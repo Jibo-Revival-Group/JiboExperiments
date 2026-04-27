@@ -1,0 +1,86 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OpenJibo", "OpenJibo", "{2FDD1CD9-89DA-D176-F85D-DC517FF08BF4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9CD502EA-259A-A102-F54F-DB66ECB43CCA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jibo.Runtime.Abstractions", "OpenJibo\src\Jibo.Runtime.Abstractions\Jibo.Runtime.Abstractions.csproj", "{4EC1F8A2-7A15-79FC-2A37-9620624156F8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Playground", "OpenJibo\src\Playground\Playground.csproj", "{61A125DD-6776-6FF9-D0B9-9945ADBCC0E1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C6EF17FD-82CB-6C4D-B0EB-AB57E442D309}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jibo.Cloud.Tests", "OpenJibo\tests\Jibo.Cloud.Tests\Jibo.Cloud.Tests.csproj", "{C18A6AEA-FD8E-FDAF-1589-0BC2EF6C8F46}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Jibo.Cloud", "Jibo.Cloud", "{1E709A93-6AAE-CBDE-D98F-8B1F8D079AE6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dotnet", "dotnet", "{7A0D8E3B-15D1-0621-86F9-1CAFD1E26384}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{42A75C5C-1B56-2C7E-5D8B-C570665075F4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jibo.Cloud.Api", "OpenJibo\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Api\Jibo.Cloud.Api.csproj", "{888E2B18-7919-73EF-DF00-AD1A4EA157FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jibo.Cloud.Application", "OpenJibo\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Application\Jibo.Cloud.Application.csproj", "{EEDE5906-13C3-E9FB-0AFB-27376A77F1AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jibo.Cloud.Domain", "OpenJibo\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Domain\Jibo.Cloud.Domain.csproj", "{6B4AD66C-CACD-D9D6-4803-33A5DB0C7F4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jibo.Cloud.Infrastructure", "OpenJibo\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Infrastructure\Jibo.Cloud.Infrastructure.csproj", "{5BD9420F-7E77-81A2-713B-8FDBF17C2D6E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4EC1F8A2-7A15-79FC-2A37-9620624156F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4EC1F8A2-7A15-79FC-2A37-9620624156F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4EC1F8A2-7A15-79FC-2A37-9620624156F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4EC1F8A2-7A15-79FC-2A37-9620624156F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61A125DD-6776-6FF9-D0B9-9945ADBCC0E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61A125DD-6776-6FF9-D0B9-9945ADBCC0E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61A125DD-6776-6FF9-D0B9-9945ADBCC0E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61A125DD-6776-6FF9-D0B9-9945ADBCC0E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C18A6AEA-FD8E-FDAF-1589-0BC2EF6C8F46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C18A6AEA-FD8E-FDAF-1589-0BC2EF6C8F46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C18A6AEA-FD8E-FDAF-1589-0BC2EF6C8F46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C18A6AEA-FD8E-FDAF-1589-0BC2EF6C8F46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{888E2B18-7919-73EF-DF00-AD1A4EA157FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{888E2B18-7919-73EF-DF00-AD1A4EA157FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{888E2B18-7919-73EF-DF00-AD1A4EA157FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{888E2B18-7919-73EF-DF00-AD1A4EA157FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEDE5906-13C3-E9FB-0AFB-27376A77F1AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEDE5906-13C3-E9FB-0AFB-27376A77F1AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEDE5906-13C3-E9FB-0AFB-27376A77F1AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEDE5906-13C3-E9FB-0AFB-27376A77F1AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B4AD66C-CACD-D9D6-4803-33A5DB0C7F4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B4AD66C-CACD-D9D6-4803-33A5DB0C7F4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B4AD66C-CACD-D9D6-4803-33A5DB0C7F4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B4AD66C-CACD-D9D6-4803-33A5DB0C7F4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BD9420F-7E77-81A2-713B-8FDBF17C2D6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BD9420F-7E77-81A2-713B-8FDBF17C2D6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BD9420F-7E77-81A2-713B-8FDBF17C2D6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BD9420F-7E77-81A2-713B-8FDBF17C2D6E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9CD502EA-259A-A102-F54F-DB66ECB43CCA} = {2FDD1CD9-89DA-D176-F85D-DC517FF08BF4}
+		{4EC1F8A2-7A15-79FC-2A37-9620624156F8} = {9CD502EA-259A-A102-F54F-DB66ECB43CCA}
+		{61A125DD-6776-6FF9-D0B9-9945ADBCC0E1} = {9CD502EA-259A-A102-F54F-DB66ECB43CCA}
+		{C6EF17FD-82CB-6C4D-B0EB-AB57E442D309} = {2FDD1CD9-89DA-D176-F85D-DC517FF08BF4}
+		{C18A6AEA-FD8E-FDAF-1589-0BC2EF6C8F46} = {C6EF17FD-82CB-6C4D-B0EB-AB57E442D309}
+		{1E709A93-6AAE-CBDE-D98F-8B1F8D079AE6} = {9CD502EA-259A-A102-F54F-DB66ECB43CCA}
+		{7A0D8E3B-15D1-0621-86F9-1CAFD1E26384} = {1E709A93-6AAE-CBDE-D98F-8B1F8D079AE6}
+		{42A75C5C-1B56-2C7E-5D8B-C570665075F4} = {7A0D8E3B-15D1-0621-86F9-1CAFD1E26384}
+		{888E2B18-7919-73EF-DF00-AD1A4EA157FF} = {42A75C5C-1B56-2C7E-5D8B-C570665075F4}
+		{EEDE5906-13C3-E9FB-0AFB-27376A77F1AD} = {42A75C5C-1B56-2C7E-5D8B-C570665075F4}
+		{6B4AD66C-CACD-D9D6-4803-33A5DB0C7F4C} = {42A75C5C-1B56-2C7E-5D8B-C570665075F4}
+		{5BD9420F-7E77-81A2-713B-8FDBF17C2D6E} = {42A75C5C-1B56-2C7E-5D8B-C570665075F4}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E18C2B78-D343-47FC-9314-42977AE46261}
+	EndGlobalSection
+EndGlobal

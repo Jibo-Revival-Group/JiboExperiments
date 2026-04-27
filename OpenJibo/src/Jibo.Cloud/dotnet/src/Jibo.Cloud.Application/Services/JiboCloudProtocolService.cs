@@ -1,11 +1,16 @@
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Logging;
 using Jibo.Cloud.Domain.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
+public sealed class JiboCloudProtocolService(
+    ICloudStateStore stateStore,
+    ILogger<JiboCloudProtocolService> logger)
 {
+    private readonly DetailedOperationLogger _detailedLogger = new(logger);
     private static readonly string[] AcceptedHosts =
     [
         "api.jibo.com",
@@ -16,16 +21,25 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
 
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope, CancellationToken cancellationToken = default)
     {
+        _detailedLogger.LogEntry(nameof(DispatchAsync),
+            ("method", envelope.Method),
+            ("path", envelope.Path),
+            ("host", envelope.HostName),
+            ("servicePrefix", envelope.ServicePrefix),
+            ("operation", envelope.Operation));
+
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
             envelope.Path == "/" &&
             string.IsNullOrWhiteSpace(envelope.ServicePrefix))
         {
+            _detailedLogger.LogExit(nameof(DispatchAsync), "NoContent");
             return Task.FromResult(ProtocolDispatchResult.NoContent());
         }
 
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
             envelope.Path.Equals("/health", StringComparison.OrdinalIgnoreCase))
         {
+            _detailedLogger.LogExit(nameof(DispatchAsync), "Health");
             return Task.FromResult(ProtocolDispatchResult.Ok(new { ok = true, host = envelope.HostName }));
         }
 
@@ -45,6 +59,8 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
 
         if (!AcceptedHosts.Contains(envelope.HostName, StringComparer.OrdinalIgnoreCase))
         {
+            _detailedLogger.LogDecision(nameof(DispatchAsync), "HostNotAccepted", envelope.HostName);
+            _detailedLogger.LogExit(nameof(DispatchAsync), "NotAccepted");
             return Task.FromResult(ProtocolDispatchResult.Ok(new
             {
                 ok = true,
@@ -53,26 +69,32 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
             }));
         }
 
+        _detailedLogger.LogStep(nameof(DispatchAsync), "ServicePrefixResolved", $"prefix={envelope.ServicePrefix}, operation={envelope.Operation}");
+
         var servicePrefix = envelope.ServicePrefix ?? string.Empty;
         var operation = envelope.Operation ?? string.Empty;
 
         if (servicePrefix.StartsWith("Log_", StringComparison.OrdinalIgnoreCase))
         {
+            _detailedLogger.LogStep(nameof(DispatchAsync), "HandlerSelected", "Log");
             return Task.FromResult(HandleLog(operation, envelope));
         }
 
         if (servicePrefix.StartsWith("Backup_", StringComparison.OrdinalIgnoreCase))
         {
+            _detailedLogger.LogStep(nameof(DispatchAsync), "HandlerSelected", "Backup");
             return Task.FromResult(HandleBackup(operation));
         }
 
         if (servicePrefix.StartsWith("Account_", StringComparison.OrdinalIgnoreCase))
         {
+            _detailedLogger.LogStep(nameof(DispatchAsync), "HandlerSelected", "Account");
             return Task.FromResult(HandleAccount(operation, envelope));
         }
 
         if (servicePrefix.StartsWith("Notification_", StringComparison.OrdinalIgnoreCase))
         {
+            _detailedLogger.LogStep(nameof(DispatchAsync), "HandlerSelected", "Notification");
             return Task.FromResult(HandleNotification(operation, envelope));
         }
 
@@ -98,6 +120,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
 
         if (servicePrefix.StartsWith("Robot_", StringComparison.OrdinalIgnoreCase))
         {
+            _detailedLogger.LogStep(nameof(DispatchAsync), "HandlerSelected", "Robot");
             return Task.FromResult(HandleRobot(operation, envelope));
         }
 
@@ -106,6 +129,8 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
             return Task.FromResult(HandleUpdate(operation, envelope));
         }
 
+        _detailedLogger.LogDecision(nameof(DispatchAsync), "UnknownHandler", $"{servicePrefix}.{operation}");
+        _detailedLogger.LogExit(nameof(DispatchAsync), "DefaultResponse");
         return Task.FromResult(ProtocolDispatchResult.Ok(new
         {
             ok = true,

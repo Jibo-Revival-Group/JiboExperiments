@@ -1,17 +1,20 @@
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Logging;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class WebSocketTurnFinalizationService(
     IConversationBroker conversationBroker,
     ISttStrategySelector sttStrategySelector,
-    ITurnTelemetrySink sink
-)
+    ITurnTelemetrySink sink,
+    ILogger<WebSocketTurnFinalizationService> logger)
 {
+    private readonly DetailedOperationLogger _detailedLogger = new(logger);
     private const int AutoFinalizeMinBufferedAudioBytes = 12000;
     private const int AutoFinalizeMinBufferedAudioChunks = 4;
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(1400);
@@ -36,12 +39,18 @@ public sealed partial class WebSocketTurnFinalizationService(
         WebSocketMessageEnvelope envelope,
         CancellationToken cancellationToken = default)
     {
+        _detailedLogger.LogEntry(nameof(HandleBinaryAudioAsync),
+            ("sessionId", session.SessionId),
+            ("audioBytes", envelope.Binary?.Length ?? 0));
+
         var turnState = session.TurnState;
         if (ShouldIgnoreLateAudio(session) || !turnState.AwaitingTurnCompletion &&
             !session.FollowUpOpen &&
             !turnState.SawListen &&
             !string.IsNullOrWhiteSpace(turnState.TransId))
         {
+            _detailedLogger.LogDecision(nameof(HandleBinaryAudioAsync), "IgnoringLateAudio", $"transId={turnState.TransId}");
+            _detailedLogger.LogExit(nameof(HandleBinaryAudioAsync), "empty");
             return [];
         }
 
@@ -59,9 +68,14 @@ public sealed partial class WebSocketTurnFinalizationService(
 
         if (ShouldAutoFinalize(session))
         {
-            return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", allowFallbackOnMissingTranscript: true, cancellationToken);
+            _detailedLogger.LogDecision(nameof(HandleBinaryAudioAsync), "AutoFinalizing", $"chunks={turnState.BufferedAudioChunkCount}, bytes={turnState.BufferedAudioBytes}");
+            var replies = await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", allowFallbackOnMissingTranscript: true, cancellationToken);
+            _detailedLogger.LogExit(nameof(HandleBinaryAudioAsync), $"replies={replies.Count}");
+            return replies;
         }
 
+        _detailedLogger.LogStep(nameof(HandleBinaryAudioAsync), "BufferingAudio", $"chunks={turnState.BufferedAudioChunkCount}, bytes={turnState.BufferedAudioBytes}");
+        _detailedLogger.LogExit(nameof(HandleBinaryAudioAsync), "empty-awaiting-more");
         return [];
     }
 

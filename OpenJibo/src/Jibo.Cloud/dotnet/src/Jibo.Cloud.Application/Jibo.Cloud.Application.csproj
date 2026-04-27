@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
 		<ProjectReference Include="..\Jibo.Cloud.Domain\Jibo.Cloud.Domain.csproj" />
 		<ProjectReference Include="..\..\..\..\Jibo.Runtime.Abstractions\Jibo.Runtime.Abstractions.csproj" />
 	</ItemGroup>

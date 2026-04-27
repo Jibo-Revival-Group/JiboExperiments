@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Logging;
 using Jibo.Cloud.Domain.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,6 +12,7 @@ public sealed class FileWebSocketTelemetrySink(
     ILogger<FileWebSocketTelemetrySink> logger,
     IOptions<WebSocketTelemetryOptions> options) : IWebSocketTelemetrySink
 {
+    private readonly DetailedOperationLogger _detailedLogger = new(logger);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
@@ -21,8 +23,14 @@ public sealed class FileWebSocketTelemetrySink(
 
     public async Task RecordConnectionOpenedAsync(WebSocketMessageEnvelope envelope, CloudSession session, CancellationToken cancellationToken = default)
     {
+        _detailedLogger.LogEntry(nameof(RecordConnectionOpenedAsync),
+            ("sessionId", session.SessionId),
+            ("host", envelope.HostName),
+            ("kind", envelope.Kind));
+
         if (!options.Value.Enabled)
         {
+            _detailedLogger.LogStep(nameof(RecordConnectionOpenedAsync), "TelemetryDisabled");
             return;
         }
 
@@ -42,10 +50,20 @@ public sealed class FileWebSocketTelemetrySink(
 
     public Task RecordInboundAsync(WebSocketMessageEnvelope envelope, CloudSession session, string? messageType, CancellationToken cancellationToken = default)
     {
-        return !options.Value.Enabled
-            ? Task.CompletedTask
-            : WriteRecordAsync(BuildRecord("message_in", envelope, session, messageType, "in", null, null),
-                cancellationToken);
+        _detailedLogger.LogEntry(nameof(RecordInboundAsync),
+            ("sessionId", session.SessionId),
+            ("messageType", messageType),
+            ("textLength", envelope.Text?.Length ?? 0),
+            ("binaryLength", envelope.Binary?.Length ?? 0));
+
+        if (!options.Value.Enabled)
+        {
+            return Task.CompletedTask;
+        }
+
+        _detailedLogger.LogPayload(nameof(RecordInboundAsync), "WebSocketMessage", envelope.Text?.Length ?? envelope.Binary?.Length ?? 0, envelope.Text?[..Math.Min(100, envelope.Text?.Length ?? 0)]);
+
+        return WriteRecordAsync(BuildRecord("message_in", envelope, session, messageType, "in", null, null), cancellationToken);
     }
 
     public Task RecordTurnEventAsync(WebSocketMessageEnvelope envelope, CloudSession session, string eventType, IReadOnlyDictionary<string, object?> details, CancellationToken cancellationToken = default)
@@ -58,10 +76,16 @@ public sealed class FileWebSocketTelemetrySink(
 
     public async Task RecordOutboundAsync(WebSocketMessageEnvelope envelope, CloudSession session, IReadOnlyList<WebSocketReply> replies, CancellationToken cancellationToken = default)
     {
+        _detailedLogger.LogEntry(nameof(RecordOutboundAsync),
+            ("sessionId", session.SessionId),
+            ("replyCount", replies.Count));
+
         if (!options.Value.Enabled)
         {
             return;
         }
+
+        _detailedLogger.LogState(nameof(RecordOutboundAsync), "ReplyCount", replies.Count);
 
         var replyTypes = replies
             .Select(reply => ReadReplyType(reply.Text))

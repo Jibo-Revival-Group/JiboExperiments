@@ -1,19 +1,31 @@
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Logging;
 using Jibo.Runtime.Abstractions;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace Jibo.Cloud.Application.Services;
 
 public sealed class JiboInteractionService(
     JiboExperienceContentCache contentCache,
-    IJiboRandomizer randomizer)
+    IJiboRandomizer randomizer,
+    ILogger<JiboInteractionService> logger)
 {
+    private readonly DetailedOperationLogger _detailedLogger = new(logger);
     public async Task<JiboInteractionDecision> BuildDecisionAsync(TurnContext turn, CancellationToken cancellationToken = default)
     {
+        _detailedLogger.LogEntry(nameof(BuildDecisionAsync),
+            ("transcript", turn.NormalizedTranscript ?? turn.RawTranscript),
+            ("inputMode", turn.InputMode),
+            ("sourceKind", turn.SourceKind));
+
         var catalog = await contentCache.GetCatalogAsync(cancellationToken);
         var transcript = (turn.NormalizedTranscript ?? turn.RawTranscript ?? string.Empty).Trim();
         var lowered = transcript.ToLowerInvariant();
+
+        _detailedLogger.LogState(nameof(BuildDecisionAsync), "NormalizedTranscript", transcript);
+        _detailedLogger.LogState(nameof(BuildDecisionAsync), "ClientIntent", turn.Attributes.TryGetValue("clientIntent", out var ci) ? ci : null);
         var referenceLocalTime = TryResolveReferenceLocalTime(turn);
         var clientIntent = turn.Attributes.TryGetValue("clientIntent", out var rawClientIntent)
             ? rawClientIntent?.ToString()
@@ -40,7 +52,10 @@ public sealed class JiboInteractionService(
             isYesNoTurn,
             isTimerValueTurn,
             isAlarmValueTurn);
-        return semanticIntent switch
+
+        _detailedLogger.LogDecision(nameof(BuildDecisionAsync), "SemanticIntentResolved", semanticIntent);
+
+        var decision = semanticIntent switch
         {
             "joke" => BuildJokeDecision(catalog),
             "dance" => BuildRandomDanceDecision(catalog),
@@ -85,6 +100,9 @@ public sealed class JiboInteractionService(
             "news" => BuildNewsDecision(catalog),
             _ => new JiboInteractionDecision("chat", BuildGenericReply(catalog, transcript, lowered))
         };
+
+        _detailedLogger.LogExit(nameof(BuildDecisionAsync), $"intent={decision.IntentName}, skill={decision.SkillName ?? "null"}");
+        return decision;
     }
 
     private JiboInteractionDecision BuildJokeDecision(JiboExperienceCatalog catalog)

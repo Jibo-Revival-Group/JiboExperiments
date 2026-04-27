@@ -12,7 +12,7 @@ namespace Jibo.Cloud.Infrastructure.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddOpenJiboCloud(this IServiceCollection services, IConfiguration? configuration = null)
+    public static IServiceCollection AddOpenJiboCloud(this IServiceCollection services, IConfiguration? configuration = null, int? logLevel = null)
     {
         var sttOptions = new BufferedAudioSttOptions();
         if (configuration is not null)

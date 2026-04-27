@@ -1,5 +1,6 @@
 using System.Net.WebSockets;
 using System.Text;
+using Jibo.Cloud.Api.Logging;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
@@ -7,7 +8,13 @@ using Jibo.Cloud.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenJiboCloud(builder.Configuration);
+var logLevel = LogLevelConfigurator.ParseLogLevelFromArgs(args);
+if (logLevel.HasValue)
+{
+    LogLevelConfigurator.ConfigureLogging(builder, logLevel.Value);
+}
+
+builder.Services.AddOpenJiboCloud(builder.Configuration, logLevel);
 
 var app = builder.Build();
 

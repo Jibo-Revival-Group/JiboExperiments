@@ -4,6 +4,21 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+#Kevins project namager :) - trace [934875333]
+.tmp/
+.manifest/
+Monospace/
+VMspace/
+Sharedspace/
+Graphene/
+Graph2Code-Jibo
+Shovel-netProj
+Shoveled-Jibo-Cloud
+Shoveled-Jibo-Cloud-OpenMemory
+latest.ShovelDump
+
+
+
 # User-specific files
 *.rsuser
 *.suo

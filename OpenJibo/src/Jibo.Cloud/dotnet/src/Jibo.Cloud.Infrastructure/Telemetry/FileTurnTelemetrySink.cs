@@ -21,7 +21,7 @@ public sealed class FileTurnTelemetrySink(
     {
         if (!options.Value.Enabled) return;
 
-        await WriteEventAsync(new
+        await WriteEventAsync(category, new
         {
             Type = category,
             Details = details
@@ -32,7 +32,7 @@ public sealed class FileTurnTelemetrySink(
     {
         if (!options.Value.Enabled) return;
 
-        await WriteEventAsync(new
+        await WriteEventAsync("transcript_error", new
         {
             Exception = ex.ToString(),
             Message = message,
@@ -40,7 +40,7 @@ public sealed class FileTurnTelemetrySink(
         }, "Turn telemetry error", LogLevel.Error, cancellationToken);
     }
 
-    private async Task WriteEventAsync(object payload, string logMessage, LogLevel level,
+    private async Task WriteEventAsync(string eventType, object payload, string logMessage, LogLevel level,
         CancellationToken cancellationToken)
     {
         var directory = GetBaseDirectory();
@@ -57,6 +57,17 @@ public sealed class FileTurnTelemetrySink(
         {
             _writeLock.Release();
         }
+
+        await CaptureIndexWriter.AppendAsync(
+            directory,
+            "turn",
+            eventType,
+            new Dictionary<string, object?>
+            {
+                ["message"] = logMessage,
+                ["level"] = level.ToString()
+            },
+            cancellationToken);
 
         logger.Log(level, "{LogMessage} {Payload}", logMessage, payload);
     }

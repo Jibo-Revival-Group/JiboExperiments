@@ -342,7 +342,7 @@ First completed slice in this personal-report parity track:
 7. Update/backup/restore end-to-end proof - implemented
 8. STT noise-screening and short-utterance reliability pass
 9. Provider-backed news expansion and deeper weather parity
-10. Capture indexing and retention boundary for group testing
+10. Capture indexing and retention boundary for group testing, including a lightweight manifest beside raw capture files
 
 For slice 1, use the new import ladder above to keep the work grounded in what OpenJibo can already render today versus what needs new scaffolding.
 For slices 2-5, use Pegasus phrase lists, MIM IDs, and behavior patterns as the source anchor before broadening into OpenJibo-native improvements.

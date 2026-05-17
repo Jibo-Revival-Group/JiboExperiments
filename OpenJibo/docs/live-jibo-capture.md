@@ -41,6 +41,7 @@ The `.NET` cloud now supports structured live capture intended for first robot r
 - HTTP request/response event streams written as NDJSON
 - websocket event streams written as NDJSON
 - per-session websocket fixture export for replay
+- a small `capture-index.ndjson` manifest beside the raw files so group testers can quickly find the session type, operation, and export artifacts
 - turn metadata including `transID`, buffered audio counts, finalize attempts, and reply types
 
 Default capture location:
@@ -54,6 +55,7 @@ Artifacts:
 - `websocket/*.events.ndjson`
 - `*.events.ndjson`
 - `websocket/fixtures/*.flow.json`
+- `capture-index.ndjson`
 
 ## Suggested First Hookup Plan
 
@@ -61,8 +63,9 @@ Artifacts:
 2. Confirm HTTP bootstrap and websocket acceptance with the existing smoke/routing helpers.
 3. Run one or two controlled listen turns with Jibo.
 4. Inspect the captured HTTP and websocket events plus exported websocket fixtures.
-5. Convert the best captures into sanitized checked-in fixtures and tests.
-6. Keep Node available to compare any surprising turn behavior before changing infrastructure.
+5. Use `capture-index.ndjson` to quickly locate the important sessions and exported fixtures.
+6. Convert the best captures into sanitized checked-in fixtures and tests.
+7. Keep Node available to compare any surprising turn behavior before changing infrastructure.
 
 Useful helper scripts:
 

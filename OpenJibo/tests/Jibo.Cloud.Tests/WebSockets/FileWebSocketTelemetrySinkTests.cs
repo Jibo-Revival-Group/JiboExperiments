@@ -66,6 +66,14 @@ public sealed class FileWebSocketTelemetrySinkTests : IDisposable
         Assert.Equal(1, document.RootElement.GetProperty("steps").GetArrayLength());
         Assert.Equal("LISTEN",
             document.RootElement.GetProperty("steps")[0].GetProperty("expectedReplyTypes")[0].GetString());
+
+        var indexPath = Path.Combine(_directoryPath, "capture-index.ndjson");
+        var indexEntries = await ReadNdjsonAsync(indexPath);
+        Assert.Contains(indexEntries, entry => entry.GetProperty("eventType").GetString() == "connection_opened");
+        Assert.Contains(indexEntries, entry => entry.GetProperty("eventType").GetString() == "message_in");
+        Assert.Contains(indexEntries, entry => entry.GetProperty("eventType").GetString() == "message_out");
+        Assert.Contains(indexEntries, entry => entry.GetProperty("eventType").GetString() == "connection_closed");
+        Assert.Contains(indexEntries, entry => entry.GetProperty("eventType").GetString() == "fixture_export");
     }
 
     [Fact]
@@ -123,5 +131,19 @@ public sealed class FileWebSocketTelemetrySinkTests : IDisposable
                 ExportFixtures = true,
                 DirectoryPath = _directoryPath
             }));
+    }
+
+    private static async Task<List<JsonElement>> ReadNdjsonAsync(string filePath)
+    {
+        var entries = new List<JsonElement>();
+        foreach (var line in await File.ReadAllLinesAsync(filePath))
+        {
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            using var document = JsonDocument.Parse(line);
+            entries.Add(document.RootElement.Clone());
+        }
+
+        return entries;
     }
 }

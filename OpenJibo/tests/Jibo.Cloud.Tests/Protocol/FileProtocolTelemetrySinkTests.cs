@@ -55,8 +55,13 @@ public sealed class FileProtocolTelemetrySinkTests : IDisposable
 
         var captureFile = Directory.GetFiles(captureDirectory, "*.events.ndjson").Single();
         var contents = await File.ReadAllTextAsync(captureFile);
+        var indexPath = Path.Combine(captureDirectory, "capture-index.ndjson");
+        var indexLines = await File.ReadAllLinesAsync(indexPath);
 
         Assert.Contains("Notification_20150505", contents);
         Assert.DoesNotContain(Path.Combine("bin", "Debug"), captureFile, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(indexLines, line => line.Contains("\"eventType\":\"protocol_record\"", StringComparison.Ordinal));
+        Assert.Contains(indexLines, line => line.Contains("\"servicePrefix\":\"Notification_20150505\"",
+            StringComparison.Ordinal));
     }
 }

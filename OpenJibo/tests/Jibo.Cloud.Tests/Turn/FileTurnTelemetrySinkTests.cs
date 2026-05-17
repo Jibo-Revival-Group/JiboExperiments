@@ -40,6 +40,35 @@ public sealed class FileTurnTelemetrySinkTests
     }
 
     [Fact]
+    public async Task RecordsCaptureIndexForTurnDiagnosticsAndErrors()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Tests", Guid.NewGuid().ToString("N"));
+        var sink = new FileTurnTelemetrySink(
+            NullLogger<FileTurnTelemetrySink>.Instance,
+            Options.Create(new TurnTelemetryOptions
+            {
+                Enabled = true,
+                DirectoryPath = directoryPath
+            }));
+
+        await sink.RecordTurnDiagnosticAsync("yes_no_turn_received", new Dictionary<string, object?>
+        {
+            ["transID"] = "trans-1",
+            ["bufferedAudioBytes"] = 1234
+        });
+
+        await sink.RecordTranscriptError(new InvalidOperationException("boom"), "turn error");
+
+        var indexPath = Path.Combine(directoryPath, "capture-index.ndjson");
+        var lines = await File.ReadAllLinesAsync(indexPath);
+
+        Assert.Contains(lines, line => line.Contains("\"eventType\":\"yes_no_turn_received\"", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("\"eventType\":\"transcript_error\"", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("\"message\":\"Turn telemetry diagnostic\"", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("\"message\":\"Turn telemetry error\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task RecordsTranscriptErrorOnTurnError()
     {
         var sink = new Mock<ITurnTelemetrySink>();

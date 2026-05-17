@@ -64,6 +64,23 @@ public sealed class FileProtocolTelemetrySink(
             _writeLock.Release();
         }
 
+        await CaptureIndexWriter.AppendAsync(
+            directory,
+            "http",
+            "protocol_record",
+            new Dictionary<string, object?>
+            {
+                ["method"] = envelope.Method,
+                ["host"] = envelope.HostName,
+                ["path"] = envelope.Path,
+                ["servicePrefix"] = envelope.ServicePrefix,
+                ["operation"] = envelope.Operation,
+                ["statusCode"] = result.StatusCode,
+                ["contentType"] = result.ContentType,
+                ["requestId"] = envelope.RequestId
+            },
+            cancellationToken);
+
         logger.LogInformation(
             "HTTP telemetry {Method} {Host}{Path} target={Target} status={StatusCode}",
             envelope.Method,

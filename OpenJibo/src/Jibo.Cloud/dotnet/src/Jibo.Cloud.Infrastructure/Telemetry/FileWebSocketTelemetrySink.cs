@@ -39,15 +39,20 @@ public sealed class FileWebSocketTelemetrySink(
 
         await WriteRecordAsync(BuildRecord("connection_opened", envelope, session, null, "internal", null, null),
             cancellationToken);
+        await AppendIndexAsync(envelope, session, "connection_opened", null, cancellationToken);
     }
 
-    public Task RecordInboundAsync(WebSocketMessageEnvelope envelope, CloudSession session, string? messageType,
+    public async Task RecordInboundAsync(WebSocketMessageEnvelope envelope, CloudSession session, string? messageType,
         CancellationToken cancellationToken = default)
     {
-        return !options.Value.Enabled
-            ? Task.CompletedTask
-            : WriteRecordAsync(BuildRecord("message_in", envelope, session, messageType, "in", null, null),
-                cancellationToken);
+        if (!options.Value.Enabled) return;
+
+        await WriteRecordAsync(BuildRecord("message_in", envelope, session, messageType, "in", null, null),
+            cancellationToken);
+        await AppendIndexAsync(envelope, session, "message_in", new Dictionary<string, object?>
+        {
+            ["messageType"] = messageType
+        }, cancellationToken);
     }
 
     public Task RecordTurnEventAsync(WebSocketMessageEnvelope envelope, CloudSession session, string eventType,
@@ -72,6 +77,10 @@ public sealed class FileWebSocketTelemetrySink(
 
         await WriteRecordAsync(BuildRecord("message_out", envelope, session, null, "out", replyTypes, null),
             cancellationToken);
+        await AppendIndexAsync(envelope, session, "message_out", new Dictionary<string, object?>
+        {
+            ["replyTypes"] = replyTypes
+        }, cancellationToken);
 
         if (_fixtures.TryGetValue(session.SessionId, out var fixture))
             fixture.Steps.Add(new CapturedWebSocketFixtureStep
@@ -95,6 +104,10 @@ public sealed class FileWebSocketTelemetrySink(
             "internal",
             null,
             new Dictionary<string, object?> { ["reason"] = reason }), cancellationToken);
+        await AppendIndexAsync(envelope, session, "connection_closed", new Dictionary<string, object?>
+        {
+            ["reason"] = reason
+        }, cancellationToken);
 
         if (!options.Value.ExportFixtures || !_fixtures.TryRemove(session.SessionId, out var fixture) ||
             fixture.Steps.Count == 0) return;
@@ -121,6 +134,13 @@ public sealed class FileWebSocketTelemetrySink(
         {
             _writeLock.Release();
         }
+
+        await AppendIndexAsync(envelope, session, "fixture_export", new Dictionary<string, object?>
+        {
+            ["fixturePath"] = fixturePath,
+            ["stepCount"] = fixture.Steps.Count,
+            ["fixtureName"] = fixtureName
+        }, cancellationToken);
 
         logger.LogInformation("Exported websocket fixture {FixturePath}", fixturePath);
     }
@@ -221,6 +241,31 @@ public sealed class FileWebSocketTelemetrySink(
             options.Value.DirectoryPath,
             Directory.GetCurrentDirectory(),
             AppContext.BaseDirectory);
+    }
+
+    private async Task AppendIndexAsync(
+        WebSocketMessageEnvelope envelope,
+        CloudSession session,
+        string eventType,
+        IReadOnlyDictionary<string, object?>? details,
+        CancellationToken cancellationToken)
+    {
+        var directory = GetBaseDirectory();
+        await CaptureIndexWriter.AppendAsync(
+            directory,
+            "websocket",
+            eventType,
+            new Dictionary<string, object?>
+            {
+                ["sessionId"] = session.SessionId,
+                ["hostName"] = envelope.HostName,
+                ["path"] = envelope.Path,
+                ["kind"] = envelope.Kind,
+                ["token"] = envelope.Token,
+                ["transId"] = session.TurnState.TransId ?? session.LastTransId,
+                ["details"] = details
+            },
+            cancellationToken);
     }
 
     private static string BuildFixtureName(CloudSession session, CapturedWebSocketFixtureBuilder fixture)

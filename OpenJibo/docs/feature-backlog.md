@@ -461,6 +461,7 @@ Current release theme:
 - Implementation notes:
   - define local capture sinks versus hosted retention
   - decide how testers submit noteworthy sessions
+  - keep a lightweight `capture-index.ndjson` manifest beside raw captures so testers can quickly find sessions, operations, and fixture exports
   - preserve sanitized fixtures as the durable parity artifact
 
 ### 11. Binary-Safe Media Storage

@@ -49,24 +49,20 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
         };
 
         if (keepMicOpen)
-        {
             plan.Actions.Add(new ListenAction
             {
                 Sequence = 1,
                 Timeout = _followUpTimeout,
                 Mode = "follow-up"
             });
-        }
 
         if (!string.IsNullOrWhiteSpace(decision.SkillName))
-        {
             plan.Actions.Add(new InvokeNativeSkillAction
             {
                 Sequence = 2,
                 SkillName = decision.SkillName,
                 Payload = decision.SkillPayload ?? new Dictionary<string, object?>()
             });
-        }
 
         return plan;
     }

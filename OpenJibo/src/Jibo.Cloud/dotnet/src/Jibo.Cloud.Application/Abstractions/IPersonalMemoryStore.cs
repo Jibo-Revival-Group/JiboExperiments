@@ -21,7 +21,11 @@ public interface IPersonalMemoryStore
     void ClearListItems(PersonalMemoryTenantScope tenantScope, string listName);
 }
 
-public sealed record PersonalMemoryTenantScope(string AccountId, string LoopId, string DeviceId, string? PersonId = null);
+public sealed record PersonalMemoryTenantScope(
+    string AccountId,
+    string LoopId,
+    string DeviceId,
+    string? PersonId = null);
 
 public sealed record PersistenceStateInfo(
     string SchemaVersion,

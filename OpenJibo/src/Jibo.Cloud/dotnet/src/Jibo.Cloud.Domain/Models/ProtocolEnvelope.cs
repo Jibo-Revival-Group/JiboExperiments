@@ -17,14 +17,13 @@ public sealed class ProtocolEnvelope
     public string? FirmwareVersion { get; init; }
     public string? ApplicationVersion { get; init; }
     public string BodyText { get; init; } = string.Empty;
-    public IDictionary<string, string> Headers { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    public IDictionary<string, string> Headers { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     public JsonElement? TryParseBody()
     {
-        if (string.IsNullOrWhiteSpace(BodyText))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(BodyText)) return null;
 
         try
         {

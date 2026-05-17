@@ -12,5 +12,6 @@ public static class OpenJiboCloudBuildInfo
 
     public static string SpokenVersion => $"Cloud version {VersionWords}.";
 
-    public static string EsmlVersion => $"Cloud version<break time='10ms'/> {VersionWords.Replace(" ", "<break time='10ms' />")}.";
+    public static string EsmlVersion =>
+        $"Cloud version<break time='10ms'/> {VersionWords.Replace(" ", "<break time='10ms' />")}.";
 }

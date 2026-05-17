@@ -5,7 +5,8 @@ using Microsoft.Extensions.Options;
 
 namespace Jibo.Cloud.Infrastructure.Telemetry;
 
-public sealed class FileTurnTelemetrySink(ILogger<FileTurnTelemetrySink> logger,
+public sealed class FileTurnTelemetrySink(
+    ILogger<FileTurnTelemetrySink> logger,
     IOptions<TurnTelemetryOptions> options) : ITurnTelemetrySink
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
@@ -15,12 +16,10 @@ public sealed class FileTurnTelemetrySink(ILogger<FileTurnTelemetrySink> logger,
 
     private readonly SemaphoreSlim _writeLock = new(1, 1);
 
-    public async Task RecordTurnDiagnosticAsync(string category, IReadOnlyDictionary<string, object?> details, CancellationToken cancellationToken = default)
+    public async Task RecordTurnDiagnosticAsync(string category, IReadOnlyDictionary<string, object?> details,
+        CancellationToken cancellationToken = default)
     {
-        if (!options.Value.Enabled)
-        {
-            return;
-        }
+        if (!options.Value.Enabled) return;
 
         await WriteEventAsync(new
         {
@@ -31,10 +30,7 @@ public sealed class FileTurnTelemetrySink(ILogger<FileTurnTelemetrySink> logger,
 
     public async Task RecordTranscriptError(Exception ex, string message, CancellationToken cancellationToken = default)
     {
-        if (!options.Value.Enabled)
-        {
-            return;
-        }
+        if (!options.Value.Enabled) return;
 
         await WriteEventAsync(new
         {
@@ -44,7 +40,8 @@ public sealed class FileTurnTelemetrySink(ILogger<FileTurnTelemetrySink> logger,
         }, "Turn telemetry error", LogLevel.Error, cancellationToken);
     }
 
-    private async Task WriteEventAsync(object payload, string logMessage, LogLevel level, CancellationToken cancellationToken)
+    private async Task WriteEventAsync(object payload, string logMessage, LogLevel level,
+        CancellationToken cancellationToken)
     {
         var directory = GetBaseDirectory();
         Directory.CreateDirectory(directory);

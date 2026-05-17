@@ -19,12 +19,12 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             new FakeExternalProcessRunner());
 
         var turn = new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
             {
-                Attributes = new Dictionary<string, object?>
-                {
-                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
-                }
-            };
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+            }
+        };
 
         Assert.False(strategy.CanHandle(turn));
     }
@@ -119,10 +119,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         }
         finally
         {
-            if (Directory.Exists(tempDirectory))
-            {
-                Directory.Delete(tempDirectory, recursive: true);
-            }
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
         }
     }
 
@@ -139,7 +136,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             0x00, 0x00, 0x00, 0x00,
             0x01,
             0x13,
-            0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64, 0x01, 0x01, 0x38, 0x01, 0x80, 0xBB, 0x00, 0x00, 0x00, 0x00, 0x00
+            0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64, 0x01, 0x01, 0x38, 0x01, 0x80, 0xBB, 0x00, 0x00, 0x00, 0x00,
+            0x00
         ];
     }
 
@@ -154,7 +152,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
     {
         public List<(string FileName, IReadOnlyList<string> Arguments)> Calls { get; } = [];
 
-        public Task<ExternalProcessResult> RunAsync(string fileName, IReadOnlyList<string> arguments, CancellationToken cancellationToken = default)
+        public Task<ExternalProcessResult> RunAsync(string fileName, IReadOnlyList<string> arguments,
+            CancellationToken cancellationToken = default)
         {
             Calls.Add((fileName, arguments));
 
@@ -165,7 +164,6 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             var outputPath = arguments[^1];
             File.WriteAllBytes(outputPath, "RIFF"u8);
             return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
-
         }
     }
 }

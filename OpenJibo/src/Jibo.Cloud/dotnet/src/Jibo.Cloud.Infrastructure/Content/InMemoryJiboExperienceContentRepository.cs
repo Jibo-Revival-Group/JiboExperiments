@@ -6,6 +6,11 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
 {
     private static readonly JiboExperienceCatalog Catalog = BuildCatalog();
 
+    public Task<JiboExperienceCatalog> GetCatalogAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Catalog);
+    }
+
     private static JiboExperienceCatalog BuildCatalog()
     {
         var catalog = new JiboExperienceCatalog
@@ -148,9 +153,7 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
         };
 
         foreach (var seedDirectory in ResolveSeedDirectories())
-        {
             catalog = LegacyMimCatalogImporter.MergeInto(catalog, seedDirectory);
-        }
 
         return catalog;
     }
@@ -210,10 +213,5 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
         };
 
         return candidates.Where(Directory.Exists).ToArray();
-    }
-
-    public Task<JiboExperienceCatalog> GetCatalogAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(Catalog);
     }
 }

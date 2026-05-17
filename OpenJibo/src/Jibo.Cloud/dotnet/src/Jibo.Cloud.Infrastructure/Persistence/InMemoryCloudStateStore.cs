@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
@@ -7,29 +8,38 @@ namespace Jibo.Cloud.Infrastructure.Persistence;
 
 public sealed class InMemoryCloudStateStore : ICloudStateStore
 {
+    private const string CurrentSchemaVersion = "1";
+
     private static readonly JsonSerializerOptions PersistenceJsonOptions = new()
     {
         WriteIndented = true,
         PropertyNameCaseInsensitive = true
     };
 
-    private AccountProfile _account = new();
+    private readonly List<BackupRecord> _backups = [];
     private readonly ConcurrentDictionary<string, DeviceRegistration> _devices = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, CloudSession> _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, string> _symmetricKeys = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, KeyRequestRecord> _keyRequests = new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly ConcurrentDictionary<string, KeyRequestRecord>
+        _keyRequests = new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly List<LoopRecord> _loops;
+    private readonly List<MediaRecord> _media = [];
+    private readonly List<PersonRecord> _people;
+
+    private readonly ConcurrentDictionary<string, CloudSession>
+        _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
+
     private readonly ISnapshotStore _snapshotStore;
+    private readonly ConcurrentDictionary<string, string> _symmetricKeys = new(StringComparer.OrdinalIgnoreCase);
     private readonly Lock _syncRoot = new();
     private readonly List<UpdateManifest> _updates;
-    private readonly List<MediaRecord> _media = [];
-    private readonly List<BackupRecord> _backups = [];
-    private readonly List<LoopRecord> _loops;
-    private readonly List<PersonRecord> _people;
-    private DeviceRegistration _robot;
-    private RobotProfile _robotProfile;
-    private long _revision;
+
+    private AccountProfile _account = new();
     private DateTimeOffset? _lastLoadedUtc;
     private DateTimeOffset? _lastSavedUtc;
+    private long _revision;
+    private DeviceRegistration _robot;
+    private RobotProfile _robotProfile;
 
     public InMemoryCloudStateStore(string? persistencePath = null)
         : this(new JsonFileSnapshotStore(persistencePath, PersistenceJsonOptions))
@@ -101,55 +111,37 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     public PersistenceStateInfo GetPersistenceStateInfo()
     {
         return new PersistenceStateInfo(
-            SchemaVersion: CurrentSchemaVersion,
-            Revision: Interlocked.Read(ref _revision),
-            LastLoadedUtc: _lastLoadedUtc,
-            LastSavedUtc: _lastSavedUtc);
+            CurrentSchemaVersion,
+            Interlocked.Read(ref _revision),
+            _lastLoadedUtc,
+            _lastSavedUtc);
     }
 
     public void LoadPersistedState()
     {
         var snapshot = _snapshotStore.Load<PersistentStateSnapshot>();
-        if (snapshot is null)
-        {
-            return;
-        }
+        if (snapshot is null) return;
 
         _account = snapshot.Account ?? _account;
         _robot = snapshot.Robot ?? _robot;
         _robotProfile = snapshot.RobotProfile ?? _robotProfile;
 
         _devices.Clear();
-        foreach (var device in snapshot.Devices ?? [])
-        {
-            _devices[device.DeviceId] = device;
-        }
+        foreach (var device in snapshot.Devices ?? []) _devices[device.DeviceId] = device;
 
-        if (_devices.IsEmpty || !_devices.ContainsKey(_robot.DeviceId))
-        {
-            _devices[_robot.DeviceId] = _robot;
-        }
+        if (_devices.IsEmpty || !_devices.ContainsKey(_robot.DeviceId)) _devices[_robot.DeviceId] = _robot;
 
         _sessionsByToken.Clear();
         foreach (var session in snapshot.Sessions ?? [])
-        {
             if (!string.IsNullOrWhiteSpace(session.Token))
-            {
                 _sessionsByToken[session.Token] = session.ToRecord();
-            }
-        }
 
         _symmetricKeys.Clear();
         foreach (var pair in snapshot.SymmetricKeys ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase))
-        {
             _symmetricKeys[pair.Key] = pair.Value;
-        }
 
         _keyRequests.Clear();
-        foreach (var keyRequest in snapshot.KeyRequests ?? [])
-        {
-            _keyRequests[keyRequest.RequestId] = keyRequest;
-        }
+        foreach (var keyRequest in snapshot.KeyRequests ?? []) _keyRequests[keyRequest.RequestId] = keyRequest;
 
         _updates.Clear();
         _updates.AddRange(snapshot.Updates ?? []);
@@ -166,8 +158,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _people.Clear();
         _people.AddRange(snapshot.People ?? []);
 
-        if (_robotProfile is null || !string.Equals(_robotProfile.RobotId, _robot.RobotId, StringComparison.OrdinalIgnoreCase))
-        {
+        if (_robotProfile is null ||
+            !string.Equals(_robotProfile.RobotId, _robot.RobotId, StringComparison.OrdinalIgnoreCase))
             _robotProfile = new RobotProfile
             {
                 RobotId = _robot.RobotId,
@@ -180,7 +172,6 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 },
                 UpdatedUtc = DateTimeOffset.UtcNow
             };
-        }
 
         Interlocked.Exchange(ref _revision, snapshot.Revision);
         _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
@@ -203,7 +194,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 RobotProfile = _robotProfile,
                 Devices = _devices.Values.ToArray(),
                 Sessions = _sessionsByToken.Values.Select(MapSessionSnapshot).ToArray(),
-                SymmetricKeys = _symmetricKeys.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase),
+                SymmetricKeys = _symmetricKeys.ToDictionary(entry => entry.Key, entry => entry.Value,
+                    StringComparer.OrdinalIgnoreCase),
                 KeyRequests = _keyRequests.Values.ToArray(),
                 Updates = _updates.ToArray(),
                 Media = _media.ToArray(),
@@ -216,11 +208,20 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         }
     }
 
-    public AccountProfile GetAccount() => _account;
+    public AccountProfile GetAccount()
+    {
+        return _account;
+    }
 
-    public DeviceRegistration GetRobot() => _robot;
+    public DeviceRegistration GetRobot()
+    {
+        return _robot;
+    }
 
-    public RobotProfile GetRobotProfile() => _robotProfile;
+    public RobotProfile GetRobotProfile()
+    {
+        return _robotProfile;
+    }
 
     public DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion)
     {
@@ -309,14 +310,21 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _sessionsByToken.GetValueOrDefault(token);
     }
 
-    public IReadOnlyList<LoopRecord> GetLoops() => _loops.ToArray();
+    public IReadOnlyList<LoopRecord> GetLoops()
+    {
+        return _loops.ToArray();
+    }
 
-    public IReadOnlyList<PersonRecord> GetPeople() => _people.ToArray();
+    public IReadOnlyList<PersonRecord> GetPeople()
+    {
+        return _people.ToArray();
+    }
 
     public IReadOnlyList<UpdateManifest> ListUpdates(string? subsystem = null, string? filter = null)
     {
         return _updates
-            .Where(update => subsystem is null || update.Subsystem.Equals(subsystem, StringComparison.OrdinalIgnoreCase))
+            .Where(update =>
+                subsystem is null || update.Subsystem.Equals(subsystem, StringComparison.OrdinalIgnoreCase))
             .Where(update => filter is null || string.Equals(update.Filter, filter, StringComparison.OrdinalIgnoreCase))
             .ToArray();
     }
@@ -324,10 +332,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     public UpdateManifest? GetUpdateFrom(string? subsystem, string? fromVersion, string? filter)
     {
         return ListUpdates(subsystem, filter)
-            .FirstOrDefault(update => fromVersion is null || update.FromVersion.Equals(fromVersion, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(update =>
+                fromVersion is null || update.FromVersion.Equals(fromVersion, StringComparison.OrdinalIgnoreCase));
     }
 
-    public UpdateManifest CreateUpdate(string? fromVersion, string? toVersion, string? changes, string? shaHash, long? length, string? subsystem, string? filter, IDictionary<string, object?>? dependencies)
+    public UpdateManifest CreateUpdate(string? fromVersion, string? toVersion, string? changes, string? shaHash,
+        long? length, string? subsystem, string? filter, IDictionary<string, object?>? dependencies)
     {
         var update = new UpdateManifest
         {
@@ -351,7 +361,6 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         var existing = _updates.FirstOrDefault(update => update.UpdateId == updateId);
         if (existing is null)
-        {
             return new UpdateManifest
             {
                 UpdateId = updateId ?? "unknown-update",
@@ -360,14 +369,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 ShaHash = "missing",
                 Subsystem = "unknown"
             };
-        }
 
         _updates.Remove(existing);
         TouchState();
         return existing;
     }
 
-    public IReadOnlyList<MediaRecord> ListMedia(IReadOnlyList<string>? loopIds = null, long? after = null, long? before = null)
+    public IReadOnlyList<MediaRecord> ListMedia(IReadOnlyList<string>? loopIds = null, long? after = null,
+        long? before = null)
     {
         return _media
             .Where(item => !item.IsDeleted)
@@ -387,10 +396,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var replacements = new List<MediaRecord>();
         for (var i = 0; i < _media.Count; i++)
         {
-            if (!paths.Contains(_media[i].Path))
-            {
-                continue;
-            }
+            if (!paths.Contains(_media[i].Path)) continue;
 
             var updated = new MediaRecord
             {
@@ -410,15 +416,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             replacements.Add(updated);
         }
 
-        if (replacements.Count > 0)
-        {
-            TouchState();
-        }
+        if (replacements.Count > 0) TouchState();
 
         return replacements;
     }
 
-    public MediaRecord CreateMedia(string loopId, string path, string type, string reference, bool isEncrypted, IDictionary<string, object?>? meta)
+    public MediaRecord CreateMedia(string loopId, string path, string type, string reference, bool isEncrypted,
+        IDictionary<string, object?>? meta)
     {
         var item = new MediaRecord
         {
@@ -432,32 +436,32 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Meta = meta ?? new Dictionary<string, object?>()
         };
 
-        var existingIndex = _media.FindIndex(existing => existing.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
+        var existingIndex =
+            _media.FindIndex(existing => existing.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
         if (existingIndex >= 0)
-        {
             _media[existingIndex] = item;
-        }
         else
-        {
             _media.Add(item);
-        }
 
         TouchState();
         return item;
     }
 
-    public IReadOnlyList<BackupRecord> GetBackups() => _backups.ToArray();
+    public IReadOnlyList<BackupRecord> GetBackups()
+    {
+        return _backups.ToArray();
+    }
 
-    public bool ShouldCreateSymmetricKey(string loopId) => !_symmetricKeys.ContainsKey(loopId);
+    public bool ShouldCreateSymmetricKey(string loopId)
+    {
+        return !_symmetricKeys.ContainsKey(loopId);
+    }
 
     public string GetOrCreateSymmetricKey(string loopId)
     {
-        if (_symmetricKeys.TryGetValue(loopId, out var existing))
-        {
-            return existing;
-        }
+        if (_symmetricKeys.TryGetValue(loopId, out var existing)) return existing;
 
-        var key = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"open-jibo-symmetric-key:{loopId}"));
+        var key = Convert.ToBase64String(Encoding.UTF8.GetBytes($"open-jibo-symmetric-key:{loopId}"));
         if (_symmetricKeys.TryAdd(loopId, key))
         {
             TouchState();
@@ -483,10 +487,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public KeyRequestRecord GetKeyRequest(string loopId, string? requestId, string? publicKey)
     {
-        if (!string.IsNullOrWhiteSpace(requestId) && _keyRequests.TryGetValue(requestId, out var record))
-        {
-            return record;
-        }
+        if (!string.IsNullOrWhiteSpace(requestId) && _keyRequests.TryGetValue(requestId, out var record)) return record;
 
         return new KeyRequestRecord
         {
@@ -496,9 +497,15 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         };
     }
 
-    public IReadOnlyList<KeyRequestRecord> GetIncomingKeyRequests() => [];
+    public IReadOnlyList<KeyRequestRecord> GetIncomingKeyRequests()
+    {
+        return [];
+    }
 
-    public IReadOnlyList<KeyRequestRecord> GetBinaryRequests() => [];
+    public IReadOnlyList<KeyRequestRecord> GetBinaryRequests()
+    {
+        return [];
+    }
 
     public IReadOnlyList<object> GetHolidays()
     {
@@ -548,7 +555,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static string ResolveDefaultLoopId(IReadOnlyList<LoopRecord> loops, AccountProfile account)
     {
-        return loops.FirstOrDefault(loop => string.Equals(loop.OwnerAccountId, account.AccountId, StringComparison.OrdinalIgnoreCase))?.LoopId
+        return loops.FirstOrDefault(loop =>
+                   string.Equals(loop.OwnerAccountId, account.AccountId, StringComparison.OrdinalIgnoreCase))?.LoopId
                ?? loops.FirstOrDefault()?.LoopId
                ?? "openjibo-default-loop";
     }
@@ -590,8 +598,6 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Metadata = session.Metadata
         };
     }
-
-    private const string CurrentSchemaVersion = "1";
 
     private sealed class PersistentStateSnapshot
     {

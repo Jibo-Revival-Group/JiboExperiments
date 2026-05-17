@@ -8,15 +8,21 @@ namespace Jibo.Cloud.Tests.WebSockets;
 
 public sealed class FileWebSocketTelemetrySinkTests : IDisposable
 {
+    private readonly string _appBaseDirectory;
     private readonly string _directoryPath;
     private readonly string _repoRoot;
-    private readonly string _appBaseDirectory;
 
     public FileWebSocketTelemetrySinkTests()
     {
         _directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Tests", Guid.NewGuid().ToString("N"));
         _repoRoot = Path.Combine(_directoryPath, "OpenJibo");
-        _appBaseDirectory = Path.Combine(_repoRoot, "src", "Jibo.Cloud", "dotnet", "src", "Jibo.Cloud.Api", "bin", "Debug", "net10.0");
+        _appBaseDirectory = Path.Combine(_repoRoot, "src", "Jibo.Cloud", "dotnet", "src", "Jibo.Cloud.Api", "bin",
+            "Debug", "net10.0");
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_directoryPath)) Directory.Delete(_directoryPath, true);
     }
 
     [Fact]
@@ -55,17 +61,11 @@ public sealed class FileWebSocketTelemetrySinkTests : IDisposable
         var fixtureDirectory = Path.Combine(_directoryPath, "fixtures");
         var fixturePath = Directory.GetFiles(fixtureDirectory, "*.flow.json").Single();
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(fixturePath));
-        Assert.Equal("neo-hub.jibo.com", document.RootElement.GetProperty("session").GetProperty("hostName").GetString());
+        Assert.Equal("neo-hub.jibo.com",
+            document.RootElement.GetProperty("session").GetProperty("hostName").GetString());
         Assert.Equal(1, document.RootElement.GetProperty("steps").GetArrayLength());
-        Assert.Equal("LISTEN", document.RootElement.GetProperty("steps")[0].GetProperty("expectedReplyTypes")[0].GetString());
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_directoryPath))
-        {
-            Directory.Delete(_directoryPath, true);
-        }
+        Assert.Equal("LISTEN",
+            document.RootElement.GetProperty("steps")[0].GetProperty("expectedReplyTypes")[0].GetString());
     }
 
     [Fact]

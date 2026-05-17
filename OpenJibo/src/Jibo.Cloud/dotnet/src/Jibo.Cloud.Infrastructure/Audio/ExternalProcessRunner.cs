@@ -4,7 +4,8 @@ namespace Jibo.Cloud.Infrastructure.Audio;
 
 public sealed class ExternalProcessRunner : IExternalProcessRunner
 {
-    public async Task<ExternalProcessResult> RunAsync(string fileName, IReadOnlyList<string> arguments, CancellationToken cancellationToken = default)
+    public async Task<ExternalProcessResult> RunAsync(string fileName, IReadOnlyList<string> arguments,
+        CancellationToken cancellationToken = default)
     {
         using var process = new Process();
         process.StartInfo = new ProcessStartInfo
@@ -16,10 +17,7 @@ public sealed class ExternalProcessRunner : IExternalProcessRunner
             CreateNoWindow = true
         };
 
-        foreach (var argument in arguments)
-        {
-            process.StartInfo.ArgumentList.Add(argument);
-        }
+        foreach (var argument in arguments) process.StartInfo.ArgumentList.Add(argument);
 
         process.Start();
 

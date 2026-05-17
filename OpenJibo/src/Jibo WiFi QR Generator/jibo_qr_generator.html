@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Jibo QR Generator</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
+<head>
+	<meta charset="UTF-8"/>
+	<title>Jibo QR Generator</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+	<style>
       * {
         box-sizing: border-box;
         margin: 0;
@@ -122,57 +122,65 @@
         text-align: center;
       }
     </style>
-  </head>
-  <body>
-    <h1>🤖 Jibo Wi-Fi QR Generator</h1>
-    <p class="sub">Generates a QR code using Jibo's XOR encoding format</p>
-    <span id="accessToken"></span>
-    <span id="wifiConfig"></span>
-    <div class="card">
-      <label>SSID (Network Name)</label>
-      <input id="ssid" placeholder="MyNetwork" />
+</head>
+<body>
+<h1>🤖 Jibo Wi-Fi QR Generator</h1>
+<p class="sub">Generates a QR code using Jibo's XOR encoding format</p>
+<span id="accessToken"></span>
+<span id="wifiConfig"></span>
+<div class="card">
+	<label>SSID (Network Name)</label>
+	<input id="ssid" placeholder="MyNetwork"/>
 
-      <label>Password (leave blank for open network)</label>
-      <input id="password" type="password" placeholder="••••••••" />
+	<label>Password (leave blank for open network)</label>
+	<input id="password" type="password" placeholder="••••••••"/>
 
-      <label class="toggle">
-        <input type="checkbox" id="useStatic" onchange="toggleStatic()" />
-        Use Static IP
-      </label>
+	<label class="toggle">
+		<input type="checkbox" id="useStatic" onchange="toggleStatic()"/>
+		Use Static IP
+	</label>
 
-      <div class="static-section" id="staticSection">
-        <div class="row">
-          <div>
-            <label>Static IP</label
-            ><input id="staticIP" placeholder="192.168.1.100" />
-          </div>
-          <div>
-            <label>Netmask</label
-            ><input id="netmask" placeholder="255.255.255.0" />
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label>Gateway</label
-            ><input id="gateway" placeholder="192.168.1.1" />
-          </div>
-          <div>
-            <label>DNS 1</label><input id="dns1" placeholder="8.8.8.8" />
-          </div>
-        </div>
-        <div><label>DNS 2</label><input id="dns2" placeholder="8.8.4.4" /></div>
-      </div>
+	<div class="static-section" id="staticSection">
+		<div class="row">
+			<div>
+				<label>
+					Static IP
+				</label
+				><input id="staticIP" placeholder="192.168.1.100"/>
+			</div>
+			<div>
+				<label>
+					Netmask
+				</label
+				><input id="netmask" placeholder="255.255.255.0"/>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label>
+					Gateway
+				</label
+				><input id="gateway" placeholder="192.168.1.1"/>
+			</div>
+			<div>
+				<label>DNS 1</label><input id="dns1" placeholder="8.8.8.8"/>
+			</div>
+		</div>
+		<div>
+			<label>DNS 2</label><input id="dns2" placeholder="8.8.4.4"/>
+		</div>
+	</div>
 
-      <button onclick="generate()">Generate QR Code</button>
-    </div>
+	<button onclick="generate()">Generate QR Code</button>
+</div>
 
-    <div id="qr-out">
-      <div id="qrdiv"></div>
-      <button id="dl" onclick="download()">⬇ Download PNG</button>
-      <p class="note">Scan with Jibo's app to configure Wi-Fi</p>
-    </div>
+<div id="qr-out">
+	<div id="qrdiv"></div>
+	<button id="dl" onclick="download()">⬇ Download PNG</button>
+	<p class="note">Scan with Jibo's app to configure Wi-Fi</p>
+</div>
 
-    <script>
+<script>
       function toggleStatic() {
         document.getElementById("staticSection").style.display =
           document.getElementById("useStatic").checked ? "block" : "none";
@@ -302,5 +310,5 @@ e!Ekiaon*%O?'O`);
         return wifiConfig;
     }
     </script>
-  </body>
+</body>
 </html>

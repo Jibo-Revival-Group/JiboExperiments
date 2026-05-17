@@ -6,18 +6,23 @@ namespace Jibo.Cloud.Infrastructure.Persistence;
 
 public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
 {
+    private const string CurrentSchemaVersion = "1";
+
     private static readonly JsonSerializerOptions PersistenceJsonOptions = new()
     {
         WriteIndented = true,
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly ConcurrentDictionary<string, TenantMemoryRecord> _tenantMemory = new(StringComparer.OrdinalIgnoreCase);
     private readonly ISnapshotStore _snapshotStore;
     private readonly Lock _syncRoot = new();
-    private long _revision;
+
+    private readonly ConcurrentDictionary<string, TenantMemoryRecord> _tenantMemory =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private DateTimeOffset? _lastLoadedUtc;
     private DateTimeOffset? _lastSavedUtc;
+    private long _revision;
 
     public InMemoryPersonalMemoryStore(string? persistencePath = null)
         : this(new JsonFileSnapshotStore(persistencePath, PersistenceJsonOptions))
@@ -33,25 +38,19 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
     public PersistenceStateInfo GetPersistenceStateInfo()
     {
         return new PersistenceStateInfo(
-            SchemaVersion: CurrentSchemaVersion,
-            Revision: Interlocked.Read(ref _revision),
-            LastLoadedUtc: _lastLoadedUtc,
-            LastSavedUtc: _lastSavedUtc);
+            CurrentSchemaVersion,
+            Interlocked.Read(ref _revision),
+            _lastLoadedUtc,
+            _lastSavedUtc);
     }
 
     public void LoadPersistedState()
     {
         var snapshot = _snapshotStore.Load<PersistentStateSnapshot>();
-        if (snapshot is null)
-        {
-            return;
-        }
+        if (snapshot is null) return;
 
         _tenantMemory.Clear();
-        foreach (var tenant in snapshot.Tenants ?? [])
-        {
-            _tenantMemory[tenant.TenantKey] = tenant.ToRecord();
-        }
+        foreach (var tenant in snapshot.Tenants ?? []) _tenantMemory[tenant.TenantKey] = tenant.ToRecord();
 
         Interlocked.Exchange(ref _revision, snapshot.Revision);
         _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
@@ -75,9 +74,12 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
                         TenantKey = pair.Key,
                         Birthday = pair.Value.Birthday,
                         Name = pair.Value.Name,
-                        Preferences = pair.Value.Preferences.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase),
-                        ImportantDates = pair.Value.ImportantDates.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase),
-                        Affinities = pair.Value.Affinities.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase),
+                        Preferences = pair.Value.Preferences.ToDictionary(entry => entry.Key, entry => entry.Value,
+                            StringComparer.OrdinalIgnoreCase),
+                        ImportantDates = pair.Value.ImportantDates.ToDictionary(entry => entry.Key,
+                            entry => entry.Value, StringComparer.OrdinalIgnoreCase),
+                        Affinities = pair.Value.Affinities.ToDictionary(entry => entry.Key, entry => entry.Value,
+                            StringComparer.OrdinalIgnoreCase),
                         Lists = pair.Value.Lists.ToDictionary(
                             entry => entry.Key,
                             entry => entry.Value.ToArray(),
@@ -167,50 +169,35 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
     public IReadOnlyDictionary<string, PersonalAffinity> GetAffinities(PersonalMemoryTenantScope tenantScope)
     {
         var key = BuildTenantKey(tenantScope);
-        if (!_tenantMemory.TryGetValue(key, out var record))
-        {
-            return new Dictionary<string, PersonalAffinity>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        return new Dictionary<string, PersonalAffinity>(record.Affinities, StringComparer.OrdinalIgnoreCase);
+        return !_tenantMemory.TryGetValue(key, out var record)
+            ? new Dictionary<string, PersonalAffinity>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, PersonalAffinity>(record.Affinities, StringComparer.OrdinalIgnoreCase);
     }
 
     public void AddListItem(PersonalMemoryTenantScope tenantScope, string listName, string item)
     {
         var normalizedListName = NormalizeCategory(listName);
         var normalizedItem = item.Trim();
-        if (string.IsNullOrWhiteSpace(normalizedListName) || string.IsNullOrWhiteSpace(normalizedItem))
-        {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(normalizedListName) || string.IsNullOrWhiteSpace(normalizedItem)) return;
 
         var record = GetOrCreateTenantRecord(tenantScope);
         var changed = false;
         lock (record.SyncRoot)
         {
             var list = record.Lists.GetOrAdd(normalizedListName, static _ => []);
-            if (list.Any(value => string.Equals(value, normalizedItem, StringComparison.OrdinalIgnoreCase)))
-            {
-                return;
-            }
+            if (list.Any(value => string.Equals(value, normalizedItem, StringComparison.OrdinalIgnoreCase))) return;
 
             list.Add(normalizedItem);
             changed = true;
         }
 
-        if (changed)
-        {
-            TouchState();
-        }
+        if (changed) TouchState();
     }
 
     public IReadOnlyList<string> GetListItems(PersonalMemoryTenantScope tenantScope, string listName)
     {
         var key = BuildTenantKey(tenantScope);
-        if (!_tenantMemory.TryGetValue(key, out var record))
-        {
-            return [];
-        }
+        if (!_tenantMemory.TryGetValue(key, out var record)) return [];
 
         var normalizedListName = NormalizeCategory(listName);
         lock (record.SyncRoot)
@@ -224,10 +211,7 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
     public void ClearListItems(PersonalMemoryTenantScope tenantScope, string listName)
     {
         var key = BuildTenantKey(tenantScope);
-        if (!_tenantMemory.TryGetValue(key, out var record))
-        {
-            return;
-        }
+        if (!_tenantMemory.TryGetValue(key, out var record)) return;
 
         var changed = false;
         lock (record.SyncRoot)
@@ -235,10 +219,7 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
             changed = record.Lists.TryRemove(NormalizeCategory(listName), out _);
         }
 
-        if (changed)
-        {
-            TouchState();
-        }
+        if (changed) TouchState();
     }
 
     private TenantMemoryRecord GetOrCreateTenantRecord(PersonalMemoryTenantScope tenantScope)
@@ -265,15 +246,16 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
         return category.Trim().ToLowerInvariant();
     }
 
-    private const string CurrentSchemaVersion = "1";
-
     private sealed class TenantMemoryRecord
     {
         public string? Birthday { get; set; }
         public string? Name { get; set; }
         public ConcurrentDictionary<string, string> Preferences { get; } = new(StringComparer.OrdinalIgnoreCase);
         public ConcurrentDictionary<string, string> ImportantDates { get; } = new(StringComparer.OrdinalIgnoreCase);
-        public ConcurrentDictionary<string, PersonalAffinity> Affinities { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public ConcurrentDictionary<string, PersonalAffinity> Affinities { get; } =
+            new(StringComparer.OrdinalIgnoreCase);
+
         public ConcurrentDictionary<string, List<string>> Lists { get; } = new(StringComparer.OrdinalIgnoreCase);
         public object SyncRoot { get; } = new();
     }
@@ -292,10 +274,18 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
         public string TenantKey { get; init; } = string.Empty;
         public string? Birthday { get; init; }
         public string? Name { get; init; }
-        public IDictionary<string, string> Preferences { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        public IDictionary<string, string> ImportantDates { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        public IDictionary<string, PersonalAffinity> Affinities { get; init; } = new Dictionary<string, PersonalAffinity>(StringComparer.OrdinalIgnoreCase);
-        public IDictionary<string, string[]> Lists { get; init; } = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
+
+        public IDictionary<string, string> Preferences { get; init; } =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        public IDictionary<string, string> ImportantDates { get; init; } =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        public IDictionary<string, PersonalAffinity> Affinities { get; init; } =
+            new Dictionary<string, PersonalAffinity>(StringComparer.OrdinalIgnoreCase);
+
+        public IDictionary<string, string[]> Lists { get; init; } =
+            new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
 
         public TenantMemoryRecord ToRecord()
         {
@@ -305,25 +295,13 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
                 Name = Name
             };
 
-            foreach (var preference in Preferences)
-            {
-                record.Preferences[preference.Key] = preference.Value;
-            }
+            foreach (var preference in Preferences) record.Preferences[preference.Key] = preference.Value;
 
-            foreach (var date in ImportantDates)
-            {
-                record.ImportantDates[date.Key] = date.Value;
-            }
+            foreach (var date in ImportantDates) record.ImportantDates[date.Key] = date.Value;
 
-            foreach (var affinity in Affinities)
-            {
-                record.Affinities[affinity.Key] = affinity.Value;
-            }
+            foreach (var affinity in Affinities) record.Affinities[affinity.Key] = affinity.Value;
 
-            foreach (var list in Lists)
-            {
-                record.Lists[list.Key] = [.. list.Value];
-            }
+            foreach (var list in Lists) record.Lists[list.Key] = [.. list.Value];
 
             return record;
         }

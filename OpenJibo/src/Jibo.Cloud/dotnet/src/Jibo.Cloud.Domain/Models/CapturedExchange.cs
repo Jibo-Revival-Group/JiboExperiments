@@ -7,5 +7,7 @@ public sealed class CapturedExchange
     public ProtocolEnvelope Request { get; init; } = new();
     public ProtocolDispatchResult Response { get; init; } = ProtocolDispatchResult.Ok();
     public string Confidence { get; init; } = "observed";
-    public IDictionary<string, string> Tags { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    public IDictionary<string, string> Tags { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }

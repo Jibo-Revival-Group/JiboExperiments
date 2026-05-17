@@ -14,97 +14,68 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
         "localhost"
     ];
 
-    public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope, CancellationToken cancellationToken = default)
+    public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope,
+        CancellationToken cancellationToken = default)
     {
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
             envelope.Path == "/" &&
             string.IsNullOrWhiteSpace(envelope.ServicePrefix))
-        {
             return Task.FromResult(ProtocolDispatchResult.NoContent());
-        }
 
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
             envelope.Path.Equals("/health", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(ProtocolDispatchResult.Ok(new { ok = true, host = envelope.HostName }));
-        }
 
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
             envelope.Path.StartsWith("/media/", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleMediaContent(envelope));
-        }
 
         if (envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) &&
             (envelope.Path.Equals("/upload/asr-binary", StringComparison.OrdinalIgnoreCase) ||
              envelope.Path.Equals("/upload/log-events", StringComparison.OrdinalIgnoreCase) ||
              envelope.Path.Equals("/upload/log-binary", StringComparison.OrdinalIgnoreCase)))
-        {
             return Task.FromResult(ProtocolDispatchResult.Raw(200, string.Empty));
-        }
 
         if (!AcceptedHosts.Contains(envelope.HostName, StringComparer.OrdinalIgnoreCase))
-        {
             return Task.FromResult(ProtocolDispatchResult.Ok(new
             {
                 ok = true,
                 accepted = false,
                 host = envelope.HostName
             }));
-        }
 
         var servicePrefix = envelope.ServicePrefix ?? string.Empty;
         var operation = envelope.Operation ?? string.Empty;
 
         if (servicePrefix.StartsWith("Log_", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleLog(operation, envelope));
-        }
 
         if (servicePrefix.StartsWith("Backup_", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleBackup(operation));
-        }
 
         if (servicePrefix.StartsWith("Account_", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleAccount(operation, envelope));
-        }
 
         if (servicePrefix.StartsWith("Notification_", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleNotification(operation, envelope));
-        }
 
         if (servicePrefix.StartsWith("Loop_", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleLoop(operation));
-        }
 
         if (servicePrefix.Equals("Media_20160725", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleMedia(operation, envelope));
-        }
 
         if (servicePrefix.StartsWith("Key_", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleKey(operation, envelope));
-        }
 
         if (servicePrefix.StartsWith("Person_", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandlePerson(operation));
-        }
 
         if (servicePrefix.StartsWith("Robot_", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleRobot(operation, envelope));
-        }
 
         if (servicePrefix.StartsWith("Update_", StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(HandleUpdate(operation, envelope));
-        }
 
         return Task.FromResult(ProtocolDispatchResult.Ok(new
         {
@@ -122,22 +93,18 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
         var body = envelope.TryParseBody();
 
         if (operation.Equals("CreateHubToken", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(new
             {
                 token = stateStore.IssueHubToken(),
                 expires = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeMilliseconds()
             });
-        }
 
         if (operation.Equals("CreateAccessToken", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(new
             {
                 token = $"access-{account.AccountId}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 expires = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeMilliseconds()
             });
-        }
 
         if (operation.Equals("CheckEmail", StringComparison.OrdinalIgnoreCase))
         {
@@ -149,7 +116,6 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
         }
 
         if (operation is "Create" or "Login")
-        {
             return ProtocolDispatchResult.Ok(new
             {
                 id = account.AccountId,
@@ -168,17 +134,13 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
                 facebookConnected = false,
                 termsAccepted = true
             });
-        }
 
         if (operation.Equals("Get", StringComparison.OrdinalIgnoreCase))
         {
             var ids = ReadStringArray(body, "ids");
             var matches = ids.Count == 0 || ids.Contains(account.AccountId, StringComparer.OrdinalIgnoreCase);
 
-            if (!matches)
-            {
-                return ProtocolDispatchResult.Ok(Array.Empty<object>());
-            }
+            if (!matches) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
             return ProtocolDispatchResult.Ok(new[]
             {
@@ -216,7 +178,6 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
         }
 
         if (operation.Equals("GetAccountByAccessToken", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(new
             {
                 id = account.AccountId,
@@ -226,12 +187,12 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
                 friendlyId = stateStore.GetRobot().RobotId,
                 payload = ReadObject(body, "payload")
             });
-        }
 
         if (operation.Equals("Search", StringComparison.OrdinalIgnoreCase))
         {
             var query = (ReadString(body, "query") ?? string.Empty).ToLowerInvariant();
-            var haystack = $"{account.Email} {account.FirstName} {account.LastName} {account.AccountId}".ToLowerInvariant();
+            var haystack = $"{account.Email} {account.FirstName} {account.LastName} {account.AccountId}"
+                .ToLowerInvariant();
 
             return ProtocolDispatchResult.Ok(query.Length > 0 && haystack.Contains(query)
                 ?
@@ -248,7 +209,6 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
         }
 
         if (operation.Equals("FacebookPrepareLogin", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(new
             {
                 url = "https://example.com/facebook-login",
@@ -258,12 +218,9 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
                 state = $"fb-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 redirect_uri = "https://api.jibo.com/facebook/callback"
             });
-        }
 
         if (operation.Equals("ConfirmEmailReset", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(new { });
-        }
 
         return ProtocolDispatchResult.Ok(new
         {
@@ -277,9 +234,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
     private ProtocolDispatchResult HandleNotification(string operation, ProtocolEnvelope envelope)
     {
         if (!operation.Equals("NewRobotToken", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(new { ok = true, operation });
-        }
 
         var body = envelope.TryParseBody();
         var deviceId = !string.IsNullOrWhiteSpace(envelope.DeviceId)
@@ -302,10 +257,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
 
     private ProtocolDispatchResult HandleLoop(string operation)
     {
-        if (operation is not ("List" or "ListLoops"))
-        {
-            return ProtocolDispatchResult.Ok(Array.Empty<object>());
-        }
+        if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
         return ProtocolDispatchResult.Ok(stateStore.GetLoops().Select(loop => new
         {
@@ -363,41 +315,35 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
         var body = envelope.TryParseBody();
 
         if (operation.Equals("List", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(stateStore.ListMedia(
                 ReadStringArray(body, "loopIds"),
                 ReadLong(body, "after"),
                 ReadLong(body, "before")).Select(MapMedia).ToArray());
-        }
 
         if (operation.Equals("Get", StringComparison.OrdinalIgnoreCase))
-        {
-            return ProtocolDispatchResult.Ok(stateStore.GetMedia(ReadStringArray(body, "paths")).Select(MapMedia).ToArray());
-        }
+            return ProtocolDispatchResult.Ok(stateStore.GetMedia(ReadStringArray(body, "paths")).Select(MapMedia)
+                .ToArray());
 
         if (operation.Equals("Remove", StringComparison.OrdinalIgnoreCase))
-        {
-            return ProtocolDispatchResult.Ok(stateStore.RemoveMedia(ReadStringArray(body, "paths")).Select(MapMedia).ToArray());
-        }
+            return ProtocolDispatchResult.Ok(stateStore.RemoveMedia(ReadStringArray(body, "paths")).Select(MapMedia)
+                .ToArray());
 
         if (!operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
         var loopId = ReadHeader(envelope, "x-loop-id") ?? ReadString(body, "loopId") ?? stateStore.GetLoops()[0].LoopId;
-        var path = ReadHeader(envelope, "x-path") ?? ReadString(body, "path") ?? $"/media/{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+        var path = ReadHeader(envelope, "x-path") ??
+                   ReadString(body, "path") ?? $"/media/{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
         var type = ReadHeader(envelope, "x-type") ?? ReadString(body, "type") ?? "unknown";
         var reference = ReadHeader(envelope, "x-reference") ?? ReadString(body, "reference") ?? string.Empty;
         var isEncrypted = ReadBooleanHeader(envelope, "x-encrypted") || ReadBool(body, "isEncrypted");
         var meta = ReadObject(body, "meta") ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
         meta["contentType"] = contentType;
-        if (!string.IsNullOrWhiteSpace(envelope.BodyText))
-        {
-            meta["bodyText"] = envelope.BodyText;
-        }
+        if (!string.IsNullOrWhiteSpace(envelope.BodyText)) meta["bodyText"] = envelope.BodyText;
 
-        return ProtocolDispatchResult.Ok(MapMedia(stateStore.CreateMedia(loopId, path, type, reference, isEncrypted, meta)));
-
+        return ProtocolDispatchResult.Ok(
+            MapMedia(stateStore.CreateMedia(loopId, path, type, reference, isEncrypted, meta)));
     }
 
     private ProtocolDispatchResult HandlePerson(string operation)
@@ -420,12 +366,10 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
         var loopId = ReadString(body, "loopId") ?? ReadString(body, "id") ?? stateStore.GetLoops()[0].LoopId;
 
         if (operation.Equals("ShouldCreate", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(new
             {
                 shouldCreate = stateStore.ShouldCreateSymmetricKey(loopId)
             });
-        }
 
         string? symmetricKey;
         if (operation.Equals("CreateSymmetricKey", StringComparison.OrdinalIgnoreCase))
@@ -451,24 +395,17 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
         }
 
         if (operation.Equals("GetRequest", StringComparison.OrdinalIgnoreCase))
-        {
-            return ProtocolDispatchResult.Ok(stateStore.GetKeyRequest(loopId, ReadString(body, "id"), ReadString(body, "publicKey")));
-        }
+            return ProtocolDispatchResult.Ok(stateStore.GetKeyRequest(loopId, ReadString(body, "id"),
+                ReadString(body, "publicKey")));
 
         if (operation.Equals("ListIncomingRequests", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(stateStore.GetIncomingKeyRequests());
-        }
 
         if (operation.Equals("ListBinaryRequests", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(stateStore.GetBinaryRequests());
-        }
 
         if (operation is "Share" or "ShareSymmetricKey" or "ShareBinary")
-        {
             return ProtocolDispatchResult.Ok(new { ok = true });
-        }
 
         if (!operation.Equals("LoadSymmetricKey", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new { ok = true, operation });
@@ -480,7 +417,6 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
             key = symmetricKey,
             symmetricKey
         });
-
     }
 
     private ProtocolDispatchResult HandleRobot(string operation, ProtocolEnvelope envelope)
@@ -521,7 +457,6 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
             updated = profile.UpdatedUtc.ToUnixTimeMilliseconds(),
             created = profile.CreatedUtc.ToUnixTimeMilliseconds()
         });
-
     }
 
     private ProtocolDispatchResult HandleUpdate(string operation, ProtocolEnvelope envelope)
@@ -533,9 +468,11 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
 
         return operation switch
         {
-            "ListUpdates" => ProtocolDispatchResult.Ok(stateStore.ListUpdates(subsystem, filter).Select(MapUpdate).ToArray()),
+            "ListUpdates" => ProtocolDispatchResult.Ok(stateStore.ListUpdates(subsystem, filter).Select(MapUpdate)
+                .ToArray()),
             "ListUpdatesFrom" => ProtocolDispatchResult.Ok(stateStore.ListUpdates(subsystem, filter)
-                .Where(update => fromVersion is null || update.FromVersion.Equals(fromVersion, StringComparison.OrdinalIgnoreCase))
+                .Where(update =>
+                    fromVersion is null || update.FromVersion.Equals(fromVersion, StringComparison.OrdinalIgnoreCase))
                 .Select(MapUpdate)
                 .ToArray()),
             "GetUpdateFrom" => HandleGetUpdateFrom(subsystem, fromVersion, filter),
@@ -558,10 +495,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
         var path = Uri.UnescapeDataString(envelope.Path["/media/".Length..]);
         var candidatePaths = new[] { path, $"/{path}" };
         var media = stateStore.GetMedia(candidatePaths).FirstOrDefault();
-        if (media is null || media.IsDeleted)
-        {
-            return ProtocolDispatchResult.Raw(404, string.Empty);
-        }
+        if (media is null || media.IsDeleted) return ProtocolDispatchResult.Raw(404, string.Empty);
 
         var contentType = TryReadMetaString(media.Meta, "contentType") ?? "application/octet-stream";
         var bodyText = TryReadMetaString(media.Meta, "bodyText") ?? string.Empty;
@@ -623,10 +557,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
 
     private static string? ReadString(JsonElement? element, string propertyName)
     {
-        if (element is null || !element.Value.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
+        if (element is null || !element.Value.TryGetProperty(propertyName, out var property)) return null;
 
         return property.ValueKind == JsonValueKind.String
             ? property.GetString()
@@ -635,25 +566,16 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
 
     private static long? ReadLong(JsonElement? element, string propertyName)
     {
-        if (element is null || !element.Value.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
+        if (element is null || !element.Value.TryGetProperty(propertyName, out var property)) return null;
 
-        if (property.ValueKind == JsonValueKind.Number && property.TryGetInt64(out var number))
-        {
-            return number;
-        }
+        if (property.ValueKind == JsonValueKind.Number && property.TryGetInt64(out var number)) return number;
 
         return long.TryParse(property.ToString(), out var parsed) ? parsed : null;
     }
 
     private static bool ReadBool(JsonElement? element, string propertyName)
     {
-        if (element is null || !element.Value.TryGetProperty(propertyName, out var property))
-        {
-            return false;
-        }
+        if (element is null || !element.Value.TryGetProperty(propertyName, out var property)) return false;
 
         return property.ValueKind switch
         {
@@ -665,31 +587,26 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
 
     private static IReadOnlyList<string> ReadStringArray(JsonElement? element, string propertyName)
     {
-        if (element is null || !element.Value.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.Array)
-        {
-            return [];
-        }
+        if (element is null || !element.Value.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind != JsonValueKind.Array) return [];
 
-        return [.. property.EnumerateArray()
-            .Select(item => item.ValueKind == JsonValueKind.String ? item.GetString() ?? string.Empty : item.ToString())
-            .Where(item => !string.IsNullOrWhiteSpace(item))];
+        return
+        [
+            .. property.EnumerateArray()
+                .Select(item =>
+                    item.ValueKind == JsonValueKind.String ? item.GetString() ?? string.Empty : item.ToString())
+                .Where(item => !string.IsNullOrWhiteSpace(item))
+        ];
     }
 
     private static IDictionary<string, object?>? ReadObject(JsonElement? element, string propertyName)
     {
-        if (element is null || !element.Value.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
+        if (element is null || !element.Value.TryGetProperty(propertyName, out var property)) return null;
 
-        if (property.ValueKind != JsonValueKind.Object)
-        {
-            return null;
-        }
+        if (property.ValueKind != JsonValueKind.Object) return null;
 
         var result = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         foreach (var child in property.EnumerateObject())
-        {
             result[child.Name] = child.Value.ValueKind switch
             {
                 JsonValueKind.String => child.Value.GetString(),
@@ -699,7 +616,6 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
                 JsonValueKind.False => false,
                 _ => child.Value.ToString()
             };
-        }
 
         return result;
     }

@@ -32,7 +32,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var isVolumeControl = string.Equals(plan.IntentName, "volume_up", StringComparison.OrdinalIgnoreCase) ||
                               string.Equals(plan.IntentName, "volume_down", StringComparison.OrdinalIgnoreCase) ||
                               string.Equals(plan.IntentName, "volume_to_value", StringComparison.OrdinalIgnoreCase);
-        var isProactivePizzaFactOffer = string.Equals(plan.IntentName, "proactive_offer_pizza_fact", StringComparison.OrdinalIgnoreCase);
+        var isProactivePizzaFactOffer = string.Equals(plan.IntentName, "proactive_offer_pizza_fact",
+            StringComparison.OrdinalIgnoreCase);
         var isSettingsLaunch = string.Equals(skill?.SkillName, "@be/settings", StringComparison.OrdinalIgnoreCase);
         var isGlobalCommand = isStopCommand || isVolumeControl;
         var isPhotoGalleryLaunch = string.Equals(plan.IntentName, "photo_gallery", StringComparison.OrdinalIgnoreCase);
@@ -71,12 +72,13 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                 ? clockIntent
                                 : isReportSkillLaunch && !string.IsNullOrWhiteSpace(localIntent)
                                     ? localIntent
-                                : isWordOfDayGuess
-                                    ? "guess"
-                                    : string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase) &&
-                                      !string.IsNullOrWhiteSpace(clientIntent)
-                                        ? clientIntent
-                                        : plan.IntentName ?? "unknown";
+                                    : isWordOfDayGuess
+                                        ? "guess"
+                                        : string.Equals(messageType, "CLIENT_NLU",
+                                              StringComparison.OrdinalIgnoreCase) &&
+                                          !string.IsNullOrWhiteSpace(clientIntent)
+                                            ? clientIntent
+                                            : plan.IntentName ?? "unknown";
         var outboundAsrText = isWordOfDayGuess && !string.IsNullOrWhiteSpace(wordOfDayGuess)
             ? wordOfDayGuess
             : isWordOfDayLaunch
@@ -104,30 +106,30 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var outboundRules = isProactivePizzaFactOffer
             ? ["shared/yes_no"]
             : isWordOfDayLaunch
-            ? ["word-of-the-day/menu"]
-            : isGlobalCommand
-                ? BuildGlobalCommandRules(rules)
-                : isRadioLaunch
-                    ? []
-                    : isSettingsLaunch
-                        ? string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase)
-                            ? rules
-                            : []
-                        : isPhotoGalleryLaunch || isPhotoCreateLaunch
+                ? ["word-of-the-day/menu"]
+                : isGlobalCommand
+                    ? BuildGlobalCommandRules(rules)
+                    : isRadioLaunch
+                        ? []
+                        : isSettingsLaunch
                             ? string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase)
                                 ? rules
                                 : []
-                            : isClockSkillLaunch
+                            : isPhotoGalleryLaunch || isPhotoCreateLaunch
                                 ? string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase)
                                     ? rules
                                     : []
-                                : isReportSkillLaunch
-                                    ? []
-                                : isWordOfDayGuess
-                                    ? ["word-of-the-day/puzzle"]
-                                    : isYesNoTurn && isYesNoIntent
-                                        ? [yesNoRule!]
-                                        : rules;
+                                : isClockSkillLaunch
+                                    ? string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase)
+                                        ? rules
+                                        : []
+                                    : isReportSkillLaunch
+                                        ? []
+                                        : isWordOfDayGuess
+                                            ? ["word-of-the-day/puzzle"]
+                                            : isYesNoTurn && isYesNoIntent
+                                                ? [yesNoRule!]
+                                                : rules;
         var entities = ReadEntities(
             turn,
             messageType,
@@ -210,10 +212,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                DelayMs: 75));
+                75));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/word-of-the-day")),
-                DelayMs: 125));
+                125));
         }
 
         if (isRadioLaunch)
@@ -226,10 +228,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                DelayMs: 75));
+                75));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/radio")),
-                DelayMs: 125));
+                125));
         }
 
         if (isStopCommand)
@@ -242,10 +244,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                DelayMs: 75));
+                75));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/idle")),
-                DelayMs: 125));
+                125));
         }
 
         if (isSettingsLaunch &&
@@ -259,10 +261,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                DelayMs: 75));
+                75));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/settings")),
-                DelayMs: 125));
+                125));
         }
 
         if (isClockSkillLaunch &&
@@ -277,10 +279,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                DelayMs: 75));
+                75));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/clock")),
-                DelayMs: 125));
+                125));
         }
 
         if ((isPhotoGalleryLaunch || isPhotoCreateLaunch) &&
@@ -295,18 +297,16 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                DelayMs: 75));
+                75));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, skillId)),
-                DelayMs: 125));
+                125));
         }
 
         if (emitSkillActions && speak is not null)
-        {
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillPayload(plan, turn, transId, speak, skill)),
-                DelayMs: 75));
-        }
+                75));
 
         return messages;
     }
@@ -352,7 +352,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 transID = transId,
                 data = new { }
             })),
-            new SocketReplyPlan(JsonSerializer.Serialize(BuildGenericFallbackSkillPayload(transId)), DelayMs: 75)
+            new SocketReplyPlan(JsonSerializer.Serialize(BuildGenericFallbackSkillPayload(transId)), 75)
         ];
     }
 
@@ -427,10 +427,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ? "clientRules"
             : "listenRules";
 
-        if (!turn.Attributes.TryGetValue(attributeName, out var value))
-        {
-            return [];
-        }
+        if (!turn.Attributes.TryGetValue(attributeName, out var value)) return [];
 
         return value switch
         {
@@ -466,10 +463,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
     {
         if (yesNoTurn)
         {
-            if (!includeCreateDomain)
-            {
-                return new Dictionary<string, object?>();
-            }
+            if (!includeCreateDomain) return new Dictionary<string, object?>();
 
             return new Dictionary<string, object?>
             {
@@ -478,20 +472,15 @@ public sealed class ResponsePlanToSocketMessagesMapper
         }
 
         if (wordOfDayLaunch)
-        {
             return new Dictionary<string, object?>
             {
                 ["domain"] = "word-of-the-day"
             };
-        }
 
         if (globalCommand)
         {
             var entities = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrWhiteSpace(volumeLevel))
-            {
-                entities["volumeLevel"] = volumeLevel;
-            }
+            if (!string.IsNullOrWhiteSpace(volumeLevel)) entities["volumeLevel"] = volumeLevel;
 
             return entities;
         }
@@ -499,10 +488,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (radioLaunch)
         {
             var entities = new Dictionary<string, object?>();
-            if (!string.IsNullOrWhiteSpace(radioStation))
-            {
-                entities["station"] = radioStation;
-            }
+            if (!string.IsNullOrWhiteSpace(radioStation)) entities["station"] = radioStation;
 
             return entities;
         }
@@ -510,10 +496,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (clockSkillLaunch)
         {
             var entities = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrWhiteSpace(clockDomain))
-            {
-                entities["domain"] = clockDomain;
-            }
+            if (!string.IsNullOrWhiteSpace(clockDomain)) entities["domain"] = clockDomain;
 
             if (string.Equals(clockDomain, "timer", StringComparison.OrdinalIgnoreCase) &&
                 !string.IsNullOrWhiteSpace(timerHours + timerMinutes + timerSeconds))
@@ -535,32 +518,22 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (reportSkillLaunch)
         {
             var entities = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrWhiteSpace(reportDate))
-            {
-                entities["date"] = reportDate;
-            }
+            if (!string.IsNullOrWhiteSpace(reportDate)) entities["date"] = reportDate;
 
-            if (!string.IsNullOrWhiteSpace(reportWeatherCondition))
-            {
-                entities["Weather"] = reportWeatherCondition;
-            }
+            if (!string.IsNullOrWhiteSpace(reportWeatherCondition)) entities["Weather"] = reportWeatherCondition;
 
             return entities;
         }
 
         if (wordOfDayGuess)
-        {
             return new Dictionary<string, object?>
             {
                 ["guess"] = guess ?? string.Empty
             };
-        }
 
         if (!string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase) ||
             !turn.Attributes.TryGetValue("clientEntities", out var value) || value is null)
-        {
             return new Dictionary<string, object?>();
-        }
 
         return value switch
         {
@@ -596,10 +569,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
     private static IEnumerable<string> ReadRuleValues(TurnContext turn, string key)
     {
-        if (!turn.Attributes.TryGetValue(key, out var value) || value is null)
-        {
-            return [];
-        }
+        if (!turn.Attributes.TryGetValue(key, out var value) || value is null) return [];
 
         return value switch
         {
@@ -621,10 +591,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
     private static string? ReadClientEntity(TurnContext turn, string entityName)
     {
-        if (!turn.Attributes.TryGetValue("clientEntities", out var value) || value is null)
-        {
-            return null;
-        }
+        if (!turn.Attributes.TryGetValue("clientEntities", out var value) || value is null) return null;
 
         return value switch
         {
@@ -642,20 +609,14 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
     private static string? ReadSkillPayloadString(InvokeNativeSkillAction? skill, string key)
     {
-        if (skill?.Payload is null || !skill.Payload.TryGetValue(key, out var value))
-        {
-            return null;
-        }
+        if (skill?.Payload is null || !skill.Payload.TryGetValue(key, out var value)) return null;
 
         return value?.ToString();
     }
 
     private static string ResolveWordOfDayGuess(TurnContext turn, string transcript, string? nluGuess)
     {
-        if (!string.IsNullOrWhiteSpace(nluGuess))
-        {
-            return nluGuess;
-        }
+        if (!string.IsNullOrWhiteSpace(nluGuess)) return nluGuess;
 
         var normalized = NormalizeGuessToken(transcript);
         var hintIndex = normalized switch
@@ -669,11 +630,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var hints = ReadRuleValues(turn, "listenAsrHints").ToArray();
 
         if (hintIndex >= 0)
-        {
             return hintIndex < hints.Length
                 ? hints[hintIndex]
                 : transcript;
-        }
 
         var fuzzyHintMatch = FindClosestHint(normalized, hints);
         return string.IsNullOrWhiteSpace(fuzzyHintMatch)
@@ -683,31 +642,19 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
     private static string? FindClosestHint(string normalizedTranscript, IReadOnlyList<string> hints)
     {
-        if (string.IsNullOrWhiteSpace(normalizedTranscript))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(normalizedTranscript)) return null;
 
         string? bestHint = null;
         var bestDistance = int.MaxValue;
 
         foreach (var hint in hints)
         {
-            if (string.IsNullOrWhiteSpace(hint))
-            {
-                continue;
-            }
+            if (string.IsNullOrWhiteSpace(hint)) continue;
 
             var normalizedHint = NormalizeGuessToken(hint);
-            if (string.IsNullOrWhiteSpace(normalizedHint))
-            {
-                continue;
-            }
+            if (string.IsNullOrWhiteSpace(normalizedHint)) continue;
 
-            if (string.Equals(normalizedTranscript, normalizedHint, StringComparison.Ordinal))
-            {
-                return hint;
-            }
+            if (string.Equals(normalizedTranscript, normalizedHint, StringComparison.Ordinal)) return hint;
 
             var distance = ComputeEditDistance(normalizedTranscript, normalizedHint);
             if (distance >= bestDistance) continue;
@@ -729,10 +676,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var previous = new int[right.Length + 1];
         var current = new int[right.Length + 1];
 
-        for (var column = 0; column <= right.Length; column += 1)
-        {
-            previous[column] = column;
-        }
+        for (var column = 0; column <= right.Length; column += 1) previous[column] = column;
 
         for (var row = 1; row <= left.Length; row += 1)
         {
@@ -757,11 +701,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var skillPayload = skill?.Payload;
         if (string.Equals(ReadPayloadString(skillPayload, "cloudResponseMode"), "completion_only",
                 StringComparison.OrdinalIgnoreCase))
-        {
             return BuildCompletionOnlySkillPayload(
                 transId,
                 ReadPayloadString(skillPayload, "skillId") ?? skill?.SkillName ?? "chitchat-skill");
-        }
 
         var isJoke = string.Equals(plan.IntentName, "joke", StringComparison.OrdinalIgnoreCase) ||
                      string.Equals(skill?.SkillName, "@be/joke", StringComparison.OrdinalIgnoreCase);
@@ -797,21 +739,16 @@ public sealed class ResponsePlanToSocketMessagesMapper
         };
 
         if (listenContexts.Count > 0)
-        {
             jcpConfig["listen"] = new
             {
                 id = CreateProtocolId(),
                 type = "LISTEN",
                 contexts = listenContexts
             };
-        }
 
-        object? weatherHiLoView = BuildWeatherHiLoView(skillPayload);
+        var weatherHiLoView = BuildWeatherHiLoView(skillPayload);
         var weeklyWeatherCards = BuildWeatherHiLoSequenceCards(skillPayload);
-        if (weatherHiLoView is null && weeklyWeatherCards.Count > 0)
-        {
-            weatherHiLoView = weeklyWeatherCards[0].View;
-        }
+        if (weatherHiLoView is null && weeklyWeatherCards.Count > 0) weatherHiLoView = weeklyWeatherCards[0].View;
 
         var useWeatherSequence = false;
         if (weatherHiLoView is not null)
@@ -927,15 +864,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ["entities"] = entities
         };
 
-        if (!string.IsNullOrWhiteSpace(skillId))
-        {
-            payload["skill"] = skillId;
-        }
+        if (!string.IsNullOrWhiteSpace(skillId)) payload["skill"] = skillId;
 
-        if (!string.IsNullOrWhiteSpace(domain))
-        {
-            payload["domain"] = domain;
-        }
+        if (!string.IsNullOrWhiteSpace(domain)) payload["domain"] = domain;
 
         return payload;
     }
@@ -1098,55 +1029,54 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
     private static string? ReadPayloadString(IDictionary<string, object?>? payload, string key)
     {
-        if (payload is null || !payload.TryGetValue(key, out var value))
-        {
-            return null;
-        }
+        if (payload is null || !payload.TryGetValue(key, out var value)) return null;
 
         return value?.ToString();
     }
 
     private static IReadOnlyList<string> ReadPayloadStringArray(IDictionary<string, object?>? payload, string key)
     {
-        if (payload is null || !payload.TryGetValue(key, out var value) || value is null)
-        {
-            return [];
-        }
+        if (payload is null || !payload.TryGetValue(key, out var value) || value is null) return [];
 
         return value switch
         {
-            string text => [.. text
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(static context => !string.IsNullOrWhiteSpace(context))],
+            string text =>
+            [
+                .. text
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Where(static context => !string.IsNullOrWhiteSpace(context))
+            ],
             string[] contexts => [.. contexts.Where(static context => !string.IsNullOrWhiteSpace(context))],
             IEnumerable<string> contexts => [.. contexts.Where(static context => !string.IsNullOrWhiteSpace(context))],
-            JsonElement jsonElement when jsonElement.ValueKind == JsonValueKind.Array => [.. jsonElement
-                .EnumerateArray()
-                .Select(static item => item.GetString())
-                .Where(static context => !string.IsNullOrWhiteSpace(context))
-                .Select(static context => context!)],
-            IEnumerable<object?> contexts => [.. contexts
-                .Select(static context => context?.ToString())
-                .Where(static context => !string.IsNullOrWhiteSpace(context))
-                .Select(static context => context!)],
+            JsonElement jsonElement when jsonElement.ValueKind == JsonValueKind.Array =>
+            [
+                .. jsonElement
+                    .EnumerateArray()
+                    .Select(static item => item.GetString())
+                    .Where(static context => !string.IsNullOrWhiteSpace(context))
+                    .Select(static context => context!)
+            ],
+            IEnumerable<object?> contexts =>
+            [
+                .. contexts
+                    .Select(static context => context?.ToString())
+                    .Where(static context => !string.IsNullOrWhiteSpace(context))
+                    .Select(static context => context!)
+            ],
             _ => string.IsNullOrWhiteSpace(value.ToString()) ? [] : [value.ToString()!]
         };
     }
 
-    private static IReadOnlyList<WeatherHiLoSequenceCard> BuildWeatherHiLoSequenceCards(IDictionary<string, object?>? payload)
+    private static IReadOnlyList<WeatherHiLoSequenceCard> BuildWeatherHiLoSequenceCards(
+        IDictionary<string, object?>? payload)
     {
         if (payload is null ||
             !payload.TryGetValue("weather_weekly_cards", out var rawCards) ||
             rawCards is null)
-        {
             return [];
-        }
 
         var cards = ReadPayloadObjectArray(rawCards);
-        if (cards.Count == 0)
-        {
-            return [];
-        }
+        if (cards.Count == 0) return [];
 
         var sequenceCards = new List<WeatherHiLoSequenceCard>(cards.Count);
         foreach (var card in cards)
@@ -1157,10 +1087,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 ["weather_view_kind"] = "weatherHiLo"
             };
             var view = BuildWeatherHiLoView(weatherCardPayload);
-            if (view is null)
-            {
-                continue;
-            }
+            if (view is null) continue;
 
             sequenceCards.Add(new WeatherHiLoSequenceCard(
                 view,
@@ -1247,38 +1174,29 @@ public sealed class ResponsePlanToSocketMessagesMapper
     private static IReadOnlyList<IDictionary<string, object?>> ReadPayloadObjectArray(object rawValue)
     {
         if (rawValue is JsonElement jsonArray && jsonArray.ValueKind == JsonValueKind.Array)
-        {
             return jsonArray
                 .EnumerateArray()
                 .Select(ConvertJsonObjectToDictionary)
                 .Where(static item => item is not null)
                 .Cast<IDictionary<string, object?>>()
                 .ToArray();
-        }
 
         if (rawValue is IEnumerable<object?> rawObjects)
-        {
             return rawObjects
                 .Select(ConvertObjectToDictionary)
                 .Where(static item => item is not null)
                 .Cast<IDictionary<string, object?>>()
                 .ToArray();
-        }
 
         return [];
     }
 
     private static IDictionary<string, object?>? ConvertObjectToDictionary(object? value)
     {
-        if (value is null)
-        {
-            return null;
-        }
+        if (value is null) return null;
 
         if (value is IDictionary<string, object?> dictionary)
-        {
             return new Dictionary<string, object?>(dictionary, StringComparer.OrdinalIgnoreCase);
-        }
 
         return value is JsonElement jsonValue
             ? ConvertJsonObjectToDictionary(jsonValue)
@@ -1287,14 +1205,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
     private static IDictionary<string, object?>? ConvertJsonObjectToDictionary(JsonElement value)
     {
-        if (value.ValueKind != JsonValueKind.Object)
-        {
-            return null;
-        }
+        if (value.ValueKind != JsonValueKind.Object) return null;
 
         var dictionary = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         foreach (var property in value.EnumerateObject())
-        {
             dictionary[property.Name] = property.Value.ValueKind switch
             {
                 JsonValueKind.String => property.Value.GetString(),
@@ -1306,35 +1220,26 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 JsonValueKind.Array => property.Value,
                 _ => null
             };
-        }
 
         return dictionary;
     }
 
     private static object? BuildWeatherHiLoView(IDictionary<string, object?>? payload)
     {
-        if (!TryReadPayloadBool(payload, "weather_view_enabled"))
-        {
-            return null;
-        }
+        if (!TryReadPayloadBool(payload, "weather_view_enabled")) return null;
 
         if (!string.Equals(
                 ReadPayloadString(payload, "weather_view_kind"),
                 "weatherHiLo",
                 StringComparison.OrdinalIgnoreCase))
-        {
             return null;
-        }
 
         var icon = ReadPayloadString(payload, "weather_icon");
         var unit = ReadPayloadString(payload, "weather_unit") ?? "F";
         var theme = ReadPayloadString(payload, "weather_theme") ?? "Normal";
         var high = TryReadPayloadInt(payload, "weather_high");
         var low = TryReadPayloadInt(payload, "weather_low");
-        if (string.IsNullOrWhiteSpace(icon) || high is null || low is null)
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(icon) || high is null || low is null) return null;
 
         var hiNumX = GetTemperatureLabelXPosition(370, high.Value);
         var hiUnitX = GetTemperatureLabelXPosition(360, high.Value);
@@ -1493,24 +1398,16 @@ public sealed class ResponsePlanToSocketMessagesMapper
     private static int GetTemperatureLabelXPosition(int baseX, int temperature)
     {
         const int xOffset = 70;
-        if (temperature < -9 || temperature > 99)
-        {
-            return baseX + xOffset;
-        }
+        if (temperature < -9 || temperature > 99) return baseX + xOffset;
 
-        if (temperature is >= 0 and < 10)
-        {
-            return baseX - xOffset;
-        }
+        if (temperature is >= 0 and < 10) return baseX - xOffset;
 
         return baseX;
     }
+
     private static int? TryReadPayloadInt(IDictionary<string, object?>? payload, string key)
     {
-        if (payload is null || !payload.TryGetValue(key, out var value) || value is null)
-        {
-            return null;
-        }
+        if (payload is null || !payload.TryGetValue(key, out var value) || value is null) return null;
 
         return value switch
         {
@@ -1519,18 +1416,17 @@ public sealed class ResponsePlanToSocketMessagesMapper
             double number => (int)Math.Round(number, MidpointRounding.AwayFromZero),
             float number => (int)Math.Round(number, MidpointRounding.AwayFromZero),
             string text when int.TryParse(text, out var parsed) => parsed,
-            JsonElement { ValueKind: JsonValueKind.Number } jsonNumber when jsonNumber.TryGetInt32(out var parsed) => parsed,
-            JsonElement jsonText when jsonText.ValueKind == JsonValueKind.String && int.TryParse(jsonText.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.Number } jsonNumber when jsonNumber.TryGetInt32(out var parsed) =>
+                parsed,
+            JsonElement jsonText when jsonText.ValueKind == JsonValueKind.String &&
+                                      int.TryParse(jsonText.GetString(), out var parsed) => parsed,
             _ => null
         };
     }
 
     private static bool TryReadPayloadBool(IDictionary<string, object?>? payload, string key)
     {
-        if (payload is null || !payload.TryGetValue(key, out var value) || value is null)
-        {
-            return false;
-        }
+        if (payload is null || !payload.TryGetValue(key, out var value) || value is null) return false;
 
         return value switch
         {
@@ -1538,7 +1434,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
             string text when bool.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.True } => true,
             JsonElement { ValueKind: JsonValueKind.False } => false,
-            JsonElement jsonText when jsonText.ValueKind == JsonValueKind.String && bool.TryParse(jsonText.GetString(), out var parsed) => parsed,
+            JsonElement jsonText when jsonText.ValueKind == JsonValueKind.String &&
+                                      bool.TryParse(jsonText.GetString(), out var parsed) => parsed,
             _ => false
         };
     }
@@ -1561,4 +1458,3 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
     public sealed record SocketReplyPlan(string Text, int DelayMs = 0);
 }
-

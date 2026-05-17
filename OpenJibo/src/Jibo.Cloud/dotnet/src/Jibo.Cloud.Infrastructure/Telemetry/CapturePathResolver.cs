@@ -4,10 +4,7 @@ internal static class CapturePathResolver
 {
     public static string Resolve(string configuredDirectoryPath, string currentDirectory, string appBaseDirectory)
     {
-        if (Path.IsPathRooted(configuredDirectoryPath))
-        {
-            return Path.GetFullPath(configuredDirectoryPath);
-        }
+        if (Path.IsPathRooted(configuredDirectoryPath)) return Path.GetFullPath(configuredDirectoryPath);
 
         var repoRoot = FindOpenJiboRepoRoot(currentDirectory) ?? FindOpenJiboRepoRoot(appBaseDirectory);
         var baseDirectory = repoRoot ?? currentDirectory;
@@ -16,23 +13,14 @@ internal static class CapturePathResolver
 
     private static string? FindOpenJiboRepoRoot(string? startPath)
     {
-        if (string.IsNullOrWhiteSpace(startPath))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(startPath)) return null;
 
         var directory = new DirectoryInfo(Path.GetFullPath(startPath));
-        if (directory is { Exists: false, Parent: not null })
-        {
-            directory = directory.Parent;
-        }
+        if (directory is { Exists: false, Parent: not null }) directory = directory.Parent;
 
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "OpenJibo.slnx")))
-            {
-                return directory.FullName;
-            }
+            if (File.Exists(Path.Combine(directory.FullName, "OpenJibo.slnx"))) return directory.FullName;
 
             directory = directory.Parent;
         }

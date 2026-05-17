@@ -6,7 +6,8 @@ namespace Jibo.Cloud.Application.Services;
 
 public sealed class ProtocolToTurnContextMapper
 {
-    public static TurnContext MapListenMessage(WebSocketMessageEnvelope envelope, CloudSession session, string messageType)
+    public static TurnContext MapListenMessage(WebSocketMessageEnvelope envelope, CloudSession session,
+        string messageType)
     {
         var turnState = session.TurnState;
         var protocolOperation = messageType.ToLowerInvariant();
@@ -16,46 +17,28 @@ public sealed class ProtocolToTurnContextMapper
         };
         var text = ExtractTranscript(envelope.Text, attributes);
 
-        if (!string.IsNullOrWhiteSpace(turnState.TransId))
-        {
-            attributes["transID"] = turnState.TransId;
-        }
+        if (!string.IsNullOrWhiteSpace(turnState.TransId)) attributes["transID"] = turnState.TransId;
 
-        if (!string.IsNullOrWhiteSpace(session.AccountId))
-        {
-            attributes["accountId"] = session.AccountId;
-        }
+        if (!string.IsNullOrWhiteSpace(session.AccountId)) attributes["accountId"] = session.AccountId;
 
-        if (!string.IsNullOrWhiteSpace(session.DeviceId))
-        {
-            attributes["deviceId"] = session.DeviceId;
-        }
+        if (!string.IsNullOrWhiteSpace(session.DeviceId)) attributes["deviceId"] = session.DeviceId;
 
         if (session.Metadata.TryGetValue("loopId", out var loopId) &&
             loopId is string loopIdText &&
             !string.IsNullOrWhiteSpace(loopIdText))
-        {
             attributes["loopId"] = loopIdText;
-        }
 
-        if (!string.IsNullOrWhiteSpace(turnState.ContextPayload))
-        {
-            attributes["context"] = turnState.ContextPayload;
-        }
+        if (!string.IsNullOrWhiteSpace(turnState.ContextPayload)) attributes["context"] = turnState.ContextPayload;
 
         if (session.Metadata.TryGetValue("lastClockDomain", out var lastClockDomain) &&
             lastClockDomain is string lastClockDomainText &&
             !string.IsNullOrWhiteSpace(lastClockDomainText))
-        {
             attributes["lastClockDomain"] = lastClockDomainText;
-        }
 
         if (session.Metadata.TryGetValue("pendingProactivityOffer", out var pendingProactivityOffer) &&
             pendingProactivityOffer is string pendingProactivityOfferText &&
             !string.IsNullOrWhiteSpace(pendingProactivityOfferText))
-        {
             attributes["pendingProactivityOffer"] = pendingProactivityOfferText;
-        }
 
         foreach (var pair in session.Metadata)
         {
@@ -63,41 +46,29 @@ public sealed class ProtocolToTurnContextMapper
                  !pair.Key.StartsWith("chitchat", StringComparison.OrdinalIgnoreCase) &&
                  !pair.Key.StartsWith("greetings", StringComparison.OrdinalIgnoreCase)) ||
                 pair.Value is null)
-            {
                 continue;
-            }
 
             attributes[pair.Key] = pair.Value;
         }
 
         attributes["listenHotphrase"] = turnState.ListenHotphrase;
 
-        if (turnState.ListenRules.Count > 0)
-        {
-            attributes["listenRules"] = turnState.ListenRules;
-        }
+        if (turnState.ListenRules.Count > 0) attributes["listenRules"] = turnState.ListenRules;
 
-        if (turnState.ListenAsrHints.Count > 0)
-        {
-            attributes["listenAsrHints"] = turnState.ListenAsrHints;
-        }
+        if (turnState.ListenAsrHints.Count > 0) attributes["listenAsrHints"] = turnState.ListenAsrHints;
 
         if (turnState.BufferedAudioBytes > 0)
         {
             attributes["bufferedAudioBytes"] = turnState.BufferedAudioBytes;
             attributes["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount;
-            attributes["bufferedAudioFrames"] = turnState.BufferedAudioFrames.Select(frame => frame.ToArray()).ToArray();
+            attributes["bufferedAudioFrames"] =
+                turnState.BufferedAudioFrames.Select(frame => frame.ToArray()).ToArray();
         }
 
         if (!string.IsNullOrWhiteSpace(turnState.AudioTranscriptHint))
-        {
             attributes["audioTranscriptHint"] = turnState.AudioTranscriptHint;
-        }
 
-        if (turnState.FinalizeAttemptCount > 0)
-        {
-            attributes["finalizeAttemptCount"] = turnState.FinalizeAttemptCount;
-        }
+        if (turnState.FinalizeAttemptCount > 0) attributes["finalizeAttemptCount"] = turnState.FinalizeAttemptCount;
 
         return new TurnContext
         {
@@ -111,8 +82,12 @@ public sealed class ProtocolToTurnContextMapper
             RequestId = envelope.ConnectionId,
             ProtocolService = "neo-hub",
             ProtocolOperation = protocolOperation,
-            FirmwareVersion = session.Metadata.TryGetValue("firmwareVersion", out var firmwareVersion) ? firmwareVersion as string : null,
-            ApplicationVersion = session.Metadata.TryGetValue("applicationVersion", out var applicationVersion) ? applicationVersion as string : null,
+            FirmwareVersion = session.Metadata.TryGetValue("firmwareVersion", out var firmwareVersion)
+                ? firmwareVersion as string
+                : null,
+            ApplicationVersion = session.Metadata.TryGetValue("applicationVersion", out var applicationVersion)
+                ? applicationVersion as string
+                : null,
             IsFollowUpEligible = true,
             Attributes = attributes
         };
@@ -120,10 +95,7 @@ public sealed class ProtocolToTurnContextMapper
 
     private static string? ExtractTranscript(string? text, IDictionary<string, object?> attributes)
     {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(text)) return null;
 
         try
         {
@@ -133,57 +105,41 @@ public sealed class ProtocolToTurnContextMapper
             if (!root.TryGetProperty("data", out var data)) return null;
 
             if (data.TryGetProperty("text", out var transcript) && transcript.ValueKind == JsonValueKind.String)
-            {
                 return transcript.GetString();
-            }
 
             if (data.TryGetProperty("asr", out var asr) &&
                 asr.ValueKind == JsonValueKind.Object &&
                 asr.TryGetProperty("text", out var asrText) &&
                 asrText.ValueKind == JsonValueKind.String)
-            {
                 return asrText.GetString();
-            }
 
-            if (data.TryGetProperty("transcriptHint", out var transcriptHint) && transcriptHint.ValueKind == JsonValueKind.String)
-            {
-                return transcriptHint.GetString();
-            }
+            if (data.TryGetProperty("transcriptHint", out var transcriptHint) &&
+                transcriptHint.ValueKind == JsonValueKind.String) return transcriptHint.GetString();
 
             if (data.TryGetProperty("intent", out var intent) && intent.ValueKind == JsonValueKind.String)
-            {
                 attributes["clientIntent"] = intent.GetString();
-            }
 
             if (data.TryGetProperty("triggerSource", out var triggerSource) &&
                 triggerSource.ValueKind == JsonValueKind.String &&
                 !string.IsNullOrWhiteSpace(triggerSource.GetString()))
-            {
                 attributes["triggerSource"] = triggerSource.GetString();
-            }
 
             if (data.TryGetProperty("triggerData", out var triggerData) &&
                 triggerData.ValueKind == JsonValueKind.Object &&
                 triggerData.TryGetProperty("looperID", out var triggerLooperId) &&
                 triggerLooperId.ValueKind == JsonValueKind.String &&
                 !string.IsNullOrWhiteSpace(triggerLooperId.GetString()))
-            {
                 attributes["triggerLooperId"] = triggerLooperId.GetString();
-            }
 
             if (data.TryGetProperty("rules", out var rules) && rules.ValueKind == JsonValueKind.Array)
-            {
                 attributes["clientRules"] = rules.EnumerateArray()
                     .Where(item => item.ValueKind == JsonValueKind.String)
                     .Select(item => item.GetString() ?? string.Empty)
                     .Where(rule => !string.IsNullOrWhiteSpace(rule))
                     .ToArray();
-            }
 
             if (data.TryGetProperty("entities", out var entities) && entities.ValueKind == JsonValueKind.Object)
-            {
                 attributes["clientEntities"] = entities.Clone();
-            }
 
             return intent.ValueKind == JsonValueKind.String ? intent.GetString() : null;
         }

@@ -20,5 +20,7 @@ public sealed class WebSocketTelemetryRecord
     public int BufferedAudioChunks { get; init; }
     public int FinalizeAttempts { get; init; }
     public bool AwaitingTurnCompletion { get; init; }
-    public IReadOnlyDictionary<string, object?> Details { get; init; } = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
+    public IReadOnlyDictionary<string, object?> Details { get; init; } =
+        new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 }

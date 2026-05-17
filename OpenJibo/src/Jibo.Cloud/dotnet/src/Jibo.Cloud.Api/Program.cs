@@ -1,5 +1,6 @@
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
@@ -38,7 +39,7 @@ app.Use(async (context, next) =>
 
     var webSocketService = context.RequestServices.GetRequiredService<JiboWebSocketService>();
     var telemetrySink = context.RequestServices.GetRequiredService<IWebSocketTelemetrySink>();
-    
+
     using var socket = await context.WebSockets.AcceptWebSocketAsync();
 
     var openEnvelope = new WebSocketMessageEnvelope
@@ -74,7 +75,7 @@ app.Use(async (context, next) =>
                 break;
             }
         }
-        
+
         var envelope = new WebSocketMessageEnvelope
         {
             ConnectionId = Guid.NewGuid().ToString("N"),
@@ -88,18 +89,13 @@ app.Use(async (context, next) =>
 
         var replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);
         var session = ResolveSession(webSocketService, envelope);
-        await telemetrySink.RecordInboundAsync(envelope, session, ReadMessageType(envelope.Text), context.RequestAborted);
+        await telemetrySink.RecordInboundAsync(envelope, session, ReadMessageType(envelope.Text),
+            context.RequestAborted);
         foreach (var reply in replies)
         {
-            if (string.IsNullOrWhiteSpace(reply.Text))
-            {
-                continue;
-            }
+            if (string.IsNullOrWhiteSpace(reply.Text)) continue;
 
-            if (reply.DelayMs > 0)
-            {
-                await Task.Delay(reply.DelayMs, context.RequestAborted);
-            }
+            if (reply.DelayMs > 0) await Task.Delay(reply.DelayMs, context.RequestAborted);
 
             var payload = Encoding.UTF8.GetBytes(reply.Text);
             await socket.SendAsync(payload, WebSocketMessageType.Text, true, context.RequestAborted);
@@ -117,7 +113,8 @@ app.Use(async (context, next) =>
         Token = token
     };
     var closeSession = ResolveSession(webSocketService, closeEnvelope);
-    await telemetrySink.RecordConnectionClosedAsync(closeEnvelope, closeSession, $"socket-loop-ended{(isPrematureClose ? "-prematurely" : string.Empty)}", context.RequestAborted);
+    await telemetrySink.RecordConnectionClosedAsync(closeEnvelope, closeSession,
+        $"socket-loop-ended{(isPrematureClose ? "-prematurely" : string.Empty)}", context.RequestAborted);
 });
 
 app.MapGet("/health", () => Results.Json(new
@@ -127,7 +124,8 @@ app.MapGet("/health", () => Results.Json(new
     version = OpenJiboCloudBuildInfo.Version
 }));
 
-app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service, IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>
+app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,
+    IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>
 {
     var envelope = await BuildEnvelopeAsync(context, cancellationToken);
     var result = await service.DispatchAsync(envelope, cancellationToken);
@@ -136,15 +134,9 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
     context.Response.StatusCode = result.StatusCode;
     context.Response.ContentType = result.ContentType;
 
-    foreach (var header in result.Headers)
-    {
-        context.Response.Headers[header.Key] = header.Value;
-    }
+    foreach (var header in result.Headers) context.Response.Headers[header.Key] = header.Value;
 
-    if (!string.IsNullOrEmpty(result.BodyText))
-    {
-        await context.Response.WriteAsync(result.BodyText, cancellationToken);
-    }
+    if (!string.IsNullOrEmpty(result.BodyText)) await context.Response.WriteAsync(result.BodyText, cancellationToken);
 });
 
 app.Run();
@@ -160,8 +152,7 @@ static async Task<ReceivedSocketMessage> ReceiveAsync(WebSocket socket, Cancella
     {
         result = await socket.ReceiveAsync(buffer, cancellationToken);
         ms.Write(buffer, 0, result.Count);
-    }
-    while (!result.EndOfMessage);
+    } while (!result.EndOfMessage);
 
     return new ReceivedSocketMessage(result.MessageType, ms.ToArray());
 }
@@ -170,7 +161,7 @@ static async Task<ProtocolEnvelope> BuildEnvelopeAsync(HttpContext context, Canc
 {
     context.Request.EnableBuffering();
 
-    using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
+    using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, false, leaveOpen: true);
     var bodyText = await reader.ReadToEndAsync(cancellationToken);
     context.Request.Body.Position = 0;
 
@@ -191,66 +182,49 @@ static async Task<ProtocolEnvelope> BuildEnvelopeAsync(HttpContext context, Canc
         FirmwareVersion = context.Request.Headers["X-OpenJibo-Firmware"].ToString(),
         ApplicationVersion = context.Request.Headers["X-OpenJibo-AppVersion"].ToString(),
         BodyText = bodyText,
-        Headers = context.Request.Headers.ToDictionary(pair => pair.Key, pair => pair.Value.ToString(), StringComparer.OrdinalIgnoreCase)
+        Headers = context.Request.Headers.ToDictionary(pair => pair.Key, pair => pair.Value.ToString(),
+            StringComparer.OrdinalIgnoreCase)
     };
 }
 
 static string ResolveSocketKind(string host, PathString path)
 {
-    if (host.Equals("api-socket.jibo.com", StringComparison.OrdinalIgnoreCase))
-    {
-        return "api-socket";
-    }
+    if (host.Equals("api-socket.jibo.com", StringComparison.OrdinalIgnoreCase)) return "api-socket";
 
     if (host.Equals("neo-hub.jibo.com", StringComparison.OrdinalIgnoreCase) &&
         path.StartsWithSegments("/v1/proactive"))
-    {
         return "neo-hub-proactive";
-    }
 
-    if (host.Equals("neo-hub.jibo.com", StringComparison.OrdinalIgnoreCase))
-    {
-        return "neo-hub-listen";
-    }
+    if (host.Equals("neo-hub.jibo.com", StringComparison.OrdinalIgnoreCase)) return "neo-hub-listen";
 
     if (host.Equals("openjibo.com", StringComparison.OrdinalIgnoreCase) ||
         host.Equals("openjibo.ai", StringComparison.OrdinalIgnoreCase) ||
         host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
-    {
         return "openjibo";
-    }
 
-    return "neo-hub-listen"; // now it assumes all unknown requests are neo-hub. I did this so that people with custom listen servers (like myself) won't get a bunch of 404 messages when doing a HJ request. -ZaneDev (an awful programmer)
+    return
+        "neo-hub-listen"; // now it assumes all unknown requests are neo-hub. I did this so that people with custom listen servers (like myself) won't get a bunch of 404 messages when doing a HJ request. -ZaneDev (an awful programmer)
 }
 
 static string? ResolveToken(HttpRequest request)
 {
     var auth = request.Headers.Authorization.ToString();
-    if (auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-    {
-        return auth["Bearer ".Length..].Trim();
-    }
+    if (auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return auth["Bearer ".Length..].Trim();
 
     var path = request.Path.Value;
-    if (!string.IsNullOrWhiteSpace(path) && path.Length > 1)
-    {
-        return path.Trim('/');
-    }
+    if (!string.IsNullOrWhiteSpace(path) && path.Length > 1) return path.Trim('/');
 
     return null;
 }
 
 static string ReadMessageType(string? text)
 {
-    if (string.IsNullOrWhiteSpace(text))
-    {
-        return "BINARY_OR_EMPTY";
-    }
+    if (string.IsNullOrWhiteSpace(text)) return "BINARY_OR_EMPTY";
 
     try
     {
-        using var document = System.Text.Json.JsonDocument.Parse(text);
-        return document.RootElement.TryGetProperty("type", out var type) && type.ValueKind == System.Text.Json.JsonValueKind.String
+        using var document = JsonDocument.Parse(text);
+        return document.RootElement.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String
             ? type.GetString() ?? "UNKNOWN"
             : "UNKNOWN";
     }

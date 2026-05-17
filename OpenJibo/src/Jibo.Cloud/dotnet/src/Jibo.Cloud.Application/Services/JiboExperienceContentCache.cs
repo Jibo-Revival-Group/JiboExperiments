@@ -9,10 +9,7 @@ public sealed class JiboExperienceContentCache(IJiboExperienceContentRepository 
 
     public async Task<JiboExperienceCatalog> GetCatalogAsync(CancellationToken cancellationToken = default)
     {
-        if (_catalog is not null)
-        {
-            return _catalog;
-        }
+        if (_catalog is not null) return _catalog;
 
         await _gate.WaitAsync(cancellationToken);
         try

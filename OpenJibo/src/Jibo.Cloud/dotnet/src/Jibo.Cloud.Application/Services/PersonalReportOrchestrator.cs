@@ -1,7 +1,7 @@
-using Jibo.Cloud.Application.Abstractions;
-using Jibo.Runtime.Abstractions;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Jibo.Cloud.Application.Abstractions;
+using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -58,6 +58,8 @@ internal static class PersonalReportOrchestrator
         "maybe later"
     ];
 
+    private static readonly Regex NameNoiseRegex = new("[^a-zA-Z\\-\\s']", RegexOptions.Compiled);
+
     public static async Task<JiboInteractionDecision?> TryBuildDecisionAsync(
         TurnContext turn,
         string semanticIntent,
@@ -72,31 +74,26 @@ internal static class PersonalReportOrchestrator
     {
         var state = ReadState(turn);
         var isActiveState = !string.Equals(state, IdleState, StringComparison.OrdinalIgnoreCase);
-        if (!isActiveState && !string.Equals(semanticIntent, "personal_report", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
+        if (!isActiveState &&
+            !string.Equals(semanticIntent, "personal_report", StringComparison.OrdinalIgnoreCase)) return null;
 
         var toggles = ApplyInlineToggleHints(
             ReadServiceToggles(turn),
             loweredTranscript,
             out var inlineToggleSummary);
 
-        if (ContainsAnyPhrase(loweredTranscript, CancelPhrases))
-        {
-            return BuildCancelledDecision(toggles);
-        }
+        if (ContainsAnyPhrase(loweredTranscript, CancelPhrases)) return BuildCancelledDecision(toggles);
 
         if (!isActiveState)
         {
             var contextUpdates = BuildContextUpdates(
                 AwaitingOptInState,
-                noMatchCount: 0,
-                noInputCount: 0,
+                0,
+                0,
                 toggles,
-                userName: ReadString(turn, UserNameMetadataKey),
-                userVerified: ReadBool(turn, UserVerifiedMetadataKey) ?? false,
-                lastServiceError: string.Empty);
+                ReadString(turn, UserNameMetadataKey),
+                ReadBool(turn, UserVerifiedMetadataKey) ?? false,
+                string.Empty);
 
             var reply = string.IsNullOrWhiteSpace(inlineToggleSummary)
                 ? "Would you like your personal report now?"
@@ -108,10 +105,7 @@ internal static class PersonalReportOrchestrator
                 ContextUpdates: contextUpdates);
         }
 
-        if (string.IsNullOrWhiteSpace(loweredTranscript))
-        {
-            return BuildNoInputDecision(turn, state, toggles);
-        }
+        if (string.IsNullOrWhiteSpace(loweredTranscript)) return BuildNoInputDecision(turn, state, toggles);
 
         switch (state)
         {
@@ -121,81 +115,71 @@ internal static class PersonalReportOrchestrator
                     var scope = tenantScopeResolver(turn);
                     var knownName = ReadString(turn, UserNameMetadataKey) ?? personalMemoryStore.GetName(scope);
                     if (!string.IsNullOrWhiteSpace(knownName))
-                    {
                         return new JiboInteractionDecision(
                             "personal_report_verify_user",
                             $"I think this is {knownName}. Is that right?",
                             ContextUpdates: BuildContextUpdates(
                                 AwaitingIdentityConfirmationState,
-                                noMatchCount: 0,
-                                noInputCount: 0,
+                                0,
+                                0,
                                 toggles,
-                                userName: knownName,
-                                userVerified: false,
-                                lastServiceError: string.Empty));
-                    }
+                                knownName,
+                                false,
+                                string.Empty));
 
                     return new JiboInteractionDecision(
                         "personal_report_request_name",
                         "Who is this?",
                         ContextUpdates: BuildContextUpdates(
                             AwaitingIdentityNameState,
-                            noMatchCount: 0,
-                            noInputCount: 0,
+                            0,
+                            0,
                             toggles,
-                            userName: null,
-                            userVerified: false,
-                            lastServiceError: string.Empty));
+                            null,
+                            false,
+                            string.Empty));
                 }
 
-                if (IsNegativeReply(loweredTranscript))
-                {
-                    return BuildDeclinedDecision(toggles);
-                }
+                if (IsNegativeReply(loweredTranscript)) return BuildDeclinedDecision(toggles);
 
                 if (!string.IsNullOrWhiteSpace(inlineToggleSummary))
-                {
                     return new JiboInteractionDecision(
                         "personal_report_opt_in",
                         $"{inlineToggleSummary} Would you like your personal report now?",
                         ContextUpdates: BuildContextUpdates(
                             AwaitingOptInState,
-                            noMatchCount: 0,
-                            noInputCount: 0,
+                            0,
+                            0,
                             toggles,
-                            userName: ReadString(turn, UserNameMetadataKey),
-                            userVerified: false,
-                            lastServiceError: string.Empty));
-                }
+                            ReadString(turn, UserNameMetadataKey),
+                            false,
+                            string.Empty));
 
                 return BuildNoMatchDecision(
                     turn,
                     state,
                     "Please say yes to start your personal report, or no to skip it.",
                     toggles,
-                    userName: ReadString(turn, UserNameMetadataKey),
-                    userVerified: false);
+                    ReadString(turn, UserNameMetadataKey),
+                    false);
 
             case AwaitingIdentityConfirmationState:
             {
                 var currentName = ReadString(turn, UserNameMetadataKey);
                 if (string.IsNullOrWhiteSpace(currentName))
-                {
                     return new JiboInteractionDecision(
                         "personal_report_request_name",
                         "Who is this?",
                         ContextUpdates: BuildContextUpdates(
                             AwaitingIdentityNameState,
-                            noMatchCount: 0,
-                            noInputCount: 0,
+                            0,
+                            0,
                             toggles,
-                            userName: null,
-                            userVerified: false,
-                            lastServiceError: string.Empty));
-                }
+                            null,
+                            false,
+                            string.Empty));
 
                 if (IsAffirmativeReply(loweredTranscript))
-                {
                     return await BuildDeliveredReportDecisionAsync(
                         turn,
                         catalog,
@@ -204,45 +188,40 @@ internal static class PersonalReportOrchestrator
                         currentName,
                         buildWeatherDecisionAsync,
                         cancellationToken);
-                }
 
                 if (IsNegativeReply(loweredTranscript))
-                {
                     return new JiboInteractionDecision(
                         "personal_report_request_name",
                         "Okay, who is this?",
                         ContextUpdates: BuildContextUpdates(
                             AwaitingIdentityNameState,
-                            noMatchCount: 0,
-                            noInputCount: 0,
+                            0,
+                            0,
                             toggles,
-                            userName: null,
-                            userVerified: false,
-                            lastServiceError: string.Empty));
-                }
+                            null,
+                            false,
+                            string.Empty));
 
                 return BuildNoMatchDecision(
                     turn,
                     state,
                     $"Please answer yes or no. Is this {currentName}?",
                     toggles,
-                    userName: currentName,
-                    userVerified: false);
+                    currentName,
+                    false);
             }
 
             case AwaitingIdentityNameState:
             {
                 var parsedName = TryExtractName(loweredTranscript);
                 if (string.IsNullOrWhiteSpace(parsedName))
-                {
                     return BuildNoMatchDecision(
                         turn,
                         state,
                         "Tell me your name like this: my name is Alex.",
                         toggles,
-                        userName: null,
-                        userVerified: false);
-                }
+                        null,
+                        false);
 
                 personalMemoryStore.SetName(tenantScopeResolver(turn), parsedName);
                 return await BuildDeliveredReportDecisionAsync(
@@ -284,10 +263,7 @@ internal static class PersonalReportOrchestrator
             reportSections.Add("First, your weather.");
             var weatherDecision = await buildWeatherDecisionAsync(turn, "weather", cancellationToken);
             reportSections.Add(weatherDecision.ReplyText);
-            if (IsWeatherErrorReply(weatherDecision.ReplyText))
-            {
-                serviceError = "weather";
-            }
+            if (IsWeatherErrorReply(weatherDecision.ReplyText)) serviceError = "weather";
         }
 
         if (toggles.CalendarEnabled)
@@ -309,7 +285,6 @@ internal static class PersonalReportOrchestrator
         }
 
         if (toggles.CommuteEnabled)
-        {
             reportSections.Add(
                 RenderReportSkillTemplate(
                     ChooseReportSkillTemplate(
@@ -317,7 +292,6 @@ internal static class PersonalReportOrchestrator
                         catalog.CommuteNowReplies,
                         "Sorry, commute information isn't available right now."),
                     userName));
-        }
 
         if (toggles.NewsEnabled)
         {
@@ -350,12 +324,12 @@ internal static class PersonalReportOrchestrator
             string.Join(" ", reportSections),
             ContextUpdates: BuildContextUpdates(
                 IdleState,
-                noMatchCount: 0,
-                noInputCount: 0,
+                0,
+                0,
                 toggles,
                 userName,
-                userVerified: true,
-                lastServiceError: serviceError));
+                true,
+                serviceError));
     }
 
     private static JiboInteractionDecision BuildNoInputDecision(
@@ -364,22 +338,19 @@ internal static class PersonalReportOrchestrator
         PersonalReportServiceToggles toggles)
     {
         var noInputCount = Math.Max(0, ReadInt(turn, NoInputCountMetadataKey)) + 1;
-        if (noInputCount >= MaxNoInputCount)
-        {
-            return BuildDeclinedDecision(toggles);
-        }
+        if (noInputCount >= MaxNoInputCount) return BuildDeclinedDecision(toggles);
 
         return new JiboInteractionDecision(
             "personal_report_no_input",
             "I am still here. Do you want your personal report?",
             ContextUpdates: BuildContextUpdates(
                 state,
-                noMatchCount: ReadInt(turn, NoMatchCountMetadataKey),
+                ReadInt(turn, NoMatchCountMetadataKey),
                 noInputCount,
                 toggles,
-                userName: ReadString(turn, UserNameMetadataKey),
-                userVerified: ReadBool(turn, UserVerifiedMetadataKey) ?? false,
-                lastServiceError: string.Empty));
+                ReadString(turn, UserNameMetadataKey),
+                ReadBool(turn, UserVerifiedMetadataKey) ?? false,
+                string.Empty));
     }
 
     private static JiboInteractionDecision BuildNoMatchDecision(
@@ -391,10 +362,7 @@ internal static class PersonalReportOrchestrator
         bool userVerified)
     {
         var noMatchCount = Math.Max(0, ReadInt(turn, NoMatchCountMetadataKey)) + 1;
-        if (noMatchCount >= MaxNoMatchCount)
-        {
-            return BuildDeclinedDecision(toggles);
-        }
+        if (noMatchCount >= MaxNoMatchCount) return BuildDeclinedDecision(toggles);
 
         return new JiboInteractionDecision(
             "personal_report_no_match",
@@ -402,11 +370,11 @@ internal static class PersonalReportOrchestrator
             ContextUpdates: BuildContextUpdates(
                 state,
                 noMatchCount,
-                noInputCount: 0,
+                0,
                 toggles,
                 userName,
                 userVerified,
-                lastServiceError: string.Empty));
+                string.Empty));
     }
 
     private static JiboInteractionDecision BuildDeclinedDecision(PersonalReportServiceToggles toggles)
@@ -416,12 +384,12 @@ internal static class PersonalReportOrchestrator
             "No problem. We can do your personal report another time.",
             ContextUpdates: BuildContextUpdates(
                 IdleState,
-                noMatchCount: 0,
-                noInputCount: 0,
+                0,
+                0,
                 toggles,
-                userName: null,
-                userVerified: false,
-                lastServiceError: string.Empty));
+                null,
+                false,
+                string.Empty));
     }
 
     private static JiboInteractionDecision BuildCancelledDecision(PersonalReportServiceToggles toggles)
@@ -431,12 +399,12 @@ internal static class PersonalReportOrchestrator
             "Okay, canceling personal report.",
             ContextUpdates: BuildContextUpdates(
                 IdleState,
-                noMatchCount: 0,
-                noInputCount: 0,
+                0,
+                0,
                 toggles,
-                userName: null,
-                userVerified: false,
-                lastServiceError: string.Empty));
+                null,
+                false,
+                string.Empty));
     }
 
     private static IDictionary<string, object?> BuildContextUpdates(
@@ -476,24 +444,17 @@ internal static class PersonalReportOrchestrator
     private static bool ContainsAnyPhrase(string loweredTranscript, IEnumerable<string> phrases)
     {
         foreach (var phrase in phrases)
-        {
             if (string.Equals(loweredTranscript, phrase, StringComparison.Ordinal) ||
                 loweredTranscript.StartsWith($"{phrase} ", StringComparison.Ordinal) ||
                 loweredTranscript.Contains($" {phrase}", StringComparison.Ordinal))
-            {
                 return true;
-            }
-        }
 
         return false;
     }
 
     private static bool IsWeatherErrorReply(string replyText)
     {
-        if (string.IsNullOrWhiteSpace(replyText))
-        {
-            return false;
-        }
+        if (string.IsNullOrWhiteSpace(replyText)) return false;
 
         return replyText.Contains("couldn't fetch the weather", StringComparison.OrdinalIgnoreCase) ||
                replyText.Contains("weather service is connected", StringComparison.OrdinalIgnoreCase);
@@ -516,36 +477,32 @@ internal static class PersonalReportOrchestrator
         summary = string.Empty;
         var updated = toggles;
 
-        updated = ApplyToggleHint(updated, loweredTranscript, "weather", static value => value with { WeatherEnabled = false }, static value => value with { WeatherEnabled = true });
-        updated = ApplyToggleHint(updated, loweredTranscript, "calendar", static value => value with { CalendarEnabled = false }, static value => value with { CalendarEnabled = true });
-        updated = ApplyToggleHint(updated, loweredTranscript, "commute", static value => value with { CommuteEnabled = false }, static value => value with { CommuteEnabled = true });
-        updated = ApplyToggleHint(updated, loweredTranscript, "news", static value => value with { NewsEnabled = false }, static value => value with { NewsEnabled = true });
+        updated = ApplyToggleHint(updated, loweredTranscript, "weather",
+            static value => value with { WeatherEnabled = false },
+            static value => value with { WeatherEnabled = true });
+        updated = ApplyToggleHint(updated, loweredTranscript, "calendar",
+            static value => value with { CalendarEnabled = false },
+            static value => value with { CalendarEnabled = true });
+        updated = ApplyToggleHint(updated, loweredTranscript, "commute",
+            static value => value with { CommuteEnabled = false },
+            static value => value with { CommuteEnabled = true });
+        updated = ApplyToggleHint(updated, loweredTranscript, "news",
+            static value => value with { NewsEnabled = false }, static value => value with { NewsEnabled = true });
 
         var changes = new List<string>();
         if (updated.WeatherEnabled != toggles.WeatherEnabled)
-        {
             changes.Add(updated.WeatherEnabled ? "including weather" : "skipping weather");
-        }
 
         if (updated.CalendarEnabled != toggles.CalendarEnabled)
-        {
             changes.Add(updated.CalendarEnabled ? "including calendar" : "skipping calendar");
-        }
 
         if (updated.CommuteEnabled != toggles.CommuteEnabled)
-        {
             changes.Add(updated.CommuteEnabled ? "including commute" : "skipping commute");
-        }
 
         if (updated.NewsEnabled != toggles.NewsEnabled)
-        {
             changes.Add(updated.NewsEnabled ? "including news" : "skipping news");
-        }
 
-        if (changes.Count > 0)
-        {
-            summary = $"Got it, {string.Join(", ", changes)}.";
-        }
+        if (changes.Count > 0) summary = $"Got it, {string.Join(", ", changes)}.";
 
         return updated;
     }
@@ -560,15 +517,11 @@ internal static class PersonalReportOrchestrator
         if (loweredTranscript.Contains($"without {serviceLabel}", StringComparison.Ordinal) ||
             loweredTranscript.Contains($"skip {serviceLabel}", StringComparison.Ordinal) ||
             loweredTranscript.Contains($"no {serviceLabel}", StringComparison.Ordinal))
-        {
             return disable(toggles);
-        }
 
         if (loweredTranscript.Contains($"with {serviceLabel}", StringComparison.Ordinal) ||
             loweredTranscript.Contains($"include {serviceLabel}", StringComparison.Ordinal))
-        {
             return enable(toggles);
-        }
 
         return toggles;
     }
@@ -580,10 +533,7 @@ internal static class PersonalReportOrchestrator
 
     private static string? ReadString(TurnContext turn, string key)
     {
-        if (!turn.Attributes.TryGetValue(key, out var value) || value is null)
-        {
-            return null;
-        }
+        if (!turn.Attributes.TryGetValue(key, out var value) || value is null) return null;
 
         return value switch
         {
@@ -594,10 +544,7 @@ internal static class PersonalReportOrchestrator
 
     private static bool? ReadBool(TurnContext turn, string key)
     {
-        if (!turn.Attributes.TryGetValue(key, out var value) || value is null)
-        {
-            return null;
-        }
+        if (!turn.Attributes.TryGetValue(key, out var value) || value is null) return null;
 
         return value switch
         {
@@ -605,17 +552,15 @@ internal static class PersonalReportOrchestrator
             string text when bool.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.True } => true,
             JsonElement { ValueKind: JsonValueKind.False } => false,
-            JsonElement json when json.ValueKind == JsonValueKind.String && bool.TryParse(json.GetString(), out var parsed) => parsed,
+            JsonElement json when json.ValueKind == JsonValueKind.String &&
+                                  bool.TryParse(json.GetString(), out var parsed) => parsed,
             _ => null
         };
     }
 
     private static int ReadInt(TurnContext turn, string key)
     {
-        if (!turn.Attributes.TryGetValue(key, out var value) || value is null)
-        {
-            return 0;
-        }
+        if (!turn.Attributes.TryGetValue(key, out var value) || value is null) return 0;
 
         return value switch
         {
@@ -623,7 +568,8 @@ internal static class PersonalReportOrchestrator
             long whole when whole <= int.MaxValue && whole >= int.MinValue => (int)whole,
             string text when int.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.Number } number when number.TryGetInt32(out var parsed) => parsed,
-            JsonElement json when json.ValueKind == JsonValueKind.String && int.TryParse(json.GetString(), out var parsed) => parsed,
+            JsonElement json when json.ValueKind == JsonValueKind.String &&
+                                  int.TryParse(json.GetString(), out var parsed) => parsed,
             _ => 0
         };
     }
@@ -633,10 +579,7 @@ internal static class PersonalReportOrchestrator
         var normalized = NameNoiseRegex.Replace(loweredTranscript, " ")
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(normalized)) return null;
 
         var prefixes = new[]
         {
@@ -650,10 +593,7 @@ internal static class PersonalReportOrchestrator
 
         foreach (var prefix in prefixes)
         {
-            if (!normalized.StartsWith(prefix, StringComparison.Ordinal))
-            {
-                continue;
-            }
+            if (!normalized.StartsWith(prefix, StringComparison.Ordinal)) continue;
 
             var candidate = normalized[prefix.Length..].Trim();
             return NormalizeNameCandidate(candidate);
@@ -664,58 +604,31 @@ internal static class PersonalReportOrchestrator
 
     private static string? NormalizeNameCandidate(string candidate)
     {
-        if (string.IsNullOrWhiteSpace(candidate))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(candidate)) return null;
 
         var cleaned = NameNoiseRegex.Replace(candidate, " ")
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
-        if (string.IsNullOrWhiteSpace(cleaned))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(cleaned)) return null;
 
-        if (cleaned.Length < 2 || cleaned.Length > 32)
-        {
-            return null;
-        }
+        if (cleaned.Length < 2 || cleaned.Length > 32) return null;
 
         var words = cleaned.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length > 4)
-        {
-            return null;
-        }
+        if (words.Length > 4) return null;
 
-        if (words.Any(static word => word.Any(char.IsDigit)))
-        {
-            return null;
-        }
-
-        return cleaned;
+        return words.Any(static word => word.Any(char.IsDigit)) ? null : cleaned;
     }
-
-    private static readonly Regex NameNoiseRegex = new("[^a-zA-Z\\-\\s']", RegexOptions.Compiled);
-
-    private readonly record struct PersonalReportServiceToggles(
-        bool WeatherEnabled,
-        bool CalendarEnabled,
-        bool CommuteEnabled,
-        bool NewsEnabled);
 
     private static string ChoosePersonalReportTemplate(
         IReadOnlyList<string> templates,
         string fallback)
     {
         var usableTemplates = templates
-            .Where(static template => !string.IsNullOrWhiteSpace(template) && !template.Contains("${dt.", StringComparison.OrdinalIgnoreCase))
+            .Where(static template => !string.IsNullOrWhiteSpace(template) &&
+                                      !template.Contains("${dt.", StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
-        if (usableTemplates.Length == 0)
-        {
-            return fallback;
-        }
+        if (usableTemplates.Length == 0) return fallback;
 
         var speakerAwareTemplate = usableTemplates.FirstOrDefault(static template =>
             template.Contains("${speaker}", StringComparison.OrdinalIgnoreCase));
@@ -737,18 +650,10 @@ internal static class PersonalReportOrchestrator
         string fallback)
     {
         var primary = primaryTemplates.FirstOrDefault(static template => !string.IsNullOrWhiteSpace(template));
-        if (!string.IsNullOrWhiteSpace(primary))
-        {
-            return primary!;
-        }
+        if (!string.IsNullOrWhiteSpace(primary)) return primary!;
 
         var secondary = secondaryTemplates.FirstOrDefault(static template => !string.IsNullOrWhiteSpace(template));
-        if (!string.IsNullOrWhiteSpace(secondary))
-        {
-            return secondary!;
-        }
-
-        return fallback;
+        return !string.IsNullOrWhiteSpace(secondary) ? secondary! : fallback;
     }
 
     private static string RenderReportSkillTemplate(string template, string userName)
@@ -759,4 +664,10 @@ internal static class PersonalReportOrchestrator
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
     }
+
+    private readonly record struct PersonalReportServiceToggles(
+        bool WeatherEnabled,
+        bool CalendarEnabled,
+        bool CommuteEnabled,
+        bool NewsEnabled);
 }

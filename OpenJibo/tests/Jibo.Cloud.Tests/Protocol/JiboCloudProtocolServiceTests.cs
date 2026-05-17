@@ -144,10 +144,7 @@ public sealed class JiboCloudProtocolServiceTests
         }
         finally
         {
-            if (File.Exists(persistencePath))
-            {
-                File.Delete(persistencePath);
-            }
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
         }
     }
 
@@ -170,7 +167,8 @@ public sealed class JiboCloudProtocolServiceTests
         });
 
         using var createdPayload = JsonDocument.Parse(result.BodyText);
-        Assert.Equal("https://api.jibo.com/media/photo-blob-1", createdPayload.RootElement.GetProperty("url").GetString());
+        Assert.Equal("https://api.jibo.com/media/photo-blob-1",
+            createdPayload.RootElement.GetProperty("url").GetString());
 
         var mediaGet = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -226,7 +224,10 @@ public sealed class JiboCloudProtocolServiceTests
 
         Assert.NotEmpty(people);
         Assert.Contains(people, person => person.IsPrimary);
-        Assert.Contains(people, person => string.Equals(person.AccountId, store.GetAccount().AccountId, StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(people, person => string.Equals(person.LoopId, store.GetLoops()[0].LoopId, StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(people,
+            person => string.Equals(person.AccountId, store.GetAccount().AccountId,
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(people,
+            person => string.Equals(person.LoopId, store.GetLoops()[0].LoopId, StringComparison.OrdinalIgnoreCase));
     }
 }

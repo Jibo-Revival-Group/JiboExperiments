@@ -10,13 +10,12 @@ public sealed class AzureBlobPersistenceSmokeTests
         var stateBackend = Environment.GetEnvironmentVariable("OpenJibo__State__Backend");
         var stateConnectionString = Environment.GetEnvironmentVariable("OpenJibo__State__ConnectionString");
         var personalMemoryBackend = Environment.GetEnvironmentVariable("OpenJibo__PersonalMemory__Backend");
-        var personalMemoryConnectionString = Environment.GetEnvironmentVariable("OpenJibo__PersonalMemory__ConnectionString");
+        var personalMemoryConnectionString =
+            Environment.GetEnvironmentVariable("OpenJibo__PersonalMemory__ConnectionString");
 
         if (!string.Equals(stateBackend, "AzureBlob", StringComparison.OrdinalIgnoreCase) ||
             string.IsNullOrWhiteSpace(stateConnectionString))
-        {
             return;
-        }
 
         var factory = new PersistenceSnapshotStoreFactory();
         var snapshotName = $"smoke-{Guid.NewGuid():N}";

@@ -11,7 +11,23 @@ public sealed class NewsApiBriefingProvider(
     ILogger<NewsApiBriefingProvider> logger)
     : INewsBriefingProvider
 {
-    private readonly ConcurrentDictionary<string, CacheEntry<NewsBriefingSnapshot?>> briefingCache = new(StringComparer.OrdinalIgnoreCase);
+    private const int MaxHeadlines = 5;
+    private const int MaxCategories = 2;
+    private const string DefaultUserAgent = "OpenJiboCloud/1.0";
+
+    private static readonly HashSet<string> SupportedCategories = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "business",
+        "entertainment",
+        "general",
+        "health",
+        "science",
+        "sports",
+        "technology"
+    };
+
+    private readonly ConcurrentDictionary<string, CacheEntry<NewsBriefingSnapshot?>> _briefingCache =
+        new(StringComparer.OrdinalIgnoreCase);
 
     public async Task<NewsBriefingSnapshot?> GetBriefingAsync(
         NewsBriefingRequest request,
@@ -27,10 +43,7 @@ public sealed class NewsApiBriefingProvider(
         try
         {
             var categories = ResolveCategories(request.PreferredCategories).ToArray();
-            if (categories.Length == 0)
-            {
-                categories = ["general"];
-            }
+            if (categories.Length == 0) categories = ["general"];
 
             var requestedHeadlineCount = Math.Clamp(request.MaxHeadlines, 1, MaxHeadlines);
             cacheKey = BuildCacheKey(categories, requestedHeadlineCount);
@@ -39,7 +52,7 @@ public sealed class NewsApiBriefingProvider(
                 string.Join(",", categories),
                 requestedHeadlineCount,
                 cacheKey);
-            if (TryGetCachedValue(briefingCache, cacheKey, out var cachedBriefing))
+            if (TryGetCachedValue(_briefingCache, cacheKey, out var cachedBriefing))
             {
                 logger.LogInformation(
                     "NewsAPI cache hit. CacheKey={CacheKey} HasSnapshot={HasSnapshot} HeadlineCount={HeadlineCount}",
@@ -57,25 +70,6 @@ public sealed class NewsApiBriefingProvider(
             string? failureEndpoint = null;
             string? failureErrorCode = null;
 
-            void CaptureFailure(
-                string status,
-                string? message,
-                int? statusCode,
-                Uri? endpoint,
-                string? errorCode = null)
-            {
-                if (!string.IsNullOrWhiteSpace(failureStatus))
-                {
-                    return;
-                }
-
-                failureStatus = status;
-                failureMessage = message;
-                failureStatusCode = statusCode;
-                failureEndpoint = endpoint is null ? null : SanitizeEndpoint(endpoint);
-                failureErrorCode = errorCode;
-            }
-
             foreach (var category in categories)
             {
                 var uri = BuildTopHeadlinesUri(category, requestedHeadlineCount);
@@ -86,7 +80,8 @@ public sealed class NewsApiBriefingProvider(
                     var apiError = TryParseApiError(responseBody);
                     CaptureFailure(
                         "http_error",
-                        apiError?.Message ?? $"Category '{category}' returned {(int)response.StatusCode} {response.ReasonPhrase}.",
+                        apiError?.Message ??
+                        $"Category '{category}' returned {(int)response.StatusCode} {response.ReasonPhrase}.",
                         (int)response.StatusCode,
                         uri,
                         apiError?.Code);
@@ -136,10 +131,7 @@ public sealed class NewsApiBriefingProvider(
                 foreach (var article in articles.EnumerateArray())
                 {
                     var title = NormalizeHeadlineTitle(ReadString(article, "title"));
-                    if (string.IsNullOrWhiteSpace(title) || !seenTitles.Add(title))
-                    {
-                        continue;
-                    }
+                    if (string.IsNullOrWhiteSpace(title) || !seenTitles.Add(title)) continue;
 
                     var summary = ReadString(article, "description");
                     var source = article.TryGetProperty("source", out var sourceNode) &&
@@ -154,8 +146,8 @@ public sealed class NewsApiBriefingProvider(
                         var snapshot = new NewsBriefingSnapshot(
                             headlines,
                             "NewsAPI",
-                            ProviderStatus: "success");
-                        SetCachedValue(briefingCache, cacheKey, snapshot, options.CacheTtlSeconds);
+                            "success");
+                        SetCachedValue(_briefingCache, cacheKey, snapshot, options.CacheTtlSeconds);
                         logger.LogInformation(
                             "NewsAPI request succeeded. Categories={Categories} HeadlineCount={HeadlineCount}",
                             string.Join(",", categories),
@@ -171,22 +163,20 @@ public sealed class NewsApiBriefingProvider(
                     "NewsAPI category lookup produced no headlines. Falling back to uncategorized top headlines. Categories={Categories}",
                     string.Join(",", categories));
 
-                var broadUri = BuildTopHeadlinesUri(category: null, requestedHeadlineCount);
+                var broadUri = BuildTopHeadlinesUri(null, requestedHeadlineCount);
                 using var broadResponse = await SendGetAsync(broadUri, cancellationToken);
                 if (broadResponse.IsSuccessStatusCode)
                 {
                     using var broadStream = await broadResponse.Content.ReadAsStreamAsync(cancellationToken);
-                    using var broadDocument = await JsonDocument.ParseAsync(broadStream, cancellationToken: cancellationToken);
+                    using var broadDocument =
+                        await JsonDocument.ParseAsync(broadStream, cancellationToken: cancellationToken);
                     if (broadDocument.RootElement.TryGetProperty("articles", out var broadArticles) &&
                         broadArticles.ValueKind == JsonValueKind.Array)
                     {
                         foreach (var article in broadArticles.EnumerateArray())
                         {
                             var title = NormalizeHeadlineTitle(ReadString(article, "title"));
-                            if (string.IsNullOrWhiteSpace(title) || !seenTitles.Add(title))
-                            {
-                                continue;
-                            }
+                            if (string.IsNullOrWhiteSpace(title) || !seenTitles.Add(title)) continue;
 
                             var summary = ReadString(article, "description");
                             var source = article.TryGetProperty("source", out var sourceNode) &&
@@ -196,10 +186,7 @@ public sealed class NewsApiBriefingProvider(
                             var url = ReadString(article, "url");
                             headlines.Add(new NewsHeadline(title, summary, "general", source, url));
 
-                            if (headlines.Count >= requestedHeadlineCount)
-                            {
-                                break;
-                            }
+                            if (headlines.Count >= requestedHeadlineCount) break;
                         }
                     }
                     else
@@ -218,7 +205,8 @@ public sealed class NewsApiBriefingProvider(
                     var apiError = TryParseApiError(fallbackBody);
                     CaptureFailure(
                         "http_error",
-                        apiError?.Message ?? $"Uncategorized fallback returned {(int)broadResponse.StatusCode} {broadResponse.ReasonPhrase}.",
+                        apiError?.Message ??
+                        $"Uncategorized fallback returned {(int)broadResponse.StatusCode} {broadResponse.ReasonPhrase}.",
                         (int)broadResponse.StatusCode,
                         broadUri,
                         apiError?.Code);
@@ -243,17 +231,15 @@ public sealed class NewsApiBriefingProvider(
                 if (everythingResponse.IsSuccessStatusCode)
                 {
                     using var everythingStream = await everythingResponse.Content.ReadAsStreamAsync(cancellationToken);
-                    using var everythingDocument = await JsonDocument.ParseAsync(everythingStream, cancellationToken: cancellationToken);
+                    using var everythingDocument =
+                        await JsonDocument.ParseAsync(everythingStream, cancellationToken: cancellationToken);
                     if (everythingDocument.RootElement.TryGetProperty("articles", out var everythingArticles) &&
                         everythingArticles.ValueKind == JsonValueKind.Array)
                     {
                         foreach (var article in everythingArticles.EnumerateArray())
                         {
                             var title = NormalizeHeadlineTitle(ReadString(article, "title"));
-                            if (string.IsNullOrWhiteSpace(title) || !seenTitles.Add(title))
-                            {
-                                continue;
-                            }
+                            if (string.IsNullOrWhiteSpace(title) || !seenTitles.Add(title)) continue;
 
                             var summary = ReadString(article, "description");
                             var source = article.TryGetProperty("source", out var sourceNode) &&
@@ -263,10 +249,7 @@ public sealed class NewsApiBriefingProvider(
                             var url = ReadString(article, "url");
                             headlines.Add(new NewsHeadline(title, summary, "general", source, url));
 
-                            if (headlines.Count >= requestedHeadlineCount)
-                            {
-                                break;
-                            }
+                            if (headlines.Count >= requestedHeadlineCount) break;
                         }
                     }
                     else
@@ -285,7 +268,8 @@ public sealed class NewsApiBriefingProvider(
                     var apiError = TryParseApiError(everythingBody);
                     CaptureFailure(
                         "http_error",
-                        apiError?.Message ?? $"Everything fallback returned {(int)everythingResponse.StatusCode} {everythingResponse.ReasonPhrase}.",
+                        apiError?.Message ??
+                        $"Everything fallback returned {(int)everythingResponse.StatusCode} {everythingResponse.ReasonPhrase}.",
                         (int)everythingResponse.StatusCode,
                         everythingUri,
                         apiError?.Code);
@@ -302,14 +286,14 @@ public sealed class NewsApiBriefingProvider(
             if (headlines.Count == 0)
             {
                 var emptySnapshot = new NewsBriefingSnapshot(
-                    Array.Empty<NewsHeadline>(),
+                    [],
                     "NewsAPI",
-                    ProviderStatus: failureStatus ?? "empty",
-                    ProviderMessage: failureMessage ?? "NewsAPI returned no usable headlines.",
-                    ProviderHttpStatusCode: failureStatusCode,
-                    ProviderEndpoint: failureEndpoint,
-                    ProviderErrorCode: failureErrorCode);
-                SetCachedValue(briefingCache, cacheKey, emptySnapshot, options.FailureCacheTtlSeconds);
+                    failureStatus ?? "empty",
+                    failureMessage ?? "NewsAPI returned no usable headlines.",
+                    failureStatusCode,
+                    failureEndpoint,
+                    failureErrorCode);
+                SetCachedValue(_briefingCache, cacheKey, emptySnapshot, options.FailureCacheTtlSeconds);
                 logger.LogWarning(
                     "NewsAPI returned no usable headlines. Categories={Categories} RequestedHeadlineCount={RequestedHeadlineCount}",
                     string.Join(",", categories),
@@ -320,14 +304,30 @@ public sealed class NewsApiBriefingProvider(
             var populatedSnapshot = new NewsBriefingSnapshot(
                 headlines,
                 "NewsAPI",
-                ProviderStatus: "success");
-            SetCachedValue(briefingCache, cacheKey, populatedSnapshot, options.CacheTtlSeconds);
+                "success");
+            SetCachedValue(_briefingCache, cacheKey, populatedSnapshot, options.CacheTtlSeconds);
             logger.LogInformation(
                 "NewsAPI request partially filled headlines. Categories={Categories} HeadlineCount={HeadlineCount} RequestedHeadlineCount={RequestedHeadlineCount}",
                 string.Join(",", categories),
                 headlines.Count,
                 requestedHeadlineCount);
             return populatedSnapshot;
+
+            void CaptureFailure(
+                string status,
+                string? message,
+                int? statusCode,
+                Uri? endpoint,
+                string? errorCode = null)
+            {
+                if (!string.IsNullOrWhiteSpace(failureStatus)) return;
+
+                failureStatus = status;
+                failureMessage = message;
+                failureStatusCode = statusCode;
+                failureEndpoint = endpoint is null ? null : SanitizeEndpoint(endpoint);
+                failureErrorCode = errorCode;
+            }
         }
         catch (Exception exception)
         {
@@ -335,12 +335,10 @@ public sealed class NewsApiBriefingProvider(
             var exceptionSnapshot = new NewsBriefingSnapshot(
                 Array.Empty<NewsHeadline>(),
                 "NewsAPI",
-                ProviderStatus: "exception",
-                ProviderMessage: exception.Message);
+                "exception",
+                exception.Message);
             if (!string.IsNullOrWhiteSpace(cacheKey))
-            {
-                SetCachedValue(briefingCache, cacheKey, exceptionSnapshot, options.FailureCacheTtlSeconds);
-            }
+                SetCachedValue(_briefingCache, cacheKey, exceptionSnapshot, options.FailureCacheTtlSeconds);
             return exceptionSnapshot;
         }
     }
@@ -368,10 +366,7 @@ public sealed class NewsApiBriefingProvider(
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        if (requested.Length > 0)
-        {
-            return requested.Take(MaxCategories);
-        }
+        if (requested.Length > 0) return requested.Take(MaxCategories);
 
         return options.DefaultCategories
             .Where(category => !string.IsNullOrWhiteSpace(category))
@@ -390,10 +385,7 @@ public sealed class NewsApiBriefingProvider(
             ("pageSize", headlineCount.ToString()),
             ("apiKey", options.ApiKey!)
         };
-        if (!string.IsNullOrWhiteSpace(category))
-        {
-            queryParts.Add(("category", category));
-        }
+        if (!string.IsNullOrWhiteSpace(category)) queryParts.Add(("category", category));
 
         var query = string.Join(
             "&",
@@ -428,10 +420,7 @@ public sealed class NewsApiBriefingProvider(
         try
         {
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
-            if (string.IsNullOrWhiteSpace(body))
-            {
-                return null;
-            }
+            if (string.IsNullOrWhiteSpace(body)) return null;
 
             const int maxLength = 400;
             return body.Length <= maxLength
@@ -455,42 +444,27 @@ public sealed class NewsApiBriefingProvider(
 
     private static string? NormalizeHeadlineTitle(string? title)
     {
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(title)) return null;
 
         var trimmed = title.Trim();
         var suffixIndex = trimmed.LastIndexOf(" - ", StringComparison.Ordinal);
-        if (suffixIndex > 30)
-        {
-            trimmed = trimmed[..suffixIndex].TrimEnd();
-        }
+        if (suffixIndex > 30) trimmed = trimmed[..suffixIndex].TrimEnd();
 
         return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
     }
 
     private static ApiError? TryParseApiError(string? responseBody)
     {
-        if (string.IsNullOrWhiteSpace(responseBody))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(responseBody)) return null;
 
         try
         {
             using var document = JsonDocument.Parse(responseBody);
-            if (document.RootElement.ValueKind != JsonValueKind.Object)
-            {
-                return null;
-            }
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return null;
 
             var code = ReadString(document.RootElement, "code");
             var message = ReadString(document.RootElement, "message");
-            if (string.IsNullOrWhiteSpace(code) && string.IsNullOrWhiteSpace(message))
-            {
-                return null;
-            }
+            if (string.IsNullOrWhiteSpace(code) && string.IsNullOrWhiteSpace(message)) return null;
 
             return new ApiError(code, message);
         }
@@ -503,10 +477,7 @@ public sealed class NewsApiBriefingProvider(
     private static string SanitizeEndpoint(Uri uri)
     {
         var path = uri.GetLeftPart(UriPartial.Path);
-        if (string.IsNullOrWhiteSpace(uri.Query))
-        {
-            return path;
-        }
+        if (string.IsNullOrWhiteSpace(uri.Query)) return path;
 
         var filtered = uri.Query
             .TrimStart('?')
@@ -532,10 +503,7 @@ public sealed class NewsApiBriefingProvider(
         out T value)
     {
         value = default!;
-        if (!cache.TryGetValue(key, out var entry))
-        {
-            return false;
-        }
+        if (!cache.TryGetValue(key, out var entry)) return false;
 
         if (entry.ExpiresUtc > DateTimeOffset.UtcNow)
         {
@@ -558,21 +526,7 @@ public sealed class NewsApiBriefingProvider(
             DateTimeOffset.UtcNow.AddSeconds(Math.Max(1, ttlSeconds)));
     }
 
-    private static readonly HashSet<string> SupportedCategories = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "business",
-        "entertainment",
-        "general",
-        "health",
-        "science",
-        "sports",
-        "technology"
-    };
-
-    private const int MaxHeadlines = 5;
-    private const int MaxCategories = 2;
-    private const string DefaultUserAgent = "OpenJiboCloud/1.0";
-
     private sealed record ApiError(string? Code, string? Message);
+
     private sealed record CacheEntry<T>(T Value, DateTimeOffset ExpiresUtc);
 }

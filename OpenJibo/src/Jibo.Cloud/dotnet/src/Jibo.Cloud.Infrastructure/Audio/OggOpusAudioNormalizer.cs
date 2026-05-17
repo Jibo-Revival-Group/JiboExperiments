@@ -9,10 +9,7 @@ internal static class OggOpusAudioNormalizer
 
     public static byte[] Normalize(IReadOnlyList<byte[]> pages)
     {
-        if (pages.Count == 0)
-        {
-            return [];
-        }
+        if (pages.Count == 0) return [];
 
         var parsed = pages.Select(ParsePage).ToArray();
         var baseGranule = parsed.Length > 1 ? parsed[1].GranulePosition : parsed[0].GranulePosition;
@@ -50,26 +47,17 @@ internal static class OggOpusAudioNormalizer
     private static ParsedOggPage ParsePage(byte[] buffer)
     {
         if (buffer.Length < 27)
-        {
             throw new InvalidOperationException($"Buffered Ogg page is too short ({buffer.Length} bytes).");
-        }
 
         if (!Encoding.ASCII.GetString(buffer, 0, 4).Equals("OggS", StringComparison.Ordinal))
-        {
             throw new InvalidOperationException("Buffered audio frame did not begin with an OggS capture pattern.");
-        }
 
         var pageSegments = buffer[26];
         if (buffer.Length < 27 + pageSegments)
-        {
             throw new InvalidOperationException("Buffered Ogg page segment table was truncated.");
-        }
 
         var payloadLength = 0;
-        for (var index = 0; index < pageSegments; index += 1)
-        {
-            payloadLength += buffer[27 + index];
-        }
+        for (var index = 0; index < pageSegments; index += 1) payloadLength += buffer[27 + index];
 
         var expectedLength = 27 + pageSegments + payloadLength;
         return buffer.Length < expectedLength
@@ -79,7 +67,8 @@ internal static class OggOpusAudioNormalizer
 
     private static uint ComputeCrc(byte[] buffer)
     {
-        return buffer.Aggregate<byte, uint>(0, (current, value) => (current << 8) ^ CrcTable[((current >> 24) ^ value) & 0xff]);
+        return buffer.Aggregate<byte, uint>(0,
+            (current, value) => (current << 8) ^ CrcTable[((current >> 24) ^ value) & 0xff]);
     }
 
     private static uint[] BuildCrcTable()
@@ -89,11 +78,9 @@ internal static class OggOpusAudioNormalizer
         {
             var remainder = index << 24;
             for (var bit = 0; bit < 8; bit += 1)
-            {
                 remainder = (remainder & 0x80000000) != 0
                     ? (remainder << 1) ^ 0x04c11db7
                     : remainder << 1;
-            }
 
             table[index] = remainder;
         }

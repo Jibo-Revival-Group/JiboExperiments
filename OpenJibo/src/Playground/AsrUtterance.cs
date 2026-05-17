@@ -4,9 +4,7 @@ namespace Playground;
 
 public sealed class AsrUtterance
 {
-    [JsonPropertyName("utterance")]
-    public string? Utterance { get; set; }
+    [JsonPropertyName("utterance")] public string? Utterance { get; set; }
 
-    [JsonPropertyName("score")]
-    public double Score { get; set; }
+    [JsonPropertyName("score")] public double Score { get; set; }
 }

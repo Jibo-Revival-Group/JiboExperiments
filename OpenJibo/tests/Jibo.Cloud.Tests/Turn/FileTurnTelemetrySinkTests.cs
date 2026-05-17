@@ -106,7 +106,8 @@ public sealed class FileTurnTelemetrySinkTests
     public async Task HandleContext_EmitsGlsmPhaseTransitionDiagnostic()
     {
         var sink = new Mock<ITurnTelemetrySink>();
-        sink.Setup(s => s.RecordTurnDiagnosticAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+        sink.Setup(s => s.RecordTurnDiagnosticAsync(It.IsAny<string>(),
+                It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         var turnService = new WebSocketTurnFinalizationService(
             Mock.Of<IConversationBroker>(),
@@ -142,7 +143,8 @@ public sealed class FileTurnTelemetrySinkTests
                 "glsm_phase_transition",
                 It.Is<IReadOnlyDictionary<string, object?>>(details =>
                     details.ContainsKey("state") &&
-                    string.Equals(details["state"] == null ? null : details["state"]!.ToString(), "LISTENING", StringComparison.OrdinalIgnoreCase)),
+                    string.Equals(details["state"] == null ? null : details["state"]!.ToString(), "LISTENING",
+                        StringComparison.OrdinalIgnoreCase)),
                 It.IsAny<CancellationToken>()),
             Times.AtLeastOnce());
     }

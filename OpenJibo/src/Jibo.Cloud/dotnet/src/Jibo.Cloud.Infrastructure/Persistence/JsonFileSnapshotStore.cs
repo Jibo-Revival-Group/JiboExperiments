@@ -2,47 +2,29 @@ using System.Text.Json;
 
 namespace Jibo.Cloud.Infrastructure.Persistence;
 
-internal sealed class JsonFileSnapshotStore : ISnapshotStore
+internal sealed class JsonFileSnapshotStore(string? persistencePath, JsonSerializerOptions options) : ISnapshotStore
 {
-    private readonly string? _persistencePath;
-    private readonly JsonSerializerOptions _options;
-
-    public JsonFileSnapshotStore(string? persistencePath, JsonSerializerOptions options)
-    {
-        _persistencePath = persistencePath;
-        _options = options;
-    }
-
     public TSnapshot? Load<TSnapshot>() where TSnapshot : class
     {
-        if (string.IsNullOrWhiteSpace(_persistencePath) || !File.Exists(_persistencePath))
-        {
-            return default;
-        }
+        if (string.IsNullOrWhiteSpace(persistencePath) || !File.Exists(persistencePath)) return null;
 
         try
         {
-            return JsonSerializer.Deserialize<TSnapshot>(File.ReadAllText(_persistencePath), _options);
+            return JsonSerializer.Deserialize<TSnapshot>(File.ReadAllText(persistencePath), options);
         }
         catch
         {
-            return default;
+            return null;
         }
     }
 
     public void Save<TSnapshot>(TSnapshot snapshot) where TSnapshot : class
     {
-        if (string.IsNullOrWhiteSpace(_persistencePath))
-        {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(persistencePath)) return;
 
-        var directory = Path.GetDirectoryName(_persistencePath);
-        if (!string.IsNullOrWhiteSpace(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
+        var directory = Path.GetDirectoryName(persistencePath);
+        if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
 
-        File.WriteAllText(_persistencePath, JsonSerializer.Serialize(snapshot, _options));
+        File.WriteAllText(persistencePath, JsonSerializer.Serialize(snapshot, options));
     }
 }

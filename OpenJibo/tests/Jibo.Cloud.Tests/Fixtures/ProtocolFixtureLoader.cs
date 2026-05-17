@@ -13,12 +13,8 @@ internal static class ProtocolFixtureLoader
 
         var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (root.TryGetProperty("headers", out var headerElement) && headerElement.ValueKind == JsonValueKind.Object)
-        {
             foreach (var property in headerElement.EnumerateObject())
-            {
                 headers[property.Name] = property.Value.ToString();
-            }
-        }
 
         var bodyText = root.TryGetProperty("body", out var bodyElement)
             ? bodyElement.GetRawText()
@@ -34,8 +30,12 @@ internal static class ProtocolFixtureLoader
             Name = Path.GetFileNameWithoutExtension(relativePath),
             Request = new ProtocolEnvelope
             {
-                HostName = root.TryGetProperty("host", out var hostElement) ? hostElement.GetString() ?? "api.jibo.com" : "api.jibo.com",
-                Method = root.TryGetProperty("method", out var methodElement) ? methodElement.GetString() ?? "POST" : "POST",
+                HostName = root.TryGetProperty("host", out var hostElement)
+                    ? hostElement.GetString() ?? "api.jibo.com"
+                    : "api.jibo.com",
+                Method = root.TryGetProperty("method", out var methodElement)
+                    ? methodElement.GetString() ?? "POST"
+                    : "POST",
                 Path = root.TryGetProperty("path", out var pathElement) ? pathElement.GetString() ?? "/" : "/",
                 Headers = headers,
                 ServicePrefix = targetParts.Length > 0 ? targetParts[0] : null,

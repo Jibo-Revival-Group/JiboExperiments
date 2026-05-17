@@ -12,9 +12,9 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
     public bool CanHandle(TurnContext turn)
     {
         return options.EnableLocalWhisperCpp &&
-               IsConfiguredPathAvailable(options.FfmpegPath, checkFileExists: false) &&
-               IsConfiguredPathAvailable(options.WhisperCliPath, checkFileExists: true) &&
-               IsConfiguredPathAvailable(options.WhisperModelPath, checkFileExists: true) &&
+               IsConfiguredPathAvailable(options.FfmpegPath, false) &&
+               IsConfiguredPathAvailable(options.WhisperCliPath, true) &&
+               IsConfiguredPathAvailable(options.WhisperModelPath, true) &&
                ReadBufferedAudioFrames(turn).Any(ContainsOpusIdentificationHeader);
     }
 
@@ -22,20 +22,14 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
     {
         var frames = ReadBufferedAudioFrames(turn);
         if (frames.Count == 0)
-        {
             throw new InvalidOperationException("Local whisper.cpp STT requires buffered websocket audio frames.");
-        }
 
         if (!frames.Any(ContainsOpusIdentificationHeader))
-        {
-            throw new InvalidOperationException("Local whisper.cpp STT requires buffered Ogg/Opus audio with an Opus identification header.");
-        }
+            throw new InvalidOperationException(
+                "Local whisper.cpp STT requires buffered Ogg/Opus audio with an Opus identification header.");
 
         var tempDirectory = options.TempDirectory;
-        if (string.IsNullOrWhiteSpace(tempDirectory))
-        {
-            tempDirectory = Path.Combine(Path.GetTempPath(), "openjibo-stt");
-        }
+        if (string.IsNullOrWhiteSpace(tempDirectory)) tempDirectory = Path.Combine(Path.GetTempPath(), "openjibo-stt");
 
         Directory.CreateDirectory(tempDirectory);
 
@@ -59,9 +53,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
 
             var transcript = ExtractTranscript(whisperResult.StdOut);
             if (string.IsNullOrWhiteSpace(transcript))
-            {
                 throw new InvalidOperationException("whisper.cpp returned no transcript for the buffered audio turn.");
-            }
 
             return new SttResult
             {
@@ -90,10 +82,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
 
     private static IReadOnlyList<byte[]> ReadBufferedAudioFrames(TurnContext turn)
     {
-        if (!turn.Attributes.TryGetValue("bufferedAudioFrames", out var value) || value is null)
-        {
-            return [];
-        }
+        if (!turn.Attributes.TryGetValue("bufferedAudioFrames", out var value) || value is null) return [];
 
         return value switch
         {
@@ -110,7 +99,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
 
     private static int ReadBufferedAudioBytes(TurnContext turn)
     {
-        return turn.Attributes.TryGetValue("bufferedAudioBytes", out var bufferedAudioBytes) && bufferedAudioBytes is not null
+        return turn.Attributes.TryGetValue("bufferedAudioBytes", out var bufferedAudioBytes) &&
+               bufferedAudioBytes is not null
             ? bufferedAudioBytes switch
             {
                 int value => value,
@@ -148,10 +138,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
     {
         try
         {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
+            if (File.Exists(path)) File.Delete(path);
         }
         catch
         {
@@ -161,15 +148,9 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
 
     private static bool IsConfiguredPathAvailable(string? path, bool checkFileExists)
     {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            return false;
-        }
+        if (string.IsNullOrWhiteSpace(path)) return false;
 
-        if (!Path.IsPathRooted(path))
-        {
-            return true;
-        }
+        if (!Path.IsPathRooted(path)) return true;
 
         return !checkFileExists || File.Exists(path);
     }

@@ -12,12 +12,10 @@ public sealed class FileProtocolTelemetrySink(
 {
     private readonly SemaphoreSlim _writeLock = new(1, 1);
 
-    public async Task RecordAsync(ProtocolEnvelope envelope, ProtocolDispatchResult result, CancellationToken cancellationToken = default)
+    public async Task RecordAsync(ProtocolEnvelope envelope, ProtocolDispatchResult result,
+        CancellationToken cancellationToken = default)
     {
-        if (!options.Value.Enabled)
-        {
-            return;
-        }
+        if (!options.Value.Enabled) return;
 
         var directory = CapturePathResolver.Resolve(
             options.Value.DirectoryPath,

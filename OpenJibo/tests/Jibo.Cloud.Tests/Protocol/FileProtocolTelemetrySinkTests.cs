@@ -7,19 +7,26 @@ namespace Jibo.Cloud.Tests.Protocol;
 
 public sealed class FileProtocolTelemetrySinkTests : IDisposable
 {
-    private readonly string _workspaceRoot;
-    private readonly string _repoRoot;
     private readonly string _appBaseDirectory;
+    private readonly string _repoRoot;
+    private readonly string _workspaceRoot;
 
     public FileProtocolTelemetrySinkTests()
     {
-        _workspaceRoot = Path.Combine(Path.GetTempPath(), "OpenJibo.ProtocolTelemetry.Tests", Guid.NewGuid().ToString("N"));
+        _workspaceRoot = Path.Combine(Path.GetTempPath(), "OpenJibo.ProtocolTelemetry.Tests",
+            Guid.NewGuid().ToString("N"));
         _repoRoot = Path.Combine(_workspaceRoot, "OpenJibo");
-        _appBaseDirectory = Path.Combine(_repoRoot, "src", "Jibo.Cloud", "dotnet", "src", "Jibo.Cloud.Api", "bin", "Debug", "net10.0");
+        _appBaseDirectory = Path.Combine(_repoRoot, "src", "Jibo.Cloud", "dotnet", "src", "Jibo.Cloud.Api", "bin",
+            "Debug", "net10.0");
 
         Directory.CreateDirectory(_repoRoot);
         Directory.CreateDirectory(_appBaseDirectory);
         File.WriteAllText(Path.Combine(_repoRoot, "OpenJibo.slnx"), string.Empty);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_workspaceRoot)) Directory.Delete(_workspaceRoot, true);
     }
 
     [Fact]
@@ -51,13 +58,5 @@ public sealed class FileProtocolTelemetrySinkTests : IDisposable
 
         Assert.Contains("Notification_20150505", contents);
         Assert.DoesNotContain(Path.Combine("bin", "Debug"), captureFile, StringComparison.OrdinalIgnoreCase);
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_workspaceRoot))
-        {
-            Directory.Delete(_workspaceRoot, true);
-        }
     }
 }

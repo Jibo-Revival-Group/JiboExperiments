@@ -16,15 +16,15 @@ public sealed class FileWebSocketTelemetrySink(
         WriteIndented = true
     };
 
-    private readonly ConcurrentDictionary<string, CapturedWebSocketFixtureBuilder> _fixtures = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, CapturedWebSocketFixtureBuilder> _fixtures =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private readonly SemaphoreSlim _writeLock = new(1, 1);
 
-    public async Task RecordConnectionOpenedAsync(WebSocketMessageEnvelope envelope, CloudSession session, CancellationToken cancellationToken = default)
+    public async Task RecordConnectionOpenedAsync(WebSocketMessageEnvelope envelope, CloudSession session,
+        CancellationToken cancellationToken = default)
     {
-        if (!options.Value.Enabled)
-        {
-            return;
-        }
+        if (!options.Value.Enabled) return;
 
         _fixtures[session.SessionId] = new CapturedWebSocketFixtureBuilder
         {
@@ -37,10 +37,12 @@ public sealed class FileWebSocketTelemetrySink(
             }
         };
 
-        await WriteRecordAsync(BuildRecord("connection_opened", envelope, session, null, "internal", null, null), cancellationToken);
+        await WriteRecordAsync(BuildRecord("connection_opened", envelope, session, null, "internal", null, null),
+            cancellationToken);
     }
 
-    public Task RecordInboundAsync(WebSocketMessageEnvelope envelope, CloudSession session, string? messageType, CancellationToken cancellationToken = default)
+    public Task RecordInboundAsync(WebSocketMessageEnvelope envelope, CloudSession session, string? messageType,
+        CancellationToken cancellationToken = default)
     {
         return !options.Value.Enabled
             ? Task.CompletedTask
@@ -48,7 +50,8 @@ public sealed class FileWebSocketTelemetrySink(
                 cancellationToken);
     }
 
-    public Task RecordTurnEventAsync(WebSocketMessageEnvelope envelope, CloudSession session, string eventType, IReadOnlyDictionary<string, object?> details, CancellationToken cancellationToken = default)
+    public Task RecordTurnEventAsync(WebSocketMessageEnvelope envelope, CloudSession session, string eventType,
+        IReadOnlyDictionary<string, object?> details, CancellationToken cancellationToken = default)
     {
         return !options.Value.Enabled
             ? Task.CompletedTask
@@ -56,12 +59,10 @@ public sealed class FileWebSocketTelemetrySink(
                 cancellationToken);
     }
 
-    public async Task RecordOutboundAsync(WebSocketMessageEnvelope envelope, CloudSession session, IReadOnlyList<WebSocketReply> replies, CancellationToken cancellationToken = default)
+    public async Task RecordOutboundAsync(WebSocketMessageEnvelope envelope, CloudSession session,
+        IReadOnlyList<WebSocketReply> replies, CancellationToken cancellationToken = default)
     {
-        if (!options.Value.Enabled)
-        {
-            return;
-        }
+        if (!options.Value.Enabled) return;
 
         var replyTypes = replies
             .Select(reply => ReadReplyType(reply.Text))
@@ -69,25 +70,22 @@ public sealed class FileWebSocketTelemetrySink(
             .Select(type => type!)
             .ToArray();
 
-        await WriteRecordAsync(BuildRecord("message_out", envelope, session, null, "out", replyTypes, null), cancellationToken);
+        await WriteRecordAsync(BuildRecord("message_out", envelope, session, null, "out", replyTypes, null),
+            cancellationToken);
 
         if (_fixtures.TryGetValue(session.SessionId, out var fixture))
-        {
             fixture.Steps.Add(new CapturedWebSocketFixtureStep
             {
                 Text = ParseJsonElement(envelope.Text),
                 Binary = envelope.Binary?.Select(value => (int)value).ToArray(),
                 ExpectedReplyTypes = replyTypes
             });
-        }
     }
 
-    public async Task RecordConnectionClosedAsync(WebSocketMessageEnvelope envelope, CloudSession session, string reason, CancellationToken cancellationToken = default)
+    public async Task RecordConnectionClosedAsync(WebSocketMessageEnvelope envelope, CloudSession session,
+        string reason, CancellationToken cancellationToken = default)
     {
-        if (!options.Value.Enabled)
-        {
-            return;
-        }
+        if (!options.Value.Enabled) return;
 
         await WriteRecordAsync(BuildRecord(
             "connection_closed",
@@ -98,10 +96,8 @@ public sealed class FileWebSocketTelemetrySink(
             null,
             new Dictionary<string, object?> { ["reason"] = reason }), cancellationToken);
 
-        if (!options.Value.ExportFixtures || !_fixtures.TryRemove(session.SessionId, out var fixture) || fixture.Steps.Count == 0)
-        {
-            return;
-        }
+        if (!options.Value.ExportFixtures || !_fixtures.TryRemove(session.SessionId, out var fixture) ||
+            fixture.Steps.Count == 0) return;
 
         var fixtureName = BuildFixtureName(session, fixture);
         var capturedFixture = new CapturedWebSocketFixture
@@ -118,7 +114,8 @@ public sealed class FileWebSocketTelemetrySink(
         await _writeLock.WaitAsync(cancellationToken);
         try
         {
-            await File.WriteAllTextAsync(fixturePath, JsonSerializer.Serialize(capturedFixture, JsonOptions), cancellationToken);
+            await File.WriteAllTextAsync(fixturePath, JsonSerializer.Serialize(capturedFixture, JsonOptions),
+                cancellationToken);
         }
         finally
         {
@@ -161,8 +158,10 @@ public sealed class FileWebSocketTelemetrySink(
         string? messageType,
         string direction,
         IReadOnlyList<string>? replyTypes,
-        IReadOnlyDictionary<string, object?>? details) => new()
+        IReadOnlyDictionary<string, object?>? details)
     {
+        return new WebSocketTelemetryRecord
+        {
             EventType = eventType,
             SessionId = session.SessionId,
             ConnectionId = envelope.ConnectionId,
@@ -182,13 +181,11 @@ public sealed class FileWebSocketTelemetrySink(
             AwaitingTurnCompletion = session.TurnState.AwaitingTurnCompletion,
             Details = details ?? new Dictionary<string, object?>()
         };
+    }
 
     private static string? ReadReplyType(string? text)
     {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(text)) return null;
 
         try
         {
@@ -205,10 +202,7 @@ public sealed class FileWebSocketTelemetrySink(
 
     private static JsonElement? ParseJsonElement(string? text)
     {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(text)) return null;
 
         try
         {

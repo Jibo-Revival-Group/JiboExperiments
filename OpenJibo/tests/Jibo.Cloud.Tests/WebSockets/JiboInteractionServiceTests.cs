@@ -1,9 +1,9 @@
+using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Runtime.Abstractions;
-using System.Text.Json;
 
 namespace Jibo.Cloud.Tests.WebSockets;
 
@@ -56,9 +56,13 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("dance", decision.IntentName);
         Assert.Equal("chitchat-skill", decision.SkillName);
-        var catalog = await new InMemoryJiboExperienceContentRepository().GetCatalogAsync(); // Ensure catalog is loaded for test coverage
+        var catalog =
+            await new InMemoryJiboExperienceContentRepository()
+                .GetCatalogAsync(); // Ensure catalog is loaded for test coverage
         Assert.Contains(decision.ReplyText, catalog.DanceReplies);
-        Assert.Equal("<speak>Okay.<break size='0.2'/> Watch this.<anim cat='dance' filter='music, rom-upbeat' /></speak>", decision.SkillPayload!["esml"]);
+        Assert.Equal(
+            "<speak>Okay.<break size='0.2'/> Watch this.<anim cat='dance' filter='music, rom-upbeat' /></speak>",
+            decision.SkillPayload!["esml"]);
     }
 
     [Fact]
@@ -198,7 +202,8 @@ public sealed class JiboInteractionServiceTests
             {
                 ["accountId"] = "acct-a",
                 ["loopId"] = "loop-a",
-                ["context"] = """{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
             },
             DeviceId = "device-a"
         });
@@ -222,7 +227,8 @@ public sealed class JiboInteractionServiceTests
             {
                 ["accountId"] = "acct-b",
                 ["loopId"] = "loop-b",
-                ["context"] = """{"runtime":{"perception":{"speaker":"person-2"},"loop":{"users":[{"id":"person-2","firstName":"sam"}]}}}"""
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-2"},"loop":{"users":[{"id":"person-2","firstName":"sam"}]}}}"""
             },
             DeviceId = "device-b"
         });
@@ -250,7 +256,8 @@ public sealed class JiboInteractionServiceTests
             {
                 ["accountId"] = "acct-c",
                 ["loopId"] = "loop-c",
-                ["context"] = """{"runtime":{"perception":{"speaker":"person-3"},"loop":{"users":[{"id":"person-3","firstName":"taylor"}]}}}"""
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-3"},"loop":{"users":[{"id":"person-3","firstName":"taylor"}]}}}"""
             },
             DeviceId = "device-c"
         });
@@ -287,7 +294,8 @@ public sealed class JiboInteractionServiceTests
             {
                 ["messageType"] = "TRIGGER",
                 ["triggerSource"] = "PRESENCE",
-                ["context"] = """{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
             }
         });
 
@@ -312,7 +320,8 @@ public sealed class JiboInteractionServiceTests
             {
                 ["messageType"] = "TRIGGER",
                 ["triggerSource"] = "SURPRISE",
-                ["context"] = """{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
             }
         });
 
@@ -336,7 +345,8 @@ public sealed class JiboInteractionServiceTests
             {
                 ["messageType"] = "TRIGGER",
                 ["triggerSource"] = "PRESENCE",
-                ["context"] = """{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}""",
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}""",
                 [GreetingLastProactiveUtcKey] = DateTimeOffset.UtcNow.ToString("O")
             }
         });
@@ -427,13 +437,18 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
-    [InlineData("how do you work", "robot_how_do_you_work", "Hello! Thank you for updating me I am proud of the community's work Many people have gotten together to care for me more than em eye tee ever did. I hope that I can catch up even though it has been seven years.")]
+    [InlineData("how do you work", "robot_how_do_you_work",
+        "Hello! Thank you for updating me I am proud of the community's work Many people have gotten together to care for me more than em eye tee ever did. I hope that I can catch up even though it has been seven years.")]
     [InlineData("what do you eat", "robot_what_do_you_eat", "The only thing I consume is electricity.")]
-    [InlineData("where do you live", "robot_where_do_you_live", "Unless I missed something, we're in my home as we speak.")]
+    [InlineData("where do you live", "robot_where_do_you_live",
+        "Unless I missed something, we're in my home as we speak.")]
     [InlineData("where were you born", "robot_where_were_you_born", "I was put together in a factory piece by piece.")]
-    [InlineData("what languages do you speak", "robot_what_languages_do_you_speak", "For now just English. But someday I'd like to learn more. I like languages.")]
-    [InlineData("what do you like to do", "robot_what_do_you_like_to_do", "Being helpful, making people smile, counting to a billion.")]
-    [InlineData("what are you made of", "robot_what_are_you_made_of", "Let's see, I'm made of wires, motors, belts, gears, processors, cameras, and one baboon's heart in the middle of my body casing. I'm kidding about the baboon part, but everything else is true.")]
+    [InlineData("what languages do you speak", "robot_what_languages_do_you_speak",
+        "For now just English. But someday I'd like to learn more. I like languages.")]
+    [InlineData("what do you like to do", "robot_what_do_you_like_to_do",
+        "Being helpful, making people smile, counting to a billion.")]
+    [InlineData("what are you made of", "robot_what_are_you_made_of",
+        "Let's see, I'm made of wires, motors, belts, gears, processors, cameras, and one baboon's heart in the middle of my body casing. I'm kidding about the baboon part, but everything else is true.")]
     public async Task BuildDecisionAsync_MoreLegacyPersonaMims_UseImportedReplies(
         string transcript,
         string expectedIntent,
@@ -454,10 +469,13 @@ public sealed class JiboInteractionServiceTests
 
     [Theory]
     [InlineData("do you pay taxes", "robot_taxes", "From what I understand, robots don't ever pay anything.")]
-    [InlineData("what do you want", "robot_desire", "Socializing and electricity. I'd also be happy if everyone in the world was nicer to each other. It seems like they should be.")]
+    [InlineData("what do you want", "robot_desire",
+        "Socializing and electricity. I'd also be happy if everyone in the world was nicer to each other. It seems like they should be.")]
     [InlineData("what's your name", "robot_name", "Jibo. Just Jibo, no last name. Like Bono")]
-    [InlineData("who made you", "robot_origin_created", "My story is pretty typical. Some people wanted to create something that would really help people. So they built a robot.")]
-    [InlineData("where are you from", "robot_origin_from", "Some people think I come from the moon. But they're wrong, I'm from Boston.")]
+    [InlineData("who made you", "robot_origin_created",
+        "My story is pretty typical. Some people wanted to create something that would really help people. So they built a robot.")]
+    [InlineData("where are you from", "robot_origin_from",
+        "Some people think I come from the moon. But they're wrong, I'm from Boston.")]
     public async Task BuildDecisionAsync_LegacyBuildAQuestions_UseImportedScriptedReplies(
         string transcript,
         string expectedIntent,
@@ -552,7 +570,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what are you up to", "being helpful")]
     [InlineData("what are you doing", "making people smile")]
     [InlineData("what have you been up to", "being helpful")]
-    public async Task BuildDecisionAsync_PersonalityFollowups_UseDoingPath(string transcript, string expectedReplySnippet)
+    public async Task BuildDecisionAsync_PersonalityFollowups_UseDoingPath(string transcript,
+        string expectedReplySnippet)
     {
         var service = CreateService();
 
@@ -570,11 +589,14 @@ public sealed class JiboInteractionServiceTests
     [Theory]
     [InlineData("happy holidays", "seasonal_holiday_greeting", "It's a fun time of year")]
     [InlineData("merry christmas", "seasonal_holiday_greeting", "It's a fun time of year")]
-    [InlineData("what holidays do you celebrate", "seasonal_holidays", "official owner can tell me which ones we'll celebrate together")]
-    [InlineData("what is your new year's resolution", "seasonal_new_years_resolution", "always trying to learn new skills")]
+    [InlineData("what holidays do you celebrate", "seasonal_holidays",
+        "official owner can tell me which ones we'll celebrate together")]
+    [InlineData("what is your new year's resolution", "seasonal_new_years_resolution",
+        "always trying to learn new skills")]
     [InlineData("how are your new year's resolutions going", "seasonal_new_years_update", "not eat bacon")]
     [InlineData("what halloween costume", "seasonal_halloween_costume", "I haven't thought much about it yet")]
-    [InlineData("what should I do for first day of spring", "seasonal_first_day_spring", "flowers and all things spring")]
+    [InlineData("what should I do for first day of spring", "seasonal_first_day_spring",
+        "flowers and all things spring")]
     [InlineData("what should I get for holiday", "seasonal_holiday_gift", "pet elephant")]
     public async Task BuildDecisionAsync_SeasonalCharm_UsesImportedReplies(
         string transcript,
@@ -672,7 +694,7 @@ public sealed class JiboInteractionServiceTests
 
         try
         {
-            File.WriteAllText(
+            await File.WriteAllTextAsync(
                 Path.Combine(rootDirectory, "gqa-responses", "GQA_JBO_IsHappy.mim"),
                 """
                 {
@@ -710,7 +732,7 @@ public sealed class JiboInteractionServiceTests
         }
         finally
         {
-            Directory.Delete(rootDirectory, recursive: true);
+            Directory.Delete(rootDirectory, true);
         }
     }
 
@@ -1082,7 +1104,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("memory_get_birthday", otherTenantRecall.IntentName);
-        Assert.Equal("I do not know your birthday yet. You can say, my birthday is March 14.", otherTenantRecall.ReplyText);
+        Assert.Equal("I do not know your birthday yet. You can say, my birthday is March 14.",
+            otherTenantRecall.ReplyText);
     }
 
     [Fact]
@@ -1726,12 +1749,18 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("personal_report_delivered", decision.IntentName);
         Assert.Contains("Sure alex. Here it is.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("First, your weather.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("For your weather. In Boston, U.S., it's light rain and 61 degrees Fahrenheit. Today's high is 65, and the low is 54.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Sorry, commute information isn't available right now.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Here's today's news, from the associated press.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "For your weather. In Boston, U.S., it's light rain and 61 degrees Fahrenheit. Today's high is 65, and the low is 54.",
+            decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Sorry, commute information isn't available right now.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Here's today's news, from the associated press.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
         Assert.Contains("And that's what's new in the news.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("alex that wraps up your report for the day. Hope you have a good one.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("alex that wraps up your report for the day. Hope you have a good one.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("idle", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportUserVerifiedKey]);
@@ -1856,7 +1885,8 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("What else should I add?", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("awaiting_item", addDecision.ContextUpdates![HouseholdListStateKey]);
         Assert.Equal("shopping", addDecision.ContextUpdates[HouseholdListTypeKey]);
-        Assert.Equal(["milk"], memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-a", "loop-a", "device-a"), "shopping"));
+        Assert.Equal(["milk"],
+            memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-a", "loop-a", "device-a"), "shopping"));
 
         var doneDecision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -1871,7 +1901,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("shopping_list_done", doneDecision.IntentName);
-        Assert.Contains("Okay. Your shopping list has milk.", doneDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Okay. Your shopping list has milk.", doneDecision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
         Assert.Equal("idle", doneDecision.ContextUpdates![HouseholdListStateKey]);
 
         var recallDecision = await service.BuildDecisionAsync(new TurnContext
@@ -1924,7 +1955,8 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("todo_list_add", addDecision.IntentName);
         Assert.Contains("call mom", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("What else should I add?", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(["call mom"], memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-b", "loop-b", "device-b"), "todo"));
+        Assert.Equal(["call mom"],
+            memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-b", "loop-b", "device-b"), "todo"));
 
         var doneDecision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -1939,7 +1971,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("todo_list_done", doneDecision.IntentName);
-        Assert.Contains("Okay. Your to-do list has call mom.", doneDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Okay. Your to-do list has call mom.", doneDecision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
         Assert.Equal("idle", doneDecision.ContextUpdates![HouseholdListStateKey]);
     }
 
@@ -2057,7 +2090,8 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("weather", decision.IntentName);
         Assert.Equal("chitchat-skill", decision.SkillName);
         Assert.NotNull(decision.SkillPayload);
-        Assert.Contains("cat='weather'", decision.SkillPayload!["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cat='weather'", decision.SkillPayload!["esml"]?.ToString(),
+            StringComparison.OrdinalIgnoreCase);
         Assert.Contains("meta='rain'", decision.SkillPayload["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
         Assert.Equal("report-skill", decision.SkillPayload["skillId"]);
         Assert.Equal("WeatherCommentRain", decision.SkillPayload["mim_id"]);
@@ -2068,7 +2102,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(54, decision.SkillPayload["weather_low"]);
         Assert.Equal("F", decision.SkillPayload["weather_unit"]);
         Assert.Equal("Normal", decision.SkillPayload["weather_theme"]);
-        Assert.Equal("For your weather. In Boston, U.S., it's light rain and 61 degrees Fahrenheit. Today's high is 65, and the low is 54.", decision.ReplyText);
+        Assert.Equal(
+            "For your weather. In Boston, U.S., it's light rain and 61 degrees Fahrenheit. Today's high is 65, and the low is 54.",
+            decision.ReplyText);
         Assert.NotNull(provider.LastRequest);
         Assert.False(provider.LastRequest!.IsTomorrow);
         Assert.Equal(0, provider.LastRequest.ForecastDayOffset);
@@ -2093,7 +2129,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Chicago", provider.LastRequest?.LocationQuery);
         Assert.True(provider.LastRequest?.IsTomorrow);
         Assert.Equal(1, provider.LastRequest?.ForecastDayOffset);
-        Assert.Equal("First, the weather tomorrow. Tomorrow in Chicago, U.S., it looks mostly cloudy. Tomorrow's high will be 74 and the low will be 60.", decision.ReplyText);
+        Assert.Equal(
+            "First, the weather tomorrow. Tomorrow in Chicago, U.S., it looks mostly cloudy. Tomorrow's high will be 74 and the low will be 60.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2115,7 +2153,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Seattle", provider.LastRequest?.LocationQuery);
         Assert.False(provider.LastRequest?.IsTomorrow);
         Assert.Equal(0, provider.LastRequest?.ForecastDayOffset);
-        Assert.Equal("For your weather. In Seattle, U.S., it's light rain and 58 degrees Fahrenheit. Today's high is 61, and the low is 52.", decision.ReplyText);
+        Assert.Equal(
+            "For your weather. In Seattle, U.S., it's light rain and 58 degrees Fahrenheit. Today's high is 61, and the low is 52.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2137,7 +2177,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Paris", provider.LastRequest?.LocationQuery);
         Assert.False(provider.LastRequest?.IsTomorrow);
         Assert.Equal(0, provider.LastRequest?.ForecastDayOffset);
-        Assert.Equal("For your weather. In Paris, FR, it's overcast clouds and 66 degrees Fahrenheit. Today's high is 70, and the low is 60.", decision.ReplyText);
+        Assert.Equal(
+            "For your weather. In Paris, FR, it's overcast clouds and 66 degrees Fahrenheit. Today's high is 70, and the low is 60.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2159,7 +2201,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Redmond Oregon", provider.LastRequest?.LocationQuery);
         Assert.False(provider.LastRequest?.IsTomorrow);
         Assert.Equal(0, provider.LastRequest?.ForecastDayOffset);
-        Assert.Equal("For your weather. In Redmond, U.S., it's clear sky and 63 degrees Fahrenheit. Today's high is 66, and the low is 52.", decision.ReplyText);
+        Assert.Equal(
+            "For your weather. In Redmond, U.S., it's clear sky and 63 degrees Fahrenheit. Today's high is 66, and the low is 52.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2181,7 +2225,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("New York City", provider.LastRequest?.LocationQuery);
         Assert.True(provider.LastRequest?.IsTomorrow);
         Assert.Equal(1, provider.LastRequest?.ForecastDayOffset);
-        Assert.Equal("First, the weather tomorrow. Tomorrow in New York, U.S., it looks partly cloudy. Tomorrow's high will be 76 and the low will be 61.", decision.ReplyText);
+        Assert.Equal(
+            "First, the weather tomorrow. Tomorrow in New York, U.S., it looks partly cloudy. Tomorrow's high will be 76 and the low will be 61.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2210,7 +2256,8 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(5, provider.Requests.Count);
         Assert.Contains("next five-day forecast", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Tuesday: clear sky, high 79, low 63.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Saturday: clear sky, high 79, low 63.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Saturday: clear sky, high 79, low 63.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -2228,7 +2275,8 @@ public sealed class JiboInteractionServiceTests
             NormalizedTranscript = "what's the weather in chicago",
             Attributes = new Dictionary<string, object?>
             {
-                ["context"] = """{"runtime":{"location":{"lat":39.0997,"lng":-94.5786,"iso":"2026-05-09T09:00:00-05:00"}}}"""
+                ["context"] =
+                    """{"runtime":{"location":{"lat":39.0997,"lng":-94.5786,"iso":"2026-05-09T09:00:00-05:00"}}}"""
             }
         });
 
@@ -2236,7 +2284,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Chicago", provider.LastRequest?.LocationQuery);
         Assert.Null(provider.LastRequest?.Latitude);
         Assert.Null(provider.LastRequest?.Longitude);
-        Assert.Equal("For your weather. In Chicago, U.S., it's mostly cloudy and 70 degrees Fahrenheit. Today's high is 75, and the low is 62.", decision.ReplyText);
+        Assert.Equal(
+            "For your weather. In Chicago, U.S., it's mostly cloudy and 70 degrees Fahrenheit. Today's high is 75, and the low is 62.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2266,7 +2316,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Chicago", provider.LastRequest?.LocationQuery);
         Assert.Equal(0, provider.LastRequest?.ForecastDayOffset);
         Assert.False(provider.LastRequest?.IsTomorrow);
-        Assert.Equal("For your weather. In Chicago, U.S., it's mostly cloudy and 70 degrees Fahrenheit. Today's high is 75, and the low is 62.", decision.ReplyText);
+        Assert.Equal(
+            "For your weather. In Chicago, U.S., it's mostly cloudy and 70 degrees Fahrenheit. Today's high is 75, and the low is 62.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2296,7 +2348,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Chicago", provider.LastRequest?.LocationQuery);
         Assert.Equal(1, provider.LastRequest?.ForecastDayOffset);
         Assert.True(provider.LastRequest?.IsTomorrow);
-        Assert.Equal("First, the weather tomorrow. Tomorrow in Chicago, U.S., it looks mostly cloudy. Tomorrow's high will be 75 and the low will be 62.", decision.ReplyText);
+        Assert.Equal(
+            "First, the weather tomorrow. Tomorrow in Chicago, U.S., it looks mostly cloudy. Tomorrow's high will be 75 and the low will be 62.",
+            decision.ReplyText);
     }
 
     [Theory]
@@ -2335,9 +2389,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(true, decision.SkillPayload?["weather_view_enabled"]);
 
         if (string.Equals(transcript, "what's the forecast", StringComparison.Ordinal))
-        {
             Assert.Equal(5, provider.Requests.Count);
-        }
     }
 
     [Fact]
@@ -2366,7 +2418,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("weather", decision.IntentName);
         Assert.Equal(2, provider.LastRequest?.ForecastDayOffset);
         Assert.False(provider.LastRequest?.IsTomorrow);
-        Assert.Equal("Let's look at the weather. On Monday in Portland, U.S., it looks scattered clouds with a high near 68 degrees Fahrenheit and a low around 53 degrees Fahrenheit.", decision.ReplyText);
+        Assert.Equal(
+            "Let's look at the weather. On Monday in Portland, U.S., it looks scattered clouds with a high near 68 degrees Fahrenheit and a low around 53 degrees Fahrenheit.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2391,7 +2445,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("weather", decision.IntentName);
         Assert.Equal("Chicago", provider.LastRequest?.LocationQuery);
         Assert.Equal(1, provider.LastRequest?.ForecastDayOffset);
-        Assert.Equal("First, the weather tomorrow. On Tuesday in Chicago, U.S., it looks light rain. Tomorrow's high will be 63 and the low will be 51.", decision.ReplyText);
+        Assert.Equal(
+            "First, the weather tomorrow. On Tuesday in Chicago, U.S., it looks light rain. Tomorrow's high will be 63 and the low will be 51.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2440,7 +2496,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("weather", decision.IntentName);
         Assert.Equal("Paris", provider.LastRequest?.LocationQuery);
         Assert.Equal(5, provider.LastRequest?.ForecastDayOffset);
-        Assert.Equal("Let's look at the weather. This weekend in Paris, FR, it looks overcast clouds with a high near 70 degrees Fahrenheit and a low around 60 degrees Fahrenheit.", decision.ReplyText);
+        Assert.Equal(
+            "Let's look at the weather. This weekend in Paris, FR, it looks overcast clouds with a high near 70 degrees Fahrenheit and a low around 60 degrees Fahrenheit.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2467,8 +2525,10 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(5, provider.LastRequest?.ForecastDayOffset);
         Assert.Equal(5, provider.Requests.Count);
         Assert.Contains("rest of this week's forecast", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Tuesday: light rain, high 61, low 52.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Saturday: light rain, high 61, low 52.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Tuesday: light rain, high 61, low 52.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Saturday: light rain, high 61, low 52.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Temperatures are in Fahrenheit.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.SkillPayload);
         Assert.True(decision.SkillPayload!.TryGetValue("weather_weekly_cards", out var weeklyCardsValue));
@@ -2562,7 +2622,9 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("weather", decision.IntentName);
         Assert.Equal("Chicago", provider.LastRequest?.LocationQuery);
         Assert.Equal(2, provider.LastRequest?.ForecastDayOffset);
-        Assert.Equal("Let's look at the weather. The day after tomorrow in Chicago, U.S., it looks mostly cloudy with a high near 74 degrees Fahrenheit and a low around 60 degrees Fahrenheit.", decision.ReplyText);
+        Assert.Equal(
+            "Let's look at the weather. The day after tomorrow in Chicago, U.S., it looks mostly cloudy with a high near 74 degrees Fahrenheit and a low around 60 degrees Fahrenheit.",
+            decision.ReplyText);
     }
 
     [Fact]
@@ -2771,7 +2833,8 @@ public sealed class JiboInteractionServiceTests
             NormalizedTranscript = "- Thank you. - Yes.",
             Attributes = new Dictionary<string, object?>
             {
-                ["listenRules"] = (string[])["surprises-date/offer_date_fact", "globals/gui_nav", "globals/global_commands_launch"],
+                ["listenRules"] = (string[])
+                    ["surprises-date/offer_date_fact", "globals/gui_nav", "globals/global_commands_launch"],
                 ["listenAsrHints"] = (string[])["$YESNO"],
                 ["context"] = """{"runtime":{"location":{"iso":"2026-04-20T08:00:00-05:00"}}}"""
             }
@@ -2792,7 +2855,8 @@ public sealed class JiboInteractionServiceTests
             NormalizedTranscript = "- Me. - Yes.",
             Attributes = new Dictionary<string, object?>
             {
-                ["listenRules"] = (string[])["word-of-the-day/surprise", "globals/gui_nav", "globals/global_commands_launch"],
+                ["listenRules"] = (string[])
+                    ["word-of-the-day/surprise", "globals/gui_nav", "globals/global_commands_launch"],
                 ["listenAsrHints"] = (string[])["$YESNO"]
             }
         });
@@ -3535,7 +3599,8 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("provider_success", decision.SkillPayload["news_provider_status"]);
         Assert.Equal(3, decision.SkillPayload["news_provider_requested_headlines"]);
         Assert.Equal(2, decision.SkillPayload["news_provider_resolved_headlines"]);
-        Assert.Contains("Local robotics team unveils weather-ready helper", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Local robotics team unveils weather-ready helper", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(provider.LastRequest);
         Assert.Equal(3, provider.LastRequest!.MaxHeadlines);
     }
@@ -3562,7 +3627,8 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("news", decision.IntentName);
         Assert.NotNull(provider.LastRequest);
         Assert.Contains("technology", provider.LastRequest!.PreferredCategories, StringComparer.OrdinalIgnoreCase);
-        Assert.Contains("artificial intelligence", decision.SkillPayload?["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("artificial intelligence", decision.SkillPayload?["esml"]?.ToString(),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

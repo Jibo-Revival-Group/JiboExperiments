@@ -8,5 +8,7 @@ public sealed class DeviceRegistration
     public string? FirmwareVersion { get; init; }
     public string? ApplicationVersion { get; init; }
     public bool IsActive { get; init; } = true;
-    public IDictionary<string, string> HostMappings { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    public IDictionary<string, string> HostMappings { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }

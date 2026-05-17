@@ -11,15 +11,16 @@ namespace Jibo.Cloud.Tests.WebSockets;
 
 public sealed class JiboWebSocketServiceTests
 {
-    private readonly InMemoryCloudStateStore _store;
     private readonly JiboWebSocketService _service;
+    private readonly InMemoryCloudStateStore _store;
 
     public JiboWebSocketServiceTests()
     {
         _store = new InMemoryCloudStateStore();
         var contentRepository = new InMemoryJiboExperienceContentRepository();
         var contentCache = new JiboExperienceContentCache(contentRepository);
-        var conversationBroker = new DemoConversationBroker(new JiboInteractionService(contentCache, new DefaultJiboRandomizer(), new InMemoryPersonalMemoryStore()));
+        var conversationBroker = new DemoConversationBroker(new JiboInteractionService(contentCache,
+            new DefaultJiboRandomizer(), new InMemoryPersonalMemoryStore()));
         var sttSelector = new DefaultSttStrategySelector(
         [
             new SyntheticBufferedAudioSttStrategy()
@@ -53,9 +54,12 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(75, replies[2].DelayMs);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("hello jibo", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("hello", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises").GetBoolean());
+        Assert.Equal("hello jibo",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("hello",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises")
+            .GetBoolean());
 
         using var eosPayload = JsonDocument.Parse(replies[1].Text!);
         Assert.True(eosPayload.RootElement.TryGetProperty("ts", out _));
@@ -86,7 +90,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-cloud-version-token",
-            Text = """{"type":"LISTEN","transID":"trans-cloud-version","data":{"text":"What's your cloud version?","hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-cloud-version","data":{"text":"What's your cloud version?","hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         Assert.Equal(3, replies.Count);
@@ -95,8 +100,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("cloud_version", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises").GetBoolean());
+        Assert.Equal("cloud_version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises")
+            .GetBoolean());
 
         using var skillPayload = JsonDocument.Parse(replies[2].Text!);
         var esml = skillPayload.RootElement
@@ -125,7 +132,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-cloud-version-token",
-            Text = """{"type":"LISTEN","transID":"trans-cloud-version-tail","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-cloud-version-tail","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         Assert.Equal(3, tailListenReplies.Count);
@@ -135,8 +143,11 @@ public sealed class JiboWebSocketServiceTests
         using (var lateListenPayload = JsonDocument.Parse(tailListenReplies[0].Text!))
         {
             Assert.Equal("trans-cloud-version-tail", lateListenPayload.RootElement.GetProperty("transID").GetString());
-            Assert.Equal("launch", lateListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+            Assert.Equal("launch",
+                lateListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0]
+                    .GetString());
         }
+
         Assert.Equal("trans-cloud-version", session.TurnState.TransId);
         Assert.False(session.TurnState.AwaitingTurnCompletion);
         Assert.False(session.TurnState.SawListen);
@@ -230,8 +241,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(75, replies[2].DelayMs);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("tell me a joke", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("joke", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("tell me a joke",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("joke",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -290,9 +303,12 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(75, replies[2].DelayMs);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("heyJibo", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal(string.Empty, listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises").GetBoolean());
+        Assert.Equal("heyJibo",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.True(listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises")
+            .GetBoolean());
     }
 
     [Fact]
@@ -313,7 +329,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-preference-continuation-token",
-            Text = """{"type":"CONTEXT","transID":"trans-preference-continuation","data":{"audioTranscriptHint":"my favorite sport"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-preference-continuation","data":{"audioTranscriptHint":"my favorite sport"}}"""
         });
 
         for (var index = 0; index < 4; index += 1)
@@ -351,7 +368,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-preference-continuation-token",
-            Text = """{"type":"CONTEXT","transID":"trans-preference-continuation","data":{"audioTranscriptHint":"my favorite sport is football"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-preference-continuation","data":{"audioTranscriptHint":"my favorite sport is football"}}"""
         });
 
         Assert.Equal(3, finalizedReplies.Count);
@@ -360,8 +378,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(finalizedReplies[2]));
 
         using var listenPayload = JsonDocument.Parse(finalizedReplies[0].Text!);
-        Assert.Equal("memory_set_preference", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("my favorite sport is football", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("memory_set_preference",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("my favorite sport is football",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
     }
 
     [Fact]
@@ -382,7 +402,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-preference-bare-token",
-            Text = """{"type":"CONTEXT","transID":"trans-preference-bare","data":{"audioTranscriptHint":"my favorite sport football"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-preference-bare","data":{"audioTranscriptHint":"my favorite sport football"}}"""
         });
 
         for (var index = 0; index < 4; index += 1)
@@ -418,8 +439,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(finalizedReplies[2]));
 
         using var listenPayload = JsonDocument.Parse(finalizedReplies[0].Text!);
-        Assert.Equal("memory_set_preference", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("my favorite sport football", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("memory_set_preference",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("my favorite sport football",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
     }
 
     [Fact]
@@ -440,7 +463,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-affinity-continuation-token",
-            Text = """{"type":"CONTEXT","transID":"trans-affinity-continuation","data":{"audioTranscriptHint":"i do like"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-affinity-continuation","data":{"audioTranscriptHint":"i do like"}}"""
         });
 
         for (var index = 0; index < 4; index += 1)
@@ -478,7 +502,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-affinity-continuation-token",
-            Text = """{"type":"CONTEXT","transID":"trans-affinity-continuation","data":{"audioTranscriptHint":"i do like pizza"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-affinity-continuation","data":{"audioTranscriptHint":"i do like pizza"}}"""
         });
 
         Assert.Equal(3, finalizedReplies.Count);
@@ -487,8 +512,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(finalizedReplies[2]));
 
         using var listenPayload = JsonDocument.Parse(finalizedReplies[0].Text!);
-        Assert.Equal("memory_set_affinity", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("i do like pizza", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("memory_set_affinity",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("i do like pizza",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
     }
 
     [Fact]
@@ -509,7 +536,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-affinity-we-continuation-token",
-            Text = """{"type":"CONTEXT","transID":"trans-affinity-we-continuation","data":{"audioTranscriptHint":"we like"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-affinity-we-continuation","data":{"audioTranscriptHint":"we like"}}"""
         });
 
         for (var index = 0; index < 4; index += 1)
@@ -547,7 +575,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-affinity-we-continuation-token",
-            Text = """{"type":"CONTEXT","transID":"trans-affinity-we-continuation","data":{"audioTranscriptHint":"we like pizza"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-affinity-we-continuation","data":{"audioTranscriptHint":"we like pizza"}}"""
         });
 
         Assert.Equal(3, finalizedReplies.Count);
@@ -556,8 +585,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(finalizedReplies[2]));
 
         using var listenPayload = JsonDocument.Parse(finalizedReplies[0].Text!);
-        Assert.Equal("memory_set_affinity", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("we like pizza", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("memory_set_affinity",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("we like pizza",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
     }
 
     [Fact]
@@ -608,7 +639,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-follow-up-token",
-            Text = """{"type":"LISTEN","transID":"trans-follow-up","data":{"text":"hello jibo","rules":["wake-word"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-follow-up","data":{"text":"hello jibo","rules":["wake-word"]}}"""
         });
 
         var contextReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -651,7 +683,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-menu-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-time","data":{"lang":"en-US","rules":["clock/clock_menu","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-time","data":{"lang":"en-US","rules":["clock/clock_menu","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
         });
 
         Assert.Empty(listenReplies);
@@ -662,7 +695,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-menu-token",
-            Text = """{"type":"CLIENT_NLU","transID":"trans-clock-time","data":{"entities":{"domain":"clock"},"intent":"askForTime","rules":["clock/clock_menu"]}}"""
+            Text =
+                """{"type":"CLIENT_NLU","transID":"trans-clock-time","data":{"entities":{"domain":"clock"},"intent":"askForTime","rules":["clock/clock_menu"]}}"""
         });
 
         Assert.Equal(2, nluReplies.Count);
@@ -670,11 +704,17 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(nluReplies[1]));
 
         using var listenPayload = JsonDocument.Parse(nluReplies[0].Text!);
-        Assert.Equal("askForTime", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("askForTime", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("clock", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("clock/clock_menu", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
-        Assert.Equal("clock/clock_menu", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("askForTime",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("askForTime",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("clock/clock_menu",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("clock/clock_menu",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -686,7 +726,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-timer-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-timer","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-timer","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -695,7 +736,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-timer-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-clock-timer","data":{"text":"set a timer for five minutes"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-clock-timer","data":{"text":"set a timer for five minutes"}}"""
         });
 
         Assert.Equal(4, replies.Count);
@@ -705,17 +747,30 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("start", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("@be/clock", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
-        Assert.Equal("timer", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("0", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("hours").GetString());
-        Assert.Equal("5", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("minutes").GetString());
-        Assert.Equal("null", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("seconds").GetString());
+        Assert.Equal("start",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("timer",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("0",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("hours").GetString());
+        Assert.Equal("5",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("minutes").GetString());
+        Assert.Equal("null",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("seconds").GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/clock", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises").GetBoolean());
-        Assert.Equal("start", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/clock",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skipSurprises")
+            .GetBoolean());
+        Assert.Equal("start",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -727,7 +782,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-open-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-open","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-open","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -745,12 +801,17 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("askForTime", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("clock", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
+        Assert.Equal("askForTime",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/clock", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("askForTime", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/clock",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("askForTime",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -762,7 +823,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-voice-time-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-voice-time","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-voice-time","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -779,8 +841,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("askForTime", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("@be/clock", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("askForTime",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
     }
 
     [Fact]
@@ -792,7 +856,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-alarm-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -807,11 +872,19 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(4, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("start", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("@be/clock", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("7:30", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time").GetString());
-        Assert.Equal("am", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm").GetString());
+        Assert.Equal("start",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("7:30",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time")
+                .GetString());
+        Assert.Equal("am",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm")
+                .GetString());
     }
 
     [Fact]
@@ -823,7 +896,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-compact-alarm-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-compact-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-compact-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -832,14 +906,19 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-compact-alarm-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-clock-compact-alarm","data":{"text":"set an alarm for 830"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-clock-compact-alarm","data":{"text":"set an alarm for 830"}}"""
         });
 
         Assert.Equal(4, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("8:30", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time").GetString());
-        Assert.Equal("am", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm").GetString());
+        Assert.Equal("8:30",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time")
+                .GetString());
+        Assert.Equal("am",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm")
+                .GetString());
     }
 
     [Fact]
@@ -851,7 +930,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-hyphen-alarm-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-hyphen-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-hyphen-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -860,16 +940,24 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-hyphen-alarm-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-clock-hyphen-alarm","data":{"text":"set an alarm for 10-25"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-clock-hyphen-alarm","data":{"text":"set an alarm for 10-25"}}"""
         });
 
         Assert.Equal(4, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("start", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("10:25", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time").GetString());
-        Assert.Equal("am", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm").GetString());
+        Assert.Equal("start",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("10:25",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time")
+                .GetString());
+        Assert.Equal("am",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm")
+                .GetString());
     }
 
     [Fact]
@@ -881,7 +969,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-pm-alarm-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-pm-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-pm-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -890,14 +979,19 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-pm-alarm-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-clock-pm-alarm","data":{"text":"set an alarm for 10:25 pm"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-clock-pm-alarm","data":{"text":"set an alarm for 10:25 pm"}}"""
         });
 
         Assert.Equal(4, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("10:25", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time").GetString());
-        Assert.Equal("pm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm").GetString());
+        Assert.Equal("10:25",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time")
+                .GetString());
+        Assert.Equal("pm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm")
+                .GetString());
     }
 
     [Fact]
@@ -909,7 +1003,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-next-occurrence-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-next-occurrence","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-next-occurrence","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -918,7 +1013,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-next-occurrence-token",
-            Text = """{"type":"CONTEXT","transID":"trans-clock-next-occurrence","data":{"runtime":{"location":{"iso":"2026-04-22T07:15:00-05:00"}}}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-clock-next-occurrence","data":{"runtime":{"location":{"iso":"2026-04-22T07:15:00-05:00"}}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -927,12 +1023,17 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-next-occurrence-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-clock-next-occurrence","data":{"text":"set an alarm for 7:10"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-clock-next-occurrence","data":{"text":"set an alarm for 7:10"}}"""
         });
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("7:10", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time").GetString());
-        Assert.Equal("pm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm").GetString());
+        Assert.Equal("7:10",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time")
+                .GetString());
+        Assert.Equal("pm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm")
+                .GetString());
     }
 
     [Fact]
@@ -944,7 +1045,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-timer-followup-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-timer-followup","data":{"rules":["clock/timer_set_value"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-timer-followup","data":{"rules":["clock/timer_set_value"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -953,7 +1055,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-timer-followup-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-clock-timer-followup","data":{"text":"twenty five minutes"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-clock-timer-followup","data":{"text":"twenty five minutes"}}"""
         });
 
         Assert.Equal(2, replies.Count);
@@ -961,9 +1064,14 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("start", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("timer", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("25", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("minutes").GetString());
+        Assert.Equal("start",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("timer",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("25",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("minutes").GetString());
     }
 
     [Fact]
@@ -975,7 +1083,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-alarm-followup-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-alarm-followup","data":{"rules":["clock/alarm_set_value"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-alarm-followup","data":{"rules":["clock/alarm_set_value"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -992,10 +1101,17 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("start", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("10:25", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time").GetString());
-        Assert.Equal("am", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm").GetString());
+        Assert.Equal("start",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("10:25",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time")
+                .GetString());
+        Assert.Equal("am",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("ampm")
+                .GetString());
     }
 
     [Fact]
@@ -1007,7 +1123,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-alarm-comma-followup-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-alarm-comma-followup","data":{"rules":["clock/alarm_set_value"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-alarm-comma-followup","data":{"rules":["clock/alarm_set_value"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1024,9 +1141,14 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("start", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("7:44", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time").GetString());
+        Assert.Equal("start",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("7:44",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("time")
+                .GetString());
     }
 
     [Fact]
@@ -1038,7 +1160,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-clarify-alarm-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-clarify-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-clarify-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1057,13 +1180,19 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("set", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.False(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").TryGetProperty("time", out _));
+        Assert.Equal("set",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.False(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+            .TryGetProperty("time", out _));
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/clock", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("set", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/clock",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("set",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -1075,7 +1204,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-cancel-alarm-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-cancel-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-cancel-alarm","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1090,12 +1220,17 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(4, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("delete", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
+        Assert.Equal("delete",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/clock", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("delete", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/clock",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("delete",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         var session = _store.FindSessionByToken("hub-clock-cancel-alarm-token");
         Assert.NotNull(session);
@@ -1111,7 +1246,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-set-alarm-query-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-set-alarm-query","data":{"rules":["clock/clock_menu","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-set-alarm-query","data":{"rules":["clock/clock_menu","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1120,7 +1256,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-set-alarm-query-token",
-            Text = """{"type":"CLIENT_NLU","transID":"trans-clock-set-alarm-query","data":{"entities":{"domain":"alarm"},"intent":"set","rules":["clock/clock_menu"]}}"""
+            Text =
+                """{"type":"CLIENT_NLU","transID":"trans-clock-set-alarm-query","data":{"entities":{"domain":"alarm"},"intent":"set","rules":["clock/clock_menu"]}}"""
         });
 
         Assert.Equal(2, replies.Count);
@@ -1128,9 +1265,13 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("set", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.False(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").TryGetProperty("time", out _));
+        Assert.Equal("set",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.False(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+            .TryGetProperty("time", out _));
     }
 
     [Fact]
@@ -1142,7 +1283,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-cancel-alarm-value-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-cancel-alarm-value","data":{"rules":["clock/alarm_set_value","globals/gui_nav","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-cancel-alarm-value","data":{"rules":["clock/alarm_set_value","globals/gui_nav","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1151,7 +1293,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-cancel-alarm-value-token",
-            Text = """{"type":"CLIENT_NLU","transID":"trans-clock-cancel-alarm-value","data":{"entities":{},"intent":"cancel","rules":["clock/alarm_set_value"]}}"""
+            Text =
+                """{"type":"CLIENT_NLU","transID":"trans-clock-cancel-alarm-value","data":{"entities":{},"intent":"cancel","rules":["clock/alarm_set_value"]}}"""
         });
 
         Assert.Equal(2, replies.Count);
@@ -1159,9 +1302,13 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("cancel", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("clock/alarm_set_value", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
+        Assert.Equal("cancel",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("clock/alarm_set_value",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
     }
 
     [Fact]
@@ -1173,7 +1320,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-cancel-query-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-cancel-query","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-cancel-query","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1182,7 +1330,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-cancel-query-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-clock-cancel-query","data":{"text":"set an alarm for 7:16 am"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-clock-cancel-query","data":{"text":"set an alarm for 7:16 am"}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1191,7 +1340,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-cancel-query-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-cancel-query-menu","data":{"rules":["clock/alarm_timer_query_menu","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-cancel-query-menu","data":{"rules":["clock/alarm_timer_query_menu","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1200,7 +1350,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-cancel-query-token",
-            Text = """{"type":"CLIENT_NLU","transID":"trans-clock-cancel-query-menu","data":{"entities":{},"intent":"cancel","rules":["clock/alarm_timer_query_menu"]}}"""
+            Text =
+                """{"type":"CLIENT_NLU","transID":"trans-clock-cancel-query-menu","data":{"entities":{},"intent":"cancel","rules":["clock/alarm_timer_query_menu"]}}"""
         });
 
         Assert.Equal(2, replies.Count);
@@ -1208,8 +1359,11 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("delete", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
+        Assert.Equal("delete",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
     }
 
     [Fact]
@@ -1221,7 +1375,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-photo-gallery-token",
-            Text = """{"type":"LISTEN","transID":"trans-photo-gallery","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-photo-gallery","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1237,12 +1392,16 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("menu", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("@be/gallery", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("menu",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/gallery",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/gallery", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("menu", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/gallery",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("menu",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -1254,7 +1413,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-photo-gallery-context-token",
-            Text = """{"type":"LISTEN","transID":"trans-photo-gallery-context","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-photo-gallery-context","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1263,7 +1423,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-photo-gallery-context-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-photo-gallery-context","data":{"text":"open photo gallery"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-photo-gallery-context","data":{"text":"open photo gallery"}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1281,7 +1442,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-photo-gallery-context-token",
-            Text = """{"type":"CONTEXT","transID":"trans-photo-gallery-context","data":{"skill":{"id":"@be/gallery"}}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-photo-gallery-context","data":{"skill":{"id":"@be/gallery"}}}"""
         });
 
         Assert.Empty(replies);
@@ -1302,7 +1464,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-gallery-yesno-context-token",
-            Text = """{"type":"LISTEN","transID":"trans-gallery-yesno-context","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-gallery-yesno-context","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1311,7 +1474,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-gallery-yesno-context-token",
-            Text = """{"type":"CONTEXT","transID":"trans-gallery-yesno-context","data":{"audioTranscriptHint":"yes","skill":{"id":"@be/gallery"}}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-gallery-yesno-context","data":{"audioTranscriptHint":"yes","skill":{"id":"@be/gallery"}}}"""
         });
 
         for (var index = 0; index < 4; index += 1)
@@ -1344,10 +1508,14 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("yes", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("yes", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("shared/yes_no", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
-        Assert.Equal("shared/yes_no", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("shared/yes_no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("shared/yes_no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -1359,7 +1527,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-settings-volume-tail-token",
-            Text = """{"type":"LISTEN","transID":"trans-settings-volume-tail","data":{"rules":["settings/volume_control","globals/gui_nav","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-settings-volume-tail","data":{"rules":["settings/volume_control","globals/gui_nav","globals/global_commands_launch"]}}"""
         });
 
         var contextReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1368,7 +1537,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-settings-volume-tail-token",
-            Text = """{"type":"CONTEXT","transID":"trans-settings-volume-tail","data":{"skill":{"id":"@be/settings"}}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-settings-volume-tail","data":{"skill":{"id":"@be/settings"}}}"""
         });
 
         Assert.Empty(contextReplies);
@@ -1407,7 +1577,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-alarm-okay-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-alarm-okay","data":{"rules":["clock/alarm_timer_okay","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-alarm-okay","data":{"rules":["clock/alarm_timer_okay","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1424,8 +1595,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal(string.Empty, listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("clock/alarm_timer_okay", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("clock/alarm_timer_okay",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
     }
 
     [Fact]
@@ -1437,7 +1610,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-clock-alarm-value-noinput-token",
-            Text = """{"type":"LISTEN","transID":"trans-clock-alarm-value-noinput","data":{"rules":["clock/alarm_set_value","globals/gui_nav","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-clock-alarm-value-noinput","data":{"rules":["clock/alarm_set_value","globals/gui_nav","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1454,8 +1628,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal(string.Empty, listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("clock/alarm_set_value", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("clock/alarm_set_value",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
     }
 
     [Fact]
@@ -1467,7 +1643,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-gallery-preview-noinput-token",
-            Text = """{"type":"LISTEN","transID":"trans-gallery-preview-noinput","data":{"rules":["gallery/gallery_preview","globals/gui_nav","globals/mim_repeat","globals/mim_thanks","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-gallery-preview-noinput","data":{"rules":["gallery/gallery_preview","globals/gui_nav","globals/mim_repeat","globals/mim_thanks","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1484,8 +1661,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal(string.Empty, listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("gallery/gallery_preview", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("gallery/gallery_preview",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
     }
 
     [Fact]
@@ -1497,7 +1676,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-snapshot-token",
-            Text = """{"type":"LISTEN","transID":"trans-snapshot","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-snapshot","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1512,12 +1692,16 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(4, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("createOnePhoto", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("@be/create", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("createOnePhoto",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/create",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/create", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("createOnePhoto", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/create",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("createOnePhoto",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -1529,7 +1713,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-photobooth-token",
-            Text = """{"type":"LISTEN","transID":"trans-photobooth","data":{"rules":["globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-photobooth","data":{"rules":["globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1544,12 +1729,16 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(4, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("createSomePhotos", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("@be/create", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("createSomePhotos",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/create",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/create", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("createSomePhotos", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/create",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("createSomePhotos",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -1576,11 +1765,17 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("yeah", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("yes", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("create/is_it_a_keeper", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
-        Assert.Equal("create", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("create/is_it_a_keeper", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("yeah",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("create/is_it_a_keeper",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("create",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("create/is_it_a_keeper",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -1592,7 +1787,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-yesno-hints-token",
-            Text = """{"type":"LISTEN","transID":"trans-yesno-hints","data":{"rules":["surprises-ota/want_to_download_now"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-yesno-hints","data":{"rules":["surprises-ota/want_to_download_now"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1607,10 +1803,14 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("no", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("no", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("surprises-ota/want_to_download_now", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
-        Assert.Equal("surprises-ota/want_to_download_now", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("surprises-ota/want_to_download_now",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("surprises-ota/want_to_download_now",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -1622,7 +1822,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-yesno-hints-yep-token",
-            Text = """{"type":"LISTEN","transID":"trans-yesno-hints-yep","data":{"rules":["surprises-ota/want_to_download_now"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-yesno-hints-yep","data":{"rules":["surprises-ota/want_to_download_now"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1637,10 +1838,14 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("yep", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("yes", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("surprises-ota/want_to_download_now", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
-        Assert.Equal("surprises-ota/want_to_download_now", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("yep",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("surprises-ota/want_to_download_now",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("surprises-ota/want_to_download_now",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -1652,7 +1857,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-shared-yesno-token",
-            Text = """{"type":"LISTEN","transID":"trans-shared-yesno","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-shared-yesno","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1667,11 +1873,13 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("yes", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
         Assert.Single(rules.EnumerateArray());
         Assert.Equal("shared/yes_no", rules[0].GetString());
-        Assert.Equal("shared/yes_no", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("shared/yes_no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -1683,7 +1891,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-shared-yesno-negative-token",
-            Text = """{"type":"LISTEN","transID":"trans-shared-yesno-negative","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-shared-yesno-negative","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1698,11 +1907,13 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("no", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
         Assert.Single(rules.EnumerateArray());
         Assert.Equal("shared/yes_no", rules[0].GetString());
-        Assert.Equal("shared/yes_no", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("shared/yes_no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -1714,7 +1925,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-alarm-change-yesno-token",
-            Text = """{"type":"LISTEN","transID":"trans-alarm-change-yesno","data":{"rules":["clock/alarm_timer_change","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-alarm-change-yesno","data":{"rules":["clock/alarm_timer_change","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1729,11 +1941,13 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("yes", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
         Assert.Single(rules.EnumerateArray());
         Assert.Equal("clock/alarm_timer_change", rules[0].GetString());
-        Assert.Equal("clock/alarm_timer_change", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("clock/alarm_timer_change",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -1745,7 +1959,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-yesno-noinput-token",
-            Text = """{"type":"LISTEN","transID":"trans-yesno-noinput","data":{"rules":["surprises-ota/want_to_download_now","globals/gui_nav","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-yesno-noinput","data":{"rules":["surprises-ota/want_to_download_now","globals/gui_nav","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1790,8 +2005,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal(string.Empty, listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal(string.Empty, listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
         Assert.Single(rules.EnumerateArray());
         Assert.Equal("surprises-ota/want_to_download_now", rules[0].GetString());
@@ -1806,7 +2023,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-shared-yesno-noinput-token",
-            Text = """{"type":"LISTEN","transID":"trans-shared-yesno-noinput","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-shared-yesno-noinput","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1865,7 +2083,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-create-noinput-token",
-            Text = """{"type":"LISTEN","transID":"trans-create-noinput-1","data":{"rules":["create/is_it_a_keeper","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-create-noinput-1","data":{"rules":["create/is_it_a_keeper","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
         });
 
         var firstReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1887,7 +2106,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-create-noinput-token",
-            Text = """{"type":"LISTEN","transID":"trans-create-noinput-2","data":{"rules":["create/is_it_a_keeper","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-create-noinput-2","data":{"rules":["create/is_it_a_keeper","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
         });
 
         var secondReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1905,7 +2125,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_REDIRECT", ReadReplyType(secondReplies[2]));
 
         using var redirectPayload = JsonDocument.Parse(secondReplies[2].Text!);
-        Assert.Equal("@be/idle", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("@be/idle",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
     }
 
     [Fact]
@@ -1917,7 +2138,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-share-yesno-token",
-            Text = """{"type":"LISTEN","transID":"trans-share-yes","data":{"rules":["surprises-date/offer_date_fact","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-share-yes","data":{"rules":["surprises-date/offer_date_fact","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1932,15 +2154,18 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("proactive_offer_pizza_fact", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("proactive_offer_pizza_fact",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
         Assert.Single(rules.EnumerateArray());
         var selectedRule = rules[0].GetString();
         Assert.True(
             string.Equals(selectedRule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(selectedRule, "shared/yes_no", StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(selectedRule, listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
-        Assert.Empty(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").EnumerateObject());
+        Assert.Equal(selectedRule,
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Empty(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+            .EnumerateObject());
     }
 
     [Fact]
@@ -1952,7 +2177,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-offer-yesno-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-offer-yes","data":{"rules":["word-of-the-day/surprise","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-offer-yes","data":{"rules":["word-of-the-day/surprise","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -1973,10 +2199,12 @@ public sealed class JiboWebSocketServiceTests
         Assert.True(
             string.Equals(selectedRule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(selectedRule, "word-of-the-day/menu", StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(selectedRule, listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal(selectedRule,
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
         Assert.Equal(
             "word-of-the-day",
-            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
     }
 
     [Fact]
@@ -2010,7 +2238,7 @@ public sealed class JiboWebSocketServiceTests
             }
         };
 
-        var replies = ResponsePlanToSocketMessagesMapper.Map(plan, turn, new CloudSession(), emitSkillActions: true);
+        var replies = ResponsePlanToSocketMessagesMapper.Map(plan, turn, new CloudSession(), true);
         using var payload = JsonDocument.Parse(replies[2].Text);
         var esml = payload.RootElement
             .GetProperty("data")
@@ -2035,7 +2263,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-news-token",
-            Text = """{"type":"LISTEN","transID":"trans-news","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-news","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2053,11 +2282,14 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("news", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("news", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("cloudSkill").GetString());
+        Assert.Equal("news",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("news",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("cloudSkill").GetString());
 
         using var skillPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("news", skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+        Assert.Equal("news",
+            skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
         var meta = skillPayload.RootElement
             .GetProperty("data")
             .GetProperty("action")
@@ -2089,7 +2321,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-news-provider-token",
-            Text = """{"type":"LISTEN","transID":"trans-news-provider","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-news-provider","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2130,7 +2363,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-weather-token",
-            Text = """{"type":"LISTEN","transID":"trans-weather","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-weather","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2148,9 +2382,11 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("weather", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("weather",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         Assert.False(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").TryGetProperty("skill", out _));
-        Assert.Equal(JsonValueKind.Null, listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("cloudSkill").ValueKind);
+        Assert.Equal(JsonValueKind.Null,
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("cloudSkill").ValueKind);
 
         using var speakPayload = JsonDocument.Parse(replies[2].Text!);
         var esml = speakPayload.RootElement
@@ -2174,7 +2410,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-weather-entities-token",
-            Text = """{"type":"LISTEN","transID":"trans-weather-entities","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-weather-entities","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2183,7 +2420,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-weather-entities-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-weather-entities","data":{"text":"will it rain tomorrow"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-weather-entities","data":{"text":"will it rain tomorrow"}}"""
         });
 
         Assert.Equal(3, replies.Count);
@@ -2192,7 +2430,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("weather", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("weather",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         using var speakPayload = JsonDocument.Parse(replies[2].Text!);
         var esml = speakPayload.RootElement
@@ -2222,7 +2461,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-weather-provider-token",
-            Text = """{"type":"LISTEN","transID":"trans-weather-provider","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-weather-provider","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await customService.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2237,13 +2477,16 @@ public sealed class JiboWebSocketServiceTests
         Assert.True(replies.Count >= 3);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
-        Assert.Contains(replies, static reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION", StringComparison.Ordinal));
+        Assert.Contains(replies,
+            static reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION", StringComparison.Ordinal));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.False(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").TryGetProperty("skill", out _));
-        Assert.Equal("weather", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("cloudSkill").GetString());
+        Assert.Equal("weather",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("cloudSkill").GetString());
 
-        var skillReply = replies.Last(static reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION", StringComparison.Ordinal));
+        var skillReply = replies.Last(static reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_ACTION", StringComparison.Ordinal));
         using var skillPayload = JsonDocument.Parse(skillReply.Text!);
         Assert.Equal(
             "report-skill",
@@ -2273,7 +2516,8 @@ public sealed class JiboWebSocketServiceTests
             display.GetProperty("view").GetProperty("data").GetProperty("viewConfig").GetProperty("id").GetString());
         Assert.Equal(
             "weatherTempView",
-            display.GetProperty("view").GetProperty("context").GetProperty("data").GetProperty("viewConfig").GetProperty("id").GetString());
+            display.GetProperty("view").GetProperty("context").GetProperty("data").GetProperty("viewConfig")
+                .GetProperty("id").GetString());
 
         Assert.True(jcpConfig.TryGetProperty("views", out var views));
         var weatherHiLo = views.GetProperty("weatherHiLo");
@@ -2282,10 +2526,12 @@ public sealed class JiboWebSocketServiceTests
         Assert.True(jcpConfig.TryGetProperty("local", out var local));
         Assert.Equal(
             "weatherTempView",
-            local.GetProperty("views").GetProperty("weatherHiLo").GetProperty("viewConfig").GetProperty("id").GetString());
+            local.GetProperty("views").GetProperty("weatherHiLo").GetProperty("viewConfig").GetProperty("id")
+                .GetString());
 
         var payloadText = skillReply.Text!;
-        Assert.Contains("assets/personal-report-skill/weather/icons/rain_v01.crn", payloadText, StringComparison.Ordinal);
+        Assert.Contains("assets/personal-report-skill/weather/icons/rain_v01.crn", payloadText,
+            StringComparison.Ordinal);
         Assert.Contains("tempNormal_v01.crn", payloadText, StringComparison.Ordinal);
     }
 
@@ -2304,7 +2550,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-weather-next-week-token",
-            Text = """{"type":"LISTEN","transID":"trans-weather-next-week","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-weather-next-week","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await customService.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2313,11 +2560,13 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-weather-next-week-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-weather-next-week","data":{"text":"forecast for seattle next week"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-weather-next-week","data":{"text":"forecast for seattle next week"}}"""
         });
 
         Assert.True(replies.Count >= 3);
-        var skillReply = replies.Last(static reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION", StringComparison.Ordinal));
+        var skillReply = replies.Last(static reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_ACTION", StringComparison.Ordinal));
         using var skillPayload = JsonDocument.Parse(skillReply.Text!);
         var jcp = skillPayload.RootElement
             .GetProperty("data")
@@ -2333,7 +2582,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.True(firstChildConfig.TryGetProperty("display", out var firstDisplay));
         Assert.Equal(
             "weatherTempView",
-            firstDisplay.GetProperty("view").GetProperty("data").GetProperty("viewConfig").GetProperty("id").GetString());
+            firstDisplay.GetProperty("view").GetProperty("data").GetProperty("viewConfig").GetProperty("id")
+                .GetString());
     }
 
     [Fact]
@@ -2345,7 +2595,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-radio-open-token",
-            Text = """{"type":"LISTEN","transID":"trans-radio-open","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-radio-open","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2364,18 +2615,26 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("menu", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("@be/radio", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
-        Assert.Equal(0, listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules").GetArrayLength());
-        Assert.Empty(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").EnumerateObject());
+        Assert.Equal("menu",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/radio",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal(0,
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules").GetArrayLength());
+        Assert.Empty(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+            .EnumerateObject());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/radio", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch").GetBoolean());
-        Assert.Equal("menu", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/radio",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch")
+            .GetBoolean());
+        Assert.Equal("menu",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         using var completionPayload = JsonDocument.Parse(replies[3].Text!);
-        Assert.Equal("@be/radio", completionPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+        Assert.Equal("@be/radio",
+            completionPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
     }
 
     [Fact]
@@ -2387,7 +2646,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-radio-country-token",
-            Text = """{"type":"LISTEN","transID":"trans-radio-country","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-radio-country","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2402,12 +2662,18 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(4, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("menu", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("Country", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("station").GetString());
+        Assert.Equal("menu",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("Country",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("station").GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("Country", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("station").GetString());
-        Assert.Equal("play country music", redirectPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("Country",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("station").GetString());
+        Assert.Equal("play country music",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
     }
 
     [Fact]
@@ -2419,7 +2685,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-stop-token",
-            Text = """{"type":"LISTEN","transID":"trans-stop","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-stop","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2444,8 +2711,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("globals/global_commands_launch", nlu.GetProperty("rules")[0].GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/idle", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("stop", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/idle",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("stop",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -2457,7 +2726,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-volume-down-token",
-            Text = """{"type":"LISTEN","transID":"trans-volume-down","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-volume-down","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2490,7 +2760,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-volume-value-token",
-            Text = """{"type":"LISTEN","transID":"trans-volume-value","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-volume-value","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2520,7 +2791,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-volume-query-token",
-            Text = """{"type":"LISTEN","transID":"trans-volume-query","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-volume-query","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2537,12 +2809,16 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("volumeQuery", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("@be/settings", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("volumeQuery",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/settings",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/settings", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("volumeQuery", redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/settings",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("volumeQuery",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -2554,7 +2830,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-guess-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-guess","data":{"rules":["word-of-the-day/puzzle","globals/gui_nav"],"asr":{"hints":["pastoral","doodad","escarpment"],"earlyEOS":["pastoral","doodad","escarpment"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-guess","data":{"rules":["word-of-the-day/puzzle","globals/gui_nav"],"asr":{"hints":["pastoral","doodad","escarpment"],"earlyEOS":["pastoral","doodad","escarpment"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2563,7 +2840,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-guess-token",
-            Text = """{"type":"CLIENT_NLU","transID":"trans-wod-guess","data":{"entities":{"guess":"pastoral"},"intent":"guess","rules":["word-of-the-day/puzzle"]}}"""
+            Text =
+                """{"type":"CLIENT_NLU","transID":"trans-wod-guess","data":{"entities":{"guess":"pastoral"},"intent":"guess","rules":["word-of-the-day/puzzle"]}}"""
         });
 
         Assert.Equal(3, replies.Count);
@@ -2572,10 +2850,15 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("pastoral", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("guess", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("pastoral", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("guess").GetString());
-        Assert.Equal("word-of-the-day/puzzle", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("pastoral",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("guess",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("pastoral",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("guess").GetString());
+        Assert.Equal("word-of-the-day/puzzle",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -2587,7 +2870,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-spoken-guess-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-spoken-guess","data":{"rules":["word-of-the-day/puzzle"],"asr":{"hints":["pastoral","doodad","escarpment"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-spoken-guess","data":{"rules":["word-of-the-day/puzzle"],"asr":{"hints":["pastoral","doodad","escarpment"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2605,10 +2889,15 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("pastoral", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("guess", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("pastoral", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("guess").GetString());
-        Assert.Equal("word-of-the-day/puzzle", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("pastoral",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("guess",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("pastoral",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("guess").GetString());
+        Assert.Equal("word-of-the-day/puzzle",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -2620,7 +2909,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-line-guess-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-line-guess","data":{"rules":["word-of-the-day/puzzle"],"asr":{"hints":["doodad","pastoral","escarpment"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-line-guess","data":{"rules":["word-of-the-day/puzzle"],"asr":{"hints":["doodad","pastoral","escarpment"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2634,9 +2924,13 @@ public sealed class JiboWebSocketServiceTests
 
         Assert.Equal(3, replies.Count);
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("pastoral", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("guess", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("pastoral", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("guess").GetString());
+        Assert.Equal("pastoral",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("guess",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("pastoral",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("guess").GetString());
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
     }
 
@@ -2649,7 +2943,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-fuzzy-guess-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-fuzzy-guess","data":{"rules":["word-of-the-day/puzzle"],"asr":{"hints":["aglet","hovel","wisenheimer"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-fuzzy-guess","data":{"rules":["word-of-the-day/puzzle"],"asr":{"hints":["aglet","hovel","wisenheimer"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2664,8 +2959,11 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("aglet", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("aglet", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("guess").GetString());
+        Assert.Equal("aglet",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("aglet",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("guess").GetString());
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
     }
 
@@ -2678,7 +2976,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-guess-rules-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-guess-rules","data":{"rules":["word-of-the-day/puzzle","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["aglet","hovel","wisenheimer"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-guess-rules","data":{"rules":["word-of-the-day/puzzle","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["aglet","hovel","wisenheimer"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2696,7 +2995,8 @@ public sealed class JiboWebSocketServiceTests
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
         Assert.Single(rules.EnumerateArray());
         Assert.Equal("word-of-the-day/puzzle", rules[0].GetString());
-        Assert.Equal("word-of-the-day/puzzle", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("word-of-the-day/puzzle",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
     }
 
     [Fact]
@@ -2708,7 +3008,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-settings-no-token",
-            Text = """{"type":"LISTEN","transID":"trans-settings-no","data":{"rules":["settings/download_now_later","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-settings-no","data":{"rules":["settings/download_now_later","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2726,8 +3027,10 @@ public sealed class JiboWebSocketServiceTests
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
         Assert.Single(rules.EnumerateArray());
         Assert.Equal("settings/download_now_later", rules[0].GetString());
-        Assert.Equal("settings/download_now_later", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
-        Assert.Equal("no", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("settings/download_now_later",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -2739,7 +3042,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-launch-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-launch","data":{"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-launch","data":{"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2753,18 +3057,27 @@ public sealed class JiboWebSocketServiceTests
 
         Assert.Equal(4, replies.Count);
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("menu", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal(string.Empty, listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("word-of-the-day", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("@be/word-of-the-day", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
-        Assert.Equal("word-of-the-day/menu", listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("menu",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("word-of-the-day",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("@be/word-of-the-day",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("word-of-the-day/menu",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
         Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/word-of-the-day", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("onRobot").GetBoolean());
-        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch").GetBoolean());
+        Assert.Equal("@be/word-of-the-day",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("onRobot")
+            .GetBoolean());
+        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch")
+            .GetBoolean());
 
         var session = _store.FindSessionByToken("hub-wod-launch-token");
         Assert.NotNull(session);
@@ -2780,7 +3093,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-auto-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-auto","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-auto","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2789,7 +3103,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-auto-token",
-            Text = """{"type":"CONTEXT","transID":"trans-wod-auto","data":{"audioTranscriptHint":"play word of the day"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-wod-auto","data":{"audioTranscriptHint":"play word of the day"}}"""
         });
 
         for (var index = 0; index < 4; index += 1)
@@ -2826,9 +3141,13 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("menu", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("word-of-the-day", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
-        Assert.Equal("@be/word-of-the-day", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("menu",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("word-of-the-day",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
+        Assert.Equal("@be/word-of-the-day",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
 
         var lateReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -2861,7 +3180,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-late-empty-token",
-            Text = """{"type":"CLIENT_NLU","transID":"trans-wod-late-empty","data":{"entities":{"guess":"pastoral"},"intent":"guess","rules":["word-of-the-day/puzzle"]}}"""
+            Text =
+                """{"type":"CLIENT_NLU","transID":"trans-wod-late-empty","data":{"entities":{"guess":"pastoral"},"intent":"guess","rules":["word-of-the-day/puzzle"]}}"""
         });
 
         Assert.Equal(3, winReplies.Count);
@@ -2887,7 +3207,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-right-word-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-right-word","data":{"rules":["word-of-the-day/right_word","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-right-word","data":{"rules":["word-of-the-day/right_word","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2908,7 +3229,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.False(listenPayload.RootElement.GetProperty("data").TryGetProperty("match", out _));
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/idle", redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("@be/idle",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
     }
 
     [Fact]
@@ -2920,7 +3242,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-listen-setup-token",
-            Text = """{"type":"LISTEN","transID":"trans-listen-setup","data":{"rules":["main-menu/execute_fun_stuff","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-listen-setup","data":{"rules":["main-menu/execute_fun_stuff","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
         });
 
         Assert.Empty(replies);
@@ -2940,7 +3263,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-stale-listen-token",
-            Text = """{"type":"LISTEN","transID":"trans-stale-listen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-stale-listen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var session = _store.FindSessionByToken("hub-stale-listen-token");
@@ -2959,7 +3283,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-stale-listen-token",
-            Text = """{"type":"LISTEN","transID":"trans-stale-listen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-stale-listen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         Assert.Empty(replies);
@@ -2981,7 +3306,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-right-word-audio-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-right-word-audio","data":{"rules":["word-of-the-day/right_word","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-right-word-audio","data":{"rules":["word-of-the-day/right_word","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2990,7 +3316,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-right-word-audio-token",
-            Text = """{"type":"LISTEN","transID":"trans-wod-right-word-audio","data":{"rules":["word-of-the-day/right_word","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-right-word-audio","data":{"rules":["word-of-the-day/right_word","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"]}}"""
         });
 
         Assert.Equal(3, replies.Count);
@@ -2999,7 +3326,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal(string.Empty, listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
         Assert.False(listenPayload.RootElement.GetProperty("data").TryGetProperty("match", out _));
 
         var binaryReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3028,7 +3356,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-blank-audio-token",
-            Text = """{"type":"LISTEN","transID":"trans-blank-audio","data":{"text":"[BLANK_AUDIO]","rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-blank-audio","data":{"text":"[BLANK_AUDIO]","rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         Assert.Empty(replies);
@@ -3062,7 +3391,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-context-no-listen-token",
-            Text = """{"type":"LISTEN","transID":"trans-context-no-listen-hello","data":{"text":"hello","rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-context-no-listen-hello","data":{"text":"hello","rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         Assert.Equal(3, helloReplies.Count);
@@ -3111,7 +3441,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-delete-the-alarm-token",
-            Text = """{"type":"LISTEN","transID":"trans-delete-the-alarm","data":{"text":"So, delete the alarm.","rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-delete-the-alarm","data":{"text":"So, delete the alarm.","rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         Assert.Equal(4, replies.Count);
@@ -3121,9 +3452,13 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("delete", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.Equal("@be/clock", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
-        Assert.Equal("alarm", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities").GetProperty("domain").GetString());
+        Assert.Equal("delete",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal("alarm",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("domain").GetString());
 
         var session = _store.FindSessionByToken("hub-delete-the-alarm-token");
         Assert.NotNull(session);
@@ -3139,7 +3474,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-initial-hotphrase-token",
-            Text = """{"type":"LISTEN","transID":"trans-initial-hotphrase","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-initial-hotphrase","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         Assert.Empty(replies);
@@ -3159,7 +3495,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-empty-hotphrase-token",
-            Text = """{"type":"LISTEN","transID":"trans-empty-hotphrase","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-empty-hotphrase","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         var firstReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3188,8 +3525,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("hello", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("hello", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("hello",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("hello",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         var session = _store.FindSessionByToken("hub-empty-hotphrase-token");
         Assert.NotNull(session);
@@ -3216,7 +3555,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-audio-token",
-            Text = """{"type":"CONTEXT","transID":"trans-audio","data":{"topic":"conversation","audioTranscriptHint":"tell me a joke"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-audio","data":{"topic":"conversation","audioTranscriptHint":"tell me a joke"}}"""
         });
 
         Assert.Empty(contextReplies);
@@ -3248,8 +3588,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(75, finalizeReplies[2].DelayMs);
 
         using var listenPayload = JsonDocument.Parse(finalizeReplies[0].Text!);
-        Assert.Equal("tell me a joke", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("joke", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("tell me a joke",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("joke",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         var session = _store.FindSessionByToken("hub-audio-token");
         Assert.NotNull(session);
@@ -3314,7 +3656,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-audio-chat-token",
-            Text = """{"type":"CONTEXT","transID":"trans-audio-chat","data":{"audioTranscriptHint":"hello from buffered audio"}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-audio-chat","data":{"audioTranscriptHint":"hello from buffered audio"}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3337,11 +3680,14 @@ public sealed class JiboWebSocketServiceTests
 
         Assert.Equal(3, finalizeReplies.Count);
         using var listenPayload = JsonDocument.Parse(finalizeReplies[0].Text!);
-        Assert.Equal("hello from buffered audio", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("hello", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("hello from buffered audio",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("hello",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         using var skillPayload = JsonDocument.Parse(finalizeReplies[2].Text!);
-        Assert.Equal("chitchat-skill", skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+        Assert.Equal("chitchat-skill",
+            skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
     }
 
     [Fact]
@@ -3353,7 +3699,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-hotphrase-greeting-token",
-            Text = """{"type":"LISTEN","transID":"trans-hotphrase-greeting","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-greeting","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3399,8 +3746,10 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("hello", listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("hello", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("hello",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("hello",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         Assert.True(session.FollowUpOpen);
     }
@@ -3440,7 +3789,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", skillPayload.RootElement.GetProperty("type").GetString());
         Assert.Equal("trans-joke-shape", skillPayload.RootElement.GetProperty("transID").GetString());
         Assert.StartsWith("mid-", skillPayload.RootElement.GetProperty("msgID").GetString());
-        Assert.Equal("@be/joke", skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+        Assert.Equal("@be/joke",
+            skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
 
         var meta = skillPayload.RootElement
             .GetProperty("data")
@@ -3495,7 +3845,8 @@ public sealed class JiboWebSocketServiceTests
             .GetString();
 
         Assert.Contains("<anim cat='dance' filter='music, ", esml, StringComparison.Ordinal);
-        Assert.Equal("chitchat-skill", skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+        Assert.Equal("chitchat-skill",
+            skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
     }
 
     [Fact]
@@ -3523,7 +3874,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var skillPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("chitchat-skill", skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+        Assert.Equal("chitchat-skill",
+            skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
 
         var play = skillPayload.RootElement
             .GetProperty("data")
@@ -3539,7 +3891,8 @@ public sealed class JiboWebSocketServiceTests
         var meta = play.GetProperty("meta");
         Assert.Equal("RA_JBO_MakePizza", meta.GetProperty("mim_id").GetString());
         Assert.Equal("announcement", meta.GetProperty("mim_type").GetString());
-        Assert.StartsWith("RA_JBO_ShowPizzaMaking_AN_", meta.GetProperty("prompt_id").GetString(), StringComparison.Ordinal);
+        Assert.StartsWith("RA_JBO_ShowPizzaMaking_AN_", meta.GetProperty("prompt_id").GetString(),
+            StringComparison.Ordinal);
         Assert.Equal("AN", meta.GetProperty("prompt_sub_category").GetString());
     }
 
@@ -3568,7 +3921,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var skillPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("chitchat-skill", skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+        Assert.Equal("chitchat-skill",
+            skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
 
         var play = skillPayload.RootElement
             .GetProperty("data")
@@ -3605,7 +3959,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, setReplies.Count);
         using (var setListenPayload = JsonDocument.Parse(setReplies[0].Text!))
         {
-            Assert.Equal("memory_set_birthday", setListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("memory_set_birthday",
+                setListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         }
 
         var sameTenantRecallReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3672,10 +4027,17 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, offerReplies.Count);
         using (var offerListenPayload = JsonDocument.Parse(offerReplies[0].Text!))
         {
-            Assert.Equal("proactive_offer_pizza_fact", offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-            Assert.Equal("shared/yes_no", offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
-            Assert.Equal("shared/yes_no", offerListenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+            Assert.Equal("proactive_offer_pizza_fact",
+                offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
+            Assert.Equal("shared/yes_no",
+                offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0]
+                    .GetString());
+            Assert.Equal("shared/yes_no",
+                offerListenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule")
+                    .GetString());
         }
+
         using (var offerSkillPayload = JsonDocument.Parse(offerReplies[2].Text!))
         {
             var jcpConfig = offerSkillPayload.RootElement
@@ -3684,8 +4046,10 @@ public sealed class JiboWebSocketServiceTests
                 .GetProperty("config")
                 .GetProperty("jcp")
                 .GetProperty("config");
-            Assert.Equal("Q", jcpConfig.GetProperty("play").GetProperty("meta").GetProperty("prompt_sub_category").GetString());
-            Assert.Equal("question", jcpConfig.GetProperty("play").GetProperty("meta").GetProperty("mim_type").GetString());
+            Assert.Equal("Q",
+                jcpConfig.GetProperty("play").GetProperty("meta").GetProperty("prompt_sub_category").GetString());
+            Assert.Equal("question",
+                jcpConfig.GetProperty("play").GetProperty("meta").GetProperty("mim_type").GetString());
             Assert.Equal("LISTEN", jcpConfig.GetProperty("listen").GetProperty("type").GetString());
             Assert.Equal("shared/yes_no", jcpConfig.GetProperty("listen").GetProperty("contexts")[0].GetString());
         }
@@ -3707,7 +4071,9 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, followUpReplies.Count);
         using (var followUpListenPayload = JsonDocument.Parse(followUpReplies[0].Text!))
         {
-            Assert.Equal("proactive_pizza_fact", followUpListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("proactive_pizza_fact",
+                followUpListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
         }
 
         session = _store.FindSessionByToken(token);
@@ -3735,12 +4101,14 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"CLIENT_ASR","transID":"trans-proactive-offer-tail-yes","data":{"text":"yes I want to"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-proactive-offer-tail-yes","data":{"text":"yes I want to"}}"""
         });
 
         Assert.Equal(3, followUpReplies.Count);
         using var followUpListenPayload = JsonDocument.Parse(followUpReplies[0].Text!);
-        Assert.Equal("proactive_pizza_fact", followUpListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("proactive_pizza_fact",
+            followUpListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         var session = _store.FindSessionByToken(token);
         Assert.NotNull(session);
@@ -3764,8 +4132,12 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, offerReplies.Count);
         using (var offerListenPayload = JsonDocument.Parse(offerReplies[0].Text!))
         {
-            Assert.Equal("proactive_offer_pizza_fact", offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-            Assert.Equal("shared/yes_no", offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+            Assert.Equal("proactive_offer_pizza_fact",
+                offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
+            Assert.Equal("shared/yes_no",
+                offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0]
+                    .GetString());
         }
 
         var session = _store.FindSessionByToken(token);
@@ -3785,7 +4157,9 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, followUpReplies.Count);
         using (var followUpListenPayload = JsonDocument.Parse(followUpReplies[0].Text!))
         {
-            Assert.Equal("proactive_offer_declined", followUpListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("proactive_offer_declined",
+                followUpListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
         }
 
         using (var followUpSkillPayload = JsonDocument.Parse(followUpReplies[2].Text!))
@@ -3827,12 +4201,14 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"CLIENT_ASR","transID":"trans-proactive-offer-no-tail-followup","data":{"text":"no I do not"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-proactive-offer-no-tail-followup","data":{"text":"no I do not"}}"""
         });
 
         Assert.Equal(3, followUpReplies.Count);
         using var followUpListenPayload = JsonDocument.Parse(followUpReplies[0].Text!);
-        Assert.Equal("proactive_offer_declined", followUpListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("proactive_offer_declined",
+            followUpListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         var session = _store.FindSessionByToken(token);
         Assert.NotNull(session);
@@ -3850,7 +4226,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"LISTEN","transID":"trans-greeting-trigger","data":{"rules":["launch","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-greeting-trigger","data":{"rules":["launch","globals/global_commands_launch"],"mode":"CLIENT_NLU"}}"""
         });
         Assert.Empty(listenSetupReplies);
 
@@ -3860,7 +4237,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"CONTEXT","transID":"trans-greeting-trigger","data":{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-greeting-trigger","data":{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}}"""
         });
         Assert.Empty(contextReplies);
 
@@ -3870,7 +4248,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"TRIGGER","transID":"trans-greeting-trigger","data":{"triggerSource":"PRESENCE","triggerData":{"looperID":"person-1"}}}"""
+            Text =
+                """{"type":"TRIGGER","transID":"trans-greeting-trigger","data":{"triggerSource":"PRESENCE","triggerData":{"looperID":"person-1"}}}"""
         });
 
         Assert.Equal(3, triggerReplies.Count);
@@ -3880,8 +4259,10 @@ public sealed class JiboWebSocketServiceTests
 
         using (var listenPayload = JsonDocument.Parse(triggerReplies[0].Text!))
         {
-            Assert.Equal("proactive_greeting", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("proactive_greeting",
+                listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         }
+
         using (var skillPayload = JsonDocument.Parse(triggerReplies[2].Text!))
         {
             var esml = skillPayload.RootElement
@@ -3918,7 +4299,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"LISTEN","transID":"trans-greeting-trigger-ignore","data":{"rules":["launch"],"mode":"CLIENT_NLU"}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-greeting-trigger-ignore","data":{"rules":["launch"],"mode":"CLIENT_NLU"}}"""
         });
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3927,7 +4309,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"CONTEXT","transID":"trans-greeting-trigger-ignore","data":{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-greeting-trigger-ignore","data":{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}}"""
         });
 
         var triggerReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3936,7 +4319,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"TRIGGER","transID":"trans-greeting-trigger-ignore","data":{"triggerSource":"SURPRISE","triggerData":{"looperID":"person-1"}}}"""
+            Text =
+                """{"type":"TRIGGER","transID":"trans-greeting-trigger-ignore","data":{"triggerSource":"SURPRISE","triggerData":{"looperID":"person-1"}}}"""
         });
 
         Assert.Equal(3, triggerReplies.Count);
@@ -3946,7 +4330,8 @@ public sealed class JiboWebSocketServiceTests
 
         using (var listenPayload = JsonDocument.Parse(triggerReplies[0].Text!))
         {
-            Assert.Equal("trigger_ignored", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("trigger_ignored",
+                listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         }
 
         var session = _store.FindSessionByToken(token);
@@ -3975,7 +4360,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"CONTEXT","transID":"trans-identity-close","data":{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"erin"}]}}}}"""
+            Text =
+                """{"type":"CONTEXT","transID":"trans-identity-close","data":{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"erin"}]}}}}"""
         });
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3990,7 +4376,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
         using (var listenPayload = JsonDocument.Parse(replies[0].Text!))
         {
-            Assert.Equal("memory_get_name", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("memory_get_name",
+                listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         }
 
         var session = _store.FindSessionByToken(token);
@@ -4017,7 +4404,9 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, startReplies.Count);
         using (var startListenPayload = JsonDocument.Parse(startReplies[0].Text!))
         {
-            Assert.Equal("personal_report_opt_in", startListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("personal_report_opt_in",
+                startListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
         }
 
         var session = _store.FindSessionByToken(token);
@@ -4037,7 +4426,9 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, optInReplies.Count);
         using (var optInListenPayload = JsonDocument.Parse(optInReplies[0].Text!))
         {
-            Assert.Equal("personal_report_request_name", optInListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("personal_report_request_name",
+                optInListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
         }
 
         session = _store.FindSessionByToken(token);
@@ -4057,7 +4448,9 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, identifyReplies.Count);
         using (var identifyListenPayload = JsonDocument.Parse(identifyReplies[0].Text!))
         {
-            Assert.Equal("personal_report_delivered", identifyListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("personal_report_delivered",
+                identifyListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
         }
 
         session = _store.FindSessionByToken(token);
@@ -4085,7 +4478,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, replies.Count);
         using (var listenPayload = JsonDocument.Parse(replies[0].Text!))
         {
-            Assert.Equal("emotion_command", listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            Assert.Equal("emotion_command",
+                listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         }
 
         var session = _store.FindSessionByToken(token);
@@ -4141,12 +4535,14 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-followup-audio-token",
-            Text = """{"type":"LISTEN","transID":"trans-second","data":{"text":"what time is it","rules":["follow-up"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-second","data":{"text":"what time is it","rules":["follow-up"]}}"""
         });
 
         Assert.Equal(4, followUpReplies.Count);
         using var payload = JsonDocument.Parse(followUpReplies[0].Text!);
-        Assert.Equal("askForTime", payload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("askForTime",
+            payload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         Assert.Equal("trans-second", payload.RootElement.GetProperty("transID").GetString());
 
         var session = _store.FindSessionByToken("hub-followup-audio-token");
@@ -4252,10 +4648,7 @@ public sealed class JiboWebSocketServiceTests
                 var expectedReply = step.ExpectedReplies[index];
                 Assert.Equal(expectedReply.Type, actualTypes[index]);
 
-                if (expectedReply.DelayMs.HasValue)
-                {
-                    Assert.Equal(expectedReply.DelayMs.Value, replies[index].DelayMs);
-                }
+                if (expectedReply.DelayMs.HasValue) Assert.Equal(expectedReply.DelayMs.Value, replies[index].DelayMs);
 
                 if (expectedReply.JsonSubset is not { ValueKind: JsonValueKind.Object } jsonSubset) continue;
 
@@ -4275,9 +4668,11 @@ public sealed class JiboWebSocketServiceTests
             case JsonValueKind.Object:
                 foreach (var property in expected.EnumerateObject())
                 {
-                    Assert.True(actual.TryGetProperty(property.Name, out var actualProperty), $"Expected property '{property.Name}' was not found.");
+                    Assert.True(actual.TryGetProperty(property.Name, out var actualProperty),
+                        $"Expected property '{property.Name}' was not found.");
                     AssertJsonContains(property.Value, actualProperty);
                 }
+
                 break;
             case JsonValueKind.Array:
             {
@@ -4285,9 +4680,7 @@ public sealed class JiboWebSocketServiceTests
                 var actualItems = actual.EnumerateArray().ToArray();
                 Assert.Equal(expectedItems.Length, actualItems.Length);
                 for (var index = 0; index < expectedItems.Length; index += 1)
-                {
                     AssertJsonContains(expectedItems[index], actualItems[index]);
-                }
                 break;
             }
             case JsonValueKind.String:

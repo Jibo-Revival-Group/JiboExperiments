@@ -14,20 +14,25 @@ public sealed class LegacyMimCatalogImporterTests
         {
             var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
-            Assert.Contains("Something's off with the connection to my sources. Maybe ask me again in a little while.", catalog.GenericFallbackReplies);
+            Assert.Contains("Something's off with the connection to my sources. Maybe ask me again in a little while.",
+                catalog.GenericFallbackReplies);
             Assert.Contains("I think only you can answer that question.", catalog.PersonalityReplies);
             Assert.Contains("Jibo. Just Jibo, no last name. Like Bono", catalog.PersonalityReplies);
             Assert.Contains("No, I'm one in one million.", catalog.PersonalityReplies);
             Assert.Contains("I know a lot, I think. But not as much as I will someday.", catalog.PersonalityReplies);
-            Assert.Contains("I don't think of it as a job, because it's more fun than a job. But I'm here to help you out, and have fun with you, and maybe get my head patted by you occasionally.", catalog.PersonalityReplies);
+            Assert.Contains(
+                "I don't think of it as a job, because it's more fun than a job. But I'm here to help you out, and have fun with you, and maybe get my head patted by you occasionally.",
+                catalog.PersonalityReplies);
             Assert.Contains(catalog.EmotionReplies, reply =>
                 reply.Condition.Contains("NEUTRAL", StringComparison.OrdinalIgnoreCase) &&
                 reply.Reply.Contains("All systems are go.", StringComparison.OrdinalIgnoreCase));
-            Assert.Contains("A Jibo is a robot. But I'm not just a machine, I have a heart. Well, not a real heart. But feelings. Well, not human feelings. You know what I mean.", catalog.PersonalityReplies);
+            Assert.Contains(
+                "A Jibo is a robot. But I'm not just a machine, I have a heart. Well, not a real heart. But feelings. Well, not human feelings. You know what I mean.",
+                catalog.PersonalityReplies);
         }
         finally
         {
-            Directory.Delete(rootDirectory, recursive: true);
+            Directory.Delete(rootDirectory, true);
         }
     }
 
@@ -70,7 +75,7 @@ public sealed class LegacyMimCatalogImporterTests
         }
         finally
         {
-            Directory.Delete(rootDirectory, recursive: true);
+            Directory.Delete(rootDirectory, true);
         }
     }
 
@@ -87,12 +92,14 @@ public sealed class LegacyMimCatalogImporterTests
 
         Assert.Contains("The only thing I consume is electricity.", catalog.PersonalityReplies);
         Assert.Contains("Unless I missed something, we're in my home as we speak.", catalog.PersonalityReplies);
-        Assert.Contains("For now just English. But someday I'd like to learn more. I like languages.", catalog.PersonalityReplies);
+        Assert.Contains("For now just English. But someday I'd like to learn more. I like languages.",
+            catalog.PersonalityReplies);
         Assert.Contains("I was put together in a factory piece by piece.", catalog.PersonalityReplies);
         Assert.Contains("I really like sunflowers.", catalog.PersonalityReplies);
         Assert.Contains("Ha. Of course I know R2D2. I mean, not personally.", catalog.PersonalityReplies);
         Assert.Contains("Yes! I like all things in space. They're so spacey.", catalog.PersonalityReplies);
-        Assert.Contains("Yes yes, I think kids are great. They're a little closer to my size.", catalog.PersonalityReplies);
+        Assert.Contains("Yes yes, I think kids are great. They're a little closer to my size.",
+            catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("I do things like this when I'm happy", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.PersonalityReplies, reply =>
@@ -129,7 +136,8 @@ public sealed class LegacyMimCatalogImporterTests
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
-        Assert.Contains("Well I definitely try to be the kindest robot I can be. So I hope so.", catalog.PersonalityReplies);
+        Assert.Contains("Well I definitely try to be the kindest robot I can be. So I hope so.",
+            catalog.PersonalityReplies);
         Assert.Contains("I don't think so, not intentionally.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("make people laugh", StringComparison.OrdinalIgnoreCase));
@@ -208,12 +216,18 @@ public sealed class LegacyMimCatalogImporterTests
 
         Assert.Contains("First let's check in with the meteorology department.", catalog.WeatherIntroReplies);
         Assert.Contains("First, the weather tomorrow.", catalog.WeatherTomorrowIntroReplies);
-        Assert.Contains("Today's high is ${skill.weather.today.highTemp}, and the low is ${skill.weather.today.lowTemp}.", catalog.WeatherTodayHighLowReplies);
-        Assert.Contains("Tomorrow's high will be ${skill.weather.tomorrow.highTemp} and the low will be ${skill.weather.tomorrow.lowTemp}.", catalog.WeatherTomorrowHighLowReplies);
+        Assert.Contains(
+            "Today's high is ${skill.weather.today.highTemp}, and the low is ${skill.weather.today.lowTemp}.",
+            catalog.WeatherTodayHighLowReplies);
+        Assert.Contains(
+            "Tomorrow's high will be ${skill.weather.tomorrow.highTemp} and the low will be ${skill.weather.tomorrow.lowTemp}.",
+            catalog.WeatherTomorrowHighLowReplies);
         Assert.Contains("Looks like our weather service is offline. Sorry.", catalog.WeatherServiceDownReplies);
         Assert.Contains("Sure ${speaker}. Here it is.", catalog.PersonalReportKickOffReplies);
-        Assert.Contains("And that's your report for the day. I hope you had as much fun as I did.", catalog.PersonalReportOutroReplies);
-        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.", catalog.CalendarNothingTodayReplies);
+        Assert.Contains("And that's your report for the day. I hope you had as much fun as I did.",
+            catalog.PersonalReportOutroReplies);
+        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.",
+            catalog.CalendarNothingTodayReplies);
         Assert.Contains("Sorry, commute information isn't available right now.", catalog.CommuteServiceDownReplies);
         Assert.Contains("Here's today's news, from the associated press.", catalog.NewsIntroReplies);
         Assert.Contains("And that's what's new in the news.", catalog.NewsOutroReplies);
@@ -245,7 +259,7 @@ public sealed class LegacyMimCatalogImporterTests
         }
         finally
         {
-            Directory.Delete(rootDirectory, recursive: true);
+            Directory.Delete(rootDirectory, true);
         }
     }
 
@@ -259,10 +273,12 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("I think only you can answer that question.", catalog.PersonalityReplies);
         Assert.Contains(catalog.EmotionReplies, reply =>
             reply.Condition.Contains("NEUTRAL", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains("Something's off with the connection to my sources. Maybe ask me again in a little while.", catalog.GenericFallbackReplies);
+        Assert.Contains("Something's off with the connection to my sources. Maybe ask me again in a little while.",
+            catalog.GenericFallbackReplies);
         Assert.Contains("For your weather.", catalog.WeatherIntroReplies);
         Assert.Contains("Today's high is {high}, and the low is {low}.", catalog.WeatherTodayHighLowReplies);
-        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.", catalog.CalendarNothingTodayReplies);
+        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.",
+            catalog.CalendarNothingTodayReplies);
     }
 
     private static string CreateSeedDirectory()

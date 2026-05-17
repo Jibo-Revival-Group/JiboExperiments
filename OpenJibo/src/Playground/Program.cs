@@ -62,8 +62,7 @@ while (!cts.IsCancellationRequested)
                     }
 
                     ms.Write(buffer, 0, result.Count);
-                }
-                while (!result.EndOfMessage);
+                } while (!result.EndOfMessage);
 
                 var json = Encoding.UTF8.GetString(ms.ToArray());
 

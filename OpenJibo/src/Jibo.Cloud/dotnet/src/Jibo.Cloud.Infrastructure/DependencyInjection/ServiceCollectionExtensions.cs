@@ -7,14 +7,15 @@ using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Cloud.Infrastructure.Telemetry;
 using Jibo.Cloud.Infrastructure.Weather;
 using Jibo.Runtime.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Jibo.Cloud.Infrastructure.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddOpenJiboCloud(this IServiceCollection services, IConfiguration? configuration = null)
+    public static IServiceCollection AddOpenJiboCloud(this IServiceCollection services,
+        IConfiguration? configuration = null)
     {
         var sttOptions = new BufferedAudioSttOptions();
         if (configuration is not null)
@@ -27,25 +28,16 @@ public static class ServiceCollectionExtensions
 
         var openWeatherOptions = new OpenWeatherOptions();
         if (configuration is not null)
-        {
             configuration.GetSection("OpenJibo:Weather:OpenWeather").Bind(openWeatherOptions);
-        }
 
         if (string.IsNullOrWhiteSpace(openWeatherOptions.ApiKey))
-        {
             openWeatherOptions.ApiKey = Environment.GetEnvironmentVariable("OPENWEATHER_API_KEY");
-        }
 
         var newsApiOptions = new NewsApiOptions();
-        if (configuration is not null)
-        {
-            configuration.GetSection("OpenJibo:News:NewsApi").Bind(newsApiOptions);
-        }
+        if (configuration is not null) configuration.GetSection("OpenJibo:News:NewsApi").Bind(newsApiOptions);
 
         if (string.IsNullOrWhiteSpace(newsApiOptions.ApiKey))
-        {
             newsApiOptions.ApiKey = Environment.GetEnvironmentVariable("NEWSAPI_KEY");
-        }
 
         services.AddSingleton(sttOptions);
         services.AddSingleton(openWeatherOptions);
@@ -53,27 +45,32 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IWeatherReportProvider, OpenWeatherReportProvider>();
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
         var statePersistencePath = configuration?["OpenJibo:State:PersistencePath"]
-            ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "cloud-state.json");
+                                   ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "cloud-state.json");
         var personalMemoryPersistencePath = configuration?["OpenJibo:PersonalMemory:PersistencePath"]
-            ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "personal-memory.json");
+                                            ?? Path.Combine(AppContext.BaseDirectory, "App_Data",
+                                                "personal-memory.json");
         var stateBackendKind = ParseBackendKind(configuration?["OpenJibo:State:Backend"]);
         var personalMemoryBackendKind = ParseBackendKind(configuration?["OpenJibo:PersonalMemory:Backend"]);
         var stateConnectionString = configuration?["OpenJibo:State:ConnectionString"]
-            ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_STORAGE_CONNECTION_STRING")
-            ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_SQL_CONNECTION_STRING");
+                                    ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_STORAGE_CONNECTION_STRING")
+                                    ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_SQL_CONNECTION_STRING");
         var personalMemoryConnectionString = configuration?["OpenJibo:PersonalMemory:ConnectionString"]
-            ?? Environment.GetEnvironmentVariable("OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
-            ?? Environment.GetEnvironmentVariable("OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
+                                             ?? Environment.GetEnvironmentVariable(
+                                                 "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
+                                             ?? Environment.GetEnvironmentVariable(
+                                                 "OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
         services.AddSingleton<IPersistenceSnapshotStoreFactory, PersistenceSnapshotStoreFactory>();
         services.AddSingleton<ICloudStateStore>(provider =>
         {
             var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
-            return new InMemoryCloudStateStore(snapshotFactory.Create(statePersistencePath, stateBackendKind, "cloud-state", stateConnectionString));
+            return new InMemoryCloudStateStore(snapshotFactory.Create(statePersistencePath, stateBackendKind,
+                "cloud-state", stateConnectionString));
         });
         services.AddSingleton<IPersonalMemoryStore>(provider =>
         {
             var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
-            return new InMemoryPersonalMemoryStore(snapshotFactory.Create(personalMemoryPersistencePath, personalMemoryBackendKind, "personal-memory", personalMemoryConnectionString));
+            return new InMemoryPersonalMemoryStore(snapshotFactory.Create(personalMemoryPersistencePath,
+                personalMemoryBackendKind, "personal-memory", personalMemoryConnectionString));
         });
         services.AddSingleton<IJiboExperienceContentRepository, InMemoryJiboExperienceContentRepository>();
         services.AddSingleton<JiboExperienceContentCache>();
@@ -98,7 +95,7 @@ public static class ServiceCollectionExtensions
 
     private static PersistenceBackendKind ParseBackendKind(string? value)
     {
-        return Enum.TryParse<PersistenceBackendKind>(value, ignoreCase: true, out var backendKind)
+        return Enum.TryParse<PersistenceBackendKind>(value, true, out var backendKind)
             ? backendKind
             : PersistenceBackendKind.File;
     }

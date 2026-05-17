@@ -19,12 +19,21 @@ public interface ICloudStateStore
     IReadOnlyList<PersonRecord> GetPeople();
     IReadOnlyList<UpdateManifest> ListUpdates(string? subsystem = null, string? filter = null);
     UpdateManifest? GetUpdateFrom(string? subsystem, string? fromVersion, string? filter);
-    UpdateManifest CreateUpdate(string? fromVersion, string? toVersion, string? changes, string? shaHash, long? length, string? subsystem, string? filter, IDictionary<string, object?>? dependencies);
+
+    UpdateManifest CreateUpdate(string? fromVersion, string? toVersion, string? changes, string? shaHash, long? length,
+        string? subsystem, string? filter, IDictionary<string, object?>? dependencies);
+
     UpdateManifest RemoveUpdate(string? updateId);
-    IReadOnlyList<MediaRecord> ListMedia(IReadOnlyList<string>? loopIds = null, long? after = null, long? before = null);
+
+    IReadOnlyList<MediaRecord> ListMedia(IReadOnlyList<string>? loopIds = null, long? after = null,
+        long? before = null);
+
     IReadOnlyList<MediaRecord> GetMedia(IReadOnlyList<string> paths);
     IReadOnlyList<MediaRecord> RemoveMedia(IReadOnlyList<string> paths);
-    MediaRecord CreateMedia(string loopId, string path, string type, string reference, bool isEncrypted, IDictionary<string, object?>? meta);
+
+    MediaRecord CreateMedia(string loopId, string path, string type, string reference, bool isEncrypted,
+        IDictionary<string, object?>? meta);
+
     IReadOnlyList<BackupRecord> GetBackups();
     bool ShouldCreateSymmetricKey(string loopId);
     string GetOrCreateSymmetricKey(string loopId);

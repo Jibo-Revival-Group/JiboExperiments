@@ -1,5 +1,4 @@
 using System.Net;
-using System.Linq;
 using System.Text;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Infrastructure.News;
@@ -93,7 +92,8 @@ public sealed class ProviderCachingTests
             },
             NullLogger<OpenWeatherReportProvider>.Instance);
 
-        var report = await provider.GetReportAsync(new WeatherReportRequest("Lone Jack,US", null, null, false, false, 0));
+        var report =
+            await provider.GetReportAsync(new WeatherReportRequest("Lone Jack,US", null, null, false, false, 0));
 
         Assert.NotNull(report);
         Assert.Equal(76, report!.Temperature);
@@ -202,9 +202,7 @@ public sealed class ProviderCachingTests
         {
             if (!message.Headers.TryGetValues("User-Agent", out var userAgents) ||
                 !userAgents.Any())
-            {
                 missingUserAgentRequestCount += 1;
-            }
 
             var path = message.RequestUri?.AbsolutePath ?? string.Empty;
             return path switch
@@ -224,7 +222,7 @@ public sealed class ProviderCachingTests
             },
             NullLogger<NewsApiBriefingProvider>.Instance);
 
-        var request = new NewsBriefingRequest(["sports"], 3);
+        var request = new NewsBriefingRequest(["sports"]);
         var first = await provider.GetBriefingAsync(request);
         var second = await provider.GetBriefingAsync(request);
 
@@ -241,18 +239,12 @@ public sealed class ProviderCachingTests
         {
             var path = message.RequestUri?.AbsolutePath ?? string.Empty;
             if (!string.Equals(path, "/v2/top-headlines", StringComparison.OrdinalIgnoreCase))
-            {
                 return new HttpResponseMessage(HttpStatusCode.NotFound);
-            }
 
             var query = message.RequestUri?.Query ?? string.Empty;
-            if (query.Contains("category=sports", StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonResponse("""{"status":"ok","articles":[]}""");
-            }
-
-            return JsonResponse(
-                """{"status":"ok","articles":[{"title":"General robotics update","description":"Top story","source":{"name":"AP News"},"url":"https://example.com/general"}]}""");
+            return JsonResponse(query.Contains("category=sports", StringComparison.OrdinalIgnoreCase)
+                ? """{"status":"ok","articles":[]}"""
+                : """{"status":"ok","articles":[{"title":"General robotics update","description":"Top story","source":{"name":"AP News"},"url":"https://example.com/general"}]}""");
         });
         var provider = new NewsApiBriefingProvider(
             new HttpClient(handler),
@@ -264,7 +256,7 @@ public sealed class ProviderCachingTests
             },
             NullLogger<NewsApiBriefingProvider>.Instance);
 
-        var result = await provider.GetBriefingAsync(new NewsBriefingRequest(["sports"], 3));
+        var result = await provider.GetBriefingAsync(new NewsBriefingRequest(["sports"]));
 
         Assert.NotNull(result);
         Assert.Single(result!.Headlines);
@@ -297,7 +289,7 @@ public sealed class ProviderCachingTests
             },
             NullLogger<NewsApiBriefingProvider>.Instance);
 
-        var result = await provider.GetBriefingAsync(new NewsBriefingRequest([], 3));
+        var result = await provider.GetBriefingAsync(new NewsBriefingRequest([]));
 
         Assert.NotNull(result);
         Assert.Single(result!.Headlines);
@@ -313,13 +305,10 @@ public sealed class ProviderCachingTests
         {
             var path = message.RequestUri?.AbsolutePath ?? string.Empty;
             if (!string.Equals(path, "/v2/top-headlines", StringComparison.OrdinalIgnoreCase))
-            {
                 return new HttpResponseMessage(HttpStatusCode.NotFound);
-            }
 
             var query = message.RequestUri?.Query ?? string.Empty;
             if (query.Contains("category=sports", StringComparison.OrdinalIgnoreCase))
-            {
                 return new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
                     Content = new StringContent(
@@ -327,7 +316,6 @@ public sealed class ProviderCachingTests
                         Encoding.UTF8,
                         "application/json")
                 };
-            }
 
             return JsonResponse(
                 """{"status":"ok","articles":[{"title":"General robotics update","description":"Top story","source":{"name":"AP News"},"url":"https://example.com/general"}]}""");
@@ -342,7 +330,7 @@ public sealed class ProviderCachingTests
             },
             NullLogger<NewsApiBriefingProvider>.Instance);
 
-        var result = await provider.GetBriefingAsync(new NewsBriefingRequest(["sports"], 3));
+        var result = await provider.GetBriefingAsync(new NewsBriefingRequest(["sports"]));
 
         Assert.NotNull(result);
         Assert.Single(result!.Headlines);
@@ -358,7 +346,6 @@ public sealed class ProviderCachingTests
         {
             var path = message.RequestUri?.AbsolutePath ?? string.Empty;
             if (string.Equals(path, "/v2/top-headlines", StringComparison.OrdinalIgnoreCase))
-            {
                 return new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
                     Content = new StringContent(
@@ -366,10 +353,8 @@ public sealed class ProviderCachingTests
                         Encoding.UTF8,
                         "application/json")
                 };
-            }
 
             if (string.Equals(path, "/v2/everything", StringComparison.OrdinalIgnoreCase))
-            {
                 return new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
                     Content = new StringContent(
@@ -377,7 +362,6 @@ public sealed class ProviderCachingTests
                         Encoding.UTF8,
                         "application/json")
                 };
-            }
 
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         });
@@ -392,7 +376,7 @@ public sealed class ProviderCachingTests
             },
             NullLogger<NewsApiBriefingProvider>.Instance);
 
-        var result = await provider.GetBriefingAsync(new NewsBriefingRequest([], 3));
+        var result = await provider.GetBriefingAsync(new NewsBriefingRequest([]));
 
         Assert.NotNull(result);
         Assert.Empty(result!.Headlines);
@@ -414,14 +398,14 @@ public sealed class ProviderCachingTests
     private sealed class CountingHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)
         : HttpMessageHandler
     {
-        private readonly Dictionary<string, int> callsByPath = new(StringComparer.OrdinalIgnoreCase);
-        private readonly object gate = new();
+        private readonly Dictionary<string, int> _callsByPath = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Lock _gate = new();
 
         public int GetCallCount(string path)
         {
-            lock (gate)
+            lock (_gate)
             {
-                return callsByPath.TryGetValue(path, out var count) ? count : 0;
+                return _callsByPath.GetValueOrDefault(path, 0);
             }
         }
 
@@ -430,9 +414,9 @@ public sealed class ProviderCachingTests
             CancellationToken cancellationToken)
         {
             var path = request.RequestUri?.AbsolutePath ?? string.Empty;
-            lock (gate)
+            lock (_gate)
             {
-                callsByPath[path] = callsByPath.TryGetValue(path, out var count) ? count + 1 : 1;
+                _callsByPath[path] = _callsByPath.TryGetValue(path, out var count) ? count + 1 : 1;
             }
 
             return Task.FromResult(responseFactory(request));

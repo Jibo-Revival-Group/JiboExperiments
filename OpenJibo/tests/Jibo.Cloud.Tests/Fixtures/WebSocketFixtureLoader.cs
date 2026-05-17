@@ -28,23 +28,31 @@ internal static class WebSocketFixtureLoader
                     Kind = session.GetProperty("kind").GetString() ?? "neo-hub-listen",
                     Token = session.GetProperty("token").GetString(),
                     Text = stepElement.TryGetProperty("text", out var text) ? text.GetRawText() : null,
-                    Binary = stepElement.TryGetProperty("binary", out var binary) && binary.ValueKind == JsonValueKind.Array
+                    Binary = stepElement.TryGetProperty("binary", out var binary) &&
+                             binary.ValueKind == JsonValueKind.Array
                         ? binary.EnumerateArray().Select(item => (byte)item.GetInt32()).ToArray()
                         : null
                 },
-                ExpectedReplyTypes = [.. stepElement.GetProperty("expectedReplyTypes")
-                    .EnumerateArray()
-                    .Select(item => item.GetString() ?? string.Empty)
-                    .Where(item => !string.IsNullOrWhiteSpace(item))],
-                ExpectedReplies = stepElement.TryGetProperty("expectedReplies", out var expectedReplies) && expectedReplies.ValueKind == JsonValueKind.Array
-                    ? JsonSerializer.Deserialize<List<ExpectedWebSocketReply>>(expectedReplies.GetRawText(), SerializerOptions) ?? []
+                ExpectedReplyTypes =
+                [
+                    .. stepElement.GetProperty("expectedReplyTypes")
+                        .EnumerateArray()
+                        .Select(item => item.GetString() ?? string.Empty)
+                        .Where(item => !string.IsNullOrWhiteSpace(item))
+                ],
+                ExpectedReplies = stepElement.TryGetProperty("expectedReplies", out var expectedReplies) &&
+                                  expectedReplies.ValueKind == JsonValueKind.Array
+                    ? JsonSerializer.Deserialize<List<ExpectedWebSocketReply>>(expectedReplies.GetRawText(),
+                        SerializerOptions) ?? []
                     : []
             })
             .ToList();
 
         return new WebSocketFixture
         {
-            Name = root.TryGetProperty("name", out var name) ? name.GetString() ?? Path.GetFileNameWithoutExtension(relativePath) : Path.GetFileNameWithoutExtension(relativePath),
+            Name = root.TryGetProperty("name", out var name)
+                ? name.GetString() ?? Path.GetFileNameWithoutExtension(relativePath)
+                : Path.GetFileNameWithoutExtension(relativePath),
             Steps = steps
         };
     }

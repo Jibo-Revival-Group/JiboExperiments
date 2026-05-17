@@ -16,9 +16,7 @@ public sealed class SyntheticBufferedAudioSttStrategy : ISttStrategy
     {
         var transcriptHint = ReadTranscriptHint(turn);
         if (string.IsNullOrWhiteSpace(transcriptHint))
-        {
             throw new InvalidOperationException("Synthetic buffered audio STT requires an audio transcript hint.");
-        }
 
         return Task.FromResult(new SttResult
         {
@@ -36,10 +34,7 @@ public sealed class SyntheticBufferedAudioSttStrategy : ISttStrategy
 
     private static int ReadBufferedAudioBytes(TurnContext turn)
     {
-        if (!turn.Attributes.TryGetValue("bufferedAudioBytes", out var bufferedAudioBytes))
-        {
-            return 0;
-        }
+        if (!turn.Attributes.TryGetValue("bufferedAudioBytes", out var bufferedAudioBytes)) return 0;
 
         return bufferedAudioBytes switch
         {

@@ -1,5 +1,5 @@
-using Jibo.Cloud.Application.Abstractions;
 using System.Text.RegularExpressions;
+using Jibo.Cloud.Application.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -136,7 +136,11 @@ internal static class ChitchatStateMachine
         ("jealous", ["jealous", "envious", "covetous"]),
         ("lonely", ["lonely", "alone", "lonesome"]),
         ("proud", ["proud", "honored"]),
-        ("sad", ["sad", "upset", "unhappy", "depressed", "somber", "downcast", "gloomy", "miserable", "bummed", "heartbroken", "troubled"])
+        ("sad",
+        [
+            "sad", "upset", "unhappy", "depressed", "somber", "downcast", "gloomy", "miserable", "bummed",
+            "heartbroken", "troubled"
+        ])
     ];
 
     private static readonly string[] EmotionCommandReplies =
@@ -216,7 +220,8 @@ internal static class ChitchatStateMachine
             case "robot_identity":
                 return BuildScriptedResponseDecision(
                     "robot_identity",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "am a robot", "i'm either jibo", "i am just jibo"));
+                    SelectLegacyPersonalityReply(catalog, randomizer, "am a robot", "i'm either jibo",
+                        "i am just jibo"));
             case "robot_likes_being_jibo":
                 return BuildScriptedResponseDecision(
                     "robot_likes_being_jibo",
@@ -259,16 +264,12 @@ internal static class ChitchatStateMachine
                     SelectLegacyPersonalityReply(catalog, randomizer, "know a lot", "not as much as i will someday"));
             case "chat":
                 if (IsEmotionQuery(normalizedLoweredTranscript))
-                {
                     return BuildEmotionQueryDecision(
                         "emotion_query",
                         SelectEmotionQueryReply(catalog, randomizer, currentEmotion));
-                }
 
                 if (TryResolveEmotionCommand(normalizedLoweredTranscript, out var emotion))
-                {
                     return BuildEmotionCommandDecision(randomizer, emotion!);
-                }
 
                 return BuildErrorResponseDecision(
                     "chat",
@@ -293,7 +294,7 @@ internal static class ChitchatStateMachine
             replyText,
             ContextUpdates: BuildContextUpdates(
                 ScriptedResponseRoute,
-                emotion: null));
+                null));
     }
 
     private static JiboInteractionDecision BuildEmotionQueryDecision(string intentName, string replyText)
@@ -303,7 +304,7 @@ internal static class ChitchatStateMachine
             replyText,
             ContextUpdates: BuildContextUpdates(
                 EmotionQueryRoute,
-                emotion: null));
+                null));
     }
 
     private static JiboInteractionDecision BuildEmotionCommandDecision(IJiboRandomizer randomizer, string emotion)
@@ -323,18 +324,20 @@ internal static class ChitchatStateMachine
             "chitchat-skill",
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
-                ["esml"] = $"<speak><es cat='{esmlEmotion}' filter='!ssa-only, !sfx-only' endNeutral='true'>{responseSuffix}</es></speak>",
+                ["esml"] =
+                    $"<speak><es cat='{esmlEmotion}' filter='!ssa-only, !sfx-only' endNeutral='true'>{responseSuffix}</es></speak>",
                 ["mim_id"] = "runtime-chat",
                 ["mim_type"] = "announcement",
                 ["prompt_id"] = "RUNTIME_EMOTION_COMMAND",
                 ["prompt_sub_category"] = "AN"
             },
-            ContextUpdates: BuildContextUpdates(
+            BuildContextUpdates(
                 EmotionCommandRoute,
                 emotion));
     }
 
-    private static JiboInteractionDecision BuildErrorResponseDecision(string intentName, string replyText, string transcript)
+    private static JiboInteractionDecision BuildErrorResponseDecision(string intentName, string replyText,
+        string transcript)
     {
         var normalizedTranscript = string.IsNullOrWhiteSpace(transcript)
             ? string.Empty
@@ -344,8 +347,8 @@ internal static class ChitchatStateMachine
             replyText,
             ContextUpdates: BuildContextUpdates(
                 ErrorResponseRoute,
-                emotion: null,
-                rawTranscript: normalizedTranscript));
+                null,
+                normalizedTranscript));
     }
 
     private static IDictionary<string, object?> BuildContextUpdates(
@@ -360,7 +363,7 @@ internal static class ChitchatStateMachine
             [EmotionMetadataKey] = emotion ?? string.Empty,
             ["chitchatLastState"] = IntentSplitState,
             ["chitchatProcessState"] = ProcessQueryState,
-                ["chitchatRawTranscript"] = rawTranscript ?? string.Empty
+            ["chitchatRawTranscript"] = rawTranscript ?? string.Empty
         };
     }
 
@@ -369,19 +372,12 @@ internal static class ChitchatStateMachine
         IJiboRandomizer randomizer,
         string? currentEmotion)
     {
-        if (catalog.EmotionReplies.Count == 0)
-        {
-            return randomizer.Choose(catalog.HowAreYouReplies);
-        }
+        if (catalog.EmotionReplies.Count == 0) return randomizer.Choose(catalog.HowAreYouReplies);
 
         var emotionVariants = ResolveEmotionVariants(currentEmotion);
         foreach (var reply in catalog.EmotionReplies)
-        {
             if (ConditionMatches(reply.Condition, emotionVariants))
-            {
                 return reply.Reply;
-            }
-        }
 
         return randomizer.Choose(catalog.HowAreYouReplies);
     }
@@ -389,19 +385,13 @@ internal static class ChitchatStateMachine
     private static bool ConditionMatches(string? condition, IReadOnlyList<string> emotionVariants)
     {
         var normalizedCondition = NormalizeCondition(condition);
-        if (string.IsNullOrWhiteSpace(normalizedCondition))
-        {
-            return false;
-        }
+        if (string.IsNullOrWhiteSpace(normalizedCondition)) return false;
 
-        var clauses = normalizedCondition.Split(new[] { "||" }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var clauses = normalizedCondition.Split(new[] { "||" },
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         foreach (var clause in clauses)
-        {
             if (MatchesConditionClause(clause, emotionVariants))
-            {
                 return true;
-            }
-        }
 
         return false;
     }
@@ -410,16 +400,11 @@ internal static class ChitchatStateMachine
     {
         var normalizedClause = NormalizeCondition(clause).ToUpperInvariant();
         if (normalizedClause == "!JIBO.EMOTION")
-        {
             return emotionVariants.Contains(string.Empty, StringComparer.OrdinalIgnoreCase) ||
                    emotionVariants.Contains("NEUTRAL", StringComparer.OrdinalIgnoreCase);
-        }
 
         var equalityIndex = normalizedClause.IndexOf("==", StringComparison.Ordinal);
-        if (equalityIndex < 0)
-        {
-            return false;
-        }
+        if (equalityIndex < 0) return false;
 
         var rightSide = normalizedClause[(equalityIndex + 2)..].Trim();
         var candidate = rightSide.Trim('"', '\'');
@@ -428,10 +413,7 @@ internal static class ChitchatStateMachine
 
     private static IReadOnlyList<string> ResolveEmotionVariants(string? currentEmotion)
     {
-        if (string.IsNullOrWhiteSpace(currentEmotion))
-        {
-            return ["", "NEUTRAL"];
-        }
+        if (string.IsNullOrWhiteSpace(currentEmotion)) return ["", "NEUTRAL"];
 
         var normalizedEmotion = NormalizeCondition(currentEmotion).Trim('"', '\'').ToUpperInvariant();
         return normalizedEmotion switch
@@ -452,17 +434,11 @@ internal static class ChitchatStateMachine
     {
         foreach (var snippet in preferredSnippets)
         {
-            if (string.IsNullOrWhiteSpace(snippet))
-            {
-                continue;
-            }
+            if (string.IsNullOrWhiteSpace(snippet)) continue;
 
             var match = catalog.PersonalityReplies.FirstOrDefault(reply =>
                 reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match))
-            {
-                return match;
-            }
+            if (!string.IsNullOrWhiteSpace(match)) return match;
         }
 
         return randomizer.Choose(catalog.PersonalityReplies);
@@ -470,25 +446,16 @@ internal static class ChitchatStateMachine
 
     private static string NormalizeCondition(string? condition)
     {
-        if (string.IsNullOrWhiteSpace(condition))
-        {
-            return string.Empty;
-        }
-
-        return PhraseWhitespacePattern.Replace(condition.Trim(), " ");
+        return string.IsNullOrWhiteSpace(condition)
+            ? string.Empty
+            : PhraseWhitespacePattern.Replace(condition.Trim(), " ");
     }
 
     private static bool IsEmotionQuery(string loweredTranscript)
     {
-        if (ContainsAnyPhrase(loweredTranscript, EmotionQueryPhrases))
-        {
-            return true;
-        }
+        if (ContainsAnyPhrase(loweredTranscript, EmotionQueryPhrases)) return true;
 
-        if (!TryResolveEmotionFromText(loweredTranscript, out _))
-        {
-            return false;
-        }
+        if (!TryResolveEmotionFromText(loweredTranscript, out _)) return false;
 
         return StartsWithAnyPhrase(loweredTranscript, EmotionQueryPrefixes) ||
                StartsWithAnyPhrase(loweredTranscript, EmotionAssertionPrefixes);
@@ -500,27 +467,20 @@ internal static class ChitchatStateMachine
 
         foreach (var mapping in DirectEmotionCommandPhrases)
         {
-            if (!ContainsPhrase(loweredTranscript, mapping.Phrase))
-            {
-                continue;
-            }
+            if (!ContainsPhrase(loweredTranscript, mapping.Phrase)) continue;
 
             emotion = mapping.Emotion;
             return true;
         }
 
         var isNegativeCommand = StartsWithAnyPhrase(loweredTranscript, EmotionCommandNegativePrefixes);
-        var isPositiveCommand = !isNegativeCommand && StartsWithAnyPhrase(loweredTranscript, EmotionCommandPositivePrefixes);
-        if (!isNegativeCommand && !isPositiveCommand)
-        {
-            return false;
-        }
+        var isPositiveCommand =
+            !isNegativeCommand && StartsWithAnyPhrase(loweredTranscript, EmotionCommandPositivePrefixes);
+        if (!isNegativeCommand && !isPositiveCommand) return false;
 
         if (!TryResolveEmotionFromText(loweredTranscript, out var canonicalEmotion) ||
             string.IsNullOrWhiteSpace(canonicalEmotion))
-        {
             return false;
-        }
 
         emotion = isNegativeCommand
             ? "calm"
@@ -544,10 +504,7 @@ internal static class ChitchatStateMachine
         emotion = null;
         foreach (var mapping in EmotionSynonymMappings)
         {
-            if (!ContainsPhrase(loweredTranscript, mapping.Phrase))
-            {
-                continue;
-            }
+            if (!ContainsPhrase(loweredTranscript, mapping.Phrase)) continue;
 
             emotion = mapping.Emotion;
             return true;
@@ -559,12 +516,8 @@ internal static class ChitchatStateMachine
     private static bool ContainsAnyPhrase(string loweredTranscript, IEnumerable<string> phrases)
     {
         foreach (var phrase in phrases)
-        {
             if (ContainsPhrase(loweredTranscript, phrase))
-            {
                 return true;
-            }
-        }
 
         return false;
     }
@@ -574,16 +527,11 @@ internal static class ChitchatStateMachine
         foreach (var phrase in phrases)
         {
             var normalizedPhrase = NormalizeForPhraseMatching(phrase);
-            if (string.IsNullOrWhiteSpace(normalizedPhrase))
-            {
-                continue;
-            }
+            if (string.IsNullOrWhiteSpace(normalizedPhrase)) continue;
 
             if (string.Equals(loweredTranscript, normalizedPhrase, StringComparison.Ordinal) ||
                 loweredTranscript.StartsWith($"{normalizedPhrase} ", StringComparison.Ordinal))
-            {
                 return true;
-            }
         }
 
         return false;
@@ -594,9 +542,7 @@ internal static class ChitchatStateMachine
         var normalizedPhrase = NormalizeForPhraseMatching(phrase);
         if (string.IsNullOrWhiteSpace(normalizedPhrase) ||
             string.IsNullOrWhiteSpace(loweredTranscript))
-        {
             return false;
-        }
 
         return string.Equals(loweredTranscript, normalizedPhrase, StringComparison.Ordinal) ||
                loweredTranscript.StartsWith($"{normalizedPhrase} ", StringComparison.Ordinal) ||
@@ -606,10 +552,7 @@ internal static class ChitchatStateMachine
 
     private static string NormalizeForPhraseMatching(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return string.Empty;
-        }
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
 
         var lowered = value.ToLowerInvariant();
         var withoutPunctuation = PhrasePunctuationPattern.Replace(lowered, " ");
@@ -622,18 +565,14 @@ internal static class ChitchatStateMachine
         var mappings = new List<(string Phrase, string Emotion)>();
 
         foreach (var emotionMapping in PegasusEmotionSynonyms)
+        foreach (var synonym in emotionMapping.Synonyms)
         {
-            foreach (var synonym in emotionMapping.Synonyms)
-            {
-                var normalizedSynonym = NormalizeForPhraseMatching(synonym);
-                if (string.IsNullOrWhiteSpace(normalizedSynonym) ||
-                    !seen.Add(normalizedSynonym))
-                {
-                    continue;
-                }
+            var normalizedSynonym = NormalizeForPhraseMatching(synonym);
+            if (string.IsNullOrWhiteSpace(normalizedSynonym) ||
+                !seen.Add(normalizedSynonym))
+                continue;
 
-                mappings.Add((normalizedSynonym, emotionMapping.Emotion));
-            }
+            mappings.Add((normalizedSynonym, emotionMapping.Emotion));
         }
 
         mappings.Sort(static (left, right) => right.Phrase.Length.CompareTo(left.Phrase.Length));

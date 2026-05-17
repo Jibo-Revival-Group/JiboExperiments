@@ -10,7 +10,8 @@ public sealed class PersistenceStoreTests
     {
         var factory = new PersistenceSnapshotStoreFactory();
 
-        var store = factory.Create(Path.Combine(Path.GetTempPath(), $"factory-{Guid.NewGuid():N}.json"), PersistenceBackendKind.File, "sample-snapshot");
+        var store = factory.Create(Path.Combine(Path.GetTempPath(), $"factory-{Guid.NewGuid():N}.json"),
+            PersistenceBackendKind.File, "sample-snapshot");
 
         Assert.Equal("JsonFileSnapshotStore", store.GetType().Name);
     }
@@ -21,7 +22,8 @@ public sealed class PersistenceStoreTests
         var factory = new PersistenceSnapshotStoreFactory();
 
         Assert.Throws<InvalidOperationException>(() =>
-            factory.Create(Path.Combine(Path.GetTempPath(), $"factory-{Guid.NewGuid():N}.json"), PersistenceBackendKind.AzureSql, "sample-snapshot"));
+            factory.Create(Path.Combine(Path.GetTempPath(), $"factory-{Guid.NewGuid():N}.json"),
+                PersistenceBackendKind.AzureSql, "sample-snapshot"));
     }
 
     [Fact]
@@ -86,10 +88,7 @@ public sealed class PersistenceStoreTests
         }
         finally
         {
-            if (File.Exists(persistencePath))
-            {
-                File.Delete(persistencePath);
-            }
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
         }
     }
 
@@ -102,7 +101,8 @@ public sealed class PersistenceStoreTests
         {
             var firstStore = new InMemoryCloudStateStore(persistencePath);
             var update = firstStore.CreateUpdate("1.0.0", "1.0.1", "Bug fix", null, 42, "robot", null, null);
-            var media = firstStore.CreateMedia("openjibo-default-loop", "persisted-photo", "image", "photo-ref", false, new Dictionary<string, object?> { ["note"] = "roundtrip" });
+            var media = firstStore.CreateMedia("openjibo-default-loop", "persisted-photo", "image", "photo-ref", false,
+                new Dictionary<string, object?> { ["note"] = "roundtrip" });
             var sessionToken = firstStore.IssueRobotToken("robot-123");
             var device = firstStore.GetOrCreateDevice("robot-123", "3.2.1", "4.5.6");
             firstStore.SavePersistedState();
@@ -124,10 +124,7 @@ public sealed class PersistenceStoreTests
         }
         finally
         {
-            if (File.Exists(persistencePath))
-            {
-                File.Delete(persistencePath);
-            }
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
         }
     }
 
@@ -137,7 +134,7 @@ public sealed class PersistenceStoreTests
 
         public TSnapshot2? Load<TSnapshot2>() where TSnapshot2 : class
         {
-            return default;
+            return null;
         }
 
         public void Save<TSnapshot2>(TSnapshot2 snapshot) where TSnapshot2 : class

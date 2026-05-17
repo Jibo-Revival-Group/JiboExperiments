@@ -12,49 +12,42 @@ public sealed class OpenWeatherReportProvider(
     ILogger<OpenWeatherReportProvider> logger)
     : IWeatherReportProvider
 {
-    private readonly ConcurrentDictionary<string, CacheEntry<LocationPoint?>> geocodeCache = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, CacheEntry<WeatherReportSnapshot?>> weatherCache = new(StringComparer.OrdinalIgnoreCase);
+    private const int MaxForecastDayOffset = 5;
+
+    private readonly ConcurrentDictionary<string, CacheEntry<LocationPoint?>> _geocodeCache =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly ConcurrentDictionary<string, CacheEntry<WeatherReportSnapshot?>> _weatherCache =
+        new(StringComparer.OrdinalIgnoreCase);
 
     public async Task<WeatherReportSnapshot?> GetReportAsync(
         WeatherReportRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(options.ApiKey))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(options.ApiKey)) return null;
 
         string? weatherCacheKey = null;
         try
         {
             var location = await ResolveLocationAsync(request, cancellationToken);
-            if (location is null)
-            {
-                return null;
-            }
+            if (location is null) return null;
 
             var useCelsius = request.UseCelsius ?? options.UseCelsius;
             var forecastDayOffset = request.ForecastDayOffset ?? (request.IsTomorrow ? 1 : 0);
             weatherCacheKey = BuildWeatherCacheKey(location.Value, useCelsius, forecastDayOffset);
-            if (TryGetCachedValue(weatherCache, weatherCacheKey, out var cachedSnapshot))
-            {
-                return cachedSnapshot;
-            }
+            if (TryGetCachedValue(_weatherCache, weatherCacheKey, out var cachedSnapshot)) return cachedSnapshot;
 
-            WeatherReportSnapshot? snapshot;
             if (forecastDayOffset > MaxForecastDayOffset)
             {
-                SetCachedValue(weatherCache, weatherCacheKey, null, options.FailureCacheTtlSeconds);
+                SetCachedValue(_weatherCache, weatherCacheKey, null, options.FailureCacheTtlSeconds);
                 return null;
             }
 
-            snapshot = await GetOneCallWeatherAsync(location.Value, useCelsius, forecastDayOffset, cancellationToken);
-            if (snapshot is null)
-            {
-                snapshot = await GetLegacyWeatherAsync(location.Value, useCelsius, forecastDayOffset, cancellationToken);
-            }
+            var snapshot =
+                await GetOneCallWeatherAsync(location.Value, useCelsius, forecastDayOffset, cancellationToken) ??
+                await GetLegacyWeatherAsync(location.Value, useCelsius, forecastDayOffset, cancellationToken);
             SetCachedValue(
-                weatherCache,
+                _weatherCache,
                 weatherCacheKey,
                 snapshot,
                 snapshot is null
@@ -68,9 +61,7 @@ public sealed class OpenWeatherReportProvider(
         {
             logger.LogWarning(exception, "OpenWeather lookup failed.");
             if (!string.IsNullOrWhiteSpace(weatherCacheKey))
-            {
-                SetCachedValue(weatherCache, weatherCacheKey, null, options.FailureCacheTtlSeconds);
-            }
+                SetCachedValue(_weatherCache, weatherCacheKey, null, options.FailureCacheTtlSeconds);
             return null;
         }
     }
@@ -86,23 +77,15 @@ public sealed class OpenWeatherReportProvider(
         if (string.IsNullOrWhiteSpace(query))
         {
             if (request is { Latitude: not null, Longitude: not null })
-            {
                 return new LocationPoint(request.Latitude.Value, request.Longitude.Value, null);
-            }
 
             query = options.DefaultLocation;
         }
 
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(query)) return null;
 
         var geocodeCacheKey = NormalizeLocationQueryForCache(query);
-        if (TryGetCachedValue(geocodeCache, geocodeCacheKey, out var cachedLocation))
-        {
-            return cachedLocation;
-        }
+        if (TryGetCachedValue(_geocodeCache, geocodeCacheKey, out var cachedLocation)) return cachedLocation;
 
         var geocodeUri = BuildRequestUri(
             "/geo/1.0/direct",
@@ -112,7 +95,7 @@ public sealed class OpenWeatherReportProvider(
         using var response = await httpClient.GetAsync(geocodeUri, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            SetCachedValue(geocodeCache, geocodeCacheKey, null, options.FailureCacheTtlSeconds);
+            SetCachedValue(_geocodeCache, geocodeCacheKey, null, options.FailureCacheTtlSeconds);
             return null;
         }
 
@@ -121,7 +104,7 @@ public sealed class OpenWeatherReportProvider(
         if (document.RootElement.ValueKind != JsonValueKind.Array ||
             document.RootElement.GetArrayLength() == 0)
         {
-            SetCachedValue(geocodeCache, geocodeCacheKey, null, options.FailureCacheTtlSeconds);
+            SetCachedValue(_geocodeCache, geocodeCacheKey, null, options.FailureCacheTtlSeconds);
             return null;
         }
 
@@ -129,13 +112,13 @@ public sealed class OpenWeatherReportProvider(
         if (!TryReadDouble(location, "lat", out var latitude) ||
             !TryReadDouble(location, "lon", out var longitude))
         {
-            SetCachedValue(geocodeCache, geocodeCacheKey, null, options.FailureCacheTtlSeconds);
+            SetCachedValue(_geocodeCache, geocodeCacheKey, null, options.FailureCacheTtlSeconds);
             return null;
         }
 
         var displayName = BuildLocationDisplayName(location);
         var resolvedLocation = new LocationPoint(latitude, longitude, displayName);
-        SetCachedValue(geocodeCache, geocodeCacheKey, resolvedLocation, options.GeocodeCacheTtlSeconds);
+        SetCachedValue(_geocodeCache, geocodeCacheKey, resolvedLocation, options.GeocodeCacheTtlSeconds);
         return resolvedLocation;
     }
 
@@ -153,10 +136,7 @@ public sealed class OpenWeatherReportProvider(
             ("exclude", "minutely,hourly,alerts"),
             ("appid", options.ApiKey!));
         using var response = await httpClient.GetAsync(weatherUri, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            return null;
-        }
+        if (!response.IsSuccessStatusCode) return null;
 
         using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
@@ -165,32 +145,24 @@ public sealed class OpenWeatherReportProvider(
             !root.TryGetProperty("daily", out var daily) ||
             daily.ValueKind != JsonValueKind.Array ||
             daily.GetArrayLength() == 0)
-        {
             return null;
-        }
 
-        if (forecastDayOffset >= daily.GetArrayLength())
-        {
-            return null;
-        }
+        if (forecastDayOffset >= daily.GetArrayLength()) return null;
 
         var selectedDay = daily[forecastDayOffset];
-        if (!selectedDay.TryGetProperty("temp", out var selectedDayTemp))
-        {
-            return null;
-        }
+        if (!selectedDay.TryGetProperty("temp", out var selectedDayTemp)) return null;
 
         var locationName = location.DisplayName ?? options.DefaultLocation;
         var summary = TryReadWeatherSummary(current)
-            ?? ReadNonEmptyString(selectedDay, "summary")
-            ?? TryReadWeatherSummary(selectedDay);
+                      ?? ReadNonEmptyString(selectedDay, "summary")
+                      ?? TryReadWeatherSummary(selectedDay);
         var condition = TryReadWeatherCondition(current) ?? TryReadWeatherCondition(selectedDay);
         var temperature = forecastDayOffset <= 0
             ? TryReadInt(current, "temp")
             : TryReadInt(selectedDayTemp, "day")
-                ?? TryReadInt(selectedDayTemp, "night")
-                ?? TryReadInt(selectedDayTemp, "morn")
-                ?? TryReadInt(selectedDayTemp, "eve");
+              ?? TryReadInt(selectedDayTemp, "night")
+              ?? TryReadInt(selectedDayTemp, "morn")
+              ?? TryReadInt(selectedDayTemp, "eve");
         var high = TryReadInt(selectedDayTemp, "max");
         var low = TryReadInt(selectedDayTemp, "min");
         if (temperature is not null)
@@ -199,10 +171,7 @@ public sealed class OpenWeatherReportProvider(
             low = low is null ? temperature : Math.Min(low.Value, temperature.Value);
         }
 
-        if (temperature is null && high is null && low is null)
-        {
-            return null;
-        }
+        if (temperature is null && high is null && low is null) return null;
 
         var resolvedTemperature = temperature ?? high ?? low ?? 0;
         return new WeatherReportSnapshot(
@@ -221,15 +190,9 @@ public sealed class OpenWeatherReportProvider(
         int forecastDayOffset,
         CancellationToken cancellationToken)
     {
-        if (forecastDayOffset <= 0)
-        {
-            return await GetLegacyCurrentWeatherAsync(location, useCelsius, cancellationToken);
-        }
+        if (forecastDayOffset <= 0) return await GetLegacyCurrentWeatherAsync(location, useCelsius, cancellationToken);
 
-        if (forecastDayOffset > MaxForecastDayOffset)
-        {
-            return null;
-        }
+        if (forecastDayOffset > MaxForecastDayOffset) return null;
 
         return await GetForecastForDayOffsetAsync(location, useCelsius, forecastDayOffset, cancellationToken);
     }
@@ -246,18 +209,12 @@ public sealed class OpenWeatherReportProvider(
             ("units", useCelsius ? "metric" : "imperial"),
             ("appid", options.ApiKey!));
         using var response = await httpClient.GetAsync(weatherUri, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            return null;
-        }
+        if (!response.IsSuccessStatusCode) return null;
 
         using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var root = document.RootElement;
-        if (!root.TryGetProperty("main", out var main))
-        {
-            return null;
-        }
+        if (!root.TryGetProperty("main", out var main)) return null;
 
         var locationName = ReadNonEmptyString(root, "name") ?? location.DisplayName ?? options.DefaultLocation;
         var summary = TryReadWeatherSummary(root);
@@ -271,10 +228,7 @@ public sealed class OpenWeatherReportProvider(
             low = low is null ? temperature : Math.Min(low.Value, temperature.Value);
         }
 
-        if (temperature is null && high is null && low is null)
-        {
-            return null;
-        }
+        if (temperature is null && high is null && low is null) return null;
 
         var resolvedTemperature = temperature ?? high ?? low ?? 0;
         return new WeatherReportSnapshot(
@@ -299,18 +253,12 @@ public sealed class OpenWeatherReportProvider(
             ("units", useCelsius ? "metric" : "imperial"),
             ("appid", options.ApiKey!));
         using var response = await httpClient.GetAsync(forecastUri, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            return null;
-        }
+        if (!response.IsSuccessStatusCode) return null;
 
         using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var root = document.RootElement;
-        if (!root.TryGetProperty("list", out var list) || list.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
+        if (!root.TryGetProperty("list", out var list) || list.ValueKind != JsonValueKind.Array) return null;
 
         var offset = TryReadForecastOffset(root);
         var targetDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(offset).DateTime);
@@ -318,35 +266,21 @@ public sealed class OpenWeatherReportProvider(
         var lows = new List<int>();
         foreach (var item in list.EnumerateArray())
         {
-            if (!TryReadLong(item, "dt", out var unixSeconds))
-            {
-                continue;
-            }
+            if (!TryReadLong(item, "dt", out var unixSeconds)) continue;
 
             var localTimestamp = DateTimeOffset.FromUnixTimeSeconds(unixSeconds).ToOffset(offset);
             if (DateOnly.FromDateTime(localTimestamp.DateTime) != targetDate ||
                 !item.TryGetProperty("main", out var main))
-            {
                 continue;
-            }
 
             var high = TryReadInt(main, "temp_max");
-            if (high is not null)
-            {
-                highs.Add(high.Value);
-            }
+            if (high is not null) highs.Add(high.Value);
 
             var low = TryReadInt(main, "temp_min");
-            if (low is not null)
-            {
-                lows.Add(low.Value);
-            }
+            if (low is not null) lows.Add(low.Value);
         }
 
-        if (highs.Count == 0 && lows.Count == 0)
-        {
-            return null;
-        }
+        if (highs.Count == 0 && lows.Count == 0) return null;
 
         return (highs.Count == 0 ? null : highs.Max(), lows.Count == 0 ? null : lows.Min());
     }
@@ -364,39 +298,25 @@ public sealed class OpenWeatherReportProvider(
             ("units", useCelsius ? "metric" : "imperial"),
             ("appid", options.ApiKey!));
         using var response = await httpClient.GetAsync(forecastUri, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            return null;
-        }
+        if (!response.IsSuccessStatusCode) return null;
 
         using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var root = document.RootElement;
-        if (!root.TryGetProperty("list", out var list) || list.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
+        if (!root.TryGetProperty("list", out var list) || list.ValueKind != JsonValueKind.Array) return null;
 
         var offset = TryReadForecastOffset(root);
-        var targetDate = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(offset).DateTime.AddDays(forecastDayOffset));
+        var targetDate =
+            DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(offset).DateTime.AddDays(forecastDayOffset));
         var entries = new List<ForecastEntry>();
         foreach (var item in list.EnumerateArray())
         {
-            if (!TryReadLong(item, "dt", out var unixSeconds))
-            {
-                continue;
-            }
+            if (!TryReadLong(item, "dt", out var unixSeconds)) continue;
 
             var localTimestamp = DateTimeOffset.FromUnixTimeSeconds(unixSeconds).ToOffset(offset);
-            if (DateOnly.FromDateTime(localTimestamp.DateTime) != targetDate)
-            {
-                continue;
-            }
+            if (DateOnly.FromDateTime(localTimestamp.DateTime) != targetDate) continue;
 
-            if (!item.TryGetProperty("main", out var main))
-            {
-                continue;
-            }
+            if (!item.TryGetProperty("main", out var main)) continue;
 
             entries.Add(new ForecastEntry(
                 localTimestamp,
@@ -407,10 +327,7 @@ public sealed class OpenWeatherReportProvider(
                 TryReadWeatherCondition(item)));
         }
 
-        if (entries.Count == 0)
-        {
-            return null;
-        }
+        if (entries.Count == 0) return null;
 
         var selectedEntry = entries
             .OrderBy(entry => Math.Abs((entry.LocalTime.TimeOfDay - TimeSpan.FromHours(12)).TotalMinutes))
@@ -451,16 +368,10 @@ public sealed class OpenWeatherReportProvider(
 
     private static TimeSpan TryReadForecastOffset(JsonElement root)
     {
-        if (!root.TryGetProperty("city", out var city))
-        {
-            return TimeSpan.Zero;
-        }
+        if (!root.TryGetProperty("city", out var city)) return TimeSpan.Zero;
 
         var timezoneSeconds = TryReadInt(city, "timezone");
-        if (timezoneSeconds is null)
-        {
-            return TimeSpan.Zero;
-        }
+        if (timezoneSeconds is null) return TimeSpan.Zero;
 
         var seconds = Math.Clamp(timezoneSeconds.Value, -50400, 50400);
         return TimeSpan.FromSeconds(seconds);
@@ -468,10 +379,7 @@ public sealed class OpenWeatherReportProvider(
 
     private static string? ReadForecastLocationName(JsonElement root)
     {
-        if (!root.TryGetProperty("city", out var city))
-        {
-            return null;
-        }
+        if (!root.TryGetProperty("city", out var city)) return null;
 
         var name = ReadNonEmptyString(city, "name");
         var country = ReadNonEmptyString(city, "country");
@@ -486,14 +394,9 @@ public sealed class OpenWeatherReportProvider(
         if (!string.IsNullOrWhiteSpace(name) &&
             !string.IsNullOrWhiteSpace(state) &&
             !string.IsNullOrWhiteSpace(country))
-        {
             return $"{name}, {state}, {country}";
-        }
 
-        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(country))
-        {
-            return $"{name}, {country}";
-        }
+        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(country)) return $"{name}, {country}";
 
         return name;
     }
@@ -506,10 +409,7 @@ public sealed class OpenWeatherReportProvider(
     private static string? TryReadWeatherCondition(JsonElement root)
     {
         var main = TryReadWeatherProperty(root, "main");
-        if (string.IsNullOrWhiteSpace(main))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(main)) return null;
 
         var normalized = main.Trim().ToLowerInvariant();
         return normalized switch
@@ -528,9 +428,7 @@ public sealed class OpenWeatherReportProvider(
         if (!root.TryGetProperty("weather", out var weather) ||
             weather.ValueKind != JsonValueKind.Array ||
             weather.GetArrayLength() == 0)
-        {
             return null;
-        }
 
         var first = weather[0];
         return ReadNonEmptyString(first, key);
@@ -557,15 +455,10 @@ public sealed class OpenWeatherReportProvider(
 
     private static int? TryReadInt(JsonElement source, string key)
     {
-        if (!source.TryGetProperty(key, out var element))
-        {
-            return null;
-        }
+        if (!source.TryGetProperty(key, out var element)) return null;
 
         if (element.ValueKind == JsonValueKind.Number && element.TryGetDouble(out var numeric))
-        {
             return (int)Math.Round(numeric, MidpointRounding.AwayFromZero);
-        }
 
         return null;
     }
@@ -588,10 +481,7 @@ public sealed class OpenWeatherReportProvider(
         out T value)
     {
         value = default!;
-        if (!cache.TryGetValue(key, out var entry))
-        {
-            return false;
-        }
+        if (!cache.TryGetValue(key, out var entry)) return false;
 
         if (entry.ExpiresUtc > DateTimeOffset.UtcNow)
         {
@@ -625,6 +515,4 @@ public sealed class OpenWeatherReportProvider(
         int? LowTemperature,
         string? Summary,
         string? Condition);
-
-    private const int MaxForecastDayOffset = 5;
 }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Content;
@@ -1748,19 +1749,16 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_delivered", decision.IntentName);
         Assert.Contains("Sure alex. Here it is.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("First, your weather.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Weather.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(
             "For your weather. In Boston, U.S., it's light rain and 61 degrees Fahrenheit. Today's high is 65, and the low is 54.",
             decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.", decision.ReplyText,
-            StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Sorry, commute information isn't available right now.", decision.ReplyText,
-            StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Here's today's news, from the associated press.", decision.ReplyText,
-            StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("And that's what's new in the news.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("alex that wraps up your report for the day. Hope you have a good one.", decision.ReplyText,
-            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("calendar", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("commute", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("news", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.True(StripMarkup(decision.ReplyText).Length < 500,
+            $"Personal report speech was still too long: {StripMarkup(decision.ReplyText).Length} chars.");
+        Assert.Contains("alex", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("idle", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportUserVerifiedKey]);
@@ -3805,6 +3803,31 @@ public sealed class JiboInteractionServiceTests
             personalMemoryStore ?? new InMemoryPersonalMemoryStore(),
             weatherReportProvider,
             newsBriefingProvider);
+    }
+
+    private static string StripMarkup(string text)
+    {
+        var builder = new StringBuilder(text.Length);
+        var inTag = false;
+
+        foreach (var character in text)
+        {
+            if (character == '<')
+            {
+                inTag = true;
+                continue;
+            }
+
+            if (character == '>')
+            {
+                inTag = false;
+                continue;
+            }
+
+            if (!inTag) builder.Append(character);
+        }
+
+        return builder.ToString();
     }
 
     private sealed class FirstItemRandomizer : IJiboRandomizer

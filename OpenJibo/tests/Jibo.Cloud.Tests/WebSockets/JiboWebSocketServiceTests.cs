@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
@@ -1884,6 +1885,41 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_YesNoPromptFromAsrHints_StripsPunctuationMashupAndMapsYesIntent()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-yesno-punctuation-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-yesno-punctuation","data":{"rules":["surprises-ota/want_to_download_now"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-yesno-punctuation-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-yesno-punctuation","data":{"text":"- Thank you. - Yes."}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("thank you yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("surprises-ota/want_to_download_now",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("surprises-ota/want_to_download_now",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+    }
+
+    [Fact]
     public async Task ClientAsr_SharedYesNoPrompt_StripsGlobalRulesAndStaysLocal()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2670,6 +2706,49 @@ public sealed class JiboWebSocketServiceTests
         using var completionPayload = JsonDocument.Parse(replies[3].Text!);
         Assert.Equal("@be/radio",
             completionPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+    }
+
+    [Fact]
+    public async Task ClientAsr_HotwordLeakageBeforeCommand_StripsNoiseAndRoutesToRadio()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-radio-noise-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-radio-noise","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-radio-noise-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-radio-noise","data":{"text":"Hey Jibo - so open the radio"}}"""
+        });
+
+        Assert.Equal(4, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("menu",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("@be/radio",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Equal(0,
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules").GetArrayLength());
+
+        using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
+        Assert.Equal("@be/radio",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.True(redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("launch")
+            .GetBoolean());
     }
 
     [Fact]
@@ -4562,6 +4641,158 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task Smoke_ClassicUserJourney_CoversGreetingMemoryPersonalityWeatherAndPersonalReport()
+    {
+        var customStore = new InMemoryCloudStateStore();
+        var service = CreateService(
+            customStore,
+            new StubWeatherReportProvider(
+                new WeatherReportSnapshot("Lone Jack, US", "overcast clouds", 79, 82, 78, "clouds", false)),
+            new StubNewsBriefingProvider(
+                new NewsBriefingSnapshot(
+                    [
+                        new NewsHeadline("Space missions are preparing for new launches"),
+                        new NewsHeadline("AI tools keep pushing into everyday products")
+                    ],
+                    "NewsAPI")));
+
+        var token = "hub-smoke-journey-token";
+
+        var greetingReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"LISTEN","transID":"trans-smoke-greeting","data":{"text":"hello jibo","rules":["wake-word"]}}"""
+        });
+
+        Assert.Equal(3, greetingReplies.Count);
+        Assert.Equal("hello",
+            JsonDocument.Parse(greetingReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
+                .GetProperty("intent").GetString());
+
+        var nameReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-smoke-name","data":{"text":"my name is erin"}}"""
+        });
+
+        Assert.Equal(3, nameReplies.Count);
+        Assert.Equal("memory_set_name",
+            JsonDocument.Parse(nameReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
+                .GetProperty("intent").GetString());
+
+        var session = customStore.FindSessionByToken(token);
+        Assert.NotNull(session);
+
+        var memoryReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-smoke-memory","data":{"text":"who am i"}}"""
+        });
+
+        Assert.Equal(3, memoryReplies.Count);
+        Assert.Equal("memory_get_name",
+            JsonDocument.Parse(memoryReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
+                .GetProperty("intent").GetString());
+
+        var personalityReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-smoke-color","data":{"text":"what is your favorite color"}}"""
+        });
+
+        Assert.Equal(3, personalityReplies.Count);
+        Assert.Equal("robot_favorite_color",
+            JsonDocument.Parse(personalityReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
+                .GetProperty("intent").GetString());
+
+        var weatherReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-smoke-weather","data":{"text":"how is the weather"}}"""
+        });
+
+        Assert.Equal(3, weatherReplies.Count);
+        Assert.Equal("weather",
+            JsonDocument.Parse(weatherReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
+                .GetProperty("intent").GetString());
+
+        var reportStartReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-smoke-report-start","data":{"text":"personal report"}}"""
+        });
+
+        Assert.Equal(3, reportStartReplies.Count);
+        Assert.Equal("personal_report_opt_in",
+            JsonDocument.Parse(reportStartReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
+                .GetProperty("intent").GetString());
+
+        var reportVerifyReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-smoke-report-verify","data":{"text":"uh huh"}}"""
+        });
+
+        Assert.Equal(3, reportVerifyReplies.Count);
+        Assert.Equal("personal_report_verify_user",
+            JsonDocument.Parse(reportVerifyReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
+                .GetProperty("intent").GetString());
+
+        var reportReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-smoke-report-deliver","data":{"text":"yes"}}"""
+        });
+
+        Assert.Equal(3, reportReplies.Count);
+        Assert.Equal("personal_report_delivered",
+            JsonDocument.Parse(reportReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
+                .GetProperty("intent").GetString());
+
+        using var skillPayload = JsonDocument.Parse(reportReplies[2].Text!);
+        var esml = skillPayload.RootElement
+            .GetProperty("data")
+            .GetProperty("action")
+            .GetProperty("config")
+            .GetProperty("jcp")
+            .GetProperty("config")
+            .GetProperty("play")
+            .GetProperty("esml")
+            .GetString();
+
+        Assert.NotNull(esml);
+        var stripped = StripMarkup(esml!);
+        Assert.Contains("weather", stripped, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("calendar", stripped, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("news", stripped, StringComparison.OrdinalIgnoreCase);
+        Assert.True(stripped.Length < 500, $"Personal report speech was still too long: {stripped.Length} chars.");
+    }
+
+    [Fact]
     public async Task ClientAsrChitchatEmotionCommand_PersistsSplitRouteMetadata()
     {
         const string routeKey = "chitchatRoute";
@@ -4834,6 +5065,31 @@ public sealed class JiboWebSocketServiceTests
     {
         using var payload = JsonDocument.Parse(reply.Text!);
         return payload.RootElement.GetProperty("type").GetString() ?? string.Empty;
+    }
+
+    private static string StripMarkup(string text)
+    {
+        var builder = new StringBuilder(text.Length);
+        var inTag = false;
+
+        foreach (var character in text)
+        {
+            if (character == '<')
+            {
+                inTag = true;
+                continue;
+            }
+
+            if (character == '>')
+            {
+                inTag = false;
+                continue;
+            }
+
+            if (!inTag) builder.Append(character);
+        }
+
+        return builder.ToString();
     }
 
     private sealed class StubWeatherReportProvider(WeatherReportSnapshot snapshot) : IWeatherReportProvider

@@ -90,6 +90,8 @@ public sealed partial class WebSocketTurnFinalizationService(
 
     private static readonly string[] TranscriptNoisePrefixes =
     [
+        "o",
+        "oh",
         "uh",
         "um",
         "hmm",
@@ -1627,11 +1629,7 @@ public sealed partial class WebSocketTurnFinalizationService(
 
     private static string NormalizeTranscript(string? transcript)
     {
-        if (string.IsNullOrWhiteSpace(transcript)) return string.Empty;
-
-        return TranscriptNormalizationRegex().Replace(transcript.Trim().ToLowerInvariant(), " ")
-            .Replace("  ", " ", StringComparison.Ordinal)
-            .Trim();
+        return TranscriptTextNormalizer.NormalizeLooseText(transcript);
     }
 
     private static string? ReadMessageType(TurnContext turn)
@@ -1938,9 +1936,6 @@ public sealed partial class WebSocketTurnFinalizationService(
             _ => false
         };
     }
-
-    [GeneratedRegex(@"[^\w\s]")]
-    private static partial Regex TranscriptNormalizationRegex();
 
     private enum YesNoReply
     {

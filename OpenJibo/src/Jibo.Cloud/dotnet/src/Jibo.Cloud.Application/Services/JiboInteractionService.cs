@@ -38,13 +38,25 @@ public sealed class JiboInteractionService(
         @"\b(?:volume|loudness)\s+(?:2|two|to)\s+(?<value>10|\d|one|two|three|four|five|six|seven|eight|nine|ten)\b",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-    private static readonly Regex CommandPhrasePattern = new(
-        @"[^\w\s]",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
-    private static readonly Regex CommandWhitespacePattern = new(
-        @"\s+",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    private static readonly string[] CommandLeadPhrases =
+    [
+        "hey jibo",
+        "hello jibo",
+        "hi jibo",
+        "jibo",
+        "o",
+        "oh",
+        "so",
+        "well",
+        "um",
+        "uh",
+        "hmm",
+        "erm",
+        "ah",
+        "please",
+        "ok jibo",
+        "okay jibo"
+    ];
 
     private static readonly Regex AlarmDeletePattern = new(
         @"\b(?:cancel|delete|remove|stop|turn\s+off)\s+(?:the\s+)?(?:alarm|along|elo)\b",
@@ -3543,11 +3555,15 @@ public sealed class JiboInteractionService(
         return normalized is
             "what is the date" or
             "what s the date" or
+            "what's the date" or
             "what date is it" or
             "today s date" or
             "today date" or
+            "what's today's date" or
             "what is today s date" or
             "what s today s date" or
+            "what's today s date" or
+            "what's todays date" or
             "what is todays date" or
             "what s todays date";
     }
@@ -4311,11 +4327,13 @@ public sealed class JiboInteractionService(
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
         return normalized.StartsWith("what is my favorite", StringComparison.Ordinal) ||
-               normalized.StartsWith("what s my favorite", StringComparison.Ordinal) ||
-               normalized.StartsWith("what is my favourite", StringComparison.Ordinal) ||
-               normalized.StartsWith("what s my favourite", StringComparison.Ordinal) ||
-               normalized.StartsWith("do you remember my favorite", StringComparison.Ordinal) ||
-               normalized.StartsWith("do you remember my favourite", StringComparison.Ordinal);
+            normalized.StartsWith("what s my favorite", StringComparison.Ordinal) ||
+            normalized.StartsWith("what's my favorite", StringComparison.Ordinal) ||
+            normalized.StartsWith("what is my favourite", StringComparison.Ordinal) ||
+            normalized.StartsWith("what s my favourite", StringComparison.Ordinal) ||
+            normalized.StartsWith("what's my favourite", StringComparison.Ordinal) ||
+            normalized.StartsWith("do you remember my favorite", StringComparison.Ordinal) ||
+            normalized.StartsWith("do you remember my favourite", StringComparison.Ordinal);
     }
 
     private static string? TryExtractPreferenceLookupCategory(string transcript)
@@ -4878,10 +4896,12 @@ public sealed class JiboInteractionService(
 
     private static string NormalizeCommandPhrase(string value)
     {
-        return CommandWhitespacePattern.Replace(
-                CommandPhrasePattern.Replace(value.Trim().ToLowerInvariant(), " "),
-                " ")
-            .Trim();
+        var normalized = TranscriptTextNormalizer.NormalizeLooseText(value);
+        if (string.Equals(normalized, "uh huh", StringComparison.Ordinal) ||
+            normalized.StartsWith("uh huh ", StringComparison.Ordinal))
+            return normalized;
+
+        return TranscriptTextNormalizer.StripLeadingPhrases(normalized, CommandLeadPhrases);
     }
 
     private static string? TryNormalizeVolumeLevel(string token)

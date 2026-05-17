@@ -41,6 +41,7 @@ internal static class PersonalReportOrchestrator
         "yeah",
         "yep",
         "yup",
+        "uh huh",
         "sure",
         "ok",
         "okay",
@@ -260,7 +261,7 @@ internal static class PersonalReportOrchestrator
 
         if (toggles.WeatherEnabled)
         {
-            reportSections.Add("First, your weather.");
+            reportSections.Add("Weather.");
             var weatherDecision = await buildWeatherDecisionAsync(turn, "weather", cancellationToken);
             reportSections.Add(weatherDecision.ReplyText);
             if (IsWeatherErrorReply(weatherDecision.ReplyText)) serviceError = "weather";
@@ -274,13 +275,6 @@ internal static class PersonalReportOrchestrator
                         catalog.CalendarNothingTodayReplies,
                         catalog.CalendarNothingReplies,
                         "Looking at your calendar, I don't see anything scheduled today."),
-                    userName));
-            reportSections.Add(
-                RenderReportSkillTemplate(
-                    ChooseReportSkillTemplate(
-                        catalog.CalendarOutroReplies,
-                        [],
-                        "And that's it."),
                     userName));
         }
 
@@ -302,7 +296,7 @@ internal static class PersonalReportOrchestrator
                         catalog.NewsCategoryIntroReplies,
                         "Here's today's news, from the associated press."),
                     userName));
-            reportSections.Add(randomizer.Choose(catalog.NewsBriefings));
+            reportSections.Add(ChooseShortestBriefing(catalog.NewsBriefings));
             reportSections.Add(
                 RenderReportSkillTemplate(
                     ChooseReportSkillTemplate(
@@ -632,7 +626,8 @@ internal static class PersonalReportOrchestrator
 
         var speakerAwareTemplate = usableTemplates.FirstOrDefault(static template =>
             template.Contains("${speaker}", StringComparison.OrdinalIgnoreCase));
-        return speakerAwareTemplate ?? usableTemplates[0];
+        return ChooseShortestTemplate(speakerAwareTemplate is not null ? [speakerAwareTemplate] : usableTemplates)
+               ?? fallback;
     }
 
     private static string RenderPersonalReportTemplate(string template, string userName)
@@ -649,11 +644,31 @@ internal static class PersonalReportOrchestrator
         IReadOnlyList<string> secondaryTemplates,
         string fallback)
     {
-        var primary = primaryTemplates.FirstOrDefault(static template => !string.IsNullOrWhiteSpace(template));
+        var primary = ChooseShortestTemplate(primaryTemplates);
         if (!string.IsNullOrWhiteSpace(primary)) return primary!;
 
-        var secondary = secondaryTemplates.FirstOrDefault(static template => !string.IsNullOrWhiteSpace(template));
+        var secondary = ChooseShortestTemplate(secondaryTemplates);
         return !string.IsNullOrWhiteSpace(secondary) ? secondary! : fallback;
+    }
+
+    private static string ChooseShortestBriefing(IReadOnlyList<string> briefings)
+    {
+        var selected = ChooseShortestTemplate(briefings);
+        if (string.IsNullOrWhiteSpace(selected)) return string.Empty;
+
+        var firstSentence = selected.Split(['.', '!', '?'], 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+        return string.IsNullOrWhiteSpace(firstSentence) ? selected : firstSentence;
+    }
+
+    private static string? ChooseShortestTemplate(IEnumerable<string> templates)
+    {
+        var selected = templates
+            .Where(static template => !string.IsNullOrWhiteSpace(template))
+            .OrderBy(static template => template.Length)
+            .FirstOrDefault();
+
+        return selected;
     }
 
     private static string RenderReportSkillTemplate(string template, string userName)

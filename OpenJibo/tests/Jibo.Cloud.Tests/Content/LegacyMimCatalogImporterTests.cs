@@ -213,8 +213,10 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("Looks like our weather service is offline. Sorry.", catalog.WeatherServiceDownReplies);
         Assert.Contains("Sure ${speaker}. Here it is.", catalog.PersonalReportKickOffReplies);
         Assert.Contains("And that's your report for the day. I hope you had as much fun as I did.", catalog.PersonalReportOutroReplies);
-        Assert.Contains(catalog.ReportSkillTemplates, reply =>
-            reply.Contains("Checking your calendar, I see ${skill.calendar.numEventsToday} items today.", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.", catalog.CalendarNothingTodayReplies);
+        Assert.Contains("Sorry, commute information isn't available right now.", catalog.CommuteServiceDownReplies);
+        Assert.Contains("Here's today's news, from the associated press.", catalog.NewsIntroReplies);
+        Assert.Contains("And that's what's new in the news.", catalog.NewsOutroReplies);
     }
 
     [Fact]
@@ -260,6 +262,7 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("Something's off with the connection to my sources. Maybe ask me again in a little while.", catalog.GenericFallbackReplies);
         Assert.Contains("For your weather.", catalog.WeatherIntroReplies);
         Assert.Contains("Today's high is {high}, and the low is {low}.", catalog.WeatherTodayHighLowReplies);
+        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.", catalog.CalendarNothingTodayReplies);
     }
 
     private static string CreateSeedDirectory()

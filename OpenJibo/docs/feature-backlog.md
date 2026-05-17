@@ -887,6 +887,8 @@ For `1.0.19`:
 7. Personal report parity track (weather visuals, live news path, commute path, calendar parity matrix) - in progress (`2026-05-10` first live-news provider slice implemented)
 8. Holidays and seasonal personality behavior built on the new memory/proactivity foundation
 9. Durable memory persistence path (multi-tenant backing store)
+  - reference design captured in `docs/persistence-architecture.md`
+  - next implementation pass should tighten the store contracts around account/loop/device/person scoping and record versioning
 10. Update, backup, and restore proof
 11. STT upgrade and noise screening
 12. Hosted capture/storage plan / indexing for group testing

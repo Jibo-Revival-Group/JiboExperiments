@@ -1727,6 +1727,10 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("Sure alex. Here it is.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("First, your weather.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("For your weather. In Boston, U.S., it's light rain and 61 degrees Fahrenheit. Today's high is 65, and the low is 54.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Looking at your calendar, I don't see anything scheduled today.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Sorry, commute information isn't available right now.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Here's today's news, from the associated press.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("And that's what's new in the news.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("alex that wraps up your report for the day. Hope you have a good one.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("idle", decision.ContextUpdates![PersonalReportStateKey]);

@@ -292,17 +292,50 @@ internal static class PersonalReportOrchestrator
 
         if (toggles.CalendarEnabled)
         {
-            reportSections.Add(randomizer.Choose(catalog.CalendarReplies));
+            reportSections.Add(
+                RenderReportSkillTemplate(
+                    ChooseReportSkillTemplate(
+                        catalog.CalendarNothingTodayReplies,
+                        catalog.CalendarNothingReplies,
+                        "Looking at your calendar, I don't see anything scheduled today."),
+                    userName));
+            reportSections.Add(
+                RenderReportSkillTemplate(
+                    ChooseReportSkillTemplate(
+                        catalog.CalendarOutroReplies,
+                        [],
+                        "And that's it."),
+                    userName));
         }
 
         if (toggles.CommuteEnabled)
         {
-            reportSections.Add(randomizer.Choose(catalog.CommuteReplies));
+            reportSections.Add(
+                RenderReportSkillTemplate(
+                    ChooseReportSkillTemplate(
+                        catalog.CommuteServiceDownReplies,
+                        catalog.CommuteNowReplies,
+                        "Sorry, commute information isn't available right now."),
+                    userName));
         }
 
         if (toggles.NewsEnabled)
         {
+            reportSections.Add(
+                RenderReportSkillTemplate(
+                    ChooseReportSkillTemplate(
+                        catalog.NewsIntroReplies,
+                        catalog.NewsCategoryIntroReplies,
+                        "Here's today's news, from the associated press."),
+                    userName));
             reportSections.Add(randomizer.Choose(catalog.NewsBriefings));
+            reportSections.Add(
+                RenderReportSkillTemplate(
+                    ChooseReportSkillTemplate(
+                        catalog.NewsOutroReplies,
+                        [],
+                        "And that's what's new in the news."),
+                    userName));
         }
 
         reportSections.Add(
@@ -690,6 +723,35 @@ internal static class PersonalReportOrchestrator
     }
 
     private static string RenderPersonalReportTemplate(string template, string userName)
+    {
+        return template
+            .Replace("${speaker}", userName, StringComparison.OrdinalIgnoreCase)
+            .Replace("${speaker}'s", $"{userName}'s", StringComparison.OrdinalIgnoreCase)
+            .Replace("  ", " ", StringComparison.Ordinal)
+            .Trim();
+    }
+
+    private static string ChooseReportSkillTemplate(
+        IReadOnlyList<string> primaryTemplates,
+        IReadOnlyList<string> secondaryTemplates,
+        string fallback)
+    {
+        var primary = primaryTemplates.FirstOrDefault(static template => !string.IsNullOrWhiteSpace(template));
+        if (!string.IsNullOrWhiteSpace(primary))
+        {
+            return primary!;
+        }
+
+        var secondary = secondaryTemplates.FirstOrDefault(static template => !string.IsNullOrWhiteSpace(template));
+        if (!string.IsNullOrWhiteSpace(secondary))
+        {
+            return secondary!;
+        }
+
+        return fallback;
+    }
+
+    private static string RenderReportSkillTemplate(string template, string userName)
     {
         return template
             .Replace("${speaker}", userName, StringComparison.OrdinalIgnoreCase)

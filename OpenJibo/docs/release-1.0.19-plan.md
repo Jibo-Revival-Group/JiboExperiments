@@ -102,6 +102,10 @@ The goal is to port these in small batches, capture the source-backed phrasing w
 - prefer explicit change records or versioned state snapshots over implicit last-writer wins when we outgrow a single node
 - keep cross-server reconciliation out of the hot path until the single-server semantics are stable
 
+Reference design:
+
+- [persistence-architecture.md](persistence-architecture.md)
+
 ## First Implemented Slice In `1.0.19`
 
 The first delivered slice in this release is persona expansion:

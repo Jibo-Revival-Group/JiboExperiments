@@ -154,6 +154,46 @@ public static class LegacyMimCatalogImporter
             return LegacyMimBucket.WeatherServiceDown;
         }
 
+        if (fileName.StartsWith("CalendarNothingToday", StringComparison.OrdinalIgnoreCase))
+        {
+            return LegacyMimBucket.CalendarNothingToday;
+        }
+
+        if (fileName.StartsWith("CalendarNothing", StringComparison.OrdinalIgnoreCase))
+        {
+            return LegacyMimBucket.CalendarNothing;
+        }
+
+        if (fileName.StartsWith("CalendarOutro", StringComparison.OrdinalIgnoreCase))
+        {
+            return LegacyMimBucket.CalendarOutro;
+        }
+
+        if (fileName.StartsWith("CommuteNow", StringComparison.OrdinalIgnoreCase))
+        {
+            return LegacyMimBucket.CommuteNow;
+        }
+
+        if (fileName.StartsWith("CommuteServiceDown", StringComparison.OrdinalIgnoreCase))
+        {
+            return LegacyMimBucket.CommuteServiceDown;
+        }
+
+        if (fileName.StartsWith("NewsIntroCategory", StringComparison.OrdinalIgnoreCase))
+        {
+            return LegacyMimBucket.NewsCategoryIntro;
+        }
+
+        if (fileName.StartsWith("NewsIntro", StringComparison.OrdinalIgnoreCase))
+        {
+            return LegacyMimBucket.NewsIntro;
+        }
+
+        if (fileName.StartsWith("NewsOutro", StringComparison.OrdinalIgnoreCase))
+        {
+            return LegacyMimBucket.NewsOutro;
+        }
+
         if (fileName.StartsWith("Weather", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(fileName, "WetNowDryLater", StringComparison.OrdinalIgnoreCase))
         {
@@ -266,6 +306,14 @@ public static class LegacyMimCatalogImporter
             WeatherTodayHighLowReplies = Merge(baseCatalog.WeatherTodayHighLowReplies, importedCatalog.WeatherTodayHighLowReplies),
             WeatherTomorrowHighLowReplies = Merge(baseCatalog.WeatherTomorrowHighLowReplies, importedCatalog.WeatherTomorrowHighLowReplies),
             WeatherServiceDownReplies = Merge(baseCatalog.WeatherServiceDownReplies, importedCatalog.WeatherServiceDownReplies),
+            CalendarNothingTodayReplies = Merge(baseCatalog.CalendarNothingTodayReplies, importedCatalog.CalendarNothingTodayReplies),
+            CalendarNothingReplies = Merge(baseCatalog.CalendarNothingReplies, importedCatalog.CalendarNothingReplies),
+            CalendarOutroReplies = Merge(baseCatalog.CalendarOutroReplies, importedCatalog.CalendarOutroReplies),
+            CommuteNowReplies = Merge(baseCatalog.CommuteNowReplies, importedCatalog.CommuteNowReplies),
+            CommuteServiceDownReplies = Merge(baseCatalog.CommuteServiceDownReplies, importedCatalog.CommuteServiceDownReplies),
+            NewsIntroReplies = Merge(baseCatalog.NewsIntroReplies, importedCatalog.NewsIntroReplies),
+            NewsCategoryIntroReplies = Merge(baseCatalog.NewsCategoryIntroReplies, importedCatalog.NewsCategoryIntroReplies),
+            NewsOutroReplies = Merge(baseCatalog.NewsOutroReplies, importedCatalog.NewsOutroReplies),
             WeatherReplies = Merge(baseCatalog.WeatherReplies, importedCatalog.WeatherReplies),
             CalendarReplies = Merge(baseCatalog.CalendarReplies, importedCatalog.CalendarReplies),
             CommuteReplies = Merge(baseCatalog.CommuteReplies, importedCatalog.CommuteReplies),
@@ -347,6 +395,14 @@ public static class LegacyMimCatalogImporter
         WeatherTodayHighLow,
         WeatherTomorrowHighLow,
         WeatherServiceDown,
+        CalendarNothingToday,
+        CalendarNothing,
+        CalendarOutro,
+        CommuteNow,
+        CommuteServiceDown,
+        NewsIntro,
+        NewsCategoryIntro,
+        NewsOutro,
         ReportSkillTemplate
     }
 
@@ -365,6 +421,14 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _weatherTodayHighLowReplies = [];
         private readonly List<string> _weatherTomorrowHighLowReplies = [];
         private readonly List<string> _weatherServiceDownReplies = [];
+        private readonly List<string> _calendarNothingTodayReplies = [];
+        private readonly List<string> _calendarNothingReplies = [];
+        private readonly List<string> _calendarOutroReplies = [];
+        private readonly List<string> _commuteNowReplies = [];
+        private readonly List<string> _commuteServiceDownReplies = [];
+        private readonly List<string> _newsIntroReplies = [];
+        private readonly List<string> _newsCategoryIntroReplies = [];
+        private readonly List<string> _newsOutroReplies = [];
 
         public void Add(LegacyMimBucket bucket, string? condition, string text)
         {
@@ -438,6 +502,30 @@ public static class LegacyMimCatalogImporter
                 case LegacyMimBucket.WeatherServiceDown:
                     AddDistinct(_weatherServiceDownReplies, text);
                     return;
+                case LegacyMimBucket.CalendarNothingToday:
+                    AddDistinct(_calendarNothingTodayReplies, text);
+                    return;
+                case LegacyMimBucket.CalendarNothing:
+                    AddDistinct(_calendarNothingReplies, text);
+                    return;
+                case LegacyMimBucket.CalendarOutro:
+                    AddDistinct(_calendarOutroReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteNow:
+                    AddDistinct(_commuteNowReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteServiceDown:
+                    AddDistinct(_commuteServiceDownReplies, text);
+                    return;
+                case LegacyMimBucket.NewsIntro:
+                    AddDistinct(_newsIntroReplies, text);
+                    return;
+                case LegacyMimBucket.NewsCategoryIntro:
+                    AddDistinct(_newsCategoryIntroReplies, text);
+                    return;
+                case LegacyMimBucket.NewsOutro:
+                    AddDistinct(_newsOutroReplies, text);
+                    return;
                 case LegacyMimBucket.ReportSkillTemplate:
                     AddDistinct(_reportSkillTemplates, text);
                     return;
@@ -463,6 +551,15 @@ public static class LegacyMimCatalogImporter
                 WeatherTodayHighLowReplies = [.. _weatherTodayHighLowReplies],
                 WeatherTomorrowHighLowReplies = [.. _weatherTomorrowHighLowReplies],
                 WeatherServiceDownReplies = [.. _weatherServiceDownReplies]
+                ,
+                CalendarNothingTodayReplies = [.. _calendarNothingTodayReplies],
+                CalendarNothingReplies = [.. _calendarNothingReplies],
+                CalendarOutroReplies = [.. _calendarOutroReplies],
+                CommuteNowReplies = [.. _commuteNowReplies],
+                CommuteServiceDownReplies = [.. _commuteServiceDownReplies],
+                NewsIntroReplies = [.. _newsIntroReplies],
+                NewsCategoryIntroReplies = [.. _newsCategoryIntroReplies],
+                NewsOutroReplies = [.. _newsOutroReplies]
             };
         }
 

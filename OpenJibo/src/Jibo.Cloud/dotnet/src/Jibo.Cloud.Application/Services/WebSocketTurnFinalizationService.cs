@@ -88,6 +88,23 @@ public sealed partial class WebSocketTurnFinalizationService(
         "thank you"
     ];
 
+    private static readonly string[] TranscriptNoisePrefixes =
+    [
+        "uh",
+        "um",
+        "hmm",
+        "erm",
+        "er",
+        "ah",
+        "eh",
+        "mm",
+        "mmm",
+        "well",
+        "so",
+        "actually",
+        "honestly"
+    ];
+
     private static readonly HashSet<string> YesNoAffirmativeLeadTokens = new(StringComparer.Ordinal)
     {
         "yes",
@@ -519,7 +536,7 @@ public sealed partial class WebSocketTurnFinalizationService(
             }
 
             var finalizedTurn = await ResolveTranscriptAsync(turn, session, cancellationToken);
-            if (!IsTranscriptUsable(finalizedTurn))
+            if (!TryGetUsableTranscript(finalizedTurn, out var usableTranscript))
                 finalizedTurn = new TurnContext
                 {
                     TurnId = finalizedTurn.TurnId,
@@ -542,6 +559,10 @@ public sealed partial class WebSocketTurnFinalizationService(
                     IsFollowUpEligible = finalizedTurn.IsFollowUpEligible,
                     Attributes = finalizedTurn.Attributes
                 };
+            else if (string.Equals(messageType, "CLIENT_ASR", StringComparison.OrdinalIgnoreCase) &&
+                     !string.Equals(usableTranscript, finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                         StringComparison.Ordinal))
+                finalizedTurn = WithSanitizedTranscript(finalizedTurn, usableTranscript);
 
             if (ShouldTreatBufferedHotphraseAsGreeting(finalizedTurn, turnState, allowFallbackOnMissingTranscript))
                 finalizedTurn = WithSyntheticTranscript(finalizedTurn, "hello");
@@ -1066,11 +1087,16 @@ public sealed partial class WebSocketTurnFinalizationService(
 
     private static bool IsTranscriptUsable(TurnContext turn)
     {
+        return TryGetUsableTranscript(turn, out _);
+    }
+
+    private static bool TryGetUsableTranscript(TurnContext turn, out string transcript)
+    {
         var messageType = ReadMessageType(turn);
         var clientIntent = ReadAttribute(turn, "clientIntent");
         var pendingProactivityOffer = ReadAttribute(turn, "pendingProactivityOffer");
         var personalReportState = ReadAttribute(turn, PersonalReportOrchestrator.StateMetadataKey);
-        var transcript = NormalizeTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
+        transcript = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
         var listenRules = ReadRules(turn, "listenRules").Concat(ReadRules(turn, "clientRules")).ToArray();
 
         if (string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase) &&
@@ -1226,7 +1252,7 @@ public sealed partial class WebSocketTurnFinalizationService(
     {
         if (string.IsNullOrWhiteSpace(normalizedTranscript)) return YesNoReply.None;
 
-        var normalized = normalizedTranscript;
+        var normalized = NormalizeUsableTranscript(normalizedTranscript);
         while (TryTrimLeadingAcknowledgement(normalized, out var trimmed)) normalized = trimmed;
 
         if (string.IsNullOrWhiteSpace(normalized)) return YesNoReply.None;
@@ -1261,6 +1287,11 @@ public sealed partial class WebSocketTurnFinalizationService(
     {
         foreach (var acknowledgement in YesNoAcknowledgementPrefixes)
         {
+            if (string.Equals(acknowledgement, "uh", StringComparison.Ordinal) &&
+                (string.Equals(normalizedTranscript, "uh huh", StringComparison.Ordinal) ||
+                 normalizedTranscript.StartsWith("uh huh ", StringComparison.Ordinal)))
+                continue;
+
             if (string.Equals(normalizedTranscript, acknowledgement, StringComparison.Ordinal))
             {
                 trimmedTranscript = string.Empty;
@@ -1270,6 +1301,41 @@ public sealed partial class WebSocketTurnFinalizationService(
             if (normalizedTranscript.StartsWith($"{acknowledgement} ", StringComparison.Ordinal))
             {
                 trimmedTranscript = normalizedTranscript[(acknowledgement.Length + 1)..].TrimStart();
+                return true;
+            }
+        }
+
+        trimmedTranscript = normalizedTranscript;
+        return false;
+    }
+
+    private static string NormalizeUsableTranscript(string? transcript)
+    {
+        var normalized = NormalizeTranscript(transcript);
+        if (string.IsNullOrWhiteSpace(normalized)) return string.Empty;
+
+        while (TryTrimLeadingTranscriptNoise(normalized, out var trimmed)) normalized = trimmed;
+        return normalized;
+    }
+
+    private static bool TryTrimLeadingTranscriptNoise(string normalizedTranscript, out string trimmedTranscript)
+    {
+        foreach (var noisePrefix in TranscriptNoisePrefixes)
+        {
+            if (string.Equals(noisePrefix, "uh", StringComparison.Ordinal) &&
+                (string.Equals(normalizedTranscript, "uh huh", StringComparison.Ordinal) ||
+                 normalizedTranscript.StartsWith("uh huh ", StringComparison.Ordinal)))
+                continue;
+
+            if (string.Equals(normalizedTranscript, noisePrefix, StringComparison.Ordinal))
+            {
+                trimmedTranscript = string.Empty;
+                return true;
+            }
+
+            if (normalizedTranscript.StartsWith($"{noisePrefix} ", StringComparison.Ordinal))
+            {
+                trimmedTranscript = normalizedTranscript[(noisePrefix.Length + 1)..].TrimStart();
                 return true;
             }
         }
@@ -1677,7 +1743,7 @@ public sealed partial class WebSocketTurnFinalizationService(
             turnState.FinalizeAttemptCount >= AutoFinalizeContinuationDeferralMaxAttempts)
             return false;
 
-        var normalized = NormalizeTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
+        var normalized = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
         if (string.IsNullOrWhiteSpace(normalized)) return false;
 
         if (normalized is "my birthday" or "my birthday is")
@@ -1830,6 +1896,32 @@ public sealed partial class WebSocketTurnFinalizationService(
             TimeZone = turn.TimeZone,
             IsFollowUpEligible = turn.IsFollowUpEligible,
             Attributes = attributes
+        };
+    }
+
+    private static TurnContext WithSanitizedTranscript(TurnContext turn, string transcript)
+    {
+        return new TurnContext
+        {
+            TurnId = turn.TurnId,
+            SessionId = turn.SessionId,
+            TimestampUtc = turn.TimestampUtc,
+            InputMode = turn.InputMode,
+            SourceKind = turn.SourceKind,
+            WakePhrase = turn.WakePhrase,
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            DeviceId = turn.DeviceId,
+            HostName = turn.HostName,
+            RequestId = turn.RequestId,
+            ProtocolService = turn.ProtocolService,
+            ProtocolOperation = turn.ProtocolOperation,
+            FirmwareVersion = turn.FirmwareVersion,
+            ApplicationVersion = turn.ApplicationVersion,
+            Locale = turn.Locale,
+            TimeZone = turn.TimeZone,
+            IsFollowUpEligible = turn.IsFollowUpEligible,
+            Attributes = turn.Attributes
         };
     }
 

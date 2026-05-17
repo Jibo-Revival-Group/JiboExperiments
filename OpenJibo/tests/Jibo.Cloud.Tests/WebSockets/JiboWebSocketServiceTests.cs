@@ -1849,6 +1849,41 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_YesNoPromptFromAsrHints_MapsUhHuhToYesIntent()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-yesno-huh-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-yesno-huh","data":{"rules":["surprises-ota/want_to_download_now"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-yesno-huh-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-yesno-huh","data":{"text":"uh huh"}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("uh huh",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("surprises-ota/want_to_download_now",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("surprises-ota/want_to_download_now",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+    }
+
+    [Fact]
     public async Task ClientAsr_SharedYesNoPrompt_StripsGlobalRulesAndStaysLocal()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3533,6 +3568,73 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-empty-hotphrase-token");
         Assert.NotNull(session);
         Assert.True(session.FollowUpOpen);
+    }
+
+    [Fact]
+    public async Task ClientAsr_LeadingFillerBeforeGreeting_IsStrippedAndRoutesToGreeting()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-filler-greeting-token",
+            Text = """{"type":"LISTEN","transID":"trans-filler-greeting","data":{"rules":["wake-word"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-filler-greeting-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-filler-greeting","data":{"text":"um hello"}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("hello",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("hello",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+
+        var session = _store.FindSessionByToken("hub-filler-greeting-token");
+        Assert.NotNull(session);
+        Assert.Equal("hello", session.LastTranscript);
+        Assert.Equal("hello", session.LastIntent);
+    }
+
+    [Fact]
+    public async Task ClientAsr_FillerOnlyTranscript_IsIgnoredAsNoise()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-filler-only-token",
+            Text = """{"type":"LISTEN","transID":"trans-filler-only","data":{"rules":["wake-word"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-filler-only-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-filler-only","data":{"text":"hmm"}}"""
+        });
+
+        Assert.Empty(replies);
+
+        var session = _store.FindSessionByToken("hub-filler-only-token");
+        Assert.NotNull(session);
+        Assert.Null(session.LastIntent);
+        Assert.Null(session.LastTranscript);
     }
 
     [Fact]

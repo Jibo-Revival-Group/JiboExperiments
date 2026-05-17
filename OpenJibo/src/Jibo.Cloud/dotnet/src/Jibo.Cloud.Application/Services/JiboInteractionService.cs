@@ -3448,6 +3448,11 @@ public sealed class JiboInteractionService(
     {
         foreach (var acknowledgement in YesNoAcknowledgementPrefixes)
         {
+            if (string.Equals(acknowledgement, "uh", StringComparison.Ordinal) &&
+                (string.Equals(normalizedTranscript, "uh huh", StringComparison.Ordinal) ||
+                 normalizedTranscript.StartsWith("uh huh ", StringComparison.Ordinal)))
+                continue;
+
             if (string.Equals(normalizedTranscript, acknowledgement, StringComparison.Ordinal))
             {
                 trimmedTranscript = string.Empty;

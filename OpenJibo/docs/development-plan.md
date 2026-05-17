@@ -194,7 +194,7 @@ These are not blockers for calling `1.0.18` complete unless the live test shows 
 - local `whisper.cpp` STT remains a discovery seam, not production ASR
 - media upload/body handling is not binary-safe enough for final gallery originals and thumbnails
 - state persistence is local JSON, not Azure SQL / Blob Storage
-- update, backup, and restore are not end-to-end proven, and the `jibo test 22` / Test 26 / Test 27 / Test 28 sluggishness appears tied to robot-local backup status/load, startup reconnect state, or previously unsuppressed end-of-skill surprises; Test 31 also captured a legacy `Backup_20170222.List` startup query, which reinforces that the local backup/status path is real even before a user asks for backup
+- update, backup, and restore are now end-to-end proven at the persistence-rehydration level, and the `jibo test 22` / Test 26 / Test 27 / Test 28 sluggishness appears tied to robot-local backup status/load, startup reconnect state, or previously unsuppressed end-of-skill surprises; Test 31 also captured a legacy `Backup_20170222.List` startup query, which reinforces that the local backup/status path is real even before a user asks for backup
 - Tests 27 and 28 showed backup/surprise behavior without corresponding `Backup_*` HTTP traffic; Test 28 isolated the unsuppressed `@be/surprises` lifecycle handoff after Nimbus
 - deployed-build verification needs to prove that synthetic OpenJibo websocket events are gone from the hosted artifact, not just from source
 - news content is synthetic; `jibo test 23` proved the path but not live provider-backed headlines

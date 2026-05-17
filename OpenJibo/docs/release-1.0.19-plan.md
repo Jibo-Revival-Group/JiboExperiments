@@ -71,6 +71,7 @@ The goal is to port these in small batches, capture the source-backed phrasing w
 ### 2. Reliability And Device Proof
 
 - complete update/backup/restore proof path with captures and operator docs
+- the restore proof is the persisted-state rehydration path; do not scope it into a new hosted restore API until we have real device evidence
 - continue alarm/gallery/yes-no cleanup from `1.0.18` evidence where regressions are still open
 - improve short-turn STT reliability and low-signal screening
 

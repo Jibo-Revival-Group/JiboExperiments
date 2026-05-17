@@ -174,7 +174,12 @@ public sealed class JiboCloudProtocolServiceTests
                 BodyText = """{"name":"manual-backup"}"""
             });
 
+            var firstStore = new InMemoryCloudStateStore(persistencePath);
+            var firstInfo = firstStore.GetPersistenceStateInfo();
+
             var secondService = new JiboCloudProtocolService(new InMemoryCloudStateStore(persistencePath));
+            var secondStore = new InMemoryCloudStateStore(persistencePath);
+            var secondInfo = secondStore.GetPersistenceStateInfo();
 
             var updates = await secondService.DispatchAsync(new ProtocolEnvelope
             {
@@ -197,6 +202,11 @@ public sealed class JiboCloudProtocolServiceTests
             using var updatesPayload = JsonDocument.Parse(updates.BodyText);
             using var backupsPayload = JsonDocument.Parse(backups.BodyText);
 
+            Assert.Equal(firstInfo.Revision, secondInfo.Revision);
+            Assert.Equal("1", firstInfo.SchemaVersion);
+            Assert.Equal("1", secondInfo.SchemaVersion);
+            Assert.NotNull(secondInfo.LastLoadedUtc);
+            Assert.NotNull(secondInfo.LastSavedUtc);
             Assert.NotEmpty(updatesPayload.RootElement.EnumerateArray());
             Assert.Contains(updatesPayload.RootElement.EnumerateArray(), item => item.GetProperty("changes").GetString() == "Restore proof");
             Assert.NotEmpty(backupsPayload.RootElement.EnumerateArray());

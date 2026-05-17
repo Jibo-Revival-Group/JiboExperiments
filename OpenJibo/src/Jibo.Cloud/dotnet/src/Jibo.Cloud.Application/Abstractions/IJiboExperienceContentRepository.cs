@@ -14,6 +14,8 @@ public sealed class JiboConditionedReply
 public sealed class JiboExperienceCatalog
 {
     public IReadOnlyList<string> Jokes { get; init; } = [];
+    public IReadOnlyList<string> RobotFacts { get; init; } = [];
+    public IReadOnlyList<string> HumanFacts { get; init; } = [];
     public IReadOnlyList<string> FunFacts { get; init; } = [];
     public IReadOnlyList<string> DanceAnimations { get; init; } = [];
     public IReadOnlyList<string> GreetingReplies { get; init; } = [];

@@ -27,6 +27,22 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "What kind of music are balloons afraid of. Pop music.",
                 "Why did the orange cry. Someone hurt his peelings."
             ],
+            RobotFacts =
+            [
+                "Leonardo Da Vinci made sketches for a humanoid machine all the way back in the year 1495.",
+                "The world's first humanoid robot was called Elektro, and it debuted in 1939.",
+                "The English word robot comes from a 1920 play in Czechoslovakia, called Rossum's Universal Robots.",
+                "The first programmable robot arm was designed in 1954.",
+                "Some robots have a human form, but most of the world's robots are machines designed to perform a task, and don't look like people at all."
+            ],
+            HumanFacts =
+            [
+                "Every human being that has ever lived spent about 30 minutes as a single cell.",
+                "50 percent of a human's DNA is the same as a banana's.",
+                "Humans are the only animals that cry tears of emotion.",
+                "Six-year-olds laugh an average of 300 times a day. Grown ups only laugh 15 to 100 times a day.",
+                "Your nose can remember 50,000 different scents."
+            ],
             FunFacts =
             [
                 "A shrimp's heart is in its head.",

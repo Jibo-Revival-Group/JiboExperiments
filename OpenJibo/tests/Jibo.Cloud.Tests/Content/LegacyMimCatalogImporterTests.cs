@@ -192,9 +192,17 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("I love jokes. Did you hear about the theater actor who fell through the floorboards? He was just going through a stage.",
             catalog.Jokes);
         Assert.Contains("Sure I got one. What did the zero say to the eight. Nice belt.", catalog.Jokes);
-        Assert.Contains("Here's an interesting fact about me. I have two cameras but they're different focal lengths. One's for far things, and the other's for near things.",
+        Assert.Contains(catalog.RobotFacts, reply =>
+            reply.Contains("Leonardo Da Vinci made sketches", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.RobotFacts, reply =>
+            reply.Contains("first programmable robot arm", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.RobotFacts, reply =>
+            reply.Contains("robots have a human form", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.RobotFacts, reply =>
+            reply.Contains("two cameras but they're different focal lengths", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("A random fact for you. A shrimp's heart is in its head.", catalog.FunFacts);
+        Assert.Contains("An amazing but true fact for you. Dogs and elephants are the only animals that understand pointing.",
             catalog.FunFacts);
-        Assert.Contains("True fact. Children have more taste buds than grown ups.", catalog.FunFacts);
     }
 
     [Fact]

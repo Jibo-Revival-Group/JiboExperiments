@@ -9,3 +9,4 @@ It also includes a descriptor pack for questions like `are you kind`, `are you f
 The newest seasonal pack adds holiday and seasonal prompts for `what holidays do you celebrate`, New Year's resolution questions, `happy holidays`, Halloween costume questions, spring suggestions, and holiday gift ideas.
 The newest social batch adds `welcome back`, `what are you thinking`, `what have you been doing`, and `what did you do` responses so the presence and charm lane keeps growing alongside seasonal content.
 The fun-fact and joke batch adds Pegasus-style `TellAJoke`, `TellRobotFact`, and `Shuffle` excerpts so proactive fun can randomize across more than one category.
+Those facts are now split into generic, robot, and human buckets so the randomizer can sound more like Pegasus while staying lightweight.

@@ -61,7 +61,7 @@ public static class LegacyMimCatalogImporter
                 var text = NormalizePrompt(prompt.Prompt, IsTemplateBucket(bucket.Value));
                 if (string.IsNullOrWhiteSpace(text)) continue;
 
-                builder.Add(bucket.Value, prompt.Condition, text);
+                builder.Add(bucket.Value, prompt.Condition, text, prompt.Prompt);
             }
         }
 
@@ -102,10 +102,12 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("RA_JBO_TellAJoke", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Jokes;
 
-        if (fileName.StartsWith("RA_JBO_TellRobotFact", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RA_JBO_Shuffle", StringComparison.OrdinalIgnoreCase) ||
+        if (fileName.StartsWith("RA_JBO_TellRobotFact", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.RobotFacts;
+
+        if (fileName.StartsWith("RA_JBO_Shuffle", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("RA_JBO_TellSomething", StringComparison.OrdinalIgnoreCase))
-            return LegacyMimBucket.FunFacts;
+            return LegacyMimBucket.FunFactSource;
 
         if (normalizedPath.Contains("/emotion-responses/", StringComparison.OrdinalIgnoreCase) ||
             normalizedPath.Contains("/gqa-responses/", StringComparison.OrdinalIgnoreCase))
@@ -221,6 +223,8 @@ public static class LegacyMimCatalogImporter
         return new JiboExperienceCatalog
         {
             Jokes = Merge(baseCatalog.Jokes, importedCatalog.Jokes),
+            RobotFacts = Merge(baseCatalog.RobotFacts, importedCatalog.RobotFacts),
+            HumanFacts = Merge(baseCatalog.HumanFacts, importedCatalog.HumanFacts),
             FunFacts = Merge(baseCatalog.FunFacts, importedCatalog.FunFacts),
             DanceAnimations = Merge(baseCatalog.DanceAnimations, importedCatalog.DanceAnimations),
             GreetingReplies = Merge(baseCatalog.GreetingReplies, importedCatalog.GreetingReplies),
@@ -332,9 +336,12 @@ public static class LegacyMimCatalogImporter
         GenericFallback,
         Greeting,
         Jokes,
+        RobotFacts,
+        HumanFacts,
         HowAreYou,
         Emotion,
         FunFacts,
+        FunFactSource,
         Personality,
         PersonalReportKickOff,
         PersonalReportOutro,
@@ -365,6 +372,8 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _fallbacks = [];
         private readonly List<string> _greetings = [];
         private readonly List<string> _jokes = [];
+        private readonly List<string> _robotFacts = [];
+        private readonly List<string> _humanFacts = [];
         private readonly List<string> _howAreYous = [];
         private readonly List<string> _funFacts = [];
         private readonly List<string> _newsCategoryIntroReplies = [];
@@ -380,7 +389,7 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _weatherTomorrowHighLowReplies = [];
         private readonly List<string> _weatherTomorrowIntroReplies = [];
 
-        public void Add(LegacyMimBucket bucket, string? condition, string text)
+        public void Add(LegacyMimBucket bucket, string? condition, string text, string? sourcePrompt = null)
         {
             switch (bucket)
             {
@@ -398,6 +407,12 @@ public static class LegacyMimCatalogImporter
                     if (_jokes.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
 
                     _jokes.Add(text);
+                    return;
+                case LegacyMimBucket.RobotFacts:
+                    AddDistinct(_robotFacts, text);
+                    return;
+                case LegacyMimBucket.HumanFacts:
+                    AddDistinct(_humanFacts, text);
                     return;
                 case LegacyMimBucket.HowAreYou:
                     if (_howAreYous.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase)))
@@ -425,6 +440,19 @@ public static class LegacyMimCatalogImporter
 
                     _personalities.Add(text);
                     return;
+                case LegacyMimBucket.FunFactSource:
+                    switch (ResolveFunFactTarget(sourcePrompt ?? text))
+                    {
+                        case LegacyMimBucket.RobotFacts:
+                            AddDistinct(_robotFacts, text);
+                            return;
+                        case LegacyMimBucket.HumanFacts:
+                            AddDistinct(_humanFacts, text);
+                            return;
+                        default:
+                            AddDistinct(_funFacts, text);
+                            return;
+                    }
                 case LegacyMimBucket.FunFacts:
                     if (_funFacts.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
 
@@ -488,6 +516,8 @@ public static class LegacyMimCatalogImporter
             return new JiboExperienceCatalog
             {
                 Jokes = [.. _jokes],
+                RobotFacts = [.. _robotFacts],
+                HumanFacts = [.. _humanFacts],
                 FunFacts = [.. _funFacts],
                 GreetingReplies = [.. _greetings],
                 HowAreYouReplies = [.. _howAreYous],
@@ -518,6 +548,23 @@ public static class LegacyMimCatalogImporter
             if (target.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
 
             target.Add(text);
+        }
+
+        private LegacyMimBucket ResolveFunFactTarget(string prompt)
+        {
+            var lowered = NormalizePrompt(prompt, false).ToLowerInvariant();
+            if (ContainsAny(lowered, "robot", "humanoid", "machine", "about me", "my cameras", "turing", "deep blue", "rossum"))
+                return LegacyMimBucket.RobotFacts;
+
+            if (ContainsAny(lowered, "human", "people", "grown ups", "human being", "humans"))
+                return LegacyMimBucket.HumanFacts;
+
+            return LegacyMimBucket.FunFacts;
+        }
+
+        private static bool ContainsAny(string text, params string[] values)
+        {
+            return values.Any(value => text.Contains(value, StringComparison.OrdinalIgnoreCase));
         }
     }
 

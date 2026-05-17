@@ -2915,8 +2915,28 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("proactive_fun_fact", decision.IntentName);
         Assert.Equal("chitchat-skill", decision.SkillName);
         Assert.Equal("fun_fact", decision.SkillPayload!["replyType"]);
+        Assert.Equal("fun_fact", decision.SkillPayload["factCategory"]);
         Assert.NotNull(decision.ReplyText);
         Assert.NotEmpty(decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_Surprise_UsesHumanFactWhenRandomizerChoosesLastCategory()
+    {
+        var service = CreateService(randomizer: new FactCategoryLastRandomizer());
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "surprise me",
+            NormalizedTranscript = "surprise me"
+        });
+
+        Assert.Equal("proactive_fun_fact", decision.IntentName);
+        Assert.Equal("chitchat-skill", decision.SkillName);
+        Assert.Equal("fun_fact", decision.SkillPayload!["replyType"]);
+        Assert.Equal("human_fact", decision.SkillPayload["factCategory"]);
+        Assert.NotNull(decision.ReplyText);
+        Assert.Contains("human", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -3872,11 +3892,12 @@ public sealed class JiboInteractionServiceTests
         IPersonalMemoryStore? personalMemoryStore = null,
         IWeatherReportProvider? weatherReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null,
-        IJiboExperienceContentRepository? contentRepository = null)
+        IJiboExperienceContentRepository? contentRepository = null,
+        IJiboRandomizer? randomizer = null)
     {
         return new JiboInteractionService(
             new JiboExperienceContentCache(contentRepository ?? new InMemoryJiboExperienceContentRepository()),
-            new FirstItemRandomizer(),
+            randomizer ?? new FirstItemRandomizer(),
             personalMemoryStore ?? new InMemoryPersonalMemoryStore(),
             weatherReportProvider,
             newsBriefingProvider);
@@ -3912,6 +3933,24 @@ public sealed class JiboInteractionServiceTests
         public T Choose<T>(IReadOnlyList<T> items)
         {
             return items[0];
+        }
+    }
+
+    private sealed class LastItemRandomizer : IJiboRandomizer
+    {
+        public T Choose<T>(IReadOnlyList<T> items)
+        {
+            return items[^1];
+        }
+    }
+
+    private sealed class FactCategoryLastRandomizer : IJiboRandomizer
+    {
+        public T Choose<T>(IReadOnlyList<T> items)
+        {
+            return typeof(T).Name == "ProactiveFactCategory"
+                ? items[^1]
+                : items[0];
         }
     }
 

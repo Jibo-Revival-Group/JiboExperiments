@@ -1161,7 +1161,16 @@ public sealed class JiboInteractionService(
 
     private JiboInteractionDecision BuildProactiveFunFactDecision(JiboExperienceCatalog catalog)
     {
-        var fact = randomizer.Choose(catalog.FunFacts);
+        var categories = new List<ProactiveFactCategory>();
+        AddProactiveFactCategory(categories, "fun_fact", catalog.FunFacts);
+        AddProactiveFactCategory(categories, "robot_fact", catalog.RobotFacts);
+        AddProactiveFactCategory(categories, "human_fact", catalog.HumanFacts);
+
+        if (categories.Count == 0)
+            return new JiboInteractionDecision("proactive_fun_fact", randomizer.Choose(catalog.SurpriseReplies));
+
+        var selectedCategory = randomizer.Choose(categories);
+        var fact = randomizer.Choose(selectedCategory.Replies);
         return new JiboInteractionDecision(
             "proactive_fun_fact",
             fact,
@@ -1171,8 +1180,19 @@ public sealed class JiboInteractionService(
                 ["mim_id"] = "runtime-fun-fact",
                 ["mim_type"] = "announcement",
                 ["prompt_id"] = "RUNTIME_FUN_FACT",
-                ["replyType"] = "fun_fact"
+                ["replyType"] = "fun_fact",
+                ["factCategory"] = selectedCategory.CategoryName
             });
+    }
+
+    private static void AddProactiveFactCategory(
+        ICollection<ProactiveFactCategory> categories,
+        string categoryName,
+        IReadOnlyList<string> replies)
+    {
+        if (replies.Count == 0) return;
+
+        categories.Add(new ProactiveFactCategory(categoryName, replies));
     }
 
     private JiboInteractionDecision BuildProactiveJokeDecision(JiboExperienceCatalog catalog)
@@ -5203,6 +5223,8 @@ public sealed class JiboInteractionService(
     private sealed record PizzaMimPrompt(string PromptId, string Esml);
 
     private sealed record ProactivityCandidate(string IntentName, int Weight);
+
+    private sealed record ProactiveFactCategory(string CategoryName, IReadOnlyList<string> Replies);
 
     private sealed record PizzaSignal(PersonalAffinity? Affinity);
 

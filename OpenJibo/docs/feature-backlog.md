@@ -889,7 +889,8 @@ For `1.0.19`:
 9. Durable memory persistence path (multi-tenant backing store)
   - reference design captured in `docs/persistence-architecture.md`
   - store contracts are now tightened around account/loop/device/person scoping, revision tracking, and explicit load/save boundaries
-  - next implementation pass should split the in-memory adapters from the eventual Azure-backed adapters while keeping the application seam stable
+  - the backend seam is now selectable, with file-backed local persistence as default and an Azure SQL slot wired for future deployment when credentials are available
+  - next implementation pass should supply the real Azure SQL connection string / deployment wiring and validate the live round-trip in Azure
 10. Update, backup, and restore proof
 11. STT upgrade and noise screening
 12. Hosted capture/storage plan / indexing for group testing

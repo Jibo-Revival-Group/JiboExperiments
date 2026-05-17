@@ -6,6 +6,25 @@ namespace Jibo.Cloud.Tests.Infrastructure;
 public sealed class PersistenceStoreTests
 {
     [Fact]
+    public void SnapshotStoreFactory_DefaultsToFileBackend()
+    {
+        var factory = new PersistenceSnapshotStoreFactory();
+
+        var store = factory.Create(Path.Combine(Path.GetTempPath(), $"factory-{Guid.NewGuid():N}.json"), PersistenceBackendKind.File, "sample-snapshot");
+
+        Assert.Equal("JsonFileSnapshotStore", store.GetType().Name);
+    }
+
+    [Fact]
+    public void SnapshotStoreFactory_AzureBackendIsExplicitlyUnavailable()
+    {
+        var factory = new PersistenceSnapshotStoreFactory();
+
+        Assert.Throws<InvalidOperationException>(() =>
+            factory.Create(Path.Combine(Path.GetTempPath(), $"factory-{Guid.NewGuid():N}.json"), PersistenceBackendKind.AzureSql, "sample-snapshot"));
+    }
+
+    [Fact]
     public void PersonalMemoryStore_CanUseAlternateSnapshotBackend()
     {
         var backend = new RecordingSnapshotStore();

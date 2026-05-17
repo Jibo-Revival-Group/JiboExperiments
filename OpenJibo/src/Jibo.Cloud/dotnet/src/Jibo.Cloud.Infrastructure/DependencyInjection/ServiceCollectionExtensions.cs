@@ -56,8 +56,21 @@ public static class ServiceCollectionExtensions
             ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "cloud-state.json");
         var personalMemoryPersistencePath = configuration?["OpenJibo:PersonalMemory:PersistencePath"]
             ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "personal-memory.json");
-        services.AddSingleton<ICloudStateStore>(_ => new InMemoryCloudStateStore(statePersistencePath));
-        services.AddSingleton<IPersonalMemoryStore>(_ => new InMemoryPersonalMemoryStore(personalMemoryPersistencePath));
+        var stateBackendKind = ParseBackendKind(configuration?["OpenJibo:State:Backend"]);
+        var personalMemoryBackendKind = ParseBackendKind(configuration?["OpenJibo:PersonalMemory:Backend"]);
+        var stateConnectionString = configuration?["OpenJibo:State:ConnectionString"] ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_SQL_CONNECTION_STRING");
+        var personalMemoryConnectionString = configuration?["OpenJibo:PersonalMemory:ConnectionString"] ?? Environment.GetEnvironmentVariable("OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
+        services.AddSingleton<IPersistenceSnapshotStoreFactory, PersistenceSnapshotStoreFactory>();
+        services.AddSingleton<ICloudStateStore>(provider =>
+        {
+            var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
+            return new InMemoryCloudStateStore(snapshotFactory.Create(statePersistencePath, stateBackendKind, "cloud-state", stateConnectionString));
+        });
+        services.AddSingleton<IPersonalMemoryStore>(provider =>
+        {
+            var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
+            return new InMemoryPersonalMemoryStore(snapshotFactory.Create(personalMemoryPersistencePath, personalMemoryBackendKind, "personal-memory", personalMemoryConnectionString));
+        });
         services.AddSingleton<IJiboExperienceContentRepository, InMemoryJiboExperienceContentRepository>();
         services.AddSingleton<JiboExperienceContentCache>();
         services.AddSingleton<IJiboRandomizer, DefaultJiboRandomizer>();
@@ -77,5 +90,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<JiboWebSocketService>();
 
         return services;
+    }
+
+    private static PersistenceBackendKind ParseBackendKind(string? value)
+    {
+        return Enum.TryParse<PersistenceBackendKind>(value, ignoreCase: true, out var backendKind)
+            ? backendKind
+            : PersistenceBackendKind.File;
     }
 }

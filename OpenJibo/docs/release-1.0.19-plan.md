@@ -94,6 +94,7 @@ The goal is to port these in small batches, capture the source-backed phrasing w
 - implement memory-ready schemas and repository contracts for user facts (names, birthdays, personal dates, preferences) with strict tenant scoping
 - seed person-aware state keys now so future interactions can scope to account + loop + device + person without another shape change
 - keep stateful interaction flows repository-backed instead of embedding more ad hoc metadata in the websocket layer
+- the store seam now exposes revision metadata plus explicit load/save boundaries so durable adapters can drop in later without changing behavior code
 
 ### 6. Multi-Server Sync Path
 

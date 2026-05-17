@@ -9,10 +9,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 {
     private static readonly JsonSerializerOptions PersistenceJsonOptions = new()
     {
-        WriteIndented = true
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true
     };
 
-    private readonly AccountProfile _account = new();
+    private AccountProfile _account = new();
     private readonly ConcurrentDictionary<string, DeviceRegistration> _devices = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, CloudSession> _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, string> _symmetricKeys = new(StringComparer.OrdinalIgnoreCase);
@@ -26,6 +27,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly List<PersonRecord> _people;
     private DeviceRegistration _robot;
     private RobotProfile _robotProfile;
+    private long _revision;
+    private DateTimeOffset? _lastLoadedUtc;
+    private DateTimeOffset? _lastSavedUtc;
 
     public InMemoryCloudStateStore(string? persistencePath = null)
     {
@@ -86,7 +90,149 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         ];
 
         _updates = [];
-        LoadPersistentState();
+        LoadPersistedState();
+    }
+
+    public PersistenceStateInfo GetPersistenceStateInfo()
+    {
+        return new PersistenceStateInfo(
+            SchemaVersion: CurrentSchemaVersion,
+            Revision: Interlocked.Read(ref _revision),
+            LastLoadedUtc: _lastLoadedUtc,
+            LastSavedUtc: _lastSavedUtc);
+    }
+
+    public void LoadPersistedState()
+    {
+        if (string.IsNullOrWhiteSpace(_persistencePath) || !File.Exists(_persistencePath))
+        {
+            return;
+        }
+
+        try
+        {
+            var snapshot = JsonSerializer.Deserialize<PersistentStateSnapshot>(File.ReadAllText(_persistencePath), PersistenceJsonOptions);
+            if (snapshot is null)
+            {
+                return;
+            }
+
+            _account = snapshot.Account ?? _account;
+            _robot = snapshot.Robot ?? _robot;
+            _robotProfile = snapshot.RobotProfile ?? _robotProfile;
+
+            _devices.Clear();
+            foreach (var device in snapshot.Devices ?? [])
+            {
+                _devices[device.DeviceId] = device;
+            }
+
+            if (_devices.IsEmpty || !_devices.ContainsKey(_robot.DeviceId))
+            {
+                _devices[_robot.DeviceId] = _robot;
+            }
+
+            _sessionsByToken.Clear();
+            foreach (var session in snapshot.Sessions ?? [])
+            {
+                if (!string.IsNullOrWhiteSpace(session.Token))
+                {
+                    _sessionsByToken[session.Token] = session.ToRecord();
+                }
+            }
+
+            _symmetricKeys.Clear();
+            foreach (var pair in snapshot.SymmetricKeys ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase))
+            {
+                _symmetricKeys[pair.Key] = pair.Value;
+            }
+
+            _keyRequests.Clear();
+            foreach (var keyRequest in snapshot.KeyRequests ?? [])
+            {
+                _keyRequests[keyRequest.RequestId] = keyRequest;
+            }
+
+            _updates.Clear();
+            _updates.AddRange(snapshot.Updates ?? []);
+
+            _media.Clear();
+            _media.AddRange(snapshot.Media ?? []);
+
+            _backups.Clear();
+            _backups.AddRange(snapshot.Backups ?? []);
+
+            _loops.Clear();
+            _loops.AddRange(snapshot.Loops ?? []);
+
+            _people.Clear();
+            _people.AddRange(snapshot.People ?? []);
+
+            if (_robotProfile is null || !string.Equals(_robotProfile.RobotId, _robot.RobotId, StringComparison.OrdinalIgnoreCase))
+            {
+                _robotProfile = new RobotProfile
+                {
+                    RobotId = _robot.RobotId,
+                    Payload = new Dictionary<string, object?>
+                    {
+                        ["SSID"] = "my-ssid",
+                        ["connectedAt"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                        ["platform"] = _robot.FirmwareVersion ?? "12.10.0",
+                        ["serialNumber"] = _robot.DeviceId
+                    },
+                    UpdatedUtc = DateTimeOffset.UtcNow
+                };
+            }
+
+            Interlocked.Exchange(ref _revision, snapshot.Revision);
+            _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
+            _lastSavedUtc = snapshot.LastSavedUtc;
+        }
+        catch
+        {
+            // Ignore corrupt state and continue with the in-memory defaults.
+        }
+    }
+
+    public void SavePersistedState()
+    {
+        if (string.IsNullOrWhiteSpace(_persistencePath))
+        {
+            return;
+        }
+
+        lock (_syncRoot)
+        {
+            var directory = Path.GetDirectoryName(_persistencePath);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            var snapshot = new PersistentStateSnapshot
+            {
+                SchemaVersion = CurrentSchemaVersion,
+                Revision = Interlocked.Read(ref _revision),
+                LastLoadedUtc = _lastLoadedUtc,
+                LastSavedUtc = now,
+                Account = _account,
+                Robot = _robot,
+                RobotProfile = _robotProfile,
+                Devices = _devices.Values.ToArray(),
+                Sessions = _sessionsByToken.Values.Select(MapSessionSnapshot).ToArray(),
+                SymmetricKeys = _symmetricKeys.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase),
+                KeyRequests = _keyRequests.Values.ToArray(),
+                Updates = _updates.ToArray(),
+                Media = _media.ToArray(),
+                Backups = _backups.ToArray(),
+                Loops = _loops.ToArray(),
+                People = _people.ToArray()
+            };
+
+            File.WriteAllText(_persistencePath, JsonSerializer.Serialize(snapshot, PersistenceJsonOptions));
+            _lastSavedUtc = now;
+        }
     }
 
     public AccountProfile GetAccount() => _account;
@@ -97,7 +243,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion)
     {
-        return _devices.AddOrUpdate(
+        var device = _devices.AddOrUpdate(
             deviceId,
             _ => new DeviceRegistration
             {
@@ -114,8 +260,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 FriendlyName = current.FriendlyName,
                 FirmwareVersion = firmwareVersion ?? current.FirmwareVersion,
                 ApplicationVersion = applicationVersion ?? current.ApplicationVersion,
-                HostMappings = current.HostMappings
+                HostMappings = new Dictionary<string, string>(current.HostMappings, StringComparer.OrdinalIgnoreCase)
             });
+
+        TouchState();
+        return device;
     }
 
     public string IssueHubToken()
@@ -130,6 +279,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Metadata = BuildSessionMetadata(_account.AccountId, _robot.DeviceId, ResolveDefaultLoopId())
         };
 
+        TouchState();
         return token;
     }
 
@@ -145,6 +295,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Metadata = BuildSessionMetadata(_account.AccountId, deviceId, ResolveDefaultLoopId())
         };
 
+        TouchState();
         return token;
     }
 
@@ -166,6 +317,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         if (!string.IsNullOrWhiteSpace(token))
         {
             _sessionsByToken[token] = session;
+            TouchState();
         }
 
         return session;
@@ -210,7 +362,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         };
 
         _updates.Add(update);
-        PersistState();
+        TouchState();
         return update;
     }
 
@@ -218,6 +370,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         var existing = _updates.FirstOrDefault(update => update.UpdateId == updateId);
         if (existing is null)
+        {
             return new UpdateManifest
             {
                 UpdateId = updateId ?? "unknown-update",
@@ -226,11 +379,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 ShaHash = "missing",
                 Subsystem = "unknown"
             };
+        }
 
         _updates.Remove(existing);
-        PersistState();
+        TouchState();
         return existing;
-
     }
 
     public IReadOnlyList<MediaRecord> ListMedia(IReadOnlyList<string>? loopIds = null, long? after = null, long? before = null)
@@ -278,7 +431,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         if (replacements.Count > 0)
         {
-            PersistState();
+            TouchState();
         }
 
         return replacements;
@@ -308,7 +461,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             _media.Add(item);
         }
 
-        PersistState();
+        TouchState();
         return item;
     }
 
@@ -318,7 +471,19 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public string GetOrCreateSymmetricKey(string loopId)
     {
-        return _symmetricKeys.GetOrAdd(loopId, key => Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"open-jibo-symmetric-key:{key}")));
+        if (_symmetricKeys.TryGetValue(loopId, out var existing))
+        {
+            return existing;
+        }
+
+        var key = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"open-jibo-symmetric-key:{loopId}"));
+        if (_symmetricKeys.TryAdd(loopId, key))
+        {
+            TouchState();
+            return key;
+        }
+
+        return _symmetricKeys[loopId];
     }
 
     public KeyRequestRecord CreateKeyRequest(string loopId, string publicKey)
@@ -331,6 +496,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         };
 
         _keyRequests[record.RequestId] = record;
+        TouchState();
         return record;
     }
 
@@ -390,77 +556,25 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             },
             UpdatedUtc = DateTimeOffset.UtcNow
         };
-        PersistState();
+        TouchState();
     }
 
-    private void LoadPersistentState()
+    private void TouchState()
     {
-        if (string.IsNullOrWhiteSpace(_persistencePath) || !File.Exists(_persistencePath))
-        {
-            return;
-        }
-
-        try
-        {
-            var snapshot = JsonSerializer.Deserialize<PersistentStateSnapshot>(File.ReadAllText(_persistencePath), PersistenceJsonOptions);
-            if (snapshot is null)
-            {
-                return;
-            }
-
-            _updates.Clear();
-            _updates.AddRange(snapshot.Updates ?? []);
-
-            _media.Clear();
-            _media.AddRange(snapshot.Media ?? []);
-
-            _backups.Clear();
-            _backups.AddRange(snapshot.Backups ?? []);
-        }
-        catch
-        {
-            // Ignore corrupt state and continue with the in-memory defaults.
-        }
+        Interlocked.Increment(ref _revision);
+        SavePersistedState();
     }
 
-    private void PersistState()
+    private static string ResolveDefaultLoopId(IReadOnlyList<LoopRecord> loops, AccountProfile account)
     {
-        if (string.IsNullOrWhiteSpace(_persistencePath))
-        {
-            return;
-        }
-
-        lock (_syncRoot)
-        {
-            var directory = Path.GetDirectoryName(_persistencePath);
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            var snapshot = new PersistentStateSnapshot
-            {
-                Updates = _updates.ToArray(),
-                Media = _media.ToArray(),
-                Backups = _backups.ToArray()
-            };
-
-            File.WriteAllText(_persistencePath, JsonSerializer.Serialize(snapshot, PersistenceJsonOptions));
-        }
-    }
-
-    private sealed class PersistentStateSnapshot
-    {
-        public UpdateManifest[]? Updates { get; init; }
-        public MediaRecord[]? Media { get; init; }
-        public BackupRecord[]? Backups { get; init; }
+        return loops.FirstOrDefault(loop => string.Equals(loop.OwnerAccountId, account.AccountId, StringComparison.OrdinalIgnoreCase))?.LoopId
+               ?? loops.FirstOrDefault()?.LoopId
+               ?? "openjibo-default-loop";
     }
 
     private string ResolveDefaultLoopId()
     {
-        return _loops.FirstOrDefault(loop => string.Equals(loop.OwnerAccountId, _account.AccountId, StringComparison.OrdinalIgnoreCase))?.LoopId
-               ?? _loops.FirstOrDefault()?.LoopId
-               ?? "openjibo-default-loop";
+        return ResolveDefaultLoopId(_loops, _account);
     }
 
     private static IDictionary<string, object?> BuildSessionMetadata(string accountId, string? deviceId, string loopId)
@@ -471,5 +585,93 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             ["loopId"] = loopId,
             ["deviceId"] = deviceId
         };
+    }
+
+    private static CloudSessionSnapshot MapSessionSnapshot(CloudSession session)
+    {
+        return new CloudSessionSnapshot
+        {
+            SessionId = session.SessionId,
+            Kind = session.Kind,
+            AccountId = session.AccountId,
+            DeviceId = session.DeviceId,
+            Token = session.Token,
+            HostName = session.HostName,
+            Path = session.Path,
+            CreatedUtc = session.CreatedUtc,
+            LastSeenUtc = session.LastSeenUtc,
+            FollowUpExpiresUtc = session.FollowUpExpiresUtc,
+            LastMessageType = session.LastMessageType,
+            LastListenType = session.LastListenType,
+            LastIntent = session.LastIntent,
+            LastTranscript = session.LastTranscript,
+            LastTransId = session.LastTransId,
+            Metadata = session.Metadata
+        };
+    }
+
+    private const string CurrentSchemaVersion = "1";
+
+    private sealed class PersistentStateSnapshot
+    {
+        public string SchemaVersion { get; init; } = CurrentSchemaVersion;
+        public long Revision { get; init; }
+        public DateTimeOffset? LastLoadedUtc { get; init; }
+        public DateTimeOffset? LastSavedUtc { get; init; }
+        public AccountProfile? Account { get; init; }
+        public DeviceRegistration? Robot { get; init; }
+        public RobotProfile? RobotProfile { get; init; }
+        public DeviceRegistration[]? Devices { get; init; }
+        public CloudSessionSnapshot[]? Sessions { get; init; }
+        public Dictionary<string, string>? SymmetricKeys { get; init; }
+        public KeyRequestRecord[]? KeyRequests { get; init; }
+        public UpdateManifest[]? Updates { get; init; }
+        public MediaRecord[]? Media { get; init; }
+        public BackupRecord[]? Backups { get; init; }
+        public LoopRecord[]? Loops { get; init; }
+        public PersonRecord[]? People { get; init; }
+    }
+
+    private sealed class CloudSessionSnapshot
+    {
+        public string SessionId { get; init; } = Guid.NewGuid().ToString("N");
+        public string Kind { get; init; } = "http";
+        public string? AccountId { get; init; }
+        public string? DeviceId { get; init; }
+        public string? Token { get; init; }
+        public string? HostName { get; init; }
+        public string? Path { get; init; }
+        public DateTimeOffset CreatedUtc { get; init; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset LastSeenUtc { get; init; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset? FollowUpExpiresUtc { get; init; }
+        public string? LastMessageType { get; init; }
+        public string? LastListenType { get; init; }
+        public string? LastIntent { get; init; }
+        public string? LastTranscript { get; init; }
+        public string? LastTransId { get; init; }
+        public IDictionary<string, object?> Metadata { get; init; } = new Dictionary<string, object?>();
+
+        public CloudSession ToRecord()
+        {
+            return new CloudSession
+            {
+                SessionId = SessionId,
+                Kind = Kind,
+                AccountId = AccountId,
+                DeviceId = DeviceId,
+                Token = Token,
+                HostName = HostName,
+                Path = Path,
+                CreatedUtc = CreatedUtc,
+                LastSeenUtc = LastSeenUtc,
+                FollowUpExpiresUtc = FollowUpExpiresUtc,
+                LastMessageType = LastMessageType,
+                LastListenType = LastListenType,
+                LastIntent = LastIntent,
+                LastTranscript = LastTranscript,
+                LastTransId = LastTransId,
+                Metadata = new Dictionary<string, object?>(Metadata, StringComparer.OrdinalIgnoreCase)
+            };
+        }
     }
 }

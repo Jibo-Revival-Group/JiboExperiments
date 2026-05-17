@@ -54,8 +54,10 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
         var statePersistencePath = configuration?["OpenJibo:State:PersistencePath"]
             ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "cloud-state.json");
+        var personalMemoryPersistencePath = configuration?["OpenJibo:PersonalMemory:PersistencePath"]
+            ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "personal-memory.json");
         services.AddSingleton<ICloudStateStore>(_ => new InMemoryCloudStateStore(statePersistencePath));
-        services.AddSingleton<IPersonalMemoryStore, InMemoryPersonalMemoryStore>();
+        services.AddSingleton<IPersonalMemoryStore>(_ => new InMemoryPersonalMemoryStore(personalMemoryPersistencePath));
         services.AddSingleton<IJiboExperienceContentRepository, InMemoryJiboExperienceContentRepository>();
         services.AddSingleton<JiboExperienceContentCache>();
         services.AddSingleton<IJiboRandomizer, DefaultJiboRandomizer>();

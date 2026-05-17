@@ -4,6 +4,9 @@ namespace Jibo.Cloud.Application.Abstractions;
 
 public interface ICloudStateStore
 {
+    PersistenceStateInfo GetPersistenceStateInfo();
+    void LoadPersistedState();
+    void SavePersistedState();
     AccountProfile GetAccount();
     DeviceRegistration GetRobot();
     RobotProfile GetRobotProfile();

@@ -888,7 +888,8 @@ For `1.0.19`:
 8. Holidays and seasonal personality behavior built on the new memory/proactivity foundation
 9. Durable memory persistence path (multi-tenant backing store)
   - reference design captured in `docs/persistence-architecture.md`
-  - next implementation pass should tighten the store contracts around account/loop/device/person scoping and record versioning
+  - store contracts are now tightened around account/loop/device/person scoping, revision tracking, and explicit load/save boundaries
+  - next implementation pass should split the in-memory adapters from the eventual Azure-backed adapters while keeping the application seam stable
 10. Update, backup, and restore proof
 11. STT upgrade and noise screening
 12. Hosted capture/storage plan / indexing for group testing

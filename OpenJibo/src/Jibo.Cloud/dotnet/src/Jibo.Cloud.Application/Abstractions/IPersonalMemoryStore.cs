@@ -2,6 +2,9 @@ namespace Jibo.Cloud.Application.Abstractions;
 
 public interface IPersonalMemoryStore
 {
+    PersistenceStateInfo GetPersistenceStateInfo();
+    void LoadPersistedState();
+    void SavePersistedState();
     void SetBirthday(PersonalMemoryTenantScope tenantScope, string birthdayText);
     string? GetBirthday(PersonalMemoryTenantScope tenantScope);
     void SetPreference(PersonalMemoryTenantScope tenantScope, string category, string value);
@@ -19,6 +22,12 @@ public interface IPersonalMemoryStore
 }
 
 public sealed record PersonalMemoryTenantScope(string AccountId, string LoopId, string DeviceId, string? PersonId = null);
+
+public sealed record PersistenceStateInfo(
+    string SchemaVersion,
+    long Revision,
+    DateTimeOffset? LastLoadedUtc = null,
+    DateTimeOffset? LastSavedUtc = null);
 
 public enum PersonalAffinity
 {

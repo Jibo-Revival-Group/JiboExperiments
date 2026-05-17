@@ -13,7 +13,7 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
     };
 
     private readonly ConcurrentDictionary<string, TenantMemoryRecord> _tenantMemory = new(StringComparer.OrdinalIgnoreCase);
-    private readonly string? _persistencePath;
+    private readonly JsonSnapshotStore _snapshotStore;
     private readonly Lock _syncRoot = new();
     private long _revision;
     private DateTimeOffset? _lastLoadedUtc;
@@ -21,7 +21,7 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
 
     public InMemoryPersonalMemoryStore(string? persistencePath = null)
     {
-        _persistencePath = persistencePath;
+        _snapshotStore = new JsonSnapshotStore(persistencePath, PersistenceJsonOptions);
         LoadPersistedState();
     }
 
@@ -36,50 +36,27 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
 
     public void LoadPersistedState()
     {
-        if (string.IsNullOrWhiteSpace(_persistencePath) || !File.Exists(_persistencePath))
+        var snapshot = _snapshotStore.Load<PersistentStateSnapshot>();
+        if (snapshot is null)
         {
             return;
         }
 
-        try
+        _tenantMemory.Clear();
+        foreach (var tenant in snapshot.Tenants ?? [])
         {
-            var snapshot = JsonSerializer.Deserialize<PersistentStateSnapshot>(File.ReadAllText(_persistencePath), PersistenceJsonOptions);
-            if (snapshot is null)
-            {
-                return;
-            }
-
-            _tenantMemory.Clear();
-            foreach (var tenant in snapshot.Tenants ?? [])
-            {
-                _tenantMemory[tenant.TenantKey] = tenant.ToRecord();
-            }
-
-            Interlocked.Exchange(ref _revision, snapshot.Revision);
-            _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
-            _lastSavedUtc = snapshot.LastSavedUtc;
+            _tenantMemory[tenant.TenantKey] = tenant.ToRecord();
         }
-        catch
-        {
-            // Ignore corrupt state and continue with the in-memory defaults.
-        }
+
+        Interlocked.Exchange(ref _revision, snapshot.Revision);
+        _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
+        _lastSavedUtc = snapshot.LastSavedUtc;
     }
 
     public void SavePersistedState()
     {
-        if (string.IsNullOrWhiteSpace(_persistencePath))
-        {
-            return;
-        }
-
         lock (_syncRoot)
         {
-            var directory = Path.GetDirectoryName(_persistencePath);
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
             var now = DateTimeOffset.UtcNow;
             var snapshot = new PersistentStateSnapshot
             {
@@ -103,8 +80,7 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
                     })
                     .ToArray()
             };
-
-            File.WriteAllText(_persistencePath, JsonSerializer.Serialize(snapshot, PersistenceJsonOptions));
+            _snapshotStore.Save(snapshot);
             _lastSavedUtc = now;
         }
     }

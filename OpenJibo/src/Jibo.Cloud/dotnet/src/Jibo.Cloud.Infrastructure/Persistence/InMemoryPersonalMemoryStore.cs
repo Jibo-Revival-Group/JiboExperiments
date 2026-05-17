@@ -13,15 +13,20 @@ public sealed class InMemoryPersonalMemoryStore : IPersonalMemoryStore
     };
 
     private readonly ConcurrentDictionary<string, TenantMemoryRecord> _tenantMemory = new(StringComparer.OrdinalIgnoreCase);
-    private readonly JsonSnapshotStore _snapshotStore;
+    private readonly ISnapshotStore _snapshotStore;
     private readonly Lock _syncRoot = new();
     private long _revision;
     private DateTimeOffset? _lastLoadedUtc;
     private DateTimeOffset? _lastSavedUtc;
 
     public InMemoryPersonalMemoryStore(string? persistencePath = null)
+        : this(new JsonFileSnapshotStore(persistencePath, PersistenceJsonOptions))
     {
-        _snapshotStore = new JsonSnapshotStore(persistencePath, PersistenceJsonOptions);
+    }
+
+    public InMemoryPersonalMemoryStore(ISnapshotStore snapshotStore)
+    {
+        _snapshotStore = snapshotStore;
         LoadPersistedState();
     }
 

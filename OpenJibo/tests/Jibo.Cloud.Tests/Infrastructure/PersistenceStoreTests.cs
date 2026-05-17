@@ -6,6 +6,33 @@ namespace Jibo.Cloud.Tests.Infrastructure;
 public sealed class PersistenceStoreTests
 {
     [Fact]
+    public void PersonalMemoryStore_CanUseAlternateSnapshotBackend()
+    {
+        var backend = new RecordingSnapshotStore();
+        var store = new InMemoryPersonalMemoryStore(backend);
+        var scope = new PersonalMemoryTenantScope("acct-b", "loop-b", "device-b", "person-b");
+
+        store.SetName(scope, "Alt Backend");
+
+        Assert.Single(backend.Saves);
+        Assert.Equal("Alt Backend", store.GetName(scope));
+        Assert.Equal("1", store.GetPersistenceStateInfo().SchemaVersion);
+    }
+
+    [Fact]
+    public void CloudStateStore_CanUseAlternateSnapshotBackend()
+    {
+        var backend = new RecordingSnapshotStore();
+        var store = new InMemoryCloudStateStore(backend);
+
+        store.CreateMedia("openjibo-default-loop", "backend-photo", "image", "photo-ref", false, null);
+
+        Assert.Single(backend.Saves);
+        Assert.Contains(store.ListMedia(), item => item.Path == "backend-photo");
+        Assert.Equal("1", store.GetPersistenceStateInfo().SchemaVersion);
+    }
+
+    [Fact]
     public void PersonalMemoryStore_RoundTripsStateAndRevision()
     {
         var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-personal-memory-{Guid.NewGuid():N}.json");
@@ -82,6 +109,21 @@ public sealed class PersistenceStoreTests
             {
                 File.Delete(persistencePath);
             }
+        }
+    }
+
+    private sealed class RecordingSnapshotStore : ISnapshotStore
+    {
+        public List<object> Saves { get; } = [];
+
+        public TSnapshot2? Load<TSnapshot2>() where TSnapshot2 : class
+        {
+            return default;
+        }
+
+        public void Save<TSnapshot2>(TSnapshot2 snapshot) where TSnapshot2 : class
+        {
+            Saves.Add(snapshot);
         }
     }
 }

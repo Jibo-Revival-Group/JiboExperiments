@@ -18,7 +18,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly ConcurrentDictionary<string, CloudSession> _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, string> _symmetricKeys = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, KeyRequestRecord> _keyRequests = new(StringComparer.OrdinalIgnoreCase);
-    private readonly JsonSnapshotStore _snapshotStore;
+    private readonly ISnapshotStore _snapshotStore;
     private readonly Lock _syncRoot = new();
     private readonly List<UpdateManifest> _updates;
     private readonly List<MediaRecord> _media = [];
@@ -32,8 +32,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private DateTimeOffset? _lastSavedUtc;
 
     public InMemoryCloudStateStore(string? persistencePath = null)
+        : this(new JsonFileSnapshotStore(persistencePath, PersistenceJsonOptions))
     {
-        _snapshotStore = new JsonSnapshotStore(persistencePath, PersistenceJsonOptions);
+    }
+
+    public InMemoryCloudStateStore(ISnapshotStore snapshotStore)
+    {
+        _snapshotStore = snapshotStore;
         _robot = new DeviceRegistration
         {
             HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

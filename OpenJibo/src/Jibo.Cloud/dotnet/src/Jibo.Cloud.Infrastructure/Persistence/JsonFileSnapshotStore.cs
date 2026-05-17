@@ -2,18 +2,18 @@ using System.Text.Json;
 
 namespace Jibo.Cloud.Infrastructure.Persistence;
 
-internal sealed class JsonSnapshotStore
+internal sealed class JsonFileSnapshotStore : ISnapshotStore
 {
     private readonly string? _persistencePath;
     private readonly JsonSerializerOptions _options;
 
-    public JsonSnapshotStore(string? persistencePath, JsonSerializerOptions options)
+    public JsonFileSnapshotStore(string? persistencePath, JsonSerializerOptions options)
     {
         _persistencePath = persistencePath;
         _options = options;
     }
 
-    public TSnapshot? Load<TSnapshot>()
+    public TSnapshot? Load<TSnapshot>() where TSnapshot : class
     {
         if (string.IsNullOrWhiteSpace(_persistencePath) || !File.Exists(_persistencePath))
         {
@@ -30,7 +30,7 @@ internal sealed class JsonSnapshotStore
         }
     }
 
-    public void Save<TSnapshot>(TSnapshot snapshot)
+    public void Save<TSnapshot>(TSnapshot snapshot) where TSnapshot : class
     {
         if (string.IsNullOrWhiteSpace(_persistencePath))
         {

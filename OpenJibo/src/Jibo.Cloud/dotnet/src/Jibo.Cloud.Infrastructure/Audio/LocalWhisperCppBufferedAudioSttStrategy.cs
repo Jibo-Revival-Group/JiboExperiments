@@ -52,6 +52,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
                 cancellationToken);
 
             var transcript = ExtractTranscript(whisperResult.StdOut);
+            transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(transcript);
             if (string.IsNullOrWhiteSpace(transcript))
                 throw new InvalidOperationException("whisper.cpp returned no transcript for the buffered audio turn.");
 

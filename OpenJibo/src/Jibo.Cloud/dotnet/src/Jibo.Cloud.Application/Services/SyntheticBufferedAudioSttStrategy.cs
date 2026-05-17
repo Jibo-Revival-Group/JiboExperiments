@@ -20,7 +20,7 @@ public sealed class SyntheticBufferedAudioSttStrategy : ISttStrategy
 
         return Task.FromResult(new SttResult
         {
-            Text = transcriptHint.Trim(),
+            Text = NormalizeLooseTranscript(transcriptHint),
             Provider = Name,
             Confidence = 0.75f,
             Locale = turn.Locale,
@@ -50,5 +50,17 @@ public sealed class SyntheticBufferedAudioSttStrategy : ISttStrategy
         return turn.Attributes.TryGetValue("audioTranscriptHint", out var transcriptHint)
             ? transcriptHint?.ToString()
             : null;
+    }
+
+    private static string NormalizeLooseTranscript(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        var lowered = value.Trim().ToLowerInvariant();
+        lowered = System.Text.RegularExpressions.Regex.Replace(lowered, @"[^\p{L}\p{N}\s']+", " ",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant | System.Text.RegularExpressions.RegexOptions.Compiled);
+        lowered = System.Text.RegularExpressions.Regex.Replace(lowered, @"\s+"," ",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant | System.Text.RegularExpressions.RegexOptions.Compiled);
+        return lowered.Trim();
     }
 }

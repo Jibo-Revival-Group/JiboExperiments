@@ -123,6 +123,48 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         }
     }
 
+    [Fact]
+    public async Task TranscribeAsync_NormalizesLoosePunctuationFromWhisperOutput()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var runner = new FakeExternalProcessRunner("[00:00:00.000 --> 00:00:01.000] - Thank you. - Yes.");
+            var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+                new BufferedAudioSttOptions
+                {
+                    EnableLocalWhisperCpp = true,
+                    FfmpegPath = "ffmpeg",
+                    WhisperCliPath = "whisper-cli",
+                    WhisperModelPath = "model.bin",
+                    TempDirectory = tempDirectory
+                },
+                runner);
+
+            var turn = new TurnContext
+            {
+                TurnId = "turn-local-stt-punctuation",
+                Locale = "en-US",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["bufferedAudioBytes"] = 47,
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                }
+            };
+
+            var result = await strategy.TranscribeAsync(turn);
+
+            Assert.Equal("thank you yes", result.Text);
+            Assert.Equal("local-whispercpp-buffered-audio", result.Provider);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
+        }
+    }
+
     private static byte[] BuildMinimalOggPage()
     {
         return
@@ -148,7 +190,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         return page;
     }
 
-    private sealed class FakeExternalProcessRunner : IExternalProcessRunner
+    private sealed class FakeExternalProcessRunner(string whisperStdOut = "[00:00:00.000 --> 00:00:01.000] tell me a joke")
+        : IExternalProcessRunner
     {
         public List<(string FileName, IReadOnlyList<string> Arguments)> Calls { get; } = [];
 
@@ -158,8 +201,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             Calls.Add((fileName, arguments));
 
             if (!string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
-                return Task.FromResult(new ExternalProcessResult(0, "[00:00:00.000 --> 00:00:01.000] tell me a joke",
-                    string.Empty));
+                return Task.FromResult(new ExternalProcessResult(0, whisperStdOut, string.Empty));
 
             var outputPath = arguments[^1];
             File.WriteAllBytes(outputPath, "RIFF"u8);

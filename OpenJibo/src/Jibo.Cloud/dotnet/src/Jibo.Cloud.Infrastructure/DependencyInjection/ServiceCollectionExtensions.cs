@@ -58,8 +58,12 @@ public static class ServiceCollectionExtensions
             ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "personal-memory.json");
         var stateBackendKind = ParseBackendKind(configuration?["OpenJibo:State:Backend"]);
         var personalMemoryBackendKind = ParseBackendKind(configuration?["OpenJibo:PersonalMemory:Backend"]);
-        var stateConnectionString = configuration?["OpenJibo:State:ConnectionString"] ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_SQL_CONNECTION_STRING");
-        var personalMemoryConnectionString = configuration?["OpenJibo:PersonalMemory:ConnectionString"] ?? Environment.GetEnvironmentVariable("OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
+        var stateConnectionString = configuration?["OpenJibo:State:ConnectionString"]
+            ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_STORAGE_CONNECTION_STRING")
+            ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_SQL_CONNECTION_STRING");
+        var personalMemoryConnectionString = configuration?["OpenJibo:PersonalMemory:ConnectionString"]
+            ?? Environment.GetEnvironmentVariable("OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
+            ?? Environment.GetEnvironmentVariable("OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
         services.AddSingleton<IPersistenceSnapshotStoreFactory, PersistenceSnapshotStoreFactory>();
         services.AddSingleton<ICloudStateStore>(provider =>
         {

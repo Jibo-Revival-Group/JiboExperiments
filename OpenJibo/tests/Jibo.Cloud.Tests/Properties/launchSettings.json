@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Jibo.Cloud.Tests.AzureBlob": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "OpenJibo__State__Backend": "AzureBlob",
+        "OpenJibo__State__ConnectionString": "UseDevelopmentStorage=true",
+        "OpenJibo__PersonalMemory__Backend": "AzureBlob",
+        "OpenJibo__PersonalMemory__ConnectionString": "UseDevelopmentStorage=true"
+      }
+    }
+  }
+}

@@ -15,6 +15,9 @@ public sealed class PersistenceSnapshotStoreFactory : IPersistenceSnapshotStoreF
         return backendKind switch
         {
             PersistenceBackendKind.File => new JsonFileSnapshotStore(persistencePath, JsonOptions),
+            PersistenceBackendKind.AzureBlob => new AzureBlobSnapshotStore(
+                connectionString ?? throw new InvalidOperationException("Azure Blob persistence requires a connection string."),
+                snapshotName),
             PersistenceBackendKind.AzureSql => new AzureSqlSnapshotStore(
                 connectionString ?? throw new InvalidOperationException("Azure SQL persistence requires a connection string."),
                 snapshotName),

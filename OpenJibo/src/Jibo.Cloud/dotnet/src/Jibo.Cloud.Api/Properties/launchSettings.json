@@ -7,6 +7,18 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "https://localhost:24604;http://localhost:24605"
+    },
+    "Jibo.Cloud.Api.AzureBlob": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "OpenJibo__State__Backend": "AzureBlob",
+        "OpenJibo__State__ConnectionString": "UseDevelopmentStorage=true",
+        "OpenJibo__PersonalMemory__Backend": "AzureBlob",
+        "OpenJibo__PersonalMemory__ConnectionString": "UseDevelopmentStorage=true"
+      },
+      "applicationUrl": "https://localhost:24604;http://localhost:24605"
     }
   }
 }

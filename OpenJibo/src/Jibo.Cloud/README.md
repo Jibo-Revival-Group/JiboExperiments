@@ -45,6 +45,47 @@ Human-facing entry points will live on domains such as:
 
 Robot traffic may still arrive using legacy hostnames routed to the OpenJibo service.
 
+## Azure Storage Wiring Sample
+
+For local or hosted Blob-backed persistence, use the Azure sample config in:
+
+- [appsettings.AzureBlob.sample.json](dotnet/src/Jibo.Cloud.Api/appsettings.AzureBlob.sample.json)
+
+It shows the expected keys for:
+
+- `OpenJibo:State:Backend`
+- `OpenJibo:State:ConnectionString`
+- `OpenJibo:PersonalMemory:Backend`
+- `OpenJibo:PersonalMemory:ConnectionString`
+
+The connection string can also come from:
+
+- `OPENJIBO_STATE_STORAGE_CONNECTION_STRING`
+- `OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING`
+
+For a real storage account, swap `UseDevelopmentStorage=true` with your Azure Storage connection string.
+
+## Local Startup Note
+
+To run the API with the Blob-backed sample config in Visual Studio or `dotnet run`, choose the
+`Jibo.Cloud.Api.AzureBlob` launch profile.
+
+The test project also has a matching `Jibo.Cloud.Tests.AzureBlob` profile so the smoke test can use
+the same environment-variable shape when you run it from an IDE.
+
+Equivalent environment variables:
+
+```powershell
+$env:OpenJibo__State__Backend = "AzureBlob"
+$env:OpenJibo__State__ConnectionString = "UseDevelopmentStorage=true"
+$env:OpenJibo__PersonalMemory__Backend = "AzureBlob"
+$env:OpenJibo__PersonalMemory__ConnectionString = "UseDevelopmentStorage=true"
+dotnet run --project dotnet/src/Jibo.Cloud.Api/Jibo.Cloud.Api.csproj
+```
+
+Replace `UseDevelopmentStorage=true` with your real storage account connection string when you move
+from local emulation to Azure.
+
 ## Recovery Strategy
 
 The first supported device path is:

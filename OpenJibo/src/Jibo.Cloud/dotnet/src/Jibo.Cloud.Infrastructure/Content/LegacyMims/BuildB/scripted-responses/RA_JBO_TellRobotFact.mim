@@ -1,0 +1,52 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Pegasus robot fact excerpt",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's an interesting fact about me. I have two cameras but they're different focal lengths. One's for far things, and the other's for near things.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 2,
+			"condition": "",
+			"prompt": "Here's a robot fact for you. Leonardo Da Vinci made sketches for a humanoid machine all the way back in the year 1495.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 3,
+			"condition": "",
+			"prompt": "Here's a robot fact for you. The first programmable robot arm, was designed in 1954.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 4,
+			"condition": "",
+			"prompt": "Here's a fact about robots. Some robots have a human form, but most of the world's robots are machines designed to perform a task, and don't look like people at all.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_04",
+			"weight": 1
+		}
+	]
+}

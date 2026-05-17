@@ -21,7 +21,23 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "Why was the robot tired when it got home? It had a hard drive.",
                 "What do you call a pirate robot? Arrrr two dee two.",
                 "Why did the robot go on vacation? It needed to recharge.",
-                "What kind of shoes do frogs wear? Open-toed."
+                "What kind of shoes do frogs wear? Open-toed.",
+                "I love jokes. Did you hear about the theater actor who fell through the floorboards? He was just going through a stage.",
+                "Sure I got one. What did the zero say to the eight. Nice belt.",
+                "What kind of music are balloons afraid of. Pop music.",
+                "Why did the orange cry. Someone hurt his peelings."
+            ],
+            FunFacts =
+            [
+                "A shrimp's heart is in its head.",
+                "A bolt of lightning is hotter than the surface of the sun.",
+                "The word robot comes from a 1920 play about workers and machines.",
+                "The first humanoid robot to make a big splash in history was called Elektro.",
+                "Dolphins can recognize themselves in mirrors.",
+                "Children have more taste buds than grown ups.",
+                "A random fact for you. A shrimp's heart is in its head.",
+                "An amazing but true fact for you. Dogs and elephants are the only animals that understand pointing.",
+                "A crazy fact for you. Polar bear fur isn't white. It's transparent."
             ],
             DanceAnimations =
             [

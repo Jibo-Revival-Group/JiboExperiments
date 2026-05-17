@@ -515,6 +515,7 @@ public sealed class JiboInteractionService(
             "time" => BuildClockLaunchDecision("time", "clock", "askForTime", "Showing the time."),
             "date" => BuildClockLaunchDecision("date", "clock", "askForDate", "Showing the date."),
             "day" => BuildClockLaunchDecision("day", "clock", "askForDay", "Showing the day."),
+            "current_location" => BuildCurrentLocationDecision(turn),
             "cloud_version" => BuildCloudVersionDecision(),
             "radio" => BuildRadioLaunchDecision(),
             "radio_genre" => BuildRadioGenreLaunchDecision(lowered),
@@ -1158,11 +1159,53 @@ public sealed class JiboInteractionService(
             "Americans consume about 100 acres of pizza every day, roughly 350 slices per second. That's a lot of pizza.");
     }
 
+    private JiboInteractionDecision BuildProactiveFunFactDecision(JiboExperienceCatalog catalog)
+    {
+        var fact = randomizer.Choose(catalog.FunFacts);
+        return new JiboInteractionDecision(
+            "proactive_fun_fact",
+            fact,
+            "chitchat-skill",
+            new Dictionary<string, object?>
+            {
+                ["mim_id"] = "runtime-fun-fact",
+                ["mim_type"] = "announcement",
+                ["prompt_id"] = "RUNTIME_FUN_FACT",
+                ["replyType"] = "fun_fact"
+            });
+    }
+
+    private JiboInteractionDecision BuildProactiveJokeDecision(JiboExperienceCatalog catalog)
+    {
+        return new JiboInteractionDecision(
+            "proactive_joke",
+            randomizer.Choose(catalog.Jokes),
+            "@be/joke",
+            new Dictionary<string, object?>
+            {
+                ["replyType"] = "joke"
+            });
+    }
+
     private static JiboInteractionDecision BuildProactiveOfferDeclinedDecision()
     {
         return new JiboInteractionDecision(
             "proactive_offer_declined",
             "No problem. We can save the pizza fact for another time.");
+    }
+
+    private JiboInteractionDecision BuildCurrentLocationDecision(TurnContext turn)
+    {
+        var locationName = TryResolveCurrentLocationName(turn);
+        if (string.IsNullOrWhiteSpace(locationName))
+            return new JiboInteractionDecision(
+                "current_location",
+                "I'm not sure where we are right now.");
+
+        return new JiboInteractionDecision(
+            "current_location",
+            $"We're at {NormalizeLocationForSpeech(locationName)} if I'm not mistaken.",
+            ContextUpdates: BuildScriptedResponseContextUpdates());
     }
 
     private async Task<JiboInteractionDecision> BuildWeatherReportDecisionAsync(
@@ -2103,6 +2146,8 @@ public sealed class JiboInteractionService(
             "proactive_pizza_day" => BuildProactivePizzaDayDecision(referenceLocalTime),
             "proactive_pizza_preference" => BuildProactivePizzaPreferenceDecision(),
             "proactive_offer_pizza_fact" => BuildProactivePizzaFactOfferDecision(),
+            "proactive_fun_fact" => BuildProactiveFunFactDecision(catalog),
+            "proactive_joke" => BuildProactiveJokeDecision(catalog),
             _ => new JiboInteractionDecision("surprise", randomizer.Choose(catalog.SurpriseReplies))
         };
     }
@@ -2136,6 +2181,8 @@ public sealed class JiboInteractionService(
             return candidates;
         }
 
+        candidates.Add(new ProactivityCandidate("proactive_fun_fact", 90));
+        candidates.Add(new ProactivityCandidate("proactive_joke", 90));
         candidates.Add(new ProactivityCandidate("proactive_offer_pizza_fact", 90));
         return candidates;
     }
@@ -2494,7 +2541,17 @@ public sealed class JiboInteractionService(
 
         if (MatchesAny(loweredTranscript, "dance", "boogie")) return "dance";
 
-        if (MatchesAny(loweredTranscript, "surprise", "surprise me", "show me something fun")) return "surprise";
+        if (MatchesAny(
+                loweredTranscript,
+                "surprise",
+                "surprise me",
+                "show me something fun",
+                "hear something fun",
+                "tell me something fun",
+                "can i tell you something fun",
+                "can i tell you something kind of fun",
+                "want to hear something fun"))
+            return "surprise";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -2689,6 +2746,18 @@ public sealed class JiboInteractionService(
                 "where did you come from",
                 "where were you made"))
             return "robot_origin_from";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "where am i",
+                "where are we",
+                "where are you",
+                "what is our current location",
+                "what is the current location",
+                "what's the current location",
+                "what is current location",
+                "current location"))
+            return "current_location";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -3248,7 +3317,7 @@ public sealed class JiboInteractionService(
             return "word_of_the_day";
 
         if (string.Equals(yesNoRule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase))
-            return "surprise";
+            return "proactive_offer_pizza_fact";
 
         return "yes";
     }
@@ -3691,6 +3760,68 @@ public sealed class JiboInteractionService(
             return latitude is not null && longitude is not null
                 ? (latitude.Value, longitude.Value)
                 : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? TryResolveCurrentLocationName(TurnContext turn)
+    {
+        if (turn.Attributes.TryGetValue("currentLocation", out var currentLocationValue) &&
+            currentLocationValue is string currentLocationText &&
+            !string.IsNullOrWhiteSpace(currentLocationText))
+            return currentLocationText.Trim();
+
+        if (turn.Attributes.TryGetValue("location", out var locationValue) &&
+            locationValue is string locationText &&
+            !string.IsNullOrWhiteSpace(locationText))
+            return locationText.Trim();
+
+        if (!turn.Attributes.TryGetValue("context", out var contextValue) ||
+            contextValue is null ||
+            string.IsNullOrWhiteSpace(contextValue.ToString()))
+            return null;
+
+        try
+        {
+            using var document = JsonDocument.Parse(contextValue.ToString()!);
+            if (!document.RootElement.TryGetProperty("runtime", out var runtime) ||
+                runtime.ValueKind != JsonValueKind.Object)
+                return null;
+
+            if (runtime.TryGetProperty("location", out var location) &&
+                location.ValueKind == JsonValueKind.Object)
+            {
+                var resolvedLocation = TryReadStringProperty(location,
+                    "displayName",
+                    "name",
+                    "city",
+                    "locationName",
+                    "placeName",
+                    "label",
+                    "title",
+                    "address");
+                if (!string.IsNullOrWhiteSpace(resolvedLocation)) return resolvedLocation;
+            }
+
+            if (runtime.TryGetProperty("currentLocation", out var currentLocation) &&
+                currentLocation.ValueKind == JsonValueKind.Object)
+            {
+                var resolvedLocation = TryReadStringProperty(currentLocation,
+                    "displayName",
+                    "name",
+                    "city",
+                    "locationName",
+                    "placeName",
+                    "label",
+                    "title",
+                    "address");
+                if (!string.IsNullOrWhiteSpace(resolvedLocation)) return resolvedLocation;
+            }
+
+            return TryReadStringProperty(runtime, "locationName", "currentLocation", "city", "placeName");
         }
         catch
         {

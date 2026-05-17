@@ -21,7 +21,7 @@ public sealed class JiboWebSocketServiceTests
         var contentRepository = new InMemoryJiboExperienceContentRepository();
         var contentCache = new JiboExperienceContentCache(contentRepository);
         var conversationBroker = new DemoConversationBroker(new JiboInteractionService(contentCache,
-            new DefaultJiboRandomizer(), new InMemoryPersonalMemoryStore()));
+            new LastItemRandomizer(), new InMemoryPersonalMemoryStore()));
         var sttSelector = new DefaultSttStrategySelector(
         [
             new SyntheticBufferedAudioSttStrategy()
@@ -5109,6 +5109,14 @@ public sealed class JiboWebSocketServiceTests
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult<NewsBriefingSnapshot?>(snapshot);
+        }
+    }
+
+    private sealed class LastItemRandomizer : IJiboRandomizer
+    {
+        public T Choose<T>(IReadOnlyList<T> items)
+        {
+            return items[^1];
         }
     }
 }

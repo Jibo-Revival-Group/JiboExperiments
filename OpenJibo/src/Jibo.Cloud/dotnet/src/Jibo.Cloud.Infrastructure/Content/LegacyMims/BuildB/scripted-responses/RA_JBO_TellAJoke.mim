@@ -1,0 +1,52 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Pegasus joke excerpt",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I love jokes. Did you hear about the theater actor who fell through the floorboards? He was just going through a stage.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 2,
+			"condition": "",
+			"prompt": "Sure I got one. What did the zero say to the eight. Nice belt.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 3,
+			"condition": "",
+			"prompt": "What kind of music are balloons afraid of. Pop music.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 4,
+			"condition": "",
+			"prompt": "Why did the orange cry. Someone hurt his peelings.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_04",
+			"weight": 1
+		}
+	]
+}

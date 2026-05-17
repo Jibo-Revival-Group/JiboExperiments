@@ -1,0 +1,51 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "Pegasus shuffle excerpt",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "True fact. Children have more taste buds than grown ups.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 2,
+			"condition": "",
+			"prompt": "A random fact for you. A shrimp's heart is in its head.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 3,
+			"condition": "",
+			"prompt": "An amazing but true fact for you. Dogs and elephants are the only animals that understand pointing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 4,
+			"condition": "",
+			"prompt": "A crazy fact for you. Polar bear fur isn't white. It's transparent.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_13",
+			"weight": 1
+		}
+	]
+}

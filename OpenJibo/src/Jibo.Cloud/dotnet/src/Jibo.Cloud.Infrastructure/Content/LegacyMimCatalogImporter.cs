@@ -99,6 +99,14 @@ public static class LegacyMimCatalogImporter
             fileName.Contains("Deflector", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Personality;
 
+        if (fileName.StartsWith("RA_JBO_TellAJoke", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.Jokes;
+
+        if (fileName.StartsWith("RA_JBO_TellRobotFact", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RA_JBO_Shuffle", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RA_JBO_TellSomething", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.FunFacts;
+
         if (normalizedPath.Contains("/emotion-responses/", StringComparison.OrdinalIgnoreCase) ||
             normalizedPath.Contains("/gqa-responses/", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Emotion;
@@ -213,6 +221,7 @@ public static class LegacyMimCatalogImporter
         return new JiboExperienceCatalog
         {
             Jokes = Merge(baseCatalog.Jokes, importedCatalog.Jokes),
+            FunFacts = Merge(baseCatalog.FunFacts, importedCatalog.FunFacts),
             DanceAnimations = Merge(baseCatalog.DanceAnimations, importedCatalog.DanceAnimations),
             GreetingReplies = Merge(baseCatalog.GreetingReplies, importedCatalog.GreetingReplies),
             HowAreYouReplies = Merge(baseCatalog.HowAreYouReplies, importedCatalog.HowAreYouReplies),
@@ -322,8 +331,10 @@ public static class LegacyMimCatalogImporter
     {
         GenericFallback,
         Greeting,
+        Jokes,
         HowAreYou,
         Emotion,
+        FunFacts,
         Personality,
         PersonalReportKickOff,
         PersonalReportOutro,
@@ -353,7 +364,9 @@ public static class LegacyMimCatalogImporter
         private readonly List<JiboConditionedReply> _emotionReplies = [];
         private readonly List<string> _fallbacks = [];
         private readonly List<string> _greetings = [];
+        private readonly List<string> _jokes = [];
         private readonly List<string> _howAreYous = [];
+        private readonly List<string> _funFacts = [];
         private readonly List<string> _newsCategoryIntroReplies = [];
         private readonly List<string> _newsIntroReplies = [];
         private readonly List<string> _newsOutroReplies = [];
@@ -381,6 +394,11 @@ public static class LegacyMimCatalogImporter
 
                     _greetings.Add(text);
                     return;
+                case LegacyMimBucket.Jokes:
+                    if (_jokes.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
+
+                    _jokes.Add(text);
+                    return;
                 case LegacyMimBucket.HowAreYou:
                     if (_howAreYous.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase)))
                         return;
@@ -406,6 +424,11 @@ public static class LegacyMimCatalogImporter
                         return;
 
                     _personalities.Add(text);
+                    return;
+                case LegacyMimBucket.FunFacts:
+                    if (_funFacts.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
+
+                    _funFacts.Add(text);
                     return;
                 case LegacyMimBucket.PersonalReportKickOff:
                     AddDistinct(_personalReportKickOffReplies, text);
@@ -464,6 +487,8 @@ public static class LegacyMimCatalogImporter
         {
             return new JiboExperienceCatalog
             {
+                Jokes = [.. _jokes],
+                FunFacts = [.. _funFacts],
                 GreetingReplies = [.. _greetings],
                 HowAreYouReplies = [.. _howAreYous],
                 EmotionReplies = [.. _emotionReplies],

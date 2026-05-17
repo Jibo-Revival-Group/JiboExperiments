@@ -179,6 +179,25 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsBuildBFunFactAndJokeResponsesIntoRandomizationBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains("I love jokes. Did you hear about the theater actor who fell through the floorboards? He was just going through a stage.",
+            catalog.Jokes);
+        Assert.Contains("Sure I got one. What did the zero say to the eight. Nice belt.", catalog.Jokes);
+        Assert.Contains("Here's an interesting fact about me. I have two cameras but they're different focal lengths. One's for far things, and the other's for near things.",
+            catalog.FunFacts);
+        Assert.Contains("True fact. Children have more taste buds than grown ups.", catalog.FunFacts);
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBRnGreetingResponsesIntoGreetingBucket()
     {
         var rootDirectory = Path.Combine(

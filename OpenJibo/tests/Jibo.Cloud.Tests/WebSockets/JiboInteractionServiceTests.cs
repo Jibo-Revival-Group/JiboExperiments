@@ -497,6 +497,26 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_CurrentLocation_UsesRuntimeLocationName()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what is our current location",
+            NormalizedTranscript = "what is our current location",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = """{"runtime":{"location":{"name":"Houston"}}}"""
+            }
+        });
+
+        Assert.Equal("current_location", decision.IntentName);
+        Assert.Contains("Houston", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_Hello_RoutesThroughChitchatScriptedResponse()
     {
         var service = CreateService();
@@ -2840,6 +2860,63 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("proactive_offer_pizza_fact", decision.IntentName);
         Assert.Equal("Do you want to hear a fun pizza fact?", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_SurprisesOtaPrompt_StaysDistinctFromPizzaProactivity()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "yes",
+            NormalizedTranscript = "yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenRules"] = (string[])["surprises-ota/want_to_download_now", "globals/global_commands_launch"],
+                ["listenAsrHints"] = (string[])["$YESNO"]
+            }
+        });
+
+        Assert.Equal("yes", decision.IntentName);
+        Assert.Equal("Yes.", decision.ReplyText);
+        Assert.NotEqual("proactive_offer_pizza_fact", decision.IntentName);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_SomethingFunOffer_MapsToFunFactIntent()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "hey can i tell you something kind of fun",
+            NormalizedTranscript = "hey can i tell you something kind of fun"
+        });
+
+        Assert.Equal("proactive_fun_fact", decision.IntentName);
+        Assert.NotNull(decision.ReplyText);
+        Assert.NotEmpty(decision.ReplyText);
+        Assert.Equal("chitchat-skill", decision.SkillName);
+        Assert.Equal("fun_fact", decision.SkillPayload!["replyType"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_Surprise_DefaultsToAFunFactWhenNoPizzaSignalExists()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "surprise me",
+            NormalizedTranscript = "surprise me"
+        });
+
+        Assert.Equal("proactive_fun_fact", decision.IntentName);
+        Assert.Equal("chitchat-skill", decision.SkillName);
+        Assert.Equal("fun_fact", decision.SkillPayload!["replyType"]);
+        Assert.NotNull(decision.ReplyText);
+        Assert.NotEmpty(decision.ReplyText);
     }
 
     [Fact]

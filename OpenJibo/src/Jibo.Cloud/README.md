@@ -57,11 +57,14 @@ It shows the expected keys for:
 - `OpenJibo:State:ConnectionString`
 - `OpenJibo:PersonalMemory:Backend`
 - `OpenJibo:PersonalMemory:ConnectionString`
+- `OpenJibo:Media:Backend`
+- `OpenJibo:Media:ConnectionString`
 
 The connection string can also come from:
 
 - `OPENJIBO_STATE_STORAGE_CONNECTION_STRING`
 - `OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING`
+- `OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING`
 
 For a real storage account, swap `UseDevelopmentStorage=true` with your Azure Storage connection string.
 
@@ -80,6 +83,8 @@ $env:OpenJibo__State__Backend = "AzureBlob"
 $env:OpenJibo__State__ConnectionString = "UseDevelopmentStorage=true"
 $env:OpenJibo__PersonalMemory__Backend = "AzureBlob"
 $env:OpenJibo__PersonalMemory__ConnectionString = "UseDevelopmentStorage=true"
+$env:OpenJibo__Media__Backend = "AzureBlob"
+$env:OpenJibo__Media__ConnectionString = "UseDevelopmentStorage=true"
 dotnet run --project dotnet/src/Jibo.Cloud.Api/Jibo.Cloud.Api.csproj
 ```
 

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.Persistence;
 
 namespace Jibo.Cloud.Tests.Protocol;
@@ -248,6 +249,47 @@ public sealed class JiboCloudProtocolServiceTests
             HostName = "api.jibo.com",
             Method = "GET",
             Path = "/media/photo-blob-1"
+        });
+
+        Assert.Equal(200, mediaGet.StatusCode);
+        Assert.Equal("image/jpeg", mediaGet.ContentType);
+        Assert.Equal("binary-photo-placeholder", mediaGet.BodyText);
+    }
+
+    [Fact]
+    public async Task MediaCreate_PersistsBinaryContentThroughFileMediaStore()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(),
+            new FileMediaContentStore(directoryPath));
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Media_20160725",
+            Operation = "Create",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = "image/jpeg",
+                ["x-path"] = "photo-blob-2",
+                ["x-type"] = "image"
+            },
+            BodyText = "binary-photo-placeholder"
+        });
+
+        using var createdPayload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal("https://api.jibo.com/media/photo-blob-2",
+            createdPayload.RootElement.GetProperty("url").GetString());
+
+        var storedFile = Path.Combine(directoryPath, "photo-blob-2.bin");
+        Assert.True(File.Exists(storedFile));
+
+        var mediaGet = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "GET",
+            Path = "/media/photo-blob-2"
         });
 
         Assert.Equal(200, mediaGet.StatusCode);

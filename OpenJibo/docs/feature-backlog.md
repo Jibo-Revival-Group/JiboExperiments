@@ -466,7 +466,7 @@ Current release theme:
 
 ### 11. Binary-Safe Media Storage
 
-- Status: `ready`
+- Status: `in progress`
 - Tags: `storage`, `protocol`
 - Why next:
   - the first gallery bridge stores metadata and text-body placeholders, but final gallery support needs originals and thumbnails
@@ -474,6 +474,9 @@ Current release theme:
   - whether stock gallery expects originals, thumbnails, or both
   - what upload metadata must survive for gallery refresh
   - how to map this cleanly to Blob Storage
+- Implementation notes:
+  - media content now flows through a storage seam with file and Azure Blob adapters
+  - the protocol still serves the legacy text-body contract, but the original payload is now persisted separately and can be swapped to binary-native storage later
 
 ### Next Up (`2026-05-06`): Dialog Parsing Expansion And Ambiguity Guardrails
 

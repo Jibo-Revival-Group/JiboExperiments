@@ -2,6 +2,7 @@ using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Audio;
 using Jibo.Cloud.Infrastructure.Content;
+using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.News;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Cloud.Infrastructure.Telemetry;
@@ -59,7 +60,15 @@ public static class ServiceCollectionExtensions
                                                  "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
                                              ?? Environment.GetEnvironmentVariable(
                                                  "OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
+        var mediaOptions = new MediaContentStoreOptions();
+        if (configuration is not null)
+            configuration.GetSection("OpenJibo:Media").Bind(mediaOptions);
+
+        if (string.IsNullOrWhiteSpace(mediaOptions.ConnectionString))
+            mediaOptions.ConnectionString = Environment.GetEnvironmentVariable("OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING");
+
         services.AddSingleton<IPersistenceSnapshotStoreFactory, PersistenceSnapshotStoreFactory>();
+        services.AddSingleton<IMediaContentStoreFactory, MediaContentStoreFactory>();
         services.AddSingleton<ICloudStateStore>(provider =>
         {
             var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
@@ -84,6 +93,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IWebSocketTelemetrySink, FileWebSocketTelemetrySink>();
         services.AddSingleton<IProtocolTelemetrySink, FileProtocolTelemetrySink>();
         services.AddSingleton<ITurnTelemetrySink, FileTurnTelemetrySink>();
+        services.AddSingleton<IMediaContentStore>(provider =>
+        {
+            var factory = provider.GetRequiredService<IMediaContentStoreFactory>();
+            return factory.Create(mediaOptions.DirectoryPath, mediaOptions.Backend, mediaOptions.ContainerName,
+                mediaOptions.ConnectionString);
+        });
         services.AddSingleton<ProtocolToTurnContextMapper>();
         services.AddSingleton<ResponsePlanToSocketMessagesMapper>();
         services.AddSingleton<WebSocketTurnFinalizationService>();

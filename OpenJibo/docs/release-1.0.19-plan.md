@@ -338,7 +338,7 @@ First completed slice in this personal-report parity track:
 4. Personal report parity slices
 5. Holidays and seasonal personality slice beyond pizza day
 6. Durable memory persistence path
-7. Update/backup/restore end-to-end proof
+7. Update/backup/restore end-to-end proof - implemented
 8. STT noise-screening and short-utterance reliability pass
 9. Provider-backed news expansion and deeper weather parity
 10. Capture indexing and retention boundary for group testing

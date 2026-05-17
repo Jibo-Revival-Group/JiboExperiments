@@ -51,7 +51,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
             return Task.FromResult(HandleLog(operation, envelope));
 
         if (servicePrefix.StartsWith("Backup_", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(HandleBackup(operation));
+            return Task.FromResult(HandleBackup(operation, envelope));
 
         if (servicePrefix.StartsWith("Account_", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleAccount(operation, envelope));
@@ -353,11 +353,19 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore)
             : []);
     }
 
-    private ProtocolDispatchResult HandleBackup(string operation)
+    private ProtocolDispatchResult HandleBackup(string operation, ProtocolEnvelope envelope)
     {
-        return operation.Equals("List", StringComparison.OrdinalIgnoreCase)
-            ? ProtocolDispatchResult.Ok(stateStore.GetBackups())
-            : ProtocolDispatchResult.Ok(Array.Empty<object>());
+        if (operation.Equals("List", StringComparison.OrdinalIgnoreCase))
+            return ProtocolDispatchResult.Ok(stateStore.GetBackups());
+
+        if (operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
+        {
+            var body = envelope.TryParseBody();
+            var requestedName = ReadString(body, "name") ?? ReadString(body, "backupName");
+            return ProtocolDispatchResult.Ok(stateStore.CreateBackup(requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"));
+        }
+
+        return ProtocolDispatchResult.Ok(Array.Empty<object>());
     }
 
     private ProtocolDispatchResult HandleKey(string operation, ProtocolEnvelope envelope)

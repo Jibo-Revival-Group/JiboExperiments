@@ -891,7 +891,7 @@ For `1.0.19`:
   - store contracts are now tightened around account/loop/device/person scoping, revision tracking, and explicit load/save boundaries
   - the backend seam is now selectable, with file-backed local persistence as default and an Azure Blob Storage slot wired for future deployment when a storage account connection string is available
   - next implementation pass should supply the real Azure Storage connection string / deployment wiring and validate the live round-trip in the storage account smoke test
-10. Update, backup, and restore proof
+10. Update, backup, and restore proof - implemented (update creation and backup creation now survive persisted reloads; restore proof uses the same persisted state rehydration path)
 11. STT upgrade and noise screening
 12. Hosted capture/storage plan / indexing for group testing
 13. Binary-safe media storage / sync to cloud drive: OneDrive, Google Drive, Box, etc.

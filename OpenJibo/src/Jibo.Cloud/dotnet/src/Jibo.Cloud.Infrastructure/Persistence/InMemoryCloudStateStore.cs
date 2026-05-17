@@ -452,6 +452,18 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _backups.ToArray();
     }
 
+    public BackupRecord CreateBackup(string name)
+    {
+        var backup = new BackupRecord
+        {
+            Name = string.IsNullOrWhiteSpace(name) ? "backup" : name.Trim()
+        };
+
+        _backups.Add(backup);
+        TouchState();
+        return backup;
+    }
+
     public bool ShouldCreateSymmetricKey(string loopId)
     {
         return !_symmetricKeys.ContainsKey(loopId);

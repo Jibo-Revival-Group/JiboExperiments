@@ -149,6 +149,69 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task UpdateAndBackupPersistAcrossStoreRecreation_WhenPersistencePathIsConfigured()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-update-backup-{Guid.NewGuid():N}.json");
+        try
+        {
+            var firstService = new JiboCloudProtocolService(new InMemoryCloudStateStore(persistencePath));
+
+            await firstService.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Update_20160715",
+                Operation = "CreateUpdate",
+                BodyText = """{"fromVersion":"1.0.0","toVersion":"1.0.1","changes":"Restore proof","subsystem":"robot"}"""
+            });
+
+            await firstService.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Backup_20160715",
+                Operation = "Create",
+                BodyText = """{"name":"manual-backup"}"""
+            });
+
+            var secondService = new JiboCloudProtocolService(new InMemoryCloudStateStore(persistencePath));
+
+            var updates = await secondService.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Update_20160715",
+                Operation = "ListUpdates",
+                BodyText = """{"subsystem":"robot"}"""
+            });
+
+            var backups = await secondService.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Backup_20160715",
+                Operation = "List",
+                BodyText = "{}"
+            });
+
+            using var updatesPayload = JsonDocument.Parse(updates.BodyText);
+            using var backupsPayload = JsonDocument.Parse(backups.BodyText);
+
+            Assert.NotEmpty(updatesPayload.RootElement.EnumerateArray());
+            Assert.Contains(updatesPayload.RootElement.EnumerateArray(), item => item.GetProperty("changes").GetString() == "Restore proof");
+            Assert.NotEmpty(backupsPayload.RootElement.EnumerateArray());
+            Assert.Contains(backupsPayload.RootElement.EnumerateArray(), item => item.TryGetProperty("Name", out var name) && name.GetString() == "manual-backup");
+        }
+        finally
+        {
+            if (File.Exists(persistencePath))
+            {
+                File.Delete(persistencePath);
+            }
+        }
+    }
+
+    [Fact]
     public async Task MediaCreate_StoresBodyAndServesMediaUrl()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope

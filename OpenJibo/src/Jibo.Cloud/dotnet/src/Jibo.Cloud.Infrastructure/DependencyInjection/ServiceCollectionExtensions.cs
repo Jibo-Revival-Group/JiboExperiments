@@ -1,6 +1,7 @@
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Audio;
+using Jibo.Cloud.Infrastructure.Commute;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.News;
@@ -45,6 +46,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(newsApiOptions);
         services.AddHttpClient<IWeatherReportProvider, OpenWeatherReportProvider>();
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
+        services.AddSingleton<ICommuteReportProvider, UnavailableCommuteReportProvider>();
         var statePersistencePath = configuration?["OpenJibo:State:PersistencePath"]
                                    ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "cloud-state.json");
         var personalMemoryPersistencePath = configuration?["OpenJibo:PersonalMemory:PersistencePath"]

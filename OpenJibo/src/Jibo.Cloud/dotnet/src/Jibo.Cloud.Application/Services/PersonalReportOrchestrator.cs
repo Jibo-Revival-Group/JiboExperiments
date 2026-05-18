@@ -70,6 +70,7 @@ internal static class PersonalReportOrchestrator
         IJiboRandomizer randomizer,
         IPersonalMemoryStore personalMemoryStore,
         Func<TurnContext, string, CancellationToken, Task<JiboInteractionDecision>> buildWeatherDecisionAsync,
+        Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCommuteDecisionAsync,
         Func<TurnContext, PersonalMemoryTenantScope> tenantScopeResolver,
         CancellationToken cancellationToken)
     {
@@ -191,6 +192,7 @@ internal static class PersonalReportOrchestrator
                         toggles,
                         currentName,
                         buildWeatherDecisionAsync,
+                        buildCommuteDecisionAsync,
                         cancellationToken);
 
                 if (IsNegativeReply(loweredTranscript))
@@ -235,6 +237,7 @@ internal static class PersonalReportOrchestrator
                     toggles,
                     parsedName,
                     buildWeatherDecisionAsync,
+                    buildCommuteDecisionAsync,
                     cancellationToken);
             }
 
@@ -250,6 +253,7 @@ internal static class PersonalReportOrchestrator
         PersonalReportServiceToggles toggles,
         string userName,
         Func<TurnContext, string, CancellationToken, Task<JiboInteractionDecision>> buildWeatherDecisionAsync,
+        Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCommuteDecisionAsync,
         CancellationToken cancellationToken)
     {
         var reportSections = new List<string>
@@ -293,13 +297,7 @@ internal static class PersonalReportOrchestrator
         }
 
         if (toggles.CommuteEnabled)
-            reportSections.Add(
-                RenderReportSkillTemplate(
-                    ChooseReportSkillTemplate(
-                        catalog.CommuteServiceDownReplies,
-                        catalog.CommuteNowReplies,
-                        "Sorry, commute information isn't available right now."),
-                    userName));
+            reportSections.Add((await buildCommuteDecisionAsync(turn, cancellationToken)).ReplyText);
 
         if (toggles.NewsEnabled)
         {

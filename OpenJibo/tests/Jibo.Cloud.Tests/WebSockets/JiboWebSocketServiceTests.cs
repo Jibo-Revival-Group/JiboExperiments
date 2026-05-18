@@ -21,7 +21,7 @@ public sealed class JiboWebSocketServiceTests
         var contentRepository = new InMemoryJiboExperienceContentRepository();
         var contentCache = new JiboExperienceContentCache(contentRepository);
         var conversationBroker = new DemoConversationBroker(new JiboInteractionService(contentCache,
-            new LastItemRandomizer(), new InMemoryPersonalMemoryStore()));
+            new LastItemRandomizer(), new InMemoryPersonalMemoryStore(), null, null, null));
         var sttSelector = new DefaultSttStrategySelector(
         [
             new SyntheticBufferedAudioSttStrategy()
@@ -4732,6 +4732,7 @@ public sealed class JiboWebSocketServiceTests
             customStore,
             new StubWeatherReportProvider(
                 new WeatherReportSnapshot("Lone Jack, US", "overcast clouds", 79, 82, 78, "clouds", false)),
+            null,
             new StubNewsBriefingProvider(
                 new NewsBriefingSnapshot(
                     [
@@ -5122,6 +5123,7 @@ public sealed class JiboWebSocketServiceTests
     private static JiboWebSocketService CreateService(
         InMemoryCloudStateStore stateStore,
         IWeatherReportProvider? weatherReportProvider = null,
+        ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null)
     {
         var contentRepository = new InMemoryJiboExperienceContentRepository();
@@ -5131,6 +5133,7 @@ public sealed class JiboWebSocketServiceTests
             new DefaultJiboRandomizer(),
             new InMemoryPersonalMemoryStore(),
             weatherReportProvider,
+            commuteReportProvider,
             newsBriefingProvider);
         var conversationBroker = new DemoConversationBroker(interactionService);
         var sttSelector = new DefaultSttStrategySelector(

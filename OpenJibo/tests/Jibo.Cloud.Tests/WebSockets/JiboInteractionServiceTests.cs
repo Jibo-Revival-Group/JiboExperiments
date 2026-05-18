@@ -3974,6 +3974,7 @@ public sealed class JiboInteractionServiceTests
     private static JiboInteractionService CreateService(
         IPersonalMemoryStore? personalMemoryStore = null,
         IWeatherReportProvider? weatherReportProvider = null,
+        ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null,
         IJiboExperienceContentRepository? contentRepository = null,
         IJiboRandomizer? randomizer = null)
@@ -3983,6 +3984,7 @@ public sealed class JiboInteractionServiceTests
             randomizer ?? new FirstItemRandomizer(),
             personalMemoryStore ?? new InMemoryPersonalMemoryStore(),
             weatherReportProvider,
+            commuteReportProvider,
             newsBriefingProvider);
     }
 
@@ -4074,6 +4076,18 @@ public sealed class JiboInteractionServiceTests
         public Task<JiboExperienceCatalog> GetCatalogAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(catalog);
+        }
+    }
+
+    private sealed class CapturingCommuteReportProvider : ICommuteReportProvider
+    {
+        public CommuteReportSnapshot? Snapshot { get; init; }
+
+        public Task<CommuteReportSnapshot?> GetReportAsync(
+            TurnContext turn,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(Snapshot);
         }
     }
 }

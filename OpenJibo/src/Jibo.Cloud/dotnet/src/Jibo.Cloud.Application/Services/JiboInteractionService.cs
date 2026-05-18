@@ -11,6 +11,7 @@ public sealed class JiboInteractionService(
     IJiboRandomizer randomizer,
     IPersonalMemoryStore personalMemoryStore,
     IWeatherReportProvider? weatherReportProvider = null,
+    ICommuteReportProvider? commuteReportProvider = null,
     INewsBriefingProvider? newsBriefingProvider = null)
 {
     private const string GreetingRouteMetadataKey = "greetingsRoute";
@@ -482,6 +483,7 @@ public sealed class JiboInteractionService(
             randomizer,
             personalMemoryStore,
             BuildWeatherReportDecisionAsync,
+            BuildCommuteReportDecisionAsync,
             turnContext => ResolveTenantScope(turnContext),
             cancellationToken);
         if (personalReportDecision is not null) return personalReportDecision;
@@ -1372,6 +1374,37 @@ public sealed class JiboInteractionService(
             weatherPayload);
     }
 
+    private async Task<JiboInteractionDecision> BuildCommuteReportDecisionAsync(
+        TurnContext turn,
+        CancellationToken cancellationToken)
+    {
+        var catalog = await contentCache.GetCatalogAsync(cancellationToken);
+
+        if (commuteReportProvider is null)
+            return new JiboInteractionDecision(
+                "commute",
+                ChooseCommuteServiceDownReply(catalog));
+
+        CommuteReportSnapshot? snapshot;
+        try
+        {
+            snapshot = await commuteReportProvider.GetReportAsync(turn, cancellationToken);
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            snapshot = null;
+        }
+
+        if (snapshot is null)
+            return new JiboInteractionDecision(
+                "commute",
+                ChooseCommuteServiceDownReply(catalog));
+
+        return new JiboInteractionDecision(
+            "commute",
+            BuildCommuteSpokenReply(snapshot, catalog));
+    }
+
     private static string BuildWeatherSpokenReply(
         WeatherReportSnapshot snapshot,
         WeatherDateEntity weatherDate,
@@ -1456,6 +1489,55 @@ public sealed class JiboInteractionService(
             string.Empty);
         return
             $"{currentIntro} In {location}, it's {summary} and {snapshot.Temperature} degrees {unit}. {currentHighLow}";
+    }
+
+    private static string BuildCommuteSpokenReply(
+        CommuteReportSnapshot snapshot,
+        JiboExperienceCatalog catalog)
+    {
+        var duration = snapshot.DurationMinutes;
+        var durationText = duration <= 1 ? "1 minute" : $"{duration} minutes";
+        var mode = string.IsNullOrWhiteSpace(snapshot.Mode) ? "driving" : snapshot.Mode.Trim();
+
+        var template = ChooseCommuteTemplate(catalog.CommuteNowReplies, mode,
+            "For your commute, it should take about ${skill.commute.durationMins} minutes.");
+
+        return template
+            .Replace("${skill.commute.durationMins}", durationText, StringComparison.OrdinalIgnoreCase)
+            .Replace("${speaker}", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("  ", " ", StringComparison.Ordinal)
+            .Trim();
+    }
+
+    private static string ChooseCommuteTemplate(
+        IReadOnlyList<string> templates,
+        string mode,
+        string fallback)
+    {
+        if (templates.Count == 0) return fallback;
+
+        var loweredMode = mode.Trim().ToLowerInvariant();
+        var filtered = templates.Where(template =>
+        {
+            var lowered = template.ToLowerInvariant();
+            return loweredMode switch
+            {
+                "walking" => lowered.Contains("walk", StringComparison.OrdinalIgnoreCase),
+                "transit" => lowered.Contains("public transportation", StringComparison.OrdinalIgnoreCase) ||
+                              lowered.Contains("transit", StringComparison.OrdinalIgnoreCase) ||
+                              lowered.Contains("transportation", StringComparison.OrdinalIgnoreCase),
+                "bicycling" => lowered.Contains("bike", StringComparison.OrdinalIgnoreCase) ||
+                                lowered.Contains("ride", StringComparison.OrdinalIgnoreCase),
+                _ => lowered.Contains("drive", StringComparison.OrdinalIgnoreCase) ||
+                     lowered.Contains("commute", StringComparison.OrdinalIgnoreCase)
+            };
+        }).ToList();
+
+        var selected = filtered.Count > 0
+            ? filtered.OrderBy(static template => template.Length).First()
+            : templates.OrderBy(static template => template.Length).FirstOrDefault();
+
+        return string.IsNullOrWhiteSpace(selected) ? fallback : selected!;
     }
 
     private static string BuildWeeklyForecastSpokenReply(
@@ -1805,6 +1887,14 @@ public sealed class JiboInteractionService(
         var template = ChooseWeatherTemplate(
             catalog.WeatherServiceDownReplies,
             "I can't access weather info right now, sorry.");
+        return template.Trim();
+    }
+
+    private string ChooseCommuteServiceDownReply(JiboExperienceCatalog catalog)
+    {
+        var template = ChooseWeatherTemplate(
+            catalog.CommuteServiceDownReplies,
+            "Sorry, commute information isn't available right now.");
         return template.Trim();
     }
 

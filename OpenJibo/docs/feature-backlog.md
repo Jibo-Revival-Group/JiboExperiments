@@ -836,6 +836,7 @@ Current release theme:
   - personality and capability questions
   - favorite-style prompts like `what is your favorite color`
   - attraction and preference prompts like `what is your favorite flower`, `do you like R2D2`, `do you like the sun`, `do you like space`, and `do you like kids`
+  - longer authored variants for the same prompt family when Pegasus shows richer phrasing
   - charm/capability prompts like `can you laugh` and `can you dance`
   - mood / affect questions
   - recognition follow-ups like `do you know me`
@@ -846,6 +847,7 @@ Current release theme:
   - keep adding small sourced personality batches, especially the legacy `R2D2`, `sun`, `space`, `kids`, and charm prompts
   - keep adding 1-3 persona prompts per pass with tests
   - prefer source-backed MIM imports when the legacy text is available, and use a temporary runtime reply only when needed to unblock user value
+  - keep a separate note for longer authored variants so we do not lose the multi-clause Peggy-style phrasing while importing the short-form packs
 - Mood follow-up work in flight:
   - source-backed happy/sad/angry response packs are now part of Build B
   - small-talk aliases like `what are you up to` and `how are things` now stay on the emotion-query path
@@ -867,6 +869,38 @@ Current release theme:
   - a stable checklist exists for the original persona surface
   - each pass can be scoped to a small batch of prompts
   - the backlog makes it obvious what is still missing without losing momentum
+
+### 31. Longer Authored Persona Variants
+
+- Status: `ready`
+- Tags: `content`, `docs`, `protocol`
+- Why now:
+  - Pegasus often used longer, multi-clause authored alternatives for the same personality question
+  - we already have the short-path import working, so this is a low-risk way to add richer phrasing without inventing a new dialog engine
+  - it gives us a straightforward next pass that stays familiar to the original robot
+- Scope:
+  - import the longer authored variants already present in the legacy MIMs
+  - prefer richer phrasing for favorite-style, identity, and charm prompts when the source text provides it
+  - keep the runtime behavior rule-based and deterministic
+- Next step:
+  - add a small batch of longer variants to the current Build B content packs and prove them with a smoke test
+
+### 32. Dialog Joining And Composition
+
+- Status: `discovery`
+- Tags: `content`, `docs`, `protocol`
+- Why now:
+  - the videos and source files suggest Jibo sometimes felt like he was joining thoughts together, even when the source text was still authored
+  - we have not found evidence of a general runtime joiner yet, so this remains a post-release enhancement instead of a 1.0.19 dependency
+  - keeping it separate lets us preserve familiar Jibo phrasing now and experiment with composition later
+- Scope:
+  - design a post-release dialog composition layer that can stitch authored fragments together when appropriate
+  - keep the first version conservative and familiar, not LLM-driven
+  - make sure any future joining feature is opt-in and does not replace the current authored prompt path
+- Follow-up:
+  - revisit after 1.0.19 personality import and report-skill parity stabilize
+  - decide whether the composition layer should sit above the prompt catalog or beside it as a dedicated response post-processor
+  - keep this separate from the authored-variant backlog item so we do not blur prompt richness with runtime composition
 
 ## Suggested Order
 
@@ -903,6 +937,8 @@ For `1.0.19`:
 15. Grocery list capability discovery and MVP selection
 16. Lasso, identity, and onboarding as larger discovery-driven tracks
 17. Legacy MIM personality import ladder and first declarative prompt packs
+18. Longer authored persona variants for the same prompt families
+19. Dialog joining/composition as a post-release enhancement, kept separate from the 1.0.19 ladder
 
 For `1.0.20` and beyond:
 

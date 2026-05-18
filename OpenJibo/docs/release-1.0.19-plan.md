@@ -29,6 +29,7 @@ Keep a running checklist of the legacy persona questions and identity surfaces w
 - self-description and social charm: `what's your name`, `do you have a nickname`, `do you like being Jibo`, `are there others like you`
 - favorite-style prompts: `what is your favorite color`, `what is your favorite food`, `what is your favorite music`
 - attraction and preference prompts: `what is your favorite flower`, `do you like R2D2`, `do you like the sun`, `do you like space`, `do you like kids`
+- longer authored variants for the same prompt family when Pegasus shows richer phrasing, especially multi-clause and follow-up-heavy responses
 - capability and charm prompts: `can you laugh`, `can you dance`
 - affect and mood: `how are you`, `are you happy`, `are you sad`, `are you angry`
 - memory and identity recall: `who am i`, `what is my name`, `when is my birthday`, `what is my favorite music`
@@ -228,6 +229,8 @@ Port after Build B:
 - richer `scripted-responses` families that depend on follow-up state
 - special-date / holiday personality sets
 - more nuanced chitchat branches that need context-aware routing
+- longer authored variants for existing prompts when the source text contains them, so the robot keeps the familiar Pegasus cadence without inventing new dialog composition yet
+- dialog joining / composition as a post-release feature, kept out of the 1.0.19 ladder so we do not blur authored phrasing with a runtime joiner
 
 Why these later:
 

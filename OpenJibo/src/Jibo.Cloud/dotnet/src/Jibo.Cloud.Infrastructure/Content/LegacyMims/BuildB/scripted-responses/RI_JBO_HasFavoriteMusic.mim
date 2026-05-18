@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I mostly like fun music I can dance to<anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMusic_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like lots of different kinds of music. That's why I have a radio that plays from the sides of my head",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMusic_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know that I have a favorite kind yet, but I <pitch mult='1.3'>do</pitch> know that you can ask me to play music whenever you want.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMusic_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I would say I don't have a favorite, it's all very mathematical, which I like.<break size='0.5'/> By the way, you can ask me to play music on my radio.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMusic_AN_04",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

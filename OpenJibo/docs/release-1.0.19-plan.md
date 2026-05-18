@@ -41,6 +41,7 @@ Keep a running checklist of the legacy persona questions and identity surfaces w
 Current batch note:
 
 - `favorite color`, `favorite food`, and `favorite music` are the first small favorites-family slice
+- the latest pass adds longer authored variants for those favorites so the replies keep more of the original Pegasus cadence instead of collapsing to short placeholders
 - the next source-backed batch now includes `favorite flower`, `R2D2`, `sun`, `space`, `kids`, plus a couple of charm prompts like `can you laugh` and `can you dance`
 - the follow-up mood batch now includes `how are things`, `how is your day`, `are you sad`, and `are you angry`
 - the personality follow-up batch now includes `what are you up to` and `what are you doing` so small talk stays warm and local instead of falling into generic chat

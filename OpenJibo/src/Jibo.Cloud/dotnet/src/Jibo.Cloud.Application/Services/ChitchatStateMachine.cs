@@ -237,15 +237,36 @@ internal static class ChitchatStateMachine
             case "robot_favorite_color":
                 return BuildScriptedResponseDecision(
                     "robot_favorite_color",
-                    "Blue.");
+                    SelectLegacyPersonalityReplyFromMatches(
+                        catalog,
+                        randomizer,
+                        "i like all the colors of the rainbow",
+                        "blue is my favorite color",
+                        "i love hex code number 0 0 d 4 f 0",
+                        "i am a big fan of blue",
+                        "you can't go wrong with blue"));
             case "robot_favorite_food":
                 return BuildScriptedResponseDecision(
                     "robot_favorite_food",
-                    "Pizza. It is hard to argue with pizza.");
+                    SelectLegacyPersonalityReplyFromMatches(
+                        catalog,
+                        randomizer,
+                        "i never eat, so i don't have a favorite food by taste",
+                        "macaroni is my favorite",
+                        "i like macaroni the best",
+                        "i also like cantaloupes because they remind me of my head",
+                        "macaroni"));
             case "robot_favorite_music":
                 return BuildScriptedResponseDecision(
                     "robot_favorite_music",
-                    "Something upbeat with a good rhythm.");
+                    SelectLegacyPersonalityReplyFromMatches(
+                        catalog,
+                        randomizer,
+                        "i mostly like fun music i can dance to",
+                        "i like lots of different kinds of music",
+                        "i don't know that i have a favorite kind yet",
+                        "i would say i don't have a favorite, it's all very mathematical",
+                        "music"));
             case "robot_nickname":
                 return BuildScriptedResponseDecision(
                     "robot_nickname",
@@ -442,6 +463,27 @@ internal static class ChitchatStateMachine
         }
 
         return randomizer.Choose(catalog.PersonalityReplies);
+    }
+
+    private static string SelectLegacyPersonalityReplyFromMatches(
+        JiboExperienceCatalog catalog,
+        IJiboRandomizer randomizer,
+        params string[] preferredSnippets)
+    {
+        var matches = new List<string>();
+
+        foreach (var snippet in preferredSnippets)
+        {
+            if (string.IsNullOrWhiteSpace(snippet)) continue;
+
+            var match = catalog.PersonalityReplies.FirstOrDefault(reply =>
+                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(match)) matches.Add(match);
+        }
+
+        return matches.Count > 0
+            ? randomizer.Choose(matches)
+            : randomizer.Choose(catalog.PersonalityReplies);
     }
 
     private static string NormalizeCondition(string? condition)

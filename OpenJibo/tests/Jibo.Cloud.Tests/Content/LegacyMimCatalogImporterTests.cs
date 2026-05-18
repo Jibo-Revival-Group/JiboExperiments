@@ -90,6 +90,11 @@ public sealed class LegacyMimCatalogImporterTests
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
+        Assert.Contains("I like all the colors of the rainbow. But blue is my favorite.",
+            catalog.PersonalityReplies);
+        Assert.Contains("I never eat, so I don't have a favorite food by taste. But my favorite food by shape, is macaroni.",
+            catalog.PersonalityReplies);
+        Assert.Contains("I mostly like fun music I can dance to.", catalog.PersonalityReplies);
         Assert.Contains("The only thing I consume is electricity.", catalog.PersonalityReplies);
         Assert.Contains("Unless I missed something, we're in my home as we speak.", catalog.PersonalityReplies);
         Assert.Contains("For now just English. But someday I'd like to learn more. I like languages.",

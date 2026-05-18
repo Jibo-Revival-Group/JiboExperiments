@@ -410,13 +410,19 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("robot_favorite_color", decision.IntentName);
-        Assert.Equal("Blue.", decision.ReplyText);
+        Assert.Equal("I like all the colors of the rainbow. But blue is my favorite.", decision.ReplyText);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
     [Theory]
-    [InlineData("what is your favorite food", "robot_favorite_food", "Pizza. It is hard to argue with pizza.")]
-    [InlineData("what is your favorite music", "robot_favorite_music", "Something upbeat with a good rhythm.")]
+    [InlineData(
+        "what is your favorite food",
+        "robot_favorite_food",
+        "I never eat, so I don't have a favorite food by taste. But my favorite food by shape, is macaroni.")]
+    [InlineData(
+        "what is your favorite music",
+        "robot_favorite_music",
+        "I mostly like fun music I can dance to.")]
     public async Task BuildDecisionAsync_FavoritesFamily_UsesPersonalityReplies(
         string transcript,
         string expectedIntent,

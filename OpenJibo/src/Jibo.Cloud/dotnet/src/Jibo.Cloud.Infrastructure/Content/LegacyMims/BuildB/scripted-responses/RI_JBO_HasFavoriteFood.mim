@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='headshake' nonBlocking='true'/>I never eat, so I don't have a favorite food by taste. <anim cat='thinking' filter='up'> But my favorite food by</anim> shape,<anim cat='happy' nonBlocking='true' /> is macaroni. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Macaroni is my favorite, but<anim name='Emoji_Pizza' nonBlocking='true'/> I also like how pizza brings people together. <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think artichokes <anim cat='laughing' nonBlocking='true' />are pretty funny, but macaroni takes the cake.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like macaroni the best, what a great shape.<break size='0.3'/> I also like cantaloupes because they <anim cat='glances' filter='up'> remind me of my head.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_09",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

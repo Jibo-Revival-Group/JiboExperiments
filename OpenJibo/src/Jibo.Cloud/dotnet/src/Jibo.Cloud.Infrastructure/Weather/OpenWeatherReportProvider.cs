@@ -163,13 +163,11 @@ public sealed class OpenWeatherReportProvider(
               ?? TryReadInt(selectedDayTemp, "night")
               ?? TryReadInt(selectedDayTemp, "morn")
               ?? TryReadInt(selectedDayTemp, "eve");
-        var high = TryReadInt(selectedDayTemp, "max");
-        var low = TryReadInt(selectedDayTemp, "min");
-        if (temperature is not null)
-        {
-            high = high is null ? temperature : Math.Max(high.Value, temperature.Value);
-            low = low is null ? temperature : Math.Min(low.Value, temperature.Value);
-        }
+        var currentDayHighLow = forecastDayOffset <= 0
+            ? await TryResolveCurrentDayHighLowFromForecastAsync(location, useCelsius, cancellationToken)
+            : null;
+        var high = currentDayHighLow?.High ?? TryReadInt(selectedDayTemp, "max");
+        var low = currentDayHighLow?.Low ?? TryReadInt(selectedDayTemp, "min");
 
         if (temperature is null && high is null && low is null) return null;
 
@@ -220,13 +218,9 @@ public sealed class OpenWeatherReportProvider(
         var summary = TryReadWeatherSummary(root);
         var condition = TryReadWeatherCondition(root);
         var temperature = TryReadInt(main, "temp");
-        var high = TryReadInt(main, "temp_max");
-        var low = TryReadInt(main, "temp_min");
-        if (temperature is not null)
-        {
-            high = high is null ? temperature : Math.Max(high.Value, temperature.Value);
-            low = low is null ? temperature : Math.Min(low.Value, temperature.Value);
-        }
+        var currentDayHighLow = await TryResolveCurrentDayHighLowFromForecastAsync(location, useCelsius, cancellationToken);
+        var high = currentDayHighLow?.High ?? TryReadInt(main, "temp_max");
+        var low = currentDayHighLow?.Low ?? TryReadInt(main, "temp_min");
 
         if (temperature is null && high is null && low is null) return null;
 

@@ -58,6 +58,9 @@ public sealed class ProviderCachingTests
     [Fact]
     public async Task OpenWeatherReportProvider_UsesCurrentHiLoForCurrentDay_WhenCurrentBandDiffers()
     {
+        var offset = TimeSpan.FromHours(-5);
+        var localNow = DateTimeOffset.UtcNow.ToOffset(offset);
+        var todayNoon = new DateTimeOffset(localNow.Date.AddHours(12), offset);
         var handler = new CountingHttpMessageHandler(message =>
         {
             var path = message.RequestUri?.AbsolutePath ?? string.Empty;
@@ -71,12 +74,18 @@ public sealed class ProviderCachingTests
                         "lat":38.8708,
                         "lon":-94.1733,
                         "timezone":"America/Chicago",
-                        "current":{"dt":1710000000,"temp":76.0,"weather":[{"main":"Clouds","description":"overcast clouds"}]},
+                        "current":{"dt":1710000000,"temp":83.0,"weather":[{"main":"Clouds","description":"overcast clouds"}]},
                         "daily":[
-                            {"dt":1710000000,"temp":{"day":76.0,"min":78.0,"max":82.0},"weather":[{"main":"Clouds","description":"overcast clouds"}]}
+                            {"dt":1710000000,"temp":{"day":83.0,"min":82.0,"max":83.0},"weather":[{"main":"Clouds","description":"overcast clouds"}]}
                         ]
                     }
                     """),
+                "/data/2.5/forecast" => JsonResponse(
+                    BuildForecastResponseJson(
+                        "Lone Jack",
+                        "US",
+                        -18000,
+                        [(todayNoon, 82, 82, 78, "Clouds", "overcast clouds")])),
                 _ => new HttpResponseMessage(HttpStatusCode.NotFound)
             };
         });
@@ -96,10 +105,11 @@ public sealed class ProviderCachingTests
             await provider.GetReportAsync(new WeatherReportRequest("Lone Jack,US", null, null, false, false, 0));
 
         Assert.NotNull(report);
-        Assert.Equal(76, report!.Temperature);
+        Assert.Equal(83, report!.Temperature);
         Assert.Equal(82, report.HighTemperature);
-        Assert.Equal(76, report.LowTemperature);
+        Assert.Equal(78, report.LowTemperature);
         Assert.Equal(1, handler.GetCallCount("/data/3.0/onecall"));
+        Assert.Equal(1, handler.GetCallCount("/data/2.5/forecast"));
     }
 
     [Fact]
@@ -153,6 +163,9 @@ public sealed class ProviderCachingTests
     [Fact]
     public async Task OpenWeatherReportProvider_FallsBackToLegacyWeatherWhenOneCallIsUnauthorized()
     {
+        var offset = TimeSpan.FromHours(-5);
+        var localNow = DateTimeOffset.UtcNow.ToOffset(offset);
+        var todayNoon = new DateTimeOffset(localNow.Date.AddHours(12), offset);
         var handler = new CountingHttpMessageHandler(message =>
         {
             var path = message.RequestUri?.AbsolutePath ?? string.Empty;
@@ -168,7 +181,13 @@ public sealed class ProviderCachingTests
                         "application/json")
                 },
                 "/data/2.5/weather" => JsonResponse(
-                    """{"name":"Boston","weather":[{"main":"Clouds","description":"overcast clouds"}],"main":{"temp":70.0,"temp_max":72.0,"temp_min":66.0}}"""),
+                    """{"name":"Boston","weather":[{"main":"Clouds","description":"overcast clouds"}],"main":{"temp":70.0,"temp_max":83.0,"temp_min":82.0}}"""),
+                "/data/2.5/forecast" => JsonResponse(
+                    BuildForecastResponseJson(
+                        "Boston",
+                        "US",
+                        -18000,
+                        [(todayNoon, 70, 72, 66, "Clouds", "overcast clouds")])),
                 _ => new HttpResponseMessage(HttpStatusCode.NotFound)
             };
         });
@@ -192,6 +211,7 @@ public sealed class ProviderCachingTests
         Assert.Equal(66, report.LowTemperature);
         Assert.Equal(1, handler.GetCallCount("/data/3.0/onecall"));
         Assert.Equal(1, handler.GetCallCount("/data/2.5/weather"));
+        Assert.Equal(1, handler.GetCallCount("/data/2.5/forecast"));
     }
 
     [Fact]
@@ -393,6 +413,20 @@ public sealed class ProviderCachingTests
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
+    }
+
+    private static string BuildForecastResponseJson(
+        string cityName,
+        string country,
+        int timezoneSeconds,
+        IReadOnlyList<(DateTimeOffset Timestamp, int Temp, int High, int Low, string Main, string Description)> entries)
+    {
+        var list = string.Join(
+            ",",
+            entries.Select(entry =>
+                $$"""{"dt":{{entry.Timestamp.ToUnixTimeSeconds()}},"main":{"temp":{{entry.Temp}},"temp_min":{{entry.Low}},"temp_max":{{entry.High}}},"weather":[{"main":"{{entry.Main}}","description":"{{entry.Description}}"}]}"""));
+
+        return $$"""{"city":{"name":"{{cityName}}","country":"{{country}}","timezone":{{timezoneSeconds}}},"list":[{{list}}]}""";
     }
 
     private sealed class CountingHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)

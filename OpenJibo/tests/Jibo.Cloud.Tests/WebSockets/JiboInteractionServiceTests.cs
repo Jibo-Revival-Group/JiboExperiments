@@ -283,6 +283,31 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_IdentityFollowUp_DoesNotGuessFromLoopFirstNameWhenMemoryIsMissing()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "who am i",
+            NormalizedTranscript = "who am i",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-d",
+                ["loopId"] = "loop-d",
+                ["context"] =
+                    """
+                    {"runtime":{"perception":{"speaker":"person-9"},"loop":{"users":[{"id":"person-9","firstName":"hi"}]}}}
+                    """
+            },
+            DeviceId = "device-d"
+        });
+
+        Assert.Equal("memory_get_name", decision.IntentName);
+        Assert.Equal("I do not know your name yet. You can say, my name is Alex.", decision.ReplyText);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_TriggerWithKnownIdentity_BuildsProactiveGreetingAndContext()
     {
         var service = CreateService();
@@ -1712,6 +1737,7 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_opt_in", decision.IntentName);
         Assert.Equal("Would you like your personal report now?", decision.ReplyText);
+        Assert.Equal("shared/yes_no", ((IReadOnlyList<string>)decision.SkillPayload!["listen_contexts"])[0]);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("awaiting_opt_in", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportWeatherEnabledKey]);
@@ -1742,6 +1768,7 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_verify_user", decision.IntentName);
         Assert.Equal("I think this is alex. Is that right?", decision.ReplyText);
+        Assert.Equal("shared/yes_no", ((IReadOnlyList<string>)decision.SkillPayload!["listen_contexts"])[0]);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("awaiting_identity_confirmation", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal("alex", decision.ContextUpdates[PersonalReportUserNameKey]);

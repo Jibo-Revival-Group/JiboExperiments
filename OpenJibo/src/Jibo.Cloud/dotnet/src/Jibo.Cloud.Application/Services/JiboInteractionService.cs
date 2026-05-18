@@ -942,13 +942,6 @@ public sealed class JiboInteractionService(
         var name = personalMemoryStore.GetName(personScope);
         if (string.IsNullOrWhiteSpace(name)) name = personalMemoryStore.GetName(ResolveTenantScope(turn));
 
-        if (string.IsNullOrWhiteSpace(name) &&
-            presence is not null &&
-            !string.IsNullOrWhiteSpace(presence.PrimaryPersonId) &&
-            presence.LoopUserFirstNames.TryGetValue(presence.PrimaryPersonId, out var firstName) &&
-            !string.IsNullOrWhiteSpace(firstName))
-            name = ToDisplayName(firstName);
-
         name = ToDisplayName(name ?? string.Empty);
 
         return string.IsNullOrWhiteSpace(name)

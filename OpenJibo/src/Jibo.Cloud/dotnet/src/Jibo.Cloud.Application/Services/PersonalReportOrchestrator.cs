@@ -103,6 +103,7 @@ internal static class PersonalReportOrchestrator
             return new JiboInteractionDecision(
                 "personal_report_opt_in",
                 reply,
+                SkillPayload: BuildYesNoPromptPayload(),
                 ContextUpdates: contextUpdates);
         }
 
@@ -119,6 +120,7 @@ internal static class PersonalReportOrchestrator
                         return new JiboInteractionDecision(
                             "personal_report_verify_user",
                             $"I think this is {knownName}. Is that right?",
+                            SkillPayload: BuildYesNoPromptPayload(),
                             ContextUpdates: BuildContextUpdates(
                                 AwaitingIdentityConfirmationState,
                                 0,
@@ -147,6 +149,7 @@ internal static class PersonalReportOrchestrator
                     return new JiboInteractionDecision(
                         "personal_report_opt_in",
                         $"{inlineToggleSummary} Would you like your personal report now?",
+                        SkillPayload: BuildYesNoPromptPayload(),
                         ContextUpdates: BuildContextUpdates(
                             AwaitingOptInState,
                             0,
@@ -422,6 +425,14 @@ internal static class PersonalReportOrchestrator
             [CommuteEnabledMetadataKey] = toggles.CommuteEnabled,
             [NewsEnabledMetadataKey] = toggles.NewsEnabled,
             [LastServiceErrorMetadataKey] = lastServiceError
+        };
+    }
+
+    private static IDictionary<string, object?> BuildYesNoPromptPayload()
+    {
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["listen_contexts"] = new[] { "shared/yes_no" }
         };
     }
 

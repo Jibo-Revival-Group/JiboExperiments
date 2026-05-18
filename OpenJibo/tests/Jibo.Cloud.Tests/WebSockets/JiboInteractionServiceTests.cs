@@ -3097,6 +3097,56 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_CanYouGoToSleep_UsesSourceBackedSleepReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you go to sleep",
+            NormalizedTranscript = "can you go to sleep"
+        });
+
+        Assert.Equal("robot_can_sleep", decision.IntentName);
+        Assert.Contains("I do. I usually fall asleep at night.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_GoToSleep_MapsToIdleSleepCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "go to sleep",
+            NormalizedTranscript = "go to sleep"
+        });
+
+        Assert.Equal("sleep", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("sleep", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_TurnAround_MapsToIdleSpinAroundCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "turn around",
+            NormalizedTranscript = "turn around"
+        });
+
+        Assert.Equal("spin_around", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("spinAround", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_NeverMindWithPunctuation_MapsToIdleStopCommand()
     {
         var service = CreateService();

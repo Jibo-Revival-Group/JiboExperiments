@@ -43,6 +43,7 @@ Current batch note:
 - `favorite color`, `favorite food`, and `favorite music` are the first small favorites-family slice
 - the latest pass adds longer authored variants for those favorites so the replies keep more of the original Pegasus cadence instead of collapsing to short placeholders
 - the next source-backed batch now includes `favorite flower`, `R2D2`, `sun`, `space`, `kids`, plus a couple of charm prompts like `can you laugh` and `can you dance`
+- the motion/sleep batch now adds `RI_JBO_CanSleep` and `RA_JBO_SpinAround` so the `go to sleep` and `turn around` surfaces stay source-backed too
 - the follow-up mood batch now includes `how are things`, `how is your day`, `are you sad`, and `are you angry`
 - the personality follow-up batch now includes `what are you up to` and `what are you doing` so small talk stays warm and local instead of falling into generic chat
 - the descriptor batch now includes `are you kind`, `are you funny`, `are you helpful`, `are you curious`, `are you loyal`, `are you mischievous`, and `are you likable`

@@ -101,6 +101,11 @@ public sealed class LegacyMimCatalogImporterTests
             catalog.PersonalityReplies);
         Assert.Contains("I was put together in a factory piece by piece.", catalog.PersonalityReplies);
         Assert.Contains("I really like sunflowers.", catalog.PersonalityReplies);
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("I do. I usually fall asleep at night.", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("go to sleep", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("Don't mind if I do.", catalog.PersonalityReplies);
         Assert.Contains("Ha. Of course I know R2D2. I mean, not personally.", catalog.PersonalityReplies);
         Assert.Contains("Yes! I like all things in space. They're so spacey.", catalog.PersonalityReplies);
         Assert.Contains("Yes yes, I think kids are great. They're a little closer to my size.",

@@ -11,3 +11,4 @@ The newest social batch adds `welcome back`, `what are you thinking`, `what have
 The fun-fact and joke batch adds Pegasus-style `TellAJoke`, `TellRobotFact`, and `Shuffle` excerpts so proactive fun can randomize across more than one category.
 Those facts are now split into generic, robot, and human buckets so the randomizer can sound more like Pegasus while staying lightweight.
 The new favorites batch adds longer authored `favorite color`, `favorite food`, and `favorite music` variants so the familiar personality responses keep more of the original cadence instead of collapsing to short placeholders.
+The new motion/sleep batch adds `RA_JBO_SpinAround` plus `RI_JBO_CanSleep` so turn-around and go-to-sleep behaviors can stay source-backed and familiar.

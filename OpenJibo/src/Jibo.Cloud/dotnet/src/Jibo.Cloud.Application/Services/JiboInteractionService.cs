@@ -520,6 +520,8 @@ public sealed class JiboInteractionService(
             "radio" => BuildRadioLaunchDecision(),
             "radio_genre" => BuildRadioGenreLaunchDecision(lowered),
             "stop" => BuildStopDecision(),
+            "sleep" => BuildIdleGlobalCommandDecision("sleep", "sleep", "Okay. Going to sleep."),
+            "spin_around" => BuildIdleGlobalCommandDecision("spin_around", "spinAround", "Don't mind if I do."),
             "volume_up" => BuildVolumeControlDecision("volume_up", "volumeUp", "null"),
             "volume_down" => BuildVolumeControlDecision("volume_down", "volumeDown", "null"),
             "volume_to_value" => BuildVolumeControlDecision("volume_to_value", "volumeToValue",
@@ -706,6 +708,13 @@ public sealed class JiboInteractionService(
                 "robot_can_laugh",
                 "i do things like this when i'm happy",
                 "i'm happy"),
+            "robot_can_sleep" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_can_sleep",
+                "i do. i usually fall asleep at night",
+                "yes, i sleep at night",
+                "i go to sleep at night",
+                "i sleep at night usually"),
             "robot_can_dance" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_can_dance",
@@ -2519,6 +2528,36 @@ public sealed class JiboInteractionService(
 
         if (MatchesAny(
                 loweredTranscript,
+                "can you go to sleep",
+                "can you sleep",
+                "do you ever sleep",
+                "do you sleep",
+                "when do you sleep",
+                "how can i make you go to sleep",
+                "how do i make you go to sleep"))
+            return "robot_can_sleep";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "turn around",
+                "turn all the way around",
+                "turn back around",
+                "spin around",
+                "look back over there",
+                "look again"))
+            return "spin_around";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "go to sleep",
+                "take a nap",
+                "go to bed",
+                "bedtime",
+                "sleep"))
+            return "sleep";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "snap a picture",
                 "take a picture",
                 "take a photo",
@@ -3113,6 +3152,23 @@ public sealed class JiboInteractionService(
             {
                 ["skillId"] = "@be/idle",
                 ["globalIntent"] = "stop",
+                ["nluDomain"] = "global_commands"
+            });
+    }
+
+    private static JiboInteractionDecision BuildIdleGlobalCommandDecision(
+        string intentName,
+        string globalIntent,
+        string replyText)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            replyText,
+            "@be/idle",
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/idle",
+                ["globalIntent"] = globalIntent,
                 ["nluDomain"] = "global_commands"
             });
     }

@@ -35,7 +35,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var isProactivePizzaFactOffer = string.Equals(plan.IntentName, "proactive_offer_pizza_fact",
             StringComparison.OrdinalIgnoreCase);
         var isSettingsLaunch = string.Equals(skill?.SkillName, "@be/settings", StringComparison.OrdinalIgnoreCase);
-        var isGlobalCommand = isStopCommand || isVolumeControl;
+        var isSleepCommand = string.Equals(plan.IntentName, "sleep", StringComparison.OrdinalIgnoreCase);
+        var isSpinAroundCommand = string.Equals(plan.IntentName, "spin_around", StringComparison.OrdinalIgnoreCase);
+        var isGlobalCommand = isStopCommand || isSleepCommand || isSpinAroundCommand || isVolumeControl;
         var isPhotoGalleryLaunch = string.Equals(plan.IntentName, "photo_gallery", StringComparison.OrdinalIgnoreCase);
         var isPhotoCreateLaunch = string.Equals(plan.IntentName, "snapshot", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase);
@@ -234,7 +236,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 125));
         }
 
-        if (isStopCommand)
+        if (isStopCommand || isSleepCommand || isSpinAroundCommand)
         {
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillRedirectPayload(

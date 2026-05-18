@@ -134,6 +134,9 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("CalendarNothing", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.CalendarNothing;
 
+        if (fileName.StartsWith("CalendarServiceDown", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CalendarServiceDown;
+
         if (fileName.StartsWith("CalendarOutro", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.CalendarOutro;
 
@@ -251,6 +254,8 @@ public static class LegacyMimCatalogImporter
             CalendarNothingTodayReplies = Merge(baseCatalog.CalendarNothingTodayReplies,
                 importedCatalog.CalendarNothingTodayReplies),
             CalendarNothingReplies = Merge(baseCatalog.CalendarNothingReplies, importedCatalog.CalendarNothingReplies),
+            CalendarServiceDownReplies = Merge(baseCatalog.CalendarServiceDownReplies,
+                importedCatalog.CalendarServiceDownReplies),
             CalendarOutroReplies = Merge(baseCatalog.CalendarOutroReplies, importedCatalog.CalendarOutroReplies),
             CommuteNowReplies = Merge(baseCatalog.CommuteNowReplies, importedCatalog.CommuteNowReplies),
             CommuteServiceDownReplies = Merge(baseCatalog.CommuteServiceDownReplies,
@@ -352,6 +357,7 @@ public static class LegacyMimCatalogImporter
         WeatherServiceDown,
         CalendarNothingToday,
         CalendarNothing,
+        CalendarServiceDown,
         CalendarOutro,
         CommuteNow,
         CommuteServiceDown,
@@ -365,6 +371,7 @@ public static class LegacyMimCatalogImporter
     {
         private readonly List<string> _calendarNothingReplies = [];
         private readonly List<string> _calendarNothingTodayReplies = [];
+        private readonly List<string> _calendarServiceDownReplies = [];
         private readonly List<string> _calendarOutroReplies = [];
         private readonly List<string> _commuteNowReplies = [];
         private readonly List<string> _commuteServiceDownReplies = [];
@@ -485,6 +492,9 @@ public static class LegacyMimCatalogImporter
                 case LegacyMimBucket.CalendarNothing:
                     AddDistinct(_calendarNothingReplies, text);
                     return;
+                case LegacyMimBucket.CalendarServiceDown:
+                    AddDistinct(_calendarServiceDownReplies, text);
+                    return;
                 case LegacyMimBucket.CalendarOutro:
                     AddDistinct(_calendarOutroReplies, text);
                     return;
@@ -534,6 +544,7 @@ public static class LegacyMimCatalogImporter
                 WeatherServiceDownReplies = [.. _weatherServiceDownReplies],
                 CalendarNothingTodayReplies = [.. _calendarNothingTodayReplies],
                 CalendarNothingReplies = [.. _calendarNothingReplies],
+                CalendarServiceDownReplies = [.. _calendarServiceDownReplies],
                 CalendarOutroReplies = [.. _calendarOutroReplies],
                 CommuteNowReplies = [.. _commuteNowReplies],
                 CommuteServiceDownReplies = [.. _commuteServiceDownReplies],

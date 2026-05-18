@@ -272,12 +272,23 @@ internal static class PersonalReportOrchestrator
 
         if (toggles.CalendarEnabled)
         {
+            var calendarSummary = ChooseReportSkillTemplate(
+                catalog.CalendarNothingTodayReplies,
+                catalog.CalendarNothingReplies,
+                string.Empty);
+            if (string.IsNullOrWhiteSpace(calendarSummary))
+                calendarSummary = ChooseReportSkillTemplate(
+                    catalog.CalendarServiceDownReplies,
+                    [],
+                    "Looking at your calendar, I don't see anything scheduled today.");
+
+            reportSections.Add(RenderReportSkillTemplate(calendarSummary, userName));
             reportSections.Add(
                 RenderReportSkillTemplate(
                     ChooseReportSkillTemplate(
-                        catalog.CalendarNothingTodayReplies,
-                        catalog.CalendarNothingReplies,
-                        "Looking at your calendar, I don't see anything scheduled today."),
+                        catalog.CalendarOutroReplies,
+                        [],
+                        "And that's your calendar."),
                     userName));
         }
 

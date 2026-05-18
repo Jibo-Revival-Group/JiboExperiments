@@ -35,6 +35,7 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> WeatherServiceDownReplies { get; init; } = [];
     public IReadOnlyList<string> CalendarNothingTodayReplies { get; init; } = [];
     public IReadOnlyList<string> CalendarNothingReplies { get; init; } = [];
+    public IReadOnlyList<string> CalendarServiceDownReplies { get; init; } = [];
     public IReadOnlyList<string> CalendarOutroReplies { get; init; } = [];
     public IReadOnlyList<string> CommuteNowReplies { get; init; } = [];
     public IReadOnlyList<string> CommuteServiceDownReplies { get; init; } = [];

@@ -265,6 +265,8 @@ public sealed class LegacyMimCatalogImporterTests
             catalog.PersonalReportOutroReplies);
         Assert.Contains("Looking at your calendar, I don't see anything scheduled today.",
             catalog.CalendarNothingTodayReplies);
+        Assert.Contains("Looks like I can't access calendars right now. Sorry.", catalog.CalendarServiceDownReplies);
+        Assert.Contains("And that's your calendar.", catalog.CalendarOutroReplies);
         Assert.Contains("Sorry, commute information isn't available right now.", catalog.CommuteServiceDownReplies);
         Assert.Contains("Here's today's news, from the associated press.", catalog.NewsIntroReplies);
         Assert.Contains("And that's what's new in the news.", catalog.NewsOutroReplies);
@@ -316,6 +318,7 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("Today's high is {high}, and the low is {low}.", catalog.WeatherTodayHighLowReplies);
         Assert.Contains("Looking at your calendar, I don't see anything scheduled today.",
             catalog.CalendarNothingTodayReplies);
+        Assert.Contains("Looks like I can't access calendars right now. Sorry.", catalog.CalendarServiceDownReplies);
     }
 
     private static string CreateSeedDirectory()

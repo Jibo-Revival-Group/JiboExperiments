@@ -4,10 +4,9 @@ using Jibo.Cloud.Domain.Models;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class JiboCloudProtocolService
+public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMediaContentStore? mediaContentStore = null)
 {
-    private readonly ICloudStateStore _stateStore;
-    private readonly IMediaContentStore _mediaContentStore;
+    private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private static readonly string[] AcceptedHosts =
     [
         "api.jibo.com",
@@ -15,12 +14,6 @@ public sealed class JiboCloudProtocolService
         "openjibo.ai",
         "localhost"
     ];
-
-    public JiboCloudProtocolService(ICloudStateStore stateStore, IMediaContentStore? mediaContentStore = null)
-    {
-        _stateStore = stateStore;
-        _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
-    }
 
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope,
         CancellationToken cancellationToken = default)
@@ -97,13 +90,13 @@ public sealed class JiboCloudProtocolService
 
     private ProtocolDispatchResult HandleAccount(string operation, ProtocolEnvelope envelope)
     {
-        var account = _stateStore.GetAccount();
+        var account = stateStore.GetAccount();
         var body = envelope.TryParseBody();
 
         if (operation.Equals("CreateHubToken", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new
             {
-                token = _stateStore.IssueHubToken(),
+                token = stateStore.IssueHubToken(),
                 expires = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeMilliseconds()
             });
 
@@ -192,7 +185,7 @@ public sealed class JiboCloudProtocolService
                 accessKeyId = account.AccessKeyId,
                 secretAccessKey = account.SecretAccessKey,
                 email = account.Email,
-                friendlyId = _stateStore.GetRobot().RobotId,
+                friendlyId = stateStore.GetRobot().RobotId,
                 payload = ReadObject(body, "payload")
             });
 
@@ -255,11 +248,11 @@ public sealed class JiboCloudProtocolService
               ?? ReadString(body, "robotId")
               ?? "unknown-device";
 
-        _stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion);
 
         return ProtocolDispatchResult.Ok(new
         {
-            token = _stateStore.IssueRobotToken(deviceId)
+            token = stateStore.IssueRobotToken(deviceId)
         });
     }
 
@@ -267,7 +260,7 @@ public sealed class JiboCloudProtocolService
     {
         if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
-        return ProtocolDispatchResult.Ok(_stateStore.GetLoops().Select(loop => new
+        return ProtocolDispatchResult.Ok(stateStore.GetLoops().Select(loop => new
         {
             id = loop.LoopId,
             name = loop.Name,
@@ -323,23 +316,23 @@ public sealed class JiboCloudProtocolService
         var body = envelope.TryParseBody();
 
         if (operation.Equals("List", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(_stateStore.ListMedia(
+            return ProtocolDispatchResult.Ok(stateStore.ListMedia(
                 ReadStringArray(body, "loopIds"),
                 ReadLong(body, "after"),
                 ReadLong(body, "before")).Select(MapMedia).ToArray());
 
         if (operation.Equals("Get", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(_stateStore.GetMedia(ReadStringArray(body, "paths")).Select(MapMedia)
+            return ProtocolDispatchResult.Ok(stateStore.GetMedia(ReadStringArray(body, "paths")).Select(MapMedia)
                 .ToArray());
 
         if (operation.Equals("Remove", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(_stateStore.RemoveMedia(ReadStringArray(body, "paths")).Select(MapMedia)
+            return ProtocolDispatchResult.Ok(stateStore.RemoveMedia(ReadStringArray(body, "paths")).Select(MapMedia)
                 .ToArray());
 
         if (!operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
-        var loopId = ReadHeader(envelope, "x-loop-id") ?? ReadString(body, "loopId") ?? _stateStore.GetLoops()[0].LoopId;
+        var loopId = ReadHeader(envelope, "x-loop-id") ?? ReadString(body, "loopId") ?? stateStore.GetLoops()[0].LoopId;
         var path = ReadHeader(envelope, "x-path") ??
                    ReadString(body, "path") ?? $"/media/{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
         var type = ReadHeader(envelope, "x-type") ?? ReadString(body, "type") ?? "unknown";
@@ -355,26 +348,26 @@ public sealed class JiboCloudProtocolService
             meta as IReadOnlyDictionary<string, object?>, CancellationToken.None).GetAwaiter().GetResult();
 
         return ProtocolDispatchResult.Ok(
-            MapMedia(_stateStore.CreateMedia(loopId, path, type, reference, isEncrypted, meta)));
+            MapMedia(stateStore.CreateMedia(loopId, path, type, reference, isEncrypted, meta)));
     }
 
     private ProtocolDispatchResult HandlePerson(string operation)
     {
         return ProtocolDispatchResult.Ok(operation.Equals("ListHolidays", StringComparison.OrdinalIgnoreCase)
-            ? _stateStore.GetHolidays()
+            ? stateStore.GetHolidays()
             : []);
     }
 
     private ProtocolDispatchResult HandleBackup(string operation, ProtocolEnvelope envelope)
     {
         if (operation.Equals("List", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(_stateStore.GetBackups());
+            return ProtocolDispatchResult.Ok(stateStore.GetBackups());
 
         if (operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
         {
             var body = envelope.TryParseBody();
             var requestedName = ReadString(body, "name") ?? ReadString(body, "backupName");
-            return ProtocolDispatchResult.Ok(_stateStore.CreateBackup(requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"));
+            return ProtocolDispatchResult.Ok(stateStore.CreateBackup(requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"));
         }
 
         return ProtocolDispatchResult.Ok(Array.Empty<object>());
@@ -383,18 +376,18 @@ public sealed class JiboCloudProtocolService
     private ProtocolDispatchResult HandleKey(string operation, ProtocolEnvelope envelope)
     {
         var body = envelope.TryParseBody();
-        var loopId = ReadString(body, "loopId") ?? ReadString(body, "id") ?? _stateStore.GetLoops()[0].LoopId;
+        var loopId = ReadString(body, "loopId") ?? ReadString(body, "id") ?? stateStore.GetLoops()[0].LoopId;
 
         if (operation.Equals("ShouldCreate", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new
             {
-                shouldCreate = _stateStore.ShouldCreateSymmetricKey(loopId)
+                shouldCreate = stateStore.ShouldCreateSymmetricKey(loopId)
             });
 
         string? symmetricKey;
         if (operation.Equals("CreateSymmetricKey", StringComparison.OrdinalIgnoreCase))
         {
-            symmetricKey = _stateStore.GetOrCreateSymmetricKey(loopId);
+            symmetricKey = stateStore.GetOrCreateSymmetricKey(loopId);
             return ProtocolDispatchResult.Ok(new
             {
                 loopId,
@@ -406,7 +399,7 @@ public sealed class JiboCloudProtocolService
 
         if (operation is "CreateRequest" or "RequestSymmetricKey")
         {
-            var record = _stateStore.CreateKeyRequest(loopId, ReadString(body, "publicKey") ?? string.Empty);
+            var record = stateStore.CreateKeyRequest(loopId, ReadString(body, "publicKey") ?? string.Empty);
             return ProtocolDispatchResult.Ok(new
             {
                 id = record.RequestId,
@@ -415,14 +408,14 @@ public sealed class JiboCloudProtocolService
         }
 
         if (operation.Equals("GetRequest", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(_stateStore.GetKeyRequest(loopId, ReadString(body, "id"),
+            return ProtocolDispatchResult.Ok(stateStore.GetKeyRequest(loopId, ReadString(body, "id"),
                 ReadString(body, "publicKey")));
 
         if (operation.Equals("ListIncomingRequests", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(_stateStore.GetIncomingKeyRequests());
+            return ProtocolDispatchResult.Ok(stateStore.GetIncomingKeyRequests());
 
         if (operation.Equals("ListBinaryRequests", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(_stateStore.GetBinaryRequests());
+            return ProtocolDispatchResult.Ok(stateStore.GetBinaryRequests());
 
         if (operation is "Share" or "ShareSymmetricKey" or "ShareBinary")
             return ProtocolDispatchResult.Ok(new { ok = true });
@@ -430,7 +423,7 @@ public sealed class JiboCloudProtocolService
         if (!operation.Equals("LoadSymmetricKey", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new { ok = true, operation });
 
-        symmetricKey = _stateStore.GetOrCreateSymmetricKey(loopId);
+        symmetricKey = stateStore.GetOrCreateSymmetricKey(loopId);
         return ProtocolDispatchResult.Ok(new
         {
             loopId,
@@ -441,7 +434,7 @@ public sealed class JiboCloudProtocolService
 
     private ProtocolDispatchResult HandleRobot(string operation, ProtocolEnvelope envelope)
     {
-        var robot = _stateStore.GetRobot();
+        var robot = stateStore.GetRobot();
 
         if (operation.Equals("UpdateRobot", StringComparison.OrdinalIgnoreCase))
         {
@@ -455,7 +448,7 @@ public sealed class JiboCloudProtocolService
                 HostMappings = robot.HostMappings
             };
 
-            _stateStore.UpdateRobot(updated);
+            stateStore.UpdateRobot(updated);
             return ProtocolDispatchResult.Ok(new
             {
                 result = "ok"
@@ -468,7 +461,7 @@ public sealed class JiboCloudProtocolService
                 result = "ok"
             });
 
-        var profile = _stateStore.GetRobotProfile();
+        var profile = stateStore.GetRobotProfile();
         return ProtocolDispatchResult.Ok(new
         {
             id = ReadString(envelope.TryParseBody(), "id") ?? profile.RobotId,
@@ -488,15 +481,15 @@ public sealed class JiboCloudProtocolService
 
         return operation switch
         {
-            "ListUpdates" => ProtocolDispatchResult.Ok(_stateStore.ListUpdates(subsystem, filter).Select(MapUpdate)
+            "ListUpdates" => ProtocolDispatchResult.Ok(stateStore.ListUpdates(subsystem, filter).Select(MapUpdate)
                 .ToArray()),
-            "ListUpdatesFrom" => ProtocolDispatchResult.Ok(_stateStore.ListUpdates(subsystem, filter)
+            "ListUpdatesFrom" => ProtocolDispatchResult.Ok(stateStore.ListUpdates(subsystem, filter)
                 .Where(update =>
                     fromVersion is null || update.FromVersion.Equals(fromVersion, StringComparison.OrdinalIgnoreCase))
                 .Select(MapUpdate)
                 .ToArray()),
             "GetUpdateFrom" => HandleGetUpdateFrom(subsystem, fromVersion, filter),
-            "CreateUpdate" => ProtocolDispatchResult.Ok(MapUpdate(_stateStore.CreateUpdate(
+            "CreateUpdate" => ProtocolDispatchResult.Ok(MapUpdate(stateStore.CreateUpdate(
                 fromVersion,
                 ReadString(body, "toVersion"),
                 ReadString(body, "changes"),
@@ -505,7 +498,7 @@ public sealed class JiboCloudProtocolService
                 subsystem,
                 filter,
                 ReadObject(body, "dependencies")))),
-            "RemoveUpdate" => ProtocolDispatchResult.Ok(MapUpdate(_stateStore.RemoveUpdate(ReadString(body, "id")))),
+            "RemoveUpdate" => ProtocolDispatchResult.Ok(MapUpdate(stateStore.RemoveUpdate(ReadString(body, "id")))),
             _ => ProtocolDispatchResult.Ok(Array.Empty<object>())
         };
     }
@@ -514,7 +507,7 @@ public sealed class JiboCloudProtocolService
     {
         var path = Uri.UnescapeDataString(envelope.Path["/media/".Length..]);
         var candidatePaths = new[] { path, $"/{path}" };
-        var media = _stateStore.GetMedia(candidatePaths).FirstOrDefault();
+        var media = stateStore.GetMedia(candidatePaths).FirstOrDefault();
         if (media is null || media.IsDeleted) return ProtocolDispatchResult.Raw(404, string.Empty);
 
         var storedContent = _mediaContentStore.LoadAsync(media.Path, CancellationToken.None).GetAwaiter().GetResult();
@@ -542,7 +535,7 @@ public sealed class JiboCloudProtocolService
 
     private ProtocolDispatchResult HandleGetUpdateFrom(string? subsystem, string? fromVersion, string? filter)
     {
-        var update = _stateStore.GetUpdateFrom(subsystem, fromVersion, filter);
+        var update = stateStore.GetUpdateFrom(subsystem, fromVersion, filter);
         return update is null
             ? ProtocolDispatchResult.Ok(new { })
             : ProtocolDispatchResult.Ok(MapUpdate(update));

@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
@@ -21,7 +21,7 @@ public sealed class JiboWebSocketServiceTests
         var contentRepository = new InMemoryJiboExperienceContentRepository();
         var contentCache = new JiboExperienceContentCache(contentRepository);
         var conversationBroker = new DemoConversationBroker(new JiboInteractionService(contentCache,
-            new LastItemRandomizer(), new InMemoryPersonalMemoryStore(), null, null, null));
+            new LastItemRandomizer(), new InMemoryPersonalMemoryStore()));
         var sttSelector = new DefaultSttStrategySelector(
         [
             new SyntheticBufferedAudioSttStrategy()
@@ -2727,7 +2727,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-radio-noise-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-radio-noise","data":{"text":"Hey Jibo - so open the radio"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-radio-noise","data":{"text":"Hey Jibo - so open the radio"}}"""
         });
 
         Assert.Equal(4, replies.Count);
@@ -4749,7 +4750,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"LISTEN","transID":"trans-smoke-greeting","data":{"text":"hello jibo","rules":["wake-word"]}}"""
+            Text =
+                """{"type":"LISTEN","transID":"trans-smoke-greeting","data":{"text":"hello jibo","rules":["wake-word"]}}"""
         });
 
         Assert.Equal(3, greetingReplies.Count);
@@ -4794,7 +4796,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = token,
-            Text = """{"type":"CLIENT_ASR","transID":"trans-smoke-color","data":{"text":"what is your favorite color"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-smoke-color","data":{"text":"what is your favorite color"}}"""
         });
 
         Assert.Equal(3, personalityReplies.Count);

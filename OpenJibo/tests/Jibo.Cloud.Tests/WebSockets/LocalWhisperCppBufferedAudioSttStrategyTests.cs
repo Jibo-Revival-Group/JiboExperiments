@@ -190,7 +190,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         return page;
     }
 
-    private sealed class FakeExternalProcessRunner(string whisperStdOut = "[00:00:00.000 --> 00:00:01.000] tell me a joke")
+    private sealed class FakeExternalProcessRunner(
+        string whisperStdOut = "[00:00:00.000 --> 00:00:01.000] tell me a joke")
         : IExternalProcessRunner
     {
         public List<(string FileName, IReadOnlyList<string> Arguments)> Calls { get; } = [];

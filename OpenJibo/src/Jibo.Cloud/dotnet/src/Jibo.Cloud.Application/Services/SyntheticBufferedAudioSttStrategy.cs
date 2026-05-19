@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -57,10 +58,10 @@ public sealed class SyntheticBufferedAudioSttStrategy : ISttStrategy
         if (string.IsNullOrWhiteSpace(value)) return string.Empty;
 
         var lowered = value.Trim().ToLowerInvariant();
-        lowered = System.Text.RegularExpressions.Regex.Replace(lowered, @"[^\p{L}\p{N}\s']+", " ",
-            System.Text.RegularExpressions.RegexOptions.CultureInvariant | System.Text.RegularExpressions.RegexOptions.Compiled);
-        lowered = System.Text.RegularExpressions.Regex.Replace(lowered, @"\s+"," ",
-            System.Text.RegularExpressions.RegexOptions.CultureInvariant | System.Text.RegularExpressions.RegexOptions.Compiled);
+        lowered = Regex.Replace(lowered, @"[^\p{L}\p{N}\s']+", " ",
+            RegexOptions.CultureInvariant | RegexOptions.Compiled);
+        lowered = Regex.Replace(lowered, @"\s+", " ",
+            RegexOptions.CultureInvariant | RegexOptions.Compiled);
         return lowered.Trim();
     }
 }

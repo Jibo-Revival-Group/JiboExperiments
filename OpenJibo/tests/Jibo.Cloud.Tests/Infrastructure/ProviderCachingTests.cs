@@ -426,7 +426,8 @@ public sealed class ProviderCachingTests
             entries.Select(entry =>
                 $$"""{"dt":{{entry.Timestamp.ToUnixTimeSeconds()}},"main":{"temp":{{entry.Temp}},"temp_min":{{entry.Low}},"temp_max":{{entry.High}}},"weather":[{"main":"{{entry.Main}}","description":"{{entry.Description}}"}]}"""));
 
-        return $$"""{"city":{"name":"{{cityName}}","country":"{{country}}","timezone":{{timezoneSeconds}}},"list":[{{list}}]}""";
+        return
+            $$"""{"city":{"name":"{{cityName}}","country":"{{country}}","timezone":{{timezoneSeconds}}},"list":[{{list}}]}""";
     }
 
     private sealed class CountingHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)

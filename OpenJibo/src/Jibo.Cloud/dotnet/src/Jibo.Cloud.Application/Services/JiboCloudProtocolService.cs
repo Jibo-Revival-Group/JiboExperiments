@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
@@ -6,7 +7,6 @@ namespace Jibo.Cloud.Application.Services;
 
 public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMediaContentStore? mediaContentStore = null)
 {
-    private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private static readonly string[] AcceptedHosts =
     [
         "api.jibo.com",
@@ -14,6 +14,8 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         "openjibo.ai",
         "localhost"
     ];
+
+    private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
 
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope,
         CancellationToken cancellationToken = default)
@@ -344,7 +346,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         if (!string.IsNullOrWhiteSpace(envelope.BodyText)) meta["bodyText"] = envelope.BodyText;
 
         _mediaContentStore.StoreAsync(path, contentType,
-            string.IsNullOrWhiteSpace(envelope.BodyText) ? [] : System.Text.Encoding.UTF8.GetBytes(envelope.BodyText),
+            string.IsNullOrWhiteSpace(envelope.BodyText) ? [] : Encoding.UTF8.GetBytes(envelope.BodyText),
             meta as IReadOnlyDictionary<string, object?>, CancellationToken.None).GetAwaiter().GetResult();
 
         return ProtocolDispatchResult.Ok(
@@ -367,7 +369,8 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         {
             var body = envelope.TryParseBody();
             var requestedName = ReadString(body, "name") ?? ReadString(body, "backupName");
-            return ProtocolDispatchResult.Ok(stateStore.CreateBackup(requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"));
+            return ProtocolDispatchResult.Ok(
+                stateStore.CreateBackup(requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"));
         }
 
         return ProtocolDispatchResult.Ok(Array.Empty<object>());
@@ -512,25 +515,11 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
 
         var storedContent = _mediaContentStore.LoadAsync(media.Path, CancellationToken.None).GetAwaiter().GetResult();
         var contentType = storedContent?.ContentType ?? TryReadMetaString(media.Meta, "contentType") ??
-                          "application/octet-stream";
+            "application/octet-stream";
         var bodyText = storedContent is not null
-            ? System.Text.Encoding.UTF8.GetString(storedContent.Content)
+            ? Encoding.UTF8.GetString(storedContent.Content)
             : TryReadMetaString(media.Meta, "bodyText") ?? string.Empty;
         return ProtocolDispatchResult.Raw(200, bodyText, contentType);
-    }
-
-    private sealed class NullMediaContentStore : IMediaContentStore
-    {
-        public Task StoreAsync(string path, string contentType, byte[] content,
-            IReadOnlyDictionary<string, object?>? meta, CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task<MediaContentSnapshot?> LoadAsync(string path, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult<MediaContentSnapshot?>(null);
-        }
     }
 
     private ProtocolDispatchResult HandleGetUpdateFrom(string? subsystem, string? fromVersion, string? filter)
@@ -661,5 +650,19 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         return envelope.Headers.TryGetValue(headerName, out var value) &&
                bool.TryParse(value, out var parsed) &&
                parsed;
+    }
+
+    private sealed class NullMediaContentStore : IMediaContentStore
+    {
+        public Task StoreAsync(string path, string contentType, byte[] content,
+            IReadOnlyDictionary<string, object?>? meta, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<MediaContentSnapshot?> LoadAsync(string path, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<MediaContentSnapshot?>(null);
+        }
     }
 }

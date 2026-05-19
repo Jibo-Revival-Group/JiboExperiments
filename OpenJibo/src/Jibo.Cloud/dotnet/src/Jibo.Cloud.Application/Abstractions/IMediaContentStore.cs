@@ -12,6 +12,7 @@ public sealed record MediaContentSnapshot
 {
     public string ContentType { get; init; } = "application/octet-stream";
     public byte[] Content { get; init; } = [];
+
     public IReadOnlyDictionary<string, object?> Meta { get; init; } =
         new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 }

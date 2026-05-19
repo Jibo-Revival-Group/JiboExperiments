@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Content;
@@ -3108,7 +3108,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("robot_can_sleep", decision.IntentName);
-        Assert.Contains("I do. I usually fall asleep at night.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("I do. I usually fall asleep at night.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 

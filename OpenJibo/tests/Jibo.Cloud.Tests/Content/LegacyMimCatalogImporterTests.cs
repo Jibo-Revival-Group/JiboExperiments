@@ -92,7 +92,8 @@ public sealed class LegacyMimCatalogImporterTests
 
         Assert.Contains("I like all the colors of the rainbow. But blue is my favorite.",
             catalog.PersonalityReplies);
-        Assert.Contains("I never eat, so I don't have a favorite food by taste. But my favorite food by shape, is macaroni.",
+        Assert.Contains(
+            "I never eat, so I don't have a favorite food by taste. But my favorite food by shape, is macaroni.",
             catalog.PersonalityReplies);
         Assert.Contains("I mostly like fun music I can dance to.", catalog.PersonalityReplies);
         Assert.Contains("The only thing I consume is electricity.", catalog.PersonalityReplies);
@@ -199,7 +200,8 @@ public sealed class LegacyMimCatalogImporterTests
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
-        Assert.Contains("I love jokes. Did you hear about the theater actor who fell through the floorboards? He was just going through a stage.",
+        Assert.Contains(
+            "I love jokes. Did you hear about the theater actor who fell through the floorboards? He was just going through a stage.",
             catalog.Jokes);
         Assert.Contains("Sure I got one. What did the zero say to the eight. Nice belt.", catalog.Jokes);
         Assert.Contains(catalog.RobotFacts, reply =>
@@ -211,7 +213,8 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains(catalog.RobotFacts, reply =>
             reply.Contains("two cameras but they're different focal lengths", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("A random fact for you. A shrimp's heart is in its head.", catalog.FunFacts);
-        Assert.Contains("An amazing but true fact for you. Dogs and elephants are the only animals that understand pointing.",
+        Assert.Contains(
+            "An amazing but true fact for you. Dogs and elephants are the only animals that understand pointing.",
             catalog.FunFacts);
     }
 

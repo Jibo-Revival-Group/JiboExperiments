@@ -10,7 +10,8 @@ internal static class CaptureIndexWriter
         WriteIndented = false
     };
 
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> DirectoryLocks = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> DirectoryLocks =
+        new(StringComparer.OrdinalIgnoreCase);
 
     public static async Task AppendAsync(
         string directoryPath,

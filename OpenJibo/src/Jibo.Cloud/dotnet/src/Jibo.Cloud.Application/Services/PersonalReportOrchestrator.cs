@@ -676,7 +676,8 @@ internal static class PersonalReportOrchestrator
         var selected = ChooseShortestTemplate(briefings);
         if (string.IsNullOrWhiteSpace(selected)) return string.Empty;
 
-        var firstSentence = selected.Split(['.', '!', '?'], 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        var firstSentence = selected.Split(['.', '!', '?'], 2,
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .FirstOrDefault();
         return string.IsNullOrWhiteSpace(firstSentence) ? selected : firstSentence;
     }

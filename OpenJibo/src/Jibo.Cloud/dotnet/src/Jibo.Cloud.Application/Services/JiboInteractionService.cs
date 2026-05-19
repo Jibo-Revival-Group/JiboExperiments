@@ -1524,10 +1524,10 @@ public sealed class JiboInteractionService(
             {
                 "walking" => lowered.Contains("walk", StringComparison.OrdinalIgnoreCase),
                 "transit" => lowered.Contains("public transportation", StringComparison.OrdinalIgnoreCase) ||
-                              lowered.Contains("transit", StringComparison.OrdinalIgnoreCase) ||
-                              lowered.Contains("transportation", StringComparison.OrdinalIgnoreCase),
+                             lowered.Contains("transit", StringComparison.OrdinalIgnoreCase) ||
+                             lowered.Contains("transportation", StringComparison.OrdinalIgnoreCase),
                 "bicycling" => lowered.Contains("bike", StringComparison.OrdinalIgnoreCase) ||
-                                lowered.Contains("ride", StringComparison.OrdinalIgnoreCase),
+                               lowered.Contains("ride", StringComparison.OrdinalIgnoreCase),
                 _ => lowered.Contains("drive", StringComparison.OrdinalIgnoreCase) ||
                      lowered.Contains("commute", StringComparison.OrdinalIgnoreCase)
             };
@@ -4617,13 +4617,13 @@ public sealed class JiboInteractionService(
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
         return normalized.StartsWith("what is my favorite", StringComparison.Ordinal) ||
-            normalized.StartsWith("what s my favorite", StringComparison.Ordinal) ||
-            normalized.StartsWith("what's my favorite", StringComparison.Ordinal) ||
-            normalized.StartsWith("what is my favourite", StringComparison.Ordinal) ||
-            normalized.StartsWith("what s my favourite", StringComparison.Ordinal) ||
-            normalized.StartsWith("what's my favourite", StringComparison.Ordinal) ||
-            normalized.StartsWith("do you remember my favorite", StringComparison.Ordinal) ||
-            normalized.StartsWith("do you remember my favourite", StringComparison.Ordinal);
+               normalized.StartsWith("what s my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what's my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what is my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what s my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what's my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you remember my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you remember my favourite", StringComparison.Ordinal);
     }
 
     private static string? TryExtractPreferenceLookupCategory(string transcript)

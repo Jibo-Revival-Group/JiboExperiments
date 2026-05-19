@@ -30,14 +30,14 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
         var contentBlob = _containerClient.GetBlobClient($"{relative}.bin");
         var metaBlob = _containerClient.GetBlobClient($"{relative}.json");
         await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
-        await contentBlob.UploadAsync(new MemoryStream(content), overwrite: true, cancellationToken);
+        await contentBlob.UploadAsync(new MemoryStream(content), true, cancellationToken);
         var payload = JsonSerializer.Serialize(new
         {
             path,
             contentType,
             meta
         }, JsonOptions);
-        await metaBlob.UploadAsync(BinaryData.FromString(payload), overwrite: true, cancellationToken);
+        await metaBlob.UploadAsync(BinaryData.FromString(payload), true, cancellationToken);
     }
 
     public async Task<MediaContentSnapshot?> LoadAsync(string path, CancellationToken cancellationToken = default)
@@ -52,7 +52,6 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
         var metaBlob = _containerClient.GetBlobClient($"{relative}.json");
 
         if (await metaBlob.ExistsAsync(cancellationToken))
-        {
             try
             {
                 var json = (await metaBlob.DownloadContentAsync(cancellationToken)).Value.Content.ToString();
@@ -70,7 +69,6 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
             {
                 // Keep the raw binary available even if metadata parsing fails.
             }
-        }
 
         return new MediaContentSnapshot
         {

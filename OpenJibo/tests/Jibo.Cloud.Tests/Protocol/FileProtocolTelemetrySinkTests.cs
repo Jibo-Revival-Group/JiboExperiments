@@ -60,7 +60,8 @@ public sealed class FileProtocolTelemetrySinkTests : IDisposable
 
         Assert.Contains("Notification_20150505", contents);
         Assert.DoesNotContain(Path.Combine("bin", "Debug"), captureFile, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(indexLines, line => line.Contains("\"eventType\":\"protocol_record\"", StringComparison.Ordinal));
+        Assert.Contains(indexLines,
+            line => line.Contains("\"eventType\":\"protocol_record\"", StringComparison.Ordinal));
         Assert.Contains(indexLines, line => line.Contains("\"servicePrefix\":\"Notification_20150505\"",
             StringComparison.Ordinal));
     }

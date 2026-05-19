@@ -53,7 +53,6 @@ internal sealed class FileMediaContentStore : IMediaContentStore
         IDictionary<string, object?> meta = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
         if (File.Exists(metaPath))
-        {
             try
             {
                 using var document = JsonDocument.Parse(await File.ReadAllTextAsync(metaPath, cancellationToken));
@@ -72,7 +71,6 @@ internal sealed class FileMediaContentStore : IMediaContentStore
             {
                 // Keep binary content available even if the manifest is malformed.
             }
-        }
 
         return new MediaContentSnapshot
         {

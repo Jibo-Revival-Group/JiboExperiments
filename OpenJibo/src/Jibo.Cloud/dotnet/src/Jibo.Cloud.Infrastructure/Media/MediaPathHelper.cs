@@ -5,7 +5,8 @@ internal static class MediaPathHelper
     public static string GetRelativeStoragePath(string path)
     {
         var trimmed = path.Trim().TrimStart('/', '\\');
-        var segments = trimmed.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        var segments = trimmed
+            .Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(SanitizeSegment)
             .Where(segment => !string.IsNullOrWhiteSpace(segment))
             .ToArray();

@@ -218,7 +218,8 @@ public sealed class OpenWeatherReportProvider(
         var summary = TryReadWeatherSummary(root);
         var condition = TryReadWeatherCondition(root);
         var temperature = TryReadInt(main, "temp");
-        var currentDayHighLow = await TryResolveCurrentDayHighLowFromForecastAsync(location, useCelsius, cancellationToken);
+        var currentDayHighLow =
+            await TryResolveCurrentDayHighLowFromForecastAsync(location, useCelsius, cancellationToken);
         var high = currentDayHighLow?.High ?? TryReadInt(main, "temp_max");
         var low = currentDayHighLow?.Low ?? TryReadInt(main, "temp_min");
 

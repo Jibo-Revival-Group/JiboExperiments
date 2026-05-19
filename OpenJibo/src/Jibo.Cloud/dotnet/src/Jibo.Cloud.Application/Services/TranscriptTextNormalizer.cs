@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Jibo.Cloud.Application.Services;
 
-internal static partial class TranscriptTextNormalizer
+internal static class TranscriptTextNormalizer
 {
     private static readonly Regex PunctuationToSpaceRegex = new(
         @"[^\p{L}\p{N}\s']+",

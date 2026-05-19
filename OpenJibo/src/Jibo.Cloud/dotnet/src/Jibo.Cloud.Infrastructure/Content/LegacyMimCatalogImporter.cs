@@ -371,18 +371,17 @@ public static class LegacyMimCatalogImporter
     {
         private readonly List<string> _calendarNothingReplies = [];
         private readonly List<string> _calendarNothingTodayReplies = [];
-        private readonly List<string> _calendarServiceDownReplies = [];
         private readonly List<string> _calendarOutroReplies = [];
+        private readonly List<string> _calendarServiceDownReplies = [];
         private readonly List<string> _commuteNowReplies = [];
         private readonly List<string> _commuteServiceDownReplies = [];
         private readonly List<JiboConditionedReply> _emotionReplies = [];
         private readonly List<string> _fallbacks = [];
-        private readonly List<string> _greetings = [];
-        private readonly List<string> _jokes = [];
-        private readonly List<string> _robotFacts = [];
-        private readonly List<string> _humanFacts = [];
-        private readonly List<string> _howAreYous = [];
         private readonly List<string> _funFacts = [];
+        private readonly List<string> _greetings = [];
+        private readonly List<string> _howAreYous = [];
+        private readonly List<string> _humanFacts = [];
+        private readonly List<string> _jokes = [];
         private readonly List<string> _newsCategoryIntroReplies = [];
         private readonly List<string> _newsIntroReplies = [];
         private readonly List<string> _newsOutroReplies = [];
@@ -390,6 +389,7 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _personalReportKickOffReplies = [];
         private readonly List<string> _personalReportOutroReplies = [];
         private readonly List<string> _reportSkillTemplates = [];
+        private readonly List<string> _robotFacts = [];
         private readonly List<string> _weatherIntroReplies = [];
         private readonly List<string> _weatherServiceDownReplies = [];
         private readonly List<string> _weatherTodayHighLowReplies = [];
@@ -564,7 +564,8 @@ public static class LegacyMimCatalogImporter
         private LegacyMimBucket ResolveFunFactTarget(string prompt)
         {
             var lowered = NormalizePrompt(prompt, false).ToLowerInvariant();
-            if (ContainsAny(lowered, "robot", "humanoid", "machine", "about me", "my cameras", "turing", "deep blue", "rossum"))
+            if (ContainsAny(lowered, "robot", "humanoid", "machine", "about me", "my cameras", "turing", "deep blue",
+                    "rossum"))
                 return LegacyMimBucket.RobotFacts;
 
             if (ContainsAny(lowered, "human", "people", "grown ups", "human being", "humans"))

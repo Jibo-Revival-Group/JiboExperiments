@@ -163,7 +163,8 @@ public sealed class JiboCloudProtocolServiceTests
                 Method = "POST",
                 ServicePrefix = "Update_20160715",
                 Operation = "CreateUpdate",
-                BodyText = """{"fromVersion":"1.0.0","toVersion":"1.0.1","changes":"Restore proof","subsystem":"robot"}"""
+                BodyText =
+                    """{"fromVersion":"1.0.0","toVersion":"1.0.1","changes":"Restore proof","subsystem":"robot"}"""
             });
 
             await firstService.DispatchAsync(new ProtocolEnvelope
@@ -209,16 +210,15 @@ public sealed class JiboCloudProtocolServiceTests
             Assert.NotNull(secondInfo.LastLoadedUtc);
             Assert.NotNull(secondInfo.LastSavedUtc);
             Assert.NotEmpty(updatesPayload.RootElement.EnumerateArray());
-            Assert.Contains(updatesPayload.RootElement.EnumerateArray(), item => item.GetProperty("changes").GetString() == "Restore proof");
+            Assert.Contains(updatesPayload.RootElement.EnumerateArray(),
+                item => item.GetProperty("changes").GetString() == "Restore proof");
             Assert.NotEmpty(backupsPayload.RootElement.EnumerateArray());
-            Assert.Contains(backupsPayload.RootElement.EnumerateArray(), item => item.TryGetProperty("Name", out var name) && name.GetString() == "manual-backup");
+            Assert.Contains(backupsPayload.RootElement.EnumerateArray(),
+                item => item.TryGetProperty("Name", out var name) && name.GetString() == "manual-backup");
         }
         finally
         {
-            if (File.Exists(persistencePath))
-            {
-                File.Delete(persistencePath);
-            }
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
         }
     }
 

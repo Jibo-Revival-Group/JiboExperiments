@@ -67,7 +67,8 @@ public static class ServiceCollectionExtensions
             configuration.GetSection("OpenJibo:Media").Bind(mediaOptions);
 
         if (string.IsNullOrWhiteSpace(mediaOptions.ConnectionString))
-            mediaOptions.ConnectionString = Environment.GetEnvironmentVariable("OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING");
+            mediaOptions.ConnectionString =
+                Environment.GetEnvironmentVariable("OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING");
 
         services.AddSingleton<IPersistenceSnapshotStoreFactory, PersistenceSnapshotStoreFactory>();
         services.AddSingleton<IMediaContentStoreFactory, MediaContentStoreFactory>();

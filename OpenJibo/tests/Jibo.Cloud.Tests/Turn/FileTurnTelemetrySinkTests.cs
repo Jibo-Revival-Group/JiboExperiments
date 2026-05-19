@@ -62,9 +62,11 @@ public sealed class FileTurnTelemetrySinkTests
         var indexPath = Path.Combine(directoryPath, "capture-index.ndjson");
         var lines = await File.ReadAllLinesAsync(indexPath);
 
-        Assert.Contains(lines, line => line.Contains("\"eventType\":\"yes_no_turn_received\"", StringComparison.Ordinal));
+        Assert.Contains(lines,
+            line => line.Contains("\"eventType\":\"yes_no_turn_received\"", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.Contains("\"eventType\":\"transcript_error\"", StringComparison.Ordinal));
-        Assert.Contains(lines, line => line.Contains("\"message\":\"Turn telemetry diagnostic\"", StringComparison.Ordinal));
+        Assert.Contains(lines,
+            line => line.Contains("\"message\":\"Turn telemetry diagnostic\"", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.Contains("\"message\":\"Turn telemetry error\"", StringComparison.Ordinal));
     }
 

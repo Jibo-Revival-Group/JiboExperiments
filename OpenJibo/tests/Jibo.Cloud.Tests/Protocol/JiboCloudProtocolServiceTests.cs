@@ -82,6 +82,92 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task PersonListHolidays_DoesNotThrow_WhenLoopStateIsEmpty()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-empty-holidays-{Guid.NewGuid():N}.json");
+        try
+        {
+            await File.WriteAllTextAsync(persistencePath, """
+            {
+              "SchemaVersion": "1",
+              "Revision": 0,
+              "Loops": [],
+              "Holidays": []
+            }
+            """);
+
+            var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(persistencePath));
+            var result = await service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Person_20160715",
+                Operation = "ListHolidays",
+                BodyText = "{}"
+            });
+
+            using var payload = JsonDocument.Parse(result.BodyText);
+            Assert.Equal(200, result.StatusCode);
+            Assert.Equal(JsonValueKind.Array, payload.RootElement.ValueKind);
+            Assert.NotEmpty(payload.RootElement.EnumerateArray());
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
+    [Fact]
+    public async Task PersonListHolidays_MergesPersistedLoopHolidayOverrides()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-loop-holidays-{Guid.NewGuid():N}.json");
+        try
+        {
+            await File.WriteAllTextAsync(persistencePath, """
+            {
+              "SchemaVersion": "1",
+              "Revision": 0,
+              "Loops": [],
+              "Holidays": [
+                {
+                  "Id": "birthday-1",
+                  "EventId": "birthday-1",
+                  "Name": "Jake's Birthday",
+                  "Category": "birthday",
+                  "LoopId": "loop-123",
+                  "MemberId": "person-123",
+                  "IsEnabled": true,
+                  "Date": "2026-05-19",
+                  "Source": "manual",
+                  "CountryCode": "US",
+                  "Created": "2026-05-19T00:00:00Z"
+                }
+              ]
+            }
+            """);
+
+            var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(persistencePath));
+            var result = await service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Person_20160715",
+                Operation = "ListHolidays",
+                BodyText = """{"loopId":"loop-123"}"""
+            });
+
+            using var payload = JsonDocument.Parse(result.BodyText);
+            Assert.Equal(200, result.StatusCode);
+            Assert.Contains(payload.RootElement.EnumerateArray(),
+                item => item.GetProperty("name").GetString() == "Jake's Birthday");
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
+    [Fact]
     public async Task MediaCreateAndGet_ReturnsCreatedItem()
     {
         var created = await _service.DispatchAsync(new ProtocolEnvelope
@@ -327,7 +413,7 @@ public sealed class JiboCloudProtocolServiceTests
         });
 
         using var payload = JsonDocument.Parse(result.BodyText);
-        Assert.Single(payload.RootElement.EnumerateArray());
+        Assert.NotEmpty(payload.RootElement.EnumerateArray());
     }
 
     [Fact]

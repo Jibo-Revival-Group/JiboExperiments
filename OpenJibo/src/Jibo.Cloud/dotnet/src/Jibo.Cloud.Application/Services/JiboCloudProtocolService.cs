@@ -72,7 +72,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             return Task.FromResult(HandleKey(operation, envelope));
 
         if (servicePrefix.StartsWith("Person_", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(HandlePerson(operation));
+            return Task.FromResult(HandlePerson(operation, envelope));
 
         if (servicePrefix.StartsWith("Robot_", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleRobot(operation, envelope));
@@ -353,11 +353,14 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             MapMedia(stateStore.CreateMedia(loopId, path, type, reference, isEncrypted, meta)));
     }
 
-    private ProtocolDispatchResult HandlePerson(string operation)
+    private ProtocolDispatchResult HandlePerson(string operation, ProtocolEnvelope envelope)
     {
-        return ProtocolDispatchResult.Ok(operation.Equals("ListHolidays", StringComparison.OrdinalIgnoreCase)
-            ? stateStore.GetHolidays()
-            : []);
+        if (!operation.Equals("ListHolidays", StringComparison.OrdinalIgnoreCase))
+            return ProtocolDispatchResult.Ok(Array.Empty<object>());
+
+        var body = envelope.TryParseBody();
+        var loopId = ReadString(body, "loopId");
+        return ProtocolDispatchResult.Ok(stateStore.GetHolidays(loopId).Select(MapHoliday));
     }
 
     private ProtocolDispatchResult HandleBackup(string operation, ProtocolEnvelope envelope)
@@ -546,6 +549,26 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             subsystem = update.Subsystem,
             filter = update.Filter,
             dependencies = new Dictionary<string, object?>()
+        };
+    }
+
+    private static object MapHoliday(HolidayRecord holiday)
+    {
+        return new
+        {
+            id = holiday.Id,
+            eventId = holiday.EventId,
+            name = holiday.Name,
+            category = holiday.Category,
+            subcategory = holiday.Subcategory,
+            loopId = holiday.LoopId,
+            memberId = holiday.MemberId,
+            isEnabled = holiday.IsEnabled,
+            date = holiday.Date,
+            endDate = holiday.EndDate,
+            source = holiday.Source,
+            countryCode = holiday.CountryCode,
+            created = holiday.Created
         };
     }
 

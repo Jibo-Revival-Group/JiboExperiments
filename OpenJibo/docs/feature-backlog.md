@@ -924,6 +924,9 @@ For `1.0.19`:
 6. Presence-aware greetings and identity-triggered proactivity - implemented (trigger path, identity-aware reactive/proactive replies, cooldown metadata wiring, focused websocket coverage)
 7. Personal report parity track (weather visuals, live news path, commute path, calendar parity matrix) - in progress (`2026-05-10` first live-news provider slice implemented)
 8. Holidays and seasonal personality behavior built on the new memory/proactivity foundation
+   - system holidays should come from an up-to-date provider and merge with loop-scoped custom holiday records
+   - allow disabled holiday records to suppress reminders for people who do not celebrate a holiday
+   - birthdays and other personal dates should flow into the same loop-scoped holiday list once authoring is wired up
 9. Durable memory persistence path (multi-tenant backing store)
   - reference design captured in `docs/persistence-architecture.md`
   - store contracts are now tightened around account/loop/device/person scoping, revision tracking, and explicit load/save boundaries

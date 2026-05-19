@@ -42,6 +42,6 @@ public interface ICloudStateStore
     KeyRequestRecord GetKeyRequest(string loopId, string? requestId, string? publicKey);
     IReadOnlyList<KeyRequestRecord> GetIncomingKeyRequests();
     IReadOnlyList<KeyRequestRecord> GetBinaryRequests();
-    IReadOnlyList<object> GetHolidays();
+    IReadOnlyList<HolidayRecord> GetHolidays(string? loopId = null);
     void UpdateRobot(DeviceRegistration registration);
 }

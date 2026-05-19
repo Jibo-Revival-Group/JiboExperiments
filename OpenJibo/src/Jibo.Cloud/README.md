@@ -91,6 +91,18 @@ dotnet run --project dotnet/src/Jibo.Cloud.Api/Jibo.Cloud.Api.csproj
 Replace `UseDevelopmentStorage=true` with your real storage account connection string when you move
 from local emulation to Azure.
 
+## Holiday Wiring
+
+Holiday lists are now sourced from a live holiday provider and merged with loop-scoped custom
+holiday records.
+
+The default country code is `US`, but you can override it with:
+
+- `OpenJibo:Holiday:CountryCode`
+
+If you later add custom holiday authoring, disabled records can be used to suppress a holiday for a
+loop without removing the underlying system holiday source.
+
 ## Recovery Strategy
 
 The first supported device path is:

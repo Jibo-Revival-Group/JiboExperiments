@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.Holidays;
 
 namespace Jibo.Cloud.Infrastructure.Persistence;
 
@@ -23,12 +24,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _keyRequests = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly List<LoopRecord> _loops;
+    private readonly List<HolidayRecord> _holidayOverrides = [];
     private readonly List<MediaRecord> _media = [];
     private readonly List<PersonRecord> _people;
 
     private readonly ConcurrentDictionary<string, CloudSession>
         _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly IHolidayCalendarProvider _holidayCalendarProvider;
     private readonly ISnapshotStore _snapshotStore;
     private readonly ConcurrentDictionary<string, string> _symmetricKeys = new(StringComparer.OrdinalIgnoreCase);
     private readonly Lock _syncRoot = new();
@@ -47,8 +50,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public InMemoryCloudStateStore(ISnapshotStore snapshotStore)
+        : this(snapshotStore, new NagerDateHolidayCalendarProvider())
+    {
+    }
+
+    public InMemoryCloudStateStore(ISnapshotStore snapshotStore, IHolidayCalendarProvider holidayCalendarProvider)
     {
         _snapshotStore = snapshotStore;
+        _holidayCalendarProvider = holidayCalendarProvider;
         _robot = new DeviceRegistration
         {
             HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -155,6 +164,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _loops.Clear();
         _loops.AddRange(snapshot.Loops ?? []);
 
+        _holidayOverrides.Clear();
+        _holidayOverrides.AddRange(snapshot.Holidays ?? []);
+
         _people.Clear();
         _people.AddRange(snapshot.People ?? []);
 
@@ -201,6 +213,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 Media = _media.ToArray(),
                 Backups = _backups.ToArray(),
                 Loops = _loops.ToArray(),
+                Holidays = _holidayOverrides.ToArray(),
                 People = _people.ToArray()
             };
             _snapshotStore.Save(snapshot);
@@ -519,25 +532,50 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return [];
     }
 
-    public IReadOnlyList<object> GetHolidays()
+    public IReadOnlyList<HolidayRecord> GetHolidays(string? loopId = null)
     {
-        return
-        [
-            new
+        var resolvedLoopId = string.IsNullOrWhiteSpace(loopId) ? ResolveDefaultLoopId() : loopId.Trim();
+        var years = new[] { DateTimeOffset.UtcNow.Year, DateTimeOffset.UtcNow.Year + 1 };
+
+        var systemHolidays = years
+            .SelectMany(year => _holidayCalendarProvider.GetPublicHolidays(null, year))
+            .Where(holiday => holiday.IsEnabled)
+            .Select(holiday => new HolidayRecord
             {
-                id = "easter-1",
-                eventId = (string?)null,
-                name = "Easter",
-                category = "holiday",
-                subcategory = (string?)null,
-                loopId = _loops[0].LoopId,
-                memberId = (string?)null,
-                isEnabled = true,
-                date = "2026-04-05",
-                endDate = (string?)null,
-                created = DateTimeOffset.UtcNow.ToString("O")
-            }
-        ];
+                Id = holiday.Id,
+                EventId = holiday.EventId,
+                Name = holiday.Name,
+                Category = holiday.Category,
+                Subcategory = holiday.Subcategory,
+                LoopId = resolvedLoopId,
+                MemberId = holiday.MemberId,
+                IsEnabled = true,
+                Date = holiday.Date,
+                EndDate = holiday.EndDate,
+                Source = holiday.Source,
+                CountryCode = holiday.CountryCode,
+                Created = holiday.Created
+            })
+            .ToList();
+
+        var overrides = _holidayOverrides
+            .Where(holiday => string.Equals(holiday.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var overrideHoliday in overrides)
+        {
+            if (string.IsNullOrWhiteSpace(overrideHoliday.EventId))
+                continue;
+
+            systemHolidays.RemoveAll(systemHoliday =>
+                string.Equals(systemHoliday.EventId, overrideHoliday.EventId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return systemHolidays
+            .Concat(overrides.Where(holiday => holiday.IsEnabled))
+            .OrderBy(holiday => holiday.Date)
+            .ThenBy(holiday => holiday.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     public void UpdateRobot(DeviceRegistration registration)
@@ -628,6 +666,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public MediaRecord[]? Media { get; init; }
         public BackupRecord[]? Backups { get; init; }
         public LoopRecord[]? Loops { get; init; }
+        public HolidayRecord[]? Holidays { get; init; }
         public PersonRecord[]? People { get; init; }
     }
 

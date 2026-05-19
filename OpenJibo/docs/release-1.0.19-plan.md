@@ -90,6 +90,9 @@ The goal is to port these in small batches, capture the source-backed phrasing w
 - port holiday-aware personality responses as a visible extension of the new persona slice
 - start with a small, source-backed set (for example birthdays/holidays already represented in legacy data paths)
 - ensure holiday responses feel characterful while still routing through stock-compatible payloads
+- use a loop-scoped merged holiday list in the cloud protocol so system holidays and custom person holidays can coexist
+- source system holidays from a live holiday provider and keep `IsEnabled = false` records available for holiday suppression
+- keep birthday/custom holiday authoring aligned with person memory so future proactivity can suppress or promote holidays per loop
 
 ### 5. Multi-Tenant Memory Storage Foundation
 
@@ -111,6 +114,7 @@ The goal is to port these in small batches, capture the source-backed phrasing w
 Reference design:
 
 - [persistence-architecture.md](persistence-architecture.md)
+- [holiday-architecture.md](holiday-architecture.md)
 
 ## First Implemented Slice In `1.0.19`
 

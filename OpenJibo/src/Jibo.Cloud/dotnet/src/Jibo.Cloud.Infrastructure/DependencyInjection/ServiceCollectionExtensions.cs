@@ -3,6 +3,7 @@ using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Audio;
 using Jibo.Cloud.Infrastructure.Commute;
 using Jibo.Cloud.Infrastructure.Content;
+using Jibo.Cloud.Infrastructure.Holidays;
 using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.News;
 using Jibo.Cloud.Infrastructure.Persistence;
@@ -41,11 +42,17 @@ public static class ServiceCollectionExtensions
         if (string.IsNullOrWhiteSpace(newsApiOptions.ApiKey))
             newsApiOptions.ApiKey = Environment.GetEnvironmentVariable("NEWSAPI_KEY");
 
+        var holidayOptions = new HolidayCalendarOptions();
+        if (configuration is not null) configuration.GetSection("OpenJibo:Holiday").Bind(holidayOptions);
+
         services.AddSingleton(sttOptions);
         services.AddSingleton(openWeatherOptions);
         services.AddSingleton(newsApiOptions);
+        services.AddSingleton(holidayOptions);
         services.AddHttpClient<IWeatherReportProvider, OpenWeatherReportProvider>();
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
+        services.AddSingleton<IHolidayCalendarProvider>(provider =>
+            new NagerDateHolidayCalendarProvider(provider.GetRequiredService<HolidayCalendarOptions>()));
         services.AddSingleton<ICommuteReportProvider, UnavailableCommuteReportProvider>();
         var statePersistencePath = configuration?["OpenJibo:State:PersistencePath"]
                                    ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "cloud-state.json");
@@ -75,8 +82,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ICloudStateStore>(provider =>
         {
             var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
-            return new InMemoryCloudStateStore(snapshotFactory.Create(statePersistencePath, stateBackendKind,
-                "cloud-state", stateConnectionString));
+            var holidayCalendarProvider = provider.GetRequiredService<IHolidayCalendarProvider>();
+            return new InMemoryCloudStateStore(
+                snapshotFactory.Create(statePersistencePath, stateBackendKind, "cloud-state", stateConnectionString),
+                holidayCalendarProvider);
         });
         services.AddSingleton<IPersonalMemoryStore>(provider =>
         {

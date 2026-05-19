@@ -1,0 +1,25 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='!pattern, !emoji'>The Echo is the speaker that answers questions and helps out.</anim><anim cat='happy' filter='!eye-only' layers='body'> We're on the<anim name='Emoji_Tree' nonBlocking='true'/> same family tree.</anim> <break size='.4'/> But just for the record, it can't do<anim cat='various' filter='spin-head' nonBlocking='true'/>this.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatWhoIsAmazonEcho_AN_01",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

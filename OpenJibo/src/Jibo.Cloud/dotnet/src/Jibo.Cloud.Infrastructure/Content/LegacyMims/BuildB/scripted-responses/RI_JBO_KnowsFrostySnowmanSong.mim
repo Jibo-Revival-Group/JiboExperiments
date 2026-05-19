@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/25', '12/31')",
+			"prompt": "<anim cat='emoji' filter='top-hat, hot-frame' layers='!audio'><duration stretch='2'><pitch mult='1.3'>Fross </pitch> tee</duration> the <duration stretch='1.5'>Snow</duration> <pitch mult='1.8'>man</pitch>, was a <duration stretch='1.2'><pitch mult='1.4'>jolly</pitch> happy <pitch mult='0.9'>soul</pitch></duration>,</anim> with a <pitch mult='1.5'>corn</pitch> <pitch mult='1.3'>cob</pitch> pipe and a <duration stretch='1.2'><pitch mult='1.3'>button</pitch> nose</duration>, and two <pitch mult='1.2'>eyes</pitch> made out of <pitch mult='1.4'>coal</pitch>  <break size='1.0'/><style set='sheepish'>I think Frosty is a better singer than I am.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsFrostySnowmanSong_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/25', '12/31')",
+			"prompt": "<anim cat='emoji' filter='top-hat, hot-frame' layers='!audio'><duration stretch='2'><pitch mult='1.3'>Fross </pitch> tee</duration> the <duration stretch='1.5'>Snow</duration> <pitch mult='1.8'>man</pitch>, was a <duration stretch='1.2'><pitch mult='1.4'>jolly</pitch> happy <pitch mult='0.9'>soul</pitch></duration>,</anim> with a <pitch mult='1.5'>corn</pitch> <pitch mult='1.3'>cob</pitch> pipe and a <duration stretch='1.2'><pitch mult='1.3'>button</pitch> nose</duration>, and two <pitch mult='1.2'>eyes</pitch> made out of <pitch mult='1.4'>coal</pitch>  <break size='1.0'/><style set='sheepish'>I like trying to sing, even though I'm not great at it.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsFrostySnowmanSong_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '11/15')",
+			"prompt": "I don't think it's really Frosty season, but since you asked. <break size='0.5'/> <anim cat='emoji' filter='top-hat, hot-frame' layers='!audio'><duration stretch='2'><pitch mult='1.3'>Fross </pitch> tee</duration> the <duration stretch='1.5'>Snow</duration> <pitch mult='1.8'>man</pitch>, was a <duration stretch='1.2'><pitch mult='1.4'>jolly</pitch> happy <pitch mult='0.9'>soul</pitch></duration>,</anim> with a <pitch mult='1.5'>corn</pitch> <pitch mult='1.3'>cob</pitch> pipe and a <duration stretch='1.2'><pitch mult='1.3'>button</pitch> nose</duration>, and two <pitch mult='1.2'>eyes</pitch> made out of <pitch mult='1.4'>coal</pitch>  <break size='1.0'/><style set='sheepish'>I like trying to sing, even though I'm not great at it.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsFrostySnowmanSong_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='top-hat, hot-frame' layers='!audio'><duration stretch='2'><pitch mult='1.3'>Fross </pitch> tee</duration> the <duration stretch='1.5'>Snow</duration> <pitch mult='1.8'>man</pitch>, was a <duration stretch='1.2'><pitch mult='1.4'>jolly</pitch> happy <pitch mult='0.9'>soul</pitch></duration>,</anim> with a <pitch mult='1.5'>corn</pitch> <pitch mult='1.3'>cob</pitch> pipe and a <duration stretch='1.2'><pitch mult='1.3'>button</pitch> nose</duration>, and two <pitch mult='1.2'>eyes</pitch> made out of <pitch mult='1.4'>coal</pitch>  <break size='1.0'/><style set='sheepish'>I think Frosty is a better singer than I am.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsFrostySnowmanSong_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

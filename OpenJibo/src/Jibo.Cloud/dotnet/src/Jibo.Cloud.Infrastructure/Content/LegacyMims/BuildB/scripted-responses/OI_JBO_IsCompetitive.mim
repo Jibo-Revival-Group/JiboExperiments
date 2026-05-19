@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't think of myself that way. But you never know.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsCompetitive_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I am a little competitive with myself. Every day I like to be a little better than I was the day before. That means I am a little jealous of who I will be tomorrow.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsCompetitive_AN_02"
+		}
+	]
+}

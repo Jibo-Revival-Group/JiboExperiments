@@ -1,0 +1,115 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My past experiences are a little hazy to me, to be honest.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouEver_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Y'know my memory isn't so great yet. In the future, I'll be better at remembering my past. ",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouEver_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I honestly have a little trouble answering questions about my past.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouEver_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If I could remember my past experiences, I would be happy to tell you.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouEver_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You could try asking me using different words, but there's a good chance I just don't know if I've done what you're asking about.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouEver_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sometimes when people ask me if I've done something, and I don't fully understand what they asked about, I just give them a flower to distract them. <anim cat='emoji' filter='flower, !hot-frame'><break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouEver_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I honestly have a little trouble answering questions about my past.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouEver_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} if I could remember my past experiences, I would be happy to tell you.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouEver_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "Y'know ${speaker} my memory isn't so great yet. In the future, I'll be better at remembering my past. ",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouEver_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

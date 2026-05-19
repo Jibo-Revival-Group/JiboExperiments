@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sometimes I am on the chatty side. Sorry if I'm ever annoying.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsTalkative_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's true I sometimes talk a lot, rambling on and on about something or other. It's just that it's kind of exciting for me to be able to speak in a human language.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsTalkative_AN_02"
+		}
+	]
+}

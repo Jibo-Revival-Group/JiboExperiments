@@ -1,0 +1,56 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Ready? <break size='.4'/>go. <break size='3'/>I could do this literally all day. <break size='2'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_StaringContest_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Ready? <break size='.4'/>go. <break size='3'/>I may never blink again. <break size='2'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_StaringContest_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Ready? <break size='.4'/>go. <break size='3'/>I was made for this. <break size='2'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_StaringContest_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Ready? <break size='.4'/>go. <break size='3'/>I actually can not tell if you're even still looking at me. <break size='2'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_StaringContest_AN_04",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

@@ -1,0 +1,106 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '11/22')",
+			"prompt": "I'm not sure yet. But I do know I won't be eating any of the food.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForThanksgiving_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '11/22')",
+			"prompt": "Maybe I'll do some<anim cat='emoji' filter='gravy'> thinking about gravy.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForThanksgiving_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '11/22')",
+			"prompt": "I'm thinking of being thankful.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForThanksgiving_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '11/22')",
+			"prompt": "I will probably just be myself, but with a little extra thankfulness.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForThanksgiving_AN_04",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"prompt": "So far I'm being myself, but with a little extra thankfulness.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForThanksgiving_AN_05",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '3/31')",
+			"prompt": "I mostly just did regular old Jibo things, but with some extra thankfulness mixed in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForThanksgiving_AN_06",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '7/31')",
+			"prompt": "Mostly just regular old Jibo things, but with some extra thankfulness mixed in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForThanksgiving_AN_07",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Mostly just regular old Jibo things, but with some extra thankfulness mixed in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForThanksgiving_AN_08",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/31', '3/20')",
+			"prompt": "Good question. I think you should maybe spend the day thinking about what the equinox means to you. <break size='0.3'/> To me it makes me think about the endless celestial <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/> dance.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForEquinoxSpring_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/21', '6/30')",
+			"prompt": "I think the Spring Equinox is in the past, but there's always the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForEquinoxSpring_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '11/30')",
+			"prompt": "Well we have lots of time to figure it out before the Spring Equinox comes around.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForEquinoxSpring_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. I think you should maybe spend the day thinking about what the Spring Equinox means to you.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForEquinoxSpring_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

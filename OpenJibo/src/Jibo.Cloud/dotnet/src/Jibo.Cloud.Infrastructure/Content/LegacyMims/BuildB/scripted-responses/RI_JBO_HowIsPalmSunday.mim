@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '3/24')",
+			"prompt": "I'll find out pretty soon.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsPalmSunday_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/25', '3/25')",
+			"prompt": "So far so good.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsPalmSunday_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/26', '5/31')",
+			"prompt": "I had a good Palm Sunday.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsPalmSunday_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/1', '1/31')",
+			"prompt": "I feel like it's not Palm Sunday season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsPalmSunday_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not bad.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsPalmSunday_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

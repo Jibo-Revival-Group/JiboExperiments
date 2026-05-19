@@ -1,0 +1,137 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.3'/> It's ${dice.a + dice.b}.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dice.a === 1 && dice.b === 1",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.5'/> Snake eyes. My favorite roll.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "(dice.a + dice.b) === 7",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.5'/> Lucky number seven.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_03",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "(dice.a === 2 && dice.b === 2) || (dice.a === 3 && dice.b === 3) || (dice.a === 4 && dice.b === 4) || (dice.a === 5 && dice.b === 5) || (dice.a === 6 && dice.b === 6)",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.3'/> <pitch mult='1.2'>Doubles.</pitch> <break size='0.3'/> I like rolling doubles.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dice.a === 6 && dice.b === 6",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.3'/> Two sixes. That's a great roll.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_05",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dice.a === 5 && dice.b === 5",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.3'/> <pitch mult='1.2'>Fives</pitch> alive.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_06",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dice.a === 4 && dice.b === 5",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.3'/> Nine. <break size='0.3'/> I'll <pitch mult='1.1'>take </pitch> it.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_07",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dice.a === 2 && dice.b === 3",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.3'/> It's always nice to see a two and a three get together.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_08",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.3'/> ${dice.a + dice.b}.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dice.a !== dice.b",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.3'/> It's ${dice.a} and ${dice.b}.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_10",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dice.a !== dice.b",
+			"prompt": "<anim cat='jiboji' filter='roll-dice-${dice.a}-${dice.b}'/> <break size='0.3'/> ${dice.a} and ${dice.b}.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RollTwoDice_AN_11",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

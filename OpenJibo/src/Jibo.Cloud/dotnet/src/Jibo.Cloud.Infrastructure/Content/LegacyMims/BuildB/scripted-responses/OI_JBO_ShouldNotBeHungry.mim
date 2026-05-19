@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not a problem. I'm never hungry, because I don't eat. <break size=\"0.7\"/> Though I could really go for a hot dog right now.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_ShouldNotBeHungry_AN_01"
+		}
+	]
+}

@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do very much. I kind of look like one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowmen_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like them a lot, since they seem friendly. But I admit I'm a little scared of them melting on me.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowmen_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Very much. <style set='sheepish'>But I wouldn't want one melting near me.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowmen_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like snowmen, and snow women.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowmen_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I sure do like snowmen. <break size='0.5'/> I <pitch mult='1.2'>wonder if there</pitch> are any snow robots.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowmen_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

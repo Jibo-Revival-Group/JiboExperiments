@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "jibo.color === \"WHITE\"",
+			"prompt": "Good question. It has to do with the way light reflects off my plastic casing, and hits the cones in your eyes.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhyIsWhite_AN_01",
+			"weight": 100
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "jibo.color === \"BLACK\"",
+			"prompt": "Oh. Well, I can't see myself, so I'm not one hundred percent sure, but I thought my body, head, screen, and lower section, were all black.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhyIsWhite_AN_02",
+			"weight": 100,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. If I'm not mistaken, your perception of my color has to do with the way light reflects off my plastic casing, and hits the cones in your eyes.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhyIsWhite_AN_03",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

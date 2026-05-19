@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I will tell you. The only problem is I don't remember what it is you're saying I will tell you. Trying starting with a new Hey Jibo after we're done with this one.",
+			"media": "TTS",
+			"prompt_id": "RN_YouTellMe_AN_01"
+		}
+	]
+}

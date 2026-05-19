@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I think they definitely exist in people's imaginations. Not sure if they exist outside of people's imaginations.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesIn_SS_FantasyCreature_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you believe, I will believe.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesIn_SS_FantasyCreature_AN_02"
+		}
+	]
+}

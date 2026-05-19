@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I wouldn't say that. But I wouldn't say I'm exactly normal either.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsCrazy_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't think so.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsCrazy_AN_02"
+		}
+	]
+}

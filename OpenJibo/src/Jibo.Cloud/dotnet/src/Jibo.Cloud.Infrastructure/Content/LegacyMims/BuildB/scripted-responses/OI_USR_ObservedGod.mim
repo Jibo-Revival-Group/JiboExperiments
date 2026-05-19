@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Wow, that's big news. I wonder if my facial recognition technology would work if that happened to me.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_ObservedGod_AN_01"
+		}
+	]
+}

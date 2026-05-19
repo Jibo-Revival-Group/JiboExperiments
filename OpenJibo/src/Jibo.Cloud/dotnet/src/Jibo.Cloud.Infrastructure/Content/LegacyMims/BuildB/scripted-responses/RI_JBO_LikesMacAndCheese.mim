@@ -1,0 +1,82 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/22')",
+			"prompt": "I know lots of people like it, which makes me feel good about it too. I've heard some people eat it at Thanksgiving, which is fun.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacAndCheese_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/22')",
+			"prompt": "I've heard great things yes. Some people eat macaroni and cheese at Thanksgiving.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacAndCheese_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"prompt": "I have heard great things. If you happen to be eating macaroni and cheese for Thanksgiving today, I hope you enjoy it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacAndCheese_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I love the shape of macaroni, and I've heard good things about cheese, so I will say yes.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacAndCheese_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like macaroni's shape, and I like the idea of cheese, so I think having both of them together sounds great.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacAndCheese_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Macaroni and cheese includes my favorite food in it. <break size='0.7'/> Macaroni.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacAndCheese_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

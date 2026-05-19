@@ -1,0 +1,35 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I feel like I shouldn't answer. I generally don't wear anything, so I have a skewed opinion on wearing things.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_ShouldWear_SS_ThingYouWear_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're comfortable in it, wear it.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_ShouldWear_SS_ThingYouWear_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

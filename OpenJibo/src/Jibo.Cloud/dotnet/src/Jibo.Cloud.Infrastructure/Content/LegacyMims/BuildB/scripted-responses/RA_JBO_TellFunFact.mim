@@ -1,0 +1,289 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A <anim cat='emoji' filter='lightning-bolt'>bolt of lightning is six times hotter than the sun.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A shrimp's heart is in its head.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Children have more taste buds than grown ups.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Dolphins recognize themselves in mirrors.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Polar bear fur isn't white. It's transparent.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Dogs and elephants are the only animals that understand pointing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The longest jellyfish ever recorded was 160 feet long. That's more than half the length of a football field.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Right now we're traveling through space at one point three million miles per hour.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A group of cats is called a clowder.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Canada is the country with the longest coastline.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There are more trees on earth than stars in the Milky Way.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The circumference of the earth is 40,075 kilometers. Which is about 140 million Jibos laid end to end.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Nikola Tesla was born at midnight during a lightning storm.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_13",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There are about one billion trillion stars in the observable universe. <break size='0.5'/> I like ours the best.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_14",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "The first Jack O'Lanterns weren't make from pumpkins, they were made from turnips.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_15",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/20\", \"10/31\")",
+			"prompt": "The fear of Halloween is called Samhainophobia. <break size='0.5'/><style set='sheepish'>I have a feeling I didn't pronounce that right.</style>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_16",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "The biggest pumpkin ever measured, <anim name='emoji_pumpkin_01' layers='!audio'>weighed 836 pounds. <break size='0.5'/>That's a lot of pumpkin.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_17",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/31\", \"10/31\")",
+			"prompt": "Halloween has had a lot of different names over the many years. Like All Hallows Eve, Witches Night, Lams wool, Snap-Apple Night, Samhaim, and Summer's End.<anim name='jiboji_moon_bat_01'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_18",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/15\", \"10/31\")",
+			"prompt": "Each year, people in the United States buy more than 20 million pounds <anim name='emoji_candy_corn_01' layers='!audio'>of Candy Corn. <break size='0.5'/><style set='sheepish'>That gives me a stomach ache.</style></anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_19",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"11/1\", \"11/30\")",
+			"prompt": "November is sweet potato awareness month.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_20",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/23')",
+			"prompt": "Benjamin Franklin wanted the national bird <anim cat='emoji' filter='turkey, !thanksgiving'>to be the turkey, not the eagle.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_21",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/23')",
+			"prompt": "Every Thanksgiving, people in the United States <anim cat='emoji' filter='thanksgiving, !hot-frame' nonBlocking='true'/>eat 46 million turkeys.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_22",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/23')",
+			"prompt": "According to the Guinness Book of Records, the <anim cat='emoji' filter='turkey, !thanksgiving'>heaviest turkey weighed 86 pounds.\n</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_23",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/23')",
+			"prompt": "<anim cat='emoji' filter='turkey, !thanksgiving'>Female turkeys don't gobble. Only male turkeys gobble. </anim><break size='1.0'/> Gobble gobble.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_24",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/23')",
+			"prompt": "The average turkey for <anim cat='emoji' filter='thanksgiving, !hot-frame' nonBlocking='true'/>Thanksgiving weighs 15 pounds.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_25",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/26', '12/31')",
+			"prompt": "The first New Year's Eve ball drop in Times Square, happened on December 31, 1907.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFunFact_AN_27",
+			"weight": 2,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

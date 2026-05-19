@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"11/25\")",
+			"prompt": "One pumpkin spiced la tay, coming <anim name='jiboji_pumpkin_latte_01' nonBlocking='true'/>up.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowPumpkinLatte_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"11/25\")",
+			"prompt": "Here you go. <break size='0.3'/> <anim name='emoji_pumpkin_01'> <break size='0.7'/> Oops. I forgot the la tay part. </anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowPumpkinLatte_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"11/26\", \"8/31\")",
+			"prompt": "Feels a little out of season, but if you insist<anim name='jiboji_pumpkin_latte_01' nonBlocking='true'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowPumpkinLatte_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"11/25\")",
+			"prompt": "<anim name='jiboji_pumpkin_latte_01' nonBlocking='true'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowPumpkinLatte_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='jiboji_pumpkin_latte_01' nonBlocking='true' layers='!audio'/>Sure why not.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowPumpkinLatte_AN_05",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

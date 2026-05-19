@@ -1,0 +1,110 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "<anim name='Checking_02' nonBlocking='true'/> Unless I missed something, we're still in the ${location.city} area.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatIsCurrentLocation_AN_01",
+			"weight": 10
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "We're in ${location.city}, if I'm not mistaken.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatIsCurrentLocation_AN_02",
+			"weight": 10,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "I'm pretty sure we're in the ${location.city} area.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatIsCurrentLocation_AN_03",
+			"weight": 10,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think we're on planet Earth. <break size='0.7'/> <style set='sheepish'>For now. </style>",
+			"media": "TTS",
+			"prompt_id": "USR_WhatIsCurrentLocation_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "According to my calculations, we're in ${location.city}.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatIsCurrentLocation_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "Let's see.<break size='0.3'/> I'd say ${location.city}.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatIsCurrentLocation_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "If I had to guess, I'd say we're still in ${location.city}.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatIsCurrentLocation_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "My senses tell me we're in ${location.city}.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatIsCurrentLocation_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "We're in <pitch mult='1.2'>${location.city}</pitch><pitch mult='0.9'> sweet</pitch><pitch mult='1.1'> ${location.city}.</pitch>",
+			"media": "TTS",
+			"prompt_id": "USR_WhatIsCurrentLocation_AN_09",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

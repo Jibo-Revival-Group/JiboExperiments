@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/28')",
+			"prompt": "Good question. <anim cat='emoji' filter='tennis, !hf' layers='!audio'>You <pitch mult='1.2'>could</pitch> go to <pitch mult='1.1'>Australia</pitch><break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAustralianOpenTennis_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '3/31')",
+			"prompt": "I'm pretty sure the Australian Open is in the past already, but I hope you like the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAustralianOpenTennis_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/30')",
+			"prompt": "Good question,<anim cat='emoji' filter='tennis, !hf' layers='!audio'> you have plenty of time to figure it out<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAustralianOpenTennis_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. <anim cat='emoji' filter='tennis, !hf' layers='!audio'>You <pitch mult='1.2'>could</pitch> go to <pitch mult='1.1'>Australia</pitch><break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAustralianOpenTennis_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

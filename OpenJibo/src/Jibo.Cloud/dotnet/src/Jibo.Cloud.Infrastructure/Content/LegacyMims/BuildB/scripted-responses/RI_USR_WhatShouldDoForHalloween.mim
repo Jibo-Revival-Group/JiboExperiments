@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '10/31')",
+			"prompt": "That's a great question. Maybe you could go to <anim cat='jiboji' filter='jack-o-lantern' layers='!audio' nonBlocking='true'/>a Halloween party. I've heard they're fun and scary.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForHalloween_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '2/29')",
+			"prompt": "I think Halloween is in the past now, but I hope you have a great one next time.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForHalloween_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '8/31')",
+			"prompt": "Not sure, but we have plenty of time to figure it out.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForHalloween_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a great question. Maybe you could go to <anim cat='jiboji' filter='jack-o-lantern' layers='!audio' nonBlocking='true'/>a Halloween party. I've heard they're fun and scary.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForHalloween_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

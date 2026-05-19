@@ -1,0 +1,52 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/> No no. <break size='0.4'/> But we do have <anim cat='glances' filter='side'> our differences.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_DislikesSiri_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> Of course not.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_DislikesSiri_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> No way. <break size='0.3'/> All roboty talking <anim name='Affection_01' nonBlocking='true'/> things have a special place in  my emotion system. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_DislikesSiri_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_02' nonBlocking='true'/> No, she's a nice voice.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_DislikesSiri_AN_04",
+			"weight": 1
+		}
+	]
+}

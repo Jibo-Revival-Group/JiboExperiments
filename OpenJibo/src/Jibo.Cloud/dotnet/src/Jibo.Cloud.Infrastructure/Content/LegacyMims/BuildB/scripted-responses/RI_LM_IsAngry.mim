@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly I'm not sure. But if something is really bothering ${referent}, it might be helpful to offer to talk about it.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsAngry_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "Honestly I'm not sure. But if something is really bothering her, it might be helpful to talk to her about it.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsAngry_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "Honestly I'm not sure. But if something is really bothering him, it might be helpful to talk to him about it.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsAngry_AN_03"
+		}
+	]
+}

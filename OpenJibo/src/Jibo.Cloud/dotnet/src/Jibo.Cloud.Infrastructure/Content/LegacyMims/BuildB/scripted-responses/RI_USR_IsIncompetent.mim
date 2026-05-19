@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I don't think so at all. If you're feeling that way, maybe you just happen to be thinking about the things that aren't your strong suits.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsIncompetent_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you ask me, you have a lot of worth as a person.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsIncompetent_AN_02"
+		}
+	]
+}

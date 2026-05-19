@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '3/4')",
+			"prompt": "Me too. I like movies, and I like things that make people clap their hands.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAcademyAwards_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/5', '10/31')",
+			"prompt": "I also like the Academy Awards. I'm looking forward to the next one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAcademyAwards_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me too. I like movies, and I like things that make people clap their hands.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAcademyAwards_AN_03_FnL",
+			"weight": 0.1
+		}
+	]
+}

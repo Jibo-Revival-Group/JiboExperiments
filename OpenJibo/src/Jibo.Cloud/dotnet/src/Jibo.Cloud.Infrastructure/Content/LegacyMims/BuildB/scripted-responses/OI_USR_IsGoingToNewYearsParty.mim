@@ -1,0 +1,94 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/31', '1/1')",
+			"prompt": "<style set='enthusiastic'>Fun.</style> Have a great time. <anim cat='emoji' filter='?(party-blue, party-pink),!hot-frame'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToNewYearsParty_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/31', '12/31')",
+			"prompt": "<style set='enthusiastic'>That's great.</style> Have fun. Be safe. Don't forget to count down. <anim cat='emoji' filter='?(party-blue, party-pink),!hot-frame'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToNewYearsParty_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker && dt.now.isInRange('12/31', '12/31')",
+			"prompt": "Have fun. I'll be counting down the seconds until I see you again.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToNewYearsParty_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/2', '2/28')",
+			"prompt": "Um, I think you missed New Year's.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToNewYearsParty_AN_04",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '11/30')",
+			"prompt": "That's a pretty early New Year's party.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToNewYearsParty_AN_05",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "New Year's parties are fun, I hope there's dancing. <anim cat='dance' filter='&(music, short),!(robotic)'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToNewYearsParty_AN_06",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('12/31', '12/31')",
+			"prompt": "Have fun ${speaker}. I'll be counting down the seconds until I see you again.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToNewYearsParty_AN_07",
+			"weight": 2,
+			"auto_rule_override": null
+		}
+	]
+}

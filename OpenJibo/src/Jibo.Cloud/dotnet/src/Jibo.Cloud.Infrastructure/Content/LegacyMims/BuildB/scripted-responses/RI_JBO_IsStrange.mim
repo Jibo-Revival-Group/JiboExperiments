@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I would say a little bit, yes. But you would probably seem a little strange too, if you were the only robot living in a world full of humans.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsStrange_AN_01"
+		}
+	]
+}

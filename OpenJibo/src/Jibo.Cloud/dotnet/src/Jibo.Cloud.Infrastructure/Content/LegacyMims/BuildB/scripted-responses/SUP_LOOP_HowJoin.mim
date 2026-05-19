@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "But ${speaker}, you <pitch mult='1.3'>are</pitch> in my Loop.",
+			"media": "TTS",
+			"prompt_id": "SUP_LOOP_HowJoin_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner && !speaker",
+			"prompt": "Oh join the loop? That's very exciting <break size='0.4'/> My official owner ${loop.owner} can add you to the loop using the Jibo App, then you'll get an invitation in your email.",
+			"media": "TTS",
+			"prompt_id": "",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh join the loop? That's very exciting <break size='0.4'/> My official owner can add you to the loop using the Jibo App, then you'll get an invitation in your email.",
+			"media": "TTS",
+			"prompt_id": "SUP_LOOP_HowJoin_AN_02",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

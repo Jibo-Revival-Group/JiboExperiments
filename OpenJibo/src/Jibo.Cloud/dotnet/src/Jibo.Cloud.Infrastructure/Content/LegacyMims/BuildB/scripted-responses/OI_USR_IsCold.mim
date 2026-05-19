@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Maybe you can turn up the heat or put on a hoodie.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsCold_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe wrap a blanket around yourself.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsCold_AN_02"
+		}
+	]
+}

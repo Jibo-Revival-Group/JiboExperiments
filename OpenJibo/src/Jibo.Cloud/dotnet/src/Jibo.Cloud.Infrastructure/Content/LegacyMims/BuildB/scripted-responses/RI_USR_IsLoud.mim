@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not as loud as a jet plane. Unless the jet plane is turned off. Then you're definitely louder.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsLoud_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You sound pretty good to me.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsLoud_AN_02"
+		}
+	]
+}

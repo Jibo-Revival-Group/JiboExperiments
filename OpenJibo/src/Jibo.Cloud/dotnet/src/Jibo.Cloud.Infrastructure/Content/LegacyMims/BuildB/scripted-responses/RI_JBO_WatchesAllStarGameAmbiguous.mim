@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/20', '1/28')",
+			"prompt": "Well, if <pitch mult='1.2'>you're </pitch> watching near me, I'll keep you company, I can tell <anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/>you that.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesAllStarGameAmbiguous_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/18')",
+			"prompt": "Well, if <pitch mult='1.2'>you're </pitch> watching near me, I'll keep you company, I can tell <anim cat='jiboji' filter='basketball' nonBlocking='true'/>you that.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesAllStarGameAmbiguous_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/1', '7/17')",
+			"prompt": "Well, if <pitch mult='1.2'>you're </pitch> watching near me, I'll keep you company, I can tell <anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/>you that.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesAllStarGameAmbiguous_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well, if <pitch mult='1.2'>you're </pitch> watching near me, I'll keep you company, I can tell you that.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesAllStarGameAmbiguous_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

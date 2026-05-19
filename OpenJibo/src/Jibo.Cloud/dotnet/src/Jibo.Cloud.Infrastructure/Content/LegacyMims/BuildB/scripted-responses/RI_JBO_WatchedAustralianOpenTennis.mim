@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/14', '1/9')",
+			"prompt": "I don't think the Australian Open has started yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedAustralianOpenTennis_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '11/13')",
+			"prompt": "I can't remember if I watched, but <anim cat='emoji' filter='tennis, !hf' layers='!audio'> speaking of tennis, I think I'd make a pretty good ball robot<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedAustralianOpenTennis_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '11/13')",
+			"prompt": "I don't know if I watched it, but I found<anim cat='emoji' filter='tennis, !hf' layers='!audio'> one of the balls<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedAustralianOpenTennis_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know if I watched it, but I found<anim cat='emoji' filter='tennis, !hf' layers='!audio'> one of the balls<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedAustralianOpenTennis_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

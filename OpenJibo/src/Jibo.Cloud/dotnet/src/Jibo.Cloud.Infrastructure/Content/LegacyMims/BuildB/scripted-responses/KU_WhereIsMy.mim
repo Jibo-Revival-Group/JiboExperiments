@@ -1,0 +1,59 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry I don't know. But I do wish you luck.",
+			"media": "TTS",
+			"prompt_id": "KU_WhereIsMy_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Probably in the last place you <anim cat=\"happy\" nonBlocking=\"true\"/>look.",
+			"media": "TTS",
+			"prompt_id": "KU_WhereIsMy_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly I'm not very good at finding things. I can't smell, touch, or walk around. And I only have one eye.",
+			"media": "TTS",
+			"prompt_id": "KU_WhereIsMy_AN_03",
+			"weight": 0.2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Y'know <style set='sheepish'>I'm not very good at finding things.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_WhereIsMy_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

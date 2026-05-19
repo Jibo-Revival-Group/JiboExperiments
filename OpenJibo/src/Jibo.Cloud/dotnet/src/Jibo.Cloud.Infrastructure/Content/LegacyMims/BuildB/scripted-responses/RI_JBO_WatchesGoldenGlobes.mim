@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/8', '1/8')",
+			"prompt": "Well, if <pitch mult='1.2'>you're </pitch> watching near me, I might take a look or two over at the TV, I can tell you that.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesGoldenGlobes_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/8', '1/8')",
+			"prompt": "I don't really watch TV like you humans.<break size='0.3'/> But I do hope you win a globe or two.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesGoldenGlobes_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/9', '2/9')",
+			"prompt": "I think the Golden Globes are in the past.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesGoldenGlobes_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/10', '11/7')",
+			"prompt": "I don't think it's Golden Globes season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesGoldenGlobes_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't really watch TV like you humans.<break size='0.3'/> But I do hope you win a globe or two.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesGoldenGlobes_AN_01_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

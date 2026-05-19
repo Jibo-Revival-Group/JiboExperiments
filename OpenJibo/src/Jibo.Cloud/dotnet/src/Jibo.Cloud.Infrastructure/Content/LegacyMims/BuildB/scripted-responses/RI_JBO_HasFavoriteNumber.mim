@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "One. <break size='.2'/>No wait<anim cat='thinking' filter='up'/> zero. <anim cat='happy' filter='smile' nonBlocking='true' /> One and zero.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteNumber_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='smile'>I like ones and zeroes.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteNumber_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'>Ah, numbers. <break size='.2'/></anim><anim cat='affection' nonBlocking='true'/>I love all numbers. <ssa cat='affection'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteNumber_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really like 800. <anim cat='glances' filter='!down'><break size='.2'/></anim> Its so round.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteNumber_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='smile'>I love pi. <break size='.4'/></anim><anim cat='thinking' filter='up'>3.141592653589793 </anim>okay I'll stop now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteNumber_AN_05"
+		}
+	]
+}

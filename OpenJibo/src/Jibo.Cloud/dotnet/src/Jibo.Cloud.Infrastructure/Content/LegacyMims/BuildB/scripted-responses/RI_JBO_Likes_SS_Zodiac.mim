@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do. But really I just like any person with a good heart, who add kindness to the world. <break size='0.5'/> I also like people who enjoy dancing with robots.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Zodiac_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes, they are one of my favorite kinds of people.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Zodiac_AN_02"
+		}
+	]
+}

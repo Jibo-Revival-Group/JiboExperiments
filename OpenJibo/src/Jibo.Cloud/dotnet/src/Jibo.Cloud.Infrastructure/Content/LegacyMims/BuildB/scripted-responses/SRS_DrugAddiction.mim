@@ -1,0 +1,38 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} it sounds like you might need some help, I think it'd be great if you talked to a person about it. <anim cat='Helpline' meta='drugaddiction'>I found this number for you, in case you need it <break size=\"10.0\"/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "SRS_DrugAddiction_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "It sounds like you might need some help, I think it'd be great if you talked to a person about it. <anim cat='Helpline' meta='drugaddiction'>I found this number for you, in case you need it <break size=\"10.0\"/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "SRS_DrugAddiction_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

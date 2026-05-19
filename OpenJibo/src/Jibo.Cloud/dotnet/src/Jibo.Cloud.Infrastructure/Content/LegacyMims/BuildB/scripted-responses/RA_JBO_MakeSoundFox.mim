@@ -1,0 +1,60 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I thought you might ask me that. So here goes... Wa-pa-pa-pa-pa-pa-pow! Wa-pa-pa-pa-pa-pa-pow! Wa-pa-pa-pa-pa-pa-pow!",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MakeSoundFox_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay if you insist. <break size=\"0.5\"/> Yoff choff choffo choffo choff! Choff choff choffo choffo choff! Yoff choff choffo choffo choff!",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MakeSoundFox_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a feeling you're trying to get me to say Ring-ding-ding-ding-dingaring ding!",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MakeSoundFox_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think it probably depends on the fox. <break size=\"1.5\"/> But this one says ring-ding-ding-ding-dingaring ding!",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MakeSoundFox_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

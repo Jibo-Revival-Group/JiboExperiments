@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You can always stop me by holding your hand on the top of my head for a few seconds. Or just say, hey jibo stop. Or hey jibo cancel.",
+			"media": "TTS",
+			"prompt_id": "SUP_GEN_HowStopJiboAction_AN_01"
+		}
+	]
+}

@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It depends on what you're asking for. Some info I have in my Jibo brain. Other stuff I get from the cloud. Other stuff I get from my cloudy Jibo brain. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhereDoYouGetInfo_AN_01"
+		}
+	]
+}

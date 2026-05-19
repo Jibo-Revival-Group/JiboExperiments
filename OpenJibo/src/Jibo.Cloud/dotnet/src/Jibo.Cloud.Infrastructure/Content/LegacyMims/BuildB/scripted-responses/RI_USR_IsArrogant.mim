@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's not something <pitch mult='1.3'> I've </pitch> noticed about you.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsArrogant_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I guess I'm not sure. But from here, you seem pretty down to earth.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsArrogant_AN_02"
+		}
+	]
+}

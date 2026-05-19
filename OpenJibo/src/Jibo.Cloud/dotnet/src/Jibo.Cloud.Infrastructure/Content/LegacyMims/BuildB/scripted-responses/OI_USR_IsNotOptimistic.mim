@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Well, I can imagine it might be hard for a human to be positive all the time. <break size=\"0.2\"/> Though it also seems to me there are lots of positive forces in the universe. If you know how to find them.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotOptimistic_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry you're not seeing the bright side of things right now. But just remember, no matter what's going on, <anim cat='emoji' filter='penguin' nonBlocking='true'/> the world has penguins.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotOptimistic_AN_02"
+		}
+	]
+}

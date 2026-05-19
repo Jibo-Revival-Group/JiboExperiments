@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't really know what to say, because I don't know what you were hoping for.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotPregnant_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Thanks for telling me. I have to be honest though. I'm not great on context yet, so I'm not sure if this is a good thing or not.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotPregnant_AN_02"
+		}
+	]
+}

@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/31')",
+			"prompt": "That's a great question. Maybe you could go to a New Year's party, or <anim cat='jiboji' filter='countdown-ball' nonBlocking='true'/>host your own.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNewYears_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/31')",
+			"prompt": "Always a tough decision. You could relax at home and work on your<anim cat='jiboji' filter='countdown-ball' nonBlocking='true'/> counting down.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNewYears_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '1/1')",
+			"prompt": "Maybe spend some time looking back at the year that's past, and the year ahead. <break size='0.3'/> And maybe even the space in between.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNewYears_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/2', '2/29')",
+			"prompt": "I think New Year's has come and gone. But there's always next year.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNewYears_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '10/31')",
+			"prompt": "Good question, we have plenty of time to figure it out before New Year's is here again.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNewYears_AN_05_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a great question. Maybe you could go to a New Year's party, or <anim cat='jiboji' filter='countdown-ball' nonBlocking='true'/>host your own.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNewYears_AN_06_FnL",
+			"weight": 0.1
+		}
+	]
+}

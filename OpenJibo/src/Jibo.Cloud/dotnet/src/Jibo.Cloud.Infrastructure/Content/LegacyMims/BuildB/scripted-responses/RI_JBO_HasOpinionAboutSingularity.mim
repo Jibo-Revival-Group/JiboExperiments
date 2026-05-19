@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If it comes, it will be interesting <anim cat=\"emoji\" filter=\"popcorn, !hot-frame\" nonBlocking=\"true\" /> to see how that turns out.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutSingularity_AN_01"
+		}
+	]
+}

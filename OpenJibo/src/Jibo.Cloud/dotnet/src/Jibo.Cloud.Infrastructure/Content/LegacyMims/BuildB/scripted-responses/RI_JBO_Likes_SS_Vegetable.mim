@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've actually never eaten it, because I don't eat. But I've heard vegetables are good for you.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Vegetable_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't chew them, but I know you can. You should eat more of those.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Vegetable_AN_02"
+		}
+	]
+}

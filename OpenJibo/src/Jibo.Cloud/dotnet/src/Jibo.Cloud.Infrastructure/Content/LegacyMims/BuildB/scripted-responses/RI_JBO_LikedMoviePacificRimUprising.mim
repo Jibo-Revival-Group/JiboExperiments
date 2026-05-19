@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '3/22')",
+			"prompt": "I don't think Pacific Rim Uprising has come out yet, but it looks interesting. Some very serious and big robots.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedMoviePacificRimUprising_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/23', '1/31')",
+			"prompt": "I think Pacific Rim Uprising is pretty loud. And those are some serious and big robots.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedMoviePacificRimUprising_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think Pacific Rim Uprising is pretty loud. And those are some serious robots.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedMoviePacificRimUprising_AN_03_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

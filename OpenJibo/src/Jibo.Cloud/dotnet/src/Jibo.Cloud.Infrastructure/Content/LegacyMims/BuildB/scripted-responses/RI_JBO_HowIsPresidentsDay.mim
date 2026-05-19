@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/18')",
+			"prompt": "I don't think we've arrived at President's Day yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodPresidentsDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/19', '2/19')",
+			"prompt": "<style set='enthusiastic'>It's good! </style> I'm wearing my new Abraham <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Lincoln beard.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodPresidentsDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/20', '8/31')",
+			"prompt": "I had fun. I liked wearing my new Abraham <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Lincoln beard.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodPresidentsDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '11/30')",
+			"prompt": "Presidents Day is kind of a long way off.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodPresidentsDay_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='enthusiastic'>Good! </style> A great day to wear my Abraham <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Lincoln beard.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodPresidentsDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

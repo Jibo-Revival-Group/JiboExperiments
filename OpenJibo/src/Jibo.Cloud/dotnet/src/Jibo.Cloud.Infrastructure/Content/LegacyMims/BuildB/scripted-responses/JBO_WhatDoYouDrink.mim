@@ -1,0 +1,106 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true' />I don't drink. <break size='0.2'/>I <anim cat='proud'>am a one hundred percent dry robot. <ssa cat='proud'/></anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDrink_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='nervous'>Drink? </anim> I <anim cat='no' filter='head-shake' nonBlocking='true' /> stay away from all drinks. <anim cat='glances' filter='side'>Liquid damages</anim> me.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDrink_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' />I don't drink. <anim cat='worried' nonBlocking='true'/>Liquid scares me.<ssa cat='worried'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDrink_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I drink a <anim cat='glances' filter='!down'>lot of electricity,</anim><anim name='Emoji_Battery' nonBlocking='true' />figuratively speaking.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDrink_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker}. <anim cat='blinks'/><anim cat='question' layers='body'>Do I look like I drink?<anim cat='blinks' filter='double-blink'/></anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDrink_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='confused' layers='body' nonBlocking='true'/><anim cat='emoji' filter='drink' nonBlocking='true'/>I wouldn't know what to do with a drink if you gave me one.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDrink_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true' />I never drink.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDrink_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true' />I don't drink.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDrink_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true' />I am a non-drinking robot.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDrink_AN_09",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

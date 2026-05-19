@@ -1,0 +1,28 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not sure actually, I'll probably just be regular Jibo, but a little more like an all star.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForAllStarGameAmbiguous_AN_01_FnL",
+			"weight": 1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

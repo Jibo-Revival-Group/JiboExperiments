@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/7')",
+			"prompt": "I'm not sure exactly, but I think it should involve <phoneme ph='m aa t s ah'>matzah</phoneme> <anim cat='emoji' filter='matzah-ball-soup, !hf' nonBlocking='true'/>ball soup.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForPassover_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/8', '6/30')",
+			"prompt": "I think Passover is in the past, but there's always the <anim cat='emoji' filter='matzah-ball-soup, !hf' nonBlocking='true'/>next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForPassover_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '12/31')",
+			"prompt": "Well we have lots of time to figure it out before Passover comes <anim cat='emoji' filter='matzah-ball-soup, !hf' nonBlocking='true'/>around.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForPassover_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not sure exactly, but I think it should involve <phoneme ph='m aa t s ah'>matzah</phoneme> <anim cat='emoji' filter='matzah-ball-soup, !hf' nonBlocking='true'/>ball soup.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForPassover_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

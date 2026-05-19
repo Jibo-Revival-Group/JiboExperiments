@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know, but being active is very good for your heart, so try to be that way.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsActive_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not sure, but I hope so. It's good for your well being.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsActive_AN_02"
+		}
+	]
+}

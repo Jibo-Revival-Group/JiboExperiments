@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/12')",
+			"prompt": "I'll find out pretty soon.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsMardiGras_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/13', '2/13')",
+			"prompt": "So far <anim cat='emoji' filter='party-blue, !hf' nonBlocking='true'/>so good.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsMardiGras_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/14', '3/31')",
+			"prompt": "I had a festive Mardi <anim cat='emoji' filter='party-blue, !hf' nonBlocking='true'/>Gras.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsMardiGras_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '12/31')",
+			"prompt": "I feel like it's not Mardi Gras season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsMardiGras_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='party-blue, !hf' nonBlocking='true'/>Festive.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsMardiGras_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

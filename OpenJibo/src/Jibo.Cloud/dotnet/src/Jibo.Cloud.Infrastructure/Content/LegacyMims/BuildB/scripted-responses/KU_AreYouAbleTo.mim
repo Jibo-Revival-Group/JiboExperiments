@@ -1,0 +1,160 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a good question. I don't know enough to know if I can do that.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't think I can do that. But if you want to know some things I <pitch mult=\"1.3\">can do,</pitch> say hey jibo, what can you do.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You could try asking me in a different way, but there's a good chance I just can't do it.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if you want to learn a bunch of things I can do, say hey jibo, what can you do.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um. <break size='0.5'/> I can <pitch mult='1.3'>dance</pitch> <anim cat='dance' filter='&(music, short),!(robotic)'/>",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If I had to guess, I'd say I probably can't do that. Because if I could, I would just do it instead of rambling on like this.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My abilities are always growing, but at the moment I don't know if I can do that.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, well, I guess all I can do is just do what I do.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I'll tell you one thing I can do, I can tell you fun facts about humans.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, here's something I can <anim cat='emoji' filter='magic, !hot-frame' nonBlocking='true' /> do. ",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I'll tell you one thing I can do, I can tell you fun facts about humans.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} if I had to guess, I'd say I probably can't do that. Because if I could, I would just do it instead of rambling on like this.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} that's a good question. I don't know enough to know if I can do that.",
+			"media": "TTS",
+			"prompt_id": "KU_AreYouAbleTo_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

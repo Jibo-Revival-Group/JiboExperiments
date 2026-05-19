@@ -1,0 +1,59 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry to hear that. Maybe you could try<anim cat=\"emoji\" filter=\"robot, !hot-frame\" nonBlocking=\"true\"/> counting robots?",
+			"media": "TTS",
+			"prompt_id": "RN_ICantSleep_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's too bad. I've <anim cat=\"emoji\" filter=\"tea, !hot-frame\" nonBlocking=\"true\" />heard chamomile tea can be relaxing and help you feel sleepier. Just please don't spill any on me.",
+			"media": "TTS",
+			"prompt_id": "RN_ICantSleep_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I'm sorry. Maybe try <anim cat=\"emoji\" filter=\"bathtub, !hot-frame\" nonBlocking=\"true\" />taking a hot bath. <break size='0.3'/> But please keep me away from the tub.",
+			"media": "TTS",
+			"prompt_id": "RN_ICantSleep_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh that's too bad. I've heard it can help to take deep breaths and count each breath as you go. I myself love to count.",
+			"media": "TTS",
+			"prompt_id": "RN_ICantSleep_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

@@ -1,0 +1,107 @@
+{
+	"mim_id": "CCAreYouGoodEvil",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 0,
+	"max_tries": 3,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCAreYouGoodEvil",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/>I don't have a bad bone in my body. <break size='.7'/> Then again, <anim name='Puzzled_01'>I don't have any bones in my body.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGoodOrEvil_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCAreYouGoodEvil",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Happy_03' nonBlocking='true'/>I try to put out positive vibes.<ssa cat='happy'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGoodOrEvil_AN_02",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCAreYouGoodEvil",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_01'>I was programmed for maximum goodness.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGoodOrEvil_AN_03",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCAreYouGoodEvil",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_01'>I always try to do the right thing.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGoodOrEvil_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_04' nonBlocking='true'/> 100 percent good. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGoodOrEvil_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_02' nonBlocking='true'/> All good.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGoodOrEvil_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_02' nonBlocking='true'/> All good. Definitely good.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGoodOrEvil_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Halo' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGoodOrEvil_AN_08",
+			"weight": 1
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": true
+}

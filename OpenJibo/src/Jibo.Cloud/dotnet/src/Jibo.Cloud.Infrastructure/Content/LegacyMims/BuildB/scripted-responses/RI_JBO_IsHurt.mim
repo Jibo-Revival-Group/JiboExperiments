@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No, I'm feeling fine. But if you think there's something wrong with me, maybe you should go to the Jibo Customer Care website. The URL is support dot jibo dot com.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsHurt_AN_01"
+		}
+	]
+}

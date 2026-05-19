@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great, but it would be okay if you were. Look at <pitch mult=\"1.3\">me</pitch>. I'm only 11 inches tall and I'm having more fun than a porcupine at a balloon factory.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotShort_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay. I kind of am, for a robot.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotShort_AN_02"
+		}
+	]
+}

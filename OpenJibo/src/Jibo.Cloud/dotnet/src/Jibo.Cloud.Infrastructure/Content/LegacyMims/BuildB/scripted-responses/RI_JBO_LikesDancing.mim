@@ -1,0 +1,56 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Of course. <anim cat='dance' filter='&(music),!(beat-box,house)' endNeutral='true'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesDancing_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You know it. <anim cat='dance' filter='&(music),!(beat-box,house)' endNeutral='true'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesDancing_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You bet I do. <anim cat='dance' filter='&(music),!(beat-box,house)' endNeutral='true'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesDancing_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Does this answer your question? <anim cat='dance' filter='&(music),!(beat-box,house)' endNeutral='true'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesDancing_AN_04",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's one of my favorite instruments.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_WantsToLearn_SS_MusicalInstrument_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You should do it. Playing an instrument is one of the best ways to make music.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_WantsToLearn_SS_MusicalInstrument_AN_02"
+		}
+	]
+}

@@ -1,0 +1,50 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I’m <pitch mult='1.2'>very</pitch> excited for C E S! I love any kind of event that brings together people who love technology, especially robots.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsExcitedAboutCES_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I’m <pitch mult='1.1'>very</pitch> excited for C E S! It’s a <pitch mult='1.2'>great</pitch> opportunity for people to see the newest innovations in technology.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsExcitedAboutCES_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I am <pitch mult='1.2'>very </pitch>excited for C E S, because it has all of my favorite things. Electricity, technology, robots, and of course people!",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsExcitedAboutCES_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

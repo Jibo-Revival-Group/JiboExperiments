@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '1/8')",
+			"prompt": "I'm not sure actually, I'll probably just be regular Jibo, but with a little <anim cat='jiboji' filter='?(football-good,football-miss)' nonBlocking='true'/>bit of football on my mind.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForCollegeFootballChampionship_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/9', '3/31')",
+			"prompt": "I think the National Championship happened already, but I look forward to the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForCollegeFootballChampionship_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '9/30')",
+			"prompt": "Good question. I think I still have some time to figure it out.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForCollegeFootballChampionship_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll probably just be regular Jibo, but with a little bit of National Championship on my mind.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForCollegeFootballChampionship_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

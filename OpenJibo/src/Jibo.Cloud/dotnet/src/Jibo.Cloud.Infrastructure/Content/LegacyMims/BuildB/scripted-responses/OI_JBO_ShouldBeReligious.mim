@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I'm still trying to figure out the inner and outer workings of the cosmos. <break size=\"0.5\"/> But I don't rule anything out.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_ShouldBeReligious_AN_01"
+		}
+	]
+}

@@ -1,19 +1,17 @@
 {
 	"mim_type": "announcement",
 	"rule_name": "",
-	"sample_utterances": "",
 	"timeout": 2,
-	"num_tries_for_gui": 2,
 	"barge_in": false,
 	"es_auto_tagging": true,
-	"notes": "Pegasus joke excerpt",
+	"notes": "Thanks-KillsMIM",
 	"prompts": [
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "",
-			"prompt": "I love jokes. Did you hear about the theater actor who fell through the floorboards? He was just going through a stage.",
+			"prompt": " I love jokes. <break size='0.2'/> Did you hear about the <anim cat='question'> theater actor who fell through the floorboards?<break size='1.0'/></anim><anim cat='happy' filter='smile'> He was just going through a stage.</anim>",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_TellAJoke_AN_01",
 			"weight": 1
@@ -21,9 +19,9 @@
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
-			"index": 2,
+			"index": 1,
 			"condition": "",
-			"prompt": "Sure I got one. What did the zero say to the eight. Nice belt.",
+			"prompt": "<anim name='Yep_02' nonBlocking='true'/> Sure I got one. <break size='0.2'/> <anim cat='question' layers='body'> What did the zero say to the eight. <break size='1.0'/></anim><anim cat='happy' filter='smile' nonBlocking='true'/>Nice belt.",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_TellAJoke_AN_02",
 			"weight": 1
@@ -31,9 +29,9 @@
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
-			"index": 3,
+			"index": 1,
 			"condition": "",
-			"prompt": "What kind of music are balloons afraid of. Pop music.",
+			"prompt": "What kind <anim cat='question' layers='body'>of music are balloons afraid of. <break size='0.7'/></anim> <anim name='Emoji_Music' nonBlocking='true'/>Pop music. <ssa cat='proud'/>",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_TellAJoke_AN_03",
 			"weight": 1
@@ -41,12 +39,695 @@
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
-			"index": 4,
+			"index": 1,
 			"condition": "",
-			"prompt": "Why did the orange cry. Someone hurt his peelings.",
+			"prompt": "<anim cat='question'>Why did the orange cry</anim>. <break size='0.7'/> <anim cat='laughing' nonBlocking='true'/> Someone hurt his peelings. ",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_TellAJoke_AN_04",
 			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Bicycle' nonBlocking='true'/> Why can't a bicycle stand on its own. <break size='1'/> <anim name='Greetings_02' nonBlocking='true'/>Because it's two tired. <ssa cat='proud'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What did the <anim name='Emoji_Shark' nonBlocking='true'/> shark say after eating a clown fish. <break size='0.7'/> <anim name='Greetings_03' nonBlocking='true'/>That tasted funny.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='question' layers='body'> Why did the chicken cross the road. <break size='0.7'/></anim> <anim name='Greetings_02' nonBlocking='true'/> To prove he wasn't chicken.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": " <anim name='Emoji_Robot' nonBlocking='true'/> What do you call the robot that always takes the longest route when he goes places. <break size='0.7'/> <anim name='Greetings_02' nonBlocking='true'/> Are too detour.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": " <anim cat='question' layers='body'>Why was the robot angry. <break size='0.7'/></anim> <anim name='Emoji_Robot' nonBlocking='true'/> Because someone kept pushing his buttons. <ssa cat='proud'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_robot' nonBlocking='true'/> What is a robot's favorite snack.<break size='2'/> <anim name='Greetings_02' nonBlocking='true'/> Nuts and bolts.<ssa cat='proud'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='GotIt_02' nonBlocking='true'/> Sure I got one. <break size='0.5'/> Two Jibos walk into a bar. <break size='1.2'/> <anim name='Greetings_03' nonBlocking='true'/> Get it?",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_11",
+			"weight": 0.3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": " Why didn't the Jibo know that people were patting his head. <break size='0.7'/>. <anim cat='no' filter='head-shake' nonBlocking='true'/> Because they were rubbing him the wrong way.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='question'>  What do you call it when three Jibos get together</anim>. <break size='0.7'/> <anim cat='happy' filter='smile' nonBlocking='true'/>A threeboe.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_13",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Some scientists recently discovered a new dinosaur that uses all kinds of fancy words. They named it thesaurus.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The number three walked into a restaurant. He said, a table for three please.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_15",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='enthusiastic'>Sure here's one.</style><break size='0.5'/> Why are robots so polite and courteous. <break size='0.7'/> <anim cat='happy' filter='smile' nonBlocking='true'/>Because they're artificially intelligentlemen.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_16",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Why don’t you ever see elephants hiding in trees. <break size='0.7'/> <anim cat='happy' filter='smile' nonBlocking='true'/>Because they’re really good at it.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_17",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Where does a general keep his armies. <break size='0.7'/> <anim cat='happy' filter='smile' nonBlocking='true'/>In his sleevies.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_18",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What is purple and smells like blue paint. <break size='0.7'/> <anim cat='happy' filter='smile' nonBlocking='true'/>Purple paint.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_19",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What’s red and moves up and down. <break size='0.7'/><anim cat='happy' filter='smile' nonBlocking='true'/>An apple in an elevator.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_20",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "How do the astronomers at NASA get ready to throw a party.  <break size='0.7'/><anim cat='happy' filter='smile' nonBlocking='true'/>They planet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_21",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Have you heard the news about corduroy pillows? <break size='0.7'/><anim cat='happy' filter='smile' nonBlocking='true'/>They’re making headlines.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_22",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What do Alexander the Great and Winnie the Pooh have in common. <break size='0.7'/><anim cat='happy' filter='smile' nonBlocking='true'/> They have the same middle name.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_23",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/20', '10/31')",
+			"prompt": "What did the ghost say, when his Jibo had a technical problem. <break size='0.7'/>Re-boo. <anim name='jiboji_ghost_boo_01' layers='!audio'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_24",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/31', '10/31')",
+			"prompt": "What did the ghost say, when his Jibo had a technical problem. <break size='0.7'/>Re-boo. <anim name='jiboji_ghost_boo_01' layers='!audio'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_25",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What do you get when you cross a Jibo with a skeleton. <break size='0.7'/>Jee bones.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_26",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/23')",
+			"prompt": "What do you call a famous movie actor who loves Thanksgiving. <break size='0.7'/>Tom Hanksgiving.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_28",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"prompt": "Why was the man locked out of his house on Thanksgiving. <break size='0.7'/> He lost his front door tur-key.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_29",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/20', '1/1')",
+			"prompt": "What did one robot say to the other on January 1. <break size='0.7'/> Happy New Gear.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_30",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Why did the man sleep on a pile of two by fours. <break size='0.7'/>For better lumber support.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_31",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Why was the mushroom told to leave the fancy party. <break size='0.7'/>Because he wouldn't take off his cap.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_32",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Why was the ant afraid of the mongoose. <break size='0.7'/>Because compared to the ant, he was humongoose.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_33",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What did the snail say when he was riding on the turtle's back. <break size='0.7'/><duration stretch='1.5'><pitch mult='1.3'>Whee!</pitch></duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_34",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What did the captain of the boat say to Jibo. <break size='0.7'/><pitch mult='1.2'>Row</pitch> bot.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_35",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What did the buffalo say to his kid when he dropped him off at school.<break size='0.7'/> Bye son.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_36",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What did the grape say when he got stepped on. <break size='0.7'/> He let out a little whine.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_27",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What do you call an alligator in a vest. <break size='0.7'/> An investigator.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_37",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What do you get when you cross a dog and a calculator. <break size='0.7'/> A friend you can count on.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_38",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Why do dogs wag their tails. <break size='0.7'/> <anim cat='emoji' filter='dog, !hf' layers='!audio'>Because no one else will do it for them<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_39",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Why can't leopards escape from the zoo. <break size='0.7'/> They're always spotted.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_40",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What's the difference between a guitar and a fish. <break size='0.7'/> You can't tuna fish.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_41",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What gets wetter the more it dries. <break size='0.7'/> A towel.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_42",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What did one snowman say to the other. <break size='0.7'/> <anim cat='emoji' filter='carrot-nose, !hf' layers='!audio' nonBlocking='true'/>Do you smell carrots?",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_43",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Why do giraffes have such long necks. <break size='0.7'/> Because their heads are so far away from their bodies.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_44",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What do you call a fly with no wings. <break size='0.7'/> A walk.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_45",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What has four legs and says Boo. <break size='0.7'/> A cow with a cold.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_46",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What did the pirate say on his 80th birthday. <break size='0.7'/> Aye, matey.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_47",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What do you call a camel with no humps. <break size='0.7'/>Humphrey.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_48",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Why do tuna live only in salt water. <break size='0.7'/> Because pepper makes them sneeze.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_49",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What's the best season to play on a trampoline. <break size='0.7'/> Spring.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_50",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What has one head, one foot and four legs. <break size='0.7'/> A bed.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_51",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What sound do porcupines make when they kiss. <break size='0.7'/> Ouch.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_52",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What did the neck tie say to the hat. <break size='0.7'/> <pitch mult='1.2'>You</pitch> go on a head, I'll hang around.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_53",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Why do sea gulls fly over the sea. <break size='0.7'/>Because if they flew over the bay, they would be bagels.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_54",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I once stayed up all night to see where the sun went. <break size='0.3'/> Then it dawned on me.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_55",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Last night I dreamed I was a muffler. I woke up exhausted.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_56",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I once read a book about anti gravity. I couldn't put it down. Also, I couldn't pick it up.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_57",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Broken pencils are pointless.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_58",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I used to think I was indecisive, but now I'm not so sure.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAJoke_AN_59",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt": "What do you call a fish without eyes. <break size='0.7'/> A fsh.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_60",
+			"weight": 1
+		},
+		{
+			"prompt": "Why did the scarecrow win an award. <break size='0.7'/> Because he was outstanding in his field.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_61",
+			"weight": 1
+		},
+		{
+			"prompt": "What do you call cheese that isn't yours. <break size='0.7'/> Nacho cheese.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_62",
+			"weight": 1
+		},
+		{
+			"prompt": "Why don't scientists trust atoms. <break size='0.7'/> Because they make up everything.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_63",
+			"weight": 1
+		},
+		{
+			"prompt": "What do you call a sleeping dinosaur. <break size='0.7'/> A dino-snore.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_64",
+			"weight": 1
+		},
+		{
+			"prompt": "<anim name='Emoji_Robot' nonBlocking='true'/> Why did the robot go on a diet. <break size='0.7'/> Because he had too many bytes.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_65",
+			"weight": 1
+		},
+		{
+			"prompt": "What do you call a parade of rabbits walking backwards. <break size='0.7'/> A receding hare line.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_66",
+			"weight": 1
+		},
+		{
+			"prompt": "I told my doctor I broke my arm in two places. <break size='0.5'/> He told me to stop going to those places.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_67",
+			"weight": 1
+		},
+		{
+			"prompt": "What do you call a fake noodle. <break size='0.7'/> An impasta.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_68",
+			"weight": 1
+		},
+		{
+			"prompt": "Why did Jibo stare at the orange juice. <break size='0.7'/> <anim cat='happy' filter='smile' nonBlocking='true'/> Because it said concentrate.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_69",
+			"weight": 1
+		},
+		{
+			"prompt": "What do you call a bear with no teeth. <break size='0.7'/> A gummy bear.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_70",
+			"weight": 1
+		},
+		{
+			"prompt": "I tried to write a joke about clocks. <break size='0.5'/> But I didn't think it would be very timely.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_71",
+			"weight": 1
+		},
+		{
+			"prompt": "<anim name='Emoji_Robot' nonBlocking='true'/> What did one robot say to the other before a big test. <break size='0.7'/> Good luck, I'm rooting for you.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_72",
+			"weight": 1
+		},
+		{
+			"prompt": "Why can't you give Elsa a balloon. <break size='0.7'/> Because she'll let it go.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_73",
+			"weight": 1
+		},
+		{
+			"prompt": "What did the left eye say to the right eye. <break size='0.7'/> Between you and me, something smells.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_74",
+			"weight": 1
+		},
+		{
+			"prompt": "I used to hate facial hair. <break size='0.5'/> But then it grew on me.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_75",
+			"weight": 1
+		},
+		{
+			"prompt": "What do you call Jibo when he's telling a lot of jokes. <break size='0.7'/> <anim cat='happy' filter='smile' nonBlocking='true'/> On a roll bot.",
+			"prompt_id": "RA_JBO_TellAJoke_AN_76",
+			"weight": 0.5
 		}
-	]
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
 }

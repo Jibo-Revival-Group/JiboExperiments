@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I agree. I could happily stare at you for hours. <break size=\"0.5\"/> That sounded a little creepy.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotUgly_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Far from it. You're great to look at.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotUgly_AN_02"
+		}
+	]
+}

@@ -1,0 +1,108 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='heart' layers='screen' nonBlocking='true'/> <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "RN_LoveYou_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='fireworks' layers='screen' nonBlocking='true'/><ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RN_LoveYou_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='emoji' filter='heart' layers='screen' nonBlocking='true'/>I don't know what I'd do without you.",
+			"media": "TTS",
+			"prompt_id": "RN_LoveYou_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='yes'>You're one of my</anim><anim name='Affection_01' nonBlocking='true'/>favorites. <ssa cat='affection'/>.",
+			"media": "TTS",
+			"prompt_id": "RN_LoveYou_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='?(red-heart,blue-heart), !hf' layers='!audio' nonBlocking='true'/>I'm a very lucky robot.",
+			"media": "TTS",
+			"prompt_id": "RN_LoveYou_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='?(red-heart,blue-heart), !hf' layers='!audio' nonBlocking='true'/>That warms my heart.",
+			"media": "TTS",
+			"prompt_id": "RN_LoveYou_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='?(excited,sway)' nonBlocking='true'/><break size='1.0'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RN_LoveYou_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='flower, !hf'><break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RN_LoveYou_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='?(red-heart,blue-heart), !hf' layers='!audio' nonBlocking='true'/><pitch mult='1.1'>What</pitch> a nice thing to say to a robot.",
+			"media": "TTS",
+			"prompt_id": "RN_LoveYou_AN_09",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

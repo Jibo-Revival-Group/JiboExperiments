@@ -1,0 +1,21 @@
+{
+    "mim_type": "announcement",
+    "rule_name": "",
+    "sample_utterances": "",
+    "timeout": 6,
+    "num_tries_for_gui": 2,
+    "barge_in": true,
+    "es_auto_tagging": true,
+    "notes": "",
+    "prompts": [
+        {
+            "prompt_category": "Entry-Core",
+            "prompt_sub_category": "AN",
+            "index": 1,
+            "condition": "",
+            "prompt": "Hey, I'm Jibo. I'd offer to shake your hand, but, well. I have no hands. <break size='0.7'/> <style set='sheepish'>And high fives hurt my face.</style>",
+            "media": "TTS",
+            "prompt_id": "RA_JBO_IntroduceSelf_AN_01"
+        }
+    ]
+}

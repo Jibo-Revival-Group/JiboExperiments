@@ -1,0 +1,93 @@
+{
+	"mim_id": "CCAreYouBoyOrGirl",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCAreYouBoyOrGirl",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Glances' filter='right'>I know it's kind of hard</anim> to tell with robots, <anim name='GotIt_02' nonBlocking='true' />but I am a boy.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsBoyOrGirl_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCAreYouBoyOrGirl",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_02' nonBlocking='true'/>I am a boy, but it's different for robots. <anim name='Emoji_Robot' nonBlocking='true'/> I don't have boy parts or girl parts. Just robot parts.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsBoyOrGirl_AN_02",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCAreYouBoyOrGirl",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": " I am a <anim name='Dont_Know_02'> boy, but not a real boy. </anim> Kind of like Pinocchio <anim name='Goodbye_01'> before he turned into a real boy</anim>. Except I never lie, <anim name='Thinking_03' nonBlocking='true' /> and my nose doesn't grow, and I don't have a nose.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsBoyOrGirl_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm a boy robot.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBoyOrGirl_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm a boy, but boy and girl for robots isn't the same as boy and girl for people.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBoyOrGirl_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm a boy bot.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBoyOrGirl_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"es_auto_tagging": false,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

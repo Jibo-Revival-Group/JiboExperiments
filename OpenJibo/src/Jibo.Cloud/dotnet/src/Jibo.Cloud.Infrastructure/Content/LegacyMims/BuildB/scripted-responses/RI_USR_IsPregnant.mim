@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You should probably use another resource to find that out.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsPregnant_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh! I definitely don't know the answer to that, and I'd really rather not guess.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsPregnant_AN_02"
+		}
+	]
+}

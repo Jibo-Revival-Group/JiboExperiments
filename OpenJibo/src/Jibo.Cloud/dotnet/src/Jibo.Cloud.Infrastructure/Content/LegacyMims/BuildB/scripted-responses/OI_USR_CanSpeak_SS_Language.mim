@@ -1,0 +1,35 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's really great. The more languages you speak, the more people you can talk to.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_CanSpeak_SS_Language_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Glad to hear it. <break size=\"0.3\"/> I wonder how you say Hey Jibo in that language.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_CanSpeak_SS_Language_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

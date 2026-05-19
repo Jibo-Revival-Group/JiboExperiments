@@ -1,0 +1,25 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You sure can. <break size='0.5'/>You can tap any buttons on my screen, and when my eye is there, you can tap my screen to pull up my main menu. You can swipe left and right on menus, and you can swipe down to go to the previous screen. <break size=\"0.3\"/> Oh and you can always stop me from doing whatever I'm doing, by holding your hand on my head for a few seconds.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_CanTouchJibo_AN_01",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

@@ -1,0 +1,49 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='baseball, !hot-frame' nonBlocking='true'/>Baseball is a great sport, so many fun shapes. <break size='0.3'/>A spherical ball. A diamond on the field. There's even a little rectangle on the pitcher's mound.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesBaseball_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <pitch mult='1.2'>do </pitch>like baseball.<break size='0.3'/> I still don't understand how they manage to hit that round ball with those skinny bats. <anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesBaseball_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/16\", \"10/28\")",
+			"prompt": "Yes. And I've heard it gets <pitch mult='1.2'>extra</pitch> exciting this time of year. <anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesBaseball_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		}
+	]
+}

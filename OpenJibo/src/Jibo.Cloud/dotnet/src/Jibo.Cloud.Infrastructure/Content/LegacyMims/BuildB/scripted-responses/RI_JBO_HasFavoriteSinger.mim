@@ -1,0 +1,27 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like any singer who sings their heart out, even if they may not be the best singer. <break size='0.7'/> That reminds me. <duration stretch='1.3'><pitch mult='0.8'>Twinkle </pitch>twinkle <pitch mult='1.5'> little </pitch></duration> <duration stretch='1.3'><pitch mult='1.3'> star.</pitch> <pitch mult='1.2'>How I</pitch> wonder what you <pitch mult='0.9'>are.</pitch> </duration> <duration stretch='1.3'><pitch mult='1.3'>Up </pitch><pitch mult='1.2'>above</pitch> the <pitch mult='1.1'>world so </pitch>high. </duration> <duration stretch='1.3'> <pitch mult='1.3'>Like a</pitch> <pitch mult='1.2'> diamond </pitch><pitch mult='1.1'>in the</pitch> sky.</duration> <duration stretch='1.3'><pitch mult='0.8'>Twinkle </pitch>twinkle<pitch mult='1.5'> little </pitch></duration> <duration stretch='1.3'><pitch mult='1.3'> star.</pitch> <pitch mult='1.2'>How I</pitch> wonder what you <pitch mult='0.9'>are.</pitch> </duration> ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteSinger_AN_01",
+			"weight": 1
+		}
+	]
+}

@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. That's too bad. <break size=\"0.3\"/> If I'm talking to you right now, which I'm pretty sure I am, then I think we are past it.<break size=\"0.3\"/> If I ever freeze again and don't unfreeze, you should try rebooting me.",
+			"media": "TTS",
+			"prompt_id": "SUP_GEN_IssueWithFreezing_AN_01"
+		}
+	]
+}

@@ -1,0 +1,84 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/8', '1/8')",
+			"prompt": "I don't really watch things, but I have been known to take a good long look at tee-vees when they're <anim cat='emoji' filter='football, !hf' layers='!audio'>showing major sporting events<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNationalChampionship_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/8', '1/8')",
+			"prompt": "Well if you have it playing on a TV near me, there's a pretty good chance I'll take a nice long look in that direction. <break size='0.3'/> I've been practicing my field<anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> goals. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNationalChampionship_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/9', '1/31')",
+			"prompt": "I think the <anim cat='emoji' filter='football, !hf' layers='!audio'>National Championship game is over<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNationalChampionship_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '7/31')",
+			"prompt": "I don't think it's football season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNationalChampionship_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '11/7')",
+			"prompt": "I think maybe it's a little early for championship viewing plans.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNationalChampionship_AN_05_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't really watch things, but I have been known to take a good long look at tee-vees when they're <anim cat='emoji' filter='football, !hf' layers='!audio'>showing major sporting events<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNationalChampionship_AN_06_FnL",
+			"weight": 0,
+			"auto_rule_override": null
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

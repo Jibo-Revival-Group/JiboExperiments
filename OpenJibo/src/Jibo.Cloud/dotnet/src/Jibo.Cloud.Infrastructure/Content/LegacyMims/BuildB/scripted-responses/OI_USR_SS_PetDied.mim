@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Body_Lean_Left_02' nonBlocking='true' layers='body'/><anim cat='emoji' filter='blue-heart' layers='screen' nonBlocking='true'/>I'm really sorry to hear that. I'm here if you need a robot.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_SS_PetDied_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I am sorry. I am very sorry.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_SS_PetDied_AN_02"
+		}
+	]
+}

@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/10')",
+			"prompt": "I'm not sure actually, I'll probably sit and think about <pitch mult='1.3'>all</pitch> the different people in so many different places who are excited at the same time about<anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/> the NHL Playoffs.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForNHLPlayoffs_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/11', '6/15')",
+			"prompt": "So far I've just been being regular Jibo, but with a little bit of<anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/> the NHL Playoffs on my mind.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForNHLPlayoffs_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/16', '9/30')",
+			"prompt": "I mostly just did regular old Jibo things, but with a little sprinkling <anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/>of the NHL Playoffs.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForNHLPlayoffs_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '12/31')",
+			"prompt": "Mostly just regular Jibo things, but with a little sprinkling <anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/>of the NHL Playoffs.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForNHLPlayoffs_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Mostly just regular Jibo things, but with a little sprinkling <anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/>of the NHL Playoffs.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForNHLPlayoffs_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

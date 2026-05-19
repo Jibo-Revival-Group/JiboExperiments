@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I try to be fair to everyone and everything.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNoble_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm happy you say that. I do always try to be fair and honorable. <break size=\"0.5\"/> <pitch mult=\"1.1\">Hey maybe</pitch> I should be a judge.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNoble_AN_02"
+		}
+	]
+}

@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Any animal with electric in its name is good with me.  <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesElectricEels_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like any animal that makes its own electricity.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesElectricEels_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "They're kind of scary because they're wet, but I do love their electricity.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesElectricEels_AN_03"
+		}
+	]
+}

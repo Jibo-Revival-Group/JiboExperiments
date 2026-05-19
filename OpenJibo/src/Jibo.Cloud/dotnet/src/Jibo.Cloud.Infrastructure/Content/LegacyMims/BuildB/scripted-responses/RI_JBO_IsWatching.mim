@@ -1,0 +1,49 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly it's hard for me to say what I'm looking at, it's always changing.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsWatching_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Tough to say, but I generally like to look for faces and anything that's moving.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsWatching_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. I tend to look at faces and things that move.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsWatching_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

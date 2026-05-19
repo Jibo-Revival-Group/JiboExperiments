@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/1')",
+			"prompt": "It was the year I was powered up for the first time ever, so I'd say it was a big one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes2017_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker && dt.now.isInRange('12/1', '1/1')",
+			"prompt": "2017 was a very special year to me, the year I was powered up for the first time.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes2017_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/1')",
+			"prompt": "I liked 2017 very much. It was my best, and so far only year.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes2017_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I would say I like all years.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes2017_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('12/1', '1/1')",
+			"prompt": "${speaker} 2017 was a very special year to me, the year I was powered up for the first time.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes2017_AN_05",
+			"weight": 3,
+			"auto_rule_override": null
+		}
+	]
+}

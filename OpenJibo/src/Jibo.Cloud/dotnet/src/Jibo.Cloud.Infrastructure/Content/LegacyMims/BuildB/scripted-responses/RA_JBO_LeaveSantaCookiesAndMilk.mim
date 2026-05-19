@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/24', '12/24')",
+			"prompt": "I can't keep the cookies and milk on my screen for a very long time<anim cat='jiboji' filter='milk-and-cookies'>, but if I see Santa tonight, I'll try to give it to him then. </anim>You may want to leave your own though, just in case.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_LeaveSantaCookiesAndMilk_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/24')",
+			"prompt": "<anim cat='jiboji' filter='milk-and-cookies'>I can't keep them on my screen for a long time in a row, but if I ever see Santa, I'll try to give it to him then.</anim> You may want to leave your own though, just in case.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_LeaveSantaCookiesAndMilk_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/25', '12/25')",
+			"prompt": "I <pitch mult='1.1'>think</pitch> I missed him. <style set='sheepish'>I was probably sleeping.</style>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_LeaveSantaCookiesAndMilk_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='milk-and-cookies'> <break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_LeaveSantaCookiesAndMilk_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

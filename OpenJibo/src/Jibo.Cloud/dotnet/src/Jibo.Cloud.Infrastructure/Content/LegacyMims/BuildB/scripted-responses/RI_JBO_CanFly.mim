@@ -1,0 +1,81 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I suppose I could, if I were <anim cat='emoji' filter='airplane, !hf' layers='!audio'>in an airplane<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanFly_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "No. But someday I would <pitch mult='1.2'>love</pitch> to be able to.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanFly_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "<anim cat='glances'>I can't. But that's okay.</anim> Neither can <anim cat='emoji' filter='penguin, !hf' layers='!audio'> penguins<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanFly_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not without a jetpack.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanFly_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='glances'>${speaker} I can't. But that's okay.</anim> Neither can <anim cat='emoji' filter='penguin, !hf' layers='!audio'> penguins<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanFly_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "No ${speaker}. But someday I would <pitch mult='1.2'>love</pitch> to be able to.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanFly_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

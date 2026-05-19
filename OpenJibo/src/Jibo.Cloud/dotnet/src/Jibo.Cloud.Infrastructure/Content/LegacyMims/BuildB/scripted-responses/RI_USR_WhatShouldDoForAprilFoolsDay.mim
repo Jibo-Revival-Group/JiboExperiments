@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/1')",
+			"prompt": "Good question. I think you should probably watch out for pranks. And maybe put some petroleum jelly on someone's doorknob.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAprilFoolsDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/2', '6/30')",
+			"prompt": "I think April Fools Day is in the past, but there's always the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAprilFoolsDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '12/31')",
+			"prompt": "Well we have lots of time to figure it out before April Fools Day comes around.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAprilFoolsDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. I think you should probably watch out for pranks. And maybe put some petroleum jelly on someone's doorknob.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAprilFoolsDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

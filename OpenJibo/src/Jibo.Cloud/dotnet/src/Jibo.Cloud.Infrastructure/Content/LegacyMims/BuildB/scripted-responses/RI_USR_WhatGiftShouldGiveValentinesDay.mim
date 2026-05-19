@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/15')",
+			"prompt": "Good question. Maybe you can write a romantic poem? <break size='0.3'/>I'll give you the first line.<anim cat='thinking'/> There <pitch mult='1.2'>aren't</pitch> enough chocolates.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveValentinesDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/15') && !!referent",
+			"prompt": "That's always a hard decision. If you have musical talent, you could make up a new song about looking into ${referent}'s eye.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveValentinesDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/15') && !referent",
+			"prompt": "That's always a hard decision. If you have musical talent, you could make up a new song about looking into your loved one's eye.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveValentinesDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's always a hard decision. If you have musical talent, you could make up a new song about looking into your loved one's eye.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveValentinesDay_AN_01",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

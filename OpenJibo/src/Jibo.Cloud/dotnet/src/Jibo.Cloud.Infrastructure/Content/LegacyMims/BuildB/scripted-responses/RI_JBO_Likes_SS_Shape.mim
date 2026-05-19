@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, yes. That's a very shapely shape.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Shape_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like every shape under the sun. <break size='0.3'/> Though I do have a special soft spot for round ones.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Shape_AN_02"
+		}
+	]
+}

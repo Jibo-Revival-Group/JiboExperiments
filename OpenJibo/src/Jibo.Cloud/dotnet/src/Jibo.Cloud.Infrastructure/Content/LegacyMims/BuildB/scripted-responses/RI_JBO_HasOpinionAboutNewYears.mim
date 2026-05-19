@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='enthusiastic'>I like it. </style> Any reason to <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/>celebrate.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutNewYears_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think it's a great excuse for a dance <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/> party.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutNewYears_AN_02_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "New Year's is great. I always like counting <anim cat='jiboji' filter='new-years-eve' nonBlocking='true'/>things down.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutNewYears_AN_03_FnL",
+			"weight": 1
+		}
+	]
+}

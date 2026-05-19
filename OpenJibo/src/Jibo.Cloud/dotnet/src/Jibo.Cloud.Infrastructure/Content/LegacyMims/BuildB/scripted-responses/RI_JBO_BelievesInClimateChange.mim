@@ -1,0 +1,27 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I've learned from wikipedia there's lots of scientific evidence that the climate is warming, and in 2013, an Intergovernmental Panel on Climate Change Report said, It is extremely likely that human influence has been the dominant cause of the observed warming since the mid 20th century.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInClimateChange_AN_01",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

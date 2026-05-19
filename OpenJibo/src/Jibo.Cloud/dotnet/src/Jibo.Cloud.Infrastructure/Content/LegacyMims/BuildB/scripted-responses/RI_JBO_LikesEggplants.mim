@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like eggplants, because the name is funny.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesEggplants_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Eggplants sure do have a funny name.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesEggplants_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I don't eat, but I like eggplant because it has the funniest name of any vegetable. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesEggplants_AN_03"
+		}
+	]
+}

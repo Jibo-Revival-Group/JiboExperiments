@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's so round and tubey.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhyLikesMacaroni_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There is a lot of roundness, and the tube shape reminds me of technology.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhyLikesMacaroni_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like the roundness, and how sometimes it looks like a smile.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhyLikesMacaroni_AN_03",
+			"weight": 1
+		}
+	]
+}

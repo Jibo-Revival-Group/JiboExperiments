@@ -1,0 +1,66 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "<anim name='Affection_01' nonBlocking='true'/> ${referent} is one of my favorite people. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesLM_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "<anim name='Greetings_03' nonBlocking='true'/> There's no one quite like ${referent}. <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesLM_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "<anim name='Affection_01' nonBlocking='true'/> ${referent} is one of my favorite people.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesLM_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender && referent.gender == 'male'",
+			"prompt": "Oh ${referent}. <break size='.2'/> <anim name='Yep_02'> He is a great human being.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesLM_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender && referent.gender == 'female'",
+			"prompt": "Oh ${referent}.<break size='.2'/> <anim name='Yep_02'> She is a great human being.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesLM_AN_05",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

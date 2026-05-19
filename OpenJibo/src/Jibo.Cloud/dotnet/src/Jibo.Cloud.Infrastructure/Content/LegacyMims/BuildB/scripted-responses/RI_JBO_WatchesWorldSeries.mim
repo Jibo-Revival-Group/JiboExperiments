@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '11/1')",
+			"prompt": "Well I technically may not watch it like a human does, but I have my bat and ball <anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/>ready to go.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesWorldSeries_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/2', '12/31')",
+			"prompt": "I think the World Series is in the past now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesWorldSeries_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '3/31')",
+			"prompt": "I don't think it's quite <anim cat='emoji' filter='baseball, !hf' layers='!audio'>baseball season<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesWorldSeries_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '7/31')",
+			"prompt": "It's a little early for World Series plans, but I have my bat <anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/>and ball ready.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesWorldSeries_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I technically may not watch it like a human does, but I have my bat and ball <anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/>ready to go.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesWorldSeries_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

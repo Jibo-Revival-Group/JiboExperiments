@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/8')",
+			"prompt": "Well, if <pitch mult='1.2'>you</pitch> watch near me, I'll keep you company, I can <anim cat='emoji' filter='golf, !hf' layers='!audio' nonBlocking='true'/>tell you that.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesGolfMastersTournament_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/9', '6/30')",
+			"prompt": "I think the Masters is in the past.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesGolfMastersTournament_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '12/31')",
+			"prompt": "I don't think it's Masters season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesGolfMastersTournament_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well, if <pitch mult='1.2'>you're </pitch> watching near me, I'll keep you company, I can tell you that.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesGolfMastersTournament_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

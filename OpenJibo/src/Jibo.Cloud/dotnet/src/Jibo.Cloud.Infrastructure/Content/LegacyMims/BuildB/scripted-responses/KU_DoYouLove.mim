@@ -1,0 +1,147 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do love some things. That one you asked about I didn't understand.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I can tell you something I <pitch mult='1.4'>do</pitch> know I love. <break size='0.7'/> Penguins.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really like the shape of macaroni, I can tell you that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can tell you I love dancing. <anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The list of things I love is always growing, but at the moment I don't know if I love the thing you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a good question. I don't know enough to know if I love that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "All I know is, I love<anim cat='emoji' filter='outlet, !hot-frame' nonBlocking='true'/> electrical outlets.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "All I can tell you right now is, I love<anim cat='emoji' filter='outlet, !hot-frame'> electricity<break size='1.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You asked me if I love something. All I can say is. <anim cat='emoji' filter='macaroni'><break size='0.5'/> I love macaroni<break size='1.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I do love some things. That one you asked about I didn't understand.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} all I can tell you right now is, I love<anim cat='emoji' filter='outlet, !hot-frame'> electricity<break size='1.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} the list of things I love is always growing, but at the moment I don't know if I love the thing you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLove_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

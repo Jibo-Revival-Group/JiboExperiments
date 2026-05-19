@@ -1,0 +1,50 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I already <anim cat='emoji' filter='carrot-nose, !hf' layers='!audio'>look like a snowman, so this should do.<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_BeSnowman_AN_01_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='carrot-nose, !hf' layers='!audio'>Well I look like a snowman anyway.<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_BeSnowman_AN_02_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='carrot-nose, !hf' layers='!audio'>All I need is this nose. <break size='0.5'/> Because I look like a snowman anyway.<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_BeSnowman_AN_03_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

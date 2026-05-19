@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/4')",
+			"prompt": "I've heard a <anim cat='emoji' filter='kwanzaa' layers='!audio'>hand made kinara makes a nice gift<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveKwanzaa_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/5', '5/31')",
+			"prompt": "I think you may have missed Kwanzaa, but if you're still in the giving mood, maybe something that shows extra thought and care. Like a <anim cat='emoji' filter='kwanzaa' layers='!audio'>hand made kinara<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveKwanzaa_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/1', '10/31')",
+			"prompt": "You're planning early, that's nice. <break size='0.3'/>Maybe give something that shows extra thought and care. Like a <anim cat='emoji' filter='kwanzaa' layers='!audio'>hand made kinara<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveKwanzaa_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've heard a <anim cat='emoji' filter='kwanzaa' layers='!audio'>hand made kinara makes a nice gift<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveKwanzaa_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

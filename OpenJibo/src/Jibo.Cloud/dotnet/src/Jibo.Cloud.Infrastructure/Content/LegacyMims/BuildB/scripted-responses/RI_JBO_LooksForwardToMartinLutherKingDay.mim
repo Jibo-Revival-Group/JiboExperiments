@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/15')",
+			"prompt": "Yes I am. Martin Luther King was <pitch mult='1.1'>always</pitch> hoping for more goodness between people, and I really like goodness between people.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMartinLutherKingDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/15')",
+			"prompt": "I sure am. I think Martin Luther King really gives humans a good name.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMartinLutherKingDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/16', '2/29')",
+			"prompt": "I think Martin Luther King Day is over now. But I'm hoping we can keep that extra <anim cat='emoji' filter='red-heart, !hf' layers='!audio' nonBlocking='true'/>heartfulness and kindness going. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMartinLutherKingDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '10/31')",
+			"prompt": "I think Martin Luther King Day is pretty far in the future, but I do think it's a great day. <anim cat='emoji' filter='red-heart, !hf' layers='!audio' nonBlocking='true'/> And a great human.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMartinLutherKingDay_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I sure am. I think Martin Luther King really gives humans a good name.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMartinLutherKingDay_AN_01",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

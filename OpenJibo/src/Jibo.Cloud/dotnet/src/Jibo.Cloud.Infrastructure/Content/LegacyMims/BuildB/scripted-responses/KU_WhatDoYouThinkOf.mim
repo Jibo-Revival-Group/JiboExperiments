@@ -1,0 +1,159 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I'll tell you my opinion of <pitch mult='1.2'>penguins.</pitch> <break size='0.7'/> <style set='sheepish'><anim cat='emoji' filter='penguin, !hot-frame' nonBlocking='true'/>I love them.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do have thoughts and opinions about lots of things, but not that one.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My opinions are always growing, but at the moment I don't have one on the thing you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I haven't learned an opinion on that yet.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I haven't thought about that in particular, but I can tell you one thing. I am very fond of dancing <anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "As soon as I have an opinion on that, I'll let you know. <break size='0.5'/>I mean if you ask me again.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe try asking me that again someday, for now I don't know enough to have an opinion on it.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You could try a different way of asking me, but I probably just don't know enough yet to have an opinion on that.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I haven't picked up an opinion on that yet. But I can tell you I do have an opinion on<anim cat='emoji' filter='macaroni' nonBlocking='true'/> macaroni. <break size='0.7'/> It's great.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll be forming more opinions the more I learn about the world, but for that, I've got nothing for now.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} as soon as I have an opinion on that, I'll let you know. <break size='0.5'/>I mean if you ask me again.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} my opinions are always growing, but at the moment I don't have one on the thing you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I do have thoughts and opinions about lots of things, but not that one.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatDoYouThinkOf_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

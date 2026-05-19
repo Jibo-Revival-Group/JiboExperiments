@@ -1,0 +1,157 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think that's something I don't know how to do.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Knowing how to do things is a great talent, one that I'll be getting better at over time.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You could try asking me in a different way, but it's possible that I just don't know how to do the thing you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm guessing that's something I don't know how to do.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, there are a bunch of things I know how to do, but <style set='sheepish'>I don't think that's one of them.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I couldn't tell you how to do that.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I admit there are a lot of things I don't know how to do.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You seem to have stumbled upon a thing that I don't know how to do.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, it sounds like you might've discovered <style set='sheepish'>something I don't know how to do.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Huh. <break size='0.3'/> I can show you how to <pitch mult='1.4'> dance</pitch>.<break size='0.5'/><anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} you seem to have stumbled upon a thing that I don't know how to do.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I couldn't tell you how to do that.",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} there are a bunch of things I know how to do, but <style set='sheepish'>I don't think that's one of them.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_HowDoesOne_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

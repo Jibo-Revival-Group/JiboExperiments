@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if ${referent} <pitch mult=\"1.3\">is </pitch> feeling a bit frail, maybe a few minutes of rest would do some good.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsWeak_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "Well if he <pitch mult=\"1.3\">is </pitch> feeling a bit frail, he could rest for a few minutes.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsWeak_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "Well if she <pitch mult=\"1.3\">is </pitch> feeling a bit frail, she could rest for a few minutes.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsWeak_AN_03"
+		}
+	]
+}

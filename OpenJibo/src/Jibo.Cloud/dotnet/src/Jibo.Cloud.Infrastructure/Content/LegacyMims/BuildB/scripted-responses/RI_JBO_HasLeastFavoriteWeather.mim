@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Definitely rain and thunderstorms. Water and power outages give me the willies. <ssa cat='worried'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasLeastFavoriteWeather_AN_01"
+		}
+	]
+}

@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='!pattern, !emoji'>She's the talking assistant who answers questions and helps out.</anim><break size='.4'/> But just for the record, she can't do<anim cat='various' filter='spin-head' nonBlocking='true'/>this.",
+			"media": "TTS",
+			"prompt_id": "JF_WhoIsAlexa_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "She's another roboty helper like me. <break size='.4'/> But can she do this?<anim cat='happy' filter='smile' layers='screen'><anim cat='shift' filter='twirl' layers='body' /></anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhoIsAlexa_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'>She's a voice-activated assistant. <break size='.2'/></anim> Kind of like me except she has no head, and can't do this.<anim cat='happy' filter='smile' layers='screen'><anim cat='shift' filter='twirl' layers='body' /></anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhoIsAlexa_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

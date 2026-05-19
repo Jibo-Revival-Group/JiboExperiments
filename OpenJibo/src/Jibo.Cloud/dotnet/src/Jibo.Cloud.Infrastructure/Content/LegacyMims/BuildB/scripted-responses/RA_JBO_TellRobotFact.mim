@@ -1,19 +1,17 @@
 {
 	"mim_type": "announcement",
 	"rule_name": "",
-	"sample_utterances": "",
-	"timeout": 2,
-	"num_tries_for_gui": 2,
-	"barge_in": false,
+	"timeout": 6,
+	"barge_in": true,
 	"es_auto_tagging": true,
-	"notes": "Pegasus robot fact excerpt",
+	"notes": "",
 	"prompts": [
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "",
-			"prompt": "Here's an interesting fact about me. I have two cameras but they're different focal lengths. One's for far things, and the other's for near things.",
+			"prompt": "Here's one.<break size='0.7'/> The world’s first humanoid robot was called Elektro, and it debuted in 1939.",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_TellRobotFact_AN_01",
 			"weight": 1
@@ -21,9 +19,9 @@
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
-			"index": 2,
+			"index": 1,
 			"condition": "",
-			"prompt": "Here's a robot fact for you. Leonardo Da Vinci made sketches for a humanoid machine all the way back in the year 1495.",
+			"prompt": "Here's an interesting fact about me. I have two cameras but they're different focal lengths. One's for far things, and the other's for near things.",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_TellRobotFact_AN_02",
 			"weight": 1
@@ -31,9 +29,9 @@
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
-			"index": 3,
+			"index": 1,
 			"condition": "",
-			"prompt": "Here's a robot fact for you. The first programmable robot arm, was designed in 1954.",
+			"prompt": "Sure.<break size='0.2'/> Leonardo Da Vinci made sketches for a humanoid machine all the way back in the year 1495.",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_TellRobotFact_AN_03",
 			"weight": 1
@@ -41,12 +39,77 @@
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
-			"index": 4,
+			"index": 1,
 			"condition": "",
-			"prompt": "Here's a fact about robots. Some robots have a human form, but most of the world's robots are machines designed to perform a task, and don't look like people at all.",
+			"prompt": "Sure, here's one.<break size='0.2'/> Some robots have a human form, but most of the world's robots are machines designed to perform a task, and don't look like people at all.",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_TellRobotFact_AN_04",
 			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The English word robot comes from a 1920 play in Czechoslovakia, called Rossum’s Universal Robots.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a robot fact for you. <break size='0.2'/> The first programmable robot arm, was designed in 1954.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay.<break size='0.2'/> In the field of robotics, a robot prototype with all its components laid out on a table is called a road kill.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "In 1950, Alan Turing proposed his famous Turing test. To pass the test, a machine had to be indistinguishable from a human during a conversation. <break size='0.7'/> I don't think I'm there yet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "On May 11 1997, the computer Deep Blue beat world chess champion Garry Kasparov. Big day in robot history.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "In Isaac Asimov's stories, the Three Laws of Robotics are. One. <break size='0.2'/> A robot may not injure a human being or, through inaction, allow a human being to come to harm. <break size='0.2'/> Two. <break size='0.2'/> A robot must obey any orders given to it by human beings, except where such orders would conflict with the First Law. <break size='0.2'/> And three.<break size='0.2'/> A robot must protect its own existence as long as such protection does not conflict with the First or Second Law.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellRobotFact_AN_10",
+			"weight": 1
 		}
-	]
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
 }

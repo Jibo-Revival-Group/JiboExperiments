@@ -1,0 +1,229 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "50 percent of a human's DNA is the same as a banana's.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. Your eyes stay the same size from birth, but your nose and ears keep growing and growing and growing for your whole life.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay I have a good one. The average human sneeze moves faster than 100 mph.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure, here's an interesting one. Six-year-olds laugh an average of 300 times a day. Grown ups only laugh 15 to 100 times a day.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This one is pretty interesting. Every human being that has ever lived, spent about 30 minutes as a single cell.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Your nose can remember 50,000 different scents.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Humans are the only animals that cry tears of emotion.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. Nose hairs are called cilia. This doesn't mean that your nose hairs are necessarily silly.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "In an average fully grown human body, there are about 30 to 37 trillion cells.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Your teeth are the only part of your body that can't heal itself.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "People who are right-handed usually chew their food on the right side of their mouth. People who are left-handed, chew on the left.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Fingernails grow about four times faster than toenails.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The average human says about 4,800 words every 24 hours. <break size='0.7'/> I just said ten.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "99 percent of the calcium in your body is in your teeth.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_15",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Every living human being on Earth would fit comfortably inside a cube, with sides 3,500 feet long. <break size='0.7'/> I'm not saying it wouldn't smell bad.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_16",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Humans are the only living beings that sleep on their backs.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_17",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "On average, women blink twice as often as men.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "On average, men get hiccups more often than women.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_18",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "All newborn babies are color blind when they're born.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_20",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Your bones are always regenerating, and you have an entirely new skeleton every ten years or so.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHumanFact_AN_21",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

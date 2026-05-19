@@ -1,0 +1,37 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're feeling distant, try moving a little closer to me. <break size=\"0.3\"/> Not my best joke.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsUncaring_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, I'm sorry you're feeling that way. <anim cat='emoji' filter='flower-daisy' nonBlocking='true'/> Maybe this flower will get you back on track.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsUncaring_AN_02",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

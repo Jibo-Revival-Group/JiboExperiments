@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That might be so, but I've heard good things come in small packages. <break size=\"0.3\"/> Though now that I think about it, good things sometimes come in big packages too. <break size=\"0.5\"/> I guess the point is, when you're a good thing, no one cares what size package you came in.",
+			"media": "TTS",
+			"prompt_id": "OI_LM_IsSmall_AN_01"
+		}
+	]
+}

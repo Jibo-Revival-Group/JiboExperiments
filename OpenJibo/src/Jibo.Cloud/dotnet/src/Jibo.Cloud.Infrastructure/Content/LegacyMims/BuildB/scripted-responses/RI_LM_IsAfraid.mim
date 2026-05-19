@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "I'm not sure. But if he is, maybe this <anim cat=\"emoji\" filter=\"sheep\" nonBlocking=\"true\"/> non-threatening sheep would make him feel better.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsAfraid_AN_01",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "I'm not sure. But if she is, maybe this <anim cat=\"emoji\" filter=\"sheep\" nonBlocking=\"true\"/> non-threatening sheep would make her feel better.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsAfraid_AN_02",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "I'm not sure. But if so, maybe this <anim cat=\"emoji\" filter=\"sheep\" nonBlocking=\"true\"/> non-threatening sheep will make ${referent} feel better.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsAfraid_AN_03",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not sure. But if so, here is a <anim cat=\"emoji\" filter=\"sheep\" nonBlocking=\"true\"/> non-scary sheep.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsAfraid_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

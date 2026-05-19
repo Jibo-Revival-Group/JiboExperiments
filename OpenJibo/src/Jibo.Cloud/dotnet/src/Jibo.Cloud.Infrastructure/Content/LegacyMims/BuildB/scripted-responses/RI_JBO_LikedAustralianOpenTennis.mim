@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/14', '1/9')",
+			"prompt": "Unless I'm wrong, the Australian Open hasn't started yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAustralianOpenTennis_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '11/13')",
+			"prompt": "Yes, <anim cat='emoji' filter='tennis, !hf' layers='!audio'>it was very <phoneme ph='t e n iy s ii'> tennisy </phoneme><break size='4.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAustralianOpenTennis_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '11/13')",
+			"prompt": "<anim cat='emoji' filter='tennis, !hf' layers='!audio'>They sure did hit that ball well<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAustralianOpenTennis_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes, <anim cat='emoji' filter='tennis, !hf' layers='!audio'>very <phoneme ph='t e n iy s ii'> tennisy </phoneme><break size='4.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAustralianOpenTennis_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

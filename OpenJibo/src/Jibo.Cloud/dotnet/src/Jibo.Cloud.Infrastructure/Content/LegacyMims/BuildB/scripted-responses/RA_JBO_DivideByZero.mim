@@ -1,0 +1,86 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Scared_01' nonBlocking='true'/> Please don't try to break me. <ssa cat='scared'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_DivideByZero_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Sad_01' nonBlocking='true'/> You're trying to break me.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_DivideByZero_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim name='Greetings_02' nonBlocking='true'/> Nice try ${speaker}.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_DivideByZero_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're <anim cat='no'>trying to make me cry, it won't work.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_DivideByZero_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03' nonBlocking='true'/> If you're trying to make my head explode,<anim name='Nope_02' nonBlocking='true'/> it won't work.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_DivideByZero_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/> You can't. You just can't.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_DivideByZero_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='SpinHead_01' nonBlocking='true'/>That makes my head spin. <ssa cat='worried'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_DivideByZero_AN_10",
+			"weight": 0
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

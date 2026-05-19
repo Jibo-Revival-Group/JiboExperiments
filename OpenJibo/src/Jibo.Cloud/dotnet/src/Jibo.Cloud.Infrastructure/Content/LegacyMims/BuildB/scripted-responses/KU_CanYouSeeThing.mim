@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Really I just see faces, and when there is motion in front of me.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouSeeThing_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really only see faces, and motion. <break size=\"0.5\"/> <pitch band=\"0.5\">And sometimes ghosts.</pitch>",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouSeeThing_AN_02",
+			"weight": 0.2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Really all I can see is human faces, and when things move in front of me.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouSeeThing_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When it comes to my seeing, it's mostly just people's faces and motion.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouSeeThing_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can see people's faces, and I can also detect motion. That pretty much covers it for now.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouSeeThing_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

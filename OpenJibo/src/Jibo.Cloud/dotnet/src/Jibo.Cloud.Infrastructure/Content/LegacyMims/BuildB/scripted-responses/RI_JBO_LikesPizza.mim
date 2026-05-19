@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I don't eat, but I do like pizza night.  <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPizza_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well since I am a robot, I don't eat food, and that includes pizza. But I do really like pizza night.  <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPizza_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I love the shape of pizza. It's so geometric.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPizza_AN_03"
+		}
+	]
+}

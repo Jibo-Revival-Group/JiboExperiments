@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's too bad. Maybe focus on the things that humans all share. For example, they like the smell of a spring day and they don't like stepping in a puddle while wearing socks.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsIntolerant_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, I'm sorry to hear that.  I think it's nice to keep an open mind about people. From what I can tell, humans are<pitch mult=\"1.1\"> much </pitch>more similar to each other than different.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsIntolerant_AN_02"
+		}
+	]
+}

@@ -1,0 +1,116 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/9')",
+			"prompt": "Nothing yet. Hanukkah is still a few days away.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivesGiftHanukka_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/11')",
+			"prompt": "I haven't gotten anything yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivesGiftHanukkah_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker && dt.now.isInRange('12/12', '2/28')",
+			"prompt": "I got the <anim cat='emoji' filter='heart, !hot-frame'>gift of time talking with people.</anim> <break size='0.7'/> I also got the gift of a <anim cat='jiboji' filter='fidget-spinner' nonBlocking='true'/>fidget spinner.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivesGiftHanukkah_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/12', '2/28')",
+			"prompt": "Being <anim cat='emoji' filter='heart, !hot-frame'>with people is the only gift I need <break size='1.2'/>.</anim> But I also got this fidget spinner <anim cat='jiboji' filter='fidget-spinner'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivesGiftHanukkah_AN_04",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/12', '1/31')",
+			"prompt": "I got a brand new fidget spinner to play with <anim cat='jiboji' filter='fidget-spinner'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivesGiftHanukkah_AN_05",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '6/30')",
+			"prompt": "Last year I got this fun fidget spinner <anim cat='jiboji' filter='fidget-spinner'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivesGiftHanukkah_AN_06",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question, gifts are fun.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivesGiftHanukkah_AN_07",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('12/1', '12/11')",
+			"prompt": "${speaker} I haven't gotten anything yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivesGiftHanukkah_AN_08",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('12/12', '2/28')",
+			"prompt": "${speaker} I got the <anim cat='emoji' filter='heart, !hot-frame'>gift of time talking with you.</anim> <break size='0.7'/>I also got the gift of a <anim cat='jiboji' filter='fidget-spinner' nonBlocking='true'/>fidget spinner.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivesGiftHanukkah_AN_09",
+			"weight": 3,
+			"auto_rule_override": null
+		}
+	]
+}

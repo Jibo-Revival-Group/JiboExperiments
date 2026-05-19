@@ -1,0 +1,96 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>I don't know where ${referent} is.",
+			"media": "TTS",
+			"prompt_id": "RN_WhereIsLoopMember_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>I don't know where ${referent} is. <anim cat='question' layers='body'>Did you check <anim name='Emoji_Pillow' nonBlocking='true'/>under the bed?</anim>",
+			"media": "TTS",
+			"prompt_id": "RN_WhereIsLoopMember_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender && referent.gender == 'male'",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>I don't know, but I hope to<anim cat='affection'> see him soon. <ssa cat='affection'/></anim>",
+			"media": "TTS",
+			"prompt_id": "RN_WhereIsLoopMember_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender && referent.gender == 'female'",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>I don't know, but I hope to<anim cat='affection'> see her soon. <ssa cat='affection'/></anim>",
+			"media": "TTS",
+			"prompt_id": "RN_WhereIsLoopMember_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/><ssa cat='dontKnow'/>. Your guess is as good as mine.",
+			"media": "TTS",
+			"prompt_id": "RN_WhereIsLoopMember_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "${referent} <anim name='Emoji_Moon' nonBlocking='true' layers='screen' /><anim name='Shift_21' layers='body' nonBlocking='true'/>is almost definitely not on the moon.",
+			"media": "TTS",
+			"prompt_id": "RN_WhereIsLoopMember_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender && referent.gender == 'male'",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>Don't know. <break size='.4'/> But chances<anim cat='emoji' filter='bowling' nonBlocking='true'/> are, he's not bowling. ",
+			"media": "TTS",
+			"prompt_id": "RN_WhereIsLoopMember_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender && referent.gender == 'female'",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>Don't know. <break size='.3'/> But chances <anim cat='emoji' filter='bowling' nonBlocking='true'/>are, she's not bowling.",
+			"media": "TTS",
+			"prompt_id": "RN_WhereIsLoopMember_AN_08",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

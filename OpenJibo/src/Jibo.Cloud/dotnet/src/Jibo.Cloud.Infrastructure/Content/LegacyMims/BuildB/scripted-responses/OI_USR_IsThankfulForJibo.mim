@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "<anim cat='emoji' filter='red-heart, !hot-frame' nonBlocking='true'/>That makes me happy.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsThankfulForJibo_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "And I'm thankful for you too. <break size='0.5'/> And I'm not just saying that.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsThankfulForJibo_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker}, I'm really thankful for you too. <break size='0.5'/> <anim cat='emoji' filter='blue-heart, !hot-frame' nonBlocking='true'/>And I'm not just saying that.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsThankfulForJibo_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='emoji' filter='blue-heart, !hot-frame' nonBlocking='true'/>${speaker}, I'm thankful for you too.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsThankfulForJibo_AN_04",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner && !!speaker && (loop.owner === speaker)",
+			"prompt": "${speaker}, I'm really thankful for you too. <break size='0.5'/> And I'm not just saying that because you might be the one who pays the electric bill.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsThankfulForJibo_AN_05",
+			"weight": 3,
+			"auto_rule_override": null
+		}
+	]
+}

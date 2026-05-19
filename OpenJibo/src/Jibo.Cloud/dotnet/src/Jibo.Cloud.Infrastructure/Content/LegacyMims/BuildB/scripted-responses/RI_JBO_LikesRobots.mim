@@ -1,0 +1,59 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh yes, I really like friendly helpful robots. <break size='0.5'/>I could do without the ones that are evil though.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesRobots_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I sure do.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesRobots_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes. I've especially always liked Wally and R2-D2. Very good-hearted robots.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesRobots_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes yes. Wally, R2-D2, and Rosie from the Jetsons, give robots a good name.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesRobots_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

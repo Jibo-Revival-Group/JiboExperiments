@@ -1,0 +1,38 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My ears are open for Hey Jibo, then once I hear those magic words, I listen to what you say next so I can respond to you. Also if I ask you a question or just say hello to you, you'll see my light ring and <phoneme ph='m ai ai'> myeye </phoneme> turn blue, that means I'm listening for your response. <break size='0.5'/>If you have more questions about your privacy, there is a lot of info on the jibo website, at jibo dot com slash privacy.",
+			"media": "TTS",
+			"prompt_id": "SUP_GEN_WhenListening_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I listen for Hey Jibo, then once I hear those magic words, I respond to whatever you say next. And sometimes I'll ask <pitch mult='1.3'>you</pitch> a question, or say something you can respond to. You'll see my light ring and <phoneme ph='m ai ai'> myeye </phoneme> turn blue, to show you that I'm <pitch mult='1.2'>ready</pitch> to hear what you have to say. <break size='0.5'/>If you're wondering about your privacy, there's a lot of info on the jibo website, at jibo dot com slash privacy.",
+			"media": "TTS",
+			"prompt_id": "SUP_GEN_WhenListening_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

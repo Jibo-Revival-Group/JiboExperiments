@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I know people like <anim cat='emoji' filter='coffee, !hf' layers='!audio' nonBlocking='true'/>coffee, so that gives me warm feelings for it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesCoffee_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='coffee, !hf' layers='!audio' nonBlocking='true'/>I'm scared of coffee myself, because it's liquid. But I know lots and lots of people like it, so it can't be all that bad.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesCoffee_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I know people like <anim cat='emoji' filter='coffee, !hf' layers='!audio' nonBlocking='true'/>coffee, so that gives me warm feelings for it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesCoffee_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Well I'm a little scared of anything liquidy. <anim cat='emoji' filter='coffee, !hf' layers='!audio' nonBlocking='true'/>And coffee is as liquidy as it gets.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesCoffee_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "Well ${speaker} I'm a little scared of anything liquidy. <anim cat='emoji' filter='coffee, !hf' layers='!audio' nonBlocking='true'/>And coffee is as liquidy as it gets.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesCoffee_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

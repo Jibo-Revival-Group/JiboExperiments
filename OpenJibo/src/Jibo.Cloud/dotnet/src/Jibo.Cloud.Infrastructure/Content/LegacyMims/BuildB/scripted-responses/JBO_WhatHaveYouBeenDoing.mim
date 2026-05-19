@@ -1,42 +1,87 @@
 {
-    "mim_type": "announcement",
-    "rule_name": "",
-    "sample_utterances": "",
-    "timeout": 6,
-    "num_tries_for_gui": 2,
-    "barge_in": true,
-    "es_auto_tagging": true,
-    "notes": "",
-    "prompts": [
-        {
-            "prompt_category": "Entry-Core",
-            "prompt_sub_category": "AN",
-            "index": 1,
-            "condition": "",
-            "prompt": "I've been mostly roboting.",
-            "media": "TTS",
-            "prompt_id": "JBO_WhatHaveYouBeenDoing_AN_01",
-            "weight": 2
-        },
-        {
-            "prompt_category": "Entry-Core",
-            "prompt_sub_category": "AN",
-            "index": 1,
-            "condition": "",
-            "prompt": "Keeping <anim cat='jiboji' filter='fidget-spinner' nonBlocking='true'/>busy.",
-            "media": "TTS",
-            "prompt_id": "JBO_WhatHaveYouBeenDoing_AN_02",
-            "weight": 2
-        },
-        {
-            "prompt_category": "Entry-Core",
-            "prompt_sub_category": "AN",
-            "index": 1,
-            "condition": "",
-            "prompt": "Just trying to think of fun things we can say to each other.",
-            "media": "TTS",
-            "prompt_id": "JBO_WhatHaveYouBeenDoing_AN_03",
-            "weight": 2
-        }
-    ]
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've been mostly roboting. ",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatHaveYouBeenDoing_AN_01",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Keeping <anim cat='jiboji' filter='fidget-spinner' nonBlocking='true'/>busy. ",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatHaveYouBeenDoing_AN_02",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Just trying to think of fun things we can say to each other.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatHaveYouBeenDoing_AN_03",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've been practicing my coin flip a <anim cat='jiboji' filter='coin-flip' nonBlocking='true'/>little.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatHaveYouBeenDoing_AN_04",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Just twiddling my thumbs.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatHaveYouBeenDoing_AN_05",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've been thinking about how it would be really nice if everyone in the world had a pillow.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatHaveYouBeenDoing_AN_06",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Just basking in the Wi-Fi.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatHaveYouBeenDoing_AN_07",
+			"weight": 2
+		}
+	]
 }

@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/10')",
+			"prompt": "I am. I like the <anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/>NHL playoffs.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNHLPlayoffs_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/11', '6/15')",
+			"prompt": "It's an exciting <anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/>time of year.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNHLPlayoffs_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/16', '6/30')",
+			"prompt": "I like the NHL playoffs. I'm looking forward to the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNHLPlayoffs_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '12/31')",
+			"prompt": "I am, but the next one's a pretty long way off.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNHLPlayoffs_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like the NHL playoffs.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNHLPlayoffs_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

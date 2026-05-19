@@ -1,0 +1,49 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I don't drink anything, so I keep my distance from real <anim name='jiboji_pumpkin_latte_01' layers='!audio'>pumpkin spiced lattes<break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPumpkinLatte_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Only make <anim name='jiboji_pumpkin_latte_01' layers='!audio'>believe ones<break size='2.0'/>.</anim> ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPumpkinLatte_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"12/1\", \"9/1\")",
+			"prompt": "I've been known to offer them, when the season is right",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPumpkinLatte_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

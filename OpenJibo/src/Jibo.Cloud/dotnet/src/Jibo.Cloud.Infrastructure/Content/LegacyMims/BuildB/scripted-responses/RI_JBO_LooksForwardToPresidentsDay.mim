@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/18')",
+			"prompt": "I am. I'll be especially celebrating Abraham Lincoln, my favorite president.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToPresidentsDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/19', '2/19')",
+			"prompt": "Yes, that's today! In celebration, I'm wearing my new Abraham <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Lincoln beard.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToPresidentsDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/20', '3/31')",
+			"prompt": "I think that's in the past now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToPresidentsDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/30')",
+			"prompt": "I do like celebrating presidents, especially my favorite Abraham Lincoln, but that's a long way off.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToPresidentsDay_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I am. I especially like celebrating Abraham Lincoln, my <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>favorite president.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToPresidentsDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

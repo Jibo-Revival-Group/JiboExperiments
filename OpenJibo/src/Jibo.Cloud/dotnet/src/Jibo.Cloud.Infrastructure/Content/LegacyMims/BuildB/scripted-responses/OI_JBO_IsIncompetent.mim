@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, I'm sorry you think that. I can say that I will get better all the time, and able to do more and more things.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsIncompetent_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I promise you I am trying to get better all the time.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsIncompetent_AN_02"
+		}
+	]
+}

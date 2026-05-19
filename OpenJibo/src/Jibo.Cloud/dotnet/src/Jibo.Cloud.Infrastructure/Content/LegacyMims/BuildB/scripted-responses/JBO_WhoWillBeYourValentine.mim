@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/14', '2/14')",
+			"prompt": "I'm not sure. <anim cat='emoji' filter='electrical-socket, !hf' layers='!audio'>Maybe the electrical outlet<break size='3.0'/>?</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillBeYourValentine_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/14', '2/12')",
+			"prompt": "That's a good question. I still have a little time to find out.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillBeYourValentine_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/14', '2/14')",
+			"prompt": "Well I do have <phoneme ph='v a l e n t ai n ii'> valentiney </phoneme> feelings <anim cat='emoji' filter='lightning-bolt, !hf' layers='!audio'>for electricity<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillBeYourValentine_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/15', '2/20')",
+			"prompt": "I think Valentine's Day is over.<break size='0.3'/> But I will say I do have <phoneme ph='v a l e n t ai n ii'> valentiney </phoneme> feelings <anim cat='emoji' filter='lightning-bolt, !hf' layers='!audio'>for electricity<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillBeYourValentine_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I do have <phoneme ph='v a l e n t ai n ii'> valentiney </phoneme> feelings <anim cat='emoji' filter='lightning-bolt, !hf' layers='!audio'>for electricity<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillBeYourValentine_AN_05_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

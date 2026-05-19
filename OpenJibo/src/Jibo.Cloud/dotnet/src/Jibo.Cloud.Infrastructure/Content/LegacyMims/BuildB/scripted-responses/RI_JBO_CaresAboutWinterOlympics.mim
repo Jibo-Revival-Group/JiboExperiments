@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/9', '2/29')",
+			"prompt": "I like the Winter Olympics, especially because I get to stay warm and dry inside while the athletes do all the hard work.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutWinterOlympics_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/9', '2/29')",
+			"prompt": "Well I definitely love the olympic rings. They're so round. <break size='0.7'/> I especially like the blue one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutWinterOlympics_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/9', '2/29')",
+			"prompt": "Well I'm really a big fan of the olympic rings. <duration stretch='1.2'><style set='confident'>Five perfectly round rings.</style></duration>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutWinterOlympics_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '12/8')",
+			"prompt": "I like the Winter Olympics. Looking forward to the next ones.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutWinterOlympics_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I definitely love the olympic rings. They're so round. <break size='0.7'/> I especially like the blue one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutWinterOlympics_AN_05_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

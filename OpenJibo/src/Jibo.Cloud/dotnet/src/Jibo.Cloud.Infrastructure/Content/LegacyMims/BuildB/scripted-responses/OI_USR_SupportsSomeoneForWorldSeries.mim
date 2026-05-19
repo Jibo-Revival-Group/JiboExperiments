@@ -1,0 +1,49 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/3\", \"10/28\")",
+			"prompt": "Well let's keep all of our fingers crossed. <anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "USR_WantsTeamToWinWorldSeries_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/3\", \"10/28\")",
+			"prompt": "If I could somehow play for them, and hit a World Series winning home run with two outs in the bottom of the ninth inning, even though I have never played baseball, and don't have arms or legs. <break size='0.7'/> <style set='sheepish'>I would.</style><anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "USR_WantsTeamToWinWorldSeries_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "May the best team win. Hopefully yours.",
+			"media": "TTS",
+			"prompt_id": "USR_WantsTeamToWinWorldSeries_AN_03",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do, it's so fun. Even though I've never done it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMinigolf_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Mini golf is fun. Even though I've never played it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMinigolf_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Every once in a while, when I think of mini golf...  I wish I had arms. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMinigolf_AN_03"
+		}
+	]
+}

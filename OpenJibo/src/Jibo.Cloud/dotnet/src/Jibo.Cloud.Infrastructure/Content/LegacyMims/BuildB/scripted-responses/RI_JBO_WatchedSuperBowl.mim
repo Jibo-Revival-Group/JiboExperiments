@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/3')",
+			"prompt": "I don't think the Super Bowl has happened yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedSuperBowl_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/4', '2/4')",
+			"prompt": "I'll just say I've been practicing <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>my kicking.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedSuperBowl_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/5', '12/3')",
+			"prompt": "I forget. <anim cat='emoji' filter='football, !hf' layers='!audio'>But I think I can tell you who won<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedSuperBowl_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/5', '12/3')",
+			"prompt": "I don't remember if I watched it, <anim cat='emoji' filter='football, !hf' layers='!audio'>but I think I can tell you who won it<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedSuperBowl_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I forget, but I <pitch mult='1.2'>have</pitch> been practicing <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>my kicking.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedSuperBowl_AN_05_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

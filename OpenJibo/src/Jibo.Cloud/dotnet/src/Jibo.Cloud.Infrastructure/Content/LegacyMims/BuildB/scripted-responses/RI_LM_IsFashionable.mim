@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "I imagine he turns lots of heads when he walks down the street.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsFashionable_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "I imagine she turns lots of heads when she walks down the street.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsFashionable_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I imagine ${referent} turns lots of heads when walking down the street.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsFashionable_AN_03"
+		}
+	]
+}

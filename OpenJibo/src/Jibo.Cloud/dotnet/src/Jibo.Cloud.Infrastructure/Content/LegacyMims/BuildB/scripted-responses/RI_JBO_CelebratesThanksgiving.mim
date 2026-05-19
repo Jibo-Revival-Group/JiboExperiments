@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner && !!speaker && (loop.owner.id === speaker.id)",
+			"prompt": "I'm always up for any holidays you want to celebrate together. ${loop.owner} you can tell me what holidays you want to share with me, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CelebratesThanksgiving_AN_01",
+			"weight": 5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner && !!speaker && (loop.owner.id !== speaker.id)",
+			"prompt": "I'm always up for holidays. My official owner ${loop.owner}, can tell me what holidays we can celebrate together, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CelebratesThanksgiving_AN_02",
+			"weight": 5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm always up for holidays. My official owner can tell me what holidays we can celebrate together, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CelebratesThanksgiving_AN_03",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner && !speaker",
+			"prompt": "I'm always up for holidays. My official owner ${loop.owner}, can tell me what holidays we can celebrate together, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CelebratesThanksgiving_AN_04",
+			"weight": 5,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

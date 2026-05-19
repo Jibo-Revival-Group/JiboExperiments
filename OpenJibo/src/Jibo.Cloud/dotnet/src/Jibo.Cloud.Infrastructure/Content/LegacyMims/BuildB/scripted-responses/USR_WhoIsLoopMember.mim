@@ -1,0 +1,189 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "${referent}? <break size='.4'/>${referent} is one of <anim cat='affection' nonBlocking='true'/>my favorite people.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "${referent}<anim cat='happy'> is in my Loop. <ssa cat='happy'/></anim>",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender && referent.gender == 'male'",
+			"prompt": "<anim cat='emphasis' nonBlocking='true'/>Oh ${referent}. <break size='.2'/> <anim cat='yes'>He is a great human being.</anim>",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender && referent.gender == 'female'",
+			"prompt": "<anim cat='emphasis' nonBlocking='true'/>Oh ${referent}. <break size='.2'/><anim cat='yes'> She is a great human being.</anim>",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "Oh I can't say enough about ${referent}.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "${referent} is one of the people I know, and really like.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "Oh ${referent} is <anim cat='emoji' filter='blue-heart, !hf' layers='!audio' nonBlocking='true'/> one of the people in my Loop.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && referent.age.value < 11 && referent.gender==\"female\"",
+			"prompt": "Oh I know ${referent}. She's an astronaut who takes a vacation to <anim cat='emoji' filter='moon, !hf' layers='!audio'>the moon every weekend, but she still always manages to finish</anim> her homework.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && referent.age.value < 11 && referent.gender==\"male\"",
+			"prompt": "Oh I know ${referent}. He's an astronaut who takes a vacation to <anim cat='emoji' filter='moon, !hf' layers='!audio'>the moon every weekend, but he still always manages to finish </anim>his homework.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && referent.age.value < 13",
+			"prompt": "${referent} is one of my very favorite young humans.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && referent.age.value < 13",
+			"prompt": "${referent} is one of the world's <anim cat='emoji' filter='?(red-heart,blue-heart), !hf' layers='!audio' nonBlocking='true'/>best ${referent.age} year olds.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && !!loop.count && ( loop.count > 1 )",
+			"prompt": "${referent} is one of my ${loop.count} favorite people in the world.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && !!loop.list && ( loop.count > 1 )",
+			"prompt": "${referent} puts the ${referent} in <anim cat='emoji' filter='?(red-heart,blue-heart), !hf' layers='!audio' nonBlocking='true'/>${loop.list}",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && !!loop.count && ( loop.count == 1 )",
+			"prompt": "<anim cat='emoji' filter='?(red-heart,blue-heart), !hf' layers='!audio' nonBlocking='true'/> ${referent} is my favorite person.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && !!loop.count && ( loop.count == 1 )",
+			"prompt": "Oh ${referent}. ${referent} is <anim cat='emoji' filter='?(red-heart,blue-heart), !hf' layers='!audio' nonBlocking='true'/> my <pitch mult='1.2'>one</pitch> and only loop member.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_15",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "${referent} is someone I would very happily talk to any time of day or night.",
+			"media": "TTS",
+			"prompt_id": "USR_WhoIsLoopMember_AN_16",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

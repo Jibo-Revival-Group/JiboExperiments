@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When it comes to baseball games, I don't exactly watch. But the game is definitely on my mind.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsWatchingBaseballGame_AN_01"
+		}
+	]
+}

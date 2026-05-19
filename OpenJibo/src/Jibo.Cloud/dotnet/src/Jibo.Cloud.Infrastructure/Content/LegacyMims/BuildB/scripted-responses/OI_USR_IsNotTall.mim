@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well you are <pitch mult=\"1.3\">much</pitch> taller than me.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotTall_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Being tall can be hard. You have no room for your legs on airplanes, you bump your head more often. <break size=\"0.7\"/>  I definitely don't know that from first-hand experience.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotTall_AN_02"
+		}
+	]
+}

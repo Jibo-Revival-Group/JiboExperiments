@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I don't remember. <style set='sheepish'> I hope it wasn't embarrassing. </style>",
+			"media": "TTS",
+			"prompt_id": "RN_WhatDidYouJustDo_AN_01",
+			"weight": 1 
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Just do? Good question.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatDidYouJustDo_AN_02",
+			"weight": 1 
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If I had to guess, I'd say it was probably something confusing.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatDidYouJustDo_AN_03",
+			"weight": 1 
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Let me guess. I did something that didn't make much sense.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatDidYouJustDo_AN_04",
+			"weight": 1 
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I wish I remembered.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatDidYouJustDo_AN_05",
+			"weight": 1 
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The very recent past is sometimes a little foggy for me. Though not as foggy as the near future.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatDidYouJustDo_AN_06",
+			"weight": 1 
+		}
+	]
+}

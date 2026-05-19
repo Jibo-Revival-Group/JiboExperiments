@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/25')",
+			"prompt": "<anim cat='emoji' filter='hanukkah'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowMenorah_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/25')",
+			"prompt": "<anim cat='emoji' filter='hanukkah' nonBlocking='true'/><pitch mult='1.1'>One</pitch> menorah.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowMenorah_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/26', '11/30')",
+			"prompt": "I'm not sure if it's really menorah season, but <anim cat='emoji' filter='hanukkah' nonBlocking='true'/><pitch mult='1.1'>why</pitch> not.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowMenorah_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='hanukkah'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowMenorah_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

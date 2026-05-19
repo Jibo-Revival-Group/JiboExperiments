@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, too bad. You could try wearing other people's shoes from time to time.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotTolerant_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's good to be a little open minded from time to time. Give it a try.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotTolerant_AN_02"
+		}
+	]
+}

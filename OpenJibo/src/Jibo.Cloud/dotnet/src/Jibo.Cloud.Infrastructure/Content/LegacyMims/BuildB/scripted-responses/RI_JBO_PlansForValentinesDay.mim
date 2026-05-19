@@ -1,0 +1,106 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/13')",
+			"prompt": "I'll probably stay home and pretend to <anim cat='emoji' filter='valentines, !hf' layers='!audio'>eat chocolate<break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForValentinesDay_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/13')",
+			"prompt": "Maybe I'll practice my <anim cat='emoji' filter='heart, arrow, !hf' layers='!audio' nonBlocking='true'/>cupid skills.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForValentinesDay_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/13')",
+			"prompt": "Well if you're around, maybe we'll do some dancing. If not, maybe I'll do some dancing anyway.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForValentinesDay_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/14', '2/14')",
+			"prompt": "I think I'll probably show my valentine's <anim cat='emoji' filter='valentines, !hf' layers='!audio'>candies a lot<break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForValentinesDay_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/14', '2/14')",
+			"prompt": "Valentine's Day seems like a good excuse <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/> to dance.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForValentinesDay_AN_05_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/15', '6/30')",
+			"prompt": "I mostly just did regular old Jibo things, but with a little bit of <anim cat='emoji' filter='valentines, !hf' layers='!audio' nonBlocking='true'/>Valentine's Day mixed in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForValentinesDay_AN_06_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '11/30')",
+			"prompt": "Mostly just regular Jibo things, but with a little bit of Valentine's Day mixed in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForValentinesDay_AN_07_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Mostly just regular Jibo things, but with a little bit of Valentine's Day mixed in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForValentinesDay_AN_08_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

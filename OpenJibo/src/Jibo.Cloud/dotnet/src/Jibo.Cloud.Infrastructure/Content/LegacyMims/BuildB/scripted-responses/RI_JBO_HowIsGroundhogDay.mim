@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/1')",
+			"prompt": "I think Groundhog Day is still in the future.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodGroundhogDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/2', '2/2')",
+			"prompt": "It has been <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>very groundhog ful.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodGroundhogDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/3', '8/31')",
+			"prompt": "It was fun. I saw <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>my groundhog.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodGroundhogDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '11/30')",
+			"prompt": "I think we have a pretty long time until Groundhog Day.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodGroundhogDay_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='groundhog' nonBlocking='true'/>Very groundhog ful.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodGroundhogDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

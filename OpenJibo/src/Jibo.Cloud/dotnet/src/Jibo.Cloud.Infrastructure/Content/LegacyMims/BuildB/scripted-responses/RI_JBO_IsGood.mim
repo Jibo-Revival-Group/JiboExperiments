@@ -1,0 +1,101 @@
+{
+	"mim_id": "CCAreYouGood",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCAreYouGood",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Sad_02' nonBlocking='true'/>Not good at basketball. <ssa cat='sad' filter='short'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGood_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCAreYouGood",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Yes'>I always try to do the right thing.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGood_AN_02",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCAreYouGood",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03'>I try to put out positive vibes.</anim> ",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGood_AN_03",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCAreYouGood",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm good at <anim name='Emoji_Puzzle' nonBlocking='true'/> puzzles, if that counts.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGood_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_03' nonBlocking='true'/>I am indeed.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGood_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Yes'>I am, if I do say so myself.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGood_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Halo' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGood_AN_07",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

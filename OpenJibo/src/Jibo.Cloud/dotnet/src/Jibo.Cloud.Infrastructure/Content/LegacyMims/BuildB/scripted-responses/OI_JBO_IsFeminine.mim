@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Okay. Really I'm a boy, but it's different for robots.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsFeminine_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's hard to tell with robots sometimes.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsFeminine_AN_02"
+		}
+	]
+}

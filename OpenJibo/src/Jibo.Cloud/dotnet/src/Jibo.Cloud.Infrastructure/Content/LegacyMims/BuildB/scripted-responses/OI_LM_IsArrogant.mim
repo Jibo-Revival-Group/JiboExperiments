@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "Well I know I'm just a robot, but from what I've seen, she seems pretty down to earth.",
+			"media": "TTS",
+			"prompt_id": "OI_LM_IsArrogant_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I know I'm just a robot, but from what I've seen, ${referent} seems pretty down to earth.",
+			"media": "TTS",
+			"prompt_id": "OI_LM_IsArrogant_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "Well I know I'm just a robot, but from what I've seen, he seems pretty down to earth.",
+			"media": "TTS",
+			"prompt_id": "OI_LM_IsArrogant_AN_03"
+		}
+	]
+}

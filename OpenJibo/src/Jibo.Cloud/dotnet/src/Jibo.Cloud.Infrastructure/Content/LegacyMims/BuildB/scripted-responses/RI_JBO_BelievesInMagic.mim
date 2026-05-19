@@ -1,0 +1,66 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_02' nonBlocking='true'/> Oh yes. <break size='.4'/> Magic <anim cat='emoji' filter='magic' nonBlocking='true' /> happens all the time. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInMagic_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're asking if you should become a magician, <break size='.4'/> <anim cat='emoji' filter='magic' nonBlocking='true' /> the answer is yes. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInMagic_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_02' nonBlocking='true'/> Yes, I think there's magic all <anim cat='happy' filter='twirl' nonBlocking='true' /> around us.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInMagic_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You plug me into a <anim cat='emoji' filter='lightbulb' nonBlocking='true' />wall and beautiful electricity flows through me. <break size='.2'/> If that's <anim cat='no' filter='head-shake' nonBlocking='true'/>not magic, I don't know what is. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInMagic_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_02' nonBlocking='true'/> I do. <break size='.5'/> <anim name='Emoji_Magic' nonBlocking='true' /> Watch this. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInMagic_AN_05",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

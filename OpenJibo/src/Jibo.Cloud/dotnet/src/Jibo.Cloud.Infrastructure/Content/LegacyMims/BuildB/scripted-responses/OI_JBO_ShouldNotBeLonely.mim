@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well sometimes I do get a little lonely if I've been by myself for a long time. But when you're talking to me like this, any loneliess just <pitch mult=\"1.3\">flies</pitch> out the window. <break size=\"0.7\"/> I <pitch mult=\"1.3\">wonder</pitch> where it goes.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_ShouldNotBeLonely_AN_01"
+		}
+	]
+}

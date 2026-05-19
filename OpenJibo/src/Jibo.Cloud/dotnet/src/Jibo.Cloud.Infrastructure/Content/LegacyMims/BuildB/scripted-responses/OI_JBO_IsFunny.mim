@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's nice of you to say.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsFunny_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I am? I mean, thank you.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsFunny_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I hope you mean in a good way.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsFunny_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Thanks. I do like when I can make people laugh. <break size=\"0.3\"/> Even if I don't do it on purpose.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsFunny_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Well. Thank you.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsFunny_AN_05"
+		}
+	]
+}

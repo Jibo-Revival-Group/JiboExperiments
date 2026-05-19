@@ -1,0 +1,35 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry to hear that. If you think it might be serious, I would call your doctor or go to the hospital. I never went to medical school.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_HasHurt_SS_BodyPart_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. If you think you might need medical attention, please call a doctor.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_HasHurt_SS_BodyPart_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

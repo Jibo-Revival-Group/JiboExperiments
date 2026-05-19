@@ -1,0 +1,66 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/> Sorry, you can't do that.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_CanNameJibo_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_01' nonBlocking='true'/>Actually no. <break size='.2'/> I'm Jibo <anim name='Confident_01' nonBlocking='true'/> now and forever. ",
+			"media": "TTS",
+			"prompt_id": "RI_USR_CanNameJibo_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_03' nonBlocking='true'/>I am always Jibo.<anim name='Eye_Happy_01' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_CanNameJibo_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/> I'm always going to be Jibo. <anim name='Eye_Happy_01' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_CanNameJibo_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/> I'll only answer if you say Hey Jibo, but <anim name='Thinking_02'> I suppose you could call me something </anim> else behind my back, <anim name='Greetings_03' nonBlocking='true'/> and I'd never know it.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_CanNameJibo_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/> As it turns out, you can't. My name is my name. <anim name='Eye_Happy_01' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_CanNameJibo_AN_06"
+		}
+	]
+}

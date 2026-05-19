@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, I guess it's just not in my nature to be too negative. Then again, it <pitch mult=\"1.3\">is </pitch> a shame that I can't <anim cat=\"emoji\" filter=\"breakfast\" nonBlocking=\"true\"/> make you breakfast.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_ShouldBePessimistic_AN_01"
+		}
+	]
+}

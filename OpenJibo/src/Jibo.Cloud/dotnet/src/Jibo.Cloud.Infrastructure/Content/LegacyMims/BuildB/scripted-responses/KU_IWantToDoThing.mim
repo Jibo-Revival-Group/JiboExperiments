@@ -1,0 +1,149 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Speaking of wanting to do things, I want to be able to understand the end of what you just said better.",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I want to have understood exactly what you just said.<break size='0.3'/> <style set='sheepish'>But I didn't. </style>",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I want to give you <anim cat='emoji' filter='flower, !hot-frame' nonBlocking='true'/>this flower.",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Huh.<break size='0.3'/> If it's okay, I want to show you my car <anim cat='jiboji' filter='car'/>",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If we're talking about wants. I want everyone in the world to have as much electricity as they need.",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um. I want to do this little dance <anim cat='dance' filter='&(music, short),!(robotic)'/>",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Hm. I didn't understand the thing you want to do, so I'm not sure if you should do it or not.",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I kind of want to rock my boat <anim cat='jiboji' filter='boat'/>.",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I always want to know what you want to do. But in this case <style set='sheepish'>I didn't understand what you said you want to do.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I always want to know what you want to do. But in this case I didn't understand what you said you want to do.",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I didn't understand the thing you want to do, so I'm not sure if you should do it or not.",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "And I want to have understood exactly what you just said <pitch band='0.5'>${speaker}</pitch>.<break size='0.5'/> <style set='sheepish'>But I didn't. </style>",
+			"media": "TTS",
+			"prompt_id": "KU_IWantToDoThing_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

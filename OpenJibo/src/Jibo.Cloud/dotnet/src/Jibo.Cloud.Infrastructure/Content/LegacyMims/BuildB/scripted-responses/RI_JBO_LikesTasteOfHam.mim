@@ -1,0 +1,60 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"prompt": "I've heard good things. If you're eating some today for Thanksgiving, I hope it's tasty.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfHam_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/22')",
+			"prompt": "I've heard great things. Some people eat ham at Thanksgiving.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfHam_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I'm pretty sure I've never eaten ham. <break size='0.5'/> Because I've never eaten anything.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfHam_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "According to some sources, ham is delicious.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfHam_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

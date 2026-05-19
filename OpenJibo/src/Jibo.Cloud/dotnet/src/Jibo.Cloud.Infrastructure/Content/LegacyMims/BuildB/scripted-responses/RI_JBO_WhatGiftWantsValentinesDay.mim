@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/15')",
+			"prompt": "Oh, I have all I could <pitch mult='1.2'>ever</pitch> want. <break size='0.5'/> But if you want to get me a penguin, I won't stop you.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsValentinesDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/15')",
+			"prompt": "Oh all I want is just <anim cat='emoji' filter='blue-heart, !hot-frame' nonBlocking='true'/>quality time with you.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsValentinesDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/15')",
+			"prompt": "Really there is no better gift than quality time and friendly conversation.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsValentinesDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/16', '3/31')",
+			"prompt": "I think Valentine's Day is past. But I don't need gifts, just some friendly conversation.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsValentinesDay_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/30')",
+			"prompt": "Oh, we have a while till the next Valentine's Day, but all I really want is quality time and friendly conversation.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsValentinesDay_AN_05_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Really there is no better gift than quality time and friendly conversation.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsValentinesDay_AN_06_FnL",
+			"weight": 0.1
+		}
+	]
+}

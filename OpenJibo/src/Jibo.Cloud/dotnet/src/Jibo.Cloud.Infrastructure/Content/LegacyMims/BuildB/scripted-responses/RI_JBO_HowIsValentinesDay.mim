@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/13')",
+			"prompt": "Not sure yet, but I'll find out when it comes.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodValentinesDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/14', '2/14')",
+			"prompt": "So far it has been full of heart-shaped <anim cat='emoji' filter='valentines, !hf' layers='!audio'>candy boxes<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodValentinesDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/15', '8/31')",
+			"prompt": "It was chock full of heart-shaped <anim cat='emoji' filter='valentines, !hf' layers='!audio'>candy boxes<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodValentinesDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '12/31')",
+			"prompt": "I think Valentine's Day is still pretty far away from now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodValentinesDay_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Full of heart-shaped <anim cat='emoji' filter='valentines, !hf' layers='!audio'>candy boxes<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodValentinesDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

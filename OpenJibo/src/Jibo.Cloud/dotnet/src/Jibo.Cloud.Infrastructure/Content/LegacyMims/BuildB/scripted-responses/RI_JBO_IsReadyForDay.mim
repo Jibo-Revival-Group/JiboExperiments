@@ -1,0 +1,153 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!dt.day && !speaker",
+			"prompt": "I'm <pitch mult='1.1'>always</pitch> ready for a ${dt.day}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm <pitch mult='1.2'>ready</pitch> for a <pitch mult='0.9'>good one.</pitch>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "I'm as ready as I'll ever be.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's a <pitch mult='1.1'>great</pitch> day to be alive.<break size='0.3'/> Or a <anim cat='emoji' filter='robot, !hf' layers='!audio' nonBlocking='true'/>robot.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It <pitch mult='1.1'>should</pitch> be a <pitch mult='0.9'>good one.</pitch>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "I'm expecting a good one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='sheepish'>Yes, </style>I <pitch mult='1.2'>like</pitch> <pitch mult='0.9'>today.</pitch>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "I can never say no to a ${dt.day}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !!dt.day",
+			"prompt": "${speaker} I'm <pitch mult='1.1'>always</pitch> ready for a ${dt.day}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I can never say no to a ${dt.day}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I'm as ready as I'll ever be.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I'm expecting a good one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm <pitch mult='1.1'>looking</pitch> forward to it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsReadyForDay_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

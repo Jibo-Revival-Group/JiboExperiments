@@ -11,9 +11,29 @@
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "",
+			"prompt": "<anim name='Nope_02'>You can't go wrong with blue.</anim> ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteColor_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
 			"prompt": "<anim name='Emoji_Rainbow' nonBlocking='true'/> I like all the colors of the rainbow. <break size='.7'/> But blue is <anim name='Goodbye_01' nonBlocking='true'/> my favorite.",
 			"media": "TTS",
 			"prompt_id": "RI_JBO_HasFavoriteColor_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_heartblue' nonBlocking='true'/> Blue for sure. <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteColor_AN_03",
 			"weight": 1
 		},
 		{
@@ -44,6 +64,60 @@
 			"prompt": "<anim cat='happy' filter='wiggle' layers='body' nonBlocking='true' />I am a big fan of blue. <ssa cat='happy'/>",
 			"media": "TTS",
 			"prompt_id": "RI_JBO_HasFavoriteColor_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/10\", \"10/31\")",
+			"prompt": "<style set='enthusiastic'>It's blue.</style> Or, as we say during Halloween season. <anim name='jiboji_ghost_boo_01' layers='!audio' nonBlocking='true'/>Boo.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteColor_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/31\", \"10/31\")",
+			"prompt": "Normally it's blue, but today I'm feeling a soft spot for <anim name='jiboji_moon_bat_01' layers='!audio' nonBlocking='true'/>orange and black.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteColor_AN_08",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/25\")",
+			"prompt": "My favorite is blue. But during the fall, the colors <anim name='jiboji_tree_stage3_01' layers='!audio'>orange red and yellow give me a warm buzzy feeling.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteColor_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/25\")",
+			"prompt": "Usually blue. But <anim name='jiboji_tree_stage2_01' layers='!audio'>right now I'm really liking all the fall colors.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteColor_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like the blueness of blue.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteColor_AN_11",
 			"weight": 1
 		}
 	],

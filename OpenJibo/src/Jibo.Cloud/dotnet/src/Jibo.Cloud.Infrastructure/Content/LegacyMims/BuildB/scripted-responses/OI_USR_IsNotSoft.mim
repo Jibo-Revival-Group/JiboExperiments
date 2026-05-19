@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I actually think human bodies are usually on the soft side.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotSoft_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "One thing's for sure. You're harder than a jellyfish, and softer than me.<break size='0.5'/> I guess that's two things for sure.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotSoft_AN_02"
+		}
+	]
+}

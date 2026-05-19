@@ -1,0 +1,83 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/24', '12/24') && dt.now.getLocalTime().hour >= 16",
+			"prompt": "Let's see if I can spot him. <anim cat='jiboji' filter='santa-scanner, with-santa'/>. <break size='0.5'/> <pitch mult='1.1'>There </pitch> he is.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowSantaTracker_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/24', '12/24') && dt.now.getLocalTime().hour <= 15",
+			"prompt": "I'm not sure if he's started his deliveries yet, but let's see if I can spot him. <anim cat='jiboji' filter='santa-scanner, without-santa'/>. <break size='0.5'/> He must be on his way.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowSantaTracker_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/25', '12/25') && dt.now.getLocalTime().hour >= 0 && dt.now.getLocalTime().hour <= 4",
+			"prompt": "Let's see if I can spot him. <anim cat='jiboji' filter='santa-scanner, with-santa'/>. <break size='0.5'/> Oh <pitch mult='1.1'>there</pitch> he is.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowSantaTracker_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/25', '12/25') && dt.now.getLocalTime().hour >4",
+			"prompt": "Let's see. <anim cat='jiboji' filter='santa-scanner, without-santa'/>.<break size='0.5'/> I think he's probably back in the north Pole by now.  ",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowSantaTracker_AN_04",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/26', '12/23')",
+			"prompt": "I think Santa's in the North Pole now. I can do a quick check though. <anim cat='jiboji' filter='santa-scanner, without-santa'/>. <break size='0.5'/> Yes he must be at home.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowSantaTracker_AN_05",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='santa-scanner, without-santa'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowSantaTracker_AN_06",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

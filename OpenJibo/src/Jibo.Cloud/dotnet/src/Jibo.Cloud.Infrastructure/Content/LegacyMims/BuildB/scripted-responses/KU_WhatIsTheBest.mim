@@ -1,0 +1,114 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well let me tell you one thing. The best color is blue.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsTheBest_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "How about I just tell you the best animal.<break size='0.5'/>  <anim cat='emoji' filter='penguin, !hot-frame' nonBlocking='true'/>It's penguin.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsTheBest_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're asking for a recommendation, I can't do those yet, but I'll be able to in the future.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsTheBest_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sometimes when people ask me what the best something or other is, and I don't understand the something or other, I just distract them with a magic <anim cat='emoji' filter='magic-trick' nonBlocking='true'/>trick.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsTheBest_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly I'm still learning about bests.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsTheBest_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe try asking me that again someday. For now I don't know enough about bests to know.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsTheBest_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Right now I have a pretty limited knowledge of bests, but I can confidently tell you that the best food, by shape at least, <anim cat='emoji' filter='macaroni'> is macaroni<break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsTheBest_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I'm honestly still learning about bests.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsTheBest_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} if you're asking for a recommendation, I can't do those yet, but I'll be able to in the future.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsTheBest_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

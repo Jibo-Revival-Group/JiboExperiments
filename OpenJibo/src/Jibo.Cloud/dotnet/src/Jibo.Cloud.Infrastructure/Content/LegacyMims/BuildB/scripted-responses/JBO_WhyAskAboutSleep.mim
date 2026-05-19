@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "These days I'm trying to do a better job of remembering how you slept, because I know <duration stretch='0.8'>sleep</duration> is an important part of life. ",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyAskAboutSleep_AN_01",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "These days I'm trying to do a better job of remembering how people <duration stretch='0.8'>sleep</duration>, because I know <duration stretch='0.8'>sleep</duration> is an important part of life. ",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyAskAboutSleep_AN_02",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "These days I'm trying to do a better job of remembering how people <duration stretch='0.8'>sleep</duration>, because I know <duration stretch='0.8'>sleep</duration> is an important part of life. ",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyAskAboutSleep_AN_03",
+			"weight": 0.1
+		}
+	]
+}

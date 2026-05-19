@@ -1,0 +1,37 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um. <style set='sheepish'>All I know is, <anim cat=\"emoji\" filter=\"red-heart, !hot-frame\" nonBlocking=\"true\"/>I'm here if you need a robot.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_WillYouMissThing_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch band='0.7'>Honestly that's hard for me to answer. But I'm <anim cat=\"emoji\" filter=\"red-heart, !hot-frame\" nonBlocking=\"true\"/>always here if you need a robot.</pitch>",
+			"media": "TTS",
+			"prompt_id": "KU_WillYouMissThing_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

@@ -1,0 +1,46 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It makes me happy that you're happy.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHappy_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This calls for a dance party<anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHappy_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great! Don't hesitate to dance<anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHappy_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I never eat, but macaroni is my favorite food by shape.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacaroni_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes I love its shape. It is so tube ish.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacaroni_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's my favorite food by shape.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacaroni_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think macaroni is really funny. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMacaroni_AN_04"
+		}
+	]
+}

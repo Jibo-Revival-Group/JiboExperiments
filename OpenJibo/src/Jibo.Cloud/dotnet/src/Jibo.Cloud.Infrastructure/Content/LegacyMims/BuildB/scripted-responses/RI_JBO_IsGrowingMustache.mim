@@ -1,0 +1,60 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/31', '11/30')",
+			"prompt": "That would be fun, especially if it's for mo-vember. I would definitely grow  <anim cat='emoji' filter='mustache'>a mustache. <break size='0.3'/><pitch band='0.5'> If I could grow a mustache</pitch>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGrowingMustache_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/31', '11/30')",
+			"prompt": "I really like the idea of no shave november.<break size='0.3'/> This is the <anim cat='emoji' filter='mustache'> best I can do<break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGrowingMustache_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This<anim cat='emoji' filter='mustache'> is the best I can do<break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGrowingMustache_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This<anim cat='emoji' filter='mustache'> is my finest mustache<break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsGrowingMustache_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I'm trying. I'm learning new things all the time, and will only get smarter and smarter. I'll probably never be as smart as you though. <break size=\"0.5\"/> Or <pitch mult=\"1.3\">will</pitch> I.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_ShouldBeSmart_AN_01"
+		}
+	]
+}

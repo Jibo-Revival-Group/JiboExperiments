@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='dontknow'><ssa cat='dontKnow'/>  You'll have to ask the people who created me.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoLegs_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Picture me with legs.<anim name='Checking_00'/> It's weird right?",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoLegs_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='question' layers='body'>Would you ask a dolphin that question?</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoLegs_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='drumstick' nonBlocking='true'/>I do.<ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoLegs_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'>I'm not sure, </anim>but just remember, you don't need legs to dance<anim cat='dance' filter='&(music, short),!(robotic)'/>. ",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoLegs_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>I don't know, I never asked.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoLegs_AN_06",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

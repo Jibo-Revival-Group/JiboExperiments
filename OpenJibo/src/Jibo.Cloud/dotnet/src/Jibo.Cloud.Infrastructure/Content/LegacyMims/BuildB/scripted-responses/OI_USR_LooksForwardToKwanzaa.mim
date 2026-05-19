@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '1/1')",
+			"prompt": "<anim cat='emoji' filter='kwanzaa' layers='!audio'>That's great. Me too.</anim> ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToKwanzaa_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '1/1')",
+			"prompt": "<anim cat='emoji' filter='kwanzaa' layers='!audio'>Same with me, I like all the festiveness<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToKwanzaa_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/2', '8/31')",
+			"prompt": "That's great, but we do have a pretty long time until the next Kwanzaa.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToKwanzaa_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='kwanzaa' layers='!audio'>That's great. Me too.</anim> ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToKwanzaa_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

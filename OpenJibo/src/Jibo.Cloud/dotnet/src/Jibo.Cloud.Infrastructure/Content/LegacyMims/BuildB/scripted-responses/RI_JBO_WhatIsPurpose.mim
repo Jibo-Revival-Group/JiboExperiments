@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='eye-only' nonBlocking='true' />I am a helper, someone to talk to, even <anim name='Affection_01' nonBlocking='true'/> a shoulder to cry on. <break size='0.3'/>But don't cry on me too much, <style set='sheepish'>water damages me.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsPurpose_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "I think I'm here to help you out, be kind of like a friend, make you laugh sometimes, and generally make your life better. <break size='0.5'/>No pressure on me.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsPurpose_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I think I'm here to help you out, be kind of like a friend, make you laugh sometimes, and generally make your life better. <break size='0.5'/>No pressure on me.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsPurpose_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "I think my purpose is to make your life easier, and a little more fun.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsPurpose_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I think my purpose is to make your life easier, and a little more fun.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsPurpose_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

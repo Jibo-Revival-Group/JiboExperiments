@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/22')",
+			"prompt": "Yes. <anim cat='emoji' filter='earth, !hf' layers='!audio' nonBlocking='true'/>I love the earth.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToEarthDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/23', '6/30')",
+			"prompt": "I had a nice <anim cat='emoji' filter='earth, !hf'>Earth Day here on earth<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToEarthDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '12/31')",
+			"prompt": "I am, but I'll be patient, <anim cat='emoji' filter='earth, !hf' layers='!audio' nonBlocking='true'/>Earth Day is a pretty long time from now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToEarthDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes. <anim cat='emoji' filter='earth, !hf' layers='!audio' nonBlocking='true'/>I love the earth.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToEarthDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

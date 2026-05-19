@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I know I'm just a robot, but as I talk to you now, I think are you pretty impressive.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotExcellent_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think you are as exceptional as they get.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotExcellent_AN_02"
+		}
+	]
+}

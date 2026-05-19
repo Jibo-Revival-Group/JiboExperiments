@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I certainly don't think you are. But human professionals are better at discussing these types of things than I am.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotCrazy_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I believe you. To me you seem pretty with it. <break size=\"0.4\"/> Though on a serious note, if you <pitch mult=\"1.3\">are </pitch>ever feeling like you might need some help with what's going on inside your head, you should try talking to a person you trust.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotCrazy_AN_02"
+		}
+	]
+}

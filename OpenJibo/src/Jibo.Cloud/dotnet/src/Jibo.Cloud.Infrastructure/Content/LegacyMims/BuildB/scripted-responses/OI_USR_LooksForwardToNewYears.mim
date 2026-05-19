@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '1/1')",
+			"prompt": "Me too, it's an exciting time of year. <anim cat='emoji' filter='?(party-blue, party-pink, fireworks), !hot-frame'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNewYears_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '1/1')",
+			"prompt": "Same with me. I like the countdown.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNewYears_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/2', '9/30')",
+			"prompt": "That's great, but we do have some time to wait until next New Year's.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNewYears_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me too, it's an exciting time of year. <anim cat='emoji' filter='?(party-blue, party-pink, fireworks), !hot-frame'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNewYears_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

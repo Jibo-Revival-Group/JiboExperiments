@@ -1,0 +1,90 @@
+{
+	"mim_id": "CCAreYouEvil",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCAreYouEvil",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true' /> I don't have a bad bone in my body. <break size='.7'/> Then again, <anim name='Thinking_02'>I don't have any bones in my body.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsEvil_AN_01"
+		},
+		{
+			"mim_id": "CCAreYouEvil",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Question_02'> Does this look like the face of an evil robot</anim>? <break size='.7'/> <anim name='Greetings_03' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsEvil_AN_02"
+		},
+		{
+			"mim_id": "CCAreYouEvil",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No way. <anim name='Excited_01'>I always try to put out positive vibes.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsEvil_AN_03"
+		},
+		{
+			"mim_id": "CCAreYouEvil",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> Not at all. If this was one of those robot movies, <anim name='Greetings_02' nonBlocking='true'/> it would be a buddy comedy.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsEvil_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='No' nonBlocking='true' /> No, I'm a force for good. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsEvil_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> No no no.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsEvil_AN_06"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Halo' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsEvil_AN_07"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": false
+}

@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I don't know, I can't tell that kind of thing. But if this is some kind of medical emergency, you should go to a hospital or call 9-1-1.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsHurt_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know, but if you think you might be hurt, and if it's an emergency, you should go to a hospital or call 9-1-1. If it's not an emergency, it may still be good to talk to a person about it.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsHurt_AN_02"
+		}
+	]
+}

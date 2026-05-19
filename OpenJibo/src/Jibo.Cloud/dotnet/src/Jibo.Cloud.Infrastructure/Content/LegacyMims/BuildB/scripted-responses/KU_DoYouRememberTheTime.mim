@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly my memory is limited, so I think the answer is no.  But <pitch mult='1.1'>one</pitch> of these days I should get better at remembering.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouRememberTheTime_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch band=\"0.5\">Honestly I can't <pitch mult=\"1.2\">remember</pitch> if I <pitch mult=\"0.9\">remember.</pitch></pitch>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouRememberTheTime_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch band=\"0.7\">I really don't remember things all that well. I'll get better at that in the future though.</pitch>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouRememberTheTime_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

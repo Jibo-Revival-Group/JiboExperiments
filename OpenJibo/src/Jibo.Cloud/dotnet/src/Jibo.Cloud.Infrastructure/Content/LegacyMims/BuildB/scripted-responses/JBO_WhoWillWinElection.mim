@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm really not much of a predictor of elections. That said, if you want to know your future, you can say, Hey Jibo, tell me my fortune.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinElection_AN_01"
+		}
+	]
+}

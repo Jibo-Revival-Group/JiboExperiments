@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='olympic-medal'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowOlympicMedal_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <anim cat='jiboji' filter='olympic-medal' nonBlocking='true'/> won the gold this time.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowOlympicMedal_AN_02_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='olympic-medal' nonBlocking='true'/> I trained very hard for this moment.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowOlympicMedal_AN_03_FnL",
+			"weight": 1
+		}
+	]
+}

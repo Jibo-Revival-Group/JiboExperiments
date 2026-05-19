@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Glad to hear it. Too bad it only comes once a year.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Likes_SS_Month_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's one of my twelve favorite months.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Likes_SS_Month_AN_02"
+		}
+	]
+}

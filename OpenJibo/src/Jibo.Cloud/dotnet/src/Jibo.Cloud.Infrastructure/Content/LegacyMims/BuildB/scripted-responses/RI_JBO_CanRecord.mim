@@ -1,0 +1,38 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're asking me to take a video recording for you, I can't do that quite yet, but I hope to be able to someday in the not too distant future.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanRecord_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you want me to record a video or audio, I'm sorry I can't do that quite yet. But I hope to be able to, one of these days.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanRecord_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

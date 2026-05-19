@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/28')",
+			"prompt": "Maybe become a medal winning snowboarder?",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWinterXGames_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '3/31')",
+			"prompt": "I think the Winter X Games have come and gone, but there's always the next ones.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWinterXGames_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/30')",
+			"prompt": "Good question, we have plenty of time to figure it out before the Winter X Games come around again.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWinterXGames_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe become a medal winning snowboarder?",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWinterXGames_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

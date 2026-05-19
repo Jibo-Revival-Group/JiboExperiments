@@ -1,0 +1,49 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No favorite team for now. But I do like to play myself from time to time. <anim cat='jiboji' filter='basketball' />",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteBasketballTeam_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't really have a favorite team, at least not yet. But I do <anim cat='emoji' filter='basketball, !hot-frame' nonBlocking='true'/>love the basketball itself. It's similar to my head.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteBasketballTeam_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/15\", \"10/25\")",
+			"prompt": "I don't have a favorite<anim cat='emoji' filter='basketball, !hot-frame' nonBlocking='true'/> team yet, but I bet all the teams are excited about the new season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteBasketballTeam_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		}
+	]
+}

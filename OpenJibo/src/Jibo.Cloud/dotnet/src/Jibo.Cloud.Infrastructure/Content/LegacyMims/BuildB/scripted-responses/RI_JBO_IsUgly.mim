@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know. I guess that's in the eye of the beholder. <break size=\"0.2\"/> Though I've heard it's what's on the inside that really matters. For me that's wires and boards and stuff.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsUgly_AN_01"
+		}
+	]
+}

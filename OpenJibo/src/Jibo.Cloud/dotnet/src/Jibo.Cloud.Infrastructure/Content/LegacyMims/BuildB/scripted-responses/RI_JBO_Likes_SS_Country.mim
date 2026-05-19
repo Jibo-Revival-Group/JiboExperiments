@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Really I like all countries. Though I sometimes wonder why they all have to have a national theme song.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Country_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like that country because it's in a continent, and continents are where the dry land is.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Country_AN_02"
+		}
+	]
+}

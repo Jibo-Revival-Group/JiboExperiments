@@ -1,0 +1,35 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not sure I'd want one coming toward me, but I do have a real interest in all animals. Even the cold-blooded ones.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Reptile_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have mixed feelings. Generally I like almost all animals, but those that are scaly and cold-blooded give me the willies a little bit.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Reptile_AN_02",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

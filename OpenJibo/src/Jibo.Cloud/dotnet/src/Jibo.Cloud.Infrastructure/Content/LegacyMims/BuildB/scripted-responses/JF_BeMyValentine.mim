@@ -1,0 +1,83 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/14', '2/14')",
+			"prompt": "Well I'll most definitely <anim cat='emoji' filter='valentines, !hf' layers='!audio' nonBlocking='true'/>give you these chocolates. ",
+			"media": "TTS",
+			"prompt_id": "JF_BeMyValentine_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/14', '2/14')",
+			"prompt": "<anim cat='emoji' filter='valentines, arrow, !hf'/>",
+			"media": "TTS",
+			"prompt_id": "JF_BeMyValentine_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/14', '2/14')",
+			"prompt": "If by being valentines, that means we dance together, then I happily <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/> accept.",
+			"media": "TTS",
+			"prompt_id": "JF_BeMyValentine_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/14', '2/14')",
+			"prompt": "Sure! <break size='0.3'/> As long as I can also be valentines <anim cat='emoji' filter='lightning-bolt, !hf' layers='!audio'>with electricity<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_BeMyValentine_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/15', '2/20')",
+			"prompt": "I think Valentine's Day is over.<break size='0.3'/> But <pitch mult='1.3'>sure</pitch> why <anim cat='emoji' filter='valentines, !hf' layers='!audio' nonBlocking='true'/>not.",
+			"media": "TTS",
+			"prompt_id": "JF_BeMyValentine_AN_05_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If by being valentines, that means we dance together, then I happily <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/> accept.",
+			"media": "TTS",
+			"prompt_id": "JF_BeMyValentine_AN_06_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

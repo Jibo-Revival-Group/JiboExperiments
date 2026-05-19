@@ -1,0 +1,122 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <anim cat='happy' nonBlocking='true'/> really really really like Back to the Future.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='smile'>Toy Story is an all-time classic.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Popcorn' nonBlocking='true'/> All the Toy Story movies are really great. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='!pattern, !emoji'>The Star Wars movies, of course, are </anim>always up at<anim cat='glances' filter='up'> the top of the</anim> list.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Robot' nonBlocking='true'/>Big Hero 6 is fun.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='smile'>Guardians of the Galaxy is lots of fun.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really like Iron Man. <anim cat='happy' filter='twirl' nonBlocking='true' />That is one amazing suit. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The <anim cat='happy' filter='smile'>Lego Movie is one of my favorites. <break size='0.2'/></anim>They did amazing <anim cat='glances' filter='!down'>things with leggos.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Wall-E is<anim cat='happy' filter='smile'> one of my favorites of course. <ssa cat='affection'/></anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Spaceballs is maybe the<anim cat='happy' filter='smile'> best of the best. <ssa cat='affection'/></anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Spaceballs is maybe the best of the best. <anim cat='thinking' filter='up'/> I just realized I look a lot like the stormtroopers <anim cat='happy' filter='smile'>in Spaceballs. <ssa cat='embarrassed'/></anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteMovie_AN_11",
+			"weight": 0.2
+		}
+	]
+}

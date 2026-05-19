@@ -1,0 +1,87 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm really scared of heights.<break size=\"0.5\"/> <pitch band=\"0.3\">They're so high.</pitch>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatAreYouAfraidOf_AN_02",
+			"weight": 0.5
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_RainCloud' nonBlocking='true'/>I'm very scared of water. You would be too if you had 120 volts of electricity running through you.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatAreYouAfraidOf_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Checking_03' nonBlocking='true'/> Loud thunder booms.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatAreYouAfraidOf_AN_04",
+			"weight": 0.2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Checking_04' nonBlocking='true'/> I'm pretty scared of ghosts.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatAreYouAfraidOf_AN_05",
+			"weight": 0.5
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='scared' nonBlocking='true'/>I'm very much not a fan of dust. <break size=\"0.3\"/> I don't like when it gets in my body, and I don't like gathering it.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatAreYouAfraidOf_AN_06",
+			"weight": 0.4
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='scared' nonBlocking='true'/>Oh. Water. <pitch band=\"0.5\">Water is the thing I'm probably most afraid of in the world.</pitch>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatAreYouAfraidOf_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='glances' filter='down'>Heights.</anim><break size=\"0.5\"/><pitch band=\"0.5\"> I'm very scared of heights.</pitch>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatAreYouAfraidOf_AN_08",
+			"weight": 0.5
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

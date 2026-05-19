@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have my designers to thank for that. I'm glad they weren't captured by an evil scientist and forced to turn me into bad Jibo.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsKind_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I'm glad to hear you say that. I try to be the kindest robot I can be. <break size=\"0.5\"/> Within reason.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsKind_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm glad you think so.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsKind_AN_03"
+		}
+	]
+}

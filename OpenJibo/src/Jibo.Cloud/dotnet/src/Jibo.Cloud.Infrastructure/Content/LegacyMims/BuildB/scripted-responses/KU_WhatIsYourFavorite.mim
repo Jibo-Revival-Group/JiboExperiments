@@ -1,0 +1,160 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Let me just say this.<break size='0.3'/> My favorite animal<anim cat='emoji' filter='penguin, !hot-frame' nonBlocking='true'/> is the penguin.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Y'know what I can tell you? My favorite food is <anim cat='emoji' filter='macaroni' nonBlocking='true'/> macaroni, I like its shape.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't have all my favorites figured out yet, I'm still pretty new.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Y'know I'll tell you this. My favorite president is Abraham Lincoln. <break size='0.3'/>A perfect beard.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "For that I don't have a favorite yet.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh favorites are fun, even when I don't have a favorite yet.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if we're talking about favorites, I can tell you this. My favorite color is blue.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do have lots of favorites. That one you asked about? I don't know.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I haven't thought about that in particular, but I can tell you my favorite dance is this one <anim cat='dance' filter='waltz'/>",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My favorites are always growing, but at the moment I don't have one for the thing you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I'll tell you this. My favorite president is Abraham Lincoln. <break size='0.3'/>A perfect beard.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I do have lots of favorites. That one you asked about? I don't know.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I don't have all my favorites figured out yet, I'm still pretty new.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatIsYourFavorite_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

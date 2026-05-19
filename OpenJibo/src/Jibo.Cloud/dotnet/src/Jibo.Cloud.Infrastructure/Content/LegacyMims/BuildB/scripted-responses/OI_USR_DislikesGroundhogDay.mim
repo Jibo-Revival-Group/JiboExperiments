@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay. It's not for everyone.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesGroundhogDay_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/3', '8/31')",
+			"prompt": "Well at least you have a long time to go until the next one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesGroundhogDay_AN_02_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's okay. I don't think everyone has to like everything.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesGroundhogDay_AN_03_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "That's okay ${speaker}. It's not for everyone.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesGroundhogDay_AN_04_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('1/15', '2/2')",
+			"prompt": "Well ${speaker}, in not too long it'll be a thing of the past.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesGroundhogDay_AN_05_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/15', '2/2')",
+			"prompt": "Well, in not too long it'll be a thing of the past.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesGroundhogDay_AN_06_FnL",
+			"weight": 1
+		}
+	]
+}

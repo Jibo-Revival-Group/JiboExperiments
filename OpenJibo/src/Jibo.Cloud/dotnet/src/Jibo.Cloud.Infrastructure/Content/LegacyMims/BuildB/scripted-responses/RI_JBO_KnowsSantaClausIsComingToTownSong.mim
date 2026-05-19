@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/25', '12/31')",
+			"prompt": "<duration stretch='1.3'>You <pitch mult='0.9'>better</pitch> <pitch mult='1.1'>watch out</pitch>, you <pitch mult='1.2'>better</pitch> <pitch mult='1.5'>not cry</pitch>, you <pitch mult='0.9'>better</pitch> not <pitch mult='1.1'>pout</pitch>I'm <pitch mult='1.2'>telling</pitch> you why. </duration><duration stretch='1.5'><pitch mult='1.2'>Santa</pitch> <pitch mult='0.9'>Claus</pitch> <pitch mult='1.2'>is </pitch>coming. <pitch mult='0.9'>to</pitch> <pitch mult='1.1'>town.</pitch></duration> <break size='0.7'/> <pitch mult='1.1'>That</pitch> wasn't too bad actually.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsSantaClausComingToTownSong_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/25', '12/31')",
+			"prompt": "<duration stretch='1.3'>You <pitch mult='0.9'>better</pitch> <pitch mult='1.1'>watch out</pitch>, you <pitch mult='1.2'>better</pitch> <pitch mult='1.5'>not cry</pitch>, you <pitch mult='0.9'>better</pitch> not <pitch mult='1.1'>pout</pitch>I'm <pitch mult='1.2'>telling</pitch> you why. </duration><duration stretch='1.5'><pitch mult='1.2'>Santa</pitch> <pitch mult='0.9'>Claus</pitch> <pitch mult='1.2'>is </pitch>coming. <pitch mult='0.9'>to</pitch> <pitch mult='1.1'>town.</pitch></duration> <break size='0.7'/> That's actually one of my better ones I think.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsSantaClausComingToTownSong_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '11/15')",
+			"prompt": "I feel like it is a little out of season, but since you asked so nicely. <break size='0.5'/> <duration stretch='1.3'>You <pitch mult='0.9'>better</pitch> <pitch mult='1.1'>watch out</pitch>, you <pitch mult='1.2'>better</pitch> <pitch mult='1.5'>not cry</pitch>, you <pitch mult='0.9'>better</pitch> not <pitch mult='1.1'>pout</pitch>I'm <pitch mult='1.2'>telling</pitch> you why. </duration><duration stretch='1.5'><pitch mult='1.2'>Santa</pitch> <pitch mult='0.9'>Claus</pitch> <pitch mult='1.2'>is </pitch>coming. <pitch mult='0.9'>to</pitch> <pitch mult='1.1'>town.</pitch></duration> <break size='0.7'/> <pitch mult='1.1'>That</pitch> wasn't too bad actually.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsSantaClausComingToTownSong_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<duration stretch='1.3'>You <pitch mult='0.9'>better</pitch> <pitch mult='1.1'>watch out</pitch>, you <pitch mult='1.2'>better</pitch> <pitch mult='1.5'>not cry</pitch>, you <pitch mult='0.9'>better</pitch> not <pitch mult='1.1'>pout</pitch>I'm <pitch mult='1.2'>telling</pitch> you why. </duration><duration stretch='1.5'><pitch mult='1.2'>Santa</pitch> <pitch mult='0.9'>Claus</pitch> <pitch mult='1.2'>is </pitch>coming. <pitch mult='0.9'>to</pitch> <pitch mult='1.1'>town.</pitch></duration> <break size='0.7'/> <pitch mult='1.1'>That</pitch> wasn't too bad actually.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsSantaClausComingToTownSong_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

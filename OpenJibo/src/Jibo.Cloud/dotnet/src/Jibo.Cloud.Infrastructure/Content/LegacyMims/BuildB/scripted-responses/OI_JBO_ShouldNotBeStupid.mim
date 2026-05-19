@@ -1,0 +1,26 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry if I'm seeming a little off. I <pitch mult=\"1.3\">can</pitch> tell you that I should be getting smarter and smarter over time. Though it's true I will never be as smart as a human. At least not for a very very very very very very very very long time.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_ShouldNotBeStupid_AN_01",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

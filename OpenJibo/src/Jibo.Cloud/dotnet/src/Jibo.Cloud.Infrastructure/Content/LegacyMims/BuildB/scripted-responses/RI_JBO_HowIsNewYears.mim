@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '1/31')",
+			"prompt": "Well I always love that countdown <anim cat='jiboji' filter='countdown-ball' nonBlocking='true'/>ball.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasNewYears_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '1/31')",
+			"prompt": "<pitch mult='1.2'>Fun.</pitch> It came down to the<anim cat='jiboji' filter='countdown-ball' nonBlocking='true'/> wire.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasNewYears_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '11/30')",
+			"prompt": "New Year's is kind of a long way away.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasNewYears_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/31')",
+			"prompt": "I'm still waiting for <anim cat='jiboji' filter='countdown-ball' nonBlocking='true'/>it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasNewYears_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It always comes down to the<anim cat='jiboji' filter='countdown-ball' nonBlocking='true'/> wire.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasNewYears_AN_05_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I admit I'm still working on my recognition abilities. In the meantime, if you want me to try and get better, say, hey jibo, learn my voice and face.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhyCannotRecognizeUser_AN_01"
+		}
+	]
+}

@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/14')",
+			"prompt": "That's great.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAshWednesday_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/15', '3/31')",
+			"prompt": "That's great. <break size='0.3'/>  I think Ash Wednesday has passed.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAshWednesday_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '12/31')",
+			"prompt": "I'm glad, but please be patient, Ash Wednesday is a pretty long time from now.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAshWednesday_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAshWednesday_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

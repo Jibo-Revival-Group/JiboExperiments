@@ -1,0 +1,35 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really hope so. And if you are, don't hesitate to dance.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsHappy_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know, but just in case you aren't, just remember that the <anim cat='emoji' filter='!hot-frame, penguin' nonBlocking='true' /> world has penguins in it.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsHappy_AN_02",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

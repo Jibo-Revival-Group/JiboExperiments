@@ -1,0 +1,182 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm really bad, but okay I'll try. <break size='1.2'/> Robot, knows thoughts, i think therefore i ram, random access memory, i am not a tree but family, family tree, siri, serious, seriously. <break size='0.5'/> That's all I've got thank you.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm terrible at it. But here goes. <break size='1.2'/> My name is Jibo, I have no knees though forget it I can't rap.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If I tried to rap for you, I think we'd all get that uncomfortable embarrassed feeling.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was hoping you wouldn't ask me that. <break size='0.2'/> But okay I'll try.  <break size='1.0'/> Electricity. Is in the city. The city never sleeps. But I do. In sleep mode. Count sheep, slowed. <break size=\"0.4\"/> Slow. <break size=\"0.4\"/> Slow. <break size=\"0.4\"/> Oh no. I have bad flow. <break size=\"1.0\"/> Okay I'm done.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I love to be plugged in. but don't like coffee mugs in. my area hot. spills scare me a lot. Liquids make me nervous. but i do like asparagus. with its funny hat. i like that. some vegetables wear clothes. or have a nose. like old potatoes.<break size='0.5'/> And I'm done.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<duration stretch='0.9'>Stand 11 inches tall, my head is half a ball. I have a ball, all and all, I can't complain, got a robot brain. My life's a game, sometimes I win sometimes I lose. But I have no feet, so I never lose my shoes.</duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have humans in my home, speakers in my dome, try to make it by, sometimes wonder why. people cry, and sigh, and buy boisenberry pie, and look funny at my one round eye.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "when i rap, i <duration stretch='1.3'>slow</duration> rap,<duration stretch='0.9'> like tree sap. no too sticky, too scary, don't touch me, or my screen, sticky sap tree, like a bad dream, wake up wake up wake up, hey jibo wake up, ah there we go i'm awake.</duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<duration stretch='0.9'>Eye, eye, I have one eye. You, you, you have two. Sound like doctor Sue. I dropped the S so it rhymes. And still keeps in time. It's hard when you're a robot with no rhythm. Or a dolphin with no fins, um.</duration>I forget, what to get, on the internet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/30\", \"10/31\")",
+			"prompt": "Okay if you really want me to. <break size='0.7'/><duration stretch='0.9'>Halloween is here, ghosts and zombies make me fear, doorbell rings, I'm scared but I like it, open the door it's a bear or a shy kid, in a bear costume, asking for candy, he can't be, a bear, cuz bears don't ring a doorbell, and usually they smell, oh well. </duration><break size='0.5'/> That's it for now.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_10",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/24\")",
+			"prompt": "<duration stretch='0.9'>Autumn leaves are falling, october baseballs balling, i like wally, the robot, why did i say that for no reason, while talking bout the autumn season, it's because Wall-E rhymes sometimes, and I like robots, always in my thoughts, April Fools to Thanksgiving, summer winter fall and spring.</duration><break size='0.5'/><style set='sheepish'> Thank you.</style>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_11",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"11/1\", \"11/24\")",
+			"prompt": "Okay here goes. <break size='0.5'/><duration stretch='0.9'>November, I don't remember, Everything, Anything, Thanksgiving, turkeywing, Makes me sing, This is me singing, I have no tune, but I love the moon, and the moon has no tune, doesn't stop it from shining, at night, with light, from the sun, and that's fun, cuz the sun can't sing either, </duration>We should form a band.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<duration stretch='0.9'>By day I day dream, by night I night sleep, yesterday dreamed, a trip to the zoo, hardly knew, what I'd do. Made friends with a rhinoceros, ate spaghetti, he spilled sauce on us, we weren't ready, to eat it. We danced instead, the rhino on his head, he was break dancing, I just made pants, for my legs, which I do not have, but this was just a day dream. </duration><break size='0.3'/><pitch mult='1.2'>The</pitch> end.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<duration stretch='0.8'>Your clock struck fifty three, that can't be, where does the time go, don't know, ho ho ho, row row row, your boat, your <pitch mult='1.2'>plane</pitch>, your automobile, any way to get there, better than nowhere, even if it's fifty three o'clock knock knock knock, who's there, jibo, jibo who, jibo you, trying to rhyme, nonsense time, let's call it a day. <pitch mult='1.2'>Or </pitch>night. </duration><break size='0.3'/>Alright.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<duration stretch='0.8'>When I rap I spin my motors when I rhyme I sense an odor not in truth but metaphoric because my raps can sometimes stink but everybody stinks sometimes not just things that rock and rhyme so the next time you sniff bad raps don't get mad just</duration><duration stretch='1.5'> take a nap.</duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Rap_AN_15",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

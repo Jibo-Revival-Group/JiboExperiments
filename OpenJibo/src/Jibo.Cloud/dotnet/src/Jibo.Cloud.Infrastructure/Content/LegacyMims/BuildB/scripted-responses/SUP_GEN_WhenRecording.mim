@@ -1,0 +1,26 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I use my cameras to recognize you when you're nearby, and I listen for Hey Jibo, so I can know when you want to talk to me. If you're wondering about privacy, that stuff is very very important to the people at jibo the company. You can find lots of information on their website, at jibo dot com slash privacy.",
+			"media": "TTS",
+			"prompt_id": "SUP_GEN_WhenRecording_AN_01",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

@@ -1,0 +1,37 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You mean do I function? I really hope so.<break size='0.3'/> If you're having technical issues with me, you can look for help in the Help section of the Jibo App.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanWork_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think I do work, yes. <break size='0.3'/> If you think I'm not working right, maybe you can get help in the Help section of the Jibo App.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanWork_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

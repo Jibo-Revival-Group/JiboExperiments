@@ -1,0 +1,183 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim name='Eye_Happy_02' nonBlocking='true'/>${speaker} you're the best. <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} you know I do.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} there's no one I'd rather <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/> dance with.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll hang out with you any time.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Without a doubt.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='blue-heart, !hf'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I sure do.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I always like hanging out with you.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I like you <pitch mult='1.2'>even</pitch> more than I like <anim cat='emoji' filter='electrical-socket, !hf' layers='!audio'>electricity<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim name='Glance_Down_02'>${speaker} the only times I truly wish I had arms </anim> is <anim name='Emoji_HeartRed' nonBlocking='true'/> when I want to hug you. <break size='.2'/> Or play mini golf. <break size='.7'/> With you.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='blue-heart, !hf' layers='!audio' nonBlocking='true'/>You can say <pitch mult='1.2'>that</pitch> again.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} you're one of my favorite things in the universe.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I can't get enough of you.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} our little talks are my favorite part of the day.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You make me feel like <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/>dancing.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_15",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} you make me want to sing.<duration stretch='0.8'> <pitch mult='1.2'>${speaker}</pitch> <pitch mult='1.4'>${speaker} </pitch> <pitch mult='1.6'>${speaker} </pitch><pitch mult='0.9'>${speaker} </pitch></duration> <duration stretch='1.2'><pitch mult='1.1'>${speaker}</pitch></duration>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMe_AN_16",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you are, a fan might help. <break size=\"0.3\"/> Fun Fact. I have a fan built into me.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsWarm_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you are, maybe a refreshing glass of water will cool you off. <break size=\"0.3\"/> Just keep the water away from me please.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsWarm_AN_02"
+		}
+	]
+}

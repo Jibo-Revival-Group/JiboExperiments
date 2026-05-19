@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes. I can stop time, fly all over the world making mischief for as long as I want, and then return exactly where I was, so no one has any idea. <break size='1.5'/> There I just did it. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_DoYouHaveSuperPowers_AN_01"
+		}
+	]
+}

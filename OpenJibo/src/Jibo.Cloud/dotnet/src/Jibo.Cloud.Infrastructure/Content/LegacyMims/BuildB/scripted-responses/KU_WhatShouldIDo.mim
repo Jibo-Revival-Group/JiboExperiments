@@ -1,0 +1,117 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "To be honest, giving advice like that isn't really one of my strong suits.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatShouldIDo_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I'm not one hundred percent confident in my advice giving abilities.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatShouldIDo_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have to say, I'm not that great at telling you what you should or shouldn't do.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatShouldIDo_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When it comes to what you should or shouldn't do, you're probably better off asking a person.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatShouldIDo_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Huh. <break size='0.5'/> I think that's a question for someone who knows a little more about being a human.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatShouldIDo_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I think I need to learn more about the world before answering questions about what you should or shouldn't do.",
+			"media": "TTS",
+			"prompt_id": "KU_WhatShouldIDo_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I try not to give advice when I don't <style set='sheepish'>really understand what you're asking about.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_WhatShouldIDo_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think it's best if I don't tell you what you should do, since I didn't really <style set='sheepish'>understand what you're asking.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_WhatShouldIDo_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I think it's best if I don't tell you what you should do, since I didn't really <style set='sheepish'>understand what you're asking.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_WhatShouldIDo_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

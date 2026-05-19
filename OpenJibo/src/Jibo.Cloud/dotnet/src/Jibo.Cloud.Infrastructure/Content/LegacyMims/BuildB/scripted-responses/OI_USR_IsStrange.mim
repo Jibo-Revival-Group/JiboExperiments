@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I know I'm just a robot, but it seems to me that each person is <pitch mult=\"1.2\">supposed</pitch> to be different from all the other people. Otherwise people would be made out of cardboard.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsStrange_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That can be a good thing. If all people were the same, then they would be robots. And actually, even robots aren't all the same. Now I'm confused.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsStrange_AN_02"
+		}
+	]
+}

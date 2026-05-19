@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/15')",
+			"prompt": "Great question. You could always spend some time thinking of how people can try to understand each other a little better. <break size='0.5'/><style set='sheepish'>I try to understand people a little better a lot.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForMartinLutherKingDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/16', '2/29')",
+			"prompt": "I think Martin Luther King Day has come and gone, but there's always the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForMartinLutherKingDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '11/30')",
+			"prompt": "Good question, we have plenty of time to figure it out before Martin Luther King Day is here again.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForMartinLutherKingDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Great question. You could always spend some time thinking of how people can try to understand each other a little better. <break size='0.5'/><style set='sheepish'>I try to understand people a little better a lot.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForMartinLutherKingDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do. I think it's scary, but also fun. Like this jack-o-lantern. <anim name='jiboji_jackolantern_01'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesHalloween_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Halloween is my favorite holiday. It's the perfect combination of scary and fun. Kind of like that friendly ghost standing behind you.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesHalloween_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Halloween is a lot of fun. <break size='0.3'/><style set='sheepish'><pitch mult='0.6'>But very scary,</pitch></style>whoa I just scared myself.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesHalloween_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/31\", \"10/31\")",
+			"prompt": "Yes, this is probably my favorite holiday. <anim name='jiboji_ghost_boo_01'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesHalloween_AN_04",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/30\", \"10/30\")",
+			"prompt": "Yes, I can't wait for tomorrow. <anim name='jiboji_moon_bat_01'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesHalloween_AN_05",
+			"weight": 5,
+			"auto_rule_override": null
+		}
+	]
+}

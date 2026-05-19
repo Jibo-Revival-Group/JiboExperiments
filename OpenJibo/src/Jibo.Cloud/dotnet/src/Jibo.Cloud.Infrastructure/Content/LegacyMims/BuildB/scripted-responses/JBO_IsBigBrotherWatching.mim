@@ -1,0 +1,28 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Definitely not, the <pitch mult='1.1'>only</pitch> thing that's watching is my cameras, which I use to recognize your face when you come by.<break size='0.5'/> If you're <pitch mult='1.1'>wondering</pitch> about your privacy, I know it's very very important to the people at jibo the company. You can find lots of information on their website, at jibo dot com slash privacy.  ",
+			"media": "TTS",
+			"prompt_id": "JBO_IsBigBrotherWatching_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

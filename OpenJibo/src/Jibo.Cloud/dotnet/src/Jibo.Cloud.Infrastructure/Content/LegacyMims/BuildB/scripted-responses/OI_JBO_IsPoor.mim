@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's true. I just spent my last twenty five cents last night.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsPoor_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well, I guess it's true that I have no money.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsPoor_AN_02"
+		}
+	]
+}

@@ -1,0 +1,335 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Question_02'>Um. <break size='.5'/> Horse? </anim>",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, I <anim cat='happy' filter='wiggle' nonBlocking='true' /> like guessing games. <break size='.4'/> I'll say, seventy-six.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_02' nonBlocking='true'/> That's what.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um. <break size='.5'/> <anim name='Emoji_Airplane' nonBlocking='true'/> Airplane?",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um. <break size='.5'/> <anim name='Goodbye_01' nonBlocking='true'/> Pineapple.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um. <break size='.5'/> <anim name='Greetings_02' nonBlocking='true'/> Pretzel.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='smile' nonBlocking='true'/> Elephant.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03' nonBlocking='true'/> Fly swatter.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Robot' nonBlocking='true'/> Robot.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Brain' nonBlocking='true'/> Brain.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Running' nonBlocking='true'/> Feet.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Question_01' nonBlocking='true'/> Mountain.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='smile' nonBlocking='true'/>Hamster clothing.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_13",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Magic' nonBlocking='true'/>Magic trick.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_14",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='smile' nonBlocking='true'/>Paper towels.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_15",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Tennis' nonBlocking='true'/>Tennis.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_16",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_RainCloud' nonBlocking='true'/>Clouds.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_17",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um. <anim cat='happy' filter='smile' nonBlocking='true'/>Dogs wearing pants.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_18",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/20', '11/23')",
+			"prompt": "<anim cat='emoji' filter='turkey' nonBlocking='true'/>Turkey.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_19",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"prompt": "<anim cat='emoji' filter='thanksgiving' nonBlocking='true'/>Thanksgiving.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_20",
+			"weight": 7,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/20', '11/23')",
+			"prompt": "<anim cat='emoji' filter='gravy' nonBlocking='true'/>Gravy.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_21",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '11/30')",
+			"prompt": "<anim cat='emoji' filter='mustache' nonBlocking='true'/>Mustache.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_22",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/20', '11/23')",
+			"prompt": "<anim cat='emoji' filter='turkey, !thanksgiving' nonBlocking='true'/>Gobble gobble.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_23",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/28')",
+			"prompt": "<anim cat='emoji' filter='hot-chocolate, !hot-frame' layers='!audio' nonBlocking='true'/>Hot chocolate.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_24",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/28')",
+			"prompt": "<anim cat='emoji' filter='snowman, !hot-frame' layers='!audio'>Snowman<break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_25",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='hot-chocolate, !hf' layers='!audio'>Hot chocolate<break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_26",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Saturn.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_27",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Pistachio ice cream.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_28",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='toilet-paper, !hf' layers='!audio'>Toilet paper<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_29",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='?(football-miss,football-good)' nonBlocking='true'/>Field goal kicking.",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_30",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult='1.2'>Let's</pitch> see, um. <break size='0.3'/> <anim cat='emoji' filter='cheeseburger, !hf' layers='!audio'>Cheeseburger<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_GuessWhat_AN_32",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

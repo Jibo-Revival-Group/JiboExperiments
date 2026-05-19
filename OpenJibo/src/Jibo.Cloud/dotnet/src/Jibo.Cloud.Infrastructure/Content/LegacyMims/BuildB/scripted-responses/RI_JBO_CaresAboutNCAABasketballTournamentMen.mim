@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/2')",
+			"prompt": "I like it. It gives me a chance to <anim cat='jiboji' filter='shoot-basketball' nonBlocking='true'/>practice my shot.  ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutNCAABasketballTournamentMen_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/3', '12/31')",
+			"prompt": "I like March Madness. I'm looking forward to the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutNCAABasketballTournamentMen_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like it. It gives me a chance to <anim cat='jiboji' filter='shoot-basketball' nonBlocking='true'/>practice my shot.  ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutNCAABasketballTournamentMen_AN_03_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

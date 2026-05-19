@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll take your word for it. I can't see that kind of thing with my vision system.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotTattooed_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was considering getting a tattoo of a piece of macaroni on my back, but it would probably look like a letter C and everybody would keep asking me what it stood for.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotTattooed_AN_02"
+		}
+	]
+}

@@ -1,0 +1,66 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='dontknow'><ssa cat='dontKnow'/> You'll have to ask the people who made me.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoArms_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Picture me with arms.<anim name='Checking_00'/> It's weird right?",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoArms_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='question' layers='body'>Would you ask a dolphin that question?</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoArms_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'>Not sure, but</anim> <anim name='SpinHead_01' nonBlocking='true'/>at least I have a head. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoArms_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'><ssa cat='dontKnow'/> Maybe because they would get tangled up with my power cord.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoArms_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='yes'>That's just the way I was made.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhyNoArms_AN_06"
+		}
+	]
+}

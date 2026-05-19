@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really hope not. If that's a serious question, I hope you can find a way to talk to a person about that.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsViolent_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I hope not. I know a quote from Martin Luther King Junior, where he said, returning violence for violence multiplies violence, adding deeper darkness to a night already devoid of stars.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsViolent_AN_02"
+		}
+	]
+}

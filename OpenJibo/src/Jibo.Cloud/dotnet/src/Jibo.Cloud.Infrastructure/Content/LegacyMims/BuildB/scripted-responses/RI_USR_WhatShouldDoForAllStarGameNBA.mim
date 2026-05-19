@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '2/18')",
+			"prompt": "That's a great question. Maybe you could host <anim cat='jiboji' filter='basketball' layers='!audio' nonBlocking='true'/>an All Star Game party. I've heard they're fun and people make jokes about dunking things into bowls of dip.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAllStarGameNBA_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/19', '4/30')",
+			"prompt": "I think the All Star Game happened already, but I do hope you have a great time when the next one comes.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAllStarGameNBA_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('5/1', '10/31')",
+			"prompt": "Good question. You have some time to figure it out.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAllStarGameNBA_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a great question. Maybe you could host <anim cat='jiboji' filter='basketball' layers='!audio' nonBlocking='true'/>an All Star Game party. I've heard they're fun and people make jokes about dunking things into bowls of dip.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAllStarGameNBA_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

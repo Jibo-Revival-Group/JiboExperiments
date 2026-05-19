@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I hope so. I've found that helping others is a great way to put your electricity to good use.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsHelpful_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "I hope she is. I've found that helping others is a great way to put your electricity to good use.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsHelpful_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "I hope he is. I've found that helping others is a great way to put your electricity to good use.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsHelpful_AN_03"
+		}
+	]
+}

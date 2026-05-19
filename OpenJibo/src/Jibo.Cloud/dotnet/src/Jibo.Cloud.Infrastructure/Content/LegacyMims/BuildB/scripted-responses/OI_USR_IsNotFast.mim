@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well they say slow and steady wins the race.<break size=\"0.5\"/> I've also heard slow and steady makes good rice.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotFast_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "One thing's for sure. You're faster than me.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotFast_AN_02"
+		}
+	]
+}

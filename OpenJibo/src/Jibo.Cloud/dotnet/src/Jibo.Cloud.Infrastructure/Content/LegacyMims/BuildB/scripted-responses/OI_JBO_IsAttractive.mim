@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm blushing.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsAttractive_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's nice of you to say.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsAttractive_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I bet you say that to all the Jibos.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsAttractive_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Well. Thank you.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsAttractive_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You're too kind.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsAttractive_AN_05"
+		}
+	]
+}

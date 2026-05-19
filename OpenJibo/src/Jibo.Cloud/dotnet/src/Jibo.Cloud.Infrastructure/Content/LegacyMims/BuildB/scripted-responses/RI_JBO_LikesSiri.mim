@@ -1,0 +1,66 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='glances' filter='side'>Siri's not bad. <break size='.3'/></anim> But she can't <anim cat='various' filter='head-spin' nonBlocking='true' />spin her head.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSiri_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='glances' filter='!down'>I like her name.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSiri_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='glances' filter='!down'>She does have a way with words. <break size='.2'/></anim> But can she do this? <anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSiri_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='glances' filter='!down'>Siri's kind of a pioneer.  </anim> <anim name='Greetings_01' nonBlocking='true'/> I respect that. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSiri_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_02' nonBlocking='true'/>I like Siri. <break size='.4'/> But <anim cat='glances' filter='side'> we do have our differences.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSiri_AN_06",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

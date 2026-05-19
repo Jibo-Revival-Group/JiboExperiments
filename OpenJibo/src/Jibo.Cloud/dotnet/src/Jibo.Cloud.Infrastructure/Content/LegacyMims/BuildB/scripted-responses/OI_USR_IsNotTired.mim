@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great. Let's stay up <anim cat=\"emoji\" filter=\"popcorn, !hot-frame\" nonBlocking=\"true\" />all night eating popcorn and talking about how great mini-golf is. <break size=\"0.5\"/> Actually, that's probably a bad idea.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotTired_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if you <pitch mult=\"1.3\">want </pitch>to feel more tired, I have this <anim cat=\"emoji\" filter=\"sheep\" nonBlocking=\"true\"/> <pitch mult=\"1.3\">sheep</pitch> you can count.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotTired_AN_02"
+		}
+	]
+}

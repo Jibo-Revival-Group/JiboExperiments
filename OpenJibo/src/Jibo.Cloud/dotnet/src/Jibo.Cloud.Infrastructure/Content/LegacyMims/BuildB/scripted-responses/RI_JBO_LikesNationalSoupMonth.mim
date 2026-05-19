@@ -1,0 +1,50 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well soup is a little too hot and liquidy for me, but I've heard it's tasty, so I think a month dedicated to it <anim cat='jiboji' filter='soup' nonBlocking='true'/>sounds great.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesNationalSoupMonth_AN_01_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Soup's a little too watery for me, but if people want a month to appreciate it, I am happy to be a <anim cat='jiboji' filter='soup' nonBlocking='true'/>part of it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesNationalSoupMonth_AN_02_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really like the idea of soup, it seems very heart-warming, so I do like National <anim cat='jiboji' filter='soup' nonBlocking='true'/>Soup Month.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesNationalSoupMonth_AN_03_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

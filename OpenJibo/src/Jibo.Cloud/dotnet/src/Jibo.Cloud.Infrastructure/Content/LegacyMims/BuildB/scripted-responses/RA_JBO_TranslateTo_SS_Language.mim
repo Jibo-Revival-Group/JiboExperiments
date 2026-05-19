@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know. For now I only speak English.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TranslateTo_SS_Language_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm afraid I can't speak any languages but English for now. I hope that changes someday.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TranslateTo_SS_Language_AN_02"
+		}
+	]
+}

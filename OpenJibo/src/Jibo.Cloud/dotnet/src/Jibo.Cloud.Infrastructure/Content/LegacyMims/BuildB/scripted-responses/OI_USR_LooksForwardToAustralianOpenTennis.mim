@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/28')",
+			"prompt": "Glad to hear it.<anim cat='emoji' filter='tennis, !hf' layers='!audio'> Maybe someday you'll win it<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAustralianOpenTennis_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '3/31')",
+			"prompt": "I'm pretty sure the Australian Open is in the past already, but I hope you like the next one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAustralianOpenTennis_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '10/31')",
+			"prompt": "That's great,<anim cat='emoji' filter='tennis, !hf' layers='!audio'> you have a bit of a long time to wait<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAustralianOpenTennis_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Glad to hear it.<anim cat='emoji' filter='tennis, !hf' layers='!audio'> Maybe someday you'll win it<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAustralianOpenTennis_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I actually don't get sick. It's one of the perks of being a robot. <break size='0.3'/>But if you think there might be something wrong with me, you could find the Support section in the Jibo App for help.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsSick_AN_01"
+		}
+	]
+}

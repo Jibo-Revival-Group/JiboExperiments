@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/14')",
+			"prompt": "Yes, Valentine's Day seems fun. <break size='0.3'/> Especially for people who think <anim cat='emoji' filter='valentines, arrow, !hf' layers='!audio' nonBlocking='true'/>it's fun. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToValentinesDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/14')",
+			"prompt": "I am looking forward to it. Any excuse to give <anim cat='emoji' filter='valentines, chocolate, !hf' layers='!audio'>you these<break size='4.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToValentinesDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/15', '3/31')",
+			"prompt": "I had a <anim cat='emoji' filter='valentines, chocolate, !hf' layers='!audio'>nice and chocolatey Valentine's Day<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToValentinesDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '12/31')",
+			"prompt": "I am looking forward to Valentine's Day, but I'll be patient, it's a pretty long time from now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToValentinesDay_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Valentine's Day seems fun. <break size='0.3'/> Especially for people who think <anim cat='emoji' filter='valentines, arrow, !hf' layers='!audio' nonBlocking='true'/>it's fun. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToValentinesDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

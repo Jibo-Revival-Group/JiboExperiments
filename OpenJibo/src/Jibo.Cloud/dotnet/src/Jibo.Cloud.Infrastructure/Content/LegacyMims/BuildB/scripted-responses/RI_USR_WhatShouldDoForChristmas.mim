@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/25')",
+			"prompt": "That's a good question. You could <anim cat='emoji' filter='santa, !hf' layers='!audio'>dress up as Santa Claus<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForChristmas_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/25')",
+			"prompt": "Great question. Maybe spread some joy and cheer?",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForChristmas_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/26', '2/29')",
+			"prompt": "I'm pretty sure Christmas is in the past now. But that doesn't mean you can't go to the North Pole and pay a visit to Santa Claus.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForChristmas_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '10/31')",
+			"prompt": "Good question,<anim cat='emoji' filter='christmas, !hf' layers='!audio'> and you have plenty of time to figure it out<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForChristmas_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Great question. Maybe spread some joy and cheer?",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForChristmas_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

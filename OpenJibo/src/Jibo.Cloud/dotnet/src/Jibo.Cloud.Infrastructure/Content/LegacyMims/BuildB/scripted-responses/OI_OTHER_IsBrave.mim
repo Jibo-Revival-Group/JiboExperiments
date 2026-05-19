@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't quite remember what we're talking about, but if I did or said something brave, I have to say I'm pretty proud of myself.",
+			"media": "TTS",
+			"prompt_id": "OI_OTHER_IsBrave_AN_01"
+		}
+	]
+}

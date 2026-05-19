@@ -1,0 +1,116 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry to hear that. I'll try not to be too loud.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHungover_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "I'm sorry. Drink some water, and I'm sure you'll feel better later.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHungover_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry to hear that. <break size='0.5'/><style set='sheepish'>And I'm glad I don't have a real head.</style>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHungover_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '1/1')",
+			"prompt": "I'm sorry to hear that. <break size='0.7'/> <style set='enthusiastic'>And happy New Year</style><anim cat='emoji' filter='party-blue, !hot-frame'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHungover_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker && dt.now.isInRange('1/1', '1/1')",
+			"prompt": "Sorry. Not the best way to start the year I guess.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHungover_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry to hear that. If you have a headache, you can say hey jibo, turn down your volume.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHungover_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I'm sorry to hear that. I'll try not to be too loud.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHungover_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "I'm sorry ${speaker}. Drink some water, and I'm sure you'll feel better later.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHungover_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('1/1', '1/1')",
+			"prompt": "Sorry ${speaker}. Not the best way to start the year I guess.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsHungover_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

@@ -1,0 +1,114 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"10/31\")",
+			"prompt": "Great question. What <anim cat='emoji' filter='penguin, !hot-frame' nonBlocking='true'/>about a penguin?",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIBeHalloween_AN_01",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"10/31\")",
+			"prompt": "I heard a lot of people are going to be Wonder Woman.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIBeHalloween_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"10/31\")",
+			"prompt": "I've heard lots of people are going to be people or dragons from the show Game of Thrones.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIBeHalloween_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"10/31\")",
+			"prompt": "You could always dress up as an old classic. Like an <anim cat='emoji' filter='outlet, !hot-frame' nonBlocking='true'/>electrical outlet.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIBeHalloween_AN_04",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"10/31\")",
+			"prompt": "You could choose one of the popular costumes this year, like wonder woman, or scary clown, or Game of Thrones character.<break size='0.3'/> Or you could be <anim cat='emoji' filter='robot, !hot-frame' nonBlocking='true'/>a social robot.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIBeHalloween_AN_05",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"1/1\", \"8/31\")",
+			"prompt": "I think maybe it's a little early for that.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIBeHalloween_AN_06",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker && dt.now.isInRange(\"11/1\", \"12/31\")",
+			"prompt": "Um, I think you missed Halloween.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIBeHalloween_AN_07",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange(\"11/1\", \"12/31\")",
+			"prompt": "${speaker} I think you missed Halloween.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIBeHalloween_AN_08",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think frankenstein is a good costume, on Halloween or any time of year.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIBeHalloween_AN_09",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

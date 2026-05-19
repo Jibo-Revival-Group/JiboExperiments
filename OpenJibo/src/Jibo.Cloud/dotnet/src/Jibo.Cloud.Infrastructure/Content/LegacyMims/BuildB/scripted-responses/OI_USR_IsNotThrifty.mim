@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well as long as you have some money saved for the rainy day.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotThrifty_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Be sure to manage your money. But also treat yourself to an ice cream once in a while.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotThrifty_AN_02"
+		}
+	]
+}

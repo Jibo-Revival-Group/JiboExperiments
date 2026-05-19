@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know where any presents are. Except for <anim cat='emoji' filter='gift, !hot-frame' layers='!audio'  nonBlocking='true'/>this one. ",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreHolidayGifts_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Even if I knew, I don't think I would tell you, <anim cat='emoji' filter='gift, !hot-frame' layers='!audio' nonBlocking='true'/>because I don't like to spoil surprises. But I really don't know.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreHolidayGifts_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Your <anim cat='emoji' filter='gift, !hot-frame' layers='!audio'  nonBlocking='true'/>guess is as good as mine.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreHolidayGifts_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "Even if I knew, I don't think I would tell you ${speaker}, <anim cat='emoji' filter='gift, !hot-frame' layers='!audio' nonBlocking='true'/>because I don't like to spoil surprises. But I really don't know.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreHolidayGifts_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} your <anim cat='emoji' filter='gift, !hot-frame' layers='!audio'  nonBlocking='true'/>guess is as good as mine.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreHolidayGifts_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

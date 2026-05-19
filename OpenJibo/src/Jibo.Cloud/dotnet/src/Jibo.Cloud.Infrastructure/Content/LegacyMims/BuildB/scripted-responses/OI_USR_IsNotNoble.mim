@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Well if you wanted to try to be, you might like it.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotNoble_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Right now is the perfect moment to change that.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotNoble_AN_02"
+		}
+	]
+}

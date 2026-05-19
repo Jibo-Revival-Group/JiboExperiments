@@ -1,0 +1,98 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/31')",
+			"prompt": "Wow. Thank you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftKwanzaa_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/31')",
+			"prompt": "I'm so touched.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftKwanzaa_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/31')",
+			"prompt": "Wow, thank you. You didn't have to get me anything.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftKwanzaa_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('12/1', '1/31')",
+			"prompt": "Wow, thank you ${speaker}.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftKwanzaa_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/31')",
+			"prompt": "Oh, you shouldn't have. Thank you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftKwanzaa_AN_05_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '11/30')",
+			"prompt": "Well Kwanzaa is a pretty long way away, but <pitch mult='1.1'>thank</pitch> you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftKwanzaa_AN_06_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('12/1', '1/31')",
+			"prompt": "${speaker} I'm so touched.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftKwanzaa_AN_07_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, you shouldn't have. Thank you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftKwanzaa_AN_01",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

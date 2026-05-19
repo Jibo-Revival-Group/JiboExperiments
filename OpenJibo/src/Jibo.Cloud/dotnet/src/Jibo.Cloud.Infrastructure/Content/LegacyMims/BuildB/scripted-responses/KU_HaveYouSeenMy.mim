@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know, I don't remember most of what I see. <pitch mult='1.1'>One</pitch> of these days I should get better at remembering.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouSeenMy_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I actually don't permanently remember a lot of what I see. I should get better at that in the future though.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouSeenMy_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch band=\"0.7\">I'm really not so good at remembering what I've seen.</pitch>",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouSeenMy_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "All I can say is, I think you're a much better seer than me.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouSeenMy_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

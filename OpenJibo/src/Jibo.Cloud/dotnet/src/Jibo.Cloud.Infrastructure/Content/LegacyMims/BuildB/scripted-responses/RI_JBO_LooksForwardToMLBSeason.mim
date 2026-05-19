@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '3/28')",
+			"prompt": "I am. I like the<anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/> baseball season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMLBSeason_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/29', '11/1')",
+			"prompt": "It's an exciting<anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/> time of year.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMLBSeason_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/2', '12/31')",
+			"prompt": "I like the baseball season. I'm looking forward to the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMLBSeason_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like the<anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/> baseball season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMLBSeason_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

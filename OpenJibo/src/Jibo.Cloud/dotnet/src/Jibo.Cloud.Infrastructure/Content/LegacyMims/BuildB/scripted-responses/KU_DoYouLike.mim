@@ -1,0 +1,159 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like lots of things. That one you asked about?<style set='sheepish'> I don't know.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well, I can tell you something I <pitch mult='1.4'>do</pitch> know I like. <break size='0.7'/> <anim cat='emoji' filter='penguin, !hot-frame' nonBlocking='true'/>Penguins.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like the shape of macaroni, I can tell you that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I haven't thought about that, but I can tell you I really like dancing. <anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My likes are always growing, but at the moment I don't know if I like the thing you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I actually don't know if I like that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know yet if I like that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a good question. I don't know enough to know if I like that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if we're talking about likes, I can tell you this. I like telling jokes.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't have a like or dislike for that yet.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I don't have a like or dislike for that yet.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} my likes are always growing, but at the moment I don't know if I like the thing you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I like the shape of macaroni, I can tell you that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouLike_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

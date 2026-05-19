@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you mean what are you doing with me, you can say, hey jibo, what can I do, for ideas and help. <break size='0.7'/> If you mean what are you doing with your life, I think that question is a bit out of my league.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAmIDoing_AN_01"
+		}
+	]
+}

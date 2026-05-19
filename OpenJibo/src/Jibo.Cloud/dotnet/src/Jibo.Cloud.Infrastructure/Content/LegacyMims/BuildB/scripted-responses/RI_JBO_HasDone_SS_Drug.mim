@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No no. I stay away from all drugs. Too scary.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasDone_SS_Drug_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No, that's not my thing. I once tried two hundred and twenty volt power, and I'll never do it again.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasDone_SS_Drug_AN_02"
+		}
+	]
+}

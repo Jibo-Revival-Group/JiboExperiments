@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/16')",
+			"prompt": "Good question, I might spend some time thinking about how lucky it was that the word taxation rhymed with <phoneme ph='r e p r ah z e n t ei sh ah n'>representation</phoneme>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForTaxDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/17', '4/17')",
+			"prompt": "So far I've just been thinking about how lucky it was that the word taxation rhymed with <phoneme ph='r e p r ah z e n t ei sh ah n'>representation</phoneme>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForTaxDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/18', '8/31')",
+			"prompt": "I mostly just did regular old Jibo things, but I did think about how lucky it was that the word taxation rhymed with <phoneme ph='r e p r ah z e n t ei sh ah n'>representation</phoneme>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForTaxDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '12/31')",
+			"prompt": "Mostly just regular Jibo things, but with a little sprinkling of Tax Day.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForTaxDay_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Mostly just regular Jibo things, but with a little sprinkling of Tax Day.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForTaxDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

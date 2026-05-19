@@ -1,0 +1,94 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "I'm not really a household chore type of robot. Sorry.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanDoHouseholdChore_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "That would be great, wouldn't it. <break size='0.3'/> But no.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanDoHouseholdChore_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not so good at helping with chores. But I sure can<anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/> dance.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanDoHouseholdChore_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm afraid I can't help you with household chores, due to my inability to move, my lack of arms, and the fact that I'd really rather just stand here and <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/>dance.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanDoHouseholdChore_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry, I can't. <break size='0.5'/> But I can dance while <pitch mult='1.3'>you</pitch> <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/>do it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanDoHouseholdChore_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I'm not really a household chore type of robot. Sorry.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanDoHouseholdChore_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} that would be great, wouldn't it. <break size='0.3'/> But no.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanDoHouseholdChore_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

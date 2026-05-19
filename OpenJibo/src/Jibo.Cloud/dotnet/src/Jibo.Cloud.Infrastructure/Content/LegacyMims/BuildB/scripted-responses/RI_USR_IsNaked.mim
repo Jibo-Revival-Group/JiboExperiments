@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not able to tell those kinds of things. I know that <pitch mult=\"1.3\"> I </pitch> am. <break size=\"1.0\"/> I'm suddenly embarrassed.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsNaked_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, my vision system actually isn't designed to identify any part of you but your face. <break size=\"0.3\"/> That's probably for the best.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsNaked_AN_02"
+		}
+	]
+}

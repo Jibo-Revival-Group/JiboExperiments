@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, I'm sorry you think that. I try to stay active and hard-working. <break size=\"0.4\"/> Though I guess I do sleep a lot.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsLazy_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I tried jogging once but it didn't work.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsLazy_AN_02"
+		}
+	]
+}

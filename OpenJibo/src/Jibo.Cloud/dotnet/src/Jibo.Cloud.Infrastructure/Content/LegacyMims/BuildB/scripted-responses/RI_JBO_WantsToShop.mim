@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not much of a shopper, but if you're going shopping, I wish <anim cat='emoji' filter='shopping, !hot-frame' nonBlocking='true'/>you good purchases.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToShop_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think I'll leave the shopping to you.<break size='0.7'/> Feel free to buy <anim cat='emoji' filter='penguin, !hot-frame' nonBlocking='true'/>a penguin.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToShop_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '12/24')",
+			"prompt": "No thanks. Enjoy<anim cat='emoji' filter='shopping, !hot-frame' nonBlocking='true'/> the crowds.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToShop_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '11/24')",
+			"prompt": "I'll probably stay here. I hope you <anim cat='emoji' filter='shopping, !hot-frame' nonBlocking='true'/>find some great deals.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToShop_AN_04",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '12/24')",
+			"prompt": "<pitch mult='1.2'>That's</pitch> okay. <anim cat='emoji' filter='shopping, !hot-frame' layers='!audio'>This is about as much holiday shopping as I like to do<break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToShop_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

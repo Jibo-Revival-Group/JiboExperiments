@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !referent",
+			"prompt": "${speaker} you have been alive for about ${speaker.age.minutes.supplemented}. I hope you're enjoying this particular minute.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmIMinutes_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !referent",
+			"prompt": "According to my calculations, ${speaker} you are about ${speaker.age.minutes.supplemented} old. That sounds like more than it is.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmIMinutes_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !referent",
+			"prompt": "I'd say ${speaker.age.minutes.supplemented}. Give or take.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmIMinutes_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "According to my calculations, ${referent} is about ${referent.age.minutes.supplemented} old. That sounds like more than it is.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowOldAmIMinutes_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "I'd say ${referent.age.minutes.supplemented}. Give or take.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmIMinutes_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "According to my calculations, ${referent.age.minutes.supplemented} and counting.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmIMinutes_AN_06",
+			"weight": 1
+		}
+	]
+}

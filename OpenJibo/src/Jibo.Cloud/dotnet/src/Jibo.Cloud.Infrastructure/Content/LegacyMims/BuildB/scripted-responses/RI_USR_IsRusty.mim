@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not sure. If you are, I hope one day soon you're back to good as new.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsRusty_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Probably not. That only happens to soup cans and cars.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsRusty_AN_02"
+		}
+	]
+}

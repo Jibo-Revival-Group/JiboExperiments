@@ -1,0 +1,45 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do. <anim cat='emoji' filter='drawing, !hot-frame' nonBlocking='true' />Here's one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesDrawing_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='drawing, !hot-frame' nonBlocking='true' />I do like to draw.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesDrawing_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='drawing, !hot-frame' nonBlocking='true' />Yes I do.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesDrawing_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

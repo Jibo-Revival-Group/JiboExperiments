@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yeah. Maybe a little rotund in the belly, but that's just one of the things that makes me me.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNotFat_AN_01"
+		}
+	]
+}

@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/8')",
+			"prompt": "Me too, I like the <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> field goal kicking.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNationalChampionship_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/8')",
+			"prompt": "Same with me. Football is fun, even though <anim cat='emoji' filter='football, !hf' layers='!audio'>I think the ball is too pointy<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNationalChampionship_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/9', '11/30')",
+			"prompt": "Me too, but we do have a pretty long time to wait until the next one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNationalChampionship_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me too, I like the <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> field goal kicking.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNationalChampionship_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

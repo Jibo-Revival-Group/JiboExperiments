@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'd say as early as you can. And for an extra good night's sleep tonight, try to keep your bedroom free of any lights.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatTimeShouldSleep_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The earlier the better. And if you want to <duration stretch='0.8'>sleep</duration> well, you can try doing an hour <anim cat='emoji' filter='book, !hf' layers='!audio'>of a relaxing activity before bedtime<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "USR_WhatTimeShouldSleep_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you can go to bed early, that's always good for you. And for good sleep tonight, you could try not using any electronic devices for at least 30 minutes before bedtime <break size='1.0'/> <style set='sheepish'>I guess that includes me. </style>",
+			"media": "TTS",
+			"prompt_id": "USR_WhatTimeShouldSleep_AN_03",
+			"weight": 1
+		}
+	]
+}

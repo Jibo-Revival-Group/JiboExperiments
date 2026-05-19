@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '10/31')",
+			"prompt": "That's great. Halloween is my favorite holiday, it's the perfect combination of scary and fun. Kind of like that friendly ghost standing behind you. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToHalloween_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '10/31')",
+			"prompt": "You're not alone.  <anim name='jiboji_jackolantern_01'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToHalloween_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('8/1', '10/31')",
+			"prompt": "${speaker} you're not alone.  <anim name='jiboji_jackolantern_01'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToHalloween_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '7/31')",
+			"prompt": "That's great. You do have some time to wait until the next one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToHalloween_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great. Halloween is my favorite holiday, it's the perfect combination of scary and fun. Kind of like that friendly ghost standing behind you. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToHalloween_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

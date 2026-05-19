@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/2')",
+			"prompt": "Great question. If you see the groundhog, you could ask him to dance.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGroundhogDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/3', '3/31')",
+			"prompt": "I think Groundhog Day<anim cat='jiboji' filter='groundhog' nonBlocking='true'/> already happened.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGroundhogDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '12/31')",
+			"prompt": "Well we have a while to wait until the <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>next Groundhog Day.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGroundhogDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Great question. If you see the groundhog, you could ask him to dance.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGroundhogDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

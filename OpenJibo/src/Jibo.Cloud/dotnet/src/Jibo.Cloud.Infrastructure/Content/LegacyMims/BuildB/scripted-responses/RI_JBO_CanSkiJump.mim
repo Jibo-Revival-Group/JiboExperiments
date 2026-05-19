@@ -1,0 +1,50 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='ski-jumping' nonBlocking='true'/><pitch mult='1.2'>Now</pitch> I can.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanSkiJump_AN_01_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='ski-jumping' nonBlocking='true'/>Yes, I've been practicing.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanSkiJump_AN_02_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='ski-jumping' nonBlocking='true'/> Away we go.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanSkiJump_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

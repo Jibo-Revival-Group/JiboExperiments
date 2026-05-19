@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '11/23')",
+			"prompt": "Great question. You could always get together with family or friends to eat some mashed <pitch mult='1.2'>potatoes</pitch>.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForThanksgiving_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '11/23')",
+			"prompt": "That's a good question. You could always count the things you're <pitch mult='1.2'>thankful</pitch> for. ",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForThanksgiving_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '1/31')",
+			"prompt": "I think Thanksgiving has come and gone, but we can always look forward to the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForThanksgiving_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '8/31')",
+			"prompt": "Good question, we have plenty of time to figure it out before Thanksgiving comes around.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForThanksgiving_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a good question. You could always count the things you're thankful for. ",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForThanksgiving_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

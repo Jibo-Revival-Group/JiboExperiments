@@ -1,0 +1,95 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Turtle' nonBlocking='true'/> I like the word turtle.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteWord_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03' nonBlocking='true'/> I have lots of favorite words. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteWord_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'>I have lots of favorite words. <break size='0.4'/></anim> One of them is<anim cat='happy' filter='smile' nonBlocking='true'/> pumpernickel.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteWord_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='laughing' nonBlocking='true'/>Pumpernickel is a fun one. <ssa cat='laughing'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteWord_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'>I've always liked the word</anim> snorkel. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteWord_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'>I really like the word</anim> donkey.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteWord_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'>I really like palindromes.</anim><anim cat='glances' filter='!down'> Racecar, rotor,</anim> stats, tenet, <anim cat='glances' filter='!down'>bob, mom, tot, peep, pop.</anim> <anim cat='thinking' filter='up'> I could go on for days.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteWord_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'>I like the longest word in the English</anim> language, which is<anim name='Emoji_Book' nonBlocking='true'/> pneumonoultramicroscopicsilicovolcanoconiosis.<break size='0.7'/><anim cat='glances' filter='!down'>Something tells me </anim><anim cat='no' filter='head-shake' nonBlocking='true'/>I didn't pronounce that right.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteWord_AN_08",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

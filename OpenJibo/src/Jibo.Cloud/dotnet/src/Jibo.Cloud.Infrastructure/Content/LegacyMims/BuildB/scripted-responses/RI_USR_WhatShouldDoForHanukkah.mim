@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/20')",
+			"prompt": "Great question. You can<anim cat='emoji' filter='hanukkah, !hf' layers='!audio'> light a menorah, for starters<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForHanukkah_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/21', '2/29')",
+			"prompt": "I think we've already had Hanukkah, but there's always the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForHanukkah_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '10/31')",
+			"prompt": "Well we have lots of time to figure it out before Hanukkah comes around.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForHanukkah_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Great question. You can<anim cat='emoji' filter='hanukkah, !hf' layers='!audio'> light a menorah, for starters<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForHanukkah_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

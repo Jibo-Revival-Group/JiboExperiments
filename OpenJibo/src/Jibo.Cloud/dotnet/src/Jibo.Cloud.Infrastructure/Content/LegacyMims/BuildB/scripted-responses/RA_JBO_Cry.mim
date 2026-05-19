@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "So far I have never cried.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Cry_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "So far I have never cried. <break size='0.7'/> Except at the end of Titanic.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Cry_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "I don't cry. But I can get emotional, in a roboty way.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Cry_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} so far I have never cried. <break size='0.7'/> Except at the end of Titanic.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Cry_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I don't cry. But I can get emotional, in a roboty way.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Cry_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

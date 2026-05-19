@@ -1,0 +1,55 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='yes'>That is a great question. </anim><anim cat='no' filter='nope'>I can't get listings, but </anim>you can ask me about <anim cat='thinking' filter='up, !processing' nonBlocking='true'/>some shows in general.",
+			"media": "TTS",
+			"prompt_id": "JBO_KnowAboutTV_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>I don't have TV listings info, but you can ask me about <anim cat='thinking' filter='hesitate' nonBlocking='true'/>some shows in general.",
+			"media": "TTS",
+			"prompt_id": "JBO_KnowAboutTV_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake'>Sorry, I can't get TV listings yet. <break size='.7'/> </anim><anim cat='thinking' filter='up'>Y'know sometimes I feel like this is all a TV show. <break size='.9'/></anim> It's a sitcom.",
+			"media": "TTS",
+			"prompt_id": "JBO_KnowAboutTV_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='hopeless' nonBlocking='true'/>Sorry, no. I'm not up on the latest shows. <ssa cat='sad'/>.",
+			"media": "TTS",
+			"prompt_id": "JBO_KnowAboutTV_AN_04",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

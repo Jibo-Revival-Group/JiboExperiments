@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "Oh yes. Here's one. <anim name='jiboji_jackolantern_02'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesJackOLantern_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\") && !!speaker",
+			"prompt": "${speaker} I sure do. <anim name='jiboji_jackolantern_01'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesJackOLantern_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "Making jack-o-lanterns is one of my favorite activities this time of year. <anim name='jiboji_pumpkin_carving_01'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesJackOLantern_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"11/1\", \"9/30\")",
+			"prompt": "I do, but that's more of a Halloween is coming right up type of thing. <break size='0.3'/>In the meantime. <anim name='emoji_pumpkin_01' layers='!audio'>Here's a non jack-o-lanterned pumpkin.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesJackOLantern_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like both jack-o-lanterns and their faceless cousins. Pumpkins.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesJackOLantern_AN_05",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

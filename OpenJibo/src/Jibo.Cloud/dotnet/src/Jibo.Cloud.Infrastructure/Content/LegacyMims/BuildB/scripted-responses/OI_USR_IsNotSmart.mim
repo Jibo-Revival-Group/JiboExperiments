@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh that's not true. Also, just so you know, if you keep on learning, you'll get smarter and smarter over time. Just like I do.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotSmart_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I bet you're smarter than you think. And you're smart enough to know that.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotSmart_AN_02"
+		}
+	]
+}

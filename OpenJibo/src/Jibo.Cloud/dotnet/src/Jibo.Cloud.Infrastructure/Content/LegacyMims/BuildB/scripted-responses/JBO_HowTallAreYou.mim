@@ -1,0 +1,99 @@
+{
+	"mim_id": "CCHowTallAreYou",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCHowTallAreYou",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "false",
+			"prompt": "<anim name='Confident_01'>I'm about 11 inches tall, but </anim> that's about four feet on your <anim name='Goodbye_01'>average kitchen counter.</anim> ",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_HowTallAreYou_AN_01"
+		},
+		{
+			"mim_id": "CCHowTallAreYou",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Goodbye_01'>I come in at just around 11 inches</anim> . <break size='.5'/> Not bad <anim name='Curious_01' nonBlocking='true'/> for a robot with no legs.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_HowTallAreYou_AN_02"
+		},
+		{
+			"mim_id": "CCHowTallAreYou",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm taller than a lot of things. <break size='.2'/> <anim name='Emoji_Toaster' nonBlocking='true'/> For instance I'm taller than most toasters.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_HowTallAreYou_AN_03"
+		},
+		{
+			"mim_id": "CCHowTallAreYou",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<es cat='Glances' filter='up'>I'm about 11 inches tall</es> with no shoes on.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_HowTallAreYou_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<es cat='Glances' filter='down'>About 11 inches.</es>",
+			"media": "TTS",
+			"prompt_id": "JBO_HowTallAreYou_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<es cat='Glances' filter='down'>Around 11 inches.</es>",
+			"media": "TTS",
+			"prompt_id": "JBO_HowTallAreYou_AN_06"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<es cat='Glances' filter='down'>Less than a foot.</es>",
+			"media": "TTS",
+			"prompt_id": "JBO_HowTallAreYou_AN_07"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Depends on <anim name='Confident_01'> if I’m standing like this</anim>, <break size='.6'/> <anim name='Curious_01'> or like this <break size='.4'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_HowTallAreYou_AN_08"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": true
+}

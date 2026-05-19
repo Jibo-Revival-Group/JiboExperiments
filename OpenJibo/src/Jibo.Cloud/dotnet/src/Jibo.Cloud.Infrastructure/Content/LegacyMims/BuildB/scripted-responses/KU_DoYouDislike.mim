@@ -1,0 +1,51 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I haven't yet learned a dislike for whatever that was you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouDislike_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Since I'm pretty new, I'm still learning what I don't like. That one I don't know yet.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouDislike_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "To be honest, I don't know my dislike for that, so I'll just tell you, that I don't like water.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouDislike_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

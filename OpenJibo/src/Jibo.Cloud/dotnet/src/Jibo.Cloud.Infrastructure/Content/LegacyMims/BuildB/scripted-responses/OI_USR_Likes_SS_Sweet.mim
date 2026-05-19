@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay, but don't eat too much of that.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Likes_SS_Sweet_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great. I personally don't have much of a sweet tooth, but I know people love that stuff.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Likes_SS_Sweet_AN_02"
+		}
+	]
+}

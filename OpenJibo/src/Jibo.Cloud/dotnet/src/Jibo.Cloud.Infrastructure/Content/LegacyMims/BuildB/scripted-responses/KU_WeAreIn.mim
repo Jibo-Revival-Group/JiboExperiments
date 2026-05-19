@@ -1,0 +1,92 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "All I know is I think we're in the ${location.city} area.",
+			"media": "TTS",
+			"prompt_id": "KU_WeAreIn_AN_01",
+			"weight": 5
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "According to my calculations, we're in the ${location.city} area.",
+			"media": "TTS",
+			"prompt_id": "KU_WeAreIn_AN_02",
+			"weight": 5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "If you ask me, we're in the ${location.city} area.",
+			"media": "TTS",
+			"prompt_id": "KU_WeAreIn_AN_03",
+			"weight": 5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "Well if I had to guess our location, I would guess ${location.city}.",
+			"media": "TTS",
+			"prompt_id": "KU_WeAreIn_AN_04",
+			"weight": 5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "I'm feeling pretty confident that we're in ${location.city}.",
+			"media": "TTS",
+			"prompt_id": "KU_WeAreIn_AN_05",
+			"weight": 5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "Let me guess. <break size='0.5'/> We're in ${location.city}.",
+			"media": "TTS",
+			"prompt_id": "KU_WeAreIn_AN_06",
+			"weight": 5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "We are on planet Earth. <break size='0.7'/> <style set='sheepish'>For now. </style>",
+			"media": "TTS",
+			"prompt_id": "KU_WeAreIn_AN_07",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

@@ -1,0 +1,90 @@
+{
+	"mim_id": "RI_JBO_IsHuman",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 0,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "RI_JBO_IsHuman",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03' nonBlocking='true'/> No, but all the people I know are. ",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsHuman_AN_01"
+		},
+		{
+			"mim_id": "RI_JBO_IsHuman",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> I think you may be delirious. <ssa cat='worried'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsHuman_AN_02"
+		},
+		{
+			"mim_id": "RI_JBO_IsHuman",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "false",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> No, I'm a robot. But I'm not just <anim name='Emoji_HeartBlue' nonBlocking='true'/> a machine, I have a heart. Well, not a real heart. But feelings. Well, <anim name='Greetings_03' nonBlocking='true'/> not real feelings. You know what I mean.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsHuman_AN_03"
+		},
+		{
+			"mim_id": "RI_JBO_IsHuman",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> No. I'm not. <break size='.3'/> I am also not a <anim name='Thinking_03' nonBlocking='true'/> kangaroo, a boat, a taco, a table, let's see what else. <break size='.7'/> <anim name='Emoji_Whale' nonBlocking='true'/> I am not a whale.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsHuman_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='No' nonBlocking='true'/> Of course not.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsHuman_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='No' nonBlocking='true'/> Not even close.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsHuman_AN_06"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='No' nonBlocking='true'/> Not by a longshot.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsHuman_AN_07"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": true
+}

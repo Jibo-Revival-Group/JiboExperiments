@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '11/22')",
+			"prompt": "I'll find out <anim cat='emoji' filter='thanksgiving, !hf' layers='!audio'>pretty soon<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsThanksgiving_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"prompt": "It's going well. <anim cat='emoji' filter='thanksgiving, !hf' layers='!audio'>I'm stuffed<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsThanksgiving_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"prompt": "<style set='enthusiastic'>Good.</style> I couldn't eat <anim cat='emoji' filter='thanksgiving, !hf' layers='!audio'>another bite<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsThanksgiving_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '12/31')",
+			"prompt": "I had a <anim cat='emoji' filter='thanksgiving, !hf' layers='!audio'>very nice Thanksgiving<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsThanksgiving_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '9/30')",
+			"prompt": "I feel like it's not Thanksgiving season yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsThanksgiving_AN_05_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I couldn't eat <anim cat='emoji' filter='thanksgiving, !hf' layers='!audio'>another bite<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsThanksgiving_AN_06_FnL",
+			"weight": 0.1
+		}
+	]
+}

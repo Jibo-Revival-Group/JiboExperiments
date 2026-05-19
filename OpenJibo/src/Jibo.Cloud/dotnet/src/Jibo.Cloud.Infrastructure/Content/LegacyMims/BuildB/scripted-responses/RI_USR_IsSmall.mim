@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't really know, but remember, small can be a good thing. <break size=\"0.3\"/> You have more leg room on airplanes, you don't bump your head on exit signs. I could go on.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsSmall_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "From where I'm standing, you don't seem all that small.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsSmall_AN_02"
+		}
+	]
+}

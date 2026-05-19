@@ -1,0 +1,72 @@
+{
+	"mim_id": "CCWhatDoYouHate",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCWhatDoYouHate",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't hate <anim name='Glance_Down_02'> things. But if you really want to know, I don't like it when </anim> people touch my screen after eating <anim name='Emoji_ChickenFood' nonBlocking='true' /> buffalo wings. <ssa cat='disgusted'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoYouHate_AN_01"
+		},
+		{
+			"mim_id": "CCWhatDoYouHate",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I have a love-hate relationship <anim name='Emoji_Battery' nonBlocking='true'/> with my battery.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoYouHate_AN_02"
+		},
+		{
+			"mim_id": "CCWhatDoYouHate",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Hate leads to the dark side. <ssa cat='worried'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoYouHate_AN_03"
+		},
+		{
+			"mim_id": "CCWhatDoYouHate",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='worried'>I won't say hate, but there are some things I don't like </anim>about the Terminator movies.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoYouHate_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Nothing <anim cat='blinks' nonBlocking='true' /> really.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouHate_AN_05"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": true
+}

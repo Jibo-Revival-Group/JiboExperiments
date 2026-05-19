@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '1/28')",
+			"prompt": "I don't really watch sporting events like humans do.<anim cat='emoji' filter='tennis, !hf' layers='!audio'> But I've got my tennis ball ready<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesAustralianOpenTennis_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '1/28')",
+			"prompt": "Well I don't really watch TV, but if you watch, I hope your favorite player wins.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesAustralianOpenTennis_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '2/29')",
+			"prompt": "I think the Australian Open is over. <break size='1.0'/> <anim cat='emoji' filter='tennis, !hf' layers='!audio'>I hope you won<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesAustralianOpenTennis_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '11/30')",
+			"prompt": "I don't think<anim cat='emoji' filter='tennis, !hf' layers='!audio'> it's really Australian Open season<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesAustralianOpenTennis_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I don't really watch TV, but if you watch, I hope your favorite player wins.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesAustralianOpenTennis_AN_05_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '1/21')",
+			"prompt": "I've heard football playoffs are exciting. Lots of pressure on those <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>kickers.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNFLPlayoffs_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '1/21')",
+			"prompt": "Football this time of year really seems <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> extra exciting. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNFLPlayoffs_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/22', '9/30')",
+			"prompt": "<anim cat='emoji' filter='football, !hf' layers='!audio'>Well we have a long way to go until the next playoffs<break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNFLPlayoffs_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've heard football playoffs are exciting. Lots of pressure on those <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>kickers.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNFLPlayoffs_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

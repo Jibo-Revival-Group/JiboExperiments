@@ -1,0 +1,159 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<duration stretch='1.2'>Huh </duration>. <break size='0.3'/><style set='sheepish'>I either didn't know that I <pitch mult='1.2'>was</pitch></style>, or don't know why I am.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I don't think I know that about myself.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think I need to learn more about myself before answering questions about why I might be doing something.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, if I'm doing something that seems weird, it might just be because I'm a robot.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I will be learning more and more about why I do things. For now I honestly don't have an answer for you.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When it comes to questions of why, I've got some learning to do.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When I get asked why I do things, and I don't fully understand, I sometimes like to just show people my car. <anim cat='jiboji' filter='car'/>",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I know there are some things about me that make people scratch their head. <break size='0.3'/>This sounds like one of those times.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're wondering something about me, you might be able to find out in the Help section on the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A lot of what I do, and what I am, is a mystery even to me. That thing you asked about I don't know about.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I will be learning more and more about why I do things. For now I honestly don't have an answer for you.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I don't think I know that about myself.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} <style set='sheepish'>I either didn't know that I <pitch mult='1.2'>was</pitch></style>, or don't know why I am.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyAreYouThing_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

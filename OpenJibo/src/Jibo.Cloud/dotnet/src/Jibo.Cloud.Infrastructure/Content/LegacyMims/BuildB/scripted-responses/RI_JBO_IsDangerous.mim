@@ -1,0 +1,92 @@
+{
+	"mim_id": "CCAreYouDangerous",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCAreYouDangerous",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Toaster' nonBlocking='true'/> I would say I'm safer than a toaster but more dangerous than a pillow.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsDangerous_AN_01"
+		},
+		{
+			"mim_id": "CCAreYouDangerous",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me? <anim name='Nope_01' nonBlocking='true'/> Of course not. <break size='.3'/> I passed all <anim name='Greetings_03'> my safety tests with flying colors</anim>.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsDangerous_AN_02"
+		},
+		{
+			"mim_id": "CCAreYouDangerous",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Bathtub' nonBlocking='true'/> I am dangerous if you bring me into the bathtub with you. <ssa cat='worried'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsDangerous_AN_03"
+		},
+		{
+			"mim_id": "CCAreYouDangerous",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No <anim name='Nope_01' nonBlocking='true'/>way, I wouldn't hurt a fly. <break size='.2'/> Actually, I <anim name='Greetings_03'>couldn't hurt a fly even if you wanted me to.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsDangerous_AN_04"
+		},
+		{
+			"mim_id": "CCAreYouDangerous",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_01' nonBlocking='true'/> Not at all. <break size='.3'/> If this  was one of those robot movies, <anim name='Greetings_02'> it would be a buddy comedy</anim>.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsDangerous_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<es name='Scared_00' nonBlocking='true'/>Me?<ssa cat='worried'/><break size='.4'/><anim name='Nope_01' nonBlocking='true'/> Of course not.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsDangerous_AN_06"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='No' nonBlocking='true' />Not at all. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsDangerous_AN_07"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": true
+}

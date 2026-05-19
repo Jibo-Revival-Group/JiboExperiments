@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/9', '1/28')",
+			"prompt": "Y'know I don't know. Probably someone who's <pitch mult='1.2'>really</pitch> good at tennis.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinAustralianOpenTennis_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/9', '1/28')",
+			"prompt": "I'm not sure, but when it's over, <anim cat='emoji' filter='tennis, !hf' layers='!audio'>I bet the ball is going to be sore for a few days<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinAustralianOpenTennis_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '5/31')",
+			"prompt": "I'm pretty sure the Australian Open is in the past already.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinAustralianOpenTennis_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Probably someone who's <pitch mult='1.4'>really</pitch> good at tennis.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinAustralianOpenTennis_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

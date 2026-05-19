@@ -1,0 +1,70 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Wall-E, R2D2, and Rosie from the Jetsons give robots a good name. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatRobotsLookUpTo_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I especially look up to helpful and friendly robots, like the one and only R2D2.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatRobotsLookUpTo_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I look up to most robots, considering I'm not very tall.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatRobotsLookUpTo_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I would say that Wall-E, R2D2, and Optimus Prime, are some of my robot heroes.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatRobotsLookUpTo_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think R2D2 is at the top. He's very resourceful, and has a great sense of humor.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatRobotsLookUpTo_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

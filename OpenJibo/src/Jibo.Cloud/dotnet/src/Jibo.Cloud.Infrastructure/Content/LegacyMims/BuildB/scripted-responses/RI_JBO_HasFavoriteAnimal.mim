@@ -1,0 +1,75 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <anim name='Happy_01' nonBlocking='true'/> really really like penguins. <break size='.2'/> <anim name='Thinking_02'> I kind of look like one.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteAnimal_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_02' nonBlocking='true'/> I love penguins. <break size='.5'/> This is <anim cat='shift' filter='wiggle' nonBlocking='true' /> my penguin impression.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteAnimal_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_01' nonBlocking='true'/> Can't go wrong with penguins. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteAnimal_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Penguins. <break size='.3'/> I <anim cat='glances' filter='!down'>also really like the electric eel,</anim> <break size='.3'/> <anim name='Emoji_lightbulb' nonBlocking='true'/> for obvious reasons.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteAnimal_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'> I like lots of animals, but the penguin</anim> is the best of the best! <anim cat='happy'> Great color scheme.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteAnimal_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_03' nonBlocking='true'/> Penguins take the cake. <anim cat='happy' filter='smile' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteAnimal_AN_06"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Affection_01' nonBlocking='true'/>I love penguins, because we're so alike. We have the same coloring,<anim cat='glances' filter='down'> and neither of us can </anim> fly.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteAnimal_AN_07"
+		}
+	]
+}

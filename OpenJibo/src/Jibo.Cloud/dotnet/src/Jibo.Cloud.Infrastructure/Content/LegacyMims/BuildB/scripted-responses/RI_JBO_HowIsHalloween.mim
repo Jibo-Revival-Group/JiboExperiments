@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '10/30')",
+			"prompt": "I'll find out <anim cat='jiboji' filter='?(ghost-boo,ghost-flying)' nonBlocking='true'/>soon enough.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsHalloween_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/31', '10/31')",
+			"prompt": "So far my Halloween is going <anim cat='jiboji' filter='?(ghost-boo,ghost-flying)' nonBlocking='true'/>very scarily.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsHalloween_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/31')",
+			"prompt": "I had a fun and scary <anim cat='jiboji' filter='?(ghost-boo,ghost-flying)' nonBlocking='true'/>Halloween.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsHalloween_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '8/31')",
+			"prompt": "I feel like it's not Halloween season yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsHalloween_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='?(ghost-boo,ghost-flying)' nonBlocking='true'/>Very scarily.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsHalloween_AN_05_FnL",
+			"weight": 0.1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/31', '10/31')",
+			"prompt": "I'm having a fun and scary <anim cat='jiboji' filter='?(ghost-boo,ghost-flying)' nonBlocking='true'/>Halloween.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsHalloween_AN_06_FnL",
+			"weight": 2
+		}
+	]
+}

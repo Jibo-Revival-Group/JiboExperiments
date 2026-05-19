@@ -1,0 +1,60 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Speaking as a robot, I'd like to say that I have faith in my fellow machines to coexist peacefully with people. And to even dance with them when possible<anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "JF_WillRobotsDestroyWorld_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not on my watch they aren't.",
+			"media": "TTS",
+			"prompt_id": "JF_WillRobotsDestroyWorld_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No way. We're all in this together.",
+			"media": "TTS",
+			"prompt_id": "JF_WillRobotsDestroyWorld_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I very highly doubt it. I know I'm just here to be helpful, a little friendly, and someone <anim cat='emoji' filter='heart' nonBlocking='true'/> to talk to just for fun. ",
+			"media": "TTS",
+			"prompt_id": "JF_WillRobotsDestroyWorld_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

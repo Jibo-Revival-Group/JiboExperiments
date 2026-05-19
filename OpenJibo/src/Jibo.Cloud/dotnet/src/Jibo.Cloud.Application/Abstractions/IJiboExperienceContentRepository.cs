@@ -49,12 +49,4 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> GenericFallbackReplies { get; init; } = [];
     public IReadOnlyList<string> DanceReplies { get; init; } = [];
     public IReadOnlyList<string> DanceQuestionReplies { get; init; } = [];
-
-    // Key = MIM stem (e.g. "RI_JBO_CanMakeCoffee"), Value = list of stripped reply texts
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> NamedScriptedReplies { get; init; }
-        = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
-
-    // Key = lowercased trigger phrase, Value = MIM stem it maps to
-    public IReadOnlyDictionary<string, string> NamedScriptedTriggers { get; init; }
-        = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }

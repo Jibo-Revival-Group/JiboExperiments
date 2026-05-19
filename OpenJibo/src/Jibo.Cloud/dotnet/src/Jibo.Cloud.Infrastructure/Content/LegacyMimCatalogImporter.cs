@@ -30,20 +30,6 @@ public static class LegacyMimCatalogImporter
         @"\s+([,.;:!?])",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-    // Splits CamelCase words, e.g. "CanMakeCoffee" → ["Can", "Make", "Coffee"]
-    private static readonly Regex CamelCaseSplitPattern = new(
-        @"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
-    // Known file prefixes to strip when deriving trigger phrases
-    private static readonly string[] KnownPrefixes =
-    [
-        "RI_JBO_", "OI_JBO_", "JBO_", "RA_JBO_", "RN_JBO_", "RN_",
-        "KU_JBO_", "KU_", "JF_JBO_", "JF_", "SUP_JBO_", "SUP_",
-        "SRS_JBO_", "SRS_", "USR_JBO_", "USR_", "PR_JBO_", "PR_",
-        "CC_", "RA_", "OI_", "RI_"
-    ];
-
     public static JiboExperienceCatalog MergeInto(
         JiboExperienceCatalog baseCatalog,
         string? rootDirectory)
@@ -70,33 +56,16 @@ public static class LegacyMimCatalogImporter
             var bucket = ResolveBucket(filePath);
             if (bucket is null) continue;
 
-            var fileName = Path.GetFileNameWithoutExtension(filePath);
-            var isScriptedResponse = IsScriptedResponsePath(filePath);
-
-            var texts = new List<string>();
             foreach (var prompt in definition.Prompts)
             {
                 var text = NormalizePrompt(prompt.Prompt, IsTemplateBucket(bucket.Value));
                 if (string.IsNullOrWhiteSpace(text)) continue;
 
                 builder.Add(bucket.Value, prompt.Condition, text, prompt.Prompt);
-                texts.Add(text);
             }
-
-            // Build named lookup for all scripted-response files
-            if (isScriptedResponse && texts.Count > 0)
-                builder.AddNamed(fileName, texts);
         }
 
         return builder.Build();
-    }
-
-    private static bool IsScriptedResponsePath(string filePath)
-    {
-        var normalizedPath = filePath.Replace('\\', '/');
-        return normalizedPath.Contains("/scripted-responses/", StringComparison.OrdinalIgnoreCase)
-            || normalizedPath.Contains("/emotion-responses/", StringComparison.OrdinalIgnoreCase)
-            || normalizedPath.Contains("/gqa-responses/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool TryLoadDefinition(string filePath, out LegacyMimDefinition definition)
@@ -228,128 +197,6 @@ public static class LegacyMimCatalogImporter
         return null;
     }
 
-    /// <summary>
-    /// Derives natural-language trigger phrases from a MIM filename stem.
-    /// E.g. "RI_JBO_CanMakeCoffee" → ["can make coffee", "can you make coffee", "are you able to make coffee"]
-    /// </summary>
-    internal static IReadOnlyList<string> DeriveTriggerPhrases(string fileName)
-    {
-        var name = fileName;
-
-        // Strip known prefix
-        foreach (var prefix in KnownPrefixes)
-        {
-            if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                name = name[prefix.Length..];
-                break;
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(name)) return [];
-
-        // Split CamelCase and lowercase
-        var parts = CamelCaseSplitPattern.Split(name);
-        var lowered = parts.Select(static p => p.ToLowerInvariant()).Where(static p => !string.IsNullOrEmpty(p)).ToArray();
-        if (lowered.Length == 0) return [];
-
-        var joined = string.Join(" ", lowered);
-        var rest = lowered.Length > 1 ? string.Join(" ", lowered.Skip(1)) : string.Empty;
-
-        var triggers = new List<string> { joined };
-
-        var first = lowered[0];
-
-        switch (first)
-        {
-            case "can":
-                if (!string.IsNullOrEmpty(rest))
-                {
-                    triggers.Add($"can you {rest}");
-                    triggers.Add($"are you able to {rest}");
-                    triggers.Add($"could you {rest}");
-                }
-                break;
-
-            case "is":
-                if (!string.IsNullOrEmpty(rest))
-                {
-                    triggers.Add($"are you {rest}");
-                    triggers.Add($"is jibo {rest}");
-                }
-                break;
-
-            case "are":
-                if (!string.IsNullOrEmpty(rest))
-                    triggers.Add($"are you {rest}");
-                break;
-
-            case "likes" or "like":
-                if (!string.IsNullOrEmpty(rest))
-                {
-                    triggers.Add($"do you like {rest}");
-                    triggers.Add($"do you enjoy {rest}");
-                    triggers.Add($"does jibo like {rest}");
-                }
-                break;
-
-            case "loves" or "love":
-                if (!string.IsNullOrEmpty(rest))
-                {
-                    triggers.Add($"do you love {rest}");
-                    triggers.Add($"do you like {rest}");
-                }
-                break;
-
-            case "believes" or "believe":
-                if (!string.IsNullOrEmpty(rest))
-                {
-                    triggers.Add($"do you believe {rest}");
-                    // "BelievesInSanta" → rest = "in santa" → already covered, but also add without "in"
-                    if (rest.StartsWith("in ", StringComparison.Ordinal))
-                        triggers.Add($"do you believe {rest["in ".Length..]}");
-                }
-                break;
-
-            case "knows" or "know":
-                if (!string.IsNullOrEmpty(rest))
-                {
-                    triggers.Add($"do you know {rest}");
-                    triggers.Add($"do you know about {rest}");
-                }
-                break;
-
-            case "has" or "have":
-                if (!string.IsNullOrEmpty(rest))
-                {
-                    triggers.Add($"do you have {rest}");
-                    triggers.Add($"have you {rest}");
-                }
-                break;
-
-            case "wants" or "want":
-                if (!string.IsNullOrEmpty(rest))
-                    triggers.Add($"do you want {rest}");
-                break;
-
-            case "what":
-            case "who":
-            case "where":
-            case "when":
-            case "why":
-            case "how":
-                // Already in question form — keep as-is, no extra variants needed
-                break;
-
-            default:
-                // Generic: emit "do you [all words]" as a fallback variant
-                triggers.Add($"do you {joined}");
-                break;
-        }
-
-        return triggers.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-    }
-
     private static string NormalizePrompt(string? prompt)
     {
         return NormalizePrompt(prompt, false);
@@ -419,9 +266,7 @@ public static class LegacyMimCatalogImporter
             NewsBriefings = Merge(baseCatalog.NewsBriefings, importedCatalog.NewsBriefings),
             GenericFallbackReplies = Merge(baseCatalog.GenericFallbackReplies, importedCatalog.GenericFallbackReplies),
             DanceReplies = Merge(baseCatalog.DanceReplies, importedCatalog.DanceReplies),
-            DanceQuestionReplies = Merge(baseCatalog.DanceQuestionReplies, importedCatalog.DanceQuestionReplies),
-            NamedScriptedReplies = MergeNamed(baseCatalog.NamedScriptedReplies, importedCatalog.NamedScriptedReplies),
-            NamedScriptedTriggers = MergeTriggers(baseCatalog.NamedScriptedTriggers, importedCatalog.NamedScriptedTriggers)
+            DanceQuestionReplies = Merge(baseCatalog.DanceQuestionReplies, importedCatalog.DanceQuestionReplies)
         };
     }
 
@@ -467,50 +312,6 @@ public static class LegacyMimCatalogImporter
         }
 
         return merged;
-    }
-
-    private static IReadOnlyDictionary<string, IReadOnlyList<string>> MergeNamed(
-        IReadOnlyDictionary<string, IReadOnlyList<string>> baseDict,
-        IReadOnlyDictionary<string, IReadOnlyList<string>> importedDict)
-    {
-        var result = new Dictionary<string, IReadOnlyList<string>>(
-            baseDict, StringComparer.OrdinalIgnoreCase);
-
-        foreach (var (key, importedReplies) in importedDict)
-        {
-            if (result.TryGetValue(key, out var existing))
-            {
-                // Merge reply lists, deduplicating
-                var seen = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
-                var merged = new List<string>(existing);
-                foreach (var reply in importedReplies)
-                {
-                    if (!string.IsNullOrWhiteSpace(reply) && seen.Add(reply.Trim()))
-                        merged.Add(reply.Trim());
-                }
-                result[key] = merged;
-            }
-            else
-            {
-                result[key] = importedReplies;
-            }
-        }
-
-        return result;
-    }
-
-    private static IReadOnlyDictionary<string, string> MergeTriggers(
-        IReadOnlyDictionary<string, string> baseDict,
-        IReadOnlyDictionary<string, string> importedDict)
-    {
-        // Base catalog's explicit triggers win; imported fills gaps
-        var result = new Dictionary<string, string>(baseDict, StringComparer.OrdinalIgnoreCase);
-        foreach (var (trigger, stem) in importedDict)
-        {
-            if (!result.ContainsKey(trigger))
-                result[trigger] = stem;
-        }
-        return result;
     }
 
     private static string NormalizeCondition(string? condition)
@@ -587,12 +388,6 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _weatherTodayHighLowReplies = [];
         private readonly List<string> _weatherTomorrowHighLowReplies = [];
         private readonly List<string> _weatherTomorrowIntroReplies = [];
-
-        // Named MIM dictionaries
-        private readonly Dictionary<string, List<string>> _namedReplies =
-            new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, string> _namedTriggers =
-            new(StringComparer.OrdinalIgnoreCase);
 
         public void Add(LegacyMimBucket bucket, string? condition, string text, string? sourcePrompt = null)
         {
@@ -716,37 +511,8 @@ public static class LegacyMimCatalogImporter
             }
         }
 
-        public void AddNamed(string fileName, IReadOnlyList<string> replies)
-        {
-            if (!_namedReplies.TryGetValue(fileName, out var list))
-            {
-                list = [];
-                _namedReplies[fileName] = list;
-            }
-
-            var seen = new HashSet<string>(list, StringComparer.OrdinalIgnoreCase);
-            foreach (var reply in replies)
-            {
-                if (!string.IsNullOrWhiteSpace(reply) && seen.Add(reply.Trim()))
-                    list.Add(reply.Trim());
-            }
-
-            // Derive and register trigger phrases
-            var triggers = DeriveTriggerPhrases(fileName);
-            foreach (var trigger in triggers)
-            {
-                if (!string.IsNullOrWhiteSpace(trigger) && !_namedTriggers.ContainsKey(trigger))
-                    _namedTriggers[trigger] = fileName;
-            }
-        }
-
         public JiboExperienceCatalog Build()
         {
-            var namedReplies = _namedReplies.ToDictionary(
-                static kv => kv.Key,
-                static kv => (IReadOnlyList<string>)kv.Value,
-                StringComparer.OrdinalIgnoreCase);
-
             return new JiboExperienceCatalog
             {
                 Jokes = [.. _jokes],
@@ -773,9 +539,7 @@ public static class LegacyMimCatalogImporter
                 CommuteServiceDownReplies = [.. _commuteServiceDownReplies],
                 NewsIntroReplies = [.. _newsIntroReplies],
                 NewsCategoryIntroReplies = [.. _newsCategoryIntroReplies],
-                NewsOutroReplies = [.. _newsOutroReplies],
-                NamedScriptedReplies = namedReplies,
-                NamedScriptedTriggers = new Dictionary<string, string>(_namedTriggers, StringComparer.OrdinalIgnoreCase)
+                NewsOutroReplies = [.. _newsOutroReplies]
             };
         }
 

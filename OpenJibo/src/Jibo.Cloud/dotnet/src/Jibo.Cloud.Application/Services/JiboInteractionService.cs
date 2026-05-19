@@ -753,7 +753,8 @@ public sealed class JiboInteractionService(
             "calendar" => new JiboInteractionDecision("calendar", randomizer.Choose(catalog.CalendarReplies)),
             "commute" => new JiboInteractionDecision("commute", randomizer.Choose(catalog.CommuteReplies)),
             "news" => await BuildNewsDecisionAsync(turn, transcript, catalog, cancellationToken),
-            _ => new JiboInteractionDecision("chat", BuildGenericReply(catalog, transcript, lowered))
+            _ => TryBuildNamedMimDecision(catalog, lowered)
+                 ?? new JiboInteractionDecision("chat", BuildGenericReply(catalog, transcript, lowered))
         };
     }
 
@@ -2233,10 +2234,16 @@ public sealed class JiboInteractionService(
         if (lowered.Contains("good afternoon", StringComparison.Ordinal))
             return "Good afternoon. I am happy to be here.";
 
-        return lowered.Contains("good night", StringComparison.Ordinal)
-            ? "Good night. Sleep tight."
-            : randomizer.Choose(catalog.GenericFallbackReplies)
-                .Replace("{transcript}", transcript, StringComparison.Ordinal);
+        if (lowered.Contains("good night", StringComparison.Ordinal))
+            return "Good night. Sleep tight.";
+
+        // For unrecognized chitchat, use personality replies rather than the
+        // CC_Error "sources unavailable" content (which is reserved for service failures).
+        var chitchatPool = catalog.PersonalityReplies.Count > 0
+            ? catalog.PersonalityReplies
+            : catalog.GenericFallbackReplies;
+        return randomizer.Choose(chitchatPool)
+            .Replace("{transcript}", transcript, StringComparison.Ordinal);
     }
 
     private JiboInteractionDecision BuildScriptedPersonalityDecision(
@@ -2247,6 +2254,31 @@ public sealed class JiboInteractionService(
         return new JiboInteractionDecision(
             intentName,
             SelectLegacyPersonalityReply(catalog, preferredSnippets),
+            ContextUpdates: BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision? TryBuildNamedMimDecision(
+        JiboExperienceCatalog catalog, string loweredTranscript)
+    {
+        // Exact trigger match first
+        if (!catalog.NamedScriptedTriggers.TryGetValue(loweredTranscript, out var stem))
+        {
+            // Partial contains match: find the longest trigger phrase contained in the transcript
+            stem = catalog.NamedScriptedTriggers
+                .Where(kv => loweredTranscript.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(kv => kv.Key.Length)
+                .Select(static kv => kv.Value)
+                .FirstOrDefault();
+        }
+
+        if (stem is null) return null;
+
+        if (!catalog.NamedScriptedReplies.TryGetValue(stem, out var replies) || replies.Count == 0)
+            return null;
+
+        return new JiboInteractionDecision(
+            stem,
+            randomizer.Choose(replies),
             ContextUpdates: BuildScriptedResponseContextUpdates());
     }
 

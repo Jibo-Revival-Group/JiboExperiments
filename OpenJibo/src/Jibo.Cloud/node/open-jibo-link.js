@@ -354,7 +354,7 @@
     }
 
     function getLoopId(parsed) {
-      return parsed?.loopId || parsed?.id || state.loops[0].id;
+      return parsed?.loopId || parsed?.id || state.loops[0]?.id || "fake-loop-id";
     }
 
     function getOrCreateSymmetricKey(loopId) {
@@ -587,10 +587,24 @@
       console.log("LOOP OPERATION:", operation);
 
       if (operation === "List" || operation === "ListLoops") {
+        const loops = state.loops.length > 0
+          ? state.loops
+          : [{
+              id: "fake-loop-id",
+              name: "OpenJibo Test Loop",
+              owner: "usr_test_001",
+              robot: "my-robot-name",
+              robotFriendlyId: "my-robot-serial-number",
+              members: [],
+              isSuspended: false,
+              created: Date.now(),
+              updated: Date.now()
+            }];
+
         return {
           statusCode: 200,
           note: "Returned one loop",
-          body: state.loops
+          body: loops
         };
       }
 

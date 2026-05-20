@@ -170,6 +170,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _people.Clear();
         _people.AddRange(snapshot.People ?? []);
 
+        EnsureDefaultTopology();
+
         if (_robotProfile is null ||
             !string.Equals(_robotProfile.RobotId, _robot.RobotId, StringComparison.OrdinalIgnoreCase))
             _robotProfile = new RobotProfile
@@ -638,6 +640,46 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         Interlocked.Increment(ref _revision);
         SavePersistedState();
+    }
+
+    private void EnsureDefaultTopology()
+    {
+        if (_loops.Count == 0)
+        {
+            _loops.Add(new LoopRecord
+            {
+                OwnerAccountId = _account.AccountId,
+                RobotId = _robot.RobotId,
+                RobotFriendlyId = _robot.DeviceId
+            });
+        }
+
+        if (_people.Count != 0)
+        {
+            return;
+        }
+
+        var loopId = _loops[0].LoopId;
+        _people.Add(new PersonRecord
+        {
+            PersonId = "person-openjibo-owner",
+            AccountId = _account.AccountId,
+            LoopId = loopId,
+            RobotId = _robot.RobotId,
+            DisplayName = $"{_account.FirstName} {_account.LastName}",
+            Alias = _account.FirstName,
+            IsPrimary = true
+        });
+        _people.Add(new PersonRecord
+        {
+            PersonId = "person-openjibo-household-member",
+            AccountId = _account.AccountId,
+            LoopId = loopId,
+            RobotId = _robot.RobotId,
+            DisplayName = "OpenJibo Household Member",
+            Alias = "Household Member",
+            IsPrimary = false
+        });
     }
 
     private static string Slugify(string value)

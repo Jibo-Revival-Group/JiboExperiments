@@ -128,6 +128,33 @@ public sealed class PersistenceStoreTests
         }
     }
 
+    [Fact]
+    public void CloudStateStore_RehydratesDefaultLoopWhenSnapshotLoopsAreMissing()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-cloud-empty-loops-{Guid.NewGuid():N}.json");
+
+        try
+        {
+            File.WriteAllText(persistencePath, """
+            {
+              "SchemaVersion": "1",
+              "Revision": 7,
+              "Loops": []
+            }
+            """);
+
+            var store = new InMemoryCloudStateStore(persistencePath);
+
+            Assert.NotEmpty(store.GetLoops());
+            Assert.Equal("openjibo-default-loop", store.GetLoops()[0].LoopId);
+            Assert.NotEmpty(store.GetPeople());
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
     private sealed class RecordingSnapshotStore : ISnapshotStore
     {
         public List<object> Saves { get; } = [];

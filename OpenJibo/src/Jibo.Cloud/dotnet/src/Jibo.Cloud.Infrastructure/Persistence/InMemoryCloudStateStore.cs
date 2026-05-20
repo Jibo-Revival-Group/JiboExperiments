@@ -578,6 +578,43 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .ToArray();
     }
 
+    public HolidayRecord UpsertHoliday(HolidayRecord holiday)
+    {
+        var resolvedLoopId = string.IsNullOrWhiteSpace(holiday.LoopId) ? ResolveDefaultLoopId() : holiday.LoopId.Trim();
+        var normalizedEventId = string.IsNullOrWhiteSpace(holiday.EventId)
+            ? $"holiday-{resolvedLoopId}-{Slugify(holiday.Name)}"
+            : holiday.EventId.Trim();
+        var normalizedId = string.IsNullOrWhiteSpace(holiday.Id) ? normalizedEventId : holiday.Id.Trim();
+        var resolvedHoliday = new HolidayRecord
+        {
+            Id = normalizedId,
+            EventId = normalizedEventId,
+            Name = string.IsNullOrWhiteSpace(holiday.Name) ? "Holiday" : holiday.Name.Trim(),
+            Category = string.IsNullOrWhiteSpace(holiday.Category) ? "holiday" : holiday.Category.Trim(),
+            Subcategory = holiday.Subcategory,
+            LoopId = resolvedLoopId,
+            MemberId = holiday.MemberId,
+            IsEnabled = holiday.IsEnabled,
+            Date = holiday.Date,
+            EndDate = holiday.EndDate,
+            Source = string.IsNullOrWhiteSpace(holiday.Source) ? "manual" : holiday.Source.Trim(),
+            CountryCode = string.IsNullOrWhiteSpace(holiday.CountryCode) ? "US" : holiday.CountryCode.Trim(),
+            Created = holiday.Created
+        };
+
+        var existingIndex = _holidayOverrides.FindIndex(existing =>
+            string.Equals(existing.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(existing.EventId, normalizedEventId, StringComparison.OrdinalIgnoreCase));
+
+        if (existingIndex >= 0)
+            _holidayOverrides[existingIndex] = resolvedHoliday;
+        else
+            _holidayOverrides.Add(resolvedHoliday);
+
+        TouchState();
+        return resolvedHoliday;
+    }
+
     public void UpdateRobot(DeviceRegistration registration)
     {
         _robot = registration;
@@ -601,6 +638,29 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         Interlocked.Increment(ref _revision);
         SavePersistedState();
+    }
+
+    private static string Slugify(string value)
+    {
+        var builder = new StringBuilder(value.Length);
+        var lastWasDash = false;
+        foreach (var ch in value.ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(ch))
+            {
+                builder.Append(ch);
+                lastWasDash = false;
+                continue;
+            }
+
+            if (!lastWasDash)
+            {
+                builder.Append('-');
+                lastWasDash = true;
+            }
+        }
+
+        return builder.ToString().Trim('-');
     }
 
     private static string ResolveDefaultLoopId(IReadOnlyList<LoopRecord> loops, AccountProfile account)

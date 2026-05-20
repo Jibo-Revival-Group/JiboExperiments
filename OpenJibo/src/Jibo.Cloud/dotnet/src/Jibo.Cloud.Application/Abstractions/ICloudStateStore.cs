@@ -43,5 +43,6 @@ public interface ICloudStateStore
     IReadOnlyList<KeyRequestRecord> GetIncomingKeyRequests();
     IReadOnlyList<KeyRequestRecord> GetBinaryRequests();
     IReadOnlyList<HolidayRecord> GetHolidays(string? loopId = null);
+    HolidayRecord UpsertHoliday(HolidayRecord holiday);
     void UpdateRobot(DeviceRegistration registration);
 }

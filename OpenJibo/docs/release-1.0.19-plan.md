@@ -90,9 +90,11 @@ The goal is to port these in small batches, capture the source-backed phrasing w
 - port holiday-aware personality responses as a visible extension of the new persona slice
 - start with a small, source-backed set (for example birthdays/holidays already represented in legacy data paths)
 - ensure holiday responses feel characterful while still routing through stock-compatible payloads
+- imported Build B holiday buckets now include holiday, holiday greeting, holiday gift, and birthday celebration lines
 - use a loop-scoped merged holiday list in the cloud protocol so system holidays and custom person holidays can coexist
 - source system holidays from a live holiday provider and keep `IsEnabled = false` records available for holiday suppression
 - keep birthday/custom holiday authoring aligned with person memory so future proactivity can suppress or promote holidays per loop
+- birthday memory writes now create loop-scoped holiday records, which keeps the holiday list extensible without changing the protocol shape again
 
 ### 5. Multi-Tenant Memory Storage Foundation
 

@@ -19,6 +19,11 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> FunFacts { get; init; } = [];
     public IReadOnlyList<string> DanceAnimations { get; init; } = [];
     public IReadOnlyList<string> GreetingReplies { get; init; } = [];
+    public IReadOnlyList<string> HolidayReplies { get; init; } = [];
+    public IReadOnlyList<string> HolidaySeasonReplies { get; init; } = [];
+    public IReadOnlyList<string> HolidayGreetingReplies { get; init; } = [];
+    public IReadOnlyList<string> HolidayGiftReplies { get; init; } = [];
+    public IReadOnlyList<string> BirthdayCelebrationReplies { get; init; } = [];
     public IReadOnlyList<string> HowAreYouReplies { get; init; } = [];
     public IReadOnlyList<JiboConditionedReply> EmotionReplies { get; init; } = [];
     public IReadOnlyList<string> PersonalityReplies { get; init; } = [];

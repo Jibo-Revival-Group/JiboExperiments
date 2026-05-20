@@ -857,6 +857,7 @@ Current release theme:
 - Seasonal charm work in flight:
   - source-backed holiday, New Year's, Halloween, spring, and gift prompts are now part of Build B
   - `RN_` holiday greeting files are now bucketed as greetings so seasonal replies stay visible in the catalog
+  - birthday celebration lines are now bucketed separately, and birthday memory writes a loop-scoped holiday record so personal dates can join the holiday list later
 - Presence and thought follow-ups in flight:
   - `welcome back`, `what are you thinking`, `what have you been doing`, and `what did you do` are now part of Build B
   - these keep the social surface lively while the memory and multitenant tracks keep advancing in parallel

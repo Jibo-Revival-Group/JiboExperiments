@@ -20,3 +20,4 @@ Notes:
 - `IsEnabled = false` can be used to suppress a holiday later
 - birthdays and other personal events can be added as loop-scoped custom records
 - the current system holiday source uses Nager.Date with a safe local fallback for uptime
+- birthday memory authoring now upserts a holiday record so the same merged list can later drive celebration and reminder behavior

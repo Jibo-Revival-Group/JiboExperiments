@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -12,7 +13,8 @@ public sealed class JiboInteractionService(
     IPersonalMemoryStore personalMemoryStore,
     IWeatherReportProvider? weatherReportProvider = null,
     ICommuteReportProvider? commuteReportProvider = null,
-    INewsBriefingProvider? newsBriefingProvider = null)
+    INewsBriefingProvider? newsBriefingProvider = null,
+    ICloudStateStore? cloudStateStore = null)
 {
     private const string GreetingRouteMetadataKey = "greetingsRoute";
     private const string GreetingSpeakerMetadataKey = "greetingsSpeaker";
@@ -634,17 +636,25 @@ public sealed class JiboInteractionService(
                 catalog,
                 "robot_is_likable",
                 "people like me"),
-            "seasonal_holiday_greeting" => BuildScriptedGreetingDecision(
+            "seasonal_holiday_greeting" => BuildScriptedHolidayGreetingDecision(
                 catalog,
                 "seasonal_holiday_greeting",
-                "It's a fun time of year",
-                "And to you too",
-                "Right back at you"),
-            "seasonal_holidays" => BuildScriptedPersonalityDecision(
+                "fun time of year",
+                "right back at you",
+                "and to you too"),
+            "seasonal_holidays" => BuildScriptedHolidayTemplateDecision(
+                turn,
+                greetingPresence,
                 catalog,
                 "seasonal_holidays",
                 "official owner can tell me which ones we'll celebrate together",
                 "going to the jibo's settings screen in the jibo app"),
+            "seasonal_holiday_season" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
+                "seasonal_holiday_season",
+                "holiday season",
+                "festive",
+                "celebrate"),
             "seasonal_new_years_resolution" => BuildScriptedPersonalityDecision(
                 catalog,
                 "seasonal_new_years_resolution",
@@ -669,12 +679,18 @@ public sealed class JiboInteractionService(
                 catalog,
                 "seasonal_first_day_spring",
                 "maybe enjoy some flowers and all things spring"),
-            "seasonal_holiday_gift" => BuildScriptedPersonalityDecision(
-                catalog,
+            "seasonal_holiday_gift" => BuildScriptedHolidayDecision(
+                catalog.HolidayGiftReplies,
                 "seasonal_holiday_gift",
                 "ask for a pet elephant",
                 "experience as a present",
                 "donate to charities in other people's names"),
+            "birthday_celebration" => BuildScriptedHolidayDecision(
+                catalog.BirthdayCelebrationReplies,
+                "birthday_celebration",
+                "another year older",
+                "can't wait to see what you got me",
+                "powered on for the first time today"),
             "robot_favorite_flower" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_flower",
@@ -974,7 +990,27 @@ public sealed class JiboInteractionService(
                 "memory_set_birthday",
                 "I can remember it if you say, my birthday is March 14.");
 
-        personalMemoryStore.SetBirthday(ResolveTenantScope(turn), birthday);
+        var tenantScope = ResolveTenantScope(turn);
+        personalMemoryStore.SetBirthday(tenantScope, birthday);
+        var birthdayDate = TryParseBirthdayDate(birthday);
+        if (birthdayDate is not null)
+        {
+            var birthdayLabel = ResolvePreferredBirthdayLabel(turn);
+            cloudStateStore?.UpsertHoliday(new HolidayRecord
+            {
+                EventId = $"birthday-{tenantScope.LoopId}-{tenantScope.PersonId ?? "loop"}",
+                Name = string.IsNullOrWhiteSpace(birthdayLabel) ? "Birthday" : $"{birthdayLabel}'s Birthday",
+                Category = "birthday",
+                Subcategory = "personal",
+                LoopId = tenantScope.LoopId,
+                MemberId = tenantScope.PersonId,
+                IsEnabled = true,
+                Date = birthdayDate.Value,
+                Source = "birthday",
+                CountryCode = "US"
+            });
+        }
+
         return new JiboInteractionDecision(
             "memory_set_birthday",
             $"Got it. I will remember your birthday is {birthday}.");
@@ -990,6 +1026,78 @@ public sealed class JiboInteractionService(
             : new JiboInteractionDecision(
                 "memory_get_birthday",
                 $"You told me your birthday is {birthday}.");
+    }
+
+    private static DateOnly? TryParseBirthdayDate(string birthdayText)
+    {
+        if (string.IsNullOrWhiteSpace(birthdayText)) return null;
+
+        var normalized = birthdayText.Trim().ToLowerInvariant();
+        var match = Regex.Match(
+            normalized,
+            @"\b(?<month>january|february|march|april|may|june|july|august|september|october|november|december)\s+(?<day>\d{1,2})(?:st|nd|rd|th)?\b",
+            RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+        if (!match.Success) return null;
+
+        var month = match.Groups["month"].Value.ToLowerInvariant() switch
+        {
+            "january" => 1,
+            "february" => 2,
+            "march" => 3,
+            "april" => 4,
+            "may" => 5,
+            "june" => 6,
+            "july" => 7,
+            "august" => 8,
+            "september" => 9,
+            "october" => 10,
+            "november" => 11,
+            "december" => 12,
+            _ => 0
+        };
+        if (month == 0) return null;
+
+        if (!int.TryParse(match.Groups["day"].Value, out var day) || day is < 1 or > 31) return null;
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var year = today.Year;
+        if (day > DateTime.DaysInMonth(year, month)) return null;
+
+        DateOnly birthday;
+        try
+        {
+            birthday = new DateOnly(year, month, day);
+        }
+        catch
+        {
+            return null;
+        }
+
+        if (birthday < today) birthday = birthday.AddYears(1);
+        return birthday;
+    }
+
+    private static string? ResolvePreferredBirthdayLabel(TurnContext turn)
+    {
+        var context = ResolveGreetingPresenceProfile(turn);
+        return !string.IsNullOrWhiteSpace(context.PrimaryPersonId) &&
+               context.LoopUserFirstNames.TryGetValue(context.PrimaryPersonId, out var firstName) &&
+               !string.IsNullOrWhiteSpace(firstName)
+            ? ToDisplayName(firstName)
+            : null;
+    }
+
+    private string RenderHolidayTemplate(string template, TurnContext turn, GreetingPresenceProfile presence)
+    {
+        var ownerName = ResolvePreferredGreetingName(turn, presence);
+        var speakerName = !string.IsNullOrWhiteSpace(ownerName) ? ownerName : "you";
+        return template
+            .Replace("${speaker}'s", $"{speakerName}'s", StringComparison.OrdinalIgnoreCase)
+            .Replace("${speaker}", speakerName, StringComparison.OrdinalIgnoreCase)
+            .Replace("${loop.owner}", string.IsNullOrWhiteSpace(ownerName) ? string.Empty : ownerName,
+                StringComparison.OrdinalIgnoreCase)
+            .Replace("  ", " ", StringComparison.Ordinal)
+            .Trim();
     }
 
     private JiboInteractionDecision BuildRememberImportantDateDecision(TurnContext turn, string transcript)
@@ -2360,6 +2468,42 @@ public sealed class JiboInteractionService(
             ContextUpdates: BuildScriptedResponseContextUpdates());
     }
 
+    private JiboInteractionDecision BuildScriptedHolidayDecision(
+        IReadOnlyList<string> replies,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            SelectLegacyReply(replies, preferredSnippets),
+            ContextUpdates: BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildScriptedHolidayGreetingDecision(
+        JiboExperienceCatalog catalog,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            SelectLegacyReply(catalog.HolidayGreetingReplies, preferredSnippets),
+            ContextUpdates: BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildScriptedHolidayTemplateDecision(
+        TurnContext turn,
+        GreetingPresenceProfile presence,
+        JiboExperienceCatalog catalog,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        var selected = SelectLegacyReply(catalog.HolidayReplies, preferredSnippets);
+        return new JiboInteractionDecision(
+            intentName,
+            RenderHolidayTemplate(selected, turn, presence),
+            ContextUpdates: BuildScriptedResponseContextUpdates());
+    }
+
     private static IDictionary<string, object?> BuildScriptedResponseContextUpdates()
     {
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -2381,7 +2525,7 @@ public sealed class JiboInteractionService(
             if (!string.IsNullOrWhiteSpace(match)) return match;
         }
 
-        return randomizer.Choose(catalog.PersonalityReplies);
+        return catalog.PersonalityReplies.Count == 0 ? string.Empty : randomizer.Choose(catalog.PersonalityReplies);
     }
 
     private string SelectLegacyGreetingReply(JiboExperienceCatalog catalog, params string[] preferredSnippets)
@@ -2395,7 +2539,21 @@ public sealed class JiboInteractionService(
             if (!string.IsNullOrWhiteSpace(match)) return match;
         }
 
-        return randomizer.Choose(catalog.GreetingReplies);
+        return catalog.GreetingReplies.Count == 0 ? string.Empty : randomizer.Choose(catalog.GreetingReplies);
+    }
+
+    private string SelectLegacyReply(IReadOnlyList<string> replies, params string[] preferredSnippets)
+    {
+        foreach (var snippet in preferredSnippets)
+        {
+            if (string.IsNullOrWhiteSpace(snippet)) continue;
+
+            var match = replies.FirstOrDefault(reply =>
+                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(match)) return match;
+        }
+
+        return replies.Count == 0 ? string.Empty : randomizer.Choose(replies);
     }
 
     private static string ResolveSemanticIntent(
@@ -2939,6 +3097,19 @@ public sealed class JiboInteractionService(
 
         if (MatchesAny(
                 loweredTranscript,
+                "how is holiday season",
+                "how's holiday season",
+                "how is the holiday season",
+                "do you like holiday season",
+                "do you like the holiday season",
+                "what is your favorite holiday",
+                "what's your favorite holiday",
+                "what holiday do you like",
+                "what is holiday season like"))
+            return "seasonal_holiday_season";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your new years resolution",
                 "what is your new year's resolution",
                 "what is your new year s resolution",
@@ -2980,6 +3151,13 @@ public sealed class JiboInteractionService(
                 "what gift should i get for christmas",
                 "what should i get someone for the holidays"))
             return "seasonal_holiday_gift";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "happy birthday",
+                "happy birthday jibo",
+                "happy birthday to you"))
+            return "birthday_celebration";
 
         if (MatchesAny(
                 loweredTranscript,

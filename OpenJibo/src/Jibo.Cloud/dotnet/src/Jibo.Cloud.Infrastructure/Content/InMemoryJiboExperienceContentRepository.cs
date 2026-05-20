@@ -83,6 +83,11 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "Hello there. I am glad you said hi.",
                 "Hey. I am happy to see you."
             ],
+            HolidaySeasonReplies =
+            [
+                "I do like festive times.",
+                "I like anything that makes people want to celebrate."
+            ],
             HowAreYouReplies =
             [
                 "I am feeling cheerful and robotic.",

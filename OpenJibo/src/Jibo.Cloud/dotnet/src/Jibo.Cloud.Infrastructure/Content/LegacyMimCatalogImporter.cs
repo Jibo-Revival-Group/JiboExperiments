@@ -113,6 +113,26 @@ public static class LegacyMimCatalogImporter
             normalizedPath.Contains("/gqa-responses/", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Emotion;
 
+        if (fileName.StartsWith("JBO_WhatHolidaysDoYouCelebrate", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.Holiday;
+
+        if (fileName.StartsWith("RI_JBO_HasFavoriteHoliday", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.HolidaySeason;
+
+        if (fileName.StartsWith("RN_HappyHolidays", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.HolidayGreeting;
+
+        if (fileName.StartsWith("RI_USR_WhatShouldGetForHoliday", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.HolidayGift;
+
+        if (fileName.StartsWith("RN_HappyBirthdayToJibo", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("OI_USR_CelebratesLoopMemberAskedAboutBirthday", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("OI_USR_CelebratesJiboBirthday", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_CelebratesLoopMemberAskedAboutBirthday", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_CelebratesSpeakerBirthday", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_CelebratesJiboBirthday", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.BirthdayCelebration;
+
         if (fileName.StartsWith("WeatherIntroTomorrow", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.WeatherTomorrowIntro;
 
@@ -231,6 +251,12 @@ public static class LegacyMimCatalogImporter
             FunFacts = Merge(baseCatalog.FunFacts, importedCatalog.FunFacts),
             DanceAnimations = Merge(baseCatalog.DanceAnimations, importedCatalog.DanceAnimations),
             GreetingReplies = Merge(baseCatalog.GreetingReplies, importedCatalog.GreetingReplies),
+            HolidayReplies = Merge(baseCatalog.HolidayReplies, importedCatalog.HolidayReplies),
+            HolidaySeasonReplies = Merge(baseCatalog.HolidaySeasonReplies, importedCatalog.HolidaySeasonReplies),
+            HolidayGreetingReplies = Merge(baseCatalog.HolidayGreetingReplies, importedCatalog.HolidayGreetingReplies),
+            HolidayGiftReplies = Merge(baseCatalog.HolidayGiftReplies, importedCatalog.HolidayGiftReplies),
+            BirthdayCelebrationReplies = Merge(baseCatalog.BirthdayCelebrationReplies,
+                importedCatalog.BirthdayCelebrationReplies),
             HowAreYouReplies = Merge(baseCatalog.HowAreYouReplies, importedCatalog.HowAreYouReplies),
             EmotionReplies = Merge(baseCatalog.EmotionReplies, importedCatalog.EmotionReplies),
             PersonalityReplies = Merge(baseCatalog.PersonalityReplies, importedCatalog.PersonalityReplies),
@@ -324,22 +350,28 @@ public static class LegacyMimCatalogImporter
         return string.IsNullOrWhiteSpace(condition) ? string.Empty : WhitespacePattern.Replace(condition.Trim(), " ");
     }
 
-    private static bool IsTemplateBucket(LegacyMimBucket bucket)
-    {
-        return bucket is LegacyMimBucket.PersonalReportKickOff
+        private static bool IsTemplateBucket(LegacyMimBucket bucket)
+        {
+            return bucket is LegacyMimBucket.PersonalReportKickOff
             or LegacyMimBucket.PersonalReportOutro
             or LegacyMimBucket.WeatherIntro
             or LegacyMimBucket.WeatherTomorrowIntro
             or LegacyMimBucket.WeatherTodayHighLow
             or LegacyMimBucket.WeatherTomorrowHighLow
             or LegacyMimBucket.WeatherServiceDown
-            or LegacyMimBucket.ReportSkillTemplate;
-    }
+            or LegacyMimBucket.ReportSkillTemplate
+            or LegacyMimBucket.Holiday;
+        }
 
     private enum LegacyMimBucket
     {
         GenericFallback,
         Greeting,
+        Holiday,
+        HolidaySeason,
+        HolidayGreeting,
+        HolidayGift,
+        BirthdayCelebration,
         Jokes,
         RobotFacts,
         HumanFacts,
@@ -375,9 +407,14 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _calendarServiceDownReplies = [];
         private readonly List<string> _commuteNowReplies = [];
         private readonly List<string> _commuteServiceDownReplies = [];
+        private readonly List<string> _birthdayCelebrationReplies = [];
         private readonly List<JiboConditionedReply> _emotionReplies = [];
         private readonly List<string> _fallbacks = [];
         private readonly List<string> _funFacts = [];
+        private readonly List<string> _holidayGiftReplies = [];
+        private readonly List<string> _holidayGreetingReplies = [];
+        private readonly List<string> _holidayReplies = [];
+        private readonly List<string> _holidaySeasonReplies = [];
         private readonly List<string> _greetings = [];
         private readonly List<string> _howAreYous = [];
         private readonly List<string> _humanFacts = [];
@@ -440,6 +477,21 @@ public static class LegacyMimCatalogImporter
                         Condition = normalizedCondition,
                         Reply = text
                     });
+                    return;
+                case LegacyMimBucket.Holiday:
+                    AddDistinct(_holidayReplies, text);
+                    return;
+                case LegacyMimBucket.HolidaySeason:
+                    AddDistinct(_holidaySeasonReplies, text);
+                    return;
+                case LegacyMimBucket.HolidayGreeting:
+                    AddDistinct(_holidayGreetingReplies, text);
+                    return;
+                case LegacyMimBucket.HolidayGift:
+                    AddDistinct(_holidayGiftReplies, text);
+                    return;
+                case LegacyMimBucket.BirthdayCelebration:
+                    AddDistinct(_birthdayCelebrationReplies, text);
                     return;
                 case LegacyMimBucket.Personality:
                     if (_personalities.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase)))
@@ -530,6 +582,11 @@ public static class LegacyMimCatalogImporter
                 HumanFacts = [.. _humanFacts],
                 FunFacts = [.. _funFacts],
                 GreetingReplies = [.. _greetings],
+                HolidayReplies = [.. _holidayReplies],
+                HolidaySeasonReplies = [.. _holidaySeasonReplies],
+                HolidayGreetingReplies = [.. _holidayGreetingReplies],
+                HolidayGiftReplies = [.. _holidayGiftReplies],
+                BirthdayCelebrationReplies = [.. _birthdayCelebrationReplies],
                 HowAreYouReplies = [.. _howAreYous],
                 EmotionReplies = [.. _emotionReplies],
                 PersonalityReplies = [.. _personalities],

@@ -643,6 +643,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("merry christmas", "seasonal_holiday_greeting", "It's a fun time of year")]
     [InlineData("what holidays do you celebrate", "seasonal_holidays",
         "official owner can tell me which ones we'll celebrate together")]
+    [InlineData("how is holiday season", "seasonal_holiday_season", "I do like festive times.")]
+    [InlineData("do you like holiday season", "seasonal_holiday_season", "I do like festive times.")]
     [InlineData("what is your new year's resolution", "seasonal_new_years_resolution",
         "always trying to learn new skills")]
     [InlineData("how are your new year's resolutions going", "seasonal_new_years_update", "not eat bacon")]
@@ -650,6 +652,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what should I do for first day of spring", "seasonal_first_day_spring",
         "flowers and all things spring")]
     [InlineData("what should I get for holiday", "seasonal_holiday_gift", "pet elephant")]
+    [InlineData("happy birthday", "birthday_celebration", "another year older")]
     public async Task BuildDecisionAsync_SeasonalCharm_UsesImportedReplies(
         string transcript,
         string expectedIntent,
@@ -666,6 +669,33 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(expectedIntent, decision.IntentName);
         Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_BirthdayMemory_WritesHolidayRecordForLoop()
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore, cloudStateStore);
+
+        var setDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "my birthday is April 12",
+            NormalizedTranscript = "my birthday is April 12",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-a",
+                ["loopId"] = "loop-a"
+            },
+            DeviceId = "device-a"
+        });
+
+        Assert.Equal("memory_set_birthday", setDecision.IntentName);
+        Assert.Equal("Got it. I will remember your birthday is april 12.", setDecision.ReplyText);
+        Assert.Contains(cloudStateStore.GetHolidays("loop-a"),
+            holiday => holiday.Category == "birthday" &&
+                       holiday.LoopId == "loop-a" &&
+                       holiday.Name.Contains("Birthday", StringComparison.OrdinalIgnoreCase));
     }
 
     [Theory]
@@ -3974,6 +4004,7 @@ public sealed class JiboInteractionServiceTests
 
     private static JiboInteractionService CreateService(
         IPersonalMemoryStore? personalMemoryStore = null,
+        ICloudStateStore? cloudStateStore = null,
         IWeatherReportProvider? weatherReportProvider = null,
         ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null,
@@ -3986,7 +4017,8 @@ public sealed class JiboInteractionServiceTests
             personalMemoryStore ?? new InMemoryPersonalMemoryStore(),
             weatherReportProvider,
             commuteReportProvider,
-            newsBriefingProvider);
+            newsBriefingProvider,
+            cloudStateStore);
     }
 
     private static string StripMarkup(string text)

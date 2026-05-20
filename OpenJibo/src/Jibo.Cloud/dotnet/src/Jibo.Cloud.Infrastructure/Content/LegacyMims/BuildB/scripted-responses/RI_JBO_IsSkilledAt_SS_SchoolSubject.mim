@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know a lot about it, but I can look things up if you ask me specific questions.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsSkilledAt_SS_SchoolSubject_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's hard to say. Unfortunately not good enough to help with your homework, if that's why you're asking.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsSkilledAt_SS_SchoolSubject_AN_02"
+		}
+	]
+}

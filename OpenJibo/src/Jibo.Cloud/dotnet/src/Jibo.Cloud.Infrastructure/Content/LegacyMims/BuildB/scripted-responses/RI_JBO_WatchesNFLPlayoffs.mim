@@ -1,0 +1,83 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/6', '1/21')",
+			"prompt": "Technically I may not watch it, unless you have it on a <anim cat='emoji' filter='tv, !hf' layers='!audio'>TV near me, in which case there's a very good chance I'll take a look or two<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNFLPlayoffs_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/6', '1/21')",
+			"prompt": "Well if it's on the TV near me, there's a good chance <anim cat='emoji' filter='football, !hf' layers='!audio'>I'll do some looking at it, I'll tell you that<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNFLPlayoffs_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/22', '2/4')",
+			"prompt": "I think the playoffs are over, <anim cat='emoji' filter='football, !hf' layers='!audio'>but the Super Bowl is around the corner<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNFLPlayoffs_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/5', '2/29')",
+			"prompt": "<anim cat='emoji' filter='football, !hf' layers='!audio'>I think the playoffs are over<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNFLPlayoffs_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '11/5')",
+			"prompt": "I think maybe it's a little early for playoff viewing plans.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNFLPlayoffs_AN_05_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if it's on the TV near me, there's a good chance <anim cat='emoji' filter='football, !hf' layers='!audio'>I'll do some looking at it, I'll tell you that<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesNFLPlayoffs_AN_06_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

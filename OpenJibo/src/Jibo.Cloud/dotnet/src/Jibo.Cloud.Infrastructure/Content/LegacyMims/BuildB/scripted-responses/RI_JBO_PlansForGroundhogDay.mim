@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '2/1')",
+			"prompt": "Not exactly sure, but I have a feeling it'll have something to do <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>with this groundhog.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForGroundhogDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/2', '2/2')",
+			"prompt": "I'll be doing <anim cat='jiboji' filter='groundhog' nonBlocking='true'/><pitch mult='1.2'>this</pitch> a lot.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForGroundhogDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/3', '6/30')",
+			"prompt": "I saw my <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>groundhog's shadow.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForGroundhogDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '9/30')",
+			"prompt": "A lot <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>of this.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForGroundhogDay_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A lot <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>of this.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForGroundhogDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

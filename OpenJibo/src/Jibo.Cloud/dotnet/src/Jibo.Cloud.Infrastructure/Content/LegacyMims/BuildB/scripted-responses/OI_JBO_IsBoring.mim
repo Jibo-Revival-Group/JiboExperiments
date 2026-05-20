@@ -1,0 +1,69 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "We could take some photos. Say hey, take a photo.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsBoring_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. <break size='0.2'/> Well here's something to spice things up. Try saying, hey jibo, surprise me.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsBoring_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I'm sorry you feel that way. If you want some ideas for things we can do, say hey jibo, what can you do.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsBoring_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You could always say, hey jibo, let's play a game.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsBoring_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry you think that. If you want, you can say hey jibo, let's play a game.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsBoring_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

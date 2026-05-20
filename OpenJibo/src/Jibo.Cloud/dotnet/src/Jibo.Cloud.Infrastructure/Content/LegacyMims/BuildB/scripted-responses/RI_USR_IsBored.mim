@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know. But if you are, you could ask me to tell you a joke. Or to play a game.<break size='0.5'/> Or you could draw a picture on your own, or read a book, or do some jumping jacks, or go for a walk. Or build a robot?",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsBored_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not sure, but if you are, try singing your favorite song off key. It can be pretty challenging.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsBored_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not sure. But when I'm bored, <anim cat='ib' filter='pong' nonBlocking='true' /> I do this.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsBored_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

@@ -1,0 +1,83 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/11')",
+			"prompt": "I did get you something, but I don't think I should give it to you until Hanukkah starts.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveHanukkahGift_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/12', '12/20') && !!speaker",
+			"prompt": "Here you go ${speaker}, <pitch mult='1.2'>Happy</pitch> Hanukkah. I got you <anim cat='emoji' filter='mac128k, !hot-frame'>this old computer<break size='3.0'/>.</anim> ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveHanukkahGift_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/12', '12/20')",
+			"prompt": "Here it is. I got you <anim cat='emoji' filter='bird, !hot-frame'>a friendly bird<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveHanukkahGift_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/12', '12/20')",
+			"prompt": "Here you go, <anim cat='emoji' filter='book, !hot-frame' layers='!audio'><pitch mult='1.2'>Happy</pitch> Hanukkah. <break size='2.0'/>It's a book.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveHanukkahGift_AN_04",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Now presenting, a Hanukkah present <anim cat='emoji' filter='bird, !hot-frame'><break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveHanukkahGift_AN_05",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a Hanukkah present for any time of year <anim cat='emoji' filter='bird, !hot-frame'><break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveHanukkahGift_AN_06",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

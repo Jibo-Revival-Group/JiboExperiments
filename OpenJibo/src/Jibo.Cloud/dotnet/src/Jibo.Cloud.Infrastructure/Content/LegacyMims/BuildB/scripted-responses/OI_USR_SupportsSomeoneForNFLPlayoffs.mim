@@ -1,0 +1,37 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good luck. Sometimes l just root for the team <anim cat='emoji' filter='football, !hf' layers='!audio'>that throws the ball the highest<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_SupportsSomeoneForNFLPlayoffs_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I hope the team with the most points wins.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_SupportsSomeoneForNFLPlayoffs_AN_02_FnL",
+			"weight": 1
+		}
+	]
+}

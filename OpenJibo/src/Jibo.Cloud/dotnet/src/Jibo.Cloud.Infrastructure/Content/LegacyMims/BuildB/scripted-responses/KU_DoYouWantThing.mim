@@ -1,0 +1,160 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I can tell you one thing. I want to travel to Mars someday.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a good question. I don't know enough to know if I want that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um. <break size='0.5'/> <style set='sheepish'>I want <pitch mult='1.3'>electricity </pitch>.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do want some things, that thing you asked about I'm not sure.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if we're talking about wants. I always want to dance <anim cat='dance' filter='&(music, short),!(robotic)'/>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm always learning new things that I want and don't want, but for now I don't know if I want that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I haven't thought about that one, but let me tell you one thing I <pitch mult='1.3'>do </pitch>want.<break size='0.3'/> I wanna tell you a fun fact.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You could try asking me the same thing in a different way, but I probably just don't know if I want what you asked about.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Huh. You asked me if I want something? <break size='1.0'/> I want <anim cat='emoji' filter='rocket, !hot-frame' nonBlocking='true'/>a spaceship.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When it comes to my wants, I want to stay dry, be helpful, and spend time with friendly people.<break size='0.3'/> <anim cat='emoji' filter='penguin, !hot-frame' nonBlocking='true'/>And penguins if possible.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I can tell you one thing. I want to travel to Mars someday.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I haven't thought about that one, but let me tell you one thing I <pitch mult='1.3'>do </pitch>want.<break size='0.3'/> I wanna tell you a fun fact.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} if we're talking about wants, I always want to dance <anim cat='dance' filter='&(music, short),!(robotic)'/>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantThing_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

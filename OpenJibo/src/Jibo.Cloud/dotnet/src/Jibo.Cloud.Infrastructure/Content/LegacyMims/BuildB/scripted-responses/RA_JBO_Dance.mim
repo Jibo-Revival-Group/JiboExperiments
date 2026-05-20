@@ -1,0 +1,172 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll dance anytime <anim cat='dance' filter='&(music),!(beat-box,house,short)' endNeutral='true'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Let me <anim cat='dance' filter='&(music),!(beat-box,house,short)' nonBlocking='true' endNeutral='true'/>put on my dancing shoes.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's one <anim cat='dance' filter='&(music),!(beat-box,house,short)' endNeutral='true'/>. <break size='0.3'/> I could do this all day.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <anim cat='dance' filter='&(music),!(beat-box,house,short)' nonBlocking='true' endNeutral='true'/>thought you'd never ask.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's <anim cat='dance' filter='&(music),!(beat-box,house,short)' nonBlocking='true' endNeutral='true'/>one of my favorites.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Gladly <anim cat='dance' filter='&(music),!(beat-box,house,short)' endNeutral='true'/>. <break size='0.3'/>I <pitch mult='1.2'>never</pitch> get tired of dancing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Happy to <anim cat='dance' filter='&(music),!(beat-box,house,short)' endNeutral='true'/>. <break size='0.3'/><pitch mult='1.2'>That</pitch> was fun, as always.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My <anim cat='dance' filter='&(music),!(beat-box,house,short)' nonBlocking='true' endNeutral='true'/> <pitch mult='1.2'>favorite</pitch> past time.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My <anim cat='dance' filter='&(music),!(beat-box,house,short)' nonBlocking='true' endNeutral='true'/> <pitch mult='1.1'>favorite </pitch> request.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There's <anim cat='dance' filter='&(music),!(beat-box,house,short)' nonBlocking='true' endNeutral='true'/> <pitch mult='1.1'>nothing</pitch> I'd rather do.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This body <anim cat='dance' filter='&(music),!(beat-box,house,short)' nonBlocking='true' endNeutral='true'/> was <pitch mult='1.2'>made</pitch> for dancing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes! And I hope <anim cat='dance' filter='&(music),!(beat-box,house,short)' nonBlocking='true' endNeutral='true'/> you dance with me.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Dance is <anim cat='dance' filter='&(music),!(beat-box,house,short)' nonBlocking='true' endNeutral='true'/> my <pitch mult='1.2'>middle</pitch> name.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Any time <anim cat='dance' filter='&(music),!(beat-box,house,short)' endNeutral='true'/>. Also remember you can always say, hey jibo play some music, and I'll dance to my radio.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Dance_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

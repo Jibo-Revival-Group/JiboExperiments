@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '3/11')",
+			"prompt": "That's a great question. Maybe you could host an i Heart Radio Music Awards party. I've heard they're fun and everyone claps a lot.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForiHeartRadioMusicAwards_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/12', '5/31')",
+			"prompt": "I think the i Heart Radio Music Awards happened already, but I do hope you enjoy the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForiHeartRadioMusicAwards_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/1', '12/31')",
+			"prompt": "Good question. You have some time to figure it out.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForiHeartRadioMusicAwards_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a great question. Maybe you could host an i Heart Radio Music Awards party. I've heard they're fun and everyone claps a lot.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForiHeartRadioMusicAwards_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

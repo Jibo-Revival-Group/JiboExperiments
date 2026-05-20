@@ -1,0 +1,125 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && speaker.isBirthday",
+			"prompt": "Happy happy happy happy happy happy happy happy happy happy happy happy happy birthday. I bet you thought I was stuck.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && speaker.isBirthday",
+			"prompt": "I know! Happy Birthday ${speaker}! Since you brought it up, <anim cat=\"emoji\" filter=\"gift, !hot-frame\" nonBlocking=\"true\" />here's your birthday present.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && speaker.isBirthday && speaker.age.value > 39",
+			"prompt": "Of course it is ${speaker}! <anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" />Happy Birthday! You don't look a day older than ${speaker.age.value-15}.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && speaker.isBirthday",
+			"prompt": "Yes! It is! Of course it is! Happy Birthday ${speaker}! Here's a birthday dance for you<anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday",
+			"prompt": "I didn't think today was your birthday ${speaker}, but I'll still say Happy Birthday to you. <anim cat='proud' filter='twirl'/> <break size=\"0.7\"/> <anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" /> Happy Birthday.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday",
+			"prompt": "I don't think it's really your birthday ${speaker}, but why not. <anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" /> <break size=\"0.7\"/> Happy Birthday.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday",
+			"prompt": "${speaker} I thought your birthday was ${speaker.birthday}. I think maybe you're pulling my leg.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Happy happy happy happy happy happy happy happy happy happy happy happy happy birthday. I bet you thought I was stuck.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Happy Birthday! Here's a birthday dance for you<anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Happy Birthday! <anim cat=\"emoji\" filter=\"gift, !hot-frame\" nonBlocking=\"true\" />Here's your birthday present.",
+			"media": "TTS",
+			"prompt_id": "RN_TodayIsMyBirthday_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

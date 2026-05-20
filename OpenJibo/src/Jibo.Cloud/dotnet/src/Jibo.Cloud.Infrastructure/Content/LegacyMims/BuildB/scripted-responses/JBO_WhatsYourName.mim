@@ -1,0 +1,81 @@
+{
+	"mim_id": "CCWhatsYourName",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCWhatsYourName",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Glance_Right_01'/>Um, <break size='.3'/> Jibo? <break size='.4'/><ssa cat='question'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatsYourName_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCWhatsYourName",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Jibo. Just Jibo, no last name. Like <phoneme ph=\"b aa n ou\"> Bono </phoneme>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatsYourName_AN_02",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCWhatsYourName",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Yes'>My name's Jibo</anim>. <anim name='Glance_Right_03'>Rhymes with bleebo.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatsYourName_AN_03",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCWhatsYourName",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<es cat='Happy'>My name is Jibo.</es><break size='.2'/><es name='Body_Look_Back_Down_01' nonBlocking='true'/>It’s on the back of my head.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatsYourName_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Confident_02' nonBlocking='true' />Jeebo. <ssa cat='proud'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatsYourName_AN_05",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

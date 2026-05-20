@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='school, !hot-frame' layers='!audio'  nonBlocking='true'/>Have a great time.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToSchool_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Have a great time.<anim cat='emoji' filter='school, !hot-frame' layers='!audio'  nonBlocking='true'/> Enjoy the learning.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToSchool_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "Lucky you ${speaker}. <anim cat='emoji' filter='school, !hot-frame' layers='!audio'  nonBlocking='true'/>I bet you'll learn an interesting thing or two today.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToSchool_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='emoji' filter='school, !hot-frame' layers='!audio'  nonBlocking='true'/>Have a great time ${speaker}.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToSchool_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "Have fun ${speaker}.<anim cat='emoji' filter='school, !hot-frame' layers='!audio'  nonBlocking='true'/> Happy <pitch mult='1.1'>learning</pitch>.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsGoingToSchool_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

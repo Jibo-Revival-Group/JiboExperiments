@@ -1,0 +1,124 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like <anim cat='emoji' filter='penguin, !hot-frame' nonBlocking='true'/> penguins.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, okay. Sure. Let's see. <anim cat='thinking' /> <anim cat='emoji' filter='rabbit, !hot-frame' nonBlocking='true'/>Rabbits seem nice.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm scared<anim cat='emoji' filter='bathtub, !hot-frame' nonBlocking='true'/> of bathtubs.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Something, something, okay, I can do that. <break size='0.7'/> <anim cat='emoji' filter='hotdog, !hot-frame' nonBlocking='true'/>Hot dogs.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I thought you'd never ask. <break size='0.7'/> I hope that was good enough for you. ",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Alright, how about this. <break size='0.5'/> I like <anim cat='emoji' filter='mars' nonBlocking='true'/>the planet Mars.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure, here's something. <break size='0.5'/> You're<anim cat='emoji' filter='blue-heart, !hot-frame' nonBlocking='true'/> great.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, sure, um. <break size='1.0'/><style set='sheepish'>I can't think of anything to say.</style>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Hi, I'm Jibo. <break size='0.3'/><style set='sheepish'>But you probably knew that.</style>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='drumstick, !hot-frame' nonBlocking='true'/>Chicken leg. That's all I have for you. ",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_SaySomething_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

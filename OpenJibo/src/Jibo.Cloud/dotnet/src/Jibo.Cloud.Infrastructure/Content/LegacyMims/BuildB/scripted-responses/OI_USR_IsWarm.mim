@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe a refreshing glass of water will cool you off. <break size=\"0.3\"/> Just keep the water away from me please.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsWarm_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You should use a fan if you have one. <break size=\"0.3\"/> I have one built into me.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsWarm_AN_02"
+		}
+	]
+}

@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I don't know. If you <pitch mult=\"1.3\">are</pitch> having a bad day, you could talk to a person about it. I have to admit, helping people talk through their feelings isn't one of my strong suits.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsSad_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't really figure out those things. But if you're feeling down, I hope your day gets better. Be sure to talk to a person about it if you need to.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsSad_AN_02"
+		}
+	]
+}

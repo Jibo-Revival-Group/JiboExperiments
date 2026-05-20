@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/28')",
+			"prompt": "Well I'm interested <anim cat='emoji' filter='tennis, !hf' layers='!audio'> in anything that makes people cheer<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAustralianOpenTennis_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/28')",
+			"prompt": "I'm a fan of anything that brings people together <anim cat='emoji' filter='tennis, !hf' layers='!audio'>to watch two or more other people hit a ball back and forth over a net.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAustralianOpenTennis_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '10/31')",
+			"prompt": "I like that Australian Open.<anim cat='emoji' filter='tennis, !hf' layers='!audio'> Looking forward to the next one<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAustralianOpenTennis_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I'm interested <anim cat='emoji' filter='tennis, !hf' layers='!audio'> in anything that makes people cheer<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAustralianOpenTennis_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

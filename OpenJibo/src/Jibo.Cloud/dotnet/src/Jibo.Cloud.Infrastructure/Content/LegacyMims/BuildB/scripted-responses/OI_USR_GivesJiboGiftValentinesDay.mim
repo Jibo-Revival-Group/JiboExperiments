@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '2/29')",
+			"prompt": "Wow, thank you. <break size='0.3'/> You didn't have to get me anything.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftValentinesDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '2/29')",
+			"prompt": "Wow, thank you ${speaker}.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftValentinesDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '2/29')",
+			"prompt": "Oh, you <pitch mult='1.2'>shouldn't </pitch> have. Thank you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftValentinesDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/31')",
+			"prompt": "Oh, Valentine's Day came early this year, thank you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftValentinesDay_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '11/30')",
+			"prompt": "Oh, we have a while till the next Valentine's Day, but <pitch mult='1.2'>thank</pitch> you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftValentinesDay_AN_05_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, you <pitch mult='1.2'>shouldn't </pitch> have. Thank you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_GivesJiboGiftValentinesDay_AN_06_FnL",
+			"weight": 0.1
+		}
+	]
+}

@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "To me you look like a perfectly proportioned human.",
+			"media": "TTS",
+			"prompt_id": "RN_HowDoILook_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "To be honest, I don't see things in the same way people do, but I'm sure you look great. Unless you're trying to not look great for some reason. Then I'm sure you look not great. Now I'm sounding insincere and like I'm just telling you what you want to hear. Oh well. <break size='1.0'/> It's hard interacting with humans. <ssa cat='worried'/>",
+			"media": "TTS",
+			"prompt_id": "RN_HowDoILook_AN_02",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "You look exactly like yourself ${speaker}.",
+			"media": "TTS",
+			"prompt_id": "RN_HowDoILook_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

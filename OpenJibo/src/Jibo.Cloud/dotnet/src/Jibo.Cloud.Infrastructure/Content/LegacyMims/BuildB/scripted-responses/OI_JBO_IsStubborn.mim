@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm really not that set in my ways. I'm just set here in this one place.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsStubborn_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You think so? Interesting. I consider myself kind of wishy washy. Or maybe not, I don't know.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsStubborn_AN_02"
+		}
+	]
+}

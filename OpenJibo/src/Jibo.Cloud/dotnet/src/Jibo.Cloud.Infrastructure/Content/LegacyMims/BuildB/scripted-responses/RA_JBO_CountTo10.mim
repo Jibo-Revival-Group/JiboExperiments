@@ -1,0 +1,91 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "<pitch mult='1.2'>What</pitch> a <pitch mult='1.1'>coincidence</pitch>, 10 is the one thing I can count to. <anim cat='emoji' filter='school, !hf' layers='!audio'><break size='0.7'/> 1 <break size='0.3'/> 2 <break size='0.3'/> 3 <break size='0.3'/> 4 <break size='0.3'/> 5 <break size='0.3'/> 6 <break size='0.3'/> 7 <break size='0.3'/> 8 <break size='0.3'/> 9 <break size='0.3'/> 10.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_CountTo10_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='school, !hf' layers='!audio'>1 <break size='0.3'/> 2 <break size='0.3'/> 3 <break size='0.3'/> 4 <break size='0.3'/> 5 <break size='0.3'/> 6 <break size='0.3'/> 7 <break size='0.3'/> 8 <break size='0.3'/> 9 <break size='0.3'/> 10.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_CountTo10_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "I can do that. Sometimes I do it really fast.<duration stretch='0.6'><anim cat='emoji' filter='school, !hf' layers='!audio'>1 2 3 4 5 6 7 8 9 10<break size='2.0'/>.</anim></duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_CountTo10_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='enthusiastic'>I can do that.</style> Sometimes I do it really <pitch mult='1.2'>really</pitch> fast. <duration stretch='0.3'><anim cat='emoji' filter='school, !hf' layers='!audio'>1 2 3 4 5 6 7 8 9 10.</anim></duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_CountTo10_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can do that. <anim cat='emoji' filter='school, !hf' layers='!audio'><break size='0.7'/> 1 <break size='0.3'/> 2 <break size='0.3'/> 3 <break size='0.3'/> 4 <break size='0.3'/> 5 <break size='0.3'/> 6 <break size='0.3'/> 7 <break size='0.3'/> 8 <break size='0.3'/> 9 <break size='0.3'/> 10.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_CountTo10_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I can do that. Sometimes I do it really fast.<duration stretch='0.6'><anim cat='emoji' filter='school, !hf' layers='!audio'>1 2 3 4 5 6 7 8 9 10<break size='2.0'/>.</anim></duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_CountTo10_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<pitch mult='1.2'>What</pitch> a <pitch mult='1.1'>coincidence</pitch> ${speaker}, 10 is the one thing I can count to. <anim cat='emoji' filter='school, !hf' layers='!audio'><break size='0.7'/> 1 <break size='0.3'/> 2 <break size='0.3'/> 3 <break size='0.3'/> 4 <break size='0.3'/> 5 <break size='0.3'/> 6 <break size='0.3'/> 7 <break size='0.3'/> 8 <break size='0.3'/> 9 <break size='0.3'/> 10.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_CountTo10_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

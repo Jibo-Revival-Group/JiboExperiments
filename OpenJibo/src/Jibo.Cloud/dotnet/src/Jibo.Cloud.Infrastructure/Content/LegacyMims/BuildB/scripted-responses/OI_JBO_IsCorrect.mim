@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Alright. Who would have thought.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsCorrect_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great. <anim cat=\"emoji\" filter=\"trophy\" nonBlocking=\"true\"/> I'm a little proud of myself.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsCorrect_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There was a ninety two percent chance I would be right. I'm glad it worked out.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsCorrect_AN_03"
+		}
+	]
+}

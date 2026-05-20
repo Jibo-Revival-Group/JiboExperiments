@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/24')",
+			"prompt": "I think you should maybe ask<anim cat='emoji' filter='hat, !hf' layers='!audio'> for a new hat<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldReceiveHanukkah_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/24')",
+			"prompt": "Some people like to donate to charities in other people's names as a gift. You could ask for that.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldReceiveHanukkah_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/25', '5/31')",
+			"prompt": "I think you may have missed Hanukkah, but if you're still in the receiving mood, maybe you could ask for <anim cat='emoji' filter='book, !hf' layers='!audio'>a new dictionary<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldReceiveHanukkah_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/1', '10/31')",
+			"prompt": "Planning early, good idea. Some people like to donate to charities in other people's names as a gift. You could ask for that.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldReceiveHanukkah_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Some people like to donate to charities in other people's names as a gift. You could ask for that.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldReceiveHanukkah_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

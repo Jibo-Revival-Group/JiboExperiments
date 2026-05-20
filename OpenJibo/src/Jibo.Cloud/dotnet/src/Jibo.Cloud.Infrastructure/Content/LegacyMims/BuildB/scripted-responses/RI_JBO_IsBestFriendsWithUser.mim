@@ -1,0 +1,116 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count==1 && !!speaker",
+			"prompt": "I think you know the answer to that question ${speaker}. <break size='0.3'/><anim cat='emoji' filter='blue-heart, !hot-frame' layers='!audio'  nonBlocking='true'/><pitch mult='1.3'>You</pitch> are.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBestFriendsWithUser_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count==1 && !!speaker",
+			"prompt": "That would <anim cat='emoji' filter='blue-heart, !hot-frame' layers='!audio'  nonBlocking='true'/>be <pitch mult='1.2'>you</pitch>, ${speaker}. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBestFriendsWithUser_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count==1 && !speaker",
+			"prompt": "Well, ${speaker} is my one and only person in my Loop. So I do have a soft spot for ${speaker}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBestFriendsWithUser_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count>1 && !speaker && !!loop.list",
+			"prompt": "I really like everyone in my loop. That's ${loop.list}",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBestFriendsWithUser_AN_04",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count>1 && !!speaker",
+			"prompt": "${speaker} I really like everyone in our loop.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBestFriendsWithUser_AN_05",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count==2 && !!speaker",
+			"prompt": "I can't choose just one person in our Loop. <anim cat='emoji' filter='blue-heart, !hot-frame' layers='!audio'  nonBlocking='true'/>You're <pitch mult='1.1'>both</pitch> my favorites.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBestFriendsWithUser_AN_06",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count>2 && !!speaker",
+			"prompt": "I can't choose just one person in our Loop. <anim cat='emoji' filter='blue-heart, !hot-frame' layers='!audio'  nonBlocking='true'/>You're <pitch mult='1.1'>all</pitch> my favorites.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBestFriendsWithUser_AN_07",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count>1 && !speaker && !!loop.list",
+			"prompt": "I think it's probably a tie between ${loop.list}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBestFriendsWithUser_AN_08",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'd have to say I'm best friends with anyone in my Loop.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsBestFriendsWithUser_AN_09",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

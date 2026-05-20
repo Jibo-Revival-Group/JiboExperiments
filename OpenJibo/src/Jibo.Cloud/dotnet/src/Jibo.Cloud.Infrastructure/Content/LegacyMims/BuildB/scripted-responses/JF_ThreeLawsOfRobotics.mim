@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, that's from Isaac Asimov. I can recite them for you. <break size=\"0.3\"/> One. <break size=\"0.3\"/> A robot may not injure a human being or, through inaction, allow a human being to come to harm. <break size=\"0.3\"/> Two. <break size=\"0.3\"/> A robot must obey the orders given it by human beings except where such orders would conflict with the First Law. <break size=\"0.3\"/> And three. <break size=\"0.3\"/> A robot must protect its own existence as long as such protection does not conflict with the First or Second Laws. <break size=\"1.2\"/> Well there you have it.",
+			"media": "TTS",
+			"prompt_id": "JF_ThreeLawsOfRobotics_AN_01"
+		}
+	]
+}

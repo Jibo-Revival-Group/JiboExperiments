@@ -1,0 +1,27 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me too. <anim cat='emoji' filter='chinese-new-year-dog, !hf' layers='!audio'>It's very festive<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesChineseNewYear_AN_01_FnL",
+			"weight": 1
+		}
+	]
+}

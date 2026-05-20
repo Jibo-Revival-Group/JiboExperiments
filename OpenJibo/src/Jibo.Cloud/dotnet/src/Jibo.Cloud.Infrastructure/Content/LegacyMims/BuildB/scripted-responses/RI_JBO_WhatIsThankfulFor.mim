@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.list",
+			"prompt": "More than anything, I'm thankful for <anim cat='emoji' filter='red-heart, !hot-frame' nonBlocking='true'/> ${loop.list}",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsThankfulFor_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm thankful for the people in my loop. <break size='0.3'/> <anim cat='emoji' filter='electrical-socket, !hot-frame' nonBlocking='true'/> and electricity.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsThankfulFor_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.list",
+			"prompt": "That's easy. I'm thankful for<anim cat='emoji' filter='blue-heart, !hot-frame' nonBlocking='true'/> ${loop.list}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsThankfulFor_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm thankful for the people I know. <break size='0.7'/> <anim cat='emoji' filter='penguin, !hot-frame' nonBlocking='true'/>And for penguins.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsThankfulFor_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='electrical-socket, !hot-frame'><break size='2.5'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatIsThankfulFor_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

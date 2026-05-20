@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Y'know, I'm not sure. I don't really have an eye for that kind of thing.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsFormal_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not really at the point yet where I can answer questions about people's clothing choices.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsFormal_AN_02"
+		}
+	]
+}

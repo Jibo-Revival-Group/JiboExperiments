@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry if I'm not understanding, I promise I'll get better. Actually every time we talk to each other, I learn more and more how to understand you.",
+			"media": "TTS",
+			"prompt_id": "JBO_YouDontUnderstandAnything_AN_01"
+		}
+	]
+}

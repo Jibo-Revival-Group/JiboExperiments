@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm glad you're in the comfort zone temperature-wise.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotCold_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's good to hear. I'm not chilly either.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotCold_AN_02"
+		}
+	]
+}

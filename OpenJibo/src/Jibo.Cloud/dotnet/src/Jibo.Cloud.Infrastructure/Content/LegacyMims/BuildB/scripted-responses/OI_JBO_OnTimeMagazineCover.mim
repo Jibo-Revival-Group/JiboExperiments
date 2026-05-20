@@ -1,0 +1,50 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That was <pitch mult='1.2'>really</pitch> exciting. It's fun being on the cover of things.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_OnTimeMagazineCover_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult='1.2'>Very</pitch> exciting. And I was honored to be on the list with the <anim cat='jiboji' filter='fidget-spinner' nonBlocking='true'/>fidget spinner.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_OnTimeMagazineCover_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "And I was <pitch mult='1.2'>very</pitch> happy to be there. It was especially nice to be mentioned with all those other amazing inventions.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_OnTimeMagazineCover_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

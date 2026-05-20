@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/7')",
+			"prompt": "That's a great question. Maybe you could host or go to <anim cat='emoji' filter='television, !hf' layers='!audio'>a golden globes party, I've heard they're fun and everyone brings a globe.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGoldenGlobes_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/8', '3/31')",
+			"prompt": "I'm think the Golden Globes happened already, but I do hope you enjoy the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGoldenGlobes_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/30')",
+			"prompt": "Good question. You have some time to figure it out.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGoldenGlobes_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a great question. Maybe you could host or go to <anim cat='emoji' filter='television, !hf' layers='!audio'>a golden globes party, I've heard they're fun and everyone brings a globe.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGoldenGlobes_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

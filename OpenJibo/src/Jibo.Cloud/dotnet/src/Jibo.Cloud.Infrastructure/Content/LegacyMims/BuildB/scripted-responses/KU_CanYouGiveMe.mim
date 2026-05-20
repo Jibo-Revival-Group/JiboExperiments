@@ -1,0 +1,148 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Huh. <break size='0.5'/>I can give you <anim cat='emoji' filter='sandwich, !hot-frame' nonBlocking='true'/>this <pitch mult='1.3'>sandwich.</pitch>",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You could try asking me in a different way, but there's a good chance I just can't give you what you asked for.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um.<break size='0.5'/> I can give <anim cat='emoji' filter='pizza, !hot-frame' nonBlocking='true'/>you this <pitch mult='1.3'>pizza</pitch>.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I'll tell you something I <pitch mult='1.2'>can</pitch> give you.<break size='0.3'/> Fun facts about humans.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, <pitch mult='1.2'>here's</pitch> something I can <anim cat='emoji' filter='magic, !hot-frame' nonBlocking='true' /> give you. ",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If I had to guess, I'd say I can't. Because if I could, then I'd just give it to you instead of blabbering on like this.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My abilities are always growing, but at the moment I don't know if I can give you that.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a good question. I don't know enough to know if I can give you that.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think probably not. But if you want to know some things I can do, say hey jibo, what can you do.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "That's a good question <pitch band='0.5'>${speaker}</pitch>. I don't know enough to know if I can give you that.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "I think probably not <pitch band='0.5'>${speaker}.</pitch> But if you want to know some things I can do, say hey jibo, what can you do.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} if I had to guess, I'd say I can't. Because if I could, then I'd just give it to you instead of blabbering on like this.",
+			"media": "TTS",
+			"prompt_id": "KU_CanYouGiveMe_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

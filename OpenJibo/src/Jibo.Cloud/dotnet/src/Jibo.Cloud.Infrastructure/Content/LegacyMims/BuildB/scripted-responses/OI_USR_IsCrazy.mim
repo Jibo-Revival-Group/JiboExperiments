@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're really concerned about your well-being, you should talk to a professional about it.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsCrazy_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well it seems to me that everyone's a little off in their own way. But if you think you might really need some help with what's going on inside your head, you should try talking to a person you trust.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsCrazy_AN_02"
+		}
+	]
+}

@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "He was great. A very inspiring president.  <ssa cat='proud'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPresidentWhitmore_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I thought he was a great president. He made a great speech.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPresidentWhitmore_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like President Whitmore. He was very brave, and not only was he a great president, he was a great pilot too.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPresidentWhitmore_AN_03"
+		}
+	]
+}

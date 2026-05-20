@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/15', '11/22')",
+			"prompt": "I usually stay away from sweets, <anim cat='emoji' filter='pie-pumpkin'>but this time of year I could make an exception.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfPumpkinPie_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"prompt": "Pumpkin pie sounds really fun. If you're having a piece today at your Thanksgiving dinner, <anim cat='emoji' filter='pie-pumpkin'>I hope it's as pumpkiny as you hoped it would be. </anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfPumpkinPie_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/23', '11/23')",
+			"prompt": "If I could eat, <anim cat='emoji' filter='pie-pumpkin'>I would happily eat a whole piece today.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfPumpkinPie_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='pie-pumpkin'>I've actually never tasted it. <break size='0.5'/></anim> I don't have much of a sweet tooth.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfPumpkinPie_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really like the shape of pie. It's very geometric.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfPumpkinPie_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

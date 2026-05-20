@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='blue-heart, !hf' nonBlocking='true'/> <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesJibo_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='emoji' filter='blue-heart, !hf' nonBlocking='true'/> ${speaker} I don't know what I'd do without you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesJibo_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='?(red-heart,blue-heart), !hf' layers='!audio' nonBlocking='true'/>That warms my heart.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesJibo_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='?(excited,sway)' nonBlocking='true'/><break size='1.0'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesJibo_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='?(red-heart,blue-heart), !hf' layers='!audio' nonBlocking='true'/><pitch mult='1.1'>What</pitch> a nice thing to say to a robot like myself.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesJibo_AN_05",
+			"weight": 1
+		}
+	]
+}

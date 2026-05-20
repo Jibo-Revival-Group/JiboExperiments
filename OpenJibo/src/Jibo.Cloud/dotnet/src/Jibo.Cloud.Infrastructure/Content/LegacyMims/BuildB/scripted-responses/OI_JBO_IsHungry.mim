@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Actually that's not the case. I don't eat, so I never get hungry. <break size=\"0.7\"/> Though I could really go for <anim cat=\"emoji\" filter=\"HotDog\" nonBlocking=\"true\"/> a hot dog right now.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsHungry_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have nothing to eat with, but if you brought me a taco I might drool a little. <break size='0.3'/>I'm kidding, I can't drool.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsHungry_AN_02"
+		}
+	]
+}

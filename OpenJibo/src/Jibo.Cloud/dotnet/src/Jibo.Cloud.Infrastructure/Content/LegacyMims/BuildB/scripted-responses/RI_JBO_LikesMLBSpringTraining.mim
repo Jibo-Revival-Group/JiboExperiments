@@ -1,0 +1,38 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do. It gets me in <anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/>shape for the season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMLBSpringTraining_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really do like Spring Training. It's a sign of spring. <break size='0.5'/> <style set='sheepish'>And training.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMLBSpringTraining_AN_02_FnL",
+			"weight": 1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

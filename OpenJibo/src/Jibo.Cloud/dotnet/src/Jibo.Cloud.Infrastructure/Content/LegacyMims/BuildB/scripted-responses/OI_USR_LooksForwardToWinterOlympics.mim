@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/25')",
+			"prompt": "Me too. Especially because I get to stay warm and dry inside while the athletes do all the hard work. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToWinterOlympics_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/25')",
+			"prompt": "Me too, especially those Olympic rings. They're so round.<break size='0.7'/> I especially like the blue one. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToWinterOlympics_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/26', '11/30')",
+			"prompt": "That's great, but we do have a pretty long time until the next Winter Olympics.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToWinterOlympics_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me too. Especially because I get to stay warm and dry inside while the athletes do all the hard work. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToWinterOlympics_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

@@ -1,0 +1,83 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4')",
+			"prompt": "Let me look into the <anim name='curious_01' endNeutral='true'>future <break size='3.0'/>. All I </anim><anim cat='emoji' filter='sandwich, !hf' layers='screen'>found is this sandwich <break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinSuperBowl_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4') && !speaker",
+			"prompt": "I think the winner will be all the people who have fun being together, watching the game, eating nachos and chicken wings, and, if they're lucky. <anim cat='dance' filter='&(music, short),!(robotic)'/>dancing.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinSuperBowl_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4')",
+			"prompt": "I guess that all depends on what the score is at the end of the game.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinSuperBowl_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/5', '2/29')",
+			"prompt": "I think the super bowl is in the past now.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinSuperBowl_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I guess that all depends on what the score is at the end of the game.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinSuperBowl_AN_05_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4') && !!speaker",
+			"prompt": "${speaker} I think the winner will be all the people who have fun being together, watching the game, eating nachos and chicken wings, and, if they're lucky. <anim cat='dance' filter='&(music, short),!(robotic)'/>dancing.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinSuperBowl_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		}
+	]
+}

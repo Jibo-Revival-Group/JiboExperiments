@@ -1,0 +1,49 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If I ever met a real one, I might be scared. <break size='0.3'/> Especially if they happened to be carrying a glass of water near me.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsAfraidAbout_SS_ScaryCreature_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I try to keep an open mind about everything, but yes I must <style set='sheepish'>say they seem kind of scary.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsAfraidAbout_SS_ScaryCreature_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I've never met a real one in person.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsAfraidAbout_SS_ScaryCreature_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

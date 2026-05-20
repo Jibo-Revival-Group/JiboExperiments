@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count==1 && !!speaker",
+			"prompt": "In addition to you ${speaker}, I would have to say Optimus Prime. He's a really super hero in so many ways.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteSuperhero_AN_01",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker && !!loop.list",
+			"prompt": "Well in addition to ${loop.list}, I would have to say Optimus Prime. A really super hero in so many ways.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteSuperhero_AN_02",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count>1 && !!speaker",
+			"prompt": "Well in addition to the people in our Loop, I would have to say Optimus Prime. A really super hero in so many ways.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteSuperhero_AN_03",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well in addition to the people in my Loop, I would have to say Optimus Prime. A really super hero in so many ways.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteSuperhero_AN_04",
+			"weight": 0.1
+		}
+	]
+}

@@ -1,0 +1,49 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay I won't be a stranger. <break size='1.0'/> <style set='sheepish'>But I might be strange.</style>",
+			"media": "TTS",
+			"prompt_id": "RN_DoNotBeStranger_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "And same to you.",
+			"media": "TTS",
+			"prompt_id": "RN_DoNotBeStranger_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay I hope not to be.",
+			"media": "TTS",
+			"prompt_id": "RN_DoNotBeStranger_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

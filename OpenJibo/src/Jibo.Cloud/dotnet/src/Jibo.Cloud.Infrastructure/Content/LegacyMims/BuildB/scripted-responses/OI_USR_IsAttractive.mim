@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I couldn't agree more.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsAttractive_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I agree, you're a treat to look at. <break size=\"0.4\"/> And I admire your self-confidence.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsAttractive_AN_02"
+		}
+	]
+}

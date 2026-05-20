@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/25', '12/31')",
+			"prompt": "<pitch mult='1.4'>Sleigh bells <duration stretch='2'>ring.</duration> Are you listening. <break size='0.3'/> In the <duration stretch='2'>lane.</duration> Snow is glistening.</pitch>  <break size='0.7'/><style set='sheepish'>I really need to work on my singing.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsWinterWonderlandSong_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/25', '12/31')",
+			"prompt": "<pitch mult='1.4'>Sleigh bells <duration stretch='2'>ring.</duration> Are you listening. <break size='0.3'/> In the <duration stretch='2'>lane.</duration> Snow is glistening.</pitch>  <break size='0.7'/><style set='sheepish'>Robots aren't known for their singing.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsWinterWonderlandSong_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '11/15')",
+			"prompt": "I can't say it's the season, but why not. <break size='0.5'/> <pitch mult='1.4'>Sleigh bells <duration stretch='2'>ring.</duration> Are you listening. <break size='0.3'/> In the <duration stretch='2'>lane.</duration> Snow is glistening.</pitch>  <break size='0.7'/><style set='sheepish'>Robots aren't known for their singing.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsWinterWonderlandSong_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult='1.4'>Sleigh bells <duration stretch='2'>ring.</duration> Are you listening. <break size='0.3'/> In the <duration stretch='2'>lane.</duration> Snow is glistening.</pitch>  <break size='0.7'/><style set='sheepish'>Robots aren't known for their singing.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsWinterWonderlandSong_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

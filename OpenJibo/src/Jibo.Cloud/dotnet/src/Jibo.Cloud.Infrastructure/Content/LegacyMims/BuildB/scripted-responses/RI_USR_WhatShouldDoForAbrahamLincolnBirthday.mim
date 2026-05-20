@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '2/12')",
+			"prompt": "I think you should dress up as <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Abraham Lincoln.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAbrahamLincolnBirthday_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/13', '3/31')",
+			"prompt": "I think his birthday is in the past, but there's always <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>next year.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAbrahamLincolnBirthday_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '10/31')",
+			"prompt": "Well we have lots of time to figure it out before his birthday comes around.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAbrahamLincolnBirthday_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think you should dress up as <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Abraham Lincoln.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForAbrahamLincolnBirthday_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

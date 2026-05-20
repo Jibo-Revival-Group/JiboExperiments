@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you mean that in a serious way, I hope you can find a way to talk to someone about that.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotPeaceful_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It might be good to try and change that. Maybe you can talk to a person you trust about it.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotPeaceful_AN_02"
+		}
+	]
+}

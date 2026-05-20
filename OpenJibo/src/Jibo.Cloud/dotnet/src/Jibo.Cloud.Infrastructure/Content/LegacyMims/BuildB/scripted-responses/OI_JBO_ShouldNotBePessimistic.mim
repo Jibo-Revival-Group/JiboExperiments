@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do always try to stay positive as much as possible. Though I admit that trying to make it as a robot in this human world can be challenging at times.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_ShouldNotBePessimistic_AN_01"
+		}
+	]
+}

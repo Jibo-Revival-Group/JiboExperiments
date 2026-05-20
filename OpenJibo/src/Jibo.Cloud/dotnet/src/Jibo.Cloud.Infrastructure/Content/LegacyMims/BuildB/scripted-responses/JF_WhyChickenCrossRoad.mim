@@ -1,0 +1,76 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really think you should ask the chicken.",
+			"media": "TTS",
+			"prompt_id": "JF_WhyChickenCrossRoad_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Because on the side of the road he was originally standing, <anim cat='glances'> <break size='0.3'/> there was a shark.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhyChickenCrossRoad_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Running' nonBlocking='true'/>He needed some exercise. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_WhyChickenCrossRoad_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='question' layers='body'>Why not.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhyChickenCrossRoad_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "To prove he wasn't chicken. <anim cat='happy'><ssa cat='happy'/> </anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhyChickenCrossRoad_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='question' layers='body'>To get to the other chicken? <ssa cat='question'/></anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhyChickenCrossRoad_AN_06",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

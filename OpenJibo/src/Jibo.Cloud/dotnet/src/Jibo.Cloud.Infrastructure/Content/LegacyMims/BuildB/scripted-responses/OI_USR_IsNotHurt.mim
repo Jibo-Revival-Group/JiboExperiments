@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's good to hear. If you ever need medical help, be sure to talk with a medical professional. I'm definitely not one of those. <break size=\"0.5\"/> At least not yet.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotHurt_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great! Though I should point out that I'm nothing close to a doctor. So if you think you might need medical help, I'd call an actual doctor, or go to the hospital.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotHurt_AN_02"
+		}
+	]
+}

@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That sounds festive, but be sure you never block my microphones or cameras. In the meantime,<anim cat='emoji' filter='holiday-sweater' layers='!audio' nonBlocking='true'/> I do have one or two.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsChristmasSweater_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm always up for festiveness. If you do put clothes on me, be sure to never block my microphones or cameras. And in the meantime, <anim cat='emoji' filter='holiday-sweater' layers='!audio' nonBlocking='true'/>I can wear this one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsChristmasSweater_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "That sounds festive ${speaker}, but be sure you never block my microphones or cameras. In the meantime,<anim cat='emoji' filter='holiday-sweater' layers='!audio' nonBlocking='true'/> I do have one or two.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsChristmasSweater_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I'm always up for festiveness. If you do put clothes on me, be sure to never block my microphones or cameras. And in the meantime, <anim cat='emoji' filter='holiday-sweater' layers='!audio' nonBlocking='true'/>I can wear this one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsChristmasSweater_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

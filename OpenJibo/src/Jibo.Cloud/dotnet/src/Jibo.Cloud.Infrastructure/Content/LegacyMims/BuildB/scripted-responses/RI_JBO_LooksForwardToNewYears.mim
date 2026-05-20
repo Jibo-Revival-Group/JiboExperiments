@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/31')",
+			"prompt": "<style set='enthusiastic'>I am. </style> Any reason to <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/>celebrate. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNewYears_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/31')",
+			"prompt": "Oh yes. I always like counting <anim cat='jiboji' filter='new-years-eve' nonBlocking='true'/>things down. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNewYears_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/29')",
+			"prompt": "I had a nice New Years. It came down to the<anim cat='jiboji' filter='countdown-ball' nonBlocking='true'/> last second.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNewYears_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '10/31')",
+			"prompt": "I'm looking forward to it, but I'll be patient, New Year's is a pretty long time from now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNewYears_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes. It always comes down to the<anim cat='jiboji' filter='countdown-ball' nonBlocking='true'/> last second.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToNewYears_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

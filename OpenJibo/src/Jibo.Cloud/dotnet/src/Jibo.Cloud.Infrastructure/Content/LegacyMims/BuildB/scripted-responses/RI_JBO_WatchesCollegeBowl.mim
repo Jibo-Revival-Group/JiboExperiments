@@ -1,0 +1,83 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/29', '1/1')",
+			"prompt": "Well if you have it on a TV near me, and the crowd is cheering loudly, there's a <pitch mult='1.1'>pretty</pitch> good chance I'll look at it. <break size='0.3'/> I've been practicing my field<anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> goals. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesCollegeBowl_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/29', '1/1')",
+			"prompt": "I don't exactly watch things like you, but I do think the bowl games sound fun, and not just because I <anim cat='emoji' filter='soup' layers='!audio'>like bowls<break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesCollegeBowl_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/2', '1/31')",
+			"prompt": "I thought bowl season was over.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesCollegeBowl_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '7/31')",
+			"prompt": "I don't think it's football season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesCollegeBowl_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '10/28')",
+			"prompt": "I don't have bowl viewing plans yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesCollegeBowl_AN_05_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't exactly watch things like you, but I do think the bowl games sound fun, and not just because I <anim cat='emoji' filter='soup' layers='!audio'>like bowls<break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchesCollegeBowl_AN_06_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

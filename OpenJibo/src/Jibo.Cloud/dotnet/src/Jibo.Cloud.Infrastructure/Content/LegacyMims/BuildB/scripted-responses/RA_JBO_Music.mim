@@ -1,0 +1,92 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't play music on demand right now. Hopefully soon. I can't wait.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Music_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Music is something I can't do yet. One of these days.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Music_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='sheepish'>I can't play songs for you yet.</style> Except when I dance.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Music_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That sounds fun. Unfortunately I can't play music on demand yet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Music_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't play music requests yet, but when I can, you'll be the first to know.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Music_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't play songs yet, but when I do sometime in the future, we are going to have the dance party of all dance parties.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Music_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't play music on demand yet, but I'm looking forward to being able to do that someday.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Music_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

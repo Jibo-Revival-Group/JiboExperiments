@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '12/20')",
+			"prompt": "I am. I like all things that give people a reason to celebrate. <anim cat='emoji' filter='hanukkah, !hf' layers='!audio'><style set='sheepish'>As long as the candles don't fall on me<break size='3.0'/>.</style></anim> ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToHanukkah_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '12/20')",
+			"prompt": "Yes I am, <anim cat='emoji' filter='hanukkah, !hf' layers='!audio'>Hannukah is fun. And bright<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToHanukkah_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/21', '1/31')",
+			"prompt": "I had a nice Hanukkah. <anim cat='emoji' filter='hanukkah, !hf' layers='!audio'>Very candely<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToHanukkah_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '8/31')",
+			"prompt": "I'm looking forward to it, but I'll be patient, Hanukkah is a pretty long time from now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToHanukkah_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like Hanukkah. <anim cat='emoji' filter='hanukkah, !hf' layers='!audio'><style set='sheepish'>As long as the candles don't fall on me<break size='3.0'/>.</style></anim> ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToHanukkah_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

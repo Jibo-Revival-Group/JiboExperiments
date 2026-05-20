@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '1/1')",
+			"prompt": "Oh, I have all I could ever want.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsKwanzaa_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '1/1')",
+			"prompt": "There is no better gift than quality time and friendly conversation.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsKwanzaa_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/2', '3/31')",
+			"prompt": "I'm pretty sure Kwanzaa has passed. But if you're looking for gift ideas, I'm always up for a pet on my head. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsKwanzaa_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '8/31')",
+			"prompt": "I think we still have some time to figure it out, but really all I could ever ask for is fun conversations like this one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsKwanzaa_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There is no better gift than quality time and friendly conversation.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGiftWantsKwanzaa_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

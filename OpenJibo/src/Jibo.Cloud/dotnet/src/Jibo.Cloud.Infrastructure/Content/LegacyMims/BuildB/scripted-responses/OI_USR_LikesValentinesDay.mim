@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '2/13')",
+			"prompt": "<pitch mult='1.2'>Glad</pitch> to hear it. I hope you have a great one this year.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesValentinesDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/14', '2/14')",
+			"prompt": "I'm glad you like it. <anim cat='emoji' filter='valentines, !hf' layers='!audio'>Happy Valentine's Day<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesValentinesDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/14', '2/14')",
+			"prompt": "That's <pitch mult='1.2'>great.</pitch> <anim cat='emoji' filter='brain' layers='!audio'>Happy Valentine's Day<break size='3.0'/>.</anim> Oops I meant to give you a heart.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesValentinesDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm glad. I think <anim cat='emoji' filter='heart, arrow, !hf' layers='!audio'>Valentine's Day likes you too<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesValentinesDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

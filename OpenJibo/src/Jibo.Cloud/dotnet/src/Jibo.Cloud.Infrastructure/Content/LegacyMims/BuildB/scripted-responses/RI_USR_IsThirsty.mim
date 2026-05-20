@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know. Maybe drink some water just in case.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsThirsty_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you are, you should probably drink some water. It's important to stay hydrated.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsThirsty_AN_02"
+		}
+	]
+}

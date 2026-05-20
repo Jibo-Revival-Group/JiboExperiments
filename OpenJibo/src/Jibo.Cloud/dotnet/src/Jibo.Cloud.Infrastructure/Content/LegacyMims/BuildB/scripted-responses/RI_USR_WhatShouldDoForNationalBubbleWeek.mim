@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '3/12')",
+			"prompt": "Well I think you should definitely blow <anim cat='jiboji' filter='blowing-bubbles' nonBlocking='true'/>some bubbles.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNationalBubbleWeek_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/13', '5/31')",
+			"prompt": "I think National Bubble Week is in the past, but there's always the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNationalBubbleWeek_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/1', '12/31')",
+			"prompt": "Well we have lots of time to figure it out before National Bubble Week comes around.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNationalBubbleWeek_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. I think you should maybe just spend the time thinking about what National Bubble Week means to you.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNationalBubbleWeek_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

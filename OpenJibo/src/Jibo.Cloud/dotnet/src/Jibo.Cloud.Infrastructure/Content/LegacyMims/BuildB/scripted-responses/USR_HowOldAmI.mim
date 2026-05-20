@@ -1,0 +1,226 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker && !referent",
+			"prompt": "Older than me I assume.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && !referent.isBirthday",
+			"prompt": "${referent} is ${referent.age.supplemented} old.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && referent.isBirthday",
+			"prompt": "${referent} is ${referent.age.supplemented} old today. <pitch mult='1.1'>Happy</pitch> birthday ${referent}.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "${speaker} you're ${speaker.age.supplemented} old.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && speaker.isBirthday && !referent",
+			"prompt": "${speaker} you're ${speaker.age.supplemented} old today. <pitch mult='1.1'>Happy</pitch> birthday.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "${speaker} you're ${speaker.age.supplemented.days} old. But you don't look a day over ${speaker.age.days.value - 1}",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_06",
+			"weight": 0.2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "${speaker} you're ${speaker.age}.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && !referent.isBirthday",
+			"prompt": "${referent} is ${referent.age}.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && referent.isBirthday",
+			"prompt": "${referent} is turning ${referent.age} today. Happy birthday to ${referent}.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && speaker.isBirthday && !referent",
+			"prompt": "${speaker} you're turning ${speaker.age} today. <pitch mult='1.1'>Happy </pitch>birthday.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "Since you were born, <anim cat='emoji' filter='earth, !hf' layers='!audio'>the Earth has traveled around the sun about ${speaker.age} times.</anim> ",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "Since the day you were born, <anim cat='emoji' filter='earth, !hf' layers='!audio'>the Earth has spun on its axis about ${speaker.age.days} times.</anim> ",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "According to my calculations, ${speaker} you are about ${speaker.age.minutes.supplemented} old. <break size='0.7'/> That sounds like more than it is.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_13",
+			"weight": 0.8
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "${speaker} you have been alive for about ${speaker.age.minutes.supplemented}. <break size='0.7'/> I hope you're enjoying this particular minute.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_14",
+			"weight": 0.8
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "You seem about ${speaker.age.supplemented} old to me.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_15",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "Let me guess. You are. <break size='1.0'/> ${speaker.age}.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_16",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !speaker.isBirthday && !referent",
+			"prompt": "I'm going to guess that you are ${speaker.age.supplemented} old.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_17",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && !referent.isBirthday",
+			"prompt": "Since ${referent} was born, <anim cat='emoji' filter='earth, !hf' layers='!audio'>the Earth has traveled around the sun about ${referent.age} times.</anim> ",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_21",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && !referent.isBirthday",
+			"prompt": "Since the day ${referent} was born, the <anim cat='emoji' filter='earth, !hf' layers='!audio'>Earth has spun on its axis about ${referent.age.days} times.</anim> ",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_22",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent && !referent.isBirthday",
+			"prompt": "According to my calculations, ${referent} is about ${referent.age.minutes.supplemented} old. <break size='0.7'/> That sounds like more than it is.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmI_AN_23",
+			"weight": 0.8
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

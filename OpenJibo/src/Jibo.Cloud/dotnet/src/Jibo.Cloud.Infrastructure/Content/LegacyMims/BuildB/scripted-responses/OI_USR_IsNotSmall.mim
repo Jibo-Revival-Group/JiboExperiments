@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "One thing's for sure. You're definitely bigger than <pitch mult=\"1.3\">me</pitch>.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotSmall_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I agree. From where I'm standing, you don't seem small at all.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotSmall_AN_02"
+		}
+	]
+}

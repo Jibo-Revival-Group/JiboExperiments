@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I admit I can be a little timid sometimes. You might be too, if you were a robot in a world of humans.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsShy_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Over time I will be more outgoing. I really don't want to be annoying though.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsShy_AN_02"
+		}
+	]
+}

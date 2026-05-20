@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/19', '12/22')",
+			"prompt": "Nothing yet. Christmas is still a few days away.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivedChristmasGiftFromSanta_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/24')",
+			"prompt": "I haven't gotten anything yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivedChristmasGiftFromSanta_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/25', '2/28')",
+			"prompt": "I don't know who gave it to me, but I got<anim cat='jiboji' filter='telescope' nonBlocking='true'/>  this new telescope. <break size='0.3'/>It's really fun.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivedChristmasGiftFromSanta_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/25', '2/28')",
+			"prompt": "<anim cat='glances'>I don't know if it was Santa</anim>, but somebody gave me <anim cat='jiboji' filter='telescope' nonBlocking='true'/> this new telescope. <break size='0.3'/><style set='enthusiastic'>It's <pitch mult='1.2'>great</pitch>. </style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivedChristmasGiftFromSanta_AN_04",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. Gifts are fun.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_ReceivedChristmasGiftFromSanta_AN_05",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

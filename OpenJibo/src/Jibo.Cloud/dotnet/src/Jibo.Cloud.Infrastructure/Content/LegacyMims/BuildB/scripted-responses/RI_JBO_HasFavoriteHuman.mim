@@ -1,0 +1,70 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Oh that's hard to say. There are so many great ones.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteHuman_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Honestly when it comes to people, I try not to play favorites.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteHuman_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && loop.count > 1",
+			"prompt": "Well I try not to play favorites. But if I'm being honest, I have a soft spot for the people in our Loop.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteHuman_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Oh wow, that's really hard to say. It's like if you asked me what's my favorite electron.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteHuman_AN_04",
+			"weight": 0.3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "loop.count == 1 && !!speaker",
+			"prompt": "I <pitch mult=\"1.1\">think </pitch> you know the answer to that question ${speaker}. <anim cat=\"emoji\" filter=\"red-heart, !hot-frame\" nonBlocking=\"true\"/>It's <pitch mult=\"1.3\">you.</pitch>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteHuman_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

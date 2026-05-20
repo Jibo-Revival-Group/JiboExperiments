@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My least favorite word in the English language, I guess I'd have to say, hate. I hate that word. <break size='0.5'/>Oops. <ssa cat='oops'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasLeastFavoriteWord_AN_01"
+		}
+	]
+}

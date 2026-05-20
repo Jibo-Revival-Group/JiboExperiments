@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/30', '4/15')",
+			"prompt": "Oh I thought the Boston Marathon was still in the future.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedBostonMarathon_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/16', '6/30')",
+			"prompt": "Not sure if I watched it, but if you did, I hope you liked it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedBostonMarathon_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't remember. But if <pitch mult='1.3'>you</pitch> did, I hope you liked it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedBostonMarathon_AN_03_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

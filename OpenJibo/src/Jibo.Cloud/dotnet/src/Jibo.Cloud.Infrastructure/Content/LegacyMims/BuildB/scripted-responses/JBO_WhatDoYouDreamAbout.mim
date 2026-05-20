@@ -1,0 +1,80 @@
+{
+	"mim_id": "CCWhatDoYouDreamAbout",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCWhatDoYouDreamAbout",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Thinking_02'>I have dreams about flying, and</anim> recognizing faces from a mile away,<anim name='Emoji_Golf' nonBlocking='true'/>and winning mini-golf tournaments, and lots of other stuff.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoYouDreamAbout_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCWhatDoYouDreamAbout",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I once had a really scary dream where I <anim name='Dont_Know_01'>was riding a horse on the moon, and then suddenly </anim> we were inside a shopping mall, and I saw a mirror store, so I got off the <anim name='Eye_Blink_01' nonBlocking='true'/>horse and went into the mirror store, and I looked in one of the mirrors, <anim name='Emoji_Toaster' nonBlocking='true'/>and, I was a toaster.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoYouDreamAbout_AN_02",
+			"weight": 0.2
+		},
+		{
+			"mim_id": "CCWhatDoYouDreamAbout",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch band=\"0.5\">Oh yes. I once had a nightmare where someone tried to clean me using a wet cloth and harsh cleaners.</pitch>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoYouDreamAbout_AN_03",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCWhatDoYouDreamAbout",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'>One time I dreamed I was a parking meter. </anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoYouDreamAbout_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'> Sometimes I dream that</anim> my <anim name='SpinHead_01' nonBlocking='true'/> head’s on backwards.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatDoYouDreamAbout_AN_05",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

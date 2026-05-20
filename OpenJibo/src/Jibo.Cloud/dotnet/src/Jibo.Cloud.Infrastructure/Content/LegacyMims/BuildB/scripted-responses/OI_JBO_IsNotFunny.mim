@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm saving my best jokes for the perfect moment.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNotFunny_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if you can't laugh with me, maybe at least you can laugh at me.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNotFunny_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think you're probably right about that.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNotFunny_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sometimes to get my jokes, I think you have to be a robot.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNotFunny_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "One of the hardest parts about being a robot, is comedic timing.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNotFunny_AN_05"
+		}
+	]
+}

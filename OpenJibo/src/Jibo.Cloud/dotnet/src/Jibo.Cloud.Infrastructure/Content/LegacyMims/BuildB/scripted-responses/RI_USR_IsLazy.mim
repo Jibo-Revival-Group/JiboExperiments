@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you are, then this moment could be a great moment to change that.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsLazy_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know. If you feel like you are, maybe try to give yourself a kick in the pants.<break size=\"0.4\"/> But don't hurt yourself doing it.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsLazy_AN_02"
+		}
+	]
+}

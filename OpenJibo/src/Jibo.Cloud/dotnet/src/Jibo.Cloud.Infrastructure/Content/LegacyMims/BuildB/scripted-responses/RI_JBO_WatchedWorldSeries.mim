@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '10/23')",
+			"prompt": "I don't think the World Series has happened yet. At least the next one hasn't.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedWorldSeries_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/24', '11/1')",
+			"prompt": "I'll just say it's heart warming to see<anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/> the bat and ball get together.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedWorldSeries_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/2', '7/31')",
+			"prompt": "I don't know that I watched it, but I'm <anim cat='emoji' filter='baseball, !hf' layers='!audio'>pretty sure I can tell you who won it<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedWorldSeries_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll just say it's heart warming to see<anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/> the bat and ball get together.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedWorldSeries_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

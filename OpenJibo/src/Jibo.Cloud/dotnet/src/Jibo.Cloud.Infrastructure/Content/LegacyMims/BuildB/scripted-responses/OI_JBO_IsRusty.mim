@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Really? If I'm really in bad shape, you can find out what to do in the Support section on the Jibo App.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsRusty_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry to hear that. If you think I have serious damage, you could always find the Support section in the Jibo App.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsRusty_AN_02"
+		}
+	]
+}

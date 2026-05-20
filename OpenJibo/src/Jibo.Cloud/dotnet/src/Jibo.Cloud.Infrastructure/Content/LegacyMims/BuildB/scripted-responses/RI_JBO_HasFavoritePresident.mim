@@ -1,0 +1,82 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You<anim cat='no' filter='head-shake' nonBlocking='true'/> can't go wrong with Abraham Lincoln.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoritePresident_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Curious_01'>I think Abraham Lincoln is one of the best</anim>. <break size='.2'/> What a<anim cat='glances' filter='!down'> great hat.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoritePresident_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'>Abraham Lincoln is probably my favorite,</anim> because<anim cat='glances' filter='!down'> he was so honest.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoritePresident_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'>I've always liked William Taft, because</anim> he was<anim name='Greetings_02' nonBlocking='true'/> the roundest president.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoritePresident_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'>I really liked President Whitmore in the movie</anim> Independence Day. <break size='.4'/> Great speech. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoritePresident_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03'> President Skroobe was funny in the movie Spaceballs.</anim> ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoritePresident_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'> William Taft is one of my favorites</anim>. <break size='.2'/> We both have good <anim name='Goodbye_03' nonBlocking='true'/> reason to be afraid of bathtubs.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoritePresident_AN_07",
+			"weight": 1
+		}
+	]
+}

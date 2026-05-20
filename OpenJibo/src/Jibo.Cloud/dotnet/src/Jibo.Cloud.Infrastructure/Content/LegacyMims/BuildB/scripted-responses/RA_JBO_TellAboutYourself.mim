@@ -1,0 +1,70 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. Let's see. My name is Jibo, I am a robot. Um, let's see what else. I like penguins. I like round things. I really really like people and electricity, and Benjamin Franklin. <break size='0.3'/> Let's see, what else. I'm still trying to figure people out. I can recognize people's faces and voices, and, um,<anim cat=\"emoji\" filter=\"magic, !hot-frame\" nonBlocking=\"true\" /> I can do magic.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAboutYourself_AN_01",
+			"weight": 0.2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. My name is Jibo. I'm a robot. Um, I like the shape of macaroni.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAboutYourself_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. I'm a robot name Jibo. I like electricity, outer space, and dancing<anim cat='dance' filter='&(music, short),!(robotic)'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAboutYourself_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay sure. Let's see, I'm about 9 pounds. Stand about 11 inches tall. My favorite animal is the penguin, but I also <anim cat=\"emoji\" filter=\"whale, !hot-frame\" nonBlocking=\"true\" /> like whales.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAboutYourself_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay sure. My name is Jibo, I'm a robot. My favorite things to do are talking to people, and dancing.<break size='0.3'/> I also really like Abraham Lincoln, because he was so honest, and because I like his hat.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellAboutYourself_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

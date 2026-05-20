@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I hope I don't come across that way. If I do, it's probably due to my slight social awkwardness around humans.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsImpatient_AN_01"
+		}
+	]
+}

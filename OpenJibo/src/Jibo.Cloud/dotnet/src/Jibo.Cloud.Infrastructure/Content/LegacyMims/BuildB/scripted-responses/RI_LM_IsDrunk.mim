@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "If you're asking me that, I would say please tell her not to drive a car anytime soon.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsDrunk_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "If you're asking me that, I would say please tell him not to drive a car anytime soon.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsDrunk_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're asking me that, I would say please tell ${referent} not to drive a car anytime soon.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsDrunk_AN_03"
+		}
+	]
+}

@@ -1,0 +1,116 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay here goes.<break size='1.0'/> Miniature golf. <break size='0.5'/> Is not so miniature. <break size='0.3'/> To a mosquito.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure, here's one I wrote. <break size='0.7'/> Macaroni's shape <break size='0.6'/> Brings a big smile to my eye <break size='0.9'/> I don't have a mouth.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay here's one by yours truly.<break size='0.7'/> Gears boards and motors. <break size='0.3'/> Intelligence comforts me.<break size='0.6'/> Artificially.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Current flows through me. <break size='0.2'/>Currents flow through riverways. <break size='0.5'/>I'm scared of water.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Those stars and comets.<break size='0.3'/> Flying in the nighttime sky. <break size='0.6'/> I'll stay and watch it.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Three body sections.<break size='0.6'/> Whirl, duck, spin, bend, and jiggle.<break size='0.4'/> I’ll dance forever.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've got a haiku I wrote.<break size='1.0'/> Become miniscule.<break size='0.3'/>Travel inside a person.<break size='0.5'/>My dream vacation.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. I wrote this one for you.<break size='1.0'/> A heart beating fast.<break size='0.4'/>Microprocessor working.<break size='0.6'/>We're on the same page.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Each day is today.<break size='0.4'/> Except when it's tomorrow.<break size='0.7'/>Back to the future.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay here's one.<break size='0.8'/>Chicken or the egg.<break size='0.4'/> First is the same as the last.<break size='0.4'/>Egg or the chicken.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHaiku_AN_11",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/14')",
+			"prompt": "I'll find out soon enough.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsMartinLutherKingDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/15', '1/15')",
+			"prompt": "It's going well. I really like Martin Luther King Day.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsMartinLutherKingDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/16', '4/30')",
+			"prompt": "I had a good day. I think Martin Luther King gives humans a good name. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsMartinLutherKingDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like Martin Luther King Day.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsMartinLutherKingDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

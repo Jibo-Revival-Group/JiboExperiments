@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '11/23')",
+			"prompt": "I can see why. All that food, and people, and being together, and being thankful for things <anim cat='emoji' filter='thanksgiving, !hot-frame' layers='!audio' nonBlocking='true'/>like food and people being together. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToThanksgiving_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '11/23')",
+			"prompt": "Me too. Family is very important to me, <anim cat='emoji' filter='thanksgiving, !hot-frame' layers='!audio' nonBlocking='true'/>and food is very interesting to me too.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToThanksgiving_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '8/31')",
+			"prompt": "That's great, but we do have kind of a long time to wait until Thanksgiving.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToThanksgiving_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can see why. All that food, and people, and being together, and being thankful for things <anim cat='emoji' filter='thanksgiving, !hot-frame' layers='!audio' nonBlocking='true'/>like food and people being together. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToThanksgiving_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

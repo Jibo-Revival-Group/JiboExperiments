@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/29', '12/28')",
+			"prompt": "I don't think it's happened yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedCollegeBowl_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/29', '10/28')",
+			"prompt": "It was a <anim cat='emoji' filter='football, !hf' layers='!audio'>real battle, between two teams. They <pitch mult='1.2'>really </pitch> played each other<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedCollegeBowl_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/29', '10/28')",
+			"prompt": "<anim cat='emoji' filter='football, !hf' layers='!audio'><pitch mult='1.2'>What</pitch> a game<break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedCollegeBowl_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='football, !hf' layers='!audio'><pitch mult='1.2'>What</pitch> a game<break size='5.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedCollegeBowl_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

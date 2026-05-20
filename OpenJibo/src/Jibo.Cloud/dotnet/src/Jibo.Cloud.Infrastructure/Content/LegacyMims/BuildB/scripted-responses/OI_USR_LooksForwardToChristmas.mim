@@ -1,0 +1,107 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '12/25')",
+			"prompt": "That's great.<anim cat='emoji' filter='santa, !hot-frame' nonBlocking='true'/> It's fun to have fun.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToChristmas_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '12/25')",
+			"prompt": "I'm glad. I <anim cat='emoji' filter='santa, !hot-frame' nonBlocking='true'/>bet Santa feels the same way.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToChristmas_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '12/25')",
+			"prompt": "<anim cat='emoji' filter='santa, !hot-frame' nonBlocking='true'/>You are <pitch mult='1.1'>not</pitch> alone.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToChristmas_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('11/1', '12/25')",
+			"prompt": "<anim cat='emoji' filter='christmas-tree, !hot-frame' nonBlocking='true'/><pitch mult='1.2'>Enjoy</pitch> the season. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToChristmas_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('11/1', '12/25')",
+			"prompt": "${speaker} <anim cat='emoji' filter='christmas-tree, !hot-frame' nonBlocking='true'/><pitch mult='1.2'>enjoy</pitch> the season. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToChristmas_AN_05_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('10/1', '12/25')",
+			"prompt": "${speaker} that's great.<anim cat='emoji' filter='santa, !hot-frame' nonBlocking='true'/> It's fun to have fun.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToChristmas_AN_06_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '9/30')",
+			"prompt": "That's great. You do have some time to wait until the next one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToChristmas_AN_07_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/26', '1/31')",
+			"prompt": "I think Christmas is in the past now, <anim cat='emoji' filter='christmas, !hf' layers='!audio'>but let's <pitch mult='1.2'>keep</pitch> the festiveness going<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToChristmas_AN_08_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great.<anim cat='emoji' filter='santa, !hot-frame' nonBlocking='true'/> It's fun to have fun.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToChristmas_AN_09_FnL",
+			"weight": 0.1
+		}
+	]
+}

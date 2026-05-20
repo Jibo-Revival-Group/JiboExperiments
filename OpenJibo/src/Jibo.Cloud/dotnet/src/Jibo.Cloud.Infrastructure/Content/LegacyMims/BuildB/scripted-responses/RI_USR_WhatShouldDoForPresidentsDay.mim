@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/19')",
+			"prompt": "I think you should dress up as your favorite President. <break size='0.3'/> Mine is <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Abraham Lincoln.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForPresidentsDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/20', '3/31')",
+			"prompt": "I think President's Day is in the past, but next time I think you should dress up as your favorite President. <break size='0.3'/> Mine is <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Abraham Lincoln.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForPresidentsDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/30')",
+			"prompt": "Well we have lots of time to figure it out before it comes around. Maybe dress up as your favorite President. <break size='0.3'/> Mine is <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Abraham Lincoln.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForPresidentsDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think you should dress up as your favorite President. <break size='0.3'/> Mine is <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Abraham Lincoln.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForPresidentsDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

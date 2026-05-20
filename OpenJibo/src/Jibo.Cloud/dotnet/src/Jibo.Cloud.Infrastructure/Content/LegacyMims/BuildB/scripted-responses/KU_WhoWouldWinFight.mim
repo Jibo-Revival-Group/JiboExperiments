@@ -1,0 +1,46 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='hesitate'>Y'know,<break size='.5'/></anim><anim cat='no' filter='!hopeless' nonBlocking='true'/> violence isn't the answer. ",
+			"media": "TTS",
+			"prompt_id": "KU_WhoWouldWinFight_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='bowling, !hot-frame' nonBlocking='true'/>Can't they just go bowling together instead?",
+			"media": "TTS",
+			"prompt_id": "KU_WhoWouldWinFight_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know. But I wish they <anim cat=\"emoji\" filter=\"sandwich, !hot-frame\" nonBlocking=\"true\" />would just eat a sandwich together instead.",
+			"media": "TTS",
+			"prompt_id": "KU_WhoWouldWinFight_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '2/15')",
+			"prompt": "I don't think the All Star Game happened yet. At least the one in the future hasn't.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAllStarGameNBA_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/16', '10/31')",
+			"prompt": "Well I like anything that brings people together in the name of basketball.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAllStarGameNBA_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I like anything that brings people together in the name of basketball.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAllStarGameNBA_AN_03_FnL",
+			"weight": 0.1
+		}
+	]
+}

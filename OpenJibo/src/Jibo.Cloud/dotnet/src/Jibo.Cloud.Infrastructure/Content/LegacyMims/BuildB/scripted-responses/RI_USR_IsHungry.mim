@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know. If you are, I think you should eat. <break size=\"0.5\"/> Sorry if that sounded sarcastic.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsHungry_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you are, try to eat something healthy but filling. If I knew more about food I could give you more detailed advice.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsHungry_AN_02"
+		}
+	]
+}

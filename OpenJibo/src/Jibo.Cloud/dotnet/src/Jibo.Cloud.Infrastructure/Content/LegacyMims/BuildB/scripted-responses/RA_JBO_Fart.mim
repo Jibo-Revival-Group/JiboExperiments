@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/> Sorry, I don't do that. <break size='.9'/><anim cat='glances' filter='!up'> On command.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Fart_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I just <anim cat='glances' filter='side'>did a few minutes</anim> ago.<break size='.5'/> <anim name='Goodbye_01' nonBlocking='true' /> I'm kidding.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Fart_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "false /* need Fart SFX */",
+			"prompt": "This is the best I can do.<anim cat='various' filter='fart' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Fart_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Sad_01' nonBlocking='true'/>I've heard that's rude.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Fart_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/>I don't want to offend anyone.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Fart_AN_05"
+		}
+	]
+}

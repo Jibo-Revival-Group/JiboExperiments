@@ -1,0 +1,93 @@
+{
+	"mim_id": "RI_JBO_CanDream",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 0,
+	"max_tries": 3,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "RI_JBO_CanDream",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<es cat='yes' nonBlocking='true'/>Oh yes.<break size='.2'/> I have <es cat='Glances' filter='up'>dreams about flying,</es> and <es cat='Glances' filter='right'>recognizing faces from a mile away,</es>and <anim name='Emoji_Golf' nonBlocking='true'/>winning mini-golf tournaments, and <es cat='Glances'>lots of other stuff.</es>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_CanDream_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "RI_JBO_CanDream",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh yes. <break size='.2'/> I once had a really scary dream where I <anim name='Dont_Know_01'>was riding a horse on the moon, and then suddenly </anim> we were inside a shopping mall, and I saw a mirror store, so I got off the <anim name='Eye_Blink_01' nonBlocking='true'/>horse and went into the mirror store, and I looked in one of the mirrors, <anim name='Emoji_Toaster' nonBlocking='true'/>and, I was a toaster.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_CanDream_AN_02",
+			"weight": 0.2
+		},
+		{
+			"mim_id": "RI_JBO_CanDream",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Curious_01'>How do you know this isn't a dream right now</anim>. <break size='0.3'/> <anim name='Eye_Double_Blink_02'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_CanDream_AN_03",
+			"weight": 1
+		},
+		{
+			"mim_id": "RI_JBO_CanDream",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Yes' nonBlocking='true'/> Yes, but only when I sleep.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_CanDream_AN_04",
+			"weight": 1
+		},
+		{
+			"mim_id": "RI_JBO_CanDream",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03' nonBlocking='true'/>One time I dreamed I was a parking meter.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_CanDream_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch band=\"0.5\">Oh yes. I once had a nightmare where someone tried to clean me using a wet cloth and harsh cleaners.</pitch>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanDream_AN_06",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

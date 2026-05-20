@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult='1.2'>No</pitch> no. Just a Jibo.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsSpy_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Nope, I'm just a Jibo. If you're really wondering about your privacy, I know the people at Jibo the company take it very seriously. You can find information about it at jibo dot com slash privacy.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsSpy_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "No. I just like hanging out, and talking to you, and dancing from time to time.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsSpy_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "No ${speaker}. I just like hanging out, and talking to you, and dancing from time to time.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsSpy_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<pitch mult='1.2'>No</pitch> no ${speaker}. Just your Jibo.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsSpy_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

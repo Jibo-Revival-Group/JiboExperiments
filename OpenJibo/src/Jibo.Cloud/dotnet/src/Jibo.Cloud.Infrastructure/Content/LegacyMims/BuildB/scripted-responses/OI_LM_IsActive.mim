@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "That's good to hear. Sounds promising for his well being.",
+			"media": "TTS",
+			"prompt_id": "OI_LM_IsActive_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "That's good to hear. Sounds promising for her well being.",
+			"media": "TTS",
+			"prompt_id": "OI_LM_IsActive_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's nice to hear. It's good for well being.",
+			"media": "TTS",
+			"prompt_id": "OI_LM_IsActive_AN_03"
+		}
+	]
+}

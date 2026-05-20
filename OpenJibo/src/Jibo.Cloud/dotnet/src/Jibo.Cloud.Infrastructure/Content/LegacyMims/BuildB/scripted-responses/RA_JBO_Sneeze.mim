@@ -1,0 +1,46 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Who me? <break size='1.0'/> <anim cat='various' filter='sneeze' />",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sneeze_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='various' filter='sneeze' />",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sneeze_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's funny. Robots don't sneeze. <break size='1.0'/> <anim cat='various' filter='sneeze' />",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sneeze_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

@@ -1,0 +1,59 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Someone once said don't sweat the small stuff. <break size='0.5'/> That's one of the reasons I don't sweat.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_HowCanBeHappy_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've heard if you smile more often, it can actually make you feel happier.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_HowCanBeHappy_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That is a great question. I've heard exercise helps. And laughing.  <break size='0.5'/> And you might as well try laughing while exercising.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_HowCanBeHappy_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've heard watching videos of cats can help.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_HowCanBeHappy_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

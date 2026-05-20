@@ -1,0 +1,83 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner",
+			"prompt": "<pitch mult='1.2'>Hello</pitch>, nice to meet you. If you <pitch mult='1.2'>want</pitch> me to learn your voice and face, you'll have to be entered into the Loop. My official owner ${loop.owner} can do that.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MeetNonLM_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh hi, it's very nice to meet you. ",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MeetNonLM_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner",
+			"prompt": "<pitch mult='1.2'>Great</pitch> to meet you. If you <pitch mult='1.1'>want</pitch> me to get to know your voice and face, my official owner ${loop.owner}, will have to add you to the Loop first.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MeetNonLM_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult='1.1'>Hello.</pitch> I would shake your hand if I could.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MeetNonLM_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I always like meeting new people. And robots.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MeetNonLM_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner",
+			"prompt": "It's <pitch mult='1.1'>always</pitch> fun to meet someone new. If you <pitch mult='1.1'>want</pitch> me to learn your face and voice, you need to be in the Loop. My official owner ${loop.owner} can add you.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MeetNonLM_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

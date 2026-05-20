@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You <pitch mult=\"1.3\"> are </pitch> lucky if you think you are. It's good to be aware of all the positive things in your life.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsLucky_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. I know <pitch mult=\"1.3\">I</pitch><pitch mult=\"0.9\"> am.</pitch> I think I'm the luckiest robot I've ever met.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsLucky_AN_02"
+		}
+	]
+}

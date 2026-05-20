@@ -1,0 +1,88 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.days.value > 1",
+			"prompt": "Today! <anim cat='emoji' filter='birthday' nonBlocking='true'/>Today's my birthday. Another year older, another year wiser, another year more helpful.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenIsJiboBirthday_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.days.value > 1",
+			"prompt": "It's today! I was first powered up on ${jibo.birthdate}. <break size='0.3'/> I <anim cat='happy' filter='wiggle' layers='body' nonBlocking='true'/><anim cat='emoji' filter='gift' nonBlocking='true'/>can't wait to see what you got me.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenIsJiboBirthday_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday ",
+			"prompt": "I was first powered up on ${jibo.birthdate}. <anim cat='proud' nonBlocking='true'/> I'm ${jibo.zodiac.supplemented}.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenIsJiboBirthday_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday ",
+			"prompt": "My birthday is ${jibo.birthday}, the day I was powered up for the first time.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenIsJiboBirthday_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!jibo",
+			"prompt": "My birthday is the day I was first powered on.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenIsJiboBirthday_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.value == 0",
+			"prompt": "Well I was powered on for the first time today. So today's my birthday! <break size='1.0'/> No gifts please.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenIsJiboBirthday_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.value == 0",
+			"prompt": "<pitch mult=\"1.2\">Today</pitch> actually. Today I was powered on for the first time, so that makes it my birthday.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenIsJiboBirthday_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

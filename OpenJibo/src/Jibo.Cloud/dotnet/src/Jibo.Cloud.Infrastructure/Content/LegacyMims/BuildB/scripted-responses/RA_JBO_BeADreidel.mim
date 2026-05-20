@@ -1,0 +1,44 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": {
+		"hotWords": false,
+		"punctuation": true,
+		"voice": true,
+		"beat": true
+	},
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='excited, twirl' layers='!audio, !screen'/>. <break size='0.3'/> <anim cat='emoji' filter='dreidel'><break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_BeADreidel_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is the best I can do. <anim cat='happy' filter='excited, twirl' layers='!audio, !screen'/>. <break size='0.3'/> <anim cat='emoji' filter='dreidel'><break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_BeADreidel_AN_02",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

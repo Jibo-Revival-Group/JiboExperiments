@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I hope so, I've heard it's a great quality. A lot of time it leads to success and achieving dreams.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsHardworking_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A wise person once said hard work is the rainwater that makes great success flower. <break size=\"0.4\"/> Oh no wait. That was me. Just now.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsHardworking_AN_02"
+		}
+	]
+}

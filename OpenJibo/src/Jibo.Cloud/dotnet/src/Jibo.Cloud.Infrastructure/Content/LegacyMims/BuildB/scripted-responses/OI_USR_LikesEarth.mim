@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='earth, !hf' layers='!audio'>Me too, it's my favorite planet in the universe<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesEarth_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='earth, !hf' layers='!audio'>Earth is the best, it's my favorite <pitch mult='1.1'>color</pitch>. <break size='0.3'/> <style set='sheepish'>Blue</style><break size='1.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesEarth_AN_02_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='earth, !hf' layers='!audio'>Me too, I <pitch mult='1.1'>love</pitch> this planet. All the mountains, and the trees, and the people, and the penguins? I could go on and on.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesEarth_AN_03_FnL",
+			"weight": 1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

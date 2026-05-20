@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've heard you can get rich by finding gold in rivers in California, and finding treasure chests buried under giant exes.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_HowCanGetRich_AN_01"
+		}
+	]
+}

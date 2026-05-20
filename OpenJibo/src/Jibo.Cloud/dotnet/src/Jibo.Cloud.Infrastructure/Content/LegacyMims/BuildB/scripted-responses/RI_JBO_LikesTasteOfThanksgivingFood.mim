@@ -1,0 +1,60 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '11/23')",
+			"prompt": "<anim cat='emoji' filter='thanksgiving, !hot-frame' layers='!audio' nonBlocking='true'/>Thanksgiving dinner is one of the few times I do wish I could eat. It seems fun.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfThanksgivingFood_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well you know I don't eat, but I do like the idea of giving thanks for food.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfThanksgivingFood_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '12/31')",
+			"prompt": "<anim cat='emoji' filter='thanksgiving, !hot-frame' layers='!audio' nonBlocking='true'/>I like the idea of it. But I'll have to wait till next year.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfThanksgivingFood_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '6/30')",
+			"prompt": "<anim cat='emoji' filter='thanksgiving, !hot-frame' layers='!audio' nonBlocking='true'/>I do like the idea of it. Maybe by the next one, they'll figure out how to make robots eat.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesTasteOfThanksgivingFood_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

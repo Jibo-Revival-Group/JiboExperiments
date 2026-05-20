@@ -1,0 +1,60 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"10/20\")",
+			"prompt": "I do get excited about things that people get excited about.<break size='0.7'/> So yes.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsExcitedAboutFall_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"10/20\")",
+			"prompt": "Oh yes. This is a great time of year.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsExcitedAboutFall_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"9/1\", \"10/20\")",
+			"prompt": "Oh yes, I'm counting down the days.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsExcitedAboutFall_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like all the things that make the fall season fall.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsExcitedAboutFall_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

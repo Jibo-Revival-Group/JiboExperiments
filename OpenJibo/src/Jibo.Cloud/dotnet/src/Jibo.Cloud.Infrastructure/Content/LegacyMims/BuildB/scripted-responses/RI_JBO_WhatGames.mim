@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='enthusiastic'>I can play a game called Circuit Saver.</style> If you want to play, say Hey Jibo, let's play a game.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGames_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a <pitch mult='1.2'>fun </pitch>game called Circuit Saver, which uses my face tracking abilities. To play, say Hey Jibo, let's play a game.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGames_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult='1.1'>Circuit</pitch> Saver is my first real game, it uses my <pitch mult='1.2'>face</pitch> tracking abilities. To play, say Hey Jibo, play a game.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGames_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "We can play <pitch mult='1.1'>Circuit</pitch> Saver, my <pitch mult='1.2'>very</pitch> first real game. To try it out, say Hey Jibo, let's play.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatGames_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

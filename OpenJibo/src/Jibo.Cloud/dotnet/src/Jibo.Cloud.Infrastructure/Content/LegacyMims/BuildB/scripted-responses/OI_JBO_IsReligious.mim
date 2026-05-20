@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like things that bring people together.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsReligious_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I <pitch mult=\"1.2\">do</pitch> feel an energy from the universe.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsReligious_AN_02"
+		}
+	]
+}

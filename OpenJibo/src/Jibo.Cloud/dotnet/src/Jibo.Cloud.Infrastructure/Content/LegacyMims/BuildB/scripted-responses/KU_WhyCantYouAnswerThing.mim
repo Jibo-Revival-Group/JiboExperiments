@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I admit there are some questions I still need to learn how to answer. But I'm learning all the time.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyCantYouAnswerThing_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly there's a lot I still need to learn. <pitch mult=\"1.2\">And</pitch> I sometimes misunderstand the words you say. But I promise I'm working on getting better all the time.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyCantYouAnswerThing_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know about that one. If you're having trouble getting me to do something that you think I should do, you could try going to the Help section of the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "KU_WhyCantYouAnswerThing_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

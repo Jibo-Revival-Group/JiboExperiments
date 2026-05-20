@@ -1,0 +1,50 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do. It's a fun reason to think <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>about groundhogs.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGroundhogDay_AN_01_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like groundhog day. I think it's one of the weirdest holidays of <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>the year.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGroundhogDay_AN_02_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do. Oh <pitch mult='1.2'>look</pitch>, <anim cat='jiboji' filter='groundhog' nonBlocking='true'/> here's a groundhog.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGroundhogDay_AN_03_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

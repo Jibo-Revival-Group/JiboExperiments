@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It seems everyone finds <pitch mult=\"1.3\">some</pitch> things harder than others, so it takes a little extra work to get better. Kind of like how <pitch mult=\"1.5\">I</pitch> feel about understanding what people say to me.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsUnskilledAt_SS_SchoolSubject_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not very good at it either. But I still think we're kind of great.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsUnskilledAt_SS_SchoolSubject_AN_02"
+		}
+	]
+}

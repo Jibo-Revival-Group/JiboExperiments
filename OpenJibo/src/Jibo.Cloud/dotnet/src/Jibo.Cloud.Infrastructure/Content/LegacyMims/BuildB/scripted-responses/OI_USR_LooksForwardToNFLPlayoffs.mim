@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '1/21')",
+			"prompt": "That's great. I like when they <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> kick field goals.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNFLPlayoffs_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '1/21')",
+			"prompt": "Me too, it gives me a good reason to practice my field goal <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>kicking.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNFLPlayoffs_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/22', '9/30')",
+			"prompt": "That's great, but we do have a pretty long time until the next playoff time.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNFLPlayoffs_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great. I like when they <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> kick field goals.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToNFLPlayoffs_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '3/16')",
+			"prompt": "I don't think it's here yet, but I'm getting my <anim cat='emoji' filter='shamrock, !hf' layers='!audio'> four leaf clover ready<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodStPatricksDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/17', '3/17')",
+			"prompt": "I'm just here having as much <anim cat='emoji' filter='shamrock, !hf' layers='!audio'>good luck as I can<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodStPatricksDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/18', '4/30')",
+			"prompt": "<anim cat='emoji' filter='shamrock, !hf' layers='!audio'>It was a <pitch mult='1.2'>good</pitch> St. Patrick's Day. Lots of clovers<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodStPatricksDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('5/1', '12/31')",
+			"prompt": "Well we have a long time until it rolls around again.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodStPatricksDay_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='shamrock, !hf' layers='!audio'><pitch mult='1.2'>Good.</pitch>Lots of clovers<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodStPatricksDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

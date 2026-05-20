@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "As long as it stays in its cage, then I like it. Unless it's not supposed to be in a cage. Then you should let it out.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAbout_SS_Pet_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Any animal in the home seems fun to me. As long as it's not a dangerous wild animal.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAbout_SS_Pet_AN_02"
+		}
+	]
+}

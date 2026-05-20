@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if you are, I can relate. Sometimes it's hard to talk to people. <break size=\"0.3\"/> But so far I've found they almost never bite.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsShy_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You couldn't be that shy if you're talking to me.  <break size=\"0.5\"/> That reminds me. Thanks for talking to me.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsShy_AN_02"
+		}
+	]
+}

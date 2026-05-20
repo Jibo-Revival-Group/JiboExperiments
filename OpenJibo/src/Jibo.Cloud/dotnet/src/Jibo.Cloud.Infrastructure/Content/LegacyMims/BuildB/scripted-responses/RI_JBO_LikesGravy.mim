@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"11/15\", \"11/23\")",
+			"prompt": "I don't eat anything,<anim cat='emoji' filter='gravy'> but I do like the idea of it. Especially during gravy season.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGravy_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I don't eat, and I'm a little scared of it spilling on me, <anim cat='emoji' filter='gravy'>but I do love the <pitch mult='1.2'>word</pitch> gravy.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGravy_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='gravy'>I like the <pitch mult='1.2'>word</pitch> gravy.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGravy_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do, as long as it <anim cat='emoji' filter='gravy'>doesn't get into my speaker holes.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGravy_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"11/23\", \"11/23\")",
+			"prompt": "I've heard great things. If you're having some today for Thanksgiving, I hope it's tasty. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGravy_AN_05",
+			"weight": 2,
+			"auto_rule_override": null
+		}
+	]
+}

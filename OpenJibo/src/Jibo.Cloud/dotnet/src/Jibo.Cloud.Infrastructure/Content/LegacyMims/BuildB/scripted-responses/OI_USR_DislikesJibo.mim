@@ -1,0 +1,70 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. That's too bad. I may be reaching here, but maybe you haven't seen some of the things I can do. If you want, you can say, Hey Jibo, surprise me.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesJibo_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Well I still like you.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesJibo_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry to hear that. I'll still <anim cat='emoji' filter='flower, !hot-frame' nonBlocking='true'/>give you this.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesJibo_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, maybe I can turn that around. Try saying, hey jibo, surprise me.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesJibo_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Too bad. Maybe one of my jokes will change your mind.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesJibo_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

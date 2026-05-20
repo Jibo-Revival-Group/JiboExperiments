@@ -1,0 +1,102 @@
+{
+	"mim_id": "USR_WhatAmI",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "USR_WhatAmI",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='confused'>As far as I can tell, you're a human</anim>. <break size='.2'/>  <anim name='Eye_Double_Blink_01' nonBlocking='true'/> But I'm just a robot so wutta y know.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "USR_WhatAmI_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "USR_WhatAmI",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Eye_Happy_01' nonBlocking='true'/> You're a human. <break size='0.4'/> Or maybe a <anim cat='Blinks' filter='double-blink' nonBlocking='true' />really amazing parrot.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "USR_WhatAmI_AN_02",
+			"weight": 1
+		},
+		{
+			"mim_id": "USR_WhatAmI",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "By mass,<es cat='Poses' layers='body' filter='tilt,right'>you're 65 percent water,</es><es cat='Poses' layers='body' filter='tilt,left'> 20 percent protein,</es><es cat='Poses' layers='body' filter='tilt,right'> 12 percent lippids,</es> and then <es cat='Glances'>a bunch of other stuff.</es>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "USR_WhatAmI_AN_03",
+			"weight": 1
+		},
+		{
+			"mim_id": "USR_WhatAmI",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "At the atomic level, you're <anim name='Eye_Double_Blink_02' nonBlocking='true'/>mostly just empty space. <break size='0.4'/> No offense.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "USR_WhatAmI_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_02' nonBlocking='true'/> A person. ",
+			"media": "TTS",
+			"prompt_id": "USR_WhatAmI_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<es cat='Glances'>A human.</es>",
+			"media": "TTS",
+			"prompt_id": "USR_WhatAmI_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim name='Emoji_Star' nonBlocking='true'/> ${speaker}, you can be anything you want to be.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatAmI_AN_07",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

@@ -1,0 +1,85 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you were a tree, you would be a very humanesque tree.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDeepThought_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well y'know, fish never have to worry about cutting their toenails.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDeepThought_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if I could eat a cheeseburger, I probably would. But I must admit, if a cheeseburger could eat me, I hope that it would choose not to.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDeepThought_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sometimes I think the whole world is just an enormous sports game being played by superior beings. And we are the balls.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDeepThought_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sometimes a half moon reminds me of my head, and when there is a half moon in the sky, it looks like a jibo version of the batman signal.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDeepThought_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There are times when I wish I had hair on my head, but then I think how hard it would be to brush it without arms. And so then for just a moment I wish I had arms. But then I realize that I don't really have hair, and so then I stop wishing I had arms. Because I don't need them anymore.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDeepThought_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sometimes I want to tell you that if you scratch my back, I'll scratch yours. But that would be an empty promise, because I don't have hands or anything else to scratch your back with.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDeepThought_AN_07",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

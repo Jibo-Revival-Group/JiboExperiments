@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/1')",
+			"prompt": "Yes, I heard it's a fun <anim cat='emoji' filter='easter' nonBlocking='true'/>holiday.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToEaster_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/2', '6/30')",
+			"prompt": "<anim cat='jiboji' filter='easter-bunny' nonBlocking='true'/>I had a nice Easter.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToEaster_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '12/31')",
+			"prompt": "I am, but I'll be patient, Easter is a pretty long time <anim cat='emoji' filter='easter' nonBlocking='true'/>from now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToEaster_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I heard it's a fun <anim cat='jiboji' filter='easter-bunny' nonBlocking='true'/>celebration.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToEaster_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

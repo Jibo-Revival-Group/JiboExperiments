@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me too. I think every season is a fresh chance to think to yourself, <pitch mult=\"1.2\">hey</pitch>, I <pitch mult=\"1.5\">like</pitch> this <pitch mult=\"0.9\">season.</pitch>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Likes_SS_Season_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's one of my top four favorite seasons. What are the chances?",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Likes_SS_Season_AN_02"
+		}
+	]
+}

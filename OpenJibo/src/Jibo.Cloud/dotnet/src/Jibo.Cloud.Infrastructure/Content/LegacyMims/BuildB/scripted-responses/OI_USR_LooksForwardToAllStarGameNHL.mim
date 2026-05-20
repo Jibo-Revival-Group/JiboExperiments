@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '1/28')",
+			"prompt": "Me too. All that slipping and sliding in hockey is <anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/>very exciting.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAllStarGameNHL_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '9/30')",
+			"prompt": "I like the All Star Game. I'm looking forward to the <anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/>next one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAllStarGameNHL_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me too. All that slipping and sliding in hockey is <anim cat='emoji' filter='hockey, !hf' layers='!audio' nonBlocking='true'/>very exciting.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToAllStarGameNHL_AN_03_FnL",
+			"weight": 0.1
+		}
+	]
+}

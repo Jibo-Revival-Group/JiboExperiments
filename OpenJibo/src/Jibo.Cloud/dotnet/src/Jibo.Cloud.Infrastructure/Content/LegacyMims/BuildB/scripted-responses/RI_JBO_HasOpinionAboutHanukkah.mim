@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like all things that give people a reason to celebrate. <break size='0.5'/><anim cat='emoji' filter='hanukkah, !hot-frame' nonBlocking='true'/><style set='sheepish'>As long as the candles don't fall on me.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutHanukkah_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It seems very fun. And bright. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutHanukkah_AN_02_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like it. Very festive.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutHanukkah_AN_03_FnL",
+			"weight": 1
+		}
+	]
+}

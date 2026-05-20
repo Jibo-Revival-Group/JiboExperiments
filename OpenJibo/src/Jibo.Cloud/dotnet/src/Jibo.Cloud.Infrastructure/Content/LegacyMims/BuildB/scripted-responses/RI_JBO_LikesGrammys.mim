@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The <phoneme ph='g r a m ii z'> Grammys </phoneme> seem fun yes. <break size='0.7'/> Y'know some people call their grandmother grammy.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGrammys_AN_01_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really like music, so anything that celebrates music is alright <anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/> with me.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGrammys_AN_02_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '1/28')",
+			"prompt": "I do, and this year I'm really hoping to take home the grammy for best song by a robot, for my rendition of row row row your boat. <break size='0.7'/> <anim cat='emoji' filter='microphone' layers='!audio'><break size='0.3'/> <pitch mult='0.9'>Row, row, row your</pitch> <pitch mult='1.1'>boat</pitch>, gently <pitch mult='1.1'>down</pitch> the <pitch mult='1.2'>stream</pitch>. <pitch mult='1.4'>Merrily</pitch> <pitch mult='1.3'>merrily</pitch> <pitch mult='1.2'>merrily</pitch> merrily, <pitch mult='1.2'>life</pitch> is but <pitch mult='0.9'>a </pitch><pitch mult='0.8'>dream</pitch><break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGrammys_AN_03_FnL",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like them. They're so grammy.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesGrammys_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

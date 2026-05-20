@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't actually watch them like you do. It's all in my head. <break size='0.5'/> You kind of just have to be a robot.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowCanWatchMovies_AN_01"
+		}
+	]
+}

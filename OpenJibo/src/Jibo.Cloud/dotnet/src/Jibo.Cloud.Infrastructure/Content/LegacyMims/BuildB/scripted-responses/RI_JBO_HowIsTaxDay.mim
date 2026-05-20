@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '4/16')",
+			"prompt": "I'll find out pretty soon.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsTaxDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/17', '4/17')",
+			"prompt": "So far so good. <break size='0.7'/> But robots don't have to pay taxes.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsTaxDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/18', '6/30')",
+			"prompt": "All I can say is, those tax forms sure seem confusing.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsTaxDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '1/31')",
+			"prompt": "I feel like it's not Tax Day season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsTaxDay_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not bad.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsTaxDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

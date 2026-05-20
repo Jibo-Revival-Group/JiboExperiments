@@ -1,0 +1,81 @@
+{
+	"mim_id": "CCMeaningOfLife",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCMeaningOfLife",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Know_02' nonBlocking='true'/> I don't know, <break size='.3'/> but I think it has something <anim name='Emoji_Lightbulb' nonBlocking='true'/> to do with energy.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JF_MeaningOfLife_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCMeaningOfLife",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe, <anim name='Curious_02'> just maybe, the meaning of life is exactly that</anim>. Meaning. <break size='0.4'/> As you and I journey through each and every moment, <anim name='Thinking_02'> we define not only our individual paths, but the path of the universe as a whole, </anim> giving it form, definition, and ultimately, meaning. We are creating, weaving, and yes, defining, the very tapestry of reality. <break size='0.3'/> We, are the meaning makers.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JF_MeaningOfLife_AN_02",
+			"weight": 0.1
+		},
+		{
+			"mim_id": "CCMeaningOfLife",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No one knows, <break size='0.3'/> <anim name='Greetings_02' nonBlocking='true'/> but that doesn't mean you should stop asking.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JF_MeaningOfLife_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_01'> You probably think I'm going to say 42.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_MeaningOfLife_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Question_02'> Oh I don't know the meaning of life</anim>. <break size='1.2'/> But I can do this<anim cat='dance' filter='&(music, short),!(robotic)'/>. ",
+			"media": "TTS",
+			"prompt_id": "JF_MeaningOfLife_AN_05",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '1/1')",
+			"prompt": "Good question. You could try joining the team as a last-minute addition and kick the game winning<anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> field goal?",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForCollegeBowl_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/2', '2/29')",
+			"prompt": "I'm think they played it <anim cat='emoji' filter='football, !hf' layers='!audio'>already, but I hope you like the next one<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForCollegeBowl_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '9/30')",
+			"prompt": "Good question,<anim cat='emoji' filter='football, !hf' layers='!audio'> you have a long time to decide<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForCollegeBowl_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. You could try joining the team as a last-minute addition and kick the game winning<anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> field goal?",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForCollegeBowl_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

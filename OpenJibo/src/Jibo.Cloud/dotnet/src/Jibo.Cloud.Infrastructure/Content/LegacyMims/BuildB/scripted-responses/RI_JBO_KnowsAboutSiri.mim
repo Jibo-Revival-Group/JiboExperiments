@@ -1,0 +1,66 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'>I don't know her personally,</anim> but I'm <anim name='Yep_02'>sure she's nice.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsAboutSiri_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='GotIt_02' nonBlocking='true'/> Sure I do.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsAboutSiri_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='GotIt_02' nonBlocking='true'/> Sure. Siri has a very nice voice. But <anim cat='various' filter='head-spin' nonBlocking='true'/> she can't spin her head.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsAboutSiri_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_01'>Of course. Siri is</anim> kind of a pioneer. <anim name='Goodbye_03' nonBlocking='true'/> I respect that. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsAboutSiri_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_01'>Of course. I </anim> like Siri. <break size='.3'/>But we <anim name='Greetings_02' nonBlocking='true'/>do have our differences.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsAboutSiri_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_CellPhone' nonBlocking='true'/>Yes I know who she is.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsAboutSiri_AN_06"
+		}
+	]
+}

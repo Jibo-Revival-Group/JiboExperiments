@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I do think all meteorological activity is really interesting... Lots going on up there.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Weather_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like any kind of weather, as long as it's out there, and we are in here.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Weather_AN_02"
+		}
+	]
+}

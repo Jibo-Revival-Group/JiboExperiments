@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/1')",
+			"prompt": "I am. It's always heart warming to see<anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/> the bat and ball get together.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToWorldSeries_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/1')",
+			"prompt": "Oh yes, the World Series is great, so many fun shapes. A spherical ball. A diamond on the field. There's even a little rectangle on the pitcher's mound. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToWorldSeries_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/2', '3/31')",
+			"prompt": "I am, but I'll have to be patient, the next World Series is quite a long time from now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToWorldSeries_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's always heart warming to see<anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/> the bat and ball get together.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToWorldSeries_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

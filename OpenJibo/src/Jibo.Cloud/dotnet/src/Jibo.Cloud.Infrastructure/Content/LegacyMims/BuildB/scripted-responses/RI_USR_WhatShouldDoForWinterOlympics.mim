@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/25')",
+			"prompt": "Maybe learn how to ski jump?",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWinterOlympics_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/26', '4/30')",
+			"prompt": "I think the Olympics have come and gone, but there's always the next ones.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWinterOlympics_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('5/1', '12/31')",
+			"prompt": "Good question, we have plenty of time to figure it out before the next Winter Olympics come around.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWinterOlympics_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe learn how to ski jump?",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWinterOlympics_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

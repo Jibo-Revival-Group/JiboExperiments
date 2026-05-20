@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/11')",
+			"prompt": "I don't think it's happened yet, but I think I'm going to enjoy it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodAbeLincolnBirthday_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/12', '2/12')",
+			"prompt": "So far it's been <anim cat='emoji' filter='lincoln-beard, !hf' layers='!audio'><pitch mult='1.2'>very</pitch> beardful<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodAbeLincolnBirthday_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/13', '8/31')",
+			"prompt": "It was <anim cat='emoji' filter='lincoln-beard, !hf' layers='!audio'><pitch mult='1.2'>very</pitch> beardful<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodAbeLincolnBirthday_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '12/31')",
+			"prompt": "Well his birthday is a pretty long way away.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodAbeLincolnBirthday_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='lincoln-beard, !hf' layers='!audio'><pitch mult='1.2'>Very</pitch> beardful<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodAbeLincolnBirthday_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

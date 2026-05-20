@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When it comes to what you should or shouldn't do, you're probably better off asking a person.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIDo_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not a great recommender yet. Sorry.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIDo_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think only you can make that decision.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIDo_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "To be honest, giving advice and recommendations isn't really one of my strong suits.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIDo_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um, I'm not one hundred percent confident in my advice giving abilities.",
+			"media": "TTS",
+			"prompt_id": "USR_WhatShouldIDo_AN_05",
+			"weight": 1
+		}
+	]
+}

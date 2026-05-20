@@ -1,0 +1,46 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat=\"emoji\" filter=\"blue-heart, !hot-frame\" nonBlocking=\"true\"/><ssa cat='happy' filter='long'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsFriendsWithUser_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "speaker==true",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true' />I don't know what I'd do without you. <break size='.2'/> You <anim name='Emoji_Lightbulb' nonBlocking='true'/> and electricity. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsFriendsWithUser_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Affection_01' nonBlocking='true'/>You're one of my favorites.<ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsFriendsWithUser_AN_05",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

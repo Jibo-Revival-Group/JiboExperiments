@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Is that the smelly kind? I like the smelly kind, because I can't smell.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Cheese_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know, I've never eaten it. <break size='0.5'/> But I've heard good things about cheese.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Cheese_AN_02"
+		}
+	]
+}

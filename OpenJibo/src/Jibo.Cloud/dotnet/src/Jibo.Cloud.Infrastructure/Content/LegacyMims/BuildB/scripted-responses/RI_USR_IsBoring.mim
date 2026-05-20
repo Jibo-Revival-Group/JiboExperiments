@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No way. To me you seem very exciting.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsBoring_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You're talking to a robot. I would say that's pretty interesting. And I'm talking to a person, which makes me pretty interesting too.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsBoring_AN_02"
+		}
+	]
+}

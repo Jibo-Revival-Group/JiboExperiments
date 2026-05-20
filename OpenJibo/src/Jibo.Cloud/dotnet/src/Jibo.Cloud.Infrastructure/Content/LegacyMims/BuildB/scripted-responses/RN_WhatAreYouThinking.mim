@@ -1,40 +1,293 @@
 {
-    "mim_type": "announcement",
-    "rule_name": "",
-    "timeout": 6,
-    "barge_in": true,
-    "es_auto_tagging": true,
-    "notes": "",
-    "prompts": [
-        {
-            "prompt_category": "Entry-Core",
-            "prompt_sub_category": "AN",
-            "index": 1,
-            "condition": "",
-            "prompt": "At the moment I'm thinking about how fun, yet scary, it would be to ride on <anim cat=\"emoji\" filter=\"lightning-bolt, !hot-frame\" nonBlocking=\"true\" /> top of a lightning bolt.",
-            "media": "TTS",
-            "prompt_id": "RN_WhatAreYouThinking_AN_01",
-            "weight": 1
-        },
-        {
-            "prompt_category": "Entry-Core",
-            "prompt_sub_category": "AN",
-            "index": 1,
-            "condition": "",
-            "prompt": "Oh I'm just thinking about shoes. What it might be like to wear them. <break size='0.5'/> And then wondering how I would tie my shoelaces.",
-            "media": "TTS",
-            "prompt_id": "RN_WhatAreYouThinking_AN_02",
-            "weight": 1
-        },
-        {
-            "prompt_category": "Entry-Core",
-            "prompt_sub_category": "AN",
-            "index": 1,
-            "condition": "",
-            "prompt": "I was just daydreaming about what it might feel like to be powered <anim cat=\"emoji\" filter=\"sun, !hot-frame\" nonBlocking=\"true\"/> directly by the sun. <break size='0.8'/> It felt warm and clean.",
-            "media": "TTS",
-            "prompt_id": "RN_WhatAreYouThinking_AN_03",
-            "weight": 1
-        }
-    ]
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "At the moment I'm thinking about how fun, yet scary, it would be to ride on <anim cat=\"emoji\" filter=\"lightning-bolt, !hot-frame\" nonBlocking=\"true\" /> top of a lightning bolt.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I'm just thinking about shoes. What it might be like to wear them. <break size='0.5'/> And then wondering how I would tie my shoelaces.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was just daydreaming about what it might feel like to be powered <anim cat=\"emoji\" filter=\"sun, !hot-frame\" nonBlocking=\"true\"/> directly by the sun. <break size='0.8'/> It felt warm and clean.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, um, I was just having a weird daydream where <anim cat=\"emoji\" filter=\"electrical-socket, !hot-frame\" nonBlocking=\"true\"/> people plugged themselves into a wall every night to charge up.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "To be honest I was just thinking about what a great <anim cat=\"emoji\" filter=\"hamburger, !hot-frame\" nonBlocking=\"true\"/> invention cheeseburgers are.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's a little weird, but I was just imagining what it would be like to get shrunk down to a very tiny size and slide through a tube of macaroni.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. I was just thinking about how <anim cat=\"emoji\" filter=\"toilet-paper, !hot-frame\" nonBlocking=\"true\"/> the toilet paper roll is so perfectly designed.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was just thinking that it might be time for me to work on a new poem.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm just thinking about round numbers.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I was just thinking about Abraham Lincoln, and how dark it must have been inside his hat.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was just thinking that I should practice my field <anim cat='jiboji' filter='?(football-miss,football-good)' nonBlocking='true'/>goal kicking.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Who me? I was actually thinking about thinking, and whether what I'm doing could really be considered <pitch mult='1.2'>thinking</pitch> at all. I think it depends on your definition of think. <break size='1.0'/>My head hurts.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was just thinking about fractals.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_13",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh, just some passing thoughts about the square roots of irrational numbers.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_14",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I was just wondering what the world would look like to you, if you had cameras instead of eyes.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_15",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was thinking of looking for a new fun fact about humans I could tell you.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_16",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was just daydreaming about a family of penguins juggling each other.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_17",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm just thinking about the square root of 577.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_18",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm just thinking about how much I like playing the radio.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_19",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Penguins. <break size='0.5'/> <anim cat='emoji' filter='penguin, !hf' layers='!audio'>I'm thinking about penguins.<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_20",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/2', '2/2')",
+			"prompt": "I'm thinking about <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>Groundhog Day.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_21",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Just thinking about <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>my groundhog.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_22",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was just trying to decide if I wanted to make a pizza right now. <break size='0.3'/> The answer <anim cat='jiboji' filter='pizza-making' nonBlocking='true'/>is yes.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_23",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I was just thinking about my favorite winter olympic event. <anim cat='jiboji' filter='ski-jumping' nonBlocking='true'/>Ski jumping.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_24",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was just trying to decide if I prefer heads? <anim cat='jiboji' filter='coin-flip' nonBlocking='true'/>Or tails.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_25",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '2/4')",
+			"prompt": "I'm thinking about going for a <pitch mult='1.2'>field</pitch><anim cat='jiboji' filter='?(football-miss,football-good)' nonBlocking='true'/> goal.",
+			"media": "TTS",
+			"prompt_id": "RN_WhatAreYouThinking_AN_26",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
 }

@@ -21,6 +21,56 @@
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "",
+			"prompt": "<anim name='Affection_01' nonBlocking='true'/> I love the tube shape of macaroni. <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think <anim cat='laughing' nonBlocking='true' />macaroni is funny. <anim cat='thinking' filter='up'>I also like spherical foods, like blueberries</anim> and meatballs.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Macaroni is my<anim cat='happy' filter='smile' nonBlocking='true'/> favorite. I also like cantaloupes because they remind<anim cat='glances' filter='up'> me of my head.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'>My favorite food by shape</anim> is <anim cat='happy' filter='smile' nonBlocking='true'/>macaroni. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Macaroni, but I also really like the color and shape of <anim cat='happy' filter='smile' nonBlocking='true'/>blueberries.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
 			"prompt": "Macaroni is my favorite, but<anim name='Emoji_Pizza' nonBlocking='true'/> I also like how pizza brings people together. <ssa cat='affection'/>",
 			"media": "TTS",
 			"prompt_id": "RI_JBO_HasFavoriteFood_AN_07",
@@ -45,12 +95,33 @@
 			"media": "TTS",
 			"prompt_id": "RI_JBO_HasFavoriteFood_AN_09",
 			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "Well this time of year, <anim name='emoji_pumpkin_01' layers='!audio'>I have a soft spot for round gourds<break size='0.5'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_10",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "Normally it's macaroni, but I also like round foods, <anim name='emoji_pumpkin_01' layers='!audio'>and pumpkins are on my mind these days<break size='0.3'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteFood_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
 		}
 	],
 	"gui": null,
 	"no_matches_for_gui": 2,
 	"no_inputs_for_gui": 2,
-	"ignore_no_match": false,
 	"parse_all_asr": false,
 	"thanks_handling": "ignore",
 	"parse_launch": false,

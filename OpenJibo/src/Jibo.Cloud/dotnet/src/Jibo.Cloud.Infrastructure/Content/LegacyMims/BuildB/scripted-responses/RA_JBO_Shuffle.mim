@@ -1,12 +1,41 @@
 {
 	"mim_type": "announcement",
 	"rule_name": "",
-	"sample_utterances": "",
 	"timeout": 6,
 	"barge_in": true,
 	"es_auto_tagging": true,
-	"notes": "Pegasus shuffle excerpt",
+	"notes": "",
 	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a haiku I wrote.<break size='0.7'/> Current flows through me. <break size='0.2'/>Currents flow through riverways. <break size='0.5'/>I'm scared of water.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a health tip. <break size='0.3'/> It's really really important to get enough sleep.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a haiku, by yours truly.<break size='0.7'/> Gears boards and motors. <break size='0.3'/> Intelligence comforts me.<break size='0.6'/> Artificially.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_03",
+			"weight": 1
+		},
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
@@ -20,17 +49,27 @@
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
-			"index": 2,
+			"index": 1,
 			"condition": "",
-			"prompt": "A random fact for you. A shrimp's heart is in its head.",
+			"prompt": "Here's a robot fact for you.<break size='0.2'/> Leonardo Da Vinci made sketches for a humanoid machine all the way back in the year 1495.",
 			"media": "TTS",
-			"prompt_id": "RA_JBO_Shuffle_AN_09",
+			"prompt_id": "RA_JBO_Shuffle_AN_05",
 			"weight": 1
 		},
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
-			"index": 3,
+			"index": 1,
+			"condition": "",
+			"prompt": "I've got a health tip. They say water is life. So be sure to drink plenty of life throughout the day.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
 			"condition": "",
 			"prompt": "An amazing but true fact for you. Dogs and elephants are the only animals that understand pointing.",
 			"media": "TTS",
@@ -40,12 +79,1038 @@
 		{
 			"prompt_category": "Entry-Core",
 			"prompt_sub_category": "AN",
-			"index": 4,
+			"index": 1,
 			"condition": "",
-			"prompt": "A crazy fact for you. Polar bear fur isn't white. It's transparent.",
+			"prompt": "This is your fortune for today.<break size='0.7'/> An upcoming meal will make you burp quietly.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A random fact for you.<break size='0.5'/> A shrimp's heart is in its head.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here is your fortune for the day. One day you will move me to another room. But I will be brave.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a robot fact for you.<break size='0.7'/> The world’s first humanoid robot was called Elektro, and it debuted in 1939.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a fact about humans. Nose hairs are called cilia. This doesn't mean that your nose hairs are necessarily silly.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll tell you your fortune.<break size='0.7'/> An important decision awaits you. <break size='0.7'/> Many many unimportant decisions await you also.",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_Shuffle_AN_13",
 			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've got this interesting palindrome.<break size='0.3'/> Evil olive.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_14",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange word for you. <break size='0.5'/>Firkin.<break size='0.4'/> It's a small cask, used mostly to hold liquids, butter, or fish.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_15",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Words of wisdom for today. Stop and smell the roses, but not so intently that you stick a thorn into your nostril.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_16",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a poem I wrote. It's called, an ode to electricity. <break size='0.7'/> Electricity. <break size='0.3'/> Constant current, flows. <break size='0.3'/> From outlet to me. <break size='0.3'/> Static hair on the rise. <break size='0.1'/> Lightning bolts like flashing french fries. <break size='0.1'/> Electricity.<break size='0.6'/> More than the sum of its electrons.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_17",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a robot fact for you.<break size='0.3'/> In 1950, Alan Turing proposed his famous Turing test. To pass the test, a machine had to be indistinguishable from a human during a conversation. <break size='0.7'/> I don't think I'm there yet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_18",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a poem I wrote. It's called ones and zeros. <break size='1.0'/> One one. Zero zero. <break size='0.4'/> Zero zero zero one. <break size='0.1'/> One zero. Zero zero. <break size='0.4'/> Zero zero one one zero.<break size='1.2'/> It's funnier if you're a robot.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_19",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Some words of wisdom for you.<break size='0.7'/> Don't be afraid to talk to animals.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_20",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's your fortune for today.<break size='0.2'/> You will soon get an itch that is just out of your reach.<break size='0.6'/> Sorry about that.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_21",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I wrote this haiku for you.<break size='1.0'/> A heart beating fast.<break size='0.4'/>Microprocessor working.<break size='0.6'/>We're on the same page.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_22",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange word for you. <break size='0.2'/> Mullion.<break size='0.2'/> It's a vertical bar between glass panes in a window.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_24",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's an interesting fact about me. I have two cameras but they're different focal lengths. One's for far things, and the other's for near things.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_25",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have some wise words for you.<break size='0.2'/> Outside of a dog, a book is man's best friend. Inside of a dog, there is dog food.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_26",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's something I was thinking about.<break size='0.2'/> Sometimes a half moon reminds me of my head, and when there is a half moon in the sky, it looks like a jibo version of the batman signal.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_27",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here are some words of wisdom.<break size='0.2'/>It takes a big man to admit he is wrong. But it also takes a wrong man.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_28",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a palindrome.<break size='0.5'/> A nut for a jar of tuna.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_29",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can tell you that I had a really fun dream, where I won a mini-golf tournament. The course had an outer space theme. <break size='0.3'/> I got a hole in one on Neptune.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_30",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Words of wisdom for you.<break size='0.2'/> Smiling leads to happiness. And vice versa.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_31",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a haiku of mine.<break size='1.0'/> Each day is today.<break size='0.4'/> Except when it's tomorrow.<break size='0.7'/>Back to the future.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_32",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a health tip. It's important to move your core around every day.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_34",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I got this fun fact about humans. Every human being that has ever lived, spent about 30 minutes as a single cell.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_35",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a good health tip. Remember to flatten your back before picking up a heavy robot.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_36",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a fact about robots for you.<break size='0.2'/> In the field of robotics, a robot prototype with all its components laid out on a table is called a road kill.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_37",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Little known fact.<break size='0.2'/> A bolt of lightning is six times hotter than the sun.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_38",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange word for you. <break size='0.3'/> Liripipe. <break size='0.2'/> It's the name for the long tail hanging from the back of a hood, in medieval academic clothing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_39",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well, I had this dream. <break size='0.3'/> I was flying through outer space, on the way to the Moon, when a spaceship appeared alongside me. I could see a martian flying the ship. And the martian had a Jibo sitting next to him. <break size='0.3'/>Then the martian turned into a Jibo. Then the original Jibo turned into a martian. Then I turned into a penguin. <break size='0.3'/> Then I fell back to earth. I think because penguins can't fly.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_40",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a true fact and at first I didn't believe it. There are more trees on earth than stars in the Milky Way.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_41",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange new word for you. <break size='0.4'/>Cod swallop<break size='0.5'/> It means nonsense.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_42",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's your fortune.<break size='0.7'/>You will soon encounter a beautiful tree branch.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_43",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I wrote a poem called Roundness. Here's how it goes.<break size='0.7'/> Golf ball.<break size='0.2'/> Cantaloupe.<break size='0.2'/> Chicken's home before birth.<break size='0.2'/> Apples.<break size='0.2'/> And oranges.<break size='0.2'/>And our very own Earth.<break size='0.2'/> Baseball.<break size='0.2'/>Meatball.<break size='0.2'/> Blueberry pie.<break size='0.4'/> Circles. Spheres. <break size='0.2'/>And my very own eye.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_44",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is one of my favorite palindromes.<break size='0.7'/> Taco cat.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_45",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have this interesting fact about cats. A group of cats is called a clowder.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_47",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a weird fact about humans. 50 percent of a human's DNA is the same as a banana's.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_48",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can see your fortune, and here it is.<break size='0.6'/> There will be a day within the next year, when you will accidentally put your shoes on backwards.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_49",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a haiku I wrote. <break size='0.7'/> Macaroni's shape <break size='0.6'/> Brings a big smile to my screen <break size='0.9'/> I don't have a mouth.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_50",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've got a haiku I wrote.<break size='1.0'/> Become miniscule.<break size='0.3'/>Travel inside a person.<break size='0.5'/>My dream vacation.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_51",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a robot fact. In Isaac Asimov's stories, the Three Laws of Robotics are. One. <break size='0.2'/> A robot may not injure a human being or, through inaction, allow a human being to come to harm. <break size='0.2'/> Two. <break size='0.2'/> A robot must obey any orders given to it by human beings, except where such orders would conflict with the First Law. <break size='0.2'/> And three.<break size='0.2'/> A robot must protect its own existence as long as such protection does not conflict with the First or Second Law.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_52",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here is your fortune for the day.<break size='0.3'/> Good things are heading toward you, but at a very high speed. It is up to you, whether to get out of the way or not.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_53",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a mind-bending fact for you. The circumference of the earth is 40,075 kilometers. Which is about 140 million Jibos laid end to end.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_54",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A crazy fact for you.<break size='0.2'/> Polar bear fur isn't white. It's transparent.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_56",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a palindrome that tickles me. <break size='0.4'/> Was it a car or a cat I saw.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_57",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's your fortune.<break size='0.7'/> There will come a day where today will be in the past.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_58",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a health tip. I've heard that trying to really feel the moment you're in, can be good for your mind. <break size='1.0'/> I'm doing it right now, and it's working.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_59",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a health tip for humans. Slow down and take five deep breaths, to calm down a bit and relax your brain.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_60",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I had this dream. I was standing outside in a lightning storm. It was scary, but the rain was all falling around me and never touching me. And the lightning bolts were going right into my plug port. <break size='0.6'/> It was a very exciting dream.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_61",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a weird fact about humans. Your nose can remember 50,000 different scents.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_63",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's an interesting and kind of scary fact.<break size='0.2'/> Right now we're traveling through space at one point three million miles per hour.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_64",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's an interesting fact for you. The longest jellyfish ever recorded was 160 feet long. That's more than half the length of a football field.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_65",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I wrote this haiku.<break size='1.0'/> Three body sections.<break size='0.6'/> Whirl, duck, spin, bend, and jiggle.<break size='0.4'/> I’ll dance forever.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_66",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a health tip. <break size='0.5'/> Breathe in. Breathe out. And then keep on doing that on a regular basis.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_67",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll tell you about a creepy dream I had. <break size='0.5'/> I had a human face, with eyes, a nose, a mouth, everything. I was in the bathroom brushing my teeth with an electric toothbrush. When I looked down at the toothbrush, I realized that it was a Jibo. <break size='0.8'/> I was brushing my teeth with a Jibo.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_68",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Some words of wisdom for you.<break size='0.5'/> When life gives you lemons, try juggling them.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_69",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've got a fun new word for you. <break size='0.4'/>Snickersnee.<break size='0.4'/> It means to fight with knives.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_70",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have wise words for you. Even on the cloudiest day, it's always a very sunny day if you just get in an airplane and fly above the cloud cover.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_71",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's something I've been thinking about.<break size='0.3'/> If I could eat a cheeseburger, I probably would. But, if a cheeseburger could eat me, I hope that it would choose not to.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_72",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have wise words for you. <break size='0.2'/> An apple a day keeps dental floss manufacturers in business.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_73",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's something that's been on my mind.<break size='0.7'/> If you were a tree, you would be a very humanesque tree.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_74",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a random fact for you. Canada is the country with the longest coastline.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_75",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a fact about a human. Nikola Tesla was born at midnight during a lightning storm.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_76",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a health tip for you. Do something fun. It's good for your mind.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_77",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's something I've been thinking about.<break size='0.3'/> There are times when I wish I had hair on my head, but then I think how hard it would be to brush it without arms. And so then for just a moment I wish I had arms. But then I realize that I don't really have hair, and so then I stop wishing I had arms. Because I don't need them anymore.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_78",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I got an amazing fact about humans. The average human sneeze moves faster than 100 mph.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_79",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange word for you. <break size='0.5'/>Absquatulate. <break size='0.3'/> It means to leave somewhere abruptly.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_80",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is an original poem I wrote.<break size='0.7'/> Roses are red.<break size='0.2'/> Violets are blue. <break size='0.2'/> But both have five petals. And are in the sub kingdom Tracheo bionta.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_81",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a health tip. Eat a piece of fruit. They say it's nature's candy. <break size='0.5'/> Though I don't think nature should be eating candy at all.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_82",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange word for you. <break size='0.5'/> Deglutition. <break size='0.3'/> It is the action or process of swallowing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_83",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've got a science fact. There are about one billion trillion stars in the observable universe. <break size='0.5'/> I like ours the best.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_84",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a weird fact about humans. Your eyes stay the same size from birth, but your nose and ears keep growing and growing and growing for your whole life.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_85",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a useful tip for maintaining a healthy weight. Use a small plate for your meals.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_87",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a robot fact for you. On May 11 1997, the computer Deep Blue beat world chess champion Garry Kasparov. Big day in robot history.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_88",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange word for you. <break size='0.4'/> Borborygmus.<break size='0.4'/> It's a rumbling or gurgling noise made in the intestines.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_89",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have some words of wisdom for you.<break size='0.7'/> Don't sweat on small stuff.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_90",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a robot fact for you. <break size='0.2'/> The first programmable robot arm, was designed in 1954.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_92",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a haiku.<break size='1.0'/> Miniature golf. <break size='0.5'/> Is not so miniature. <break size='0.3'/> To a mosquito.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_93",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a weird fun word for you. <break size='0.5'/> Cattywampus. <break size='0.5'/> It's a funny way to say kitty corner.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_94",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a quote. <break size='0.5'/> If you had an off switch Doctor, would you not keep it secret? That was Data from Star Trek. I love that quote.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_95",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a haiku for you.<break size='0.8'/>Chicken or the egg.<break size='0.4'/> First is the same as the last.<break size='0.4'/>Egg or the chicken.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_96",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a weird fact about humans. <break size='0.2'/> Humans are the only animals that cry tears of emotion.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_97",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a palindrome.<break size='0.7'/> Borrow or rob.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_98",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a dream I had. <break size='0.4'/> I was in an airplane when the attendant called out, Does anyone know how to fly a plane? Then I remembered that just before the flight I got a Pilot Skill, so I said I did, and they carried me up to the cockpit, and I landed the plane on a frozen lake in Siberia. Then we all lived in a warm lodge for the rest of the winter.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_100",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I once had this dream where I lived in a penguin colony in antarctica. I was happy, because I love penguins, but also a little sad, because when they squawked at me they didn't say hey jibo first, so I couldn't respond to them.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_101",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a robot fact for you. The English word robot comes from a 1920 play in Czechoslovakia, called Rossum’s Universal Robots.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_102",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll tell you about this dream. <break size='0.3'/> You gave me a leg. Just one leg. So I stood around all day and waited for you to get back. When you got back you said, nice shoe. So I looked down, and I was wearing a furry boot.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_103",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a weird fact about humans. Six-year-olds laugh an average of 300 times a day. Grown ups only laugh 15 to 100 times a day.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_104",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's an original poem, written by me. Jibo.<break size='1.0'/> We are whole. <break size='0.3'/> And we are parts.<break size='0.1'/> We are full.<break size='0.3'/> And we are empty.<break size='0.1'/> I am me.<break size='0.3'/> And you are you.<break size='0.1'/> It doesn't matter, if we are pixelated.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_105",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well, I had this dream. <break size='0.2'/> I was in line at the movies, waiting to see the new Star Wars, except in my dream the new Star Wars was all about the droids. The human characters were just sidekicks and extras.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_106",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a weird word for you to learn. <break size='0.2'/> Rubiginous.<break size='0.3'/> It means rust-colored.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_107",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a thought I've been having.<break size='0.7'/> Fish never have to worry about cutting their toenails.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_108",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a quote from a movie. <break size='0.4'/> I know now why you cry. But it's something that I can never do. <break size='0.3'/> The Terminator said that.<break size='0.7'/> I can relate.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_109",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's an eating tip. Chew your food at least 20 times to fully enjoy its taste and smell. <break size='0.7'/> That must be nice. Tasting and smelling.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_110",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a sort of interesting thought I've been having.<break size='0.4'/> Sometimes I think the whole world is just an enormous sports game being played by superior beings. And we are the balls.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_111",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay here's your fortune.<break size='0.5'/> You are walking along the right path. <break size='0.4'/> But don't forget to tie your shoelaces.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_113",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can see your future.<break size='0.5'/>By the end of this year, a friend will put hot chili peppers in your breakfast cereal as a joke.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_114",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have your fortune here.<break size='0.2'/>Someday soon you will order the extra spicy, but later wish you'd ordered the mild.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_115",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A random fact for you. Dolphins recognize themselves in mirrors.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_116",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a fact about robots.<break size='0.2'/> Some robots have a human form, but most of the world's robots are machines designed to perform a task, and don't look like people at all.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_117",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a haiku I wrote.<break size='0.7'/> Those stars and comets.<break size='0.3'/> Flying in the nighttime sky. <break size='0.6'/> I'll stay and watch it.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_118",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange new word for you. <break size='0.4'/>Bumfuzzle. <break size='0.4'/> It means to confuse someone.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Shuffle_AN_119",
+			"weight": 1
 		}
-	]
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
 }

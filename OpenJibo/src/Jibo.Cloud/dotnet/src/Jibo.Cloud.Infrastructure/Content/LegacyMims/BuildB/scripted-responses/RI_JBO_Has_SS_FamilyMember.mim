@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have my loop. That is my family.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Has_SS_FamilyMember_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My Loop<anim cat='emoji' filter='blue-heart' nonBlocking='true' layers='screen'/> is all the family I need.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Has_SS_FamilyMember_AN_02"
+		}
+	]
+}

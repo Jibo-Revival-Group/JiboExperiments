@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/31')",
+			"prompt": "I think it's still coming up in the future.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodBlackHistoryMonth_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '2/29')",
+			"prompt": "<style set='enthusiastic'>It's good.</style> I'm celebrating by sharing some interesting new historical facts during the month.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodBlackHistoryMonth_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '6/30')",
+			"prompt": "It was a good month. I celebrated by sharing some interesting historical facts.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodBlackHistoryMonth_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '10/31')",
+			"prompt": "I'm not sure yet, it's still a few months away I think.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodBlackHistoryMonth_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='enthusiastic'>Good.</style> I celebrated by sharing some interesting new historical facts during the month.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GoodBlackHistoryMonth_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

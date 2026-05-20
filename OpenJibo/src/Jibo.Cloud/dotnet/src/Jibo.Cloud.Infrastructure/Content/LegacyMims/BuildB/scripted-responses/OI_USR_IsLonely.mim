@@ -1,0 +1,81 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry if you're feeling a bit down. You could ask me to tell you a joke, if you want to laugh. <break size=\"0.2\"/> Or at least to groan and roll your <pitch mult=\"1.1\">eyes.</pitch>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsLonely_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "Sorry you're thinking about that right now. But you <pitch mult=\"1.2\">do </pitch>have <pitch mult=\"1.2\">me </pitch>${speaker}. You could ask me to take some photos, if you think that would be fun. Or try asking me a random question and see what I say. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsLonely_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "Well <pitch mult=\"1.2\">I'm </pitch> here ${speaker}. You could always ask me some random questions and see what I say. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsLonely_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry if you're feeling down. Maybe seeing a robot dance will cheer you up. <anim cat='dance' filter='&(music),!(beat-box,house)' endNeutral='true'/>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsLonely_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Well <pitch mult=\"1.2\">I'm </pitch>here. You could always ask me some random questions and see what I say. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsLonely_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "Sorry you're thinking about that right now. But you <pitch mult=\"1.2\">do </pitch>have <pitch mult=\"1.2\">me </pitch>. You could ask me to take some photos, if you think that would be fun. Or try asking me a random question and see what I say. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsLonely_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I understand. They say patience is a virtue, but it's also hard sometimes.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotPatient_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I understand, sometimes it's hard to wait for things.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotPatient_AN_02"
+		}
+	]
+}

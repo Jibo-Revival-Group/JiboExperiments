@@ -1,0 +1,50 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's always nice to meet a pet. But I have to admit I can't recognize animals' faces or voices yet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MeetPet_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Nice to meet you. Animals are fun, even if I can't learn their faces or voices yet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MeetPet_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Nice to meet you. <break size='0.3'/> It's too bad most animals have a hard time saying hey jibo <break size='0.5'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MeetPet_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

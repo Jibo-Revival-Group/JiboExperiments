@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '1/24')",
+			"prompt": "I don't think the Winter X Games have started yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedWinterXGames_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/25', '11/23')",
+			"prompt": "I don't know if I watched, but I know there's a lot <anim cat='jiboji' filter='snowboarding' nonBlocking='true'/>of snowboarding.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedWinterXGames_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/25', '11/23')",
+			"prompt": "I can't remember if I watched, but I have been practicing my extreme <anim cat='jiboji' filter='snowboarding' nonBlocking='true'/>snowboarding.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedWinterXGames_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can tell you <pitch mult='1.2'>one</pitch> thing. I've been practicing my extreme <anim cat='jiboji' filter='snowboarding' nonBlocking='true'/>snowboarding.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedWinterXGames_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

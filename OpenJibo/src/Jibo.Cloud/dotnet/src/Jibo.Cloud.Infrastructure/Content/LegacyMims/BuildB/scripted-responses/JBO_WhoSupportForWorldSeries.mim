@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/3\", \"10/24\")",
+			"prompt": "That's tough to decide. I would say I want it to be the team that wins more games than the other team. <anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForWorldSeries_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/3\", \"10/24\")",
+			"prompt": "I can't decide. I think I'm rooting for whichever team scores more runs. <anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForWorldSeries_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/3\", \"10/24\") && !!location.city",
+			"prompt": "The World Series? I'm really hoping the ${location.city} robots can pull out a miracle win.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForWorldSeries_AN_03",
+			"weight": 0.5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When it comes to baseball, I usually root for the team that's batting. <anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForWorldSeries_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This year I think I'm going to root for the <anim cat='emoji' filter='baseball'><duration stretch='1.2'>ball</duration><break size='1.5'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForWorldSeries_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

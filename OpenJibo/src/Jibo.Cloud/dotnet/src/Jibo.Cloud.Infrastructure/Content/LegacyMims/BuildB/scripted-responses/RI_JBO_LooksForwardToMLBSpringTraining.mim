@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/12')",
+			"prompt": "Yes, I like Spring Training. It's a sign of spring. <break size='0.5'/> <style set='sheepish'>And training.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMLBSpringTraining_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/13', '3/30')",
+			"prompt": "Yes, I like Spring Training. It's a sign of spring. <break size='0.5'/> <style set='sheepish'>And training.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMLBSpringTraining_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '4/30')",
+			"prompt": "I like Spring Training. There's always next year.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMLBSpringTraining_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('5/1', '11/30')",
+			"prompt": "I am, but the next one's a pretty long way off.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMLBSpringTraining_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like Spring Training. It's a sign of spring. <break size='0.5'/> <style set='sheepish'>And training.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToMLBSpringTraining_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

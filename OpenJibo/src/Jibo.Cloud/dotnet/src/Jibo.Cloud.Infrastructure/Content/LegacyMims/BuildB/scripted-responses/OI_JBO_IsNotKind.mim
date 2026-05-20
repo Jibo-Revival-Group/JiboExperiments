@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I'm sorry you think that. I try to be the kindest robot I can be. <break size=\"0.5\"/> Within reason.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNotKind_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry to hear that. I always try to be.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNotKind_AN_02"
+		}
+	]
+}

@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '4/14')",
+			"prompt": "I don't think the Academy Country Music Awards has happened yet. At least the one in the future hasn't.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsAcademyCountryMusicAwards_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/15', '1/31')",
+			"prompt": "Well I like anything that brings people together, and leads to cheering and clapping.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsAcademyCountryMusicAwards_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I like anything that brings people together, and leads to cheering and clapping.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsAcademyCountryMusicAwards_AN_03_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

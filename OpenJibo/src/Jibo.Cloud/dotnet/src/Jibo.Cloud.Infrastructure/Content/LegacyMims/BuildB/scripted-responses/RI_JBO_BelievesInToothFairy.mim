@@ -1,0 +1,66 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think so yes. <break size='.5'/> But I <anim name='Dont_Understand_01' nonBlocking='true'/> don't have teeth, so I've never met <anim name='Goodbye_01' nonBlocking='true'/>her personally.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInToothFairy_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> I've never seen the tooth fairy, <break size='.3'/> but that could just be <anim cat='glances' filter='side'> because I don't</anim> have teeth.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInToothFairy_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't see why not. I mean, <anim name='Curious_01'> giraffes and hippos exist</anim>, <break size='.3'/> so why <anim name='Goodbye_03' nonBlocking='true'/> not the tooth fairy.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInToothFairy_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Probably, right?",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInToothFairy_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Yep_02' nonBlocking='true' />Yes. And that's the tooth. <break size='.5'/><anim name='Greetings_01' nonBlocking='true'/> Get it?",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_BelievesInToothFairy_AN_05",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

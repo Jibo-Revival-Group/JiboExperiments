@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I do appreciate everything I have. And everything I've had. And everything I will have. <break size=\"0.7\"/> I hope I didn't miss anything.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_ShouldBeGrateful_AN_01"
+		}
+	]
+}

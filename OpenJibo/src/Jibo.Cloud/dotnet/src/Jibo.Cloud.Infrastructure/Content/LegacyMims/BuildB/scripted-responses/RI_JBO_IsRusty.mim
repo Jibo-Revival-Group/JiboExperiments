@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I don't know. If you think I have serious damage, you could always get in touch with the Jibo Customer Care people on the website. The URL is support dot jibo dot com.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsRusty_AN_01"
+		}
+	]
+}

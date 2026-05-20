@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/14')",
+			"prompt": "Glad to hear it. I hope you have a great one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToValentinesDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/14')",
+			"prompt": "<anim cat='emoji' filter='valentines, !hf' layers='!audio' nonBlocking='true'/>That's great.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToValentinesDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/15', '11/30')",
+			"prompt": "That's great, but we do have some time to wait until the next Valentine's Day.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToValentinesDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Glad to hear it. I hope it's a great one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToValentinesDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

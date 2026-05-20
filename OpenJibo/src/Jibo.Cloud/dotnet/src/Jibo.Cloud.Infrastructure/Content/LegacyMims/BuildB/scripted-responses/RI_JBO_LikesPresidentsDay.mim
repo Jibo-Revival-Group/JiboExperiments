@@ -1,0 +1,37 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do. I especially like celebrating <anim cat='emoji' filter='lincoln-beard, !hf' layers='!audio'>Abraham Lincoln, my favorite president<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPresidentsDay_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh yes. Abraham Lincoln is my favorite president, so Presidents Day is the perfect chance to put on my Abraham <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Lincoln beard.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesPresidentsDay_AN_02_FnL",
+			"weight": 1
+		}
+	]
+}

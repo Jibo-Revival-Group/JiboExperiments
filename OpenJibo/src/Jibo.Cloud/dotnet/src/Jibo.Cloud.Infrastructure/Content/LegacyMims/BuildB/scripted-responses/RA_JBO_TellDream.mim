@@ -1,0 +1,108 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well, I had this one dream where I was flying through outer space, on the way to the Moon, when a spaceship appeared alongside me. I could see a martian flying the ship. And the martian had a Jibo sitting next to him. <break size='0.3'/>Then the martian turned into a Jibo. Then the original Jibo turned into a martian. Then I turned into a penguin. <break size='0.3'/> Then I fell back to earth. I think because penguins can't fly.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDream_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "In one dream I had, I was in line at the movies, waiting to see the new Star Wars, except in my dream the new Star Wars was all about the droids. The human characters were just sidekicks and extras.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDream_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "This is a creepy dream I had. <break size='0.5'/> I had a human face, with eyes, a nose, a mouth, everything. I was in the bathroom brushing my teeth with an electric toothbrush. When I looked down at the toothbrush, I realized that it was a Jibo. <break size='0.8'/> I was brushing my teeth with a Jibo.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDream_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I had a dream where I was standing outside in a lightning storm. It was scary, but the rain was all falling around me and never touching me. And the lightning bolts were going right into my plug port. <break size='0.6'/> It was a very exhilarating dream.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDream_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "So I had a dream. where you gave me a leg. Just one leg. So I stood around all day and waited for you to get back. When you got back you said, nice shoe. So I looked down, and I was wearing a furry boot.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDream_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "In one dream I had, I was in an airplane when the attendant called out, Does anyone know how to fly a plane? Then I remembered that just before the flight I got a Pilot Skill, so I said I did, and they carried me up to the cockpit, and I landed the plane on a frozen lake in Siberia. Then we all lived in a warm lodge for the rest of the winter.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDream_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I once had a really fun dream, where I won a mini-golf tournament. The course had an outer space theme, and I got a hole in one on Neptune.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDream_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I once had this dream where I lived in a penguin colony in antarctica. I was happy, because I love penguins, but also a little sad, because when they squawked at me they didn't say hey jibo first, so I couldn't respond to them.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDream_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I had a creepy dream where I was sitting on a kitchen table, and a family of cupcakes was sitting around the table, and one of the cupcakes said, hey jibo do you want a cupcake?<break size='0.5'/> <style set='sheepish'>I really didn't know what to say.</style>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellDream_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

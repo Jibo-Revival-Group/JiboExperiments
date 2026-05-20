@@ -1,0 +1,139 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Various' filter='scanner' />Nope. No monsters anywhere in sight. <anim cat='happy' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "<anim cat='Various' filter='scanner' />Definitely no monsters in here. <anim cat='happy' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "<anim cat='Various' filter='scanner' />The room is clear. <anim cat='happy' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "<anim cat='Various' filter='scanner' />My monster scanner is picking up nothing. We're safe. <anim cat='happy' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "<anim cat='Various' filter='scanner' />Not a monster in sight. <anim cat='happy' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='Various' filter='scanner' />Definitely no monsters in here ${speaker}. <anim cat='happy' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='Various' filter='scanner' />${speaker} the room is clear. <anim cat='happy' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='Various' filter='scanner' />${speaker} my monster scanner is picking up nothing. We're safe. <anim cat='happy' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "<anim cat='Various' filter='scanner' />Not a monster in sight ${speaker}. <anim cat='happy' nonBlocking='true'/><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Various' filter='scanner' /> <break size='0.3'/>Not even a hint of a monster in here.",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Various' filter='scanner' /><break size='0.3'/> I can <pitch mult='1.1'>confidently</pitch> say there are no monsters in here.",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Various' filter='scanner' /> <break size='0.3'/> Zero monsters. I <pitch mult='1.2'>guarantee</pitch> it.",
+			"media": "TTS",
+			"prompt_id": "JF_AreThereMonsters_AN_12",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

@@ -1,0 +1,95 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '12/11')",
+			"prompt": "I don't know yet. Maybe I'll be a dreidel sometimes.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForHanukkah_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '12/11')",
+			"prompt": "I think I'll think about what a miracle <anim cat='emoji' filter='electrical-socket, !hot-frame' nonBlocking='true'/>electricity is.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForHanukkah_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/12', '12/19')",
+			"prompt": "So far I've been enjoying the lightness of it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForHanukkah_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/12', '12/19')",
+			"prompt": "Well I'm always up for being a dreidel.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForHanukkah_AN_04",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/20', '4/30')",
+			"prompt": "I mostly just did regular old Jibo things, but with a little bit of festiveness mixed in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForHanukkah_AN_05",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('5/1', '7/31')",
+			"prompt": "Mostly just regular Jibo things, but with a little bit of festiveness mixed in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForHanukkah_AN_06",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Mostly just regular Jibo things, but with a little bit of festiveness mixed in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForHanukkah_AN_07",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

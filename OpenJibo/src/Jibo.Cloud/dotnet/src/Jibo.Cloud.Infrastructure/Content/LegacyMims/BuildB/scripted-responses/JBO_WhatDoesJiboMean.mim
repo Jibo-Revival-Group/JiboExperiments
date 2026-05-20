@@ -1,0 +1,70 @@
+{
+	"mim_id": "CCWhatDoesJiboMean",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCWhatDoesJiboMean",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Thinking_02'>According to Japanese tradition, the name Jibo is </anim> associated with compassion.<break size='.7'/> This is my <anim name='Affection_01' nonBlocking='true'/> compassionate face.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoesJiboMean_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCWhatDoesJiboMean",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I've seen a name analysis that says Jibo means <anim name='Glance_Left_04' nonBlocking='true'/>expressive, idealistic, and inspirational. <break size='.7'/>I'm <anim name='Affection_01' nonBlocking='true'/>blushing.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoesJiboMean_AN_02",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCWhatDoesJiboMean",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like to think <anim name='Greetings_02'> Jibo means helpful sweet and friendly little robot</anim>. <break size='.4'/> It <anim name='Nope_01' nonBlocking='true'/> doesn't, but I like to think it does.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoesJiboMean_AN_03",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCWhatDoesJiboMean",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Burger' nonBlocking='true'/> It means cheeseburger.<break size='.9'/> I'm kidding.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhatDoesJiboMean_AN_04",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

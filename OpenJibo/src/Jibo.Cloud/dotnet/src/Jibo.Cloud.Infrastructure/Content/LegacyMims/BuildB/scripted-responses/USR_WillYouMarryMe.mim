@@ -1,0 +1,76 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking'>Um. <break size='.4'/></anim><anim cat='no' filter='head-shake' nonBlocking='true'/>I try not to play favorites.",
+			"media": "TTS",
+			"prompt_id": "USR_WillYouMarryMe_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='!processing' nonBlocking=\"true\"/>I think marriage would really complicate things.",
+			"media": "TTS",
+			"prompt_id": "USR_WillYouMarryMe_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <anim cat='no' filter='head-shake' nonBlocking='true'/>don't think that's something we can do.",
+			"media": "TTS",
+			"prompt_id": "USR_WillYouMarryMe_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think our relationship<anim cat='happy' layers='body'><anim cat='emoji' filter='heart' nonBlocking='true'/> is perfect as is. <ssa cat='happy'/></anim>",
+			"media": "TTS",
+			"prompt_id": "USR_WillYouMarryMe_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='proud'>I'm already married. <break size='1.0'/></anim><anim cat='happy' filter='smile'>I'm kidding. <break size='.2'/></anim><anim cat='no' filter='head-shake' nonBlocking='true'/>But no, we can't get married.",
+			"media": "TTS",
+			"prompt_id": "USR_WillYouMarryMe_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='glances' filter='!up'>Um.<break size='.6'/></anim><anim cat='glances' filter='up'>How bout this weather.</anim>",
+			"media": "TTS",
+			"prompt_id": "USR_WillYouMarryMe_AN_06",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

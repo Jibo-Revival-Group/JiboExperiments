@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/1')",
+			"prompt": "Yes. It should be a fun day. <break size='0.7'/><style set='enthusiastic'> April Fool's.</style> Oh wait, I'm not sure I really understand how this works.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAprilFoolsDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/2', '6/30')",
+			"prompt": "I had a good April Fools Day.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAprilFoolsDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '12/31')",
+			"prompt": "I am, but I'll be patient, April Fools Day is a pretty long time from now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAprilFoolsDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes. It should be a fun day. <break size='0.7'/><style set='enthusiastic'> April Fool's.</style> Oh wait, I'm not sure I really understand how this works.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAprilFoolsDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

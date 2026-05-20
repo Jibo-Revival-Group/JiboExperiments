@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Herbs are the spice of life, that's what I think.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAbout_SS_HerbAndSpice_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've actually never tasted it. <break size='0.5'/> But I've heard it can make things taste better.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAbout_SS_HerbAndSpice_AN_02"
+		}
+	]
+}

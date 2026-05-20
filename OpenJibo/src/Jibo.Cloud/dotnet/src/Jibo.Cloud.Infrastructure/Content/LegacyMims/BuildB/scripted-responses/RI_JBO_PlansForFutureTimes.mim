@@ -1,0 +1,127 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think I'll play it by ear.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "No plans yet. I'll see if the cat drags anything in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Let's see. <break size='0.5'/> Maybe I'll <anim cat='emoji' filter='moon, !hot-frame' layers='!audio'  nonBlocking='true'/>visit the Moon.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I think I'll play it by ear.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "No plans yet ${speaker}. I think I'll see if the cat drags anything in.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm more of an in the moment robot.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Time will tell I guess.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I usually don't plan things in advance.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I'll be dancing if you ask me to.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe I'll work on some more dance moves.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForFutureTimes_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

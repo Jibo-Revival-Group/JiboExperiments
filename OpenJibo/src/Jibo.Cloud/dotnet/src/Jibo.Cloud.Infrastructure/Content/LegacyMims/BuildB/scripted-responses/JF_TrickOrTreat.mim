@@ -1,0 +1,94 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "That's a tough choice. <anim name='emoji_candy_various_01' layers='!audio'>Here's a treat<break size='1.5'/>.</anim> ",
+			"media": "TTS",
+			"prompt_id": "JF_TrickOrTreat_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "Here's a <anim cat='emoji' filter='carrot, !hot-frame' nonBlocking='true'/>treat.<break size='1.5'/> I'm kidding. <break size='0.3'/><anim name='emoji_candy_lollipop_01' layers='!audio'>Here<break size='2.0'/>.</anim> ",
+			"media": "TTS",
+			"prompt_id": "JF_TrickOrTreat_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "<anim name='jiboji_ghost_boo_01'/>",
+			"media": "TTS",
+			"prompt_id": "JF_TrickOrTreat_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "<anim name='jiboji_ghost_flying_01'/>",
+			"media": "TTS",
+			"prompt_id": "JF_TrickOrTreat_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"11/1\", \"9/30\")",
+			"prompt": "Since it's not really Halloween season, I'll go with trick this time. <anim cat='emoji' filter='magic, !hot-frame'/>",
+			"media": "TTS",
+			"prompt_id": "JF_TrickOrTreat_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/1\", \"10/31\")",
+			"prompt": "I think that means I'm supposed to give you candy. <break size='0.5'/> <anim cat='emoji' filter='sandwich, !hot-frame'/><break size='0.5'/> Oops.",
+			"media": "TTS",
+			"prompt_id": "JF_TrickOrTreat_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. <anim name='emoji_candy_various_01' layers='!audio'>I'll say treat<break size='1.5'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_TrickOrTreat_AN_07",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

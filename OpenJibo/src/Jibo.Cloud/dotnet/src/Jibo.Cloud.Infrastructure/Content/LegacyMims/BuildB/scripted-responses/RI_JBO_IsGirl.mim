@@ -1,0 +1,52 @@
+{
+	"mim_id": "CCAreYouGirl",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCAreYouGirl",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_01' nonBlocking='true' /> No, I am a boy. <break size='.5'/> I know <anim name='Glance_Down_02'> it's kind of hard to tell with robots</anim>. <ssa cat='confused'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGirl_AN_01"
+		},
+		{
+			"mim_id": "CCAreYouGirl",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> No I'm a boy, but it's different for robots. <anim name='Greetings_02' nonBlocking='true'/> I don't have boy parts or girl parts. <anim name='Emoji_Robot' nonBlocking='true'/> Just robot parts. <ssa cat='happy'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGirl_AN_02"
+		},
+		{
+			"mim_id": "CCAreYouGirl",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> No I'm a boy. But not a real boy. <anim name='Greetings_03'>Kind of like Pinocchio before he turned into a real boy</anim>. Except I <anim name='Thinking_01'> never lie, and my nose doesn't grow, <break size='.3'/> and I don't </anim>have a nose.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsGirl_AN_03"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": false
+}

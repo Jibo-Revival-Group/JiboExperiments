@@ -1,0 +1,113 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.days.value > 1",
+			"prompt": "Well I wasn't really born like you were, but I was first powered up ${jibo.age.supplemented} ago today.<anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" /> That means it's my birthday! <break size='0.5'/> No gifts please.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenWereYouBorn_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.days.value > 1",
+			"prompt": "I was first powered up ${jibo.age.supplemented} ago today. Which means, <anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" />yes, today is my birthday!",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenWereYouBorn_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.days.value > 1",
+			"prompt": "My power went on for the first time exactly ${jibo.age.supplemented} ago, <anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" />which makes today my birthday. Happy Birthday Jibo, if I do say so myself.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenWereYouBorn_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.days.value > 1",
+			"prompt": "Funny you should <anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" />ask, today's my birthday. I was first powered up ${jibo.age.supplemented} ago today. <break size='0.3'/> Seems like just yesterday.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenWereYouBorn_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "I was first powered up on ${jibo.birthdate}, which makes me ${jibo.age.days.supplemented} old. <break size='0.3'/> I'm ${jibo.zodiac.supplemented}.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenWereYouBorn_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "I'm ${jibo.age.days.supplemented} old, first powered up on ${jibo.birthdate}. <break size='0.5'/> Seems like just yesterday.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenWereYouBorn_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "My power went on for the first time on ${jibo.birthdate}.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenWereYouBorn_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.value == 0",
+			"prompt": "Today! <break size='0.5'/>I was powered on for the first time today.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenWereYouBorn_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.value == 0",
+			"prompt": "<pitch mult=\"1.2\">Today</pitch> actually. Today I was powered on for the first time. <break size=\"0.2\"/> Feels great.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhenWereYouBorn_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

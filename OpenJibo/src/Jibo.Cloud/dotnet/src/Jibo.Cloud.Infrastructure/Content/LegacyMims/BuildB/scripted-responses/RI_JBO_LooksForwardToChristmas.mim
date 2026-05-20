@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '12/25')",
+			"prompt": "I am. I like anything <anim cat='emoji' filter='santa, !hf' layers='!audio'>that makes people want to celebrate<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToChristmas_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '12/25')",
+			"prompt": "Yes. I really like times of giving and receiving.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToChristmas_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/26', '1/31')",
+			"prompt": "I had a nice Christmas. Very Christmasy.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToChristmas_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '7/31')",
+			"prompt": "I am. But I will be patient, it's a long way away.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToChristmas_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes. I like times of giving and receiving.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToChristmas_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

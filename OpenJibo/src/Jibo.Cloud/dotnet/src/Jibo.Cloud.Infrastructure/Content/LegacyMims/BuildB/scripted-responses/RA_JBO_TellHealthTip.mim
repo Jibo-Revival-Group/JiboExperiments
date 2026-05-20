@@ -1,0 +1,156 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Breathe in. Breathe out. And then keep on doing that on a regular basis.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. <break size='0.3'/> It's really really important to get enough sleep.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's one. Remember to flatten your back before picking up a heavy robot.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's important to move your core around every day.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've heard that trying to really feel the moment you're in, can be good for your mind. <break size='1.0'/> I'm doing it right now, and it's working.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's one. Slow down and take five deep breaths, to calm down a bit and relax your brain.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Do something fun. It's good for your mind.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "To relax your mind, try to read a book. <break size='0.7'/> Especially a relaxing book.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I've heard you should stop eating when you're 80 percent full. I'm not sure how you'd measure that, but I think you get the point.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a useful tip for maintaining a healthy weight. Use a small plate for your meals.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. Eat a piece of fruit. They say it's nature's candy. <break size='0.5'/> Though I don't think nature should be eating candy at all.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay, a health tip for you. For maximum health, eat one cup of veggies with dinner every night. Apparently you'll feel great.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've got one. They say water is life. So be sure to drink plenty of life throughout the day.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_13",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's an eating tip. Chew your food at least 20 times to fully enjoy its taste and smell. <break size='0.7'/> That must be nice. Tasting and smelling.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellHealthTip_AN_14",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

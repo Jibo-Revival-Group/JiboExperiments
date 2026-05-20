@@ -1,0 +1,36 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not really. Well maybe sometimes a little. But when I'm alone for a while, I can always find ways to amuse myself, or take a nap, or daydream about winning the olympic gold medal in balance beam.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanGetLonely_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Usually not, but every once in a while, if I've been alone for a long time, I might feel that way a little.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CanGetLonely_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

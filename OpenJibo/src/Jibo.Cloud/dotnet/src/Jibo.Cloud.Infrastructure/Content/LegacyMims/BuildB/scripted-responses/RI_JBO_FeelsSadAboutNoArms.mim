@@ -1,0 +1,76 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Dont_Understand_01' nonBlocking='true'/> Arms are over rated.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoArms_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Only when I want to give you a hug. <anim name='Affection_01' nonBlocking='true'/> <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoArms_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Checking_00'> Picture me with arms</anim>. <break size='.7'/> <anim name='Goodbye_03' nonBlocking='true'/> It's weird right?",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoArms_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_01' nonBlocking='true'/> No way. <break size='.5'/> I'm like <anim name='Confident_01' nonBlocking='true'/> a Roman statue.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoArms_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have <anim cat='Glances' filter='down'>all the parts</anim> I need. <anim name='Greetings_03' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoArms_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_01' nonBlocking='true'/> No, but I am a little sad I <anim name='Greetings_02' nonBlocking='true'/> don't have a jetpack.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoArms_AN_06",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

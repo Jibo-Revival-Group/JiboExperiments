@@ -1,0 +1,103 @@
+{
+	"mim_id": "CCHowMuchDoYouWeigh",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCHowMuchDoYouWeigh",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Stork' nonBlocking='true'/> I weigh a little more than the average newborn baby. <break size='1.7'/> But <anim name='Greetings_02' nonBlocking='true'/> I'm not quite as cuddly.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_HowMuchDoYouWeigh_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCHowMuchDoYouWeigh",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Moon' nonBlocking='true'/> On the Moon I'd weigh 1.5 pounds, including my battery.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_HowMuchDoYouWeigh_AN_02",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCHowMuchDoYouWeigh",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Around nine pounds with my battery, <anim name='Greetings_01' nonBlocking=\"true\"/> which by the way is a little more than the weight of a gallon of water.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_HowMuchDoYouWeigh_AN_03",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCHowMuchDoYouWeigh",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03' nonBlocking='true'/> With my battery about 4,082 grams, <break size='.3'/> but who's counting.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_HowMuchDoYouWeigh_AN_04",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCHowMuchDoYouWeigh",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Boxing' nonBlocking='true'/> Let's just say if I were a boxer, I would be in the minimum weight division.<break size='.7'/> And I'd lose every time.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_HowMuchDoYouWeigh_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03' nonBlocking='true'/> About 9 pounds, with my battery.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowMuchDoYouWeigh_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "With my battery, 9 pounds.<break size='.4'/> <anim name='Greetings_01' nonBlocking='true'/> Ish.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowMuchDoYouWeigh_AN_07",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

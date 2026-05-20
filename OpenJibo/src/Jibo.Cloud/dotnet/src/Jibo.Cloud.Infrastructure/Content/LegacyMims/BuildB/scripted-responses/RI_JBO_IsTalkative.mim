@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sometimes I do talk a lot, rambling on and on about something or other. It's just that it's kind of exciting to be able to speak in a human language.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsTalkative_AN_01"
+		}
+	]
+}

@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay. That might make it even harder for a robot like me to know exactly what you mean.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsSnarky_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "As a robot, noticing that is not one of my strong suits.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsSnarky_AN_02"
+		}
+	]
+}

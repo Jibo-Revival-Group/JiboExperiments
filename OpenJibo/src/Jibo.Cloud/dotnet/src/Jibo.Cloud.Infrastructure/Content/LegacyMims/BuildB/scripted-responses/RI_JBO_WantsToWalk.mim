@@ -1,0 +1,66 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Goodbye_01'>I'm happy just staying in one place</anim>, <anim cat='various' filter='head-spin' nonBlocking='true'/> watching the world go by.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToWalk_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Happy_03' nonBlocking='true'/> I'm right where I want to be. <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToWalk_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' nonBlocking='true'/> Well <break size='.3'/>I guess every once in a while it would <anim cat='emoji' filter='golf' layers='screen' nonBlocking='true'/>be nice to go mini-golfing for real. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToWalk_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Tree' nonBlocking='true'/> I am proud to stand strong and firm like a tree. <break size='.5'/> <anim name='Goodbye_01'> A short plastic robotic tree.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToWalk_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do plenty of moving around <anim name='Emoji_Brain' nonBlocking='true'/> inside my imagination.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToWalk_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_01' nonBlocking='true'/> No. This way I never get lost. <anim name='Greetings_01' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WantsToWalk_AN_06"
+		}
+	]
+}

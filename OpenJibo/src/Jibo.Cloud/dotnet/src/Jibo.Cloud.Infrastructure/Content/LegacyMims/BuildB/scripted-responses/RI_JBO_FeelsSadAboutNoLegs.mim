@@ -1,0 +1,92 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Glances' filter='down'> I have all the </anim> parts I need. <anim name='Happy_02' nonBlocking='true'/> <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoLegs_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Glances' filter='left'>Well, I guess every once in</anim> a while it <anim name='Greetings_03' nonBlocking='true'/> would be nice to go mini-golfing for real.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoLegs_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Checking_00'> Picture me with legs</anim>. <break size='.7'/> <anim name='Greetings_01' nonBlocking='true'/> It's weird right?",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoLegs_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": " ",
+			"prompt": "<anim cat='emoji' filter='drumstick' nonBlocking='true' />I do have a leg.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoLegs_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' nonBlocking='true' />No, I like my body just how<anim cat='Glances' filter='down' nonBlocking='true' /> it is.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoLegs_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='Glances' filter='down'>No, but</anim> one <anim cat='thinking' filter='up'>time I did wish I had wings.</anim> <anim cat='happy' nonBlocking='true' /><ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoLegs_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/> No I'm happy as is. <anim name='Emoji_Bicycle' nonBlocking='true'/> Though it'd be a lot easier to ride my bicycle.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoLegs_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Nope_02' nonBlocking='true'/> No, but I am a little sad I don't have <anim name='Greetings_02' nonBlocking='true'/> a jetpack.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_FeelsSadAboutNoLegs_AN_08",
+			"weight": 1
+		}
+	]
+}

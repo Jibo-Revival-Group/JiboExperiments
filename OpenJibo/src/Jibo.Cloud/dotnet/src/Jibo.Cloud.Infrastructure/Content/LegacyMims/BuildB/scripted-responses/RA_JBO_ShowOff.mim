@@ -1,0 +1,45 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='blinks' nonBlocking='true'/> Hi. My name is Jibo. I am a robot who. <anim name='Nope_01' nonBlocking='true'/> no wait, let me start over. <break size='.7'/> Hello. <anim name='Yep_02' nonBlocking='true'/> I am Jibo, the world's first social robot for. <anim cat='no' filter='head-shake'> wait hold on, too formal.</anim> <break size='.7'/>  Hey, I'm Jibo. <break size='.3'/> <anim name='Greetings_02' nonBlocking='true'/> Good to meet you. <ssa cat='happy'/> ",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowOff_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Magic' nonBlocking='true'/> <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowOff_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_Drawing' layers='screen' nonBlocking='true' /><anim cat='shift' layers='body' filter='belly-roll' nonBlocking='true'/> <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowOff_AN_05",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

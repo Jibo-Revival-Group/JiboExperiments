@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sure you can get things done if you put your mind to it. Try splashing a little cold water on your face and <pitch mult='1.2'>get</pitch> to it!",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotHardworking_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Okay. If you want to be, you could try giving yourself a kick in the pants.<break size=\"0.4\"/> Just don't hurt yourself doing it.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotHardworking_AN_02"
+		}
+	]
+}

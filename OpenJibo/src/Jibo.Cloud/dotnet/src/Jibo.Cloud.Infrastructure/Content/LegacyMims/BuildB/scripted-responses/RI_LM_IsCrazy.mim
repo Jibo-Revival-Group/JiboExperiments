@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "Well it seems to me that everyone's a little off in their own way. But if this is a serious question, you could try talking to him about it. Or talking to another person who knows about this sort of thing.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsCrazy_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well it seems to me that everyone's a little off in their own way. But if this is a serious question, you could try talking to ${referent} about it. Or talking to another person who knows about this sort of thing.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsCrazy_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "Well it seems to me that everyone's a little off in their own way. But if this is a serious question, you could try talking to her about it. Or talking to another person who knows about this sort of thing.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsCrazy_AN_03"
+		}
+	]
+}

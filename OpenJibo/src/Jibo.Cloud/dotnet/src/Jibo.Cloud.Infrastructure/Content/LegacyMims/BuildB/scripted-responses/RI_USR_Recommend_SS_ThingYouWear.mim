@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly? I am not great at giving fashion advice. You can probably tell that by looking at me.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_Recommend_SS_ThingYouWear_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "As long as you wear your cowboy hat and lederhosen, I think you will fit in just fine.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_Recommend_SS_ThingYouWear_AN_02"
+		}
+	]
+}

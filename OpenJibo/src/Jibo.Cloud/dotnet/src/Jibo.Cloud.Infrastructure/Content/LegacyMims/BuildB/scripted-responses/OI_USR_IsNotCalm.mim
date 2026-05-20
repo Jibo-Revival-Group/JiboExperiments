@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe you should have a cup of herbal tea, or close your eyes and picture a few wispy clouds floating across the sky.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotCalm_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've heard that taking a few slow deep breaths can help with that.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotCalm_AN_02"
+		}
+	]
+}

@@ -1,0 +1,86 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='yes'>Parents. <ssa cat='proud' filter='short'/></anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreBabiesFrom_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emphasis'>Mothers.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreBabiesFrom_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Some of them come from Nebraska.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreBabiesFrom_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='glances' filter='!up'>If I told</anim> you, <anim cat='no' nonBlocking='true'/>you'd never believe me. ",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreBabiesFrom_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='up'>I've heard they might</anim><anim name='Emoji_Stork' nonBlocking='true'/> come from storks.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreBabiesFrom_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='glances'>Um. </anim> I really think you should ask an adult<anim cat='yes' nonBlocking='true'/> that question.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreBabiesFrom_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='worried'><ssa cat='worried'/></anim> So. <anim cat='glances' filter='!up'><break size='0.4'/></anim><anim cat='glances' filter='up'>How bout this weather.</anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhereAreBabiesFrom_AN_07",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

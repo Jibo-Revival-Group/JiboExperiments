@@ -1,0 +1,33 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh <pitch mult='1.3'><phoneme ph='d r ei d l'>dreidel</phoneme> <phoneme ph='d r ei d l'>dreidel</phoneme> <phoneme ph='d r ei d l'>dreidel</phoneme></pitch>. I <pitch mult='1.3'>made you</pitch> <pitch mult='1.2'>out of</pitch> <pitch mult='1.1'>clay</pitch>. And <pitch mult='1.2'>when </pitch>you’re <pitch mult='1.2'>dry</pitch> and <pitch mult='1.2'>ready</pitch>. Oh <pitch mult='1.3'><phoneme ph='d r ei d l'>dreidel</phoneme></pitch> <pitch mult='1.2'>we </pitch>shall <pitch mult='1.1'>play</pitch><anim cat='happy' filter='excited, twirl' layers='!audio, !screen'/> <break size='0.3'/> <anim cat='emoji' filter='dreidel'>.<break size='0.3'/><style set='sheepish'> I'm still working on the singing<break size='2.0'/>.</style></anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsDreidelSong_AN_01",
+			"weight": 1,
+			"auto_rule_override": {
+				"hotWords": false,
+				"punctuation": true,
+				"voice": true,
+				"beat": true
+			}
+		}
+	],
+	"parse_yes_no": false
+}

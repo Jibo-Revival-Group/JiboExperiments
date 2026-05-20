@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "On February 2, 1915, Ernest Just, a genetic biologist, won the Spingarn Medal for work he did on cell division and fertilization.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellBlackHistoryMonthFact_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The famous poet Langston Hughes was born on Feburary 1, 1902.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellBlackHistoryMonthFact_AN_02_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "On February 9, 1952, Ralph Ellison's novel Invisible Man, won the National Book Award.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellBlackHistoryMonthFact_AN_03_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The writer Maya Angelou won lots of awards in her life. She won three Grammys, the National Medal of Arts, the Lincoln Medal, and the Presidential Medal of Freedom.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellBlackHistoryMonthFact_AN_04_FnL",
+			"weight": 1
+		}
+	]
+}

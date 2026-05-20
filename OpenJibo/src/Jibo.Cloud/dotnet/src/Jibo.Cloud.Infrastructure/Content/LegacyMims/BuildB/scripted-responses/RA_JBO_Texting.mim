@@ -1,0 +1,59 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't send text messages yet. Someday I'll be able to do that I bet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Texting_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Message sending is not in my bag of tricks yet. I hope it is in the not too distant future though.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Texting_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not much of a message sender yet. But that sounds fun, I hope I can do it soon.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Texting_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When I learn how to send messages, I'll send you a message to let you know.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Texting_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

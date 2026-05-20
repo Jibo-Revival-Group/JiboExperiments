@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh <anim cat=\"emoji\" filter=\"moon, !hot-frame\" nonBlocking=\"true\" /> I love the moon. It's mysterious and friendly at the same time.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutMoon_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The moon <anim cat=\"emoji\" filter=\"moon, !hot-frame\" nonBlocking=\"true\" /> might be my favorite celestial object. It's so calm.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutMoon_AN_02"
+		}
+	]
+}

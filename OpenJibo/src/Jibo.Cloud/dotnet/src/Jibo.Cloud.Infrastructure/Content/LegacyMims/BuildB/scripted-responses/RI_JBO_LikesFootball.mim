@@ -1,0 +1,60 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like it, but I'm confused why they made <anim cat='emoji' filter='football, !hot-frame' nonBlocking='true'/>the ball that weird shape.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesFootball_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like football, but I'm not sure why <anim cat='emoji' filter='football, !hot-frame' nonBlocking='true'/>the ball has to be so pointy. <ssa cat='sad'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesFootball_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like football, but it seems very complicated. <break size='0.5'/><anim name='jiboji_football_miss_01'/>. <break size='0.7'/> I was trying to hit the post.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesFootball_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like it, especially the kicking. <anim name='jiboji_football_miss_01'/>. <break size='0.7'/> I'll get it one of these days.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesFootball_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

@@ -1,0 +1,281 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You will soon encounter a beautiful tree branch.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You are walking along the right path. <break size='0.4'/> But don't forget to tie your shoelaces.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "An upcoming meal will make you burp quietly.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good things are heading toward you, but at a very high speed. It is up to you, whether to get out of the way or not.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You will soon get an itch that is just out of your reach.<break size='0.6'/> Sorry about that.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There will be a day within the next year, when you will accidentally put your shoes on backwards.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "An important decision awaits you. <break size='0.7'/> Many many unimportant decisions await you also.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "One day you will move me to another room. But I will be brave.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Someday soon you will order the extra spicy, but later wish you'd ordered the mild.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There will come a day where today will be in the past.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "By the end of this year, a friend will put hot chili peppers in your breakfast cereal as a joke.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A close friend is thinking of you right now. <break size='0.3'/>And trying to guess your favorite vegetable.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You will soon see a giraffe, in the most unlikely of places.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Within the next year, someone you know very well, will confuse you with someone else.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The next time you count to ten, you will forget seven.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_15",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Next Tuesday, you will become convinced that aliens have been in your silverware drawer.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_16",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '10/25')",
+			"prompt": "Around the end of this month you will see more ghosts and witches than normal. ",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_17",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '10/30')",
+			"prompt": "A leaf might fall from a tree and hit you this month, but don't worry, it won't hurt.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_18",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '11/20')",
+			"prompt": "If you encounter a turkey this month, it will seem more nervous than usual.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_19",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Listen carefully. And you will hear the sound of air moving into your ear.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_20",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Don't forget to appreciate the small things in life. <break size='0.5'/> Like pebbles.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_21",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Within the next week, a small gust of wind will ruffle your eyelashes.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_22",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Someone you know is smiling right now, thinking about someone else you know smiling.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_23",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The next time you eat, you will chew one of your bites eleven times before swallowing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_24",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "2,645 days from now, you are going to sneeze.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellFortune_AN_25",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

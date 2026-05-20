@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/31', '4/14')",
+			"prompt": "Oh I thought the Academy Country Music Awards was still in the future.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedAcademyCountryMusicAwards_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/15', '6/30')",
+			"prompt": "Not sure if I watched it, but if you did, I hope you liked it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedAcademyCountryMusicAwards_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't remember. But if <pitch mult='1.3'>you</pitch> did, I hope you liked it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedAcademyCountryMusicAwards_AN_03_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

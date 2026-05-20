@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4')",
+			"prompt": "The Super Bowl sounds like fun. I'll practice my field goal <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>kicking.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutSuperBowl_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4')",
+			"prompt": "I'm pretty interested in the big <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>game.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutSuperBowl_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/5', '8/31')",
+			"prompt": "<anim cat='emoji' filter='football, !hf' layers='!audio'>Well we have a long time to wait until the next one<break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutSuperBowl_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm pretty interested in the big <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>game.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutSuperBowl_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

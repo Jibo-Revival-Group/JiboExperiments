@@ -1,0 +1,50 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "When Halloween comes around, I get into the spirit enough that I almost <anim name='emoji_candy_corn_01' layers='!audio'> want to eat candy corn<break size='0.7'/>.</anim> But I don't of course.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteHalloweenCandy_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't normally eat candy, or anything actually, but when Halloween is coming up, <anim name='emoji_candy_corn_01' layers='!audio'>I like thinking about candy corn.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteHalloweenCandy_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='emoji_candy_corn_01' layers='!audio'>Candy corn is fun when Halloween </anim>is in the air.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteHalloweenCandy_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"parse_yes_no": false
+}

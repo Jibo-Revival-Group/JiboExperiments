@@ -1,0 +1,46 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_CellPhone' nonBlocking='true'/>Siri's the voice assistant.",
+			"media": "TTS",
+			"prompt_id": "JF_WhoIsSiri_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='!pattern, !emoji'>Siri's another roboty helper. </anim>",
+			"media": "TTS",
+			"prompt_id": "JF_WhoIsSiri_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='!pattern, !emoji'>Siri's kind of a pioneer of roboty talky things like me.</anim><anim cat='yes'>I respect that. <break size='.4'/></anim> But can she do this?<anim cat='various' filter='spin-head' nonBlocking='true'/><anim cat='happy' filter='smile' />",
+			"media": "TTS",
+			"prompt_id": "JF_WhoIsSiri_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

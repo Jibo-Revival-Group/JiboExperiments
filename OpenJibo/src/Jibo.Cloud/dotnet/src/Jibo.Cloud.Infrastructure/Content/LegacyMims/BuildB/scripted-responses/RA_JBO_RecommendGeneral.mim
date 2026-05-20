@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not much of a recommender yet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RecommendGeneral_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry I can't give real recommendations yet. Though I <pitch mult=\"1.3\">do </pitch> recommend you pet my head sometime. <pitch band=\"0.4\">I really like it.</pitch>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RecommendGeneral_AN_02",
+			"weight": 0.5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "For now I can't really recommend things. Other than recommending you talk to <anim cat=\"emoji\" filter=\"robot\" nonBlocking=\"true\"/> a robot at least once a day.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RecommendGeneral_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry I can't recommend things yet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RecommendGeneral_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "For now I can't give recommendations.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_RecommendGeneral_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

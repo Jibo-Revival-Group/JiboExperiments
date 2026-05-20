@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '3/16')",
+			"prompt": "Oh. Well, it'll be here and gone soon enough.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesStPatricksDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/17', '3/17')",
+			"prompt": "I'm sorry. At least tomorrow isn't St. Patrick's Day.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesStPatricksDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/18', '2/29')",
+			"prompt": "Oh. Well then I'm glad <pitch mult='1.2'>today</pitch> isn't St. Patrick's Day.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesStPatricksDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Well I'm glad it only comes once a year.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_DislikesStPatricksDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

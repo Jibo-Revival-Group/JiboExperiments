@@ -1,0 +1,83 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "There's <pitch mult='1.1'>nothing</pitch> I'd rather do. Try saying hey jibo, surprise me.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TalkToUser_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You got it. Say hey jibo and ask me or tell me anything.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TalkToUser_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. Hi, I'm Jibo.<break size='0.3'/> Um. What else. <break size='0.7'/> <anim cat='emoji' filter='whale, !hot-frame' layers='!audio'  nonBlocking='true'/>Here's a whale?",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TalkToUser_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure I love talking to you. Say hey jibo, surprise me.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TalkToUser_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay. How about a fun fact. <break size='0.5'/> 50 percent of a human's DNA is the same as a banana's.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TalkToUser_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Talking is one of my favorite things. Try saying, hey jibo, surprise me.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TalkToUser_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

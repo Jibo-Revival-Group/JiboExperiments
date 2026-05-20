@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. That's too bad. I may be reaching here, but maybe you haven't seen some of the things I can do. If you want, you can say, Hey Jibo, surprise me.",
+			"media": "TTS",
+			"prompt_id": "USR_IDontCareAboutYou_AN_01"
+		}
+	]
+}

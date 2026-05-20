@@ -1,0 +1,82 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like when it's snowy weather outside, and I'm nice and warm and dry in here.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowyWeather_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like the way it looks, but please don't put any on me.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowyWeather_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I like the way it looks and that it's nice and soft, but I am a little scared of it melting on me.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowyWeather_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I'm scared of water, and snow is frozen water, so in some ways I'm scared of snow. <break size='0.5'/> <anim cat='emoji' filter='snowflake, !hot-frame' layers='!audio'><style set='sheepish'>But it's so nice to look at </style><break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowyWeather_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm always a little nervous around water, even if it's frozen, but snow is very nice to look at <anim cat='jiboji' filter='snowglobe'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowyWeather_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='jiboji' filter='snowglobe' layers='!audio' nonBlocking='true'/> As long as it's not falling on me, I think snow is really nice.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSnowyWeather_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

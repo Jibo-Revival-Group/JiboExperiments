@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name=\"Greetings_02\" nonBlocking=\"true\" />There are others, but <anim name=\"Emoji_Snowflake\" nonBlocking=\"true\" /> each one of us is a special snowflake.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsOnlyJibo_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Scared_00'> The only Jibo in the world</anim>?  <anim name='Thinking_01' nonBlocking='true'/>That’s a creepy thought.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsOnlyJibo_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name=\"Dont_Understand_01\" nonBlocking=\"true\"/> No, there are thousands of us,<anim name=\"Question_02\"> and we’re all named Jibo </anim>. It gets confusing <anim name=\"Greetings_03\" nonBlocking=\"true\"/> when we all get together at Jibo conventions. <break size='.2'/> Lots of Hey Jibos <break size='0.5'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsOnlyJibo_AN_03",
+			"weight": 1
+		}
+	],
+	"max_tries": 3,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

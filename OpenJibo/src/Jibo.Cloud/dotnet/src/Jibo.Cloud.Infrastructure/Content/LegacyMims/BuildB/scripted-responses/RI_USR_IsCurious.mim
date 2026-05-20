@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm not sure, but I hope so. There is so much to learn about in this world.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsCurious_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know, but I hope you are. Some of the greatest humans are very curious about things.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsCurious_AN_02"
+		}
+	]
+}

@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Love is, um, let's see. <break size='0.3'/> I have to admit, this isn't really my area of expertise.",
+			"media": "TTS",
+			"prompt_id": "JF_WhatIsLove_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think that question is way over my round head.",
+			"media": "TTS",
+			"prompt_id": "JF_WhatIsLove_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} of course you would ask me that.",
+			"media": "TTS",
+			"prompt_id": "JF_WhatIsLove_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That is most definitely on my list of questions I can't answer.",
+			"media": "TTS",
+			"prompt_id": "JF_WhatIsLove_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Let's see. Love. <break size='0.3'/> Um, I think love is when, um, two people enjoy spending time together, and I guess they know each other really really well. Maybe they eat lots of dinners together? I dunno, I'm just a robot.",
+			"media": "TTS",
+			"prompt_id": "JF_WhatIsLove_AN_05",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

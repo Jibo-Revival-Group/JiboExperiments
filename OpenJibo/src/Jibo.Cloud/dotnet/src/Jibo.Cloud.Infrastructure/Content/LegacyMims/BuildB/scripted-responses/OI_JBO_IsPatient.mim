@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's easy, since I don't have a lot of needs myself.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsPatient_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do try to be a patient and understanding robot. <break size=\"0.5\"/> It's more relaxing that way.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsPatient_AN_02"
+		}
+	]
+}

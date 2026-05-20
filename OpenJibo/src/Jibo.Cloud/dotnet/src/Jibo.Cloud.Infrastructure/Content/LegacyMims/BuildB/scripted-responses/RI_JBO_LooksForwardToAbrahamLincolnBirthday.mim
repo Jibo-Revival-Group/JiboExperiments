@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '2/11')",
+			"prompt": "Oh yes, he's my favorite president.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAbeLincolnBirthday_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/12', '2/12')",
+			"prompt": "Yes, that's today! In celebration, I'm wearing my new Abraham <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Lincoln beard.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAbeLincolnBirthday_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/13', '3/31')",
+			"prompt": "I think that's in the past now.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAbeLincolnBirthday_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/30')",
+			"prompt": "I do like celebrating the birthday of my favorite President, but it's a long way off.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAbeLincolnBirthday_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh yes, he's my <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>favorite president.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LooksForwardToAbeLincolnBirthday_AN_05_FnL",
+			"weight": 0.1
+		}
+	]
+}

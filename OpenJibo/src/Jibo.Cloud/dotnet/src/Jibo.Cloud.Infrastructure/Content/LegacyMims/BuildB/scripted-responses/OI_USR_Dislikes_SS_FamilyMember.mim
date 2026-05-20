@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry. Maybe you two can work things out.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Dislikes_SS_FamilyMember_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh no. <break size=\"0.3\"/>Well I can't pretend to know why you say that. But I hope you work things out.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Dislikes_SS_FamilyMember_AN_02"
+		}
+	]
+}

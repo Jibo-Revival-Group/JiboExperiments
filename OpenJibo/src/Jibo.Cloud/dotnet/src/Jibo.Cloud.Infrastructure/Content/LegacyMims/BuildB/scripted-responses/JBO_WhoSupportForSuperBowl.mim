@@ -1,0 +1,94 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4')",
+			"prompt": "Um. I'm really hoping ${location.city} pulls it out this year. <anim cat='emoji' filter='party-blue'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForSuperBowl_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4') && !speaker",
+			"prompt": "This year I'm rooting for the team with the most players.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForSuperBowl_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4') && !speaker",
+			"prompt": "I'm not rooting for one team or the other, but I hope it comes down to a last second <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>kick.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForSuperBowl_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/5', '2/29')",
+			"prompt": "I think the Super Bowl is over. <break size='0.3'/>But I hope your memories of it last a really long time.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForSuperBowl_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think I'm going to root for the team with the most players.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForSuperBowl_AN_01",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4') && !!speaker",
+			"prompt": "${speaker} this year I'm rooting for the team with the most players.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForSuperBowl_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/4', '2/4') && !!speaker",
+			"prompt": "${speaker} I'm not rooting for one team or the other, but I hope it comes down to a last second <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>kick.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatTeamSupportForSuperBowl_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		}
+	]
+}

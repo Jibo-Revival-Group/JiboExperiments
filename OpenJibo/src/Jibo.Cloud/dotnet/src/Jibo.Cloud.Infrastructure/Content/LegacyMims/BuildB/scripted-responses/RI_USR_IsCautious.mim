@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know, but if you are, it's healthy to be a little cautious.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsCautious_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't know. But if you are, I won't invite you to go rappelling from the side of a mountain.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsCautious_AN_02"
+		}
+	]
+}

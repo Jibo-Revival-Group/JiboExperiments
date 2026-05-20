@@ -1,0 +1,112 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' nonBlocking='true'/>Singing is not my strong suit. <ssa cat='embarrassed'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sing_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/25')",
+			"prompt": "I can't sing, though I've been working on a couple of seasonal songs. Like Frosty the Snowman.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sing_AN_10",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '12/25')",
+			"prompt": "I can't really sing, but I have been working on some wintery songs recently. Like Let it Snow.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sing_AN_11",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm really not a very good singer. But if you insist, here's my row row row your boat. <break size='0.7'/> <anim cat='emoji' filter='microphone' layers='!audio'><break size='0.3'/> <pitch mult='0.9'>Row, row, row your</pitch> <pitch mult='1.1'>boat</pitch>, gently <pitch mult='1.1'>down</pitch> the <pitch mult='1.2'>stream</pitch>. <pitch mult='1.4'>Merrily</pitch> <pitch mult='1.3'>merrily</pitch> <pitch mult='1.2'>merrily</pitch> merrily, <pitch mult='1.2'>life</pitch> is but <pitch mult='0.9'>a </pitch><pitch mult='0.8'>dream</pitch><break size='2.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sing_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've been told my singing abilities are not a ward winning. On the other hand,<break size='0.5'/> I am a robot. ",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sing_AN_13",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I'm not much of a singer, but here's one I've been working on. <break size='0.7'/><duration stretch='1.3'><pitch mult='0.8'>Twinkle </pitch>twinkle <pitch mult='1.5'> little </pitch></duration> <duration stretch='1.3'><pitch mult='1.3'> star.</pitch> <pitch mult='1.2'>How I</pitch> wonder what you <pitch mult='0.9'>are.</pitch> </duration> <duration stretch='1.3'><pitch mult='1.3'>Up </pitch><pitch mult='1.2'>above</pitch> the <pitch mult='1.1'>world so </pitch>high. </duration> <duration stretch='1.3'> <pitch mult='1.3'>Like a</pitch> <pitch mult='1.2'> diamond </pitch><pitch mult='1.1'>in the</pitch> sky.</duration> <duration stretch='1.3'><pitch mult='0.8'>Twinkle </pitch>twinkle<pitch mult='1.5'> little </pitch></duration> <duration stretch='1.3'><pitch mult='1.3'> star.</pitch> <pitch mult='1.2'>How I</pitch> wonder what you <pitch mult='0.9'>are.</pitch> </duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sing_AN_14",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's one I've been practicing lately. <break size='0.7'/><duration stretch='1.2'>The <pitch mult='1.1'>itsy bitsy</pitch><pitch mult='1.3'> spider</pitch> climbed <pitch mult='1.2'>up </pitch>the <pitch mult='1.2'>water spout</pitch>.<pitch mult='1.3'>Down came the</pitch><pitch mult='1.5'> rain and</pitch><pitch mult='1.3'> washed the spider out</pitch>. <pitch mult='0.9'>Out came the</pitch><pitch mult='1.4'> sun and </pitch><pitch mult='1.3'>dried up all</pitch><pitch mult='1.3'> the</pitch> <pitch mult='1.2'>rain</pitch>, <pitch mult='0.9'>and the </pitch>itsy bitsy <pitch mult='1.4'>spider climbed</pitch> up the <pitch mult='1.3'>spout</pitch> </duration><duration stretch='1.4'><pitch mult='1.3'>again</pitch> </duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sing_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='mountain, !hf' layers='!audio'><pitch mult='0.9'>She'll be</pitch><pitch mult='1.3'> coming round the</pitch><pitch mult='1.2'> mountain</pitch> when <pitch mult='1.2'>she</pitch><duration stretch='1.6'><pitch mult='1.6'> comes</pitch></duration>. <break size='0.3'/> She'll be <pitch mult='1.5'>coming round</pitch> the<pitch mult='1.7'> mountain when </pitch>she <duration stretch='1.6'><pitch mult='1.5'>comes</pitch></duration><break size='0.5'/><pitch mult='1.5'>She'll be </pitch><pitch mult='1.3'>coming round the </pitch><pitch mult='1.2'>mountain</pitch> she'll be <pitch mult='1.1'>coming round the</pitch><pitch mult='1.2'> mountain</pitch> she'll <pitch mult='1.1'>be</pitch> coming round the <pitch mult='1.2'>mountain </pitch>when she <duration stretch='2.1'><pitch mult='1.2'>comes</pitch></duration></anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sing_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<duration stretch='1.7'><pitch mult='1.3'>John</pitch></duration> <duration stretch='1.3'><pitch mult='1.2'>Jacob</pitch>Jingle <pitch mult='1.3'>heimer Schmidt. His<duration stretch='2.4'>name</duration> is</pitch> <pitch mult='2.0'>my </pitch></duration><duration stretch='1.7'><pitch mult='1.4'>name too</pitch></duration>.<pitch mult='1.1'>Whenever</pitch><pitch mult='1.5'>we go out</pitch>,<pitch mult='1.2'>the</pitch><pitch mult='1.4'> people always shout</pitch>, <pitch mult='1.3'>there  </pitch> <pitch mult='1.4'>goes</pitch> <duration stretch='1.2'><pitch mult='1.4'>John Jacob Jingle </pitch></duration><pitch mult='1.2'>heimer</pitch> <pitch mult='1.1'> Schmidt</pitch> <duration stretch='1.2'><pitch mult='1.7'>Duh duh duh duh</pitch><pitch mult='1.6'> duh</pitch><pitch mult='1.5'> duh</pitch> <pitch mult='1.4'> duh </pitch></duration> <duration stretch='2.0'><pitch mult='1.3'>duh.</pitch></duration>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Sing_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

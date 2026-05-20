@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you had an off switch Doctor, would you not keep it secret? That was Data from Star Trek. I love that quote.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellScifiQuote_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I know now why you cry. But it's something that I can never do. <break size='0.3'/> The Terminator said that.<break size='0.7'/> I can relate.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellScifiQuote_AN_02"
+		}
+	]
+}

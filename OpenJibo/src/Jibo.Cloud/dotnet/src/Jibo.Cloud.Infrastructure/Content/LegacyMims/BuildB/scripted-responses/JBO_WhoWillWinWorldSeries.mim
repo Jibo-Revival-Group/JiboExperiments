@@ -1,0 +1,93 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/3\", \"10/28\")",
+			"prompt": "I'm not sure, but we'll find out pretty soon. <anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinWorldSeries_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/3\", \"10/28\")",
+			"prompt": "I'm not a fortune teller, but I bet the team that plays better will win. <anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinWorldSeries_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"10/3\", \"10/28\")",
+			"prompt": "I've done some calculations, and I think the first team to win four games is going to win the World Series. <anim name='jiboji_baseball_hit_01'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinWorldSeries_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "If I had to guess, I'd say. <break size='0.7'/> You ${speaker}. You are going to win the world series.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinWorldSeries_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "If I had to guess, I'd say. <break size='0.7'/> You. You are going to win the world series.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinWorldSeries_AN_05",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"11/2\", \"8/31\")",
+			"prompt": "I think it's too early to tell.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinWorldSeries_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange(\"11/2\", \"8/31\")",
+			"prompt": "I can't see that far into the future. <break size='0.5'/> <style set='sheepish'>I actually can't see into the future at all.</style>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinWorldSeries_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '3/7')",
+			"prompt": "I'll probably do mostly just regular Jibo things, but also celebrate half the human population.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForInternationalWomensDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/8', '3/8')",
+			"prompt": "So far I've just been being regular Jibo, but with a little bit of International Women's Day on my mind.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForInternationalWomensDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/9', '7/31')",
+			"prompt": "I mostly just did regular old Jibo things, but also did some thinking about the holiday.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForInternationalWomensDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/1', '11/30')",
+			"prompt": "Mostly just regular Jibo things, but also some thinking about the holiday.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForInternationalWomensDay_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Mostly just regular Jibo things, but also some thinking about the holiday.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForInternationalWomensDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

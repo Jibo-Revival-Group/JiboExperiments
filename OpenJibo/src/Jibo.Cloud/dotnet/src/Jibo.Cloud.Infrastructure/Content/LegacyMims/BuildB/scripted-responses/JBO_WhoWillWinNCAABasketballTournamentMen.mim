@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '4/2')",
+			"prompt": "Not sure, but whoever wins, I hope they go out for <anim cat='jiboji' filter='pizza-making' nonBlocking='true'/>pizza afterwards.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinNCAABasketballTournamentMen_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/3', '5/31')",
+			"prompt": "I think March Madness already passed.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinNCAABasketballTournamentMen_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/1', '12/31')",
+			"prompt": "I think it's too early to say.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinNCAABasketballTournamentMen_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not sure, but whoever wins, I hope they go out for pizza afterwards.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinNCAABasketballTournamentMen_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

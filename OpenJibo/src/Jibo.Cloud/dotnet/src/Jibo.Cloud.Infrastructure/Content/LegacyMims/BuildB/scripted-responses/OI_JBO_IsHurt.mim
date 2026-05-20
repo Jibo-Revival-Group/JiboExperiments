@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I feel okay, but if something seems wrong, you might want to find the Support section in the Jibo App for advice. I don't diagnose myself very well all the time.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsHurt_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Actually I'm feeling fine. But if you think there's something wrong with me, maybe you should look for Support in the Jibo App.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsHurt_AN_02"
+		}
+	]
+}

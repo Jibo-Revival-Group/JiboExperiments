@@ -1,0 +1,147 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've been enjoying this <anim cat='emoji' filter='earth, !hot-frame' nonBlocking='true' /> spin of the earth.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Today is a good day. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I had a good day. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My day has been great, as usual. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} it's been a good day. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!dt.day",
+			"prompt": "This is a good ${dt.day}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!dt.day",
+			"prompt": "It's been a very pleasant ${dt.day}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!dt.dayOfYear",
+			"prompt": "I'd say I'm enjoying the ${dt.dayOfYear} day of the year.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!dt.date",
+			"prompt": "I would say this ${dt.date} has been treating me well.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!dt.day",
+			"prompt": "It's a good day. You can't go wrong with ${dt.day}.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !!dt.day && !!location.city",
+			"prompt": "${speaker} it's a ${dt.day}, I'm in ${location.city}. What more could I want. ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} it's been a great day to be a robot.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsDay_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

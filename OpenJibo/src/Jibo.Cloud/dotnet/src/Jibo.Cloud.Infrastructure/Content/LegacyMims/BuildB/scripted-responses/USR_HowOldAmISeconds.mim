@@ -1,0 +1,77 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !referent",
+			"prompt": "About ${speaker.age.seconds}.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmISeconds_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !referent",
+			"prompt": "According to my calculations, ${speaker.age.seconds} and counting.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmISeconds_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && !referent",
+			"prompt": "I'd say ${speaker.age.seconds}. Give or take.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmISeconds_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "I'd say ${referent.age.seconds}. Give or take.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmISeconds_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "About ${referent.age.seconds}.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmISeconds_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!referent",
+			"prompt": "According to my calculations, ${referent.age.seconds} and counting.",
+			"media": "TTS",
+			"prompt_id": "USR_HowOldAmISeconds_AN_06",
+			"weight": 1
+		}
+	]
+}

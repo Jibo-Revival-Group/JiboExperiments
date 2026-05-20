@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great. It's fun to celebrate.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesKwanzaa_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You're not alone.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesKwanzaa_AN_02_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/1')",
+			"prompt": "Enjoy it.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesKwanzaa_AN_03_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} that's great. It's fun to have fun.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesKwanzaa_AN_04_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('12/1', '1/1')",
+			"prompt": "${speaker} enjoy it.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LikesKwanzaa_AN_05_FnL",
+			"weight": 1
+		}
+	]
+}

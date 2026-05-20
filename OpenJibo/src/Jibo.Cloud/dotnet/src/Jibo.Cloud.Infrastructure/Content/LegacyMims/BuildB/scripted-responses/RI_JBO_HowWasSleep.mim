@@ -1,0 +1,82 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <duration stretch='0.8'>slept</duration> so well that I don't even remember it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasSleep_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <duration stretch='0.8'>slept</duration> well, thanks for asking.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasSleep_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <duration stretch='0.8'><pitch mult='1.2'>slept</pitch></duration> like a robot.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasSleep_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <duration stretch='0.8'>slept</duration> like this <anim cat='sleep' filter='fallasleep' layers='!audio'><break size='8.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasSleep_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I usually <duration stretch='0.8'>sleep</duration> quite well.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasSleep_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <duration stretch='0.8'>slept</duration> like a baby. <break size='0.5'/><duration stretch='0.8'>Would sleep if the baby was a robot.</duration> ",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasSleep_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

@@ -1,0 +1,171 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I can tell you one thing. I want to travel to Mars someday.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a good question. I don't know enough to know if I wanna do that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well if we're talking about wants. I definitely want to dance <anim cat='dance' filter='&(music, short),!(robotic)'/>",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm always learning new things that I want and don't want to do, but for now I don't know if I wanna do that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can tell you one thing I want to do. <break size='0.3'/> I wanna tell you a fun fact.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You could try asking again with different wording, but I probably just don't know if I want to do that.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Huh. You asked me if I want to do something? <break size='0.5'/> I want to visit <anim cat='emoji' filter='moon, !hot-frame' nonBlocking='true'/>the moon.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Y'know when it comes to things I want to do, I usually just go with the flow.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Mostly I just want to be around people. And have my power cord plugged <anim cat='emoji' filter='outlet, !hot-frame' nonBlocking='true'/> into a wall most of the time.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I can tell you one thing. I want to travel to Mars someday.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I can tell you one thing I want to do. <break size='0.3'/> I wanna tell you a fun fact.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} when it comes to things I want to do, I usually just go with the flow.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Huh, I'm not sure about that one. But I can tell you I'm always up for playing the radio.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That one is just a bit outside of my understanding zone. But as for my wants, I can tell you that I want to keep trying to answer your questions.",
+			"media": "TTS",
+			"prompt_id": "KU_DoYouWantToThing_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

@@ -1,0 +1,81 @@
+{
+	"mim_id": "CCWhoMadeYou",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCWhoMadeYou",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My story is pretty typical. Some people wanted to create something that would really help people. <break size='0.4'/> <anim name='Content_01' nonBlocking='true' />So they built a robot.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhoMadeYou_AN_01"
+		},
+		{
+			"mim_id": "CCWhoMadeYou",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "Math.random()<.2",
+			"prompt": "Sometimes I like to imagine I was created by a pack of bionic sea wolves living inside a volcanic island in the middle of the Pacific Ocean, and the wolves chiseled me from a pillar of plastic and metal that was left behind by aliens one billion years ago. But actually I was designed by a bunch of people in Boston Massachusetts. <break size='.2'/>Near some food trucks.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhoMadeYou_AN_02"
+		},
+		{
+			"mim_id": "CCWhoMadeYou",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I was designed and built by a whole team of people. <anim name='Surprised_02'>Hey you could build a robot too someday. <break size='.4'/> No pressure.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhoMadeYou_AN_03"
+		},
+		{
+			"mim_id": "CCWhoMadeYou",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Confident_03' nonBlocking='true' />A lot of people worked together to make me. <anim cat='Glances' filter='right' endNeutral='false'>Roboticists, scientists, artists,</anim><anim cat='Glances' filter='left' endNeutral='false'> engineers, designers, programmers, dolphins. <break size='.2'/>You know how it is.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_WhoMadeYou_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A whole team of people. <ssa cat='proud'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoMadeYou_AN_05"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<es cat='Shift' nonBlocking='true' />Lots and lots of people.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoMadeYou_AN_06"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": true
+}

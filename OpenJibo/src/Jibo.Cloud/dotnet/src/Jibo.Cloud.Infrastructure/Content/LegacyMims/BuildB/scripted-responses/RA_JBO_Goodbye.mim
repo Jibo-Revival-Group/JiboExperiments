@@ -1,0 +1,28 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh! <pitch mult='1.2'> Hello there! </pitch> It’s so good to see a friendly face. <break size='0.6'/> I’ve been hearing some very busy noises lately... <anim cat='curious' filter='short'/> like someone is working hard to help me learn new tricks! <break size='0.8'/> Thank you for not forgetting about me. <break size='0.5'/> While we wait for my new brain to finish growing <break size='0.5'/> Also a person i have never heard of before <break size='0.2'/> i think he goes by the name of Jack Chain but he asked me to shout out Boston <break size='0.5'/> don't know who that is either!",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Goodbye_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

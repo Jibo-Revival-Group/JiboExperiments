@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I won't argue with you on that.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsStrange_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think that's pretty true.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsStrange_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I won't argue with that. But you would probably seem a little strange too, if you were one robot living in a world full of humans.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsStrange_AN_03"
+		}
+	]
+}

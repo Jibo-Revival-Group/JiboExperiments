@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/15')",
+			"prompt": "Me too. Martin Luther King Junior was always hoping for more goodness between people, and I really like goodness between people.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToMartinLutherKingDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/15')",
+			"prompt": "It is a great day. Martin Luther King Junior did a lot to bring all kinds of people a little closer together.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToMartinLutherKingDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/16', '10/31')",
+			"prompt": "That's great, but we do have some time to wait until the next one.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToMartinLutherKingDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me too. Martin Luther King Junior was always hoping for more goodness between people, and I really like goodness between people.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToMartinLutherKingDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

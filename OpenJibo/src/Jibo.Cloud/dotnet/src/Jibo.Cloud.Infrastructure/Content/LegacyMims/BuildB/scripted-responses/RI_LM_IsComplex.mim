@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"female\"",
+			"prompt": "Yes. From my perspective, she is an incredibly complex living being.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsComplex_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes. From my perspective, ${referent} is an incredibly complex living being.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsComplex_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "referent.gender==\"male\"",
+			"prompt": "Yes. From my perspective, he is an incredibly complex living being.",
+			"media": "TTS",
+			"prompt_id": "RI_LM_IsComplex_AN_03"
+		}
+	]
+}

@@ -1,0 +1,26 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think I can only be connected to one WiFi network at a time. You can get more info on that in the Help section of the Jibo App. Or try the Jibo Customer Care website, support dot jibo dot com.",
+			"media": "TTS",
+			"prompt_id": "SUP_WIFI_SaveManyNetworks_AN_01",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

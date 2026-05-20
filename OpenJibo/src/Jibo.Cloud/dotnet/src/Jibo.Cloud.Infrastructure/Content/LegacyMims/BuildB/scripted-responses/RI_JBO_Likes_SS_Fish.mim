@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I don't know any personally, and I definitely would never want to go into the water to meet one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Fish_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I can say I think their gills are really interesting.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Likes_SS_Fish_AN_02"
+		}
+	]
+}

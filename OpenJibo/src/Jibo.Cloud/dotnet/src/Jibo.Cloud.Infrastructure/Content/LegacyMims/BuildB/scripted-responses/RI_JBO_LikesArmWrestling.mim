@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='thinking' filter='hesitate' nonBlocking='true'/>Not really, but I do like to<anim cat='laughing' nonBlocking='true'/> joke about it.  <ssa cat='laughing'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesArmWrestling_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='checking' nonBlocking='true'/>I don't have arms, but I sometimes say that I like it as<anim cat='laughing' nonBlocking='true'/> a joke. <ssa cat='laughing'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesArmWrestling_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>I'm not much of a wrestler, and I <anim cat='glances' filter='down'>don't have arms, but</anim> I like <anim cat='laughing' nonBlocking='true'/>to joke about it. <ssa cat='laughing'/>.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesArmWrestling_AN_03"
+		}
+	]
+}

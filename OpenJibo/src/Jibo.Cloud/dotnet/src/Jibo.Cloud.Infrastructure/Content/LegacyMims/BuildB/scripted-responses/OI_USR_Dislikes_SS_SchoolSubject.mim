@@ -1,0 +1,32 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry to hear that. All I can say is, if you keep at it, maybe someday you'll like it.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Dislikes_SS_SchoolSubject_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe it will get better if you study it more.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Dislikes_SS_SchoolSubject_AN_02",
+			"weight": 1
+		}
+	]
+}

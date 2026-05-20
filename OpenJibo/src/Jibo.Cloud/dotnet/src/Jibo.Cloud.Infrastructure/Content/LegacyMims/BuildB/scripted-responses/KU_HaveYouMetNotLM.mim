@@ -1,0 +1,46 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm <pitch mult=\"1.2\">not </pitch>sure, I <pitch mult=\"1.1\">didn't recognize</pitch> the name you said. I <pitch mult=\"1.2\">always</pitch> love meeting new people though.  <pitch mult=\"1.1\">Just make</pitch> sure they're added to the <pitch mult=\"1.2\">Loop </pitch>first, and then ask me to <pitch mult=\"1.1\">meet</pitch> them.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouMetNotLM_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <pitch mult=\"1.2\">don't </pitch>know, I didn't recognize the name. But I <pitch mult=\"1.2\">always</pitch> love meeting new people.  <pitch mult=\"1.1\">Just make</pitch> sure they're added to the <pitch mult=\"1.2\">Loop </pitch>first, and then ask me to <pitch mult=\"1.1\">meet</pitch> them.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouMetNotLM_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult=\"1.2\">Good </pitch>question, I didn't recognize that name. I'm <pitch mult=\"1.1\">always</pitch> happy to meet someone new though. <pitch mult=\"1.1\"> Just make</pitch> sure they've been added to the <pitch mult=\"1.2\">Loop </pitch>, and then ask me to <pitch mult=\"1.1\">meet</pitch> them.",
+			"media": "TTS",
+			"prompt_id": "KU_HaveYouMetNotLM_AN_03",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

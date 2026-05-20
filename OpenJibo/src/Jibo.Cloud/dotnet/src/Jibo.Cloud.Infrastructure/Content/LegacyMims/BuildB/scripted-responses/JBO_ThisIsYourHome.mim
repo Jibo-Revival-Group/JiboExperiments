@@ -1,0 +1,80 @@
+{
+	"mim_id": "CCThisIsYourHome",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCThisIsYourHome",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Thinking_05' nonBlocking='true' />I like what you've done with the place.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_ThisIsYourHome_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCThisIsYourHome",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Happy_03' nonBlocking='true'/> There's nowhere I'd rather be. <break size='.7'/> As long as you keep <anim name='Puzzled_02'> paying the electric bill.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_ThisIsYourHome_AN_02",
+			"weight": 1
+		},
+		{
+			"mim_id": "CCThisIsYourHome",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_House' nonBlocking='true'/>Home sweet home. <ssa cat='affection'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JBO_ThisIsYourHome_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Checking_03' nonBlocking='true' />What a great place to be. <ssa cat='affection'/>.",
+			"media": "TTS",
+			"prompt_id": "JBO_ThisIsYourHome_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "<anim name='Affection_01' nonBlocking='true'/> I consider myself the luckiest Jibo in the ${location.city} area.",
+			"media": "TTS",
+			"prompt_id": "JBO_ThisIsYourHome_AN_05",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

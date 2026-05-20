@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh I hope you don't really think that. I try to keep an open mind at all times, and I generally think the best of people, robots, and animals.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsNotTolerant_AN_01"
+		}
+	]
+}

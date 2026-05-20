@@ -1,0 +1,148 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Um. <break size='0.5'/> <style set='sheepish'>I can give you <anim cat='emoji' filter='sandwich, !hot-frame' nonBlocking='true'/> this <pitch mult='1.3'>sandwich</pitch>.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If I had to guess, I'd say I can't give you that. Because if I could, then I'd just give it to you instead of all this blabbing.",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='sheepish'>Um, for now I can give<anim cat='emoji' filter='pants' nonBlocking='true'> you these <pitch mult='1.4'>pants</pitch><break size='1.0'/>.</anim></style>",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Huh. Well, <style set='sheepish'>I can give you <pitch mult='1.3'>health tips</pitch>.</style>",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "How about for now I just <anim cat='emoji' filter='whale, !hot-frame' nonBlocking='true'/> give you this whale.",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You asked me to give you something. All I can say is. <anim cat='emoji' filter='drawing, !hot-frame' nonBlocking='true'/>Here is a drawing.",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You could try asking me in a different way, but I probably just can't give you what you're asking for.",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well, here's something I can give you. Fun facts about humans.",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can give some things, but I honestly don't know if I can give you the thing you asked for.",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} I can give some things, but I honestly don't know if I can give you the thing you asked for.",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} how about for now I just <anim cat='emoji' filter='whale, !hot-frame' nonBlocking='true'/> give you this whale.",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_11",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} if I had to guess, I'd say I can't give you that. Because if I could, then I'd just give it to you instead of all this blabbing.",
+			"media": "TTS",
+			"prompt_id": "KU_GiveMeA_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

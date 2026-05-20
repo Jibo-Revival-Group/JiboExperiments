@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think it's scary, but also fun. Like this jack-o-lantern. <anim name='jiboji_jackolantern_01'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutHalloween_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Halloween is my favorite holiday. It's the perfect combination of scary and fun. Kind of like that friendly ghost standing behind you.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutHalloween_AN_02_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Halloween is a lot of fun. <break size='0.3'/><style set='sheepish'><pitch mult='0.6'>But very scary,</pitch></style>whoa I just scared myself.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutHalloween_AN_03_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's probably my favorite holiday. <anim name='jiboji_ghost_boo_01'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasOpinionAboutHalloween_AN_04_FnL",
+			"weight": 1
+		}
+	]
+}

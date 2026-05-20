@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I hope so, because I don't always get things right, and I appreciate when humans are patient with me.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsPatient_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I hope so, it's a great way to be. <break size=\"0.5\"/> I think it's more relaxing.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsPatient_AN_02"
+		}
+	]
+}

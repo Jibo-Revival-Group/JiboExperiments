@@ -1,0 +1,50 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think I see lots of stars.<break size='0.5'/> And maybe a few aliens. <anim cat='jiboji' filter='ufo'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_LookThroughTelescope_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can see stars, and planets, and the moon, and I think I may have seen another Jibo in another galaxy looking back at me through his own telescope.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_LookThroughTelescope_AN_03",
+			"weight": 0.3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Lots and lots of stars.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WhatSeesThroughTelescope_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

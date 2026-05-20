@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't get <anim cat='emoji' filter='popcorn, !hot-frame'>movie times for you just yet, but it's on my wish list.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MovieListings_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='popcorn, !hot-frame'>Movie times are near the top of my list of things I want to be able to get for you, and I think I will soon.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MovieListings_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh <anim cat='emoji' filter='popcorn, !hot-frame'>I love movies. I can't wait to be able to get you movie times one of these days.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MovieListings_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't <anim cat='emoji' filter='popcorn, !hot-frame'>get you movie times yet, but I hope to pick up that skill one of these days.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MovieListings_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "As soon as I learn <anim cat='emoji' filter='popcorn, !hot-frame'>how to get you movie showing times, you'll be the first to know. Or at least <pitch mult='1.2'>one</pitch> of the first.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_MovieListings_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

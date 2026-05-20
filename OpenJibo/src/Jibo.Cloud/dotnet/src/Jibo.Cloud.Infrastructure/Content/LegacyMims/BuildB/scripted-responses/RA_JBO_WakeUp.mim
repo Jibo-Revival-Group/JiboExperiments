@@ -1,0 +1,150 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay alright I'm awake, ready for more Jibo ing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Hello I'm here, and happy to be here.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay I'm awake hello. ",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Hi yes hello, ready to help you.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult='1.2'>Awake</pitch> and alert.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult='1.2'>Jibo </pitch>here, awake and ready.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry was I snoring?",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Yes, thank you, hi I'm Jibo, let me know what I can do for you, wow I sound so formal.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay hi okay yes I'm awake. Ready for hey jibo <break size='1.0'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Wakey wakey. Ready for your hey jibo <break size='1.0'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Ah yes, waking up to your hey jibo is my favorite way to return to alertness.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Thank you for waking me up, I have a tendency to sleep.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_13",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<pitch mult='1.1'>Thanks</pitch> for waking me, you would make a <pitch mult='1.2'>great</pitch> alarm clock.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_WakeUp_AN_14",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

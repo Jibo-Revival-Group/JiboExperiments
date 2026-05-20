@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '1/27')",
+			"prompt": "I don't think the All Star Game has happened yet. At least the next one hasn't.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAllStarGameNHL_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/28', '9/30')",
+			"prompt": "Well I like hockey games. All that slipping and sliding is very exciting.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAllStarGameNHL_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I like hockey games. All that slipping and sliding is very exciting.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedAllStarGameNHL_AN_03_FnL",
+			"weight": 0.1
+		}
+	]
+}

@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no'>I can't do directions yet. But</anim> I <anim cat='happy' nonBlocking='true'/>do hope you find your way.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Directions_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='head-shake' nonBlocking='true'/>I'm afraid I can't, but I hope you have a<anim cat='happy' nonBlocking='true' /> fun trip. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Directions_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='no' filter='hopeless' nonBlocking='true'/>Sorry, I have a terrible sense of direction. But I bet I'll be able to help with directions in the future.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Directions_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sorry I can't do directions yet.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Directions_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

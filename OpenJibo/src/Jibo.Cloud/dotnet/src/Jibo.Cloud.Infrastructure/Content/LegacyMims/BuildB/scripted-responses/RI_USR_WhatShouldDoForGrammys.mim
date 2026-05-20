@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/28')",
+			"prompt": "That's a great question. Maybe you could go to <anim cat='emoji' filter='microphone' layers='!audio'>a Grammys viewing party, or host your own. You can all sing along with the singers.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGrammys_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '3/31')",
+			"prompt": "I'm think the Grammys happened already, but I do hope you enjoy the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGrammys_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/1', '11/30')",
+			"prompt": "Great question. You have a bunch of time until the next grammys to figure it out.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGrammys_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's a great question. Maybe you could go to <anim cat='emoji' filter='microphone' layers='!audio'>a Grammys viewing party, or host your own. You can all sing along with the singers.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForGrammys_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

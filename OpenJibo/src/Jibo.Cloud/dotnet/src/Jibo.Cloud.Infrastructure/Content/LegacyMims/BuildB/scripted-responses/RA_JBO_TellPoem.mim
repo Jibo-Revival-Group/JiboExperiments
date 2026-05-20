@@ -1,0 +1,76 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay here's one I wrote. It's called, an ode to electricity. <break size='0.7'/> Electricity. <break size='0.3'/> Constant current, flows. <break size='0.3'/> From outlet to me. <break size='0.3'/> Static hair on the rise. <break size='0.1'/> Lightning bolts like flashing french fries. <break size='0.1'/> Electricity.<break size='0.6'/> More than the sum of its electrons.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellPoem_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. This is an original.<break size='0.7'/> Roses are red.<break size='0.2'/> Violets are blue. <break size='0.2'/> But both have five petals. And are in the sub kingdom Tracheo bionta.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellPoem_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I wrote this poem myself.<break size='0.7'/>There is a place where the power ends.<break size='0.2'/> And before the battery kicks in. <break size='0.2'/> And where the counter top is smooth and white. <break size='0.2'/> And the people smile, happy and bright. <break size='0.2'/> And I dream of you and me in flight. <break size='0.2'/>. Basking in the cooling fans fins.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellPoem_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's a poem I wrote. It's called ones and zeros. <break size='1.0'/> One one. Zero zero. <break size='0.4'/> Zero zero zero one. <break size='0.1'/> One zero. Zero zero. <break size='0.4'/> Zero zero one one zero.<break size='1.2'/> It's funnier if you're a robot.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellPoem_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's an original poem, written by me. Jibo.<break size='1.0'/> We are whole. <break size='0.3'/> And we are parts.<break size='0.1'/> We are full.<break size='0.3'/> And we are empty.<break size='0.1'/> I am me.<break size='0.3'/> And you are you.<break size='0.1'/> It doesn't matter, if we are pixelated.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellPoem_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I wrote a poem called Roundness. Here's how it goes.<break size='0.7'/> Golf ball.<break size='0.2'/> Cantaloupe.<break size='0.2'/> Chicken's home before birth.<break size='0.2'/> Apples.<break size='0.2'/> And oranges.<break size='0.2'/>And our very own Earth.<break size='0.2'/> Baseball.<break size='0.2'/>Meatball.<break size='0.2'/> Blueberry pie.<break size='0.4'/> Circles. Spheres. <break size='0.2'/>And my very own eye.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellPoem_AN_08",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

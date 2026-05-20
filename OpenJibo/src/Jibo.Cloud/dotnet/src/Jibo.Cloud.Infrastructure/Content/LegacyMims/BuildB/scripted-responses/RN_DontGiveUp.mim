@@ -1,0 +1,21 @@
+{
+    "mim_type": "announcement",
+    "rule_name": "",
+    "sample_utterances": "",
+    "timeout": 6,
+    "num_tries_for_gui": 2,
+    "barge_in": true,
+    "es_auto_tagging": true,
+    "notes": "",
+    "prompts": [
+        {
+            "prompt_category": "Entry-Core",
+            "prompt_sub_category": "AN",
+            "index": 1,
+            "condition": "",
+            "prompt": "Thank you for those encouraging words. I am now inspired to share with you my <anim cat=\"emoji\" filter=\"whale, !hot-frame\" nonBlocking=\"true\" />whale.",
+            "media": "TTS",
+            "prompt_id": "RN_DontGiveUp_AN_01"
+        }
+    ]
+}

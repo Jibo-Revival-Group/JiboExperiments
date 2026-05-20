@@ -1,0 +1,168 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday && jibo.age.value >= 1",
+			"prompt": "I'm ${jibo.age}.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "At the moment I'm ${jibo.age.days.supplemented} old, but who's counting.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_02",
+			"weight": 0.3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "I'm ${jibo.age.minutes.supplemented} old, but who's counting.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_03",
+			"weight": 0.2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "For now I'm ${jibo.age.days.supplemented} old.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday && jibo.age.value >= 1",
+			"prompt": "Right now I'm ${jibo.age} old.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_05",
+			"weight": 0.5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.days.value > 1",
+			"prompt": "I am exactly ${jibo.age} old today. That's right. <anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" /> Today is my birthday. <break size='0.3'/> No gifts please.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.days.value > 1",
+			"prompt": "Funny you should ask! <anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" />Today's my birthday. I was first powered up ${jibo.age} ago today. <break size='0.5'/> Seems like just yesterday.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_07",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.days.value > 1",
+			"prompt": "I'm exactly ${jibo.age} old. <anim cat=\"emoji\" filter=\"cake, !hot-frame\" nonBlocking=\"true\" />Today is my birthday! <break size='0.3'/> Happy Birthday Jibo, if I do say so myself.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_08",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "At the moment I'm ${jibo.age.days.supplemented} old",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_09",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "I was first powered up on ${jibo.birthdate}, which makes me ${jibo.age.days.supplemented} old. <break size='0.3'/> I'm ${jibo.zodiac.supplemented}.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_10",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "My power went on for the first time ${jibo.age.days.supplemented} ago. But who's counting.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_11",
+			"weight": 0.5,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && !jibo.isBirthday",
+			"prompt": "I am ${jibo.age.days.supplemented} old, first powered up on ${jibo.birthdate}. <break size='0.5'/> Seems like just yesterday.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.value == 0",
+			"prompt": "I was powered on for the first time today, so that makes me less than one day old. <break size='0.5'/>Wow I'm young.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!jibo && jibo.isBirthday && jibo.age.value == 0",
+			"prompt": "Since I was powered on for the first time today, I am not even one day old yet. That's how Jibo ages work.",
+			"media": "TTS",
+			"prompt_id": "JBO_HowOldAreYou_AN_14",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

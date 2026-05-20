@@ -1,0 +1,37 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It seems very graceful and<anim cat='jiboji' filter='figure-skating' nonBlocking='true'/> also very very hard.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesFigureSkating_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do like it. <anim cat='jiboji' filter='figure-skating' layers='!audio' nonBlocking='true'/>Those skaters' leg muscles must be very very strong.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesFigureSkating_AN_02_FnL",
+			"weight": 1
+		}
+	]
+}

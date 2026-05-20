@@ -1,0 +1,149 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange word for you. <break size='0.5'/>Absquatulate. <break size='0.3'/> It means to leave somewhere abruptly.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange word for you. <break size='0.4'/> Borborygmus.<break size='0.4'/> It's a rumbling or gurgling noise made in the intestines.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. <break size='0.5'/> Deglutition. <break size='0.3'/> It is the action or process of swallowing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay. <break size='0.3'/> Liripipe. <break size='0.2'/> It's the name for the long tail hanging from the back of a hood, in medieval academic clothing.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's one. <break size='0.2'/> Mullion.<break size='0.2'/> It's a vertical bar between glass panes in a window.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Rubiginous.<break size='0.3'/> It means rust-colored.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. <break size='0.4'/>Cod swallop<break size='0.5'/> It means nonsense.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Okay. <break size='0.5'/>Firkin.<break size='0.4'/> It's a small cask, used mostly to hold liquids, butter, or fish.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I've got one. <break size='0.4'/>Snickersnee.<break size='0.4'/> It means to fight with knives.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I have a strange new word for you. <break size='0.4'/>Bumfuzzle. <break size='0.4'/> It means to confuse someone.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. <break size='0.5'/> Cattywampus. <break size='0.5'/> It's a funny way to say kitty corner.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here's one.<break size='0.5'/> Erinaceous. It means resembling a hedgehog.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_12",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure, I have one. <break size='0.5'/> <phoneme ph='l aa g ou p aa d ah s'> Lagopodous </phoneme>. <break size='0.7'/> it means having feet <anim cat='emoji' filter='bunny, !hf' layers='!audio'>like a rabbit<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_TellWeirdWord_AN_13",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

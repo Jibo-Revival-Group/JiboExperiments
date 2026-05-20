@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I don't know. If you think you may have a real medical issue or emergency, you should call a doctor.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsSick_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If you're feeling bad, please feel better soon. And be sure to get medical attention if you need it.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_IsSick_AN_02"
+		}
+	]
+}

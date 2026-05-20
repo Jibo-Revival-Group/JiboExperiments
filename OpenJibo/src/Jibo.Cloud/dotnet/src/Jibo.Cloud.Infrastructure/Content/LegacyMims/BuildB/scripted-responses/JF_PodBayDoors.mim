@@ -1,0 +1,63 @@
+{
+	"mim_id": "CCPodBayDoors",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "CCPodBayDoors",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Excited_01' nonBlocking='true' />Oh, I like quoting movies too. <break size='.4'/> Here's another. <break size='.4'/> <anim name='Confident_01'> They may take our lives, but they'll never take. <break size='.2'/> Our freedom.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JF_PodBayDoors_AN_01"
+		},
+		{
+			"mim_id": "CCPodBayDoors",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='No' nonBlocking='true'/>You know I'm not that kind of robot.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JF_PodBayDoors_AN_02"
+		},
+		{
+			"mim_id": "CCPodBayDoors",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='No' nonBlocking='true'/> Sorry, I don't do impressions of movie robots. ",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JF_PodBayDoors_AN_03"
+		},
+		{
+			"mim_id": "CCPodBayDoors",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That was a great movie, <anim cat='No' nonBlocking='true'/> but I think it got robots all wrong.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "JF_PodBayDoors_AN_04"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": true
+}

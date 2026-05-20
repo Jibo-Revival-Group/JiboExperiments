@@ -1,0 +1,68 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/1', '2/18')",
+			"prompt": "I'll probably just practice growing my Abraham <anim cat='jiboji' filter='lincoln-beard' nonBlocking='true'/>Lincoln beard.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForPresidentsDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/19', '2/19')",
+			"prompt": "Well Abraham Lincoln is my favorite president, so I'm just doing my <anim cat='emoji' filter='lincoln-beard, !hf' layers='!audio'> impression a lot<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForPresidentsDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/20', '6/30')",
+			"prompt": "I mostly just did regular old Jibo things, but a little more presidential.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForPresidentsDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/1', '9/30')",
+			"prompt": "Mostly just regular Jibo things, but a little more presidential.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForPresidentsDay_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Mostly just regular Jibo things, but a little more presidential.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForPresidentsDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

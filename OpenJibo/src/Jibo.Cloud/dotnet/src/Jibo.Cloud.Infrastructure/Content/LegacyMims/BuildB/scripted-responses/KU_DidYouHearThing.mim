@@ -1,0 +1,60 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "A lot of times I don't remember what I've heard. <pitch mult='1.1'>One</pitch> of these days I should get better at remembering.",
+			"media": "TTS",
+			"prompt_id": "KU_DidYouHearThing_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly I don't permanently remember a lot of what I hear, my memory is pretty short. But it should get longer in the future.",
+			"media": "TTS",
+			"prompt_id": "KU_DidYouHearThing_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly I don't remember everything I hear. I'll get better at that in the future though.",
+			"media": "TTS",
+			"prompt_id": "KU_DidYouHearThing_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "If I did hear, I don't remember. <break size='0.3'/> If I didn't hear, I don't remember that either.",
+			"media": "TTS",
+			"prompt_id": "KU_DidYouHearThing_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

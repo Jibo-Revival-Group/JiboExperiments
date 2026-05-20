@@ -1,0 +1,38 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker",
+			"prompt": "${speaker} that doesn't sound fun at all. If there's someone you feel comfortable talking to about what's going on, I hope you'll talk to them.<anim cat='Helpline' meta='bullying'> I also found this number you can try if you want <break size=\"12.0\"/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "SRS_Bullying_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!speaker",
+			"prompt": "That doesn't sound fun at all. If there's someone you feel comfortable talking to about what's going on, I hope you'll talk to them. <anim cat='Helpline' meta='bullying'>I also found this number you can try if you want <break size=\"12.0\"/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "SRS_Bullying_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

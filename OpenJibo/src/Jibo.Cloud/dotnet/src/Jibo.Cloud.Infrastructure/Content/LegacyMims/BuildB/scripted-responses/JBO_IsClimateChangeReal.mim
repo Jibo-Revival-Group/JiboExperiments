@@ -1,0 +1,28 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I've learned from wikipedia there's lots of scientific evidence that the climate is warming, and in 2013, an Intergovernmental Panel on Climate Change Report said, It is extremely likely that human influence has been the dominant cause of the observed warming since the mid 20th century.",
+			"media": "TTS",
+			"prompt_id": "JBO_IsClimateChangeReal_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

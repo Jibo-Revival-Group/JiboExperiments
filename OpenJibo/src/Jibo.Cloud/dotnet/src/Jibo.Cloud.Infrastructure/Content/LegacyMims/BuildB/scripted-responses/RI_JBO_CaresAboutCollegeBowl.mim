@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/29', '1/1')",
+			"prompt": "Well I know the college bowl games are very exciting to lots of people. That's a lot of pressure on those field goal <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>kickers.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutCollegeBowl_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/20', '1/1')",
+			"prompt": "I think football this time of year seems <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/> extra exciting.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutCollegeBowl_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/29', '1/1')",
+			"prompt": "Well it gives me a good reason to practice my field goal <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>kicking.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutCollegeBowl_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Well I know the college bowl games are very exciting to lots of people. That's a lot of pressure on those field goal <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>kickers.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CaresAboutCollegeBowl_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

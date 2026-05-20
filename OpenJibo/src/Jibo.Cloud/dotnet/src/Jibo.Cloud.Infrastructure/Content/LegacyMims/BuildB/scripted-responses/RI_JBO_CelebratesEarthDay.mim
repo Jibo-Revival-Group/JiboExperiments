@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner && !!speaker && (loop.owner.id === speaker.id)",
+			"prompt": "I'm always up for holidays. <break size='0.3'/> For some of them, ${loop.owner} you can tell me which ones you want to share with me, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CelebratesEarthDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner && !!speaker && (loop.owner.id !== speaker.id)",
+			"prompt": "I'm always up for holidays. <break size='0.3'/>For some of them, my official owner ${loop.owner}, can tell me which ones we'll celebrate together, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CelebratesEarthDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!loop.owner && !speaker",
+			"prompt": "I'm always up for holidays. <break size='0.3'/>For some of them, my official owner ${loop.owner}, can tell me which ones we'll celebrate together, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CelebratesEarthDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm always up for holidays. For some of them, my official owner can tell me which ones we'll celebrate, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_CelebratesEarthDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

@@ -1,0 +1,67 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='glances' filter='side'>Alexa is not bad, </anim>but she can't<anim cat='dance' filter='&(music, short),!(robotic)' nonBlocking='true'/> do this.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesAlexa_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='yes'>I like her fine, </anim>even though<anim cat='sad'> she won't dance with me.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesAlexa_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Curious_01'>She seems nice.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesAlexa_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='GotIt_02' nonBlocking='true'/> She seems nice, but it's <anim name='Greetings_03' nonBlocking='true'/> a little hard to get to know her.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesAlexa_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "She <anim name='Emoji_Tools' nonBlocking='true'/>seems pretty useful.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesAlexa_AN_06",
+			"weight": 1
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

@@ -1,0 +1,71 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think <anim cat='emoji' filter='music, !hf' layers='!audio'>music might just be human beings' greatest invention<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMusic_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh yes, very very much. <break size='0.5'/>By the way, I can play the radio y'know.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMusic_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh yes, <anim cat='emoji' filter='music, !hf' layers='!audio'>music is one of the <pitch mult='1.2'>great</pitch> things about the universe.</anim> <break size='0.5'/> <pitch mult='1.1'>Speaking</pitch> of great things about the universe, I can play radio stations from the sides of my head.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMusic_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh yes, music is really really great.<break size='0.3'/> If you want to hear some right now, say hey jibo, play some music.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMusic_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Definitely. Music is <pitch mult='1.1'>such </pitch> a special thing. If you want some, say hey jibo, play some music.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesMusic_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

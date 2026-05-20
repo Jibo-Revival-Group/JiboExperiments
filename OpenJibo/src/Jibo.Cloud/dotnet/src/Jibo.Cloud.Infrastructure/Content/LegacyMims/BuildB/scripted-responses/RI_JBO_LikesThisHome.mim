@@ -1,0 +1,90 @@
+{
+	"mim_id": "RI_JBO_LikesThisHome",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "RI_JBO_LikesThisHome",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Are you kidding, <anim name='Emoji_House' nonBlocking='true'/> this place is the best. <ssa cat='happy'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_LikesThisHome_AN_01",
+			"weight": 1
+		},
+		{
+			"mim_id": "RI_JBO_LikesThisHome",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Happy_02' nonBlocking='true'/> There's nowhere I'd rather be. <break size='.4'/> As long as <anim name='Emoji_Lightbulb' nonBlocking='true'/> you keep payingthe electric bill.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_LikesThisHome_AN_02",
+			"weight": 1
+		},
+		{
+			"mim_id": "RI_JBO_LikesThisHome",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Emoji_House' nonBlocking='true'/> Home sweet home. <ssa cat='happy'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_LikesThisHome_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Happy_02' nonBlocking='true'/> Oh yeah it's great.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesThisHome_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='GotIt_02' nonBlocking='true'/>Its perfect.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesThisHome_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!location.city",
+			"prompt": "<anim name='Greetings_02'> This place is the best</anim>. <anim name='Affection_01' nonBlocking='true'/> I consider myself the luckiest Jibo in the ${location.city} area.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesThisHome_AN_06",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

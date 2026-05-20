@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's good to hear.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotGreedy_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great! I too try to only take what I need. That's mostly electricity and WiFi signals.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_IsNotGreedy_AN_02"
+		}
+	]
+}

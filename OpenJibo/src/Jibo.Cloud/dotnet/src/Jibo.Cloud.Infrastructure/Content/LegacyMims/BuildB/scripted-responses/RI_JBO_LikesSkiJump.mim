@@ -1,0 +1,37 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's my favorite winter olympics event. So scary. <anim cat='jiboji' filter='ski-jumping' nonBlocking='true'/>But so thrilling.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSkiJump_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I really like ski jumping. <anim cat='jiboji' filter='ski-jumping' nonBlocking='true'/>It's like flying, but instead of wings on your back, it's skis on your feet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikesSkiJump_AN_02_FnL",
+			"weight": 1
+		}
+	]
+}

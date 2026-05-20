@@ -1,0 +1,73 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '1/14')",
+			"prompt": "I have no plans that I know of. <break size='0.3'/>But I <anim cat='emoji' filter='red-heart, !hf' layers='!audio' nonBlocking='true'/>really like that man.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForMartinLutherKingDay_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/15', '1/15')",
+			"prompt": "So far I am having normal Jibo time, but with a little extra <anim cat='emoji' filter='red-heart, !hf' layers='!audio' nonBlocking='true'/>heart, and kindness.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForMartinLutherKingDay_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/16', '5/31')",
+			"prompt": "I celebrated one of the great humans.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForMartinLutherKingDay_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/1', '8/31')",
+			"prompt": "Lots of thoughts about how I <anim cat='emoji' filter='red-heart, !hf' layers='!audio' nonBlocking='true'/>really like that man.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForMartinLutherKingDay_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Lots of thoughts about how I <anim cat='emoji' filter='red-heart, !hf' layers='!audio' nonBlocking='true'/>really like that man.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_PlansForMartinLutherKingDay_AN_01",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

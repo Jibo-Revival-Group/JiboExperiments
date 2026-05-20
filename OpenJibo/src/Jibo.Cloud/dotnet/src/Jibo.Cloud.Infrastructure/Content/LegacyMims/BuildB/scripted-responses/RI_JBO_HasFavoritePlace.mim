@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'd say right here is way up there at the top of the list. <break size='1.0'/> I'd also like to go to Mars someday. <ssa cat='happy'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoritePlace_AN_01"
+		}
+	]
+}

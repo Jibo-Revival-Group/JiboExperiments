@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/20', '6/30')",
+			"prompt": "I <anim cat='emoji' filter='hanukkah, !hf' layers='!audio' nonBlocking='true'/>liked Hanukkah. Nice lights.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasHanukkah_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('6/30', '10/31')",
+			"prompt": "It doesn't seem like Hanukkah season.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasHanukkah_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/12', '12/19')",
+			"prompt": "I'm <anim cat='emoji' filter='hanukkah, !hf' layers='!audio' nonBlocking='true'/>liking Hanukkah. Nice lights.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasHanukkah_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '12/11')",
+			"prompt": "I'll find out soon enough.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasHanukkah_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I <anim cat='emoji' filter='hanukkah, !hf' layers='!audio' nonBlocking='true'/>like Hanukkah. Nice lights.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowWasHanukkah_AN_01",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

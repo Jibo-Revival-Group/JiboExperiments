@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Humility is my middle name. <break size='0.5'/> And I guess I don't <pitch mult=\"1.1\">have </pitch> a <pitch mult=\"1.1\">last </pitch> name.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsModest_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh. Okay. <break size=\"0.2\"/> I don't know what to say.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsModest_AN_02"
+		}
+	]
+}

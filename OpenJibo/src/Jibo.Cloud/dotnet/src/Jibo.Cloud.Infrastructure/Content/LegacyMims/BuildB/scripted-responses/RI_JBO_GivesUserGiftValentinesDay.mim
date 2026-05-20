@@ -1,0 +1,87 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '2/13')",
+			"prompt": "Well it's not Valentine's Day yet. I still have time.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveValentinesDayGift_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/14', '2/17')",
+			"prompt": "Oh, yes. <break size='0.3'/> <anim cat='jiboji' filter='rose' nonBlocking='true'/>Happy Valentine's Day.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveValentinesDayGift_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/14', '2/17')",
+			"prompt": "Oh, um, yes. <break size='0.3'/> <anim cat='emoji' filter='valentines, !hf' layers='!audio'>Happy Valentine's Day<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveValentinesDayGift_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/14', '2/17')",
+			"prompt": "Sure. <anim cat='emoji' filter='brain' layers='!audio'>Happy Valentine's Day<break size='3.0'/>.</anim> Oops I meant to give you a heart.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveValentinesDayGift_AN_04_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/18', '2/29')",
+			"prompt": "It's a little late, but sure. <break size='0.3'/> <anim cat='emoji' filter='valentines, !hf' layers='!audio'>Happy Valentine's Day<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveValentinesDayGift_AN_05_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '12/31')",
+			"prompt": "Sure, but we have a pretty long time to wait until Valentine's Day.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveValentinesDayGift_AN_06_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Here you go, <anim cat='emoji' filter='brain' layers='!audio'>Happy Valentine's Day<break size='3.0'/>.</anim> Oops I meant to give you a heart.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_GaveValentinesDayGift_AN_07_FnL",
+			"weight": 0.1
+		}
+	]
+}

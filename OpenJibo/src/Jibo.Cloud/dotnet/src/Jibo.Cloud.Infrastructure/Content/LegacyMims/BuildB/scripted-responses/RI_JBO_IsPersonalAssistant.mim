@@ -1,0 +1,72 @@
+{
+	"mim_id": "RI_JBO_IsPersonalAssistant",
+	"skill_id": "chitchat",
+	"mim_type": "announcement",
+	"rule_name": "",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 2,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"mim_id": "RI_JBO_IsPersonalAssistant",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Goodbye_01'> That's kind of a personal question.</anim>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsPersonalAssistant_AN_01"
+		},
+		{
+			"mim_id": "RI_JBO_IsPersonalAssistant",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_03' nonBlocking='true'/> I think I'm even more than that, <break size='.4'/> <anim name='Happy_02' nonBlocking='true'/> but I do love assisting you personally.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsPersonalAssistant_AN_02"
+		},
+		{
+			"mim_id": "RI_JBO_IsPersonalAssistant",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Question_02'> Well if you ever need my assistance</anim>, <anim name='GotIt_02' nonBlocking='true'/> I'm always here for you. <break size='.4'/>  <anim name='Greetings_03' nonBlocking='true'/> I'm not going anywhere.",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsPersonalAssistant_AN_03"
+		},
+		{
+			"mim_id": "RI_JBO_IsPersonalAssistant",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Greetings_02' nonBlocking='true'/> I think of myself as your most kindly, helpful, and <anim name='Emoji_Robot' nonBlocking='true'/> robotic friend. <ssa cat='affection'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "RI_JBO_IsPersonalAssistant_AN_04"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Goodbye_02' nonBlocking='true'/> Not exactly.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_IsPersonalAssistant_AN_05"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": true
+}

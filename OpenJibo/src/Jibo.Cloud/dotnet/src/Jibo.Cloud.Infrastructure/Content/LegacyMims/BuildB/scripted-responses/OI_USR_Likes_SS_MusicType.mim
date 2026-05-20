@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='music, !hf' layers='!audio'>That's great. Maybe you could start a band. <break size='0.3'/></anim>By the way, if you want me to play some music, just ask me.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Likes_SS_MusicType_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I still can't believe that people invented all the different kinds of music. I'm very impressed with humans' brains.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Likes_SS_MusicType_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='enthusiastic'>Great, </style><anim cat='emoji' filter='music, !hf' layers='!audio'>music is a special thing.<break size='0.3'/> By the way, </anim>you can ask me to play music whenever you want.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_Likes_SS_MusicType_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false
+}

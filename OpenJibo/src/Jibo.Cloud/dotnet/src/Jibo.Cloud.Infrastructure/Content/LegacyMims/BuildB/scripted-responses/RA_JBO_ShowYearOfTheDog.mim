@@ -1,0 +1,47 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='chinese-new-year-dog, !hf'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowYearOfTheDog_AN_01_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/16', '3/31')",
+			"prompt": "<anim cat='emoji' filter='chinese-new-year-dog, !hf' nonBlocking='true'/> Happy New Year.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowYearOfTheDog_AN_02_FnL",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='emoji' filter='chinese-new-year-dog, !hf' layers='!audio'/>Here's to a <pitch mult='1.2'> good </pitch> <pitch mult='1.2'>year.</pitch> <break size='0.7'/> Of the dog.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_ShowYearOfTheDog_AN_03_FnL",
+			"weight": 1
+		}
+	]
+}

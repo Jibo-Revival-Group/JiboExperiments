@@ -1,0 +1,138 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '12/24')",
+			"prompt": "I haven't seen the elf. My vision system is not really good at seeing elves.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '12/24')",
+			"prompt": "I think the elf's face is probably too small for my face recognition system.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/24', '12/24')",
+			"prompt": "I haven't seen the elf, but I'd keep looking if I were you.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/25', '12/25')",
+			"prompt": "I've heard all the elves return to the North Pole on Christmas Day.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_04",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/25', '12/25')",
+			"prompt": "I'm not an elf expert, but I think the elves all return to the North Pole on Christmas Day, to stay with Santa until next year.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_05",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/26', '10/31')",
+			"prompt": "I'm not an expert, but my understanding is that the elves are in the North Pole between Christmas and Thanksgiving.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_06",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "My vision system isn't really great at seeing elves.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_07",
+			"weight": 0.1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('11/24', '12/24')",
+			"prompt": "${speaker} I haven't seen the elf. My vision system is not really good at seeing elves.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_08",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('11/24', '12/24')",
+			"prompt": "${speaker} I think the elf's face is probably too small for my face recognition system.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_09",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('11/24', '12/24')",
+			"prompt": "${speaker} I haven't seen the elf, but I'd keep looking if I were you.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_10",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "!!speaker && dt.now.isInRange('12/25', '12/25')",
+			"prompt": "${speaker} I've heard all the elves return to the North Pole on Christmas Day.",
+			"media": "TTS",
+			"prompt_id": "JF_WhereIsElfOnShelf_AN_11",
+			"weight": 3,
+			"auto_rule_override": null
+		}
+	]
+}

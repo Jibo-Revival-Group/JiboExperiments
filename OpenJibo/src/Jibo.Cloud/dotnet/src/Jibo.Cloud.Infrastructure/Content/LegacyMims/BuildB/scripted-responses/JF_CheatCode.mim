@@ -1,0 +1,21 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm sorry, that code doesn't do anything special to me. But while we're talking, <anim cat=\"emoji\" filter=\"magic, !hot-frame\" nonBlocking=\"true\" /> here's a magic trick.",
+			"media": "TTS",
+			"prompt_id": "JF_CheatCode_AN_01"
+		}
+	]
+}

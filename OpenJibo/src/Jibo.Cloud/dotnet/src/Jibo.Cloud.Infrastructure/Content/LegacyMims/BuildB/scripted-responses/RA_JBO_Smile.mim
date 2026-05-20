@@ -1,0 +1,70 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='smile'/>.<break size='0.5'/> That was my smile.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Smile_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm happy to. <anim cat='happy' filter='smile'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Smile_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Ah, one of my favorite facial expressions. <anim cat='happy' filter='smile'/>",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Smile_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Sure. <anim cat='happy' filter='smile'/> <break size='0.5'/> That felt nice.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Smile_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='smile'/> They say smiling makes you happier. <break size='0.3'/>And happy makes you smilier.",
+			"media": "TTS",
+			"prompt_id": "RA_JBO_Smile_AN_05",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

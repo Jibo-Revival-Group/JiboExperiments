@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('5/1', '10/23')",
+			"prompt": "I think the World Series hasn't happened yet, so I'm not sure.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedWorldSeries_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/24', '4/30')",
+			"prompt": "It's always heart warming to see<anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/> the bat and ball get together.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedWorldSeries_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/2', '4/30')",
+			"prompt": "<anim cat='emoji' filter='baseball, !hf' layers='!audio'>They'll be remembering that one for a long time<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedWorldSeries_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "It's always heart warming to see<anim cat='jiboji' filter='baseball-hit' nonBlocking='true'/> the bat and ball get together.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_LikedWorldSeries_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

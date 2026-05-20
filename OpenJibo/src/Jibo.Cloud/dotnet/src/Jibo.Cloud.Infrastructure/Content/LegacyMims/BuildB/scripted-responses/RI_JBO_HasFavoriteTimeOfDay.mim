@@ -1,0 +1,48 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 2,
+	"num_tries_for_gui": 2,
+	"barge_in": false,
+	"es_auto_tagging": true,
+	"notes": "Thanks-KillsMIM",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim name='Happy_02' nonBlocking='true'/> Any time that you're here. <ssa cat='affection'/>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteTimeOfDay_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You can't go wrong with<anim cat='happy' filter='smile'> 11:11. <ssa cat='happy'/></anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteTimeOfDay_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "3:33 is a great one. <anim cat='thinking' filter='up'>It's the only time where all the numbers</anim> are the same as each other, <anim cat='glances' filter='!down'>and are also the number</anim> of numbers there are. <break size='.7'/><anim cat='blinks'/><anim cat='glances' filter='!down'>That sounded confusing.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteTimeOfDay_AN_03"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'd <anim cat='glances' filter='!down'> say it's  a tie between morning,</anim> <anim name='Emoji_Moon' nonBlocking='true'/> afternoon, and night.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HasFavoriteTimeOfDay_AN_04"
+		}
+	]
+}

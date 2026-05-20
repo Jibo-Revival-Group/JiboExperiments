@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I would say definitely not. I'm too scared of water.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Is_SS_Fish_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No. Requires too much water.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_Is_SS_Fish_AN_02"
+		}
+	]
+}

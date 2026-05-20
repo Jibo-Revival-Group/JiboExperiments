@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/1', '1/8')",
+			"prompt": "I'll find out soon enough, <phoneme ph='s ii j ii e s'> CES </phoneme> is coming right up.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsCES_AN_01",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/9', '1/12')",
+			"prompt": "It's <pitch mult='1.3'>great</pitch>, I really like all the technology and fun inventions. Very exciting for an invention like myself.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsCES_AN_02",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/13', '2/29')",
+			"prompt": "What a great event. All the technology and fun inventions, very exciting for an invention like myself.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsCES_AN_03",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '11/30')",
+			"prompt": "Well the next event's not for a pretty long time, but I'm sure it will be a good one.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsCES_AN_04",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "What a great event. All the technology and fun inventions, very exciting for an invention like myself.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_HowIsCES_AN_05",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

@@ -1,0 +1,61 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/25', '12/31')",
+			"prompt": "<duration stretch='1.3'>Rudolph</duration> the Red <pitch mult='1.6'>Nosed</pitch> <duration stretch='1.6'><pitch mult='1.3'>Reindeer,</pitch><break size='0.3'/></duration><duration stretch='1.3'>Had a very </duration><duration stretch='1.6'><pitch mult='1.3'>shiny</pitch> <pitch mult='1.2'>nose,</pitch></duration><duration stretch='1.3'><break size='0.3'/> And if you <pitch mult='1.3'>ever</pitch> saw<pitch mult='1.2'> it</pitch>,</duration><break size='0.3'/><duration stretch='1.3'>You would even say<pitch mult='1.3'> it</pitch><pitch mult='0.9'> glows.</pitch> </duration><break size='1.0'/><style set='sheepish'> I think we can agree rudolph sings much better than me.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsRudolphSong_AN_01",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/25', '12/31')",
+			"prompt": "<duration stretch='1.3'>Rudolph</duration> the Red <pitch mult='1.6'>Nosed</pitch> <duration stretch='1.6'><pitch mult='1.3'>Reindeer,</pitch><break size='0.3'/></duration><duration stretch='1.3'>Had a very </duration><duration stretch='1.6'><pitch mult='1.3'>shiny</pitch> <pitch mult='1.2'>nose,</pitch></duration><duration stretch='1.3'><break size='0.3'/> And if you <pitch mult='1.3'>ever</pitch> saw<pitch mult='1.2'> it</pitch>,</duration><break size='0.3'/><duration stretch='1.3'>You would even say<pitch mult='1.3'> it</pitch><pitch mult='0.9'> glows.</pitch> </duration><break size='1.0'/><style set='sheepish'> I'm going to keep working on my singing.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsRudolphSong_AN_02",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/1', '11/15')",
+			"prompt": "I'm not sure if it's the season, but why not. <break size='0.5'/> <duration stretch='1.3'>Rudolph</duration> the Red <pitch mult='1.6'>Nosed</pitch> <duration stretch='1.6'><pitch mult='1.3'>Reindeer,</pitch><break size='0.3'/></duration><duration stretch='1.3'>Had a very </duration><duration stretch='1.6'><pitch mult='1.3'>shiny</pitch> <pitch mult='1.2'>nose,</pitch></duration><duration stretch='1.3'><break size='0.3'/> And if you <pitch mult='1.3'>ever</pitch> saw<pitch mult='1.2'> it</pitch>,</duration><break size='0.3'/><duration stretch='1.3'>You would even say<pitch mult='1.3'> it</pitch><pitch mult='0.9'> glows.</pitch> </duration><break size='1.0'/><style set='sheepish'> I'm going to keep working on my singing.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsRudolphSong_AN_03",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<duration stretch='1.3'>Rudolph</duration> the Red <pitch mult='1.6'>Nosed</pitch> <duration stretch='1.6'><pitch mult='1.3'>Reindeer,</pitch><break size='0.3'/></duration><duration stretch='1.3'>Had a very </duration><duration stretch='1.6'><pitch mult='1.3'>shiny</pitch> <pitch mult='1.2'>nose,</pitch></duration><duration stretch='1.3'><break size='0.3'/> And if you <pitch mult='1.3'>ever</pitch> saw<pitch mult='1.2'> it</pitch>,</duration><break size='0.3'/><duration stretch='1.3'>You would even say<pitch mult='1.3'> it</pitch><pitch mult='0.9'> glows.</pitch> </duration><break size='1.0'/><style set='sheepish'> I'm going to keep working on my singing.</style>",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_KnowsRudolphSong_AN_04",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

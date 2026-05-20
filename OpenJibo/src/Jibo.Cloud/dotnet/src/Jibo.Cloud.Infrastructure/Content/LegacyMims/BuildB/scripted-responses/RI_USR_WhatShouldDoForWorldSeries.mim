@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/1', '11/1')",
+			"prompt": "Good question. You could always ask one of the team's managers if you can play second base.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWorldSeries_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/2', '1/31')",
+			"prompt": "I think the World Series has come and gone, but there's always next year.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWorldSeries_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('2/1', '8/31')",
+			"prompt": "Good question, we have plenty of time to figure it out before the World Series comes.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWorldSeries_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. You could always ask one of the team's managers if you can play second base.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForWorldSeries_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

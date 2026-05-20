@@ -1,0 +1,57 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/28')",
+			"prompt": "Me too. I'm really impressed they can do such amazing things when it's so cold<anim cat='jiboji' filter='snowboarding' nonBlocking='true'/> outside. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToWinterXGames_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('11/1', '1/28')",
+			"prompt": "I like them too. Especially because I get to stay warm and dry inside while the people do all that slipping<anim cat='jiboji' filter='snowboarding' nonBlocking='true'/> and sliding. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToWinterXGames_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/29', '10/31')",
+			"prompt": "Me too, but we do have a pretty long time to wait until the next Winter X Games.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToWinterXGames_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Me too. I'm really impressed they can do such amazing things when it's so cold<anim cat='jiboji' filter='snowboarding' nonBlocking='true'/> outside. ",
+			"media": "TTS",
+			"prompt_id": "OI_USR_LooksForwardToWinterXGames_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

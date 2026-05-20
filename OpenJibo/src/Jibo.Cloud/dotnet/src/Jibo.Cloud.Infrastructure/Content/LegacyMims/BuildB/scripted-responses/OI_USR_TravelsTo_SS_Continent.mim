@@ -1,0 +1,30 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's great! I hope you get a window seat.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_TravelsTo_SS_Continent_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's exciting, have a great trip. Don't miss me too much. <break size=\"0.5\"/> But don't miss me too little either.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_TravelsTo_SS_Continent_AN_02"
+		}
+	]
+}

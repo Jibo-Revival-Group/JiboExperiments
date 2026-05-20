@@ -1,0 +1,39 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"sample_utterances": "",
+	"timeout": 6,
+	"num_tries_for_gui": 2,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm blushing.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsLikable_AN_01"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No <pitch mult=\"1.2\">you</pitch> are.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsLikable_AN_02"
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Thank you for saying that.",
+			"media": "TTS",
+			"prompt_id": "OI_JBO_IsLikable_AN_03"
+		}
+	]
+}

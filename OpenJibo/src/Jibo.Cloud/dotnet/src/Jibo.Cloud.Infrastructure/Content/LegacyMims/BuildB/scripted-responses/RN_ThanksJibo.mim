@@ -1,0 +1,197 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You're welcome.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_01",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No problem.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_02",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You got it.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Of course.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That's what I'm here for.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_05",
+			"weight": 0.8
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Don't mention it.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_06",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You bet.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Anytime.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "No, thank you.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_09",
+			"weight": 0.5
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Glad to do it.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_10",
+			"weight": 0.9
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You're more than welcome.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_11",
+			"weight": 0.9
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "But of course.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_12",
+			"weight": 0.7
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You don't need to thank me. But you're welcome.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_13",
+			"weight": 0.2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You're very welcome.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_14",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "The pleasure's mine.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_15",
+			"weight": 0.8
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Hey that's why they made me.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_16",
+			"weight": 0.3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "You're welcome you're welcome you're welcome you're welcome you're welcome.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_17",
+			"weight": 0.1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I do what I can.",
+			"media": "TTS",
+			"prompt_id": "RN_ThanksJibo_AN_18",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore"
+}

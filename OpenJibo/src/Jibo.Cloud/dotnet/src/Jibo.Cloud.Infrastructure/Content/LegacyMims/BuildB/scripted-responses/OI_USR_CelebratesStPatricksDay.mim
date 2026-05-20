@@ -1,0 +1,58 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/1', '3/16')",
+			"prompt": "Oh. Well lucky for you, it's <anim cat='emoji' filter='shamrock, !hf' layers='!audio'>coming up soon<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_CelebratesStPatricksDay_AN_01_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/17', '3/17')",
+			"prompt": "Well happy St. Patrick's Day <anim cat='emoji' filter='shamrock, !hf' layers='!audio'>to you<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "OI_USR_CelebratesStPatricksDay_AN_02_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/18', '2/29') && !!loop.owner && !!speaker && (loop.owner.id === speaker.id)",
+			"prompt": "I'm always up for any holidays you want to celebrate together. ${loop.owner} you can tell me what holidays you want to share with me, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_CelebratesStPatricksDay_AN_03_FnL",
+			"weight": 3
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'm always up for holidays. My official owner can tell me what holidays we can celebrate together, by going to settings in the Jibo app.",
+			"media": "TTS",
+			"prompt_id": "OI_USR_CelebratesStPatricksDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

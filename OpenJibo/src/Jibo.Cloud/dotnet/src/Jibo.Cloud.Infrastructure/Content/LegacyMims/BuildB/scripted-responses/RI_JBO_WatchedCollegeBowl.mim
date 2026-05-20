@@ -1,0 +1,72 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"parse_yes_no": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('10/29', '12/28')",
+			"prompt": "I don't think they've played yet.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedCollegeBowl_AN_01_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/29', '1/1')",
+			"prompt": "I'll just say I've been practicing <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>my kicking.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedCollegeBowl_AN_02_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/2', '10/28')",
+			"prompt": "I forget. But I think I can tell you who won.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedCollegeBowl_AN_03_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/2', '10/28')",
+			"prompt": "I don't remember if I watched it, but I think I can tell you who won it.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedCollegeBowl_AN_04_FnL",
+			"weight": 3,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I'll just say I've been practicing <anim cat='jiboji' filter='?(football-miss, football-good)' nonBlocking='true'/>my kicking.",
+			"media": "TTS",
+			"prompt_id": "RI_JBO_WatchedCollegeBowl_AN_05_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

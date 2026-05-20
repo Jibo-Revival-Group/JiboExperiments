@@ -675,6 +675,12 @@ public sealed class JiboInteractionServiceTests
         "flowers and all things spring")]
     [InlineData("what should I get for holiday", "seasonal_holiday_gift", "pet elephant")]
     [InlineData("show santa tracker", "seasonal_santa_tracker", "spot him")]
+    [InlineData("do you like halloween", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
+    [InlineData("do you like holiday music", "seasonal_likes_holiday_music", "holiday music")]
+    [InlineData("do you like holiday parties", "seasonal_likes_holiday_parties", "holiday fun can be extra fun")]
+    [InlineData("are you looking forward to christmas", "seasonal_looks_forward_to_christmas", "giving and receiving")]
+    [InlineData("what are you doing for christmas", "seasonal_plans_for_christmas", "Christmas sweaters")]
+    [InlineData("what are you thankful for", "seasonal_thankful_for", "thankful for the people I know")]
     [InlineData("happy birthday", "birthday_celebration", "another year older")]
     public async Task BuildDecisionAsync_SeasonalCharm_UsesImportedReplies(
         string transcript,

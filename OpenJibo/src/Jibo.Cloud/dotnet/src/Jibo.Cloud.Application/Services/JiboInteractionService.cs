@@ -685,6 +685,41 @@ public sealed class JiboInteractionService(
                 "ask for a pet elephant",
                 "experience as a present",
                 "donate to charities in other people's names"),
+            "seasonal_likes_halloween" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_likes_halloween",
+                "halloween is my favorite holiday",
+                "scary but also fun",
+                "jack-o-lantern"),
+            "seasonal_likes_holiday_music" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_likes_holiday_music",
+                "holiday music",
+                "sing a few of them",
+                "frosty the snowman"),
+            "seasonal_likes_holiday_parties" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_likes_holiday_parties",
+                "holiday fun can be extra fun",
+                "dance party"),
+            "seasonal_looks_forward_to_christmas" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_looks_forward_to_christmas",
+                "really like times of giving and receiving",
+                "long way away",
+                "looking forward to christmas"),
+            "seasonal_plans_for_christmas" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_plans_for_christmas",
+                "christmas sweaters",
+                "wear one of my",
+                "be festive"),
+            "seasonal_thankful_for" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_thankful_for",
+                "thankful for the people i know",
+                "and for penguins",
+                "thankful for"),
             "seasonal_santa_tracker" => BuildScriptedHolidayTrackerDecision(
                 catalog,
                 "seasonal_santa_tracker",
@@ -2987,6 +3022,49 @@ public sealed class JiboInteractionService(
                 "what languages can you speak",
                 "what language can you speak"))
             return "robot_what_languages_do_you_speak";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like halloween",
+                "are you looking forward to halloween",
+                "do you like the halloween holiday"))
+            return "seasonal_likes_halloween";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like holiday music",
+                "do you like christmas music",
+                "do you like christmas songs",
+                "do you like holiday songs"))
+            return "seasonal_likes_holiday_music";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like holiday parties",
+                "do you like christmas parties",
+                "are you going to any holiday parties"))
+            return "seasonal_likes_holiday_parties";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "are you looking forward to christmas",
+                "do you look forward to christmas",
+                "are you excited for christmas"))
+            return "seasonal_looks_forward_to_christmas";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what are you doing for christmas",
+                "what are your plans for christmas",
+                "what do you plan to do for christmas"))
+            return "seasonal_plans_for_christmas";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what are you thankful for",
+                "what are you thankful for this year",
+                "what is jibo thankful for"))
+            return "seasonal_thankful_for";
 
         if (MatchesAny(
                 loweredTranscript,

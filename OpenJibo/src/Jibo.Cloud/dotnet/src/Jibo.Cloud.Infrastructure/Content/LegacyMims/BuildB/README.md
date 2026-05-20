@@ -8,6 +8,7 @@ It now includes a small emotion-response pack for `happy`, `sad`, and `angry` fo
 It also includes a descriptor pack for questions like `are you kind`, `are you funny`, `are you helpful`, `are you curious`, `are you loyal`, and `are you mischievous`.
 The newest seasonal pack adds holiday and seasonal prompts for `what holidays do you celebrate`, New Year's resolution questions, `happy holidays`, Halloween costume questions, spring suggestions, holiday gift ideas, and birthday celebration lines.
 The holiday extras batch adds `RA_JBO_ShowSantaTracker` so Santa Tracker stays source-backed too.
+The remaining seasonal polish adds `RI_JBO_LikesHalloween`, `RI_JBO_LikesHolidayMusic`, `RI_JBO_LikesHolidayParties`, `RI_JBO_LooksForwardToChristmas`, `RI_JBO_PlansForChristmas`, and `RI_JBO_WhatIsThankfulFor` so the holiday voice can feel a little closer to Pegasus.
 
 Holiday-specific note:
 - `JBO_WhatHolidaysDoYouCelebrate` now lands in the holiday bucket

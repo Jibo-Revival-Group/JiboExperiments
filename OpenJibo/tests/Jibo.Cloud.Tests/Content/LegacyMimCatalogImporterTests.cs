@@ -118,6 +118,27 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsBuildBFavoriteAnimalAndSantaTrackerResponsesIntoDedicatedBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.FavoriteAnimalReplies, reply =>
+            reply.Contains("penguins", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.FavoriteAnimalReplies, reply =>
+            reply.Contains("favorite animal overall", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidayTrackerReplies, reply =>
+            reply.Contains("let's see if i can spot him", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidayTrackerReplies, reply =>
+            reply.Contains("north Pole", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBEmotionResponsesIntoEmotionBucket()
     {
         var rootDirectory = Path.Combine(

@@ -11,22 +11,24 @@ public sealed class JiboConditionedReply
     public string Reply { get; init; } = string.Empty;
 }
 
-public sealed class JiboExperienceCatalog
-{
-    public IReadOnlyList<string> Jokes { get; init; } = [];
-    public IReadOnlyList<string> RobotFacts { get; init; } = [];
-    public IReadOnlyList<string> HumanFacts { get; init; } = [];
-    public IReadOnlyList<string> FunFacts { get; init; } = [];
-    public IReadOnlyList<string> DanceAnimations { get; init; } = [];
-    public IReadOnlyList<string> GreetingReplies { get; init; } = [];
-    public IReadOnlyList<string> HolidayReplies { get; init; } = [];
-    public IReadOnlyList<string> HolidaySeasonReplies { get; init; } = [];
-    public IReadOnlyList<string> HolidayGreetingReplies { get; init; } = [];
-    public IReadOnlyList<string> HolidayGiftReplies { get; init; } = [];
-    public IReadOnlyList<string> BirthdayCelebrationReplies { get; init; } = [];
-    public IReadOnlyList<string> HowAreYouReplies { get; init; } = [];
-    public IReadOnlyList<JiboConditionedReply> EmotionReplies { get; init; } = [];
-    public IReadOnlyList<string> PersonalityReplies { get; init; } = [];
+    public sealed class JiboExperienceCatalog
+    {
+        public IReadOnlyList<string> Jokes { get; init; } = [];
+        public IReadOnlyList<string> RobotFacts { get; init; } = [];
+        public IReadOnlyList<string> HumanFacts { get; init; } = [];
+        public IReadOnlyList<string> FunFacts { get; init; } = [];
+        public IReadOnlyList<string> FavoriteAnimalReplies { get; init; } = [];
+        public IReadOnlyList<string> DanceAnimations { get; init; } = [];
+        public IReadOnlyList<string> GreetingReplies { get; init; } = [];
+        public IReadOnlyList<string> HolidayReplies { get; init; } = [];
+        public IReadOnlyList<string> HolidaySeasonReplies { get; init; } = [];
+        public IReadOnlyList<string> HolidayGreetingReplies { get; init; } = [];
+        public IReadOnlyList<string> HolidayGiftReplies { get; init; } = [];
+        public IReadOnlyList<string> HolidayTrackerReplies { get; init; } = [];
+        public IReadOnlyList<string> BirthdayCelebrationReplies { get; init; } = [];
+        public IReadOnlyList<string> HowAreYouReplies { get; init; } = [];
+        public IReadOnlyList<JiboConditionedReply> EmotionReplies { get; init; } = [];
+        public IReadOnlyList<string> PersonalityReplies { get; init; } = [];
     public IReadOnlyList<string> PizzaReplies { get; init; } = [];
     public IReadOnlyList<string> SurpriseReplies { get; init; } = [];
     public IReadOnlyList<string> PersonalReportReplies { get; init; } = [];

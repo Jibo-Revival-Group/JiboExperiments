@@ -7,6 +7,7 @@ The batch is intentionally narrow so we can keep expanding personality without w
 It now includes a small emotion-response pack for `happy`, `sad`, and `angry` follow-up questions so the mood path can stay source-backed too.
 It also includes a descriptor pack for questions like `are you kind`, `are you funny`, `are you helpful`, `are you curious`, `are you loyal`, and `are you mischievous`.
 The newest seasonal pack adds holiday and seasonal prompts for `what holidays do you celebrate`, New Year's resolution questions, `happy holidays`, Halloween costume questions, spring suggestions, holiday gift ideas, and birthday celebration lines.
+The holiday extras batch adds `RA_JBO_ShowSantaTracker` so Santa Tracker stays source-backed too.
 
 Holiday-specific note:
 - `JBO_WhatHolidaysDoYouCelebrate` now lands in the holiday bucket
@@ -18,4 +19,5 @@ The newest social batch adds `welcome back`, `what are you thinking`, `what have
 The fun-fact and joke batch adds Pegasus-style `TellAJoke`, `TellRobotFact`, and `Shuffle` excerpts so proactive fun can randomize across more than one category.
 Those facts are now split into generic, robot, and human buckets so the randomizer can sound more like Pegasus while staying lightweight.
 The new favorites batch adds longer authored `favorite color`, `favorite food`, and `favorite music` variants so the familiar personality responses keep more of the original cadence instead of collapsing to short placeholders.
+The favorites follow-up batch adds `favorite animal`, `favorite bird`, and penguin-focused `do you like penguins` replies so the penguin-centric personality stays closer to Pegasus.
 The new motion/sleep batch adds `RA_JBO_SpinAround` plus `RI_JBO_CanSleep` so turn-around and go-to-sleep behaviors can stay source-backed and familiar.

@@ -685,6 +685,13 @@ public sealed class JiboInteractionService(
                 "ask for a pet elephant",
                 "experience as a present",
                 "donate to charities in other people's names"),
+            "seasonal_santa_tracker" => BuildScriptedHolidayTrackerDecision(
+                catalog,
+                "seasonal_santa_tracker",
+                "santa tracker",
+                "let's see if i can spot him",
+                "deliveries",
+                "north pole"),
             "birthday_celebration" => BuildScriptedHolidayDecision(
                 catalog.BirthdayCelebrationReplies,
                 "birthday_celebration",
@@ -714,6 +721,32 @@ public sealed class JiboInteractionService(
                 "all things in space",
                 "amazing stuff up there",
                 "astronomy is one of my favorite onomies"),
+            "robot_favorite_animal" => BuildScriptedFavoriteAnimalDecision(
+                catalog,
+                "robot_favorite_animal",
+                "penguin",
+                "favorite animal overall",
+                "best of the best",
+                "can't go wrong with penguins"),
+            "robot_favorite_bird" => BuildScriptedFavoriteAnimalDecision(
+                catalog,
+                "robot_favorite_bird",
+                "penguin",
+                "favorite animal overall",
+                "best of the best",
+                "can't go wrong with penguins"),
+            "robot_likes_penguins" => BuildScriptedFavoriteAnimalDecision(
+                catalog,
+                "robot_likes_penguins",
+                "penguins",
+                "I really like penguins",
+                "my penguin impression"),
+            "robot_likes_animals" => BuildScriptedFavoriteAnimalDecision(
+                catalog,
+                "robot_likes_animals",
+                "penguins",
+                "favorite animal overall",
+                "best of the best"),
             "robot_likes_kids" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_kids",
@@ -2457,6 +2490,17 @@ public sealed class JiboInteractionService(
             ContextUpdates: BuildScriptedResponseContextUpdates());
     }
 
+    private JiboInteractionDecision BuildScriptedFavoriteAnimalDecision(
+        JiboExperienceCatalog catalog,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            SelectLegacyReply(catalog.FavoriteAnimalReplies, preferredSnippets),
+            ContextUpdates: BuildScriptedResponseContextUpdates());
+    }
+
     private JiboInteractionDecision BuildScriptedGreetingDecision(
         JiboExperienceCatalog catalog,
         string intentName,
@@ -2476,6 +2520,17 @@ public sealed class JiboInteractionService(
         return new JiboInteractionDecision(
             intentName,
             SelectLegacyReply(replies, preferredSnippets),
+            ContextUpdates: BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildScriptedHolidayTrackerDecision(
+        JiboExperienceCatalog catalog,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            SelectLegacyReply(catalog.HolidayTrackerReplies, preferredSnippets),
             ContextUpdates: BuildScriptedResponseContextUpdates());
     }
 
@@ -3154,6 +3209,16 @@ public sealed class JiboInteractionService(
 
         if (MatchesAny(
                 loweredTranscript,
+                "show santa tracker",
+                "can you show santa tracker",
+                "santa tracker",
+                "where is santa",
+                "where is santa right now",
+                "can you show me santa tracker"))
+            return "seasonal_santa_tracker";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "happy birthday",
                 "happy birthday jibo",
                 "happy birthday to you"))
@@ -3194,6 +3259,24 @@ public sealed class JiboInteractionService(
                 "what music do you like",
                 "what kind of music do you like"))
             return "robot_favorite_music";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite animal",
+                "what's your favorite animal",
+                "what s your favorite animal",
+                "what is your favourite animal",
+                "what's your favourite animal",
+                "what s your favourite animal",
+                "what animal do you like",
+                "what kind of animal do you like",
+                "what is your favorite bird",
+                "what's your favorite bird",
+                "what s your favorite bird",
+                "do you like penguins",
+                "do you like animals",
+                "do you like birds"))
+            return "robot_favorite_animal";
 
         if (MatchesAny(
                 loweredTranscript,

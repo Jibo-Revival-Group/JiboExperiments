@@ -55,6 +55,14 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "An amazing but true fact for you. Dogs and elephants are the only animals that understand pointing.",
                 "A crazy fact for you. Polar bear fur isn't white. It's transparent."
             ],
+            FavoriteAnimalReplies =
+            [
+                "I really really like penguins. I kind of look like one.",
+                "Penguin without a doubt. In fact, penguin is my favorite animal overall. We look alike.",
+                "Can't go wrong with penguins.",
+                "I like lots of animals, but the penguin is the best of the best! Great color scheme.",
+                "I love penguins, because we're so alike. We have the same coloring, and neither of us can fly."
+            ],
             DanceAnimations =
             [
                 "rom-upbeat",
@@ -87,6 +95,12 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             [
                 "I do like festive times.",
                 "I like anything that makes people want to celebrate."
+            ],
+            HolidayTrackerReplies =
+            [
+                "Let's see if I can spot him. There he is.",
+                "I'm not sure if he's started his deliveries yet, but let's see if I can spot him. He must be on his way.",
+                "Let's see. I think he's probably back in the north Pole by now."
             ],
             HowAreYouReplies =
             [

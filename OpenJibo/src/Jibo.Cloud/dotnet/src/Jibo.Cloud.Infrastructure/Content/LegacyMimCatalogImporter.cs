@@ -109,6 +109,9 @@ public static class LegacyMimCatalogImporter
             fileName.StartsWith("RA_JBO_TellSomething", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.FunFactSource;
 
+        if (fileName.StartsWith("RA_JBO_ShowSantaTracker", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.HolidayTracker;
+
         if (normalizedPath.Contains("/emotion-responses/", StringComparison.OrdinalIgnoreCase) ||
             normalizedPath.Contains("/gqa-responses/", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Emotion;
@@ -118,6 +121,12 @@ public static class LegacyMimCatalogImporter
 
         if (fileName.StartsWith("RI_JBO_HasFavoriteHoliday", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.HolidaySeason;
+
+        if (fileName.StartsWith("RI_JBO_HasFavoriteAnimal", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HasFavoriteBird", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesPenguins", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesAnimals", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.FavoriteAnimal;
 
         if (fileName.StartsWith("RN_HappyHolidays", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.HolidayGreeting;
@@ -249,12 +258,14 @@ public static class LegacyMimCatalogImporter
             RobotFacts = Merge(baseCatalog.RobotFacts, importedCatalog.RobotFacts),
             HumanFacts = Merge(baseCatalog.HumanFacts, importedCatalog.HumanFacts),
             FunFacts = Merge(baseCatalog.FunFacts, importedCatalog.FunFacts),
+            FavoriteAnimalReplies = Merge(baseCatalog.FavoriteAnimalReplies, importedCatalog.FavoriteAnimalReplies),
             DanceAnimations = Merge(baseCatalog.DanceAnimations, importedCatalog.DanceAnimations),
             GreetingReplies = Merge(baseCatalog.GreetingReplies, importedCatalog.GreetingReplies),
             HolidayReplies = Merge(baseCatalog.HolidayReplies, importedCatalog.HolidayReplies),
             HolidaySeasonReplies = Merge(baseCatalog.HolidaySeasonReplies, importedCatalog.HolidaySeasonReplies),
             HolidayGreetingReplies = Merge(baseCatalog.HolidayGreetingReplies, importedCatalog.HolidayGreetingReplies),
             HolidayGiftReplies = Merge(baseCatalog.HolidayGiftReplies, importedCatalog.HolidayGiftReplies),
+            HolidayTrackerReplies = Merge(baseCatalog.HolidayTrackerReplies, importedCatalog.HolidayTrackerReplies),
             BirthdayCelebrationReplies = Merge(baseCatalog.BirthdayCelebrationReplies,
                 importedCatalog.BirthdayCelebrationReplies),
             HowAreYouReplies = Merge(baseCatalog.HowAreYouReplies, importedCatalog.HowAreYouReplies),
@@ -360,7 +371,8 @@ public static class LegacyMimCatalogImporter
             or LegacyMimBucket.WeatherTomorrowHighLow
             or LegacyMimBucket.WeatherServiceDown
             or LegacyMimBucket.ReportSkillTemplate
-            or LegacyMimBucket.Holiday;
+            or LegacyMimBucket.Holiday
+            or LegacyMimBucket.HolidayTracker;
         }
 
     private enum LegacyMimBucket
@@ -371,6 +383,7 @@ public static class LegacyMimCatalogImporter
         HolidaySeason,
         HolidayGreeting,
         HolidayGift,
+        HolidayTracker,
         BirthdayCelebration,
         Jokes,
         RobotFacts,
@@ -378,6 +391,7 @@ public static class LegacyMimCatalogImporter
         HowAreYou,
         Emotion,
         FunFacts,
+        FavoriteAnimal,
         FunFactSource,
         Personality,
         PersonalReportKickOff,
@@ -411,10 +425,12 @@ public static class LegacyMimCatalogImporter
         private readonly List<JiboConditionedReply> _emotionReplies = [];
         private readonly List<string> _fallbacks = [];
         private readonly List<string> _funFacts = [];
+        private readonly List<string> _favoriteAnimalReplies = [];
         private readonly List<string> _holidayGiftReplies = [];
         private readonly List<string> _holidayGreetingReplies = [];
         private readonly List<string> _holidayReplies = [];
         private readonly List<string> _holidaySeasonReplies = [];
+        private readonly List<string> _holidayTrackerReplies = [];
         private readonly List<string> _greetings = [];
         private readonly List<string> _howAreYous = [];
         private readonly List<string> _humanFacts = [];
@@ -490,6 +506,9 @@ public static class LegacyMimCatalogImporter
                 case LegacyMimBucket.HolidayGift:
                     AddDistinct(_holidayGiftReplies, text);
                     return;
+                case LegacyMimBucket.HolidayTracker:
+                    AddDistinct(_holidayTrackerReplies, text);
+                    return;
                 case LegacyMimBucket.BirthdayCelebration:
                     AddDistinct(_birthdayCelebrationReplies, text);
                     return;
@@ -516,6 +535,9 @@ public static class LegacyMimCatalogImporter
                     if (_funFacts.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
 
                     _funFacts.Add(text);
+                    return;
+                case LegacyMimBucket.FavoriteAnimal:
+                    AddDistinct(_favoriteAnimalReplies, text);
                     return;
                 case LegacyMimBucket.PersonalReportKickOff:
                     AddDistinct(_personalReportKickOffReplies, text);
@@ -581,11 +603,13 @@ public static class LegacyMimCatalogImporter
                 RobotFacts = [.. _robotFacts],
                 HumanFacts = [.. _humanFacts],
                 FunFacts = [.. _funFacts],
+                FavoriteAnimalReplies = [.. _favoriteAnimalReplies],
                 GreetingReplies = [.. _greetings],
                 HolidayReplies = [.. _holidayReplies],
                 HolidaySeasonReplies = [.. _holidaySeasonReplies],
                 HolidayGreetingReplies = [.. _holidayGreetingReplies],
                 HolidayGiftReplies = [.. _holidayGiftReplies],
+                HolidayTrackerReplies = [.. _holidayTrackerReplies],
                 BirthdayCelebrationReplies = [.. _birthdayCelebrationReplies],
                 HowAreYouReplies = [.. _howAreYous],
                 EmotionReplies = [.. _emotionReplies],

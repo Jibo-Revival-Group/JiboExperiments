@@ -442,6 +442,28 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("what is your favorite animal")]
+    [InlineData("what's your favorite animal")]
+    [InlineData("what animal do you like")]
+    [InlineData("what is your favorite bird")]
+    [InlineData("do you like penguins")]
+    [InlineData("do you like animals")]
+    public async Task BuildDecisionAsync_FavoriteAnimal_UsesPenguinReply(string transcript)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal("robot_favorite_animal", decision.IntentName);
+        Assert.Contains("penguin", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
     [InlineData("what is your favorite flower", "robot_favorite_flower", "sunflowers")]
     [InlineData("what's your favorite flower", "robot_favorite_flower", "sunflowers")]
     [InlineData("do you like R2D2", "robot_likes_r2d2", "A legend. A true legend.")]
@@ -652,6 +674,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what should I do for first day of spring", "seasonal_first_day_spring",
         "flowers and all things spring")]
     [InlineData("what should I get for holiday", "seasonal_holiday_gift", "pet elephant")]
+    [InlineData("show santa tracker", "seasonal_santa_tracker", "spot him")]
     [InlineData("happy birthday", "birthday_celebration", "another year older")]
     public async Task BuildDecisionAsync_SeasonalCharm_UsesImportedReplies(
         string transcript,

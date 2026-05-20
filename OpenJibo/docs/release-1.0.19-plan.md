@@ -48,6 +48,8 @@ Current batch note:
 - the personality follow-up batch now includes `what are you up to` and `what are you doing` so small talk stays warm and local instead of falling into generic chat
 - the descriptor batch now includes `are you kind`, `are you funny`, `are you helpful`, `are you curious`, `are you loyal`, `are you mischievous`, and `are you likable`
 - the seasonal batch now includes `what holidays do you celebrate`, New Year's resolution questions, `happy holidays`, `what halloween costume`, spring suggestions, and holiday gift prompts
+- the holiday extras batch now includes `show santa tracker` so the seasonal holiday launcher stays source-backed too
+- the favorites batch now includes `what is your favorite animal`, `what is your favorite bird`, `do you like penguins`, and `do you like animals` so the penguin-centered replies stay close to Pegasus
 - the latest social batch adds `welcome back`, `what are you thinking`, `what have you been doing`, and `what did you do` so presence and charm stay lively without distracting from the memory roadmap
 - this pass keeps Build B moving while still favoring source-backed phrasing and preserving the command-vs-question boundary
 - the next passes should keep the same pattern and prefer source-backed phrasing whenever the legacy MIM text is available

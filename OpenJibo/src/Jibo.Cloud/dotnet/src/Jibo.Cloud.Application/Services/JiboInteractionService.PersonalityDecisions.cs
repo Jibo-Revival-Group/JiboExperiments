@@ -58,14 +58,11 @@ public sealed partial class JiboInteractionService
         DateTimeOffset? referenceLocalTime)
     {
         var displayName = ResolvePreferredGreetingName(turn, presence);
-        var greetingPrefix = ResolveTimeOfDayGreetingPrefix(referenceLocalTime);
         var specialGreeting = ResolveSpecialGreetingPrefix(turn, presence, referenceLocalTime);
         var route = specialGreeting?.Route ?? "ProactiveGreeting";
         var intentName = specialGreeting?.IntentName ?? "proactive_greeting";
         var replyText = specialGreeting is null
-            ? string.IsNullOrWhiteSpace(displayName)
-                ? $"{greetingPrefix}. I am glad to see you."
-                : $"{greetingPrefix}, {displayName}. Welcome back."
+            ? BuildProactiveGreetingReply(turn, presence, displayName, referenceLocalTime)
             : string.IsNullOrWhiteSpace(displayName)
                 ? $"{specialGreeting.Prefix}. I am glad to see you."
                 : $"{specialGreeting.Prefix}, {displayName}. It is nice to celebrate with you.";
@@ -137,18 +134,21 @@ public sealed partial class JiboInteractionService
 
     private DateTimeOffset? ReadGreetingHistoryLastGreetedUtc(TurnContext turn, GreetingPresenceProfile presence)
     {
-        var historyIdentity = ResolveGreetingHistoryIdentity(presence);
-        if (!string.IsNullOrWhiteSpace(historyIdentity) && cloudStateStore is not null)
-        {
-            var loopId = ReadTenantAttribute(turn, "loopId") ?? "openjibo-default-loop";
-            var greetingHistory = cloudStateStore.GetGreetingPresences(loopId)
-                .FirstOrDefault(record =>
-                    record.PersonId.Equals(historyIdentity, StringComparison.OrdinalIgnoreCase));
-            if (greetingHistory is not null && greetingHistory.LastGreetedUtc.HasValue)
-                return greetingHistory.LastGreetedUtc;
-        }
+        var greetingHistory = ResolveGreetingHistoryRecord(turn, presence);
+        if (greetingHistory is not null && greetingHistory.LastGreetedUtc.HasValue)
+            return greetingHistory.LastGreetedUtc;
 
         return ReadTimestampAttribute(turn, LastProactiveGreetingUtcMetadataKey);
+    }
+
+    private GreetingPresenceRecord? ResolveGreetingHistoryRecord(TurnContext turn, GreetingPresenceProfile presence)
+    {
+        var historyIdentity = ResolveGreetingHistoryIdentity(presence);
+        if (string.IsNullOrWhiteSpace(historyIdentity) || cloudStateStore is null) return null;
+
+        var loopId = ReadTenantAttribute(turn, "loopId") ?? "openjibo-default-loop";
+        return cloudStateStore.GetGreetingPresences(loopId)
+            .FirstOrDefault(record => record.PersonId.Equals(historyIdentity, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string? ResolveGreetingHistoryIdentity(GreetingPresenceProfile presence)
@@ -226,6 +226,39 @@ public sealed partial class JiboInteractionService
             >= 12 and < 17 => "Good afternoon",
             _ => "Good evening"
         };
+    }
+
+    private string BuildProactiveGreetingReply(
+        TurnContext turn,
+        GreetingPresenceProfile presence,
+        string? displayName,
+        DateTimeOffset? referenceLocalTime)
+    {
+        var greetingHistory = ResolveGreetingHistoryRecord(turn, presence);
+        var greetingPrefix = ResolveProactiveGreetingPrefix(referenceLocalTime, greetingHistory);
+
+        if (string.Equals(greetingPrefix, "Welcome back", StringComparison.OrdinalIgnoreCase))
+            return string.IsNullOrWhiteSpace(displayName)
+                ? "Welcome back. I am glad to see you again."
+                : $"Welcome back, {displayName}. I am glad to see you again.";
+
+        return string.IsNullOrWhiteSpace(displayName)
+            ? $"{greetingPrefix}. I am glad to see you."
+            : $"{greetingPrefix}, {displayName}. It is great to see you.";
+    }
+
+    private static string ResolveProactiveGreetingPrefix(
+        DateTimeOffset? referenceLocalTime,
+        GreetingPresenceRecord? greetingHistory)
+    {
+        var hour = (referenceLocalTime ?? DateTimeOffset.UtcNow).Hour;
+        var isMorning = hour >= 5 && hour < 12;
+        var recentGreeting = greetingHistory?.LastGreetedUtc is not null &&
+                             DateTimeOffset.UtcNow - greetingHistory.LastGreetedUtc.Value < TimeSpan.FromHours(8);
+
+        if (recentGreeting) return "Welcome back";
+
+        return isMorning ? "Good morning" : ResolveTimeOfDayGreetingPrefix(referenceLocalTime);
     }
 
     private SpecialGreetingPrefix? ResolveSpecialGreetingPrefix(

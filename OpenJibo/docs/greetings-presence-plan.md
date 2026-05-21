@@ -66,7 +66,8 @@ Current implementation progress:
 - proactive greeting gating now consults stored greeting history first, then falls back to the current turn metadata
 - birthday-aware proactive greetings now use the loop/person birthday memory when the current date matches
 - holiday-aware proactive greetings now use the loop holiday calendar when the current date matches
-- the remaining work is to broaden the presence policy surface so it can grow from reactive/proactive greeting split into richer day-part and return-visit behavior without reworking the storage seam again
+- morning proactive greetings now stay distinct from return-visit greetings so a fresh start of day still sounds like a morning greeting
+- the remaining work is to broaden the presence policy surface so it can grow into richer day-part and return-visit variations without reworking the storage seam again
 
 ## Implementation Slices
 

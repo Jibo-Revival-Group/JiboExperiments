@@ -725,6 +725,7 @@ Current release theme:
   - reactive and proactive greeting turns write back greeting-history records for later cooldown checks
   - birthday-aware proactive greetings now use stored birthday memory on matching dates
   - holiday-aware proactive greetings now use loop holiday records on matching dates
+  - morning proactive greetings now stay distinct from return-visit greetings
 - Exit criteria:
   - presence-aware greetings are routed deterministically with tests
   - proactive greetings are frequency-bounded and do not trigger from surprise source when blocked by policy

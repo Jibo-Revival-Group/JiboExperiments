@@ -349,6 +349,76 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_TriggerInTheMorning_UsesGoodMorningProactiveTone()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        memoryStore.SetName(new PersonalMemoryTenantScope("acct-morning", "loop-morning", "device-morning", "person-9"),
+            "jake");
+        var service = CreateService(memoryStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-morning",
+                ["loopId"] = "loop-morning",
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-05-21T09:00:00-05:00"},"perception":{"speaker":"person-9","peoplePresent":[{"id":"person-9"}]},"loop":{"users":[{"id":"person-9","firstName":"jake"}]}}}"""
+            },
+            DeviceId = "device-morning"
+        });
+
+        Assert.Equal("proactive_greeting", decision.IntentName);
+        Assert.Contains("Good morning, Jake", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("welcome back", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_TriggerWithRecentGreetingHistory_UsesWelcomeBackTone()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        memoryStore.SetName(new PersonalMemoryTenantScope("acct-return", "loop-return", "device-return", "person-11"),
+            "jake");
+        var cloudStateStore = new InMemoryCloudStateStore();
+        cloudStateStore.UpsertGreetingPresence(new GreetingPresenceRecord
+        {
+            LoopId = "loop-return",
+            PersonId = "person-11",
+            SpeakerId = "person-11",
+            PreferredName = "Jake",
+            LastSeenUtc = DateTimeOffset.UtcNow.AddHours(-1),
+            LastGreetedUtc = DateTimeOffset.UtcNow.AddHours(-1),
+            LastGreetingRoute = "ProactiveGreeting",
+            LastGreetingIntent = "proactive_greeting"
+        });
+        var service = CreateService(memoryStore, cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-return",
+                ["loopId"] = "loop-return",
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-05-21T15:00:00-05:00"},"perception":{"speaker":"person-11","peoplePresent":[{"id":"person-11"}]},"loop":{"users":[{"id":"person-11","firstName":"jake"}]}}}"""
+            },
+            DeviceId = "device-return"
+        });
+
+        Assert.Equal("proactive_greeting", decision.IntentName);
+        Assert.Contains("Welcome back, Jake", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("again", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_TriggerOnBirthday_BuildsBirthdayGreeting()
     {
         var memoryStore = new InMemoryPersonalMemoryStore();

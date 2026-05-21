@@ -518,9 +518,7 @@ public sealed class JiboInteractionService(
                 randomizer,
                 selected => RenderHolidayTemplate(selected, turn, greetingPresence),
                 out var seasonalHolidayDecision))
-        {
             return seasonalHolidayDecision;
-        }
 
         return semanticIntent switch
         {
@@ -1665,7 +1663,7 @@ public sealed class JiboInteractionService(
         if (minutesLeft > 0 && minutesLeft < 30)
         {
             var minutesTemplate = ChooseShortestTemplate(catalog.CommuteMinutesLeftReplies)
-                ?? "That's in about ${skill.commute.minsLeft} minutes.";
+                                  ?? "That's in about ${skill.commute.minsLeft} minutes.";
             reply = $"{reply} {RenderCommuteTemplate(minutesTemplate, durationText, minutesLeftText)}";
         }
 
@@ -1682,10 +1680,7 @@ public sealed class JiboInteractionService(
     private string ChooseCommuteAppSetupReply(JiboExperienceCatalog catalog)
     {
         return SelectLegacyReply(
-            catalog.CommuteAppSetupReplies,
-            [
-                "I need your commute settings before I can give you a commute report."
-            ]);
+            catalog.CommuteAppSetupReplies, "I need your commute settings before I can give you a commute report.");
     }
 
     private static string ChooseCommuteTemplate(
@@ -2147,14 +2142,12 @@ public sealed class JiboInteractionService(
                 "Your calendar says ${skill.calendar.eventSummaries.shift()}, ${skill.calendar.eventTimesOnAt.shift()}.");
             if (template.Contains("${skill.calendar.eventSummaries.shift()}", StringComparison.OrdinalIgnoreCase) ||
                 template.Contains("${skill.calendar.eventTimesOnAt.shift()}", StringComparison.OrdinalIgnoreCase))
-            {
                 return template
                     .Replace("${skill.calendar.eventSummaries.shift()}", summary, StringComparison.OrdinalIgnoreCase)
                     .Replace("${skill.calendar.eventTimesOnAt.shift()}", time, StringComparison.OrdinalIgnoreCase)
                     .Replace("${speaker}", string.Empty, StringComparison.OrdinalIgnoreCase)
                     .Replace("  ", " ", StringComparison.Ordinal)
                     .Trim();
-            }
 
             return $"Your calendar says {summary}, {time}.";
         }
@@ -2171,7 +2164,8 @@ public sealed class JiboInteractionService(
                     .Replace("  ", " ", StringComparison.Ordinal)
                     .Trim();
 
-            return $"Looking at your calendar, there's nothing scheduled for the rest of the day today. Here's what's going on tomorrow: {snapshot.TomorrowEventSummaries[0]}.";
+            return
+                $"Looking at your calendar, there's nothing scheduled for the rest of the day today. Here's what's going on tomorrow: {snapshot.TomorrowEventSummaries[0]}.";
         }
 
         return ChooseCalendarNothingReply(catalog);
@@ -2191,7 +2185,7 @@ public sealed class JiboInteractionService(
             return loweredMode switch
             {
                 "calendar summary" => lowered.Contains("event", StringComparison.OrdinalIgnoreCase) ||
-                                     lowered.Contains("summary", StringComparison.OrdinalIgnoreCase),
+                                      lowered.Contains("summary", StringComparison.OrdinalIgnoreCase),
                 "calendar tomorrow" => lowered.Contains("tomorrow", StringComparison.OrdinalIgnoreCase),
                 _ => true
             };

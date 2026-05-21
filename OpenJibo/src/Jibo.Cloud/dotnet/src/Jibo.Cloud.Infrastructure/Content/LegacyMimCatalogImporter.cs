@@ -338,16 +338,22 @@ public static class LegacyMimCatalogImporter
             CommuteConfirmSpeakerReplies = Merge(baseCatalog.CommuteConfirmSpeakerReplies,
                 importedCatalog.CommuteConfirmSpeakerReplies),
             CommuteNowReplies = Merge(baseCatalog.CommuteNowReplies, importedCatalog.CommuteNowReplies),
-            CommuteMinutesLeftReplies = Merge(baseCatalog.CommuteMinutesLeftReplies, importedCatalog.CommuteMinutesLeftReplies),
+            CommuteMinutesLeftReplies = Merge(baseCatalog.CommuteMinutesLeftReplies,
+                importedCatalog.CommuteMinutesLeftReplies),
             CommuteDepartTimeNormalReplies = Merge(baseCatalog.CommuteDepartTimeNormalReplies,
                 importedCatalog.CommuteDepartTimeNormalReplies),
             CommuteDepartTimeNotNormalReplies = Merge(baseCatalog.CommuteDepartTimeNotNormalReplies,
                 importedCatalog.CommuteDepartTimeNotNormalReplies),
-            CommuteDriveNormalReplies = Merge(baseCatalog.CommuteDriveNormalReplies, importedCatalog.CommuteDriveNormalReplies),
-            CommuteDriveLateReplies = Merge(baseCatalog.CommuteDriveLateReplies, importedCatalog.CommuteDriveLateReplies),
-            CommuteDriveHurryReplies = Merge(baseCatalog.CommuteDriveHurryReplies, importedCatalog.CommuteDriveHurryReplies),
-            CommuteDrivePoorReplies = Merge(baseCatalog.CommuteDrivePoorReplies, importedCatalog.CommuteDrivePoorReplies),
-            CommuteDriveTerribleReplies = Merge(baseCatalog.CommuteDriveTerribleReplies, importedCatalog.CommuteDriveTerribleReplies),
+            CommuteDriveNormalReplies = Merge(baseCatalog.CommuteDriveNormalReplies,
+                importedCatalog.CommuteDriveNormalReplies),
+            CommuteDriveLateReplies =
+                Merge(baseCatalog.CommuteDriveLateReplies, importedCatalog.CommuteDriveLateReplies),
+            CommuteDriveHurryReplies =
+                Merge(baseCatalog.CommuteDriveHurryReplies, importedCatalog.CommuteDriveHurryReplies),
+            CommuteDrivePoorReplies =
+                Merge(baseCatalog.CommuteDrivePoorReplies, importedCatalog.CommuteDrivePoorReplies),
+            CommuteDriveTerribleReplies = Merge(baseCatalog.CommuteDriveTerribleReplies,
+                importedCatalog.CommuteDriveTerribleReplies),
             CommuteTransportNormalReplies = Merge(baseCatalog.CommuteTransportNormalReplies,
                 importedCatalog.CommuteTransportNormalReplies),
             CommuteTransportLateReplies = Merge(baseCatalog.CommuteTransportLateReplies,
@@ -420,9 +426,9 @@ public static class LegacyMimCatalogImporter
         return string.IsNullOrWhiteSpace(condition) ? string.Empty : WhitespacePattern.Replace(condition.Trim(), " ");
     }
 
-        private static bool IsTemplateBucket(LegacyMimBucket bucket)
-        {
-            return bucket is LegacyMimBucket.PersonalReportKickOff
+    private static bool IsTemplateBucket(LegacyMimBucket bucket)
+    {
+        return bucket is LegacyMimBucket.PersonalReportKickOff
             or LegacyMimBucket.PersonalReportOutro
             or LegacyMimBucket.WeatherIntro
             or LegacyMimBucket.WeatherTomorrowIntro
@@ -432,48 +438,48 @@ public static class LegacyMimCatalogImporter
             or LegacyMimBucket.ReportSkillTemplate
             or LegacyMimBucket.Holiday
             or LegacyMimBucket.HolidayTracker;
-        }
+    }
 
     private static bool IsHolidaySeasonFile(string fileName)
     {
         return fileName.StartsWith("RI_JBO_HowIsHolidaySeason", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesHolidaySeason", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_HowIsThanksgiving", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesThanksgiving", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LooksForwardToThanksgiving", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_PlansForThanksgiving", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_HowIsChristmas", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesChristmas", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LooksForwardToChristmas", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_PlansForChristmas", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_HowIsHanukkah", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesHanukkah", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LooksForwardToHanukkah", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_PlansForHanukkah", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_HowIsPassover", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesPassover", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LooksForwardToPassover", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_PlansForPassover", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_HowIsNewYears", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesNewYears", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LooksForwardToNewYears", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_PlansForNewYears", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_HowIsValentinesDay", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesValentinesDay", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LooksForwardToValentinesDay", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_PlansForValentinesDay", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_HowIsKwanzaa", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesKwanzaa", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LooksForwardToKwanzaa", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_PlansForKwanzaa", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_HowIsEaster", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesEaster", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LooksForwardToEaster", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_PlansForEaster", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_HowIsOrthodoxEaster", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LikesOrthodoxEaster", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_LooksForwardToOrthodoxEaster", StringComparison.OrdinalIgnoreCase) ||
-            fileName.StartsWith("RI_JBO_PlansForOrthodoxEaster", StringComparison.OrdinalIgnoreCase);
+               fileName.StartsWith("RI_JBO_LikesHolidaySeason", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_HowIsThanksgiving", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LikesThanksgiving", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LooksForwardToThanksgiving", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_PlansForThanksgiving", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_HowIsChristmas", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LikesChristmas", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LooksForwardToChristmas", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_PlansForChristmas", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_HowIsHanukkah", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LikesHanukkah", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LooksForwardToHanukkah", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_PlansForHanukkah", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_HowIsPassover", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LikesPassover", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LooksForwardToPassover", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_PlansForPassover", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_HowIsNewYears", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LikesNewYears", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LooksForwardToNewYears", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_PlansForNewYears", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_HowIsValentinesDay", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LikesValentinesDay", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LooksForwardToValentinesDay", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_PlansForValentinesDay", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_HowIsKwanzaa", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LikesKwanzaa", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LooksForwardToKwanzaa", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_PlansForKwanzaa", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_HowIsEaster", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LikesEaster", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LooksForwardToEaster", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_PlansForEaster", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_HowIsOrthodoxEaster", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LikesOrthodoxEaster", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_LooksForwardToOrthodoxEaster", StringComparison.OrdinalIgnoreCase) ||
+               fileName.StartsWith("RI_JBO_PlansForOrthodoxEaster", StringComparison.OrdinalIgnoreCase);
     }
 
     private enum LegacyMimBucket
@@ -529,6 +535,7 @@ public static class LegacyMimCatalogImporter
 
     private sealed class LegacyMimCatalogBuilder
     {
+        private readonly List<string> _birthdayCelebrationReplies = [];
         private readonly List<string> _calendarNothingReplies = [];
         private readonly List<string> _calendarNothingTodayReplies = [];
         private readonly List<string> _calendarOutroReplies = [];
@@ -537,28 +544,27 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _commuteConfirmSpeakerReplies = [];
         private readonly List<string> _commuteDepartTimeNormalReplies = [];
         private readonly List<string> _commuteDepartTimeNotNormalReplies = [];
-        private readonly List<string> _commuteNowReplies = [];
-        private readonly List<string> _commuteMinutesLeftReplies = [];
-        private readonly List<string> _commuteDriveNormalReplies = [];
-        private readonly List<string> _commuteDriveLateReplies = [];
         private readonly List<string> _commuteDriveHurryReplies = [];
+        private readonly List<string> _commuteDriveLateReplies = [];
+        private readonly List<string> _commuteDriveNormalReplies = [];
         private readonly List<string> _commuteDrivePoorReplies = [];
         private readonly List<string> _commuteDriveTerribleReplies = [];
-        private readonly List<string> _commuteTransportNormalReplies = [];
-        private readonly List<string> _commuteTransportLateReplies = [];
-        private readonly List<string> _commuteTransportHurryReplies = [];
+        private readonly List<string> _commuteMinutesLeftReplies = [];
+        private readonly List<string> _commuteNowReplies = [];
         private readonly List<string> _commuteServiceDownReplies = [];
-        private readonly List<string> _birthdayCelebrationReplies = [];
+        private readonly List<string> _commuteTransportHurryReplies = [];
+        private readonly List<string> _commuteTransportLateReplies = [];
+        private readonly List<string> _commuteTransportNormalReplies = [];
         private readonly List<JiboConditionedReply> _emotionReplies = [];
         private readonly List<string> _fallbacks = [];
-        private readonly List<string> _funFacts = [];
         private readonly List<string> _favoriteAnimalReplies = [];
+        private readonly List<string> _funFacts = [];
+        private readonly List<string> _greetings = [];
         private readonly List<string> _holidayGiftReplies = [];
         private readonly List<string> _holidayGreetingReplies = [];
         private readonly List<string> _holidayReplies = [];
         private readonly List<string> _holidaySeasonReplies = [];
         private readonly List<string> _holidayTrackerReplies = [];
-        private readonly List<string> _greetings = [];
         private readonly List<string> _howAreYous = [];
         private readonly List<string> _humanFacts = [];
         private readonly List<string> _jokes = [];

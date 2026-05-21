@@ -333,7 +333,7 @@ internal static class PersonalReportOrchestrator
             reportText,
             "report-skill",
             BuildPersonalReportSkillPayload(reportText, weatherSkillPayload),
-            ContextUpdates: BuildContextUpdates(
+            BuildContextUpdates(
                 IdleState,
                 0,
                 0,

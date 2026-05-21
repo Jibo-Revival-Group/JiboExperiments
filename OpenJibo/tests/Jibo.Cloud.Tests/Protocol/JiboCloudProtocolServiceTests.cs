@@ -88,13 +88,13 @@ public sealed class JiboCloudProtocolServiceTests
         try
         {
             await File.WriteAllTextAsync(persistencePath, """
-            {
-              "SchemaVersion": "1",
-              "Revision": 0,
-              "Loops": [],
-              "Holidays": []
-            }
-            """);
+                                                          {
+                                                            "SchemaVersion": "1",
+                                                            "Revision": 0,
+                                                            "Loops": [],
+                                                            "Holidays": []
+                                                          }
+                                                          """);
 
             var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(persistencePath));
             var result = await service.DispatchAsync(new ProtocolEnvelope
@@ -124,27 +124,27 @@ public sealed class JiboCloudProtocolServiceTests
         try
         {
             await File.WriteAllTextAsync(persistencePath, """
-            {
-              "SchemaVersion": "1",
-              "Revision": 0,
-              "Loops": [],
-              "Holidays": [
-                {
-                  "Id": "birthday-1",
-                  "EventId": "birthday-1",
-                  "Name": "Jake's Birthday",
-                  "Category": "birthday",
-                  "LoopId": "loop-123",
-                  "MemberId": "person-123",
-                  "IsEnabled": true,
-                  "Date": "2026-05-19",
-                  "Source": "manual",
-                  "CountryCode": "US",
-                  "Created": "2026-05-19T00:00:00Z"
-                }
-              ]
-            }
-            """);
+                                                          {
+                                                            "SchemaVersion": "1",
+                                                            "Revision": 0,
+                                                            "Loops": [],
+                                                            "Holidays": [
+                                                              {
+                                                                "Id": "birthday-1",
+                                                                "EventId": "birthday-1",
+                                                                "Name": "Jake's Birthday",
+                                                                "Category": "birthday",
+                                                                "LoopId": "loop-123",
+                                                                "MemberId": "person-123",
+                                                                "IsEnabled": true,
+                                                                "Date": "2026-05-19",
+                                                                "Source": "manual",
+                                                                "CountryCode": "US",
+                                                                "Created": "2026-05-19T00:00:00Z"
+                                                              }
+                                                            ]
+                                                          }
+                                                          """);
 
             var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(persistencePath));
             var result = await service.DispatchAsync(new ProtocolEnvelope

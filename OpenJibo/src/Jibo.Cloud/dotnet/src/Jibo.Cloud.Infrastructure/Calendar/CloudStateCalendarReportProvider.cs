@@ -1,6 +1,5 @@
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
-using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Infrastructure.Calendar;
@@ -31,9 +30,9 @@ public sealed class CloudStateCalendarReportProvider(ICloudStateStore cloudState
 
         foreach (var entry in calendarEvents
                      .Select(calendarEvent => (
-                         Summary: calendarEvent.Summary,
+                         calendarEvent.Summary,
                          TimeLabel: calendarEvent.TimeLabel ?? "all day",
-                         Date: calendarEvent.Date))
+                         calendarEvent.Date))
                      .Concat(ToCalendarEntries(holidays)))
         {
             if (entry.Date == today)
@@ -65,11 +64,9 @@ public sealed class CloudStateCalendarReportProvider(ICloudStateStore cloudState
         IEnumerable<HolidayRecord> holidays)
     {
         foreach (var holiday in holidays)
-        {
             yield return (
                 holiday.Name,
                 "all day",
                 holiday.Date);
-        }
     }
 }

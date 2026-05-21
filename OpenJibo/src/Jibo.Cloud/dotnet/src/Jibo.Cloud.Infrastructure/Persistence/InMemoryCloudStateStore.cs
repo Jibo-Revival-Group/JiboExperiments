@@ -18,22 +18,23 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     };
 
     private readonly List<BackupRecord> _backups = [];
-    private readonly List<CommuteProfileRecord> _commuteProfiles = [];
     private readonly List<CalendarEventRecord> _calendarEvents = [];
+    private readonly List<CommuteProfileRecord> _commuteProfiles = [];
     private readonly ConcurrentDictionary<string, DeviceRegistration> _devices = new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly IHolidayCalendarProvider _holidayCalendarProvider;
+    private readonly List<HolidayRecord> _holidayOverrides = [];
 
     private readonly ConcurrentDictionary<string, KeyRequestRecord>
         _keyRequests = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly List<LoopRecord> _loops;
-    private readonly List<HolidayRecord> _holidayOverrides = [];
     private readonly List<MediaRecord> _media = [];
     private readonly List<PersonRecord> _people;
 
     private readonly ConcurrentDictionary<string, CloudSession>
         _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
 
-    private readonly IHolidayCalendarProvider _holidayCalendarProvider;
     private readonly ISnapshotStore _snapshotStore;
     private readonly ConcurrentDictionary<string, string> _symmetricKeys = new(StringComparer.OrdinalIgnoreCase);
     private readonly Lock _syncRoot = new();
@@ -515,7 +516,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         {
             Id = normalizedId,
             LoopId = resolvedLoopId,
-            Summary = string.IsNullOrWhiteSpace(calendarEvent.Summary) ? "Calendar event" : calendarEvent.Summary.Trim(),
+            Summary =
+                string.IsNullOrWhiteSpace(calendarEvent.Summary) ? "Calendar event" : calendarEvent.Summary.Trim(),
             TimeLabel = string.IsNullOrWhiteSpace(calendarEvent.TimeLabel) ? null : calendarEvent.TimeLabel.Trim(),
             Date = calendarEvent.Date,
             EndDate = calendarEvent.EndDate,
@@ -757,14 +759,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private void EnsureDefaultTopology()
     {
         if (_loops.Count == 0)
-        {
             _loops.Add(new LoopRecord
             {
                 OwnerAccountId = _account.AccountId,
                 RobotId = _robot.RobotId,
                 RobotFriendlyId = _robot.DeviceId
             });
-        }
 
         if (_people.Count != 0)
         {

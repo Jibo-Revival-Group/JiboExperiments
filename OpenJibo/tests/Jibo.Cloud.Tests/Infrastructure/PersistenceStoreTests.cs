@@ -156,12 +156,12 @@ public sealed class PersistenceStoreTests
         try
         {
             File.WriteAllText(persistencePath, """
-            {
-              "SchemaVersion": "1",
-              "Revision": 7,
-              "Loops": []
-            }
-            """);
+                                               {
+                                                 "SchemaVersion": "1",
+                                                 "Revision": 7,
+                                                 "Loops": []
+                                               }
+                                               """);
 
             var store = new InMemoryCloudStateStore(persistencePath);
 

@@ -28,10 +28,8 @@ public sealed class CloudStateCommuteReportProvider(ICloudStateStore cloudStateS
         commute ??= commuteProfiles.FirstOrDefault(profile => profile.IsEnabled);
 
         if (commute is null || !commute.IsComplete)
-        {
             return Task.FromResult<CommuteReportSnapshot?>(
                 new CommuteReportSnapshot(string.Empty, string.Empty, 0, RequiresSetup: true));
-        }
 
         var now = DateTimeOffset.Now;
         var workTarget = ResolveWorkTarget(now, commute);

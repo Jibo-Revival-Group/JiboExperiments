@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
@@ -9,6 +10,7 @@ public sealed class NagerDateHolidayCalendarProvider : IHolidayCalendarProvider
 {
     private static readonly HttpClient HttpClient = new();
     private static readonly ConcurrentDictionary<string, HolidayRecord[]> Cache = new(StringComparer.OrdinalIgnoreCase);
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNameCaseInsensitive = true
@@ -168,13 +170,13 @@ public sealed class NagerDateHolidayCalendarProvider : IHolidayCalendarProvider
         var l = (32 + 2 * e + 2 * i - h - k) % 7;
         var m = (a + 11 * h + 22 * l) / 451;
         var month = (h + l - 7 * m + 114) / 31;
-        var day = ((h + l - 7 * m + 114) % 31) + 1;
+        var day = (h + l - 7 * m + 114) % 31 + 1;
         return new DateOnly(year, month, day);
     }
 
     private static string Slugify(string value)
     {
-        var builder = new System.Text.StringBuilder(value.Length);
+        var builder = new StringBuilder(value.Length);
         var lastWasDash = false;
         foreach (var ch in value.ToLowerInvariant())
         {

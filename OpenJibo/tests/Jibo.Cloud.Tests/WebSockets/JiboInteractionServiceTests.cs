@@ -4289,5 +4289,4 @@ public sealed class JiboInteractionServiceTests
             return Task.FromResult(Snapshot);
         }
     }
-
 }

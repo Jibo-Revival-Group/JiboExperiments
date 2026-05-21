@@ -59,14 +59,21 @@ public sealed partial class JiboInteractionService
     {
         var displayName = ResolvePreferredGreetingName(turn, presence);
         var greetingPrefix = ResolveTimeOfDayGreetingPrefix(referenceLocalTime);
-        var replyText = string.IsNullOrWhiteSpace(displayName)
-            ? $"{greetingPrefix}. I am glad to see you."
-            : $"{greetingPrefix}, {displayName}. Welcome back.";
-        RecordGreetingPresence(turn, presence, "ProactiveGreeting", "proactive_greeting", displayName, proactive: true);
+        var specialGreeting = ResolveSpecialGreetingPrefix(turn, presence, referenceLocalTime);
+        var route = specialGreeting?.Route ?? "ProactiveGreeting";
+        var intentName = specialGreeting?.IntentName ?? "proactive_greeting";
+        var replyText = specialGreeting is null
+            ? string.IsNullOrWhiteSpace(displayName)
+                ? $"{greetingPrefix}. I am glad to see you."
+                : $"{greetingPrefix}, {displayName}. Welcome back."
+            : string.IsNullOrWhiteSpace(displayName)
+                ? $"{specialGreeting.Prefix}. I am glad to see you."
+                : $"{specialGreeting.Prefix}, {displayName}. It is nice to celebrate with you.";
+        RecordGreetingPresence(turn, presence, route, intentName, displayName, proactive: true);
         return new JiboInteractionDecision(
-            "proactive_greeting",
+            intentName,
             replyText,
-            ContextUpdates: BuildGreetingContextUpdates("ProactiveGreeting", presence.PrimaryPersonId, true));
+            ContextUpdates: BuildGreetingContextUpdates(route, presence.PrimaryPersonId, true));
     }
 
     private static string BuildReactiveGreetingReply(
@@ -208,6 +215,8 @@ public sealed partial class JiboInteractionService
         });
     }
 
+    private sealed record SpecialGreetingPrefix(string Route, string IntentName, string Prefix);
+
     private static string ResolveTimeOfDayGreetingPrefix(DateTimeOffset? referenceLocalTime)
     {
         var hour = (referenceLocalTime ?? DateTimeOffset.UtcNow).Hour;
@@ -217,6 +226,58 @@ public sealed partial class JiboInteractionService
             >= 12 and < 17 => "Good afternoon",
             _ => "Good evening"
         };
+    }
+
+    private SpecialGreetingPrefix? ResolveSpecialGreetingPrefix(
+        TurnContext turn,
+        GreetingPresenceProfile presence,
+        DateTimeOffset? referenceLocalTime)
+    {
+        var today = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
+        var birthday = ResolveBirthdayGreeting(turn, presence, today);
+        if (birthday is not null) return birthday;
+
+        return ResolveHolidayGreeting(turn, today);
+    }
+
+    private SpecialGreetingPrefix? ResolveBirthdayGreeting(
+        TurnContext turn,
+        GreetingPresenceProfile presence,
+        DateOnly today)
+    {
+        var identityScope = !string.IsNullOrWhiteSpace(presence.PrimaryPersonId)
+            ? ResolveTenantScope(turn, presence.PrimaryPersonId)
+            : ResolveTenantScope(turn);
+
+        var birthdayText = personalMemoryStore.GetBirthday(identityScope) ??
+                           personalMemoryStore.GetBirthday(ResolveTenantScope(turn));
+        if (string.IsNullOrWhiteSpace(birthdayText)) return null;
+
+        var birthdayDate = TryParseBirthdayDate(birthdayText);
+        if (birthdayDate is null) return null;
+
+        return birthdayDate.Value.Month == today.Month && birthdayDate.Value.Day == today.Day
+            ? new SpecialGreetingPrefix("ProactiveBirthdayGreeting", "proactive_birthday_greeting",
+                "Happy birthday")
+            : null;
+    }
+
+    private SpecialGreetingPrefix? ResolveHolidayGreeting(TurnContext turn, DateOnly today)
+    {
+        if (cloudStateStore is null) return null;
+
+        var loopId = ReadTenantAttribute(turn, "loopId") ?? "openjibo-default-loop";
+        var holiday = cloudStateStore.GetHolidays(loopId)
+            .FirstOrDefault(item =>
+                item.IsEnabled &&
+                item.Category != "birthday" &&
+                item.Date.Month == today.Month &&
+                item.Date.Day == today.Day);
+
+        return holiday is null
+            ? null
+            : new SpecialGreetingPrefix("ProactiveHolidayGreeting", "proactive_holiday_greeting",
+                "Happy holidays");
     }
 
     private JiboInteractionDecision BuildPizzaDecision()

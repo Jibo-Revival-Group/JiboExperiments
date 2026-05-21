@@ -349,6 +349,75 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_TriggerOnBirthday_BuildsBirthdayGreeting()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        memoryStore.SetName(new PersonalMemoryTenantScope("acct-bday", "loop-bday", "device-bday", "person-7"),
+            "jake");
+        memoryStore.SetBirthday(new PersonalMemoryTenantScope("acct-bday", "loop-bday", "device-bday", "person-7"),
+            "March 14");
+        var cloudStateStore = new InMemoryCloudStateStore();
+        var service = CreateService(memoryStore, cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-bday",
+                ["loopId"] = "loop-bday",
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-03-14T09:00:00-05:00"},"perception":{"speaker":"person-7","peoplePresent":[{"id":"person-7"}]},"loop":{"users":[{"id":"person-7","firstName":"jake"}]}}}"""
+            },
+            DeviceId = "device-bday"
+        });
+
+        Assert.Equal("proactive_birthday_greeting", decision.IntentName);
+        Assert.Contains("Happy birthday", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Jake", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ProactiveBirthdayGreeting", decision.ContextUpdates![GreetingRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_TriggerOnHoliday_BuildsHolidayGreeting()
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        cloudStateStore.UpsertHoliday(new HolidayRecord
+        {
+            LoopId = "loop-holiday",
+            Name = "Christmas",
+            Category = "holiday",
+            Date = new DateOnly(2026, 12, 25),
+            IsEnabled = true,
+            Source = "manual",
+            CountryCode = "US"
+        });
+        var service = CreateService(cloudStateStore: cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-holiday",
+                ["loopId"] = "loop-holiday",
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-12-25T09:00:00-05:00"},"perception":{"speaker":"person-8","peoplePresent":[{"id":"person-8"}]},"loop":{"users":[{"id":"person-8","firstName":"jake"}]}}}"""
+            }
+        });
+
+        Assert.Equal("proactive_holiday_greeting", decision.IntentName);
+        Assert.Contains("Happy holidays", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ProactiveHolidayGreeting", decision.ContextUpdates![GreetingRouteKey]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_TriggerWithKnownIdentity_SuppressesRepeatGreetingFromCloudHistory()
     {
         var cloudStateStore = new InMemoryCloudStateStore();

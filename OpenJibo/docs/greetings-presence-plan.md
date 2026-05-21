@@ -64,7 +64,9 @@ Current implementation progress:
 - runtime presence parsing now extracts speaker, people-present ids, and loop user first names
 - reactive and proactive greeting turns now write durable greeting-presence history into cloud state
 - proactive greeting gating now consults stored greeting history first, then falls back to the current turn metadata
-- the remaining work is to broaden the presence policy surface so it can grow from reactive/proactive greeting split into richer day-part, birthday, and holiday behavior without reworking the storage seam again
+- birthday-aware proactive greetings now use the loop/person birthday memory when the current date matches
+- holiday-aware proactive greetings now use the loop holiday calendar when the current date matches
+- the remaining work is to broaden the presence policy surface so it can grow from reactive/proactive greeting split into richer day-part and return-visit behavior without reworking the storage seam again
 
 ## Implementation Slices
 

@@ -362,7 +362,7 @@ First completed slice in this personal-report parity track:
 1. MIM import foundation for personality expansion
 2. Dialog parsing expansion
 3. Presence-aware greetings and identity-triggered proactivity
-   - in progress: durable greeting-presence history and per-person cooldown gating are now in place
+   - in progress: durable greeting-presence history, per-person cooldown gating, and birthday/holiday-aware special-day greetings are now in place
 4. Personal report parity slices
 5. Holidays and seasonal personality slice beyond pizza day
 6. Durable memory persistence path

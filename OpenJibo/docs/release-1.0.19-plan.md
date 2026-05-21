@@ -43,6 +43,7 @@ Current batch note:
 - `favorite color`, `favorite food`, and `favorite music` are the first small favorites-family slice
 - the latest pass adds longer authored variants for those favorites so the replies keep more of the original Pegasus cadence instead of collapsing to short placeholders
 - singing and musical personality now has a source-backed first slice with `can you sing`, `will you sing`, and holiday sing variants so the charm surface can keep growing without inventing a new dialog engine
+- the friendship batch now includes `do you have friends`, `are we friends`, and `are we best friends` responses, plus the loop-friendly friend replies, so the relationship lane can stay source-backed too
 - the next source-backed batch now includes `favorite flower`, `R2D2`, `sun`, `space`, `kids`, plus a couple of charm prompts like `can you laugh` and `can you dance`
 - the motion/sleep batch now adds `RI_JBO_CanSleep` and `RA_JBO_SpinAround` so the `go to sleep` and `turn around` surfaces stay source-backed too
 - the follow-up mood batch now includes `how are things`, `how is your day`, `are you sad`, and `are you angry`

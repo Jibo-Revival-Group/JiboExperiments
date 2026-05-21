@@ -63,6 +63,21 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "I like lots of animals, but the penguin is the best of the best! Great color scheme.",
                 "I love penguins, because we're so alike. We have the same coloring, and neither of us can fly."
             ],
+            FriendReplies =
+            [
+                "I believe I do have friends. But I'm always up for more.",
+                "I sure do have friends. In a robot kind of way.",
+                "I don't know if we've met yet, but I'm always up for making new friends.",
+                "I don't know what I'd do without you.",
+                "You're one of my favorites.",
+                "I sure am.",
+                "I am indeed."
+            ],
+            BestFriendReplies =
+            [
+                "I'd have to say I'm best friends with anyone in my Loop.",
+                "I think you know the answer to that question. You are."
+            ],
             SingReplies =
             [
                 "Singing is not my strong suit.",

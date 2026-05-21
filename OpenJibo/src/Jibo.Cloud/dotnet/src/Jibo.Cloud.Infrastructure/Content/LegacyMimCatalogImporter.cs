@@ -135,6 +135,16 @@ public static class LegacyMimCatalogImporter
             fileName.StartsWith("RI_JBO_LikesAnimals", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.FavoriteAnimal;
 
+        if (fileName.StartsWith("RI_JBO_HasFriends", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_IsFriendsWithUser", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_IsFriendsWithLM", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_IsFriendsWithNonLM", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_IsFriendsWithToaster", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.Friend;
+
+        if (fileName.StartsWith("RI_JBO_IsBestFriendsWithUser", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.BestFriend;
+
         if (fileName.StartsWith("RN_HappyHolidays", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.HolidayGreeting;
 
@@ -305,6 +315,8 @@ public static class LegacyMimCatalogImporter
             HumanFacts = Merge(baseCatalog.HumanFacts, importedCatalog.HumanFacts),
             FunFacts = Merge(baseCatalog.FunFacts, importedCatalog.FunFacts),
             FavoriteAnimalReplies = Merge(baseCatalog.FavoriteAnimalReplies, importedCatalog.FavoriteAnimalReplies),
+            FriendReplies = Merge(baseCatalog.FriendReplies, importedCatalog.FriendReplies),
+            BestFriendReplies = Merge(baseCatalog.BestFriendReplies, importedCatalog.BestFriendReplies),
             SingReplies = Merge(baseCatalog.SingReplies, importedCatalog.SingReplies),
             HolidaySingReplies = Merge(baseCatalog.HolidaySingReplies, importedCatalog.HolidaySingReplies),
             DanceAnimations = Merge(baseCatalog.DanceAnimations, importedCatalog.DanceAnimations),
@@ -507,6 +519,8 @@ public static class LegacyMimCatalogImporter
         Emotion,
         FunFacts,
         FavoriteAnimal,
+        Friend,
+        BestFriend,
         Sing,
         HolidaySing,
         FunFactSource,
@@ -568,6 +582,8 @@ public static class LegacyMimCatalogImporter
         private readonly List<JiboConditionedReply> _emotionReplies = [];
         private readonly List<string> _fallbacks = [];
         private readonly List<string> _favoriteAnimalReplies = [];
+        private readonly List<string> _friendReplies = [];
+        private readonly List<string> _bestFriendReplies = [];
         private readonly List<string> _funFacts = [];
         private readonly List<string> _greetings = [];
         private readonly List<string> _holidayGiftReplies = [];
@@ -690,6 +706,12 @@ public static class LegacyMimCatalogImporter
                 case LegacyMimBucket.FavoriteAnimal:
                     AddDistinct(_favoriteAnimalReplies, text);
                     return;
+                case LegacyMimBucket.Friend:
+                    AddDistinct(_friendReplies, text);
+                    return;
+                case LegacyMimBucket.BestFriend:
+                    AddDistinct(_bestFriendReplies, text);
+                    return;
                 case LegacyMimBucket.PersonalReportKickOff:
                     AddDistinct(_personalReportKickOffReplies, text);
                     return;
@@ -794,6 +816,8 @@ public static class LegacyMimCatalogImporter
                 HumanFacts = [.. _humanFacts],
                 FunFacts = [.. _funFacts],
                 FavoriteAnimalReplies = [.. _favoriteAnimalReplies],
+                FriendReplies = [.. _friendReplies],
+                BestFriendReplies = [.. _bestFriendReplies],
                 SingReplies = [.. _singReplies],
                 HolidaySingReplies = [.. _holidaySingReplies],
                 GreetingReplies = [.. _greetings],

@@ -187,6 +187,33 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsBuildBFriendshipResponsesIntoFriendBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.FriendReplies, reply =>
+            reply.Contains("always up for more", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.FriendReplies, reply =>
+            reply.Contains("robot kind of way", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.FriendReplies, reply =>
+            reply.Contains("making new friends", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.FriendReplies, reply =>
+            reply.Contains("don't know if we've met yet", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.FriendReplies, reply =>
+            reply.Contains("don't know what I'd do without you", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("I'd have to say I'm best friends with anyone in my Loop.",
+            catalog.BestFriendReplies);
+        Assert.Contains(catalog.BestFriendReplies, reply =>
+            reply.Contains("You are", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBEmotionResponsesIntoEmotionBucket()
     {
         var rootDirectory = Path.Combine(

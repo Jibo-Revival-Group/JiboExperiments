@@ -752,6 +752,22 @@ public sealed partial class JiboInteractionService(
                 "dancing is one of the things i know best",
                 "if there's one thing i know how to do. it's dance",
                 "i can dance"),
+            "robot_has_friends" => BuildScriptedFriendDecision(
+                catalog,
+                "robot_has_friends",
+                "I believe I do have friends",
+                "I sure do have friends",
+                "I'm always up for making new friends"),
+            "robot_is_friends_with_user" => BuildScriptedFriendDecision(
+                catalog,
+                "robot_is_friends_with_user",
+                "don't know what i'd do without you",
+                "one of my favorites",
+                "making new friends"),
+            "robot_best_friends" => BuildScriptedBestFriendDecision(
+                catalog,
+                "robot_best_friends",
+                "best friends with anyone in my Loop"),
             "robot_can_sing" => BuildScriptedSingDecision(
                 catalog,
                 "robot_can_sing",

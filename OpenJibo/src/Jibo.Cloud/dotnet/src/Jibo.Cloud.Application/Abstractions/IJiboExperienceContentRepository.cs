@@ -18,6 +18,8 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> HumanFacts { get; init; } = [];
     public IReadOnlyList<string> FunFacts { get; init; } = [];
     public IReadOnlyList<string> FavoriteAnimalReplies { get; init; } = [];
+    public IReadOnlyList<string> FriendReplies { get; init; } = [];
+    public IReadOnlyList<string> BestFriendReplies { get; init; } = [];
     public IReadOnlyList<string> SingReplies { get; init; } = [];
     public IReadOnlyList<string> HolidaySingReplies { get; init; } = [];
     public IReadOnlyList<string> DanceAnimations { get; init; } = [];

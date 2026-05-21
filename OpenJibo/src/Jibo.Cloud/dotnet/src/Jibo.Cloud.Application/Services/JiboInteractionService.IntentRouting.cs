@@ -319,6 +319,15 @@ public sealed partial class JiboInteractionService
                 "would you sing"))
             return "robot_can_sing";
 
+        if (IsBestFriendQuestion(loweredTranscript))
+            return "robot_best_friends";
+
+        if (IsFriendRelationQuestion(loweredTranscript))
+            return "robot_is_friends_with_user";
+
+        if (IsFriendQuestion(loweredTranscript))
+            return "robot_has_friends";
+
         if (MatchesAny(loweredTranscript, "twerk")) return "twerk";
 
         if (MatchesAny(loweredTranscript, "dance", "boogie")) return "dance";
@@ -838,6 +847,50 @@ public sealed partial class JiboInteractionService
         if (IsDateRequest(loweredTranscript)) return "date";
 
         return "chat";
+    }
+
+    private static bool IsFriendQuestion(string loweredTranscript)
+    {
+        return MatchesAny(
+            loweredTranscript,
+            "do you have friends",
+            "who are your friends",
+            "are you friends",
+            "are you and i friends",
+            "are you and me friends",
+            "are you and jibo friends");
+    }
+
+    private static bool IsFriendRelationQuestion(string loweredTranscript)
+    {
+        return MatchesAny(
+            loweredTranscript,
+            "are you my friend",
+            "are you friends with me",
+            "are we friends",
+            "are we friends with each other",
+            "is jibo your friend",
+            "i am friends with you",
+            "i'm friends with you",
+            "you are my friend",
+            "you re my friend",
+            "you're my friend");
+    }
+
+    private static bool IsBestFriendQuestion(string loweredTranscript)
+    {
+        return MatchesAny(
+            loweredTranscript,
+            "are we best friends",
+            "are we best friends with each other",
+            "are you my best friend",
+            "are you best friends with me",
+            "are you and i best friends",
+            "i am best friends with you",
+            "i'm best friends with you",
+            "you are my best friend",
+            "you re my best friend",
+            "you're my best friend");
     }
 
 }

@@ -9,12 +9,53 @@ using Jibo.Cloud.Infrastructure.DependencyInjection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenJiboCloud(builder.Configuration);
+builder.Services.AddControllers();
+
+// Add CORS for multi-server controller support (for future api support so we can hook up azure / aws / firebase / pocketbase) <=====================================================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("WebPanelPolicy", policy =>
+    {
+        var allowedOrigins = builder.Configuration["OpenJibo:WebPanel:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            // Default: allow localhost for development
+            policy.WithOrigins("http://localhost:3380", "http://localhost:3000", "http://localhost:8080")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+    });
+});
 
 var app = builder.Build();
 
 app.Logger.LogInformation("Starting Open Jibo Cloud Api version {Version}", OpenJiboCloudBuildInfo.Version);
 
 app.UseWebSockets();
+app.UseCors("WebPanelPolicy");
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.MapControllers();
+
+// Serve web panel index.html for root requests on port 3380 <=====================================================================
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/" && (context.Request.Host.Port == 3380 || 
+        (context.Request.Host.Value != null && context.Request.Host.Value.Contains("3380"))))
+    {
+        context.Response.ContentType = "text/html";
+        await context.Response.SendFileAsync(Path.Combine(app.Environment.WebRootPath, "index.html"));
+        return;
+    }
+    await next();
+});
 
 app.Use(async (context, next) =>
 {
@@ -24,7 +65,7 @@ app.Use(async (context, next) =>
         return;
     }
 
-    var kind = ResolveSocketKind(context.Request.Host.Host, context.Request.Path);
+    var kind = ResolveSocketKind(context.Request.Host.Host, context.Request.Path, context.Request.Host.Port, builder.Configuration);
     var token = ResolveToken(context.Request);
     switch (kind)
     {
@@ -127,6 +168,32 @@ app.MapGet("/health", () => Results.Json(new
 app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,
     IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>
 {
+    // For web panel port, **try** to serve static files <=====================================================================
+    if (context.Request.Host.Port == 3380 || 
+        (context.Request.Host.Value != null && context.Request.Host.Value.Contains("3380")))
+    {
+        var path = context.Request.Path.Value ?? "";
+        var filePath = Path.Combine(app.Environment.WebRootPath, path.TrimStart('/'));
+        
+        if (File.Exists(filePath))
+        {
+            var contentType = Path.GetExtension(filePath) switch
+            {
+                ".css" => "text/css",
+                ".js" => "application/javascript",
+                ".html" => "text/html",
+                _ => "application/octet-stream"
+            };
+            
+            context.Response.ContentType = contentType;
+            await context.Response.SendFileAsync(filePath);
+            return;
+        }
+        
+        context.Response.StatusCode = 404;
+        return;
+    }
+
     var envelope = await BuildEnvelopeAsync(context, cancellationToken);
     var result = await service.DispatchAsync(envelope, cancellationToken);
     await telemetrySink.RecordAsync(envelope, result, cancellationToken);
@@ -187,8 +254,21 @@ static async Task<ProtocolEnvelope> BuildEnvelopeAsync(HttpContext context, Canc
     };
 }
 
-static string ResolveSocketKind(string host, PathString path)
+static string ResolveSocketKind(string host, PathString path, int? port, IConfiguration configuration)
 {
+    var multiPortEnabled = configuration.GetValue<bool>("OpenJibo:MultiPortMode:Enabled");
+    
+    if (multiPortEnabled && port.HasValue)
+    {
+        var apiSocketPort = configuration.GetValue<int>("OpenJibo:MultiPortMode:Ports:ApiSocket");
+        var neoHubListenPort = configuration.GetValue<int>("OpenJibo:MultiPortMode:Ports:NeoHubListen");
+        var neoHubProactivePort = configuration.GetValue<int>("OpenJibo:MultiPortMode:Ports:NeoHubProactive");
+        
+        if (port == apiSocketPort) return "api-socket";
+        if (port == neoHubProactivePort) return "neo-hub-proactive";
+        if (port == neoHubListenPort) return "neo-hub-listen";
+    }
+    
     if (host.Equals("api-socket.jibo.com", StringComparison.OrdinalIgnoreCase)) return "api-socket";
 
     if (host.Equals("neo-hub.jibo.com", StringComparison.OrdinalIgnoreCase) &&

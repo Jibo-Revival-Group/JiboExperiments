@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenJibo Cloud Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/css/panel.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "@material/web/": "https://esm.run/@material/web/"
+      }
+    }
+    </script>
+    <script type="module">
+    import '@material/web/all.js';
+    import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
+
+    document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">OpenJibo Panel</div>
+            <div class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+                <span class="material-icons nav-icon">dashboard</span>
+                <span class="nav-text">Dashboard</span>
+            </div>
+            <div class="nav-item" data-tab="robots" onclick="switchTab('robots')">
+                <span class="material-icons nav-icon">smart_toy</span>
+                <span class="nav-text">Robots</span>
+            </div>
+            <div class="nav-item" data-tab="sessions" onclick="switchTab('sessions')">
+                <span class="material-icons nav-icon">people</span>
+                <span class="nav-text">Sessions</span>
+            </div>
+            <div class="nav-item" data-tab="health" onclick="switchTab('health')">
+                <span class="material-icons nav-icon">favorite</span>
+                <span class="nav-text">Health</span>
+            </div>
+            <div class="nav-item" data-tab="config" onclick="switchTab('config')">
+                <span class="material-icons nav-icon">settings</span>
+                <span class="nav-text">Config</span>
+            </div>
+            <div class="nav-item" data-tab="terminal" onclick="switchTab('terminal')">
+                <span class="material-icons nav-icon">terminal</span>
+                <span class="nav-text">Terminal</span>
+            </div>
+        </nav>
+
+        <div class="main-wrapper">
+            <header class="header">
+                <h1 class="title">OpenJibo Cloud Panel Test Thingy</h1>
+                <div class="status-indicator">
+                    <span class="status-dot" id="connectionStatus"></span>
+                    <span class="status-text" id="connectionText">Connecting...</span>
+                </div>
+            </header>
+
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="main-content active">
+                <md-elevated-card>
+                    <div class="card-content">
+                        <h2 class="md-typescale-headline-small">Server Status</h2>
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <span class="status-label">Version</span>
+                                <span class="status-value" id="serverVersion">-</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Uptime</span>
+                                <span class="status-value" id="serverUptime">-</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Started</span>
+                                <span class="status-value" id="serverStartTime">-</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Last Saved</span>
+                                <span class="status-value" id="lastSaved">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </md-elevated-card>
+
+                <md-elevated-card>
+                    <div class="card-content">
+                        <h2 class="md-typescale-headline-small">Server Quick Controls</h2>
+                        <div class="controls-grid">
+                            <md-filled-button onclick="saveState()">Save State</md-filled-button>
+                            <md-filled-button class="warning" onclick="reloadState()">Reload State</md-filled-button>
+                        </div>
+                    </div>
+                </md-elevated-card>
+            </div>
+
+            <!-- Robots Tab -->
+            <div id="tab-robots" class="main-content">
+                <md-elevated-card>
+                    <div class="card-content">
+                        <h2 class="md-typescale-headline-small">Will Have Connected Robots</h2>
+                        <div id="robotsList">
+                            <div class="robot-item">
+                                <div class="robot-info">
+                                    <span class="robot-name" id="robotName">-</span>
+                                    <span class="robot-id" id="robotId">-</span>
+                                </div>
+                                <div class="robot-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Device ID:</span>
+                                        <span class="detail-value" id="deviceId">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Firmware:</span>
+                                        <span class="detail-value" id="firmwareVersion">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">App Version:</span>
+                                        <span class="detail-value" id="appVersion">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Platform:</span>
+                                        <span class="detail-value" id="platform">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </md-elevated-card>
+            </div>
+
+            <!-- Sessions Tab -->
+            <div id="tab-sessions" class="main-content">
+                <md-elevated-card>
+                    <div class="card-content">
+                        <h2 class="md-typescale-headline-small">Active Sessions</h2>
+                        <div class="session-count">
+                            <span class="count-label">Active Sessions:</span>
+                            <span class="count-value" id="sessionCount">0</span>
+                        </div>
+                        <div id="sessionsList" class="sessions-list">
+                            <p class="empty-state">No active sessions</p>
+                        </div>
+                    </div>
+                </md-elevated-card>
+            </div>
+
+            <!-- Health Tab -->
+            <div id="tab-health" class="main-content">
+                <md-elevated-card>
+                    <div class="card-content">
+                        <h2 class="md-typescale-headline-small">Health Check</h2>
+                        <div class="health-status">
+                            <span class="health-label">Overall Status:</span>
+                            <span class="health-value" id="healthStatus">-</span>
+                        </div>
+                        <div class="health-checks">
+                            <div class="health-check">
+                                <span class="check-label">Persistence:</span>
+                                <span class="check-value" id="persistenceStatus">-</span>
+                            </div>
+                            <div class="health-check">
+                                <span class="check-label">State Store:</span>
+                                <span class="check-value" id="stateStoreStatus">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </md-elevated-card>
+            </div>
+
+            <!-- Config Tab -->
+            <div id="tab-config" class="main-content">
+                <md-elevated-card>
+                    <div class="card-content">
+                        <h2 class="md-typescale-headline-small">Will be Configurator</h2>
+                        <div class="config-grid">
+                            <div class="config-item">
+                                <span class="config-label">Web Panel Enabled</span>
+                                <span class="config-value" id="webPanelEnabled">-</span>
+                            </div>
+                            <div class="config-item">
+                                <span class="config-label">Refresh Interval</span>
+                                <span class="config-value" id="refreshInterval">-</span>
+                            </div>
+                            <div class="config-item">
+                                <span class="config-label">Remote Access</span>
+                                <span class="config-value" id="remoteAccess">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </md-elevated-card>
+            </div>
+
+            <!-- Terminal Tab -->
+            <div id="tab-terminal" class="main-content">
+                <div class="terminal-container">
+                    <div class="terminal-header">
+                        <span class="terminal-title">Server Logs</span>
+                        <div class="terminal-controls">
+                            <md-outlined-button onclick="clearTerminal()">Clear</md-outlined-button>
+                            <md-outlined-button onclick="toggleAutoScroll()">Auto Scroll</md-outlined-button>
+                        </div>
+                    </div>
+                    <div class="terminal-output" id="terminalOutput">
+                        <div class="log-entry">Waiting for server logs...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/panel.js"></script>
+</body>
+</html>

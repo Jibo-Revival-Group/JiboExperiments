@@ -1,0 +1,399 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #363636;
+    color: #ffffff;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Custom Sidebar with Material Design styling */
+.sidebar {
+    width: 280px;
+    height: 100%;
+    background: #212121;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 16px;
+    font-size: 20px;
+    font-weight: 500;
+    color: #fbfbfb;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    color: #dfdfdf;
+    font-size: 20px;
+    margin: 4px 8px;
+
+}
+
+.nav-item:hover {
+    background-color: rgba(98, 0, 238, 0.08);
+}
+
+.nav-item.active {
+    background-color: rgba(98, 0, 238, 0.12);
+    color: #df62ff;
+}
+
+.nav-icon {
+    font-size: 40px;
+}
+
+.nav-text {
+    flex: 1;
+}
+
+.header {
+    background: #6200ee;
+    color: #ffffff;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+/* Main Content Area */
+.main-wrapper {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.main-content {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: none;
+}
+
+.main-content.active {
+    display: block;
+}
+
+/* Material Web Card */
+md-elevated-card {
+    margin-bottom: 16px;
+    max-width: 100%;
+}
+
+.card-content {
+    padding: 16px;
+}
+
+.status-grid,
+.config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.status-item,
+.config-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.status-label,
+.config-label,
+.detail-label,
+.check-label,
+.health-label,
+.count-label {
+    font-size: 12px;
+    color: #666666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.status-value,
+.config-value,
+.detail-value,
+.check-value,
+.health-value,
+.count-value {
+    font-size: 14px;
+    color: #111111;
+    font-weight: 500;
+}
+
+.robot-item {
+    background: #1e1e1e;
+    border-radius: 4px;
+    padding: 16px;
+}
+
+.robot-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.robot-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.robot-id {
+    font-size: 12px;
+    color: #666666;
+    font-family: monospace;
+}
+
+.robot-details {
+    display: grid;
+    gap: 8px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.session-count {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.count-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #6200ee;
+}
+
+.sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.empty-state {
+    text-align: center;
+    color: #666666;
+    font-style: italic;
+    padding: 20px;
+}
+
+.health-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #111111;
+    border-radius: 4px;
+}
+
+.health-value {
+    font-size: 18px;
+    font-weight: 500;
+    color: #4caf50;
+}
+
+.health-value.warning {
+    color: #ff9800;
+}
+
+.health-value.error {
+    color: #f44336;
+}
+
+.health-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.health-check {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.check-value {
+    color: #4caf50;
+}
+
+.check-value.warning {
+    color: #ff9800;
+}
+
+.check-value.error {
+    color: #f44336;
+}
+
+/* Status indicator */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #9e9e9e;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+    background: #4caf50;
+}
+
+.status-dot.disconnected {
+    background: #f44336;
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-text {
+    font-size: 14px;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+/* Material Web Button warning variant */
+md-filled-button.warning {
+    --md-filled-button-container-color: #f44336;
+    --md-filled-button-label-text-color: #ffffff;
+}
+
+.controls-grid {
+    display: flex;
+    gap: 8px;
+}
+
+/* Terminal Styles */
+.terminal-container {
+    background: #1e1e1e;
+    border-radius: 4px;
+    padding: 16px;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #333;
+}
+
+.terminal-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #d4d4d4;
+}
+
+.terminal-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.terminal-output {
+    flex: 1;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #d4d4d4;
+    padding: 8px;
+    background: #0d0d0d;
+    border-radius: 4px;
+}
+
+.log-entry {
+    margin-bottom: 4px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.log-entry.info {
+    color: #5bc0de;
+}
+
+.log-entry.warning {
+    color: #f0ad4e;
+}
+
+.log-entry.error {
+    color: #d9534f;
+}
+
+.log-entry.debug {
+    color: #777;
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    
+    md-navigation-drawer {
+        width: 100%;
+        height: auto;
+    }
+    
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .status-grid,
+    .config-grid {
+        grid-template-columns: 1fr;
+    }
+}

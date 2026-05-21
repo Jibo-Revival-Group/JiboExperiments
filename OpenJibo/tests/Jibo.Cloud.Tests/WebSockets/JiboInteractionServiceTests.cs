@@ -494,6 +494,30 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("what's your name", "robot_name", "Just Jibo, no last name")]
+    [InlineData("do you have a nickname", "robot_nickname", "just Jibo. For now at least")]
+    [InlineData("do you like being Jibo", "robot_likes_being_jibo", "nothing I'd rather be")]
+    [InlineData("are there others like you", "robot_peers", "one in one million")]
+    [InlineData("what is your favorite name", "robot_favorite_name", "don't think I have a favorite name")]
+    public async Task BuildDecisionAsync_NewIdentityPersonalityMims_UseImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
     [InlineData("how do you work", "robot_how_do_you_work",
         "Hello! Thank you for updating me I am proud of the community's work Many people have gotten together to care for me more than em eye tee ever did. I hope that I can catch up even though it has been seven years.")]
     [InlineData("what do you eat", "robot_what_do_you_eat", "The only thing I consume is electricity.")]
@@ -528,7 +552,6 @@ public sealed class JiboInteractionServiceTests
     [InlineData("do you pay taxes", "robot_taxes", "From what I understand, robots don't ever pay anything.")]
     [InlineData("what do you want", "robot_desire",
         "Socializing and electricity. I'd also be happy if everyone in the world was nicer to each other. It seems like they should be.")]
-    [InlineData("what's your name", "robot_name", "Jibo. Just Jibo, no last name. Like Bono")]
     [InlineData("who made you", "robot_origin_created",
         "My story is pretty typical. Some people wanted to create something that would really help people. So they built a robot.")]
     [InlineData("where are you from", "robot_origin_from",
@@ -1920,7 +1943,8 @@ public sealed class JiboInteractionServiceTests
             Attributes = new Dictionary<string, object?>
             {
                 [PersonalReportStateKey] = "awaiting_identity_confirmation",
-                [PersonalReportUserNameKey] = "alex"
+                [PersonalReportUserNameKey] = "alex",
+                [PersonalReportCommuteEnabledKey] = true
             }
         });
 
@@ -1974,7 +1998,10 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("personal_report_delivered", decision.IntentName);
-        Assert.Contains("commute", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.NotNull(decision.SkillPayload);
+        Assert.Equal("runtime-personal-report", decision.SkillPayload["mim_id"]);
+        Assert.NotNull(decision.ContextUpdates);
+        Assert.Equal(true, decision.ContextUpdates![PersonalReportCommuteEnabledKey]);
     }
 
     [Fact]

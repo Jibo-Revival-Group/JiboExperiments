@@ -837,6 +837,7 @@ Current release theme:
   - identity and origin questions
   - personality and capability questions
   - favorite-style prompts like `what is your favorite color`
+  - identity charm prompts like `what's your name`, `do you have a nickname`, `do you like being Jibo`, `are there others like you`, and `what is your favorite name`
   - attraction and preference prompts like `what is your favorite flower`, `do you like R2D2`, `do you like the sun`, `do you like space`, and `do you like kids`
   - longer authored variants for the same prompt family when Pegasus shows richer phrasing
   - charm/capability prompts like `can you laugh` and `can you dance`
@@ -870,7 +871,7 @@ Current release theme:
 - Next queued persona surfaces:
   - richer identity follow-ups like `who is this`, `do you know me`, `do you remember me`, and `can you recognize me`
   - mood and affect prompts like `how are you`, `are you happy`, `are you sad`, and `are you angry`
-  - self-description charm like `what's your name`, `do you have a nickname`, and `do you like being Jibo`
+  - self-description charm like `what's your name`, `do you have a nickname`, `do you like being Jibo`, and `what is your favorite name`
   - additional legacy source-backed `RI_USR` prompts where the text is short and the behavior is easy to verify
 - Exit criteria:
   - a stable checklist exists for the original persona surface

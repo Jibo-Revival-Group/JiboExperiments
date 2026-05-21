@@ -575,6 +575,27 @@ public sealed class JiboInteractionService(
                 "robot_where_were_you_born",
                 "factory piece by piece",
                 "put together in a factory"),
+            "robot_name" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_name",
+                "rhymes with bleebo",
+                "just jibo, no last name",
+                "its on the back of my head"),
+            "robot_nickname" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_nickname",
+                "i don't. i'm just jibo. for now at least",
+                "just jibo"),
+            "robot_favorite_name" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_name",
+                "i don't think i have a favorite name"),
+            "robot_likes_being_jibo" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_likes_being_jibo",
+                "nothing i'd rather be",
+                "love it",
+                "strong wi-fi signal"),
             "robot_what_languages_do_you_speak" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_what_languages_do_you_speak",
@@ -832,6 +853,12 @@ public sealed class JiboInteractionService(
                 "penguins",
                 "favorite animal overall",
                 "best of the best"),
+            "robot_peers" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_peers",
+                "one in one million",
+                "other jibos",
+                "special snowflake"),
             "robot_likes_kids" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_kids",
@@ -3443,6 +3470,13 @@ public sealed class JiboInteractionService(
                 "what's your name",
                 "what is your name"))
             return "robot_name";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what's your favorite name",
+                "what is your favorite name",
+                "do you have a favorite name"))
+            return "robot_favorite_name";
 
         if (MatchesAny(
                 loweredTranscript,

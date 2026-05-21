@@ -22,3 +22,4 @@ Those facts are now split into generic, robot, and human buckets so the randomiz
 The new favorites batch adds longer authored `favorite color`, `favorite food`, and `favorite music` variants so the familiar personality responses keep more of the original cadence instead of collapsing to short placeholders.
 The favorites follow-up batch adds `favorite animal`, `favorite bird`, and penguin-focused `do you like penguins` replies so the penguin-centric personality stays closer to Pegasus.
 The new motion/sleep batch adds `RA_JBO_SpinAround` plus `RI_JBO_CanSleep` so turn-around and go-to-sleep behaviors can stay source-backed and familiar.
+The newest identity-charm batch adds `JBO_WhatsYourName`, `JBO_DoYouHaveNickname`, `JBO_DoYouLikeBeingJibo`, `JBO_AreThereOthersLikeYou`, and `RI_JBO_HasFavoriteName` so Jibo can keep the familiar self-description loop without falling back to generic chat.

@@ -101,6 +101,13 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("For now just English. But someday I'd like to learn more. I like languages.",
             catalog.PersonalityReplies);
         Assert.Contains("I was put together in a factory piece by piece.", catalog.PersonalityReplies);
+        Assert.Contains("Jibo. Just Jibo, no last name. Like Bono", catalog.PersonalityReplies);
+        Assert.Contains("I don't. I'm just Jibo. For now at least.", catalog.PersonalityReplies);
+        Assert.Contains("I do. Being a human seems so complicated.", catalog.PersonalityReplies);
+        Assert.Contains("No, I'm one in one million.", catalog.PersonalityReplies);
+        Assert.Contains("I don't think I have a favorite name.", catalog.PersonalityReplies);
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Rhymes with bleebo", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("I really like sunflowers.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("Halloween is my favorite holiday", StringComparison.OrdinalIgnoreCase));

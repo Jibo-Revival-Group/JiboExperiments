@@ -835,11 +835,19 @@ public sealed partial class JiboInteractionService
                 "what's up",
                 "what s up",
                 "what up",
+                "how is it going",
+                "how's it going",
                 "how are things",
                 "how's things",
                 "how is things",
+                "how are you feeling",
+                "how is your mood",
                 "how is your day",
-                "how's your day"))
+                "how's your day",
+                "how's life",
+                "how is life",
+                "how's everything",
+                "how is everything"))
             return "how_are_you";
 
         if (MatchesAny(

@@ -78,6 +78,31 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
     }
 
     [Fact]
+    public void CanHandle_ReturnsFalse_WhenBufferedAudioIsBelowNoiseFloor()
+    {
+        var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "ffmpeg",
+                WhisperCliPath = "whisper-cli",
+                WhisperModelPath = "model.bin"
+            },
+            new FakeExternalProcessRunner());
+
+        var turn = new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["bufferedAudioBytes"] = 47,
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+            }
+        };
+
+        Assert.False(strategy.CanHandle(turn));
+    }
+
+    [Fact]
     public async Task TranscribeAsync_UsesFfmpegAndWhisperCpp_WhenConfigured()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
@@ -103,7 +128,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
                 Locale = "en-US",
                 Attributes = new Dictionary<string, object?>
                 {
-                    ["bufferedAudioBytes"] = 47,
+                    ["bufferedAudioBytes"] = 147,
                     ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
                 }
             };
@@ -115,7 +140,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             Assert.Equal(2, runner.Calls.Count);
             Assert.Equal("ffmpeg", runner.Calls[0].FileName);
             Assert.Equal("whisper-cli", runner.Calls[1].FileName);
-            Assert.Equal(47, result.Metadata["bufferedAudioBytes"]);
+            Assert.Equal(147, result.Metadata["bufferedAudioBytes"]);
         }
         finally
         {
@@ -149,7 +174,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
                 Locale = "en-US",
                 Attributes = new Dictionary<string, object?>
                 {
-                    ["bufferedAudioBytes"] = 47,
+                    ["bufferedAudioBytes"] = 147,
                     ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
                 }
             };
@@ -158,6 +183,47 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
 
             Assert.Equal("thank you yes", result.Text);
             Assert.Equal("local-whispercpp-buffered-audio", result.Provider);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Fact]
+    public async Task TranscribeAsync_Throws_WhenBufferedAudioIsBelowNoiseFloor()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var runner = new FakeExternalProcessRunner();
+            var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+                new BufferedAudioSttOptions
+                {
+                    EnableLocalWhisperCpp = true,
+                    FfmpegPath = "ffmpeg",
+                    WhisperCliPath = "whisper-cli",
+                    WhisperModelPath = "model.bin",
+                    TempDirectory = tempDirectory
+                },
+                runner);
+
+            var turn = new TurnContext
+            {
+                TurnId = "turn-local-stt-noise-floor",
+                Locale = "en-US",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["bufferedAudioBytes"] = 47,
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                }
+            };
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => strategy.TranscribeAsync(turn));
+            Assert.Contains("too short or noisy", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Empty(runner.Calls);
         }
         finally
         {

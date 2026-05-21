@@ -2770,6 +2770,8 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("Temperatures are in Fahrenheit.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.SkillPayload);
         Assert.True(decision.SkillPayload!.TryGetValue("weather_weekly_cards", out var weeklyCardsValue));
+        Assert.Equal("weatherWeekly", decision.SkillPayload["weather_view_kind"]);
+        Assert.Equal("forecast", decision.SkillPayload["weather_view_mode"]);
         var weeklyCards = Assert.IsAssignableFrom<IReadOnlyList<IDictionary<string, object?>>>(weeklyCardsValue);
         Assert.Equal(5, weeklyCards.Count);
         var firstCard = weeklyCards[0];

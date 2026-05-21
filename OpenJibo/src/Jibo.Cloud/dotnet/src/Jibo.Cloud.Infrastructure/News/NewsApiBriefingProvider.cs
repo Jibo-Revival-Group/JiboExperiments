@@ -131,9 +131,9 @@ public sealed class NewsApiBriefingProvider(
                 foreach (var article in articles.EnumerateArray())
                 {
                     var title = NormalizeHeadlineTitle(ReadString(article, "title"));
-                    if (string.IsNullOrWhiteSpace(title) || !seenTitles.Add(title)) continue;
-
                     var summary = ReadString(article, "description");
+                    if (title is null || !IsUsableHeadline(title, summary) || !seenTitles.Add(title)) continue;
+
                     var source = article.TryGetProperty("source", out var sourceNode) &&
                                  sourceNode.ValueKind == JsonValueKind.Object
                         ? ReadString(sourceNode, "name")
@@ -176,9 +176,9 @@ public sealed class NewsApiBriefingProvider(
                         foreach (var article in broadArticles.EnumerateArray())
                         {
                             var title = NormalizeHeadlineTitle(ReadString(article, "title"));
-                            if (string.IsNullOrWhiteSpace(title) || !seenTitles.Add(title)) continue;
-
                             var summary = ReadString(article, "description");
+                            if (title is null || !IsUsableHeadline(title, summary) || !seenTitles.Add(title)) continue;
+
                             var source = article.TryGetProperty("source", out var sourceNode) &&
                                          sourceNode.ValueKind == JsonValueKind.Object
                                 ? ReadString(sourceNode, "name")
@@ -239,9 +239,9 @@ public sealed class NewsApiBriefingProvider(
                         foreach (var article in everythingArticles.EnumerateArray())
                         {
                             var title = NormalizeHeadlineTitle(ReadString(article, "title"));
-                            if (string.IsNullOrWhiteSpace(title) || !seenTitles.Add(title)) continue;
-
                             var summary = ReadString(article, "description");
+                            if (title is null || !IsUsableHeadline(title, summary) || !seenTitles.Add(title)) continue;
+
                             var source = article.TryGetProperty("source", out var sourceNode) &&
                                          sourceNode.ValueKind == JsonValueKind.Object
                                 ? ReadString(sourceNode, "name")
@@ -451,6 +451,16 @@ public sealed class NewsApiBriefingProvider(
         if (suffixIndex > 30) trimmed = trimmed[..suffixIndex].TrimEnd();
 
         return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+    }
+
+    private static bool IsUsableHeadline(string? title, string? summary)
+    {
+        if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(summary)) return false;
+
+        var loweredTitle = title.Trim().ToLowerInvariant();
+        return !loweredTitle.StartsWith("correction:", StringComparison.Ordinal) &&
+               !loweredTitle.StartsWith("corrected:", StringComparison.Ordinal) &&
+               !loweredTitle.Contains(" correction", StringComparison.Ordinal);
     }
 
     private static ApiError? TryParseApiError(string? responseBody)

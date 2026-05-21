@@ -351,6 +351,8 @@ First completed slice in this personal-report parity track:
 - added provider-side request caching for both news and weather to reduce integration churn and repeated lookups
 - added focused interaction + websocket tests for provider-backed news speech output and request-hint plumbing
 - added loop-scoped calendar and commute provider seams so personal report can use persisted household context instead of static placeholders
+- weather payloads now distinguish current vs weekly view modes so renderer parity can key off the payload shape
+- news provider now skips summaryless correction headlines before falling back to broader sources
 
 ## Next Slices
 

@@ -1969,6 +1969,8 @@ public sealed class JiboInteractionService(
         DateTimeOffset? referenceLocalTime)
     {
         var payload = BuildWeatherSkillPayload(spokenReply, snapshot, referenceLocalTime);
+        payload["weather_view_kind"] = "weatherWeekly";
+        payload["weather_view_mode"] = "forecast";
         payload["weather_weekly_cards"] = segments
             .Select(static segment => new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -2118,6 +2120,7 @@ public sealed class JiboInteractionService(
             ["prompt_sub_category"] = "AN",
             ["weather_view_enabled"] = true,
             ["weather_view_kind"] = "weatherHiLo",
+            ["weather_view_mode"] = "current",
             ["weather_icon"] = weatherIcon,
             ["weather_summary"] = snapshot.Summary,
             ["weather_location"] = snapshot.LocationName,

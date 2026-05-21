@@ -7,6 +7,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
     BufferedAudioSttOptions options,
     IExternalProcessRunner processRunner) : ISttStrategy
 {
+    private const int MinimumBufferedAudioBytes = 64;
+
     public string Name => "local-whispercpp-buffered-audio";
 
     public bool CanHandle(TurnContext turn)
@@ -15,7 +17,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
                IsConfiguredPathAvailable(options.FfmpegPath, false) &&
                IsConfiguredPathAvailable(options.WhisperCliPath, true) &&
                IsConfiguredPathAvailable(options.WhisperModelPath, true) &&
-               ReadBufferedAudioFrames(turn).Any(ContainsOpusIdentificationHeader);
+               ReadBufferedAudioFrames(turn).Any(ContainsOpusIdentificationHeader) &&
+               !IsBelowNoiseFloor(ReadBufferedAudioBytes(turn));
     }
 
     public async Task<SttResult> TranscribeAsync(TurnContext turn, CancellationToken cancellationToken = default)
@@ -27,6 +30,10 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
         if (!frames.Any(ContainsOpusIdentificationHeader))
             throw new InvalidOperationException(
                 "Local whisper.cpp STT requires buffered Ogg/Opus audio with an Opus identification header.");
+
+        if (IsBelowNoiseFloor(ReadBufferedAudioBytes(turn)))
+            throw new InvalidOperationException(
+                "Local whisper.cpp STT rejected buffered audio as too short or noisy for transcription.");
 
         var tempDirectory = options.TempDirectory;
         if (string.IsNullOrWhiteSpace(tempDirectory)) tempDirectory = Path.Combine(Path.GetTempPath(), "openjibo-stt");
@@ -110,6 +117,11 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
                 _ => 0
             }
             : 0;
+    }
+
+    private static bool IsBelowNoiseFloor(int bufferedAudioBytes)
+    {
+        return bufferedAudioBytes > 0 && bufferedAudioBytes < MinimumBufferedAudioBytes;
     }
 
     private static bool ContainsOpusIdentificationHeader(byte[] frame)

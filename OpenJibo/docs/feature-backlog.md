@@ -436,7 +436,7 @@ Current release theme:
 
 ### 9. STT Upgrade And Noise Screening
 
-- Status: `ready`
+- Status: `in progress`
 - Tags: `stt`
 - Why next:
   - feature paths are now often correct when a transcript exists, but short replies and low-quality audio still block otherwise-correct flows
@@ -448,6 +448,10 @@ Current release theme:
   - `jibo test 26` had long no-`LISTEN` binary buffering and alarm-delete mishears now patched; remaining short-answer failures still need STT/noise work
   - current source now skips local whisper when buffered audio does not contain an Opus identification header
   - yes/no and alarm flows are especially sensitive to short or collapsed transcripts
+- Progress update (`2026-05-21`):
+  - added a small local whisper noise floor so obviously tiny buffered audio can be screened before ffmpeg/whisper work runs
+  - short/noisy buffered turns now fail fast instead of wasting a transcription cycle
+  - focused tests now cover the new low-audio rejection behavior
 - Implementation notes:
   - add lightweight waveform or energy screening before transcription
   - compare managed STT against the local toolchain
@@ -741,6 +745,9 @@ Current release theme:
   - added TTL caching for weather/news provider calls to reduce repeated external requests
   - vendored Pegasus `report-skill` templates for weather and personal-report phrasing so the next pass can focus on renderer coverage for calendar, commute, and news templates instead of rediscovering source text
   - commute now has a loop-scoped provider seam plus persisted commute profiles, so the next pass can focus on richer travel-time data instead of basic storage shape
+- Progress update (`2026-05-21`):
+  - weather payloads now distinguish current-vs-weekly view modes so renderer parity can key off the payload shape more cleanly
+  - news provider now skips summaryless correction headlines before falling back to broader sources
 - Source anchors:
   - `C:\Projects\jibo\pegasus\packages\report-skill\src\subskills\weather\WeatherMimLogic.ts`
   - `C:\Projects\jibo\pegasus\packages\report-skill\resources\views\weatherHiLo.json`

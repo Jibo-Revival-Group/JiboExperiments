@@ -1,6 +1,7 @@
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Audio;
+using Jibo.Cloud.Infrastructure.Calendar;
 using Jibo.Cloud.Infrastructure.Commute;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Holidays;
@@ -53,6 +54,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
         services.AddSingleton<IHolidayCalendarProvider>(provider =>
             new NagerDateHolidayCalendarProvider(provider.GetRequiredService<HolidayCalendarOptions>()));
+        services.AddSingleton<ICalendarReportProvider, UnavailableCalendarReportProvider>();
         services.AddSingleton<ICommuteReportProvider, UnavailableCommuteReportProvider>();
         var statePersistencePath = configuration?["OpenJibo:State:PersistencePath"]
                                    ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "cloud-state.json");

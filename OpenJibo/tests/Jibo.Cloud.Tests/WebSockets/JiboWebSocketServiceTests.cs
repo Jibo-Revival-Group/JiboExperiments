@@ -4734,6 +4734,7 @@ public sealed class JiboWebSocketServiceTests
             new StubWeatherReportProvider(
                 new WeatherReportSnapshot("Lone Jack, US", "overcast clouds", 79, 82, 78, "clouds", false)),
             null,
+            null,
             new StubNewsBriefingProvider(
                 new NewsBriefingSnapshot(
                     [
@@ -5126,6 +5127,7 @@ public sealed class JiboWebSocketServiceTests
     private static JiboWebSocketService CreateService(
         InMemoryCloudStateStore stateStore,
         IWeatherReportProvider? weatherReportProvider = null,
+        ICalendarReportProvider? calendarReportProvider = null,
         ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null)
     {
@@ -5136,6 +5138,7 @@ public sealed class JiboWebSocketServiceTests
             new DefaultJiboRandomizer(),
             new InMemoryPersonalMemoryStore(),
             weatherReportProvider,
+            calendarReportProvider,
             commuteReportProvider,
             newsBriefingProvider);
         var conversationBroker = new DemoConversationBroker(interactionService);

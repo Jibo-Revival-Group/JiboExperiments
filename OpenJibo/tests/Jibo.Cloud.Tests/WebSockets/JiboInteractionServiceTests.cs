@@ -665,8 +665,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("merry christmas", "seasonal_holiday_greeting", "It's a fun time of year")]
     [InlineData("what holidays do you celebrate", "seasonal_holidays",
         "official owner can tell me which ones we'll celebrate together")]
-    [InlineData("how is holiday season", "seasonal_holiday_season", "I do like festive times.")]
-    [InlineData("do you like holiday season", "seasonal_holiday_season", "I do like festive times.")]
+    [InlineData("how is holiday season", "seasonal_holiday_season", "holiday season is going very nicely")]
+    [InlineData("do you like holiday season", "seasonal_holiday_season", "holiday season is going very nicely")]
     [InlineData("what is your new year's resolution", "seasonal_new_years_resolution",
         "always trying to learn new skills")]
     [InlineData("how are your new year's resolutions going", "seasonal_new_years_update", "not eat bacon")]
@@ -678,9 +678,17 @@ public sealed class JiboInteractionServiceTests
     [InlineData("do you like halloween", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
     [InlineData("do you like holiday music", "seasonal_likes_holiday_music", "holiday music")]
     [InlineData("do you like holiday parties", "seasonal_likes_holiday_parties", "holiday fun can be extra fun")]
-    [InlineData("are you looking forward to christmas", "seasonal_looks_forward_to_christmas", "giving and receiving")]
+    [InlineData("how is thanksgiving", "seasonal_thanksgiving", "Thanksgiving")]
+    [InlineData("are you looking forward to christmas", "seasonal_looks_forward_to_christmas", "long way away")]
     [InlineData("what are you doing for christmas", "seasonal_plans_for_christmas", "Christmas sweaters")]
+    [InlineData("do you like christmas", "seasonal_christmas", "Christmas")]
+    [InlineData("how is hanukkah", "seasonal_hanukkah", "Hanukkah")]
+    [InlineData("do you like passover", "seasonal_passover", "Passover")]
+    [InlineData("do you like new years", "seasonal_new_years", "new year")]
     [InlineData("what are you thankful for", "seasonal_thankful_for", "thankful for the people I know")]
+    [InlineData("do you like valentines day", "seasonal_valentines_day", "Valentine")]
+    [InlineData("do you like kwanzaa", "seasonal_kwanzaa", "Kwanzaa")]
+    [InlineData("do you like easter", "seasonal_easter", "Easter")]
     [InlineData("happy birthday", "birthday_celebration", "another year older")]
     public async Task BuildDecisionAsync_SeasonalCharm_UsesImportedReplies(
         string transcript,
@@ -1874,6 +1882,35 @@ public sealed class JiboInteractionServiceTests
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("idle", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportUserVerifiedKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PersonalReport_UsesCalendarProviderSummaryAndTime()
+    {
+        var weatherProvider = new CapturingWeatherReportProvider
+        {
+            Snapshot = new WeatherReportSnapshot("Boston, U.S.", "light rain", 61, 65, 54, "rain", false)
+        };
+        var calendarProvider = new CapturingCalendarReportProvider
+        {
+            Snapshot = new CalendarReportSnapshot(["get personal report from jibo"], ["at 6:00 p.m."], [])
+        };
+        var service = CreateService(weatherReportProvider: weatherProvider, calendarReportProvider: calendarProvider);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "yes",
+            NormalizedTranscript = "yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                [PersonalReportStateKey] = "awaiting_identity_confirmation",
+                [PersonalReportUserNameKey] = "alex"
+            }
+        });
+
+        Assert.Equal("personal_report_delivered", decision.IntentName);
+        Assert.Contains("Your calendar says get personal report from jibo, at 6:00 p.m.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -4035,6 +4072,7 @@ public sealed class JiboInteractionServiceTests
         IPersonalMemoryStore? personalMemoryStore = null,
         ICloudStateStore? cloudStateStore = null,
         IWeatherReportProvider? weatherReportProvider = null,
+        ICalendarReportProvider? calendarReportProvider = null,
         ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null,
         IJiboExperienceContentRepository? contentRepository = null,
@@ -4045,6 +4083,7 @@ public sealed class JiboInteractionServiceTests
             randomizer ?? new FirstItemRandomizer(),
             personalMemoryStore ?? new InMemoryPersonalMemoryStore(),
             weatherReportProvider,
+            calendarReportProvider,
             commuteReportProvider,
             newsBriefingProvider,
             cloudStateStore);
@@ -4146,6 +4185,18 @@ public sealed class JiboInteractionServiceTests
         public CommuteReportSnapshot? Snapshot { get; init; }
 
         public Task<CommuteReportSnapshot?> GetReportAsync(
+            TurnContext turn,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(Snapshot);
+        }
+    }
+
+    private sealed class CapturingCalendarReportProvider : ICalendarReportProvider
+    {
+        public CalendarReportSnapshot? Snapshot { get; init; }
+
+        public Task<CalendarReportSnapshot?> GetReportAsync(
             TurnContext turn,
             CancellationToken cancellationToken = default)
         {

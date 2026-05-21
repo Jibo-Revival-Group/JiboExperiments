@@ -119,7 +119,8 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("JBO_WhatHolidaysDoYouCelebrate", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Holiday;
 
-        if (fileName.StartsWith("RI_JBO_HasFavoriteHoliday", StringComparison.OrdinalIgnoreCase))
+        if (fileName.StartsWith("RI_JBO_HasFavoriteHoliday", StringComparison.OrdinalIgnoreCase) ||
+            IsHolidaySeasonFile(fileName))
             return LegacyMimBucket.HolidaySeason;
 
         if (fileName.StartsWith("RI_JBO_HasFavoriteAnimal", StringComparison.OrdinalIgnoreCase) ||
@@ -374,6 +375,48 @@ public static class LegacyMimCatalogImporter
             or LegacyMimBucket.Holiday
             or LegacyMimBucket.HolidayTracker;
         }
+
+    private static bool IsHolidaySeasonFile(string fileName)
+    {
+        return fileName.StartsWith("RI_JBO_HowIsHolidaySeason", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesHolidaySeason", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsThanksgiving", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesThanksgiving", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToThanksgiving", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForThanksgiving", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsChristmas", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesChristmas", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToChristmas", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForChristmas", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsHanukkah", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesHanukkah", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToHanukkah", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForHanukkah", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsPassover", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesPassover", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToPassover", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForPassover", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsNewYears", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesNewYears", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToNewYears", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForNewYears", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsValentinesDay", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesValentinesDay", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToValentinesDay", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForValentinesDay", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsKwanzaa", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesKwanzaa", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToKwanzaa", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForKwanzaa", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsEaster", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesEaster", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToEaster", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForEaster", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsOrthodoxEaster", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesOrthodoxEaster", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToOrthodoxEaster", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForOrthodoxEaster", StringComparison.OrdinalIgnoreCase);
+    }
 
     private enum LegacyMimBucket
     {

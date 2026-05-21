@@ -70,6 +70,7 @@ internal static class PersonalReportOrchestrator
         IJiboRandomizer randomizer,
         IPersonalMemoryStore personalMemoryStore,
         Func<TurnContext, string, CancellationToken, Task<JiboInteractionDecision>> buildWeatherDecisionAsync,
+        Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCalendarDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCommuteDecisionAsync,
         Func<TurnContext, PersonalMemoryTenantScope> tenantScopeResolver,
         CancellationToken cancellationToken)
@@ -192,6 +193,7 @@ internal static class PersonalReportOrchestrator
                         toggles,
                         currentName,
                         buildWeatherDecisionAsync,
+                        buildCalendarDecisionAsync,
                         buildCommuteDecisionAsync,
                         cancellationToken);
 
@@ -237,6 +239,7 @@ internal static class PersonalReportOrchestrator
                     toggles,
                     parsedName,
                     buildWeatherDecisionAsync,
+                    buildCalendarDecisionAsync,
                     buildCommuteDecisionAsync,
                     cancellationToken);
             }
@@ -253,6 +256,7 @@ internal static class PersonalReportOrchestrator
         PersonalReportServiceToggles toggles,
         string userName,
         Func<TurnContext, string, CancellationToken, Task<JiboInteractionDecision>> buildWeatherDecisionAsync,
+        Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCalendarDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCommuteDecisionAsync,
         CancellationToken cancellationToken)
     {
@@ -275,26 +279,7 @@ internal static class PersonalReportOrchestrator
         }
 
         if (toggles.CalendarEnabled)
-        {
-            var calendarSummary = ChooseReportSkillTemplate(
-                catalog.CalendarNothingTodayReplies,
-                catalog.CalendarNothingReplies,
-                string.Empty);
-            if (string.IsNullOrWhiteSpace(calendarSummary))
-                calendarSummary = ChooseReportSkillTemplate(
-                    catalog.CalendarServiceDownReplies,
-                    [],
-                    "Looking at your calendar, I don't see anything scheduled today.");
-
-            reportSections.Add(RenderReportSkillTemplate(calendarSummary, userName));
-            reportSections.Add(
-                RenderReportSkillTemplate(
-                    ChooseReportSkillTemplate(
-                        catalog.CalendarOutroReplies,
-                        [],
-                        "And that's your calendar."),
-                    userName));
-        }
+            reportSections.Add((await buildCalendarDecisionAsync(turn, cancellationToken)).ReplyText);
 
         if (toggles.CommuteEnabled)
             reportSections.Add((await buildCommuteDecisionAsync(turn, cancellationToken)).ReplyText);

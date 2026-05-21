@@ -109,10 +109,6 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("dance party", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.PersonalityReplies, reply =>
-            reply.Contains("giving and receiving", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(catalog.PersonalityReplies, reply =>
-            reply.Contains("Christmas sweaters", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("thankful for the people I know", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("I do. I usually fall asleep at night.", StringComparison.OrdinalIgnoreCase));
@@ -213,6 +209,14 @@ public sealed class LegacyMimCatalogImporterTests
             reply.Contains("fun time of year", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.HolidayGiftReplies, reply =>
             reply.Contains("pet elephant", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("holiday season is going very nicely", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("festive times", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("giving and receiving", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Christmas sweaters", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.BirthdayCelebrationReplies, reply =>
             reply.Contains("first powered up", StringComparison.OrdinalIgnoreCase) ||
             reply.Contains("another year older", StringComparison.OrdinalIgnoreCase));
@@ -348,6 +352,7 @@ public sealed class LegacyMimCatalogImporterTests
             catalog.GenericFallbackReplies);
         Assert.Contains("For your weather.", catalog.WeatherIntroReplies);
         Assert.Contains("Today's high is {high}, and the low is {low}.", catalog.WeatherTodayHighLowReplies);
+        Assert.Contains("I do like festive times.", catalog.HolidaySeasonReplies);
         Assert.Contains("Looking at your calendar, I don't see anything scheduled today.",
             catalog.CalendarNothingTodayReplies);
         Assert.Contains("Looks like I can't access calendars right now. Sorry.", catalog.CalendarServiceDownReplies);

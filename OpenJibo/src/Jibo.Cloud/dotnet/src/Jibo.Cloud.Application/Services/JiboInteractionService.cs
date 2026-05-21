@@ -12,6 +12,7 @@ public sealed class JiboInteractionService(
     IJiboRandomizer randomizer,
     IPersonalMemoryStore personalMemoryStore,
     IWeatherReportProvider? weatherReportProvider = null,
+    ICalendarReportProvider? calendarReportProvider = null,
     ICommuteReportProvider? commuteReportProvider = null,
     INewsBriefingProvider? newsBriefingProvider = null,
     ICloudStateStore? cloudStateStore = null)
@@ -485,6 +486,7 @@ public sealed class JiboInteractionService(
             randomizer,
             personalMemoryStore,
             BuildWeatherReportDecisionAsync,
+            BuildCalendarReportDecisionAsync,
             BuildCommuteReportDecisionAsync,
             turnContext => ResolveTenantScope(turnContext),
             cancellationToken);
@@ -655,6 +657,54 @@ public sealed class JiboInteractionService(
                 "holiday season",
                 "festive",
                 "celebrate"),
+            "seasonal_thanksgiving" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
+                "seasonal_thanksgiving",
+                "thanksgiving",
+                "turkey",
+                "stuffed"),
+            "seasonal_christmas" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
+                "seasonal_christmas",
+                "christmas",
+                "quality time",
+                "socks"),
+            "seasonal_hanukkah" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
+                "seasonal_hanukkah",
+                "hanukkah",
+                "dreidel",
+                "gift"),
+            "seasonal_passover" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
+                "seasonal_passover",
+                "passover",
+                "matzah",
+                "next one"),
+            "seasonal_new_years" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
+                "seasonal_new_years",
+                "new year",
+                "resolutions",
+                "party"),
+            "seasonal_valentines_day" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
+                "seasonal_valentines_day",
+                "valentine",
+                "heart",
+                "flowers"),
+            "seasonal_kwanzaa" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
+                "seasonal_kwanzaa",
+                "kwanzaa",
+                "gift",
+                "celebrate"),
+            "seasonal_easter" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
+                "seasonal_easter",
+                "easter",
+                "bunny",
+                "egg"),
             "seasonal_new_years_resolution" => BuildScriptedPersonalityDecision(
                 catalog,
                 "seasonal_new_years_resolution",
@@ -708,8 +758,8 @@ public sealed class JiboInteractionService(
                 "really like times of giving and receiving",
                 "long way away",
                 "looking forward to christmas"),
-            "seasonal_plans_for_christmas" => BuildScriptedPersonalityDecision(
-                catalog,
+            "seasonal_plans_for_christmas" => BuildScriptedHolidayDecision(
+                catalog.HolidaySeasonReplies,
                 "seasonal_plans_for_christmas",
                 "christmas sweaters",
                 "wear one of my",
@@ -1581,6 +1631,37 @@ public sealed class JiboInteractionService(
             BuildCommuteSpokenReply(snapshot, catalog));
     }
 
+    private async Task<JiboInteractionDecision> BuildCalendarReportDecisionAsync(
+        TurnContext turn,
+        CancellationToken cancellationToken)
+    {
+        var catalog = await contentCache.GetCatalogAsync(cancellationToken);
+
+        if (calendarReportProvider is null)
+            return new JiboInteractionDecision(
+                "calendar",
+                ChooseCalendarServiceDownReply(catalog));
+
+        CalendarReportSnapshot? snapshot;
+        try
+        {
+            snapshot = await calendarReportProvider.GetReportAsync(turn, cancellationToken);
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            snapshot = null;
+        }
+
+        if (snapshot is null)
+            return new JiboInteractionDecision(
+                "calendar",
+                ChooseCalendarServiceDownReply(catalog));
+
+        return new JiboInteractionDecision(
+            "calendar",
+            BuildCalendarSpokenReply(snapshot, catalog));
+    }
+
     private static string BuildWeatherSpokenReply(
         WeatherReportSnapshot snapshot,
         WeatherDateEntity weatherDate,
@@ -2072,6 +2153,91 @@ public sealed class JiboInteractionService(
             catalog.CommuteServiceDownReplies,
             "Sorry, commute information isn't available right now.");
         return template.Trim();
+    }
+
+    private string BuildCalendarSpokenReply(CalendarReportSnapshot snapshot, JiboExperienceCatalog catalog)
+    {
+        if (snapshot.EventSummaries.Count > 0 && snapshot.EventTimesOnAt.Count > 0)
+        {
+            var summary = snapshot.EventSummaries[0];
+            var time = snapshot.EventTimesOnAt[0];
+            var template = ChooseCalendarTemplate(
+                catalog.CalendarReplies,
+                "calendar summary",
+                "Your calendar says ${skill.calendar.eventSummaries.shift()}, ${skill.calendar.eventTimesOnAt.shift()}.");
+            if (template.Contains("${skill.calendar.eventSummaries.shift()}", StringComparison.OrdinalIgnoreCase) ||
+                template.Contains("${skill.calendar.eventTimesOnAt.shift()}", StringComparison.OrdinalIgnoreCase))
+            {
+                return template
+                    .Replace("${skill.calendar.eventSummaries.shift()}", summary, StringComparison.OrdinalIgnoreCase)
+                    .Replace("${skill.calendar.eventTimesOnAt.shift()}", time, StringComparison.OrdinalIgnoreCase)
+                    .Replace("${speaker}", string.Empty, StringComparison.OrdinalIgnoreCase)
+                    .Replace("  ", " ", StringComparison.Ordinal)
+                    .Trim();
+            }
+
+            return $"Your calendar says {summary}, {time}.";
+        }
+
+        if (snapshot.TomorrowEventSummaries.Count > 0)
+        {
+            var template = ChooseCalendarTemplate(
+                catalog.CalendarReplies,
+                "calendar tomorrow",
+                "Looking at your calendar, there's nothing scheduled for the rest of the day today. Here's what's going on tomorrow.");
+            if (template.Contains("tomorrow", StringComparison.OrdinalIgnoreCase))
+                return template
+                    .Replace("${speaker}", string.Empty, StringComparison.OrdinalIgnoreCase)
+                    .Replace("  ", " ", StringComparison.Ordinal)
+                    .Trim();
+
+            return $"Looking at your calendar, there's nothing scheduled for the rest of the day today. Here's what's going on tomorrow: {snapshot.TomorrowEventSummaries[0]}.";
+        }
+
+        return ChooseCalendarNothingReply(catalog);
+    }
+
+    private static string ChooseCalendarTemplate(
+        IReadOnlyList<string> templates,
+        string mode,
+        string fallback)
+    {
+        if (templates.Count == 0) return fallback;
+
+        var loweredMode = mode.Trim().ToLowerInvariant();
+        var filtered = templates.Where(template =>
+        {
+            var lowered = template.ToLowerInvariant();
+            return loweredMode switch
+            {
+                "calendar summary" => lowered.Contains("event", StringComparison.OrdinalIgnoreCase) ||
+                                     lowered.Contains("summary", StringComparison.OrdinalIgnoreCase),
+                "calendar tomorrow" => lowered.Contains("tomorrow", StringComparison.OrdinalIgnoreCase),
+                _ => true
+            };
+        }).ToList();
+
+        var selected = filtered.Count > 0
+            ? filtered.OrderBy(static template => template.Length).First()
+            : templates.OrderBy(static template => template.Length).FirstOrDefault();
+
+        return string.IsNullOrWhiteSpace(selected) ? fallback : selected!;
+    }
+
+    private string ChooseCalendarNothingReply(JiboExperienceCatalog catalog)
+    {
+        return catalog.CalendarNothingTodayReplies.Count > 0
+            ? randomizer.Choose(catalog.CalendarNothingTodayReplies)
+            : catalog.CalendarNothingReplies.Count > 0
+                ? randomizer.Choose(catalog.CalendarNothingReplies)
+                : "Looking at your calendar, I don't see anything scheduled today.";
+    }
+
+    private string ChooseCalendarServiceDownReply(JiboExperienceCatalog catalog)
+    {
+        return catalog.CalendarServiceDownReplies.Count > 0
+            ? randomizer.Choose(catalog.CalendarServiceDownReplies)
+            : "Looks like I can't access calendars right now. Sorry.";
     }
 
     private static string EscapeForEsml(string value)
@@ -3054,13 +3220,6 @@ public sealed class JiboInteractionService(
 
         if (MatchesAny(
                 loweredTranscript,
-                "what are you doing for christmas",
-                "what are your plans for christmas",
-                "what do you plan to do for christmas"))
-            return "seasonal_plans_for_christmas";
-
-        if (MatchesAny(
-                loweredTranscript,
                 "what are you thankful for",
                 "what are you thankful for this year",
                 "what is jibo thankful for"))
@@ -3075,6 +3234,13 @@ public sealed class JiboInteractionService(
                 "what is your favourite thing to do",
                 "what's your favourite thing to do"))
             return "robot_what_do_you_like_to_do";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what are you doing for christmas",
+                "what are your plans for christmas",
+                "what do you plan to do for christmas"))
+            return "seasonal_plans_for_christmas";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -3240,6 +3406,71 @@ public sealed class JiboInteractionService(
                 "what holiday do you like",
                 "what is holiday season like"))
             return "seasonal_holiday_season";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how is thanksgiving",
+                "how's thanksgiving",
+                "do you like thanksgiving",
+                "what do you think of thanksgiving"))
+            return "seasonal_thanksgiving";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how is christmas",
+                "how's christmas",
+                "do you like christmas",
+                "what do you think of christmas"))
+            return "seasonal_christmas";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how is hanukkah",
+                "how's hanukkah",
+                "do you like hanukkah",
+                "what do you think of hanukkah"))
+            return "seasonal_hanukkah";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how is passover",
+                "how's passover",
+                "do you like passover",
+                "what do you think of passover"))
+            return "seasonal_passover";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how is new years",
+                "how's new years",
+                "how is new year s",
+                "do you like new years",
+                "what do you think of new years"))
+            return "seasonal_new_years";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how is valentines day",
+                "how's valentines day",
+                "do you like valentines day",
+                "what do you think of valentines day"))
+            return "seasonal_valentines_day";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how is kwanzaa",
+                "how's kwanzaa",
+                "do you like kwanzaa",
+                "what do you think of kwanzaa"))
+            return "seasonal_kwanzaa";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how is easter",
+                "how's easter",
+                "do you like easter",
+                "what do you think of easter"))
+            return "seasonal_easter";
 
         if (MatchesAny(
                 loweredTranscript,

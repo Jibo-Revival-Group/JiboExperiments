@@ -562,7 +562,7 @@ public sealed class JiboInteractionService(
             "robot_what_do_you_eat" => new JiboInteractionDecision(
                 "robot_what_do_you_eat",
                 "The only thing I consume is electricity.",
-                ContextUpdates: BuildScriptedResponseContextUpdates()),
+                ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates()),
             "robot_where_do_you_live" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_where_do_you_live",
@@ -912,7 +912,7 @@ public sealed class JiboInteractionService(
             "robot_what_are_you_made_of" => new JiboInteractionDecision(
                 "robot_what_are_you_made_of",
                 "Let's see, I'm made of wires, motors, belts, gears, processors, cameras, and one baboon's heart in the middle of my body casing. I'm kidding about the baboon part, but everything else is true.",
-                ContextUpdates: BuildScriptedResponseContextUpdates()),
+                ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates()),
             "good_morning" => BuildReactiveGreetingDecision(turn, "good_morning", referenceLocalTime),
             "good_afternoon" => BuildReactiveGreetingDecision(turn, "good_afternoon", referenceLocalTime),
             "good_evening" => BuildReactiveGreetingDecision(turn, "good_evening", referenceLocalTime),
@@ -1507,7 +1507,7 @@ public sealed class JiboInteractionService(
         return new JiboInteractionDecision(
             "current_location",
             $"We're at {NormalizeLocationForSpeech(locationName)} if I'm not mistaken.",
-            ContextUpdates: BuildScriptedResponseContextUpdates());
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
     }
 
     private async Task<JiboInteractionDecision> BuildWeatherReportDecisionAsync(
@@ -2826,10 +2826,11 @@ public sealed class JiboInteractionService(
         string intentName,
         params string[] preferredSnippets)
     {
-        return new JiboInteractionDecision(
+        return ScriptedResponseDecisionBuilder.BuildScriptedPersonalityDecision(
+            catalog,
+            randomizer,
             intentName,
-            SelectLegacyPersonalityReply(catalog, preferredSnippets),
-            ContextUpdates: BuildScriptedResponseContextUpdates());
+            preferredSnippets);
     }
 
     private JiboInteractionDecision BuildScriptedFavoriteAnimalDecision(
@@ -2837,10 +2838,11 @@ public sealed class JiboInteractionService(
         string intentName,
         params string[] preferredSnippets)
     {
-        return new JiboInteractionDecision(
+        return ScriptedResponseDecisionBuilder.BuildScriptedFavoriteAnimalDecision(
+            catalog,
+            randomizer,
             intentName,
-            SelectLegacyReply(catalog.FavoriteAnimalReplies, preferredSnippets),
-            ContextUpdates: BuildScriptedResponseContextUpdates());
+            preferredSnippets);
     }
 
     private JiboInteractionDecision BuildScriptedGreetingDecision(
@@ -2848,10 +2850,11 @@ public sealed class JiboInteractionService(
         string intentName,
         params string[] preferredSnippets)
     {
-        return new JiboInteractionDecision(
+        return ScriptedResponseDecisionBuilder.BuildScriptedGreetingDecision(
+            catalog,
+            randomizer,
             intentName,
-            SelectLegacyGreetingReply(catalog, preferredSnippets),
-            ContextUpdates: BuildScriptedResponseContextUpdates());
+            preferredSnippets);
     }
 
     private JiboInteractionDecision BuildScriptedHolidayDecision(
@@ -2859,10 +2862,11 @@ public sealed class JiboInteractionService(
         string intentName,
         params string[] preferredSnippets)
     {
-        return new JiboInteractionDecision(
+        return ScriptedResponseDecisionBuilder.BuildScriptedHolidayDecision(
+            replies,
+            randomizer,
             intentName,
-            SelectLegacyReply(replies, preferredSnippets),
-            ContextUpdates: BuildScriptedResponseContextUpdates());
+            preferredSnippets);
     }
 
     private JiboInteractionDecision BuildScriptedHolidayTrackerDecision(
@@ -2870,10 +2874,11 @@ public sealed class JiboInteractionService(
         string intentName,
         params string[] preferredSnippets)
     {
-        return new JiboInteractionDecision(
+        return ScriptedResponseDecisionBuilder.BuildScriptedHolidayTrackerDecision(
+            catalog,
+            randomizer,
             intentName,
-            SelectLegacyReply(catalog.HolidayTrackerReplies, preferredSnippets),
-            ContextUpdates: BuildScriptedResponseContextUpdates());
+            preferredSnippets);
     }
 
     private JiboInteractionDecision BuildScriptedHolidayGreetingDecision(
@@ -2881,10 +2886,11 @@ public sealed class JiboInteractionService(
         string intentName,
         params string[] preferredSnippets)
     {
-        return new JiboInteractionDecision(
+        return ScriptedResponseDecisionBuilder.BuildScriptedHolidayGreetingDecision(
+            catalog,
+            randomizer,
             intentName,
-            SelectLegacyReply(catalog.HolidayGreetingReplies, preferredSnippets),
-            ContextUpdates: BuildScriptedResponseContextUpdates());
+            preferredSnippets);
     }
 
     private JiboInteractionDecision BuildScriptedHolidayTemplateDecision(
@@ -2894,63 +2900,29 @@ public sealed class JiboInteractionService(
         string intentName,
         params string[] preferredSnippets)
     {
-        var selected = SelectLegacyReply(catalog.HolidayReplies, preferredSnippets);
+        var selected = ScriptedResponseDecisionBuilder.SelectLegacyReply(
+            catalog.HolidayReplies,
+            randomizer,
+            preferredSnippets);
         return new JiboInteractionDecision(
             intentName,
             RenderHolidayTemplate(selected, turn, presence),
-            ContextUpdates: BuildScriptedResponseContextUpdates());
-    }
-
-    private static IDictionary<string, object?> BuildScriptedResponseContextUpdates()
-    {
-        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-        {
-            [ChitchatStateMachine.StateMetadataKey] = "complete",
-            [ChitchatStateMachine.RouteMetadataKey] = "ScriptedResponse",
-            [ChitchatStateMachine.EmotionMetadataKey] = string.Empty
-        };
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
     }
 
     private string SelectLegacyPersonalityReply(JiboExperienceCatalog catalog, params string[] preferredSnippets)
     {
-        foreach (var snippet in preferredSnippets)
-        {
-            if (string.IsNullOrWhiteSpace(snippet)) continue;
-
-            var match = catalog.PersonalityReplies.FirstOrDefault(reply =>
-                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match)) return match;
-        }
-
-        return catalog.PersonalityReplies.Count == 0 ? string.Empty : randomizer.Choose(catalog.PersonalityReplies);
+        return ScriptedResponseDecisionBuilder.SelectLegacyPersonalityReply(catalog, randomizer, preferredSnippets);
     }
 
     private string SelectLegacyGreetingReply(JiboExperienceCatalog catalog, params string[] preferredSnippets)
     {
-        foreach (var snippet in preferredSnippets)
-        {
-            if (string.IsNullOrWhiteSpace(snippet)) continue;
-
-            var match = catalog.GreetingReplies.FirstOrDefault(reply =>
-                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match)) return match;
-        }
-
-        return catalog.GreetingReplies.Count == 0 ? string.Empty : randomizer.Choose(catalog.GreetingReplies);
+        return ScriptedResponseDecisionBuilder.SelectLegacyGreetingReply(catalog, randomizer, preferredSnippets);
     }
 
     private string SelectLegacyReply(IReadOnlyList<string> replies, params string[] preferredSnippets)
     {
-        foreach (var snippet in preferredSnippets)
-        {
-            if (string.IsNullOrWhiteSpace(snippet)) continue;
-
-            var match = replies.FirstOrDefault(reply =>
-                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match)) return match;
-        }
-
-        return replies.Count == 0 ? string.Empty : randomizer.Choose(replies);
+        return ScriptedResponseDecisionBuilder.SelectLegacyReply(replies, randomizer, preferredSnippets);
     }
 
     private static string ResolveSemanticIntent(

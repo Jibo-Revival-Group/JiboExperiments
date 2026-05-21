@@ -861,6 +861,29 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("EmotionQuery", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
+    [Fact]
+    public async Task BuildDecisionAsync_HowAreYou_UsesRememberedNameForStateDrivenReply()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        memoryStore.SetName(new PersonalMemoryTenantScope("acct-how", "loop-how", "device-how"), "jake");
+        var service = CreateService(memoryStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "how are you",
+            NormalizedTranscript = "how are you",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-how",
+                ["loopId"] = "loop-how"
+            },
+            DeviceId = "device-how"
+        });
+
+        Assert.Equal("how_are_you", decision.IntentName);
+        Assert.Equal("All systems are go, Jake.", decision.ReplyText);
+    }
+
     [Theory]
     [InlineData("what are you up to", "being helpful")]
     [InlineData("what are you doing", "making people smile")]

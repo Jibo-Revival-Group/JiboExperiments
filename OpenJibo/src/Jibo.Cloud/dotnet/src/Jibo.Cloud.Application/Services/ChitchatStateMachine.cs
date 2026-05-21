@@ -167,6 +167,7 @@ internal static class ChitchatStateMachine
         JiboExperienceCatalog catalog,
         IJiboRandomizer randomizer,
         string? currentEmotion,
+        string? preferredName,
         Func<string> buildErrorResponse)
     {
         var normalizedLoweredTranscript = NormalizeForPhraseMatching(loweredTranscript);
@@ -187,7 +188,7 @@ internal static class ChitchatStateMachine
             case "how_are_you":
                 return BuildEmotionQueryDecision(
                     "how_are_you",
-                    SelectEmotionQueryReply(catalog, randomizer, currentEmotion));
+                    SelectEmotionQueryReply(catalog, randomizer, currentEmotion, preferredName));
             case "robot_desire":
                 return BuildScriptedResponseDecision(
                     "robot_desire",
@@ -285,9 +286,9 @@ internal static class ChitchatStateMachine
                     SelectLegacyPersonalityReply(catalog, randomizer, "know a lot", "not as much as i will someday"));
             case "chat":
                 if (IsEmotionQuery(normalizedLoweredTranscript))
-                    return BuildEmotionQueryDecision(
+                return BuildEmotionQueryDecision(
                         "emotion_query",
-                        SelectEmotionQueryReply(catalog, randomizer, currentEmotion));
+                        SelectEmotionQueryReply(catalog, randomizer, currentEmotion, preferredName));
 
                 if (TryResolveEmotionCommand(normalizedLoweredTranscript, out var emotion))
                     return BuildEmotionCommandDecision(randomizer, emotion!);
@@ -391,16 +392,36 @@ internal static class ChitchatStateMachine
     private static string SelectEmotionQueryReply(
         JiboExperienceCatalog catalog,
         IJiboRandomizer randomizer,
-        string? currentEmotion)
+        string? currentEmotion,
+        string? preferredName)
     {
-        if (catalog.EmotionReplies.Count == 0) return randomizer.Choose(catalog.HowAreYouReplies);
+        if (catalog.EmotionReplies.Count == 0)
+            return PersonalizeHowAreYouReply(randomizer.Choose(catalog.HowAreYouReplies), preferredName);
 
         var emotionVariants = ResolveEmotionVariants(currentEmotion);
         foreach (var reply in catalog.EmotionReplies)
             if (ConditionMatches(reply.Condition, emotionVariants))
-                return reply.Reply;
+                return PersonalizeHowAreYouReply(reply.Reply, preferredName);
 
-        return randomizer.Choose(catalog.HowAreYouReplies);
+        return PersonalizeHowAreYouReply(randomizer.Choose(catalog.HowAreYouReplies), preferredName);
+    }
+
+    private static string PersonalizeHowAreYouReply(string replyText, string? preferredName)
+    {
+        if (string.IsNullOrWhiteSpace(replyText) || string.IsNullOrWhiteSpace(preferredName)) return replyText;
+
+        var trimmedName = preferredName.Trim();
+        if (replyText.Contains(trimmedName, StringComparison.OrdinalIgnoreCase)) return replyText;
+
+        var trimmedReply = replyText.Trim();
+        var firstSentenceEnd = trimmedReply.IndexOfAny(['.', '!', '?']);
+        if (firstSentenceEnd <= 0)
+            return $"{trimmedReply}, {trimmedName}.";
+
+        if (firstSentenceEnd == trimmedReply.Length - 1)
+            return $"{trimmedReply[..firstSentenceEnd]}, {trimmedName}.";
+
+        return $"{trimmedReply[..firstSentenceEnd]}, {trimmedName}{trimmedReply[firstSentenceEnd..]}";
     }
 
     private static bool ConditionMatches(string? condition, IReadOnlyList<string> emotionVariants)

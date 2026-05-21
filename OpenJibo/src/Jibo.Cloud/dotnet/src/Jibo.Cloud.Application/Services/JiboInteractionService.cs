@@ -502,6 +502,7 @@ public sealed partial class JiboInteractionService(
             turnContext => ResolveTenantScope(turnContext));
         if (householdListDecision is not null) return householdListDecision;
 
+        var preferredName = ResolvePreferredGreetingName(turn, greetingPresence);
         var chitchatDecision = ChitchatStateMachine.TryBuildDecision(
             semanticIntent,
             transcript,
@@ -509,6 +510,7 @@ public sealed partial class JiboInteractionService(
             catalog,
             randomizer,
             chitchatEmotion,
+            preferredName,
             () => BuildGenericReply(catalog, transcript, lowered));
         if (chitchatDecision is not null) return chitchatDecision;
 

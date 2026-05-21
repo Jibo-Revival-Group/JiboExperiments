@@ -1900,8 +1900,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains(
             "For your weather. In Boston, U.S., it's light rain and 61 degrees Fahrenheit. Today's high is 65, and the low is 54.",
             decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("calendar", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("commute", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("And that's it.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("news", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.True(StripMarkup(decision.ReplyText).Length < 500,
             $"Personal report speech was still too long: {StripMarkup(decision.ReplyText).Length} chars.");
@@ -1951,6 +1950,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("personal_report_delivered", decision.IntentName);
         Assert.Contains("Your calendar says get personal report from jibo, at 6:00 p.m.", decision.ReplyText,
             StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("calendar", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

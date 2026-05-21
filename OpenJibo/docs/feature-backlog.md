@@ -847,7 +847,7 @@ Current release theme:
   - identity charm prompts like `what's your name`, `do you have a nickname`, `do you like being Jibo`, `are there others like you`, and `what is your favorite name`
   - attraction and preference prompts like `what is your favorite flower`, `do you like R2D2`, `do you like the sun`, `do you like space`, and `do you like kids`
   - longer authored variants for the same prompt family when Pegasus shows richer phrasing
-  - charm/capability prompts like `can you laugh` and `can you dance`
+- charm/capability prompts like `can you laugh`, `can you dance`, `can you sing`, and `will you sing`
   - mood / affect questions
   - recognition follow-ups like `do you know me`
   - follow-up state prompts that should stay warm and locally grounded
@@ -916,6 +916,21 @@ Current release theme:
   - revisit after 1.0.19 personality import and report-skill parity stabilize
   - decide whether the composition layer should sit above the prompt catalog or beside it as a dedicated response post-processor
   - keep this separate from the authored-variant backlog item so we do not blur prompt richness with runtime composition
+
+### 33. Singing And Musical Personality
+
+- Status: `discovery`
+- Tags: `content`, `docs`, `protocol`
+- Why now:
+  - Jibo’s charm surface includes musical and sing-along behavior, and it fits naturally after the current personality and holiday batches
+  - the first pass should stay familiar and rule-based, not LLM-driven
+- Scope:
+  - inventory the legacy song / sing / musical prompt families
+  - decide whether the first slice should be short song replies, a sing-along launcher, or both
+  - keep the first implementation source-backed if Pegasus has usable authored lines
+- Exit criteria:
+  - a small song backlog exists with candidate phrases listed
+  - the release plan has a clear place for musical personality without crowding out weather/news/report work
 
 ## Suggested Order
 

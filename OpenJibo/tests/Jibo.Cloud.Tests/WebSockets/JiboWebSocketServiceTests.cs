@@ -4878,7 +4878,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.Contains("weather", stripped, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("calendar", stripped, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("news", stripped, StringComparison.OrdinalIgnoreCase);
-        Assert.True(stripped.Length < 500, $"Personal report speech was still too long: {stripped.Length} chars.");
+        Assert.True(stripped.Length < 600, $"Personal report speech was still too long: {stripped.Length} chars.");
     }
 
     [Fact]

@@ -2432,7 +2432,11 @@ public sealed class JiboInteractionService(
                     cancellationToken);
 
                 if (snapshot?.Headlines.Count > 0)
-                    return BuildProviderNewsDecision(snapshot, preferredCategories, requestedHeadlineCount);
+                    return BuildProviderNewsDecision(
+                        snapshot,
+                        catalog,
+                        preferredCategories,
+                        requestedHeadlineCount);
 
                 var providerStatus = ResolveNewsProviderStatus(snapshot);
                 var providerMessage = snapshot?.ProviderMessage;
@@ -2522,6 +2526,7 @@ public sealed class JiboInteractionService(
 
     private static JiboInteractionDecision BuildProviderNewsDecision(
         NewsBriefingSnapshot snapshot,
+        JiboExperienceCatalog catalog,
         IReadOnlyList<string> preferredCategories,
         int requestedHeadlineCount)
     {
@@ -2543,7 +2548,8 @@ public sealed class JiboInteractionService(
 
         var leadIn = BuildNewsLeadIn(snapshot.SourceName, preferredCategories);
         var joinedHeadlines = string.Join(" ", headlines.Select(static headline => $"{headline.Title}."));
-        var spokenBriefing = $"{leadIn} {joinedHeadlines}".Trim();
+        var outroTemplate = ChooseShortestTemplate(catalog.NewsOutroReplies) ?? "And that's the news.";
+        var spokenBriefing = $"{leadIn} {joinedHeadlines} {outroTemplate}".Trim();
         return BuildNewsDecision(
             spokenBriefing,
             snapshot.SourceName,

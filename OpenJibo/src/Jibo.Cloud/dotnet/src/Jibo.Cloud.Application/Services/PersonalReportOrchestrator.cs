@@ -281,12 +281,24 @@ internal static class PersonalReportOrchestrator
         }
 
         if (toggles.CalendarEnabled)
-            reportSections.Add((await buildCalendarDecisionAsync(turn, cancellationToken)).ReplyText);
+        {
+            var calendarReply = (await buildCalendarDecisionAsync(turn, cancellationToken)).ReplyText;
+            if (!string.IsNullOrWhiteSpace(calendarReply))
+            {
+                reportSections.Add(calendarReply);
+
+                var calendarOutro = ChooseShortestTemplate(catalog.CalendarOutroReplies);
+                if (!string.IsNullOrWhiteSpace(calendarOutro))
+                    reportSections.Add(RenderPersonalReportTemplate(calendarOutro!, userName));
+            }
+        }
 
         if (toggles.CommuteEnabled)
         {
             var commuteReply = (await buildCommuteDecisionAsync(turn, cancellationToken)).ReplyText;
-            reportSections.Add(ChooseFirstSentence(commuteReply));
+            var commuteSnippet = ChooseFirstSentence(commuteReply);
+            if (!string.IsNullOrWhiteSpace(commuteSnippet))
+                reportSections.Add(commuteSnippet);
         }
 
         if (toggles.NewsEnabled)
@@ -715,6 +727,25 @@ internal static class PersonalReportOrchestrator
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .FirstOrDefault();
         return string.IsNullOrWhiteSpace(firstSentence) ? value.Trim() : firstSentence;
+    }
+
+    private static string ChooseFirstTwoSentences(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        var segments = value
+            .Split(['.', '!', '?'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Take(2)
+            .ToArray();
+
+        if (segments.Length == 0) return string.Empty;
+
+        var joined = string.Join(". ", segments);
+        return value.TrimEnd().EndsWith(".", StringComparison.Ordinal) ||
+               value.TrimEnd().EndsWith("!", StringComparison.Ordinal) ||
+               value.TrimEnd().EndsWith("?", StringComparison.Ordinal)
+            ? $"{joined}."
+            : joined;
     }
 
     private static string? ChooseShortestTemplate(IEnumerable<string> templates)

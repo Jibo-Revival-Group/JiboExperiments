@@ -30,7 +30,7 @@ Keep a running checklist of the legacy persona questions and identity surfaces w
 - favorite-style prompts: `what is your favorite color`, `what is your favorite food`, `what is your favorite music`
 - attraction and preference prompts: `what is your favorite flower`, `do you like R2D2`, `do you like the sun`, `do you like space`, `do you like kids`
 - longer authored variants for the same prompt family when Pegasus shows richer phrasing, especially multi-clause and follow-up-heavy responses
-- capability and charm prompts: `can you laugh`, `can you dance`
+- capability and charm prompts: `can you laugh`, `can you dance`, `can you sing`, `will you sing`
 - affect and mood: `how are you`, `are you happy`, `are you sad`, `are you angry`
 - memory and identity recall: `who am i`, `what is my name`, `when is my birthday`, `what is my favorite music`
 - greeting and presence charm: `good morning`, `welcome back`, `who is this`, person-aware greeting follow-ups

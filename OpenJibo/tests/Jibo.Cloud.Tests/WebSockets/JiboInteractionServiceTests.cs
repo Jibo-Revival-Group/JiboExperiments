@@ -475,6 +475,9 @@ public sealed class JiboInteractionServiceTests
     [InlineData("do you like kids", "robot_likes_kids", "kids are so fun")]
     [InlineData("can you laugh", "robot_can_laugh", "when I'm happy")]
     [InlineData("can you dance", "robot_can_dance", "dancing is one of the things I know best")]
+    [InlineData("can you sing", "robot_can_sing", "sing")]
+    [InlineData("will you sing", "robot_can_sing", "sing")]
+    [InlineData("can you sing a christmas song", "robot_sing_christmas_song", "sing")]
     public async Task BuildDecisionAsync_NewLegacyPersonalityMims_UseImportedReplies(
         string transcript,
         string expectedIntent,

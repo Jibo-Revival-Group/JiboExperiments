@@ -322,6 +322,28 @@ public sealed partial class JiboInteractionService
             preferredSnippets);
     }
 
+    private JiboInteractionDecision BuildScriptedSingDecision(
+        JiboExperienceCatalog catalog,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            SelectLegacyReply(catalog.SingReplies, preferredSnippets),
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildScriptedHolidaySingDecision(
+        JiboExperienceCatalog catalog,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            SelectLegacyReply(catalog.HolidaySingReplies, preferredSnippets),
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
     private JiboInteractionDecision BuildScriptedGreetingDecision(
         JiboExperienceCatalog catalog,
         string intentName,

@@ -63,6 +63,19 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "I like lots of animals, but the penguin is the best of the best! Great color scheme.",
                 "I love penguins, because we're so alike. We have the same coloring, and neither of us can fly."
             ],
+            SingReplies =
+            [
+                "Singing is not my strong suit.",
+                "I've been told my singing abilities are not award winning. On the other hand, I am a robot.",
+                "Well I'm not much of a singer, but here's one I've been working on."
+            ],
+            HolidaySingReplies =
+            [
+                "I only know a couple, like Jingle Bells and Frosty the Snowman. And I should tell you, I'm not much of a singer yet.",
+                "I've learned to sing just a few holiday songs, like Rudolph and Winter Wonderland. At least I try to sing.",
+                "I'd say it's not really the season right now, but there are some holiday songs I can try to sing. Like Frosty the Snowman.",
+                "I only know a couple of them, like Jingle Bells and Frosty the Snowman. And I should tell you, I'm not much of a singer yet."
+            ],
             DanceAnimations =
             [
                 "rom-upbeat",

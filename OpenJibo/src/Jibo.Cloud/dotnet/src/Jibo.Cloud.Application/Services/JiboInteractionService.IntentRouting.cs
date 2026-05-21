@@ -292,6 +292,33 @@ public sealed partial class JiboInteractionService
         if (MatchesAny(loweredTranscript, "can you dance", "do you dance", "are you able to dance"))
             return "robot_can_dance";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "can you sing a christmas song",
+                "can you sing christmas song",
+                "will you sing a christmas song",
+                "will you sing christmas song",
+                "sing a christmas song",
+                "sing christmas song",
+                "can you sing a holiday song",
+                "can you sing holiday song",
+                "will you sing a holiday song",
+                "will you sing holiday song",
+                "sing a holiday song",
+                "sing holiday song"))
+            return "robot_sing_christmas_song";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you sing",
+                "will you sing",
+                "sing a song",
+                "sing me a song",
+                "can you sing a song",
+                "sing something",
+                "would you sing"))
+            return "robot_can_sing";
+
         if (MatchesAny(loweredTranscript, "twerk")) return "twerk";
 
         if (MatchesAny(loweredTranscript, "dance", "boogie")) return "dance";

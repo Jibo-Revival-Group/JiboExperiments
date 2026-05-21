@@ -144,6 +144,28 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsBuildBSingResponsesIntoSingBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains("Singing is not my strong suit.", catalog.SingReplies);
+        Assert.Contains(catalog.SingReplies, reply =>
+            reply.Contains("not award winning", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.SingReplies, reply =>
+            reply.Contains("not much of a singer", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySingReplies, reply =>
+            reply.Contains("Jingle Bells", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySingReplies, reply =>
+            reply.Contains("Frosty the Snowman", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBFavoriteAnimalAndSantaTrackerResponsesIntoDedicatedBuckets()
     {
         var rootDirectory = Path.Combine(

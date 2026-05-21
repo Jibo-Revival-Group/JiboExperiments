@@ -29,7 +29,7 @@
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "dt.now.isInRange('11/25', '12/31')",
-			"prompt": "I've learned to sing just a few holiday songs, like Rudolph and Winter Wonderland. At least I <pitch mult='1.3'>try </pitch> to sing.",
+			"prompt": "I've learned to sing just a few holiday songs, like Rudolph and Winter Wonderland. At least I try to sing.",
 			"media": "TTS",
 			"prompt_id": "RA_JBO_SingChristmasSongUnknown_AN_02",
 			"weight": 2,

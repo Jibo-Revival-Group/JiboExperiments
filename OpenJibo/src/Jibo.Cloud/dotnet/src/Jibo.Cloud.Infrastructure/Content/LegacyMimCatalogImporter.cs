@@ -102,6 +102,12 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("RA_JBO_TellAJoke", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Jokes;
 
+        if (fileName.StartsWith("RA_JBO_SingChristmasSongUnknown", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.HolidaySing;
+
+        if (fileName.StartsWith("RA_JBO_Sing", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.Sing;
+
         if (fileName.StartsWith("RA_JBO_TellRobotFact", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.RobotFacts;
 
@@ -299,6 +305,8 @@ public static class LegacyMimCatalogImporter
             HumanFacts = Merge(baseCatalog.HumanFacts, importedCatalog.HumanFacts),
             FunFacts = Merge(baseCatalog.FunFacts, importedCatalog.FunFacts),
             FavoriteAnimalReplies = Merge(baseCatalog.FavoriteAnimalReplies, importedCatalog.FavoriteAnimalReplies),
+            SingReplies = Merge(baseCatalog.SingReplies, importedCatalog.SingReplies),
+            HolidaySingReplies = Merge(baseCatalog.HolidaySingReplies, importedCatalog.HolidaySingReplies),
             DanceAnimations = Merge(baseCatalog.DanceAnimations, importedCatalog.DanceAnimations),
             GreetingReplies = Merge(baseCatalog.GreetingReplies, importedCatalog.GreetingReplies),
             HolidayReplies = Merge(baseCatalog.HolidayReplies, importedCatalog.HolidayReplies),
@@ -499,6 +507,8 @@ public static class LegacyMimCatalogImporter
         Emotion,
         FunFacts,
         FavoriteAnimal,
+        Sing,
+        HolidaySing,
         FunFactSource,
         Personality,
         PersonalReportKickOff,
@@ -565,6 +575,7 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _holidayReplies = [];
         private readonly List<string> _holidaySeasonReplies = [];
         private readonly List<string> _holidayTrackerReplies = [];
+        private readonly List<string> _holidaySingReplies = [];
         private readonly List<string> _howAreYous = [];
         private readonly List<string> _humanFacts = [];
         private readonly List<string> _jokes = [];
@@ -576,6 +587,7 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _personalReportOutroReplies = [];
         private readonly List<string> _reportSkillTemplates = [];
         private readonly List<string> _robotFacts = [];
+        private readonly List<string> _singReplies = [];
         private readonly List<string> _weatherIntroReplies = [];
         private readonly List<string> _weatherServiceDownReplies = [];
         private readonly List<string> _weatherTodayHighLowReplies = [];
@@ -650,6 +662,12 @@ public static class LegacyMimCatalogImporter
                         return;
 
                     _personalities.Add(text);
+                    return;
+                case LegacyMimBucket.Sing:
+                    AddDistinct(_singReplies, text);
+                    return;
+                case LegacyMimBucket.HolidaySing:
+                    AddDistinct(_holidaySingReplies, text);
                     return;
                 case LegacyMimBucket.FunFactSource:
                     switch (ResolveFunFactTarget(sourcePrompt ?? text))
@@ -776,6 +794,8 @@ public static class LegacyMimCatalogImporter
                 HumanFacts = [.. _humanFacts],
                 FunFacts = [.. _funFacts],
                 FavoriteAnimalReplies = [.. _favoriteAnimalReplies],
+                SingReplies = [.. _singReplies],
+                HolidaySingReplies = [.. _holidaySingReplies],
                 GreetingReplies = [.. _greetings],
                 HolidayReplies = [.. _holidayReplies],
                 HolidaySeasonReplies = [.. _holidaySeasonReplies],

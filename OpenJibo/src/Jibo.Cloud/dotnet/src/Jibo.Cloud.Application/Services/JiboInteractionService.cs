@@ -752,6 +752,18 @@ public sealed partial class JiboInteractionService(
                 "dancing is one of the things i know best",
                 "if there's one thing i know how to do. it's dance",
                 "i can dance"),
+            "robot_can_sing" => BuildScriptedSingDecision(
+                catalog,
+                "robot_can_sing",
+                "not much of a singer",
+                "singing is not my strong suit",
+                "not award winning"),
+            "robot_sing_christmas_song" => BuildScriptedHolidaySingDecision(
+                catalog,
+                "robot_sing_christmas_song",
+                "Jingle Bells",
+                "Frosty the Snowman",
+                "holiday songs"),
             "robot_what_are_you_made_of" => new JiboInteractionDecision(
                 "robot_what_are_you_made_of",
                 "Let's see, I'm made of wires, motors, belts, gears, processors, cameras, and one baboon's heart in the middle of my body casing. I'm kidding about the baboon part, but everything else is true.",

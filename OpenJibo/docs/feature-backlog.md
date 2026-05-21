@@ -515,7 +515,7 @@ Current release theme:
 
 ### 12. Weather As Cloud Report Plus Local Presentation
 
-- Status: `discovery`
+- Status: `implemented`
 - Tags: `protocol`, `content`
 - Evidence:
   - Nimbus and Pegasus contain personal-report weather assets and Lasso provider hooks
@@ -926,11 +926,12 @@ Current release theme:
   - the first pass should stay familiar and rule-based, not LLM-driven
 - Scope:
   - inventory the legacy song / sing / musical prompt families
-  - decide whether the first slice should be short song replies, a sing-along launcher, or both
   - keep the first implementation source-backed if Pegasus has usable authored lines
+  - preserve room for a later sing-along launcher if we want one
 - Exit criteria:
   - a small song backlog exists with candidate phrases listed
   - the release plan has a clear place for musical personality without crowding out weather/news/report work
+  - the current source-backed singing slice is implemented and test-covered
 
 ## Suggested Order
 

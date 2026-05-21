@@ -47,7 +47,7 @@ Current batch note:
 - the follow-up mood batch now includes `how are things`, `how is your day`, `are you sad`, and `are you angry`
 - the personality follow-up batch now includes `what are you up to` and `what are you doing` so small talk stays warm and local instead of falling into generic chat
 - the descriptor batch now includes `are you kind`, `are you funny`, `are you helpful`, `are you curious`, `are you loyal`, `are you mischievous`, and `are you likable`
-- the seasonal batch now includes `what holidays do you celebrate`, New Year's resolution questions, `happy holidays`, `what halloween costume`, spring suggestions, and holiday gift prompts
+- the seasonal batch now includes `what holidays do you celebrate`, New Year's resolution questions, `happy holidays`, `what halloween costume`, spring and summer suggestions, a favorite-season prompt, and holiday gift prompts
 - the holiday extras batch now includes `show santa tracker` so the seasonal holiday launcher stays source-backed too
 - the remaining seasonal polish now includes `do you like halloween`, `do you like holiday music`, `do you like holiday parties`, `are you looking forward to christmas`, `what are you doing for christmas`, and `what are you thankful for`
 - the favorites batch now includes `what is your favorite animal`, `what is your favorite bird`, `do you like penguins`, and `do you like animals` so the penguin-centered replies stay close to Pegasus

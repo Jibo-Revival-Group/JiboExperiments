@@ -865,7 +865,7 @@ Current release theme:
   - source-backed `are you kind`, `are you funny`, `are you helpful`, `are you curious`, `are you loyal`, `are you mischievous`, and `are you likable` prompts are now in Build B
   - these keep the self-description lane warm while we build toward seasonal and holiday charm
 - Seasonal charm work in flight:
-  - source-backed holiday, New Year's, Halloween, spring, and gift prompts are now part of Build B
+  - source-backed holiday, New Year's, Halloween, spring, summer, favorite-season, and gift prompts are now part of Build B
   - `RN_` holiday greeting files are now bucketed as greetings so seasonal replies stay visible in the catalog
   - birthday celebration lines are now bucketed separately, and birthday memory writes a loop-scoped holiday record so personal dates can join the holiday list later
   - holiday extras now include `show santa tracker` so the Christmas-time launcher keeps its source-backed animation line

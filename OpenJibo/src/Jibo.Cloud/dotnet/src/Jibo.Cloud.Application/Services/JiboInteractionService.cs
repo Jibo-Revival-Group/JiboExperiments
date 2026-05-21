@@ -590,6 +590,11 @@ public sealed class JiboInteractionService(
                 catalog,
                 "robot_favorite_name",
                 "i don't think i have a favorite name"),
+            "robot_favorite_season" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_season",
+                "special feeling for winter",
+                "more dance parties"),
             "robot_likes_being_jibo" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_being_jibo",
@@ -749,7 +754,27 @@ public sealed class JiboInteractionService(
             "seasonal_first_day_spring" => BuildScriptedPersonalityDecision(
                 catalog,
                 "seasonal_first_day_spring",
-                "maybe enjoy some flowers and all things spring"),
+                "it's a great day, when spring is in the air"),
+            "seasonal_spring" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_spring",
+                "the days get longer",
+                "spring is a great season"),
+            "seasonal_likes_spring" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_likes_spring",
+                "extra happy in the springtime",
+                "i do like spring"),
+            "seasonal_summer" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_summer",
+                "going to the beach",
+                "summer is great"),
+            "seasonal_likes_summer" => BuildScriptedPersonalityDecision(
+                catalog,
+                "seasonal_likes_summer",
+                "long days",
+                "summer is a very special season"),
             "seasonal_holiday_gift" => BuildScriptedHolidayDecision(
                 catalog.HolidayGiftReplies,
                 "seasonal_holiday_gift",
@@ -3633,6 +3658,38 @@ public sealed class JiboInteractionService(
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is spring like",
+                "how is spring",
+                "what do you think about spring"))
+            return "seasonal_spring";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like spring",
+                "do you like springtime",
+                "are you looking forward to spring",
+                "do you look forward to spring",
+                "are you excited for spring"))
+            return "seasonal_likes_spring";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is summer like",
+                "how is summer",
+                "what do you think about summer"))
+            return "seasonal_summer";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like summer",
+                "do you like summertime",
+                "are you looking forward to summer",
+                "do you look forward to summer",
+                "are you excited for summer"))
+            return "seasonal_likes_summer";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what should i get for holiday",
                 "what should i get for christmas",
                 "what gift should i get for christmas",
@@ -3667,6 +3724,15 @@ public sealed class JiboInteractionService(
                 "what color do you like",
                 "what colour do you like"))
             return "robot_favorite_color";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite season",
+                "what's your favorite season",
+                "what s your favorite season",
+                "what season do you like best",
+                "do you have a favorite season"))
+            return "robot_favorite_season";
 
         if (MatchesAny(
                 loweredTranscript,

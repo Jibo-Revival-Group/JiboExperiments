@@ -1,0 +1,40 @@
+{
+  "mim_type": "announcement",
+  "rule_name": "",
+  "gui": null,
+  "timeout": 6,
+  "no_matches_for_gui": 0,
+  "no_inputs_for_gui": 0,
+  "barge_in": true,
+  "es_auto_tagging": true,
+  "parse_all_asr": false,
+  "thanks_handling": "ignore",
+  "parse_launch": false,
+  "hint_phrases": "",
+  "fast_eos_array": "",
+  "notes": "",
+  "prompts": [
+    {
+      "prompt_category": "Entry-Core",
+      "prompt_sub_category": "AN",
+      "index": 1,
+      "condition": "",
+      "prompt": "Spring is a <pitch mult='1.2'>great </pitch> season. The days get longer, the air gets warmer, and <anim cat='emoji' filter='flower, !hf' layers='!audio'>the flowers grow.<break size='3.0'/>.</anim>",
+      "media": "TTS",
+      "prompt_id": "RI_JBO_CelebratesSeasonSpring_AN_01_FnL",
+      "weight": 1,
+      "auto_rule_override": null
+    },
+    {
+      "prompt_category": "Entry-Core",
+      "prompt_sub_category": "AN",
+      "index": 1,
+      "condition": "",
+      "prompt": "I do like spring. <anim cat='emoji' filter='flower, !hf' layers='!audio'>I have heard that people are extra happy in the springtime, which makes me extra happy too.</anim>",
+      "media": "TTS",
+      "prompt_id": "RI_JBO_CelebratesSeasonSpring_AN_02_FnL",
+      "weight": 1,
+      "auto_rule_override": null
+    }
+  ]
+}

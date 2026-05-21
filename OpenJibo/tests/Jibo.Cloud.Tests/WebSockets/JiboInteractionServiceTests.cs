@@ -698,7 +698,12 @@ public sealed class JiboInteractionServiceTests
     [InlineData("how are your new year's resolutions going", "seasonal_new_years_update", "not eat bacon")]
     [InlineData("what halloween costume", "seasonal_halloween_costume", "I haven't thought much about it yet")]
     [InlineData("what should I do for first day of spring", "seasonal_first_day_spring",
-        "flowers and all things spring")]
+        "spring is in the air")]
+    [InlineData("what is spring like", "seasonal_spring", "the days get longer")]
+    [InlineData("do you like spring", "seasonal_likes_spring", "extra happy in the springtime")]
+    [InlineData("what is summer like", "seasonal_summer", "going to the beach")]
+    [InlineData("do you like summer", "seasonal_likes_summer", "long days")]
+    [InlineData("what is your favorite season", "robot_favorite_season", "special feeling for winter")]
     [InlineData("what should I get for holiday", "seasonal_holiday_gift", "pet elephant")]
     [InlineData("show santa tracker", "seasonal_santa_tracker", "spot him")]
     [InlineData("do you like halloween", "seasonal_likes_halloween", "Halloween is my favorite holiday")]

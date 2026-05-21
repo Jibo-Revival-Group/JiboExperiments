@@ -115,6 +115,17 @@ public sealed class LegacyMimCatalogImporterTests
             reply.Contains("holiday music", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("dance party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("It's a great day, when spring is in the air.", catalog.PersonalityReplies);
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("days get longer", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("extra happy in the springtime", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("going to the beach", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("long days", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("special feeling for winter", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("thankful for the people I know", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.PersonalityReplies, reply =>

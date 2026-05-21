@@ -44,6 +44,7 @@ Current release theme:
 - radio, ESML apostrophe cleanup, and first news are implemented in source/tests; radio and basic news are live-proven as of `jibo test 23`
 - `jibo test 22` validated radio, exposed backup/load interference, exposed a shared yes/no no-input gap, exposed repeated create keeper prompts after photo handoff, and showed local whisper `ffmpeg` failures on unusable buffered audio
 - `jibo test 23` validated basic news, proved one alarm set/fire path at `7:43 AM`, exposed comma-separated/short alarm follow-up parsing risk, showed stock alarm replacement yes/no rules that needed cloud handling, and showed photo gallery still failing when `shared/yes_no` ASR came back empty
+- personal report parity now has loop-scoped calendar and commute provider seams that merge persisted loop events, birthday/holiday dates, and commute profiles; the remaining report gap is richer travel-time data, not missing structure
 - `jibo test 24` showed alarm replacement yes/no working, but exposed empty `clock/alarm_set_value` and `gallery/gallery_preview` turns falling into generic `I heard you` fallback speech; it also showed `CLIENT_NLU cancel` inside `clock/alarm_set_value` re-asking for an alarm value instead of closing the prompt
 - `jibo test 25` proved a broader regression path but exposed repeated backup-in-progress/update-menu blockage, timer/alarm stale state and delete/menu disagreement, gallery `shared/yes_no` hangs under `@be/gallery`, punctuated `Never mind.` falling through to chat, volume homophone parsing (`Set Volume 2-6.`), and settings volume-control cleanup falling into `I heard you`
 - `jibo test 26` live-proved punctuated stop, volume homophone parsing, gallery launch/yes/create/save, and good morning; it still exposed robot-local backup warnings, long blue-ring buffering without a fresh `LISTEN`, alarm replacement drifting into the value/manual screen, and alarm delete phrases/mishears falling to chat
@@ -731,7 +732,7 @@ Current release theme:
   - weather icon/animation parity and view support
   - broader non-local weather query handling and short-range date coverage
   - provider-backed news ingestion and filtering
-  - commute provider path and settings schema
+  - commute provider path, settings schema, and loop-scoped commute profile storage
   - coverage matrix for personal report parity gaps and test/capture exit criteria
 - Progress update (`2026-05-10`):
   - added provider-ready news briefing lane with Nimbus-compatible `news` skill payload continuity
@@ -739,6 +740,7 @@ Current release theme:
   - fallback synthetic news behavior remains active when no provider key is configured
   - added TTL caching for weather/news provider calls to reduce repeated external requests
   - vendored Pegasus `report-skill` templates for weather and personal-report phrasing so the next pass can focus on renderer coverage for calendar, commute, and news templates instead of rediscovering source text
+  - commute now has a loop-scoped provider seam plus persisted commute profiles, so the next pass can focus on richer travel-time data instead of basic storage shape
 - Source anchors:
   - `C:\Projects\jibo\pegasus\packages\report-skill\src\subskills\weather\WeatherMimLogic.ts`
   - `C:\Projects\jibo\pegasus\packages\report-skill\resources\views\weatherHiLo.json`
@@ -927,7 +929,7 @@ For `1.0.19`:
 4. Weather report-skill launch compatibility - implemented
 5. Dialog parsing expansion and ambiguity guardrails - in progress (`2026-05-09` third guardrail slice implemented; Pegasus affinity phrase families + continuation guardrails expanded)
 6. Presence-aware greetings and identity-triggered proactivity - implemented (trigger path, identity-aware reactive/proactive replies, cooldown metadata wiring, focused websocket coverage)
-7. Personal report parity track (weather visuals, live news path, commute path, calendar parity matrix) - in progress (`2026-05-10` first live-news provider slice implemented)
+7. Personal report parity track (weather visuals, live news path, commute path, calendar parity matrix) - in progress (`2026-05-10` first live-news provider slice implemented; commute now has a loop-scoped provider seam)
 8. Holidays and seasonal personality behavior built on the new memory/proactivity foundation
    - system holidays should come from an up-to-date provider and merge with loop-scoped custom holiday records
    - allow disabled holiday records to suppress reminders for people who do not celebrate a holiday

@@ -355,12 +355,47 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
 
     private ProtocolDispatchResult HandlePerson(string operation, ProtocolEnvelope envelope)
     {
-        if (!operation.Equals("ListHolidays", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(Array.Empty<object>());
-
         var body = envelope.TryParseBody();
-        var loopId = ReadString(body, "loopId");
-        return ProtocolDispatchResult.Ok(stateStore.GetHolidays(loopId).Select(MapHoliday));
+
+        if (operation.Equals("ListHolidays", StringComparison.OrdinalIgnoreCase))
+        {
+            var loopId = ReadString(body, "loopId");
+            return ProtocolDispatchResult.Ok(stateStore.GetHolidays(loopId).Select(MapHoliday));
+        }
+
+        if (operation.Equals("ListCommute", StringComparison.OrdinalIgnoreCase))
+        {
+            var loopId = ReadString(body, "loopId");
+            return ProtocolDispatchResult.Ok(stateStore.GetCommuteProfiles(loopId).Select(MapCommute));
+        }
+
+        if (operation.Equals("UpsertCommute", StringComparison.OrdinalIgnoreCase))
+        {
+            var hasIsEnabled = body is { } enabledBody && enabledBody.TryGetProperty("isEnabled", out _);
+            var hasIsComplete = body is { } completeBody && completeBody.TryGetProperty("isComplete", out _);
+            var workHour = ReadLong(body, "workHour");
+            var workMinute = ReadLong(body, "workMinute");
+            var typicalDurationMinutes = ReadLong(body, "typicalDurationMinutes");
+            var commute = new CommuteProfileRecord
+            {
+                Id = ReadString(body, "id") ?? string.Empty,
+                LoopId = ReadString(body, "loopId") ?? string.Empty,
+                MemberId = ReadString(body, "memberId"),
+                IsEnabled = hasIsEnabled ? ReadBool(body, "isEnabled") : true,
+                IsComplete = hasIsComplete ? ReadBool(body, "isComplete") : true,
+                Mode = ReadString(body, "mode") ?? "driving",
+                WorkHour = workHour is > 0 and < 24 ? (int)workHour.Value : 8,
+                WorkMinute = workMinute is >= 0 and < 60 ? (int)workMinute.Value : 30,
+                OriginName = ReadString(body, "originName"),
+                DestinationName = ReadString(body, "destinationName"),
+                TypicalDurationMinutes = typicalDurationMinutes is > 0
+                    ? (int)typicalDurationMinutes.Value
+                    : 25
+            };
+            return ProtocolDispatchResult.Ok(MapCommute(stateStore.UpsertCommuteProfile(commute)));
+        }
+
+        return ProtocolDispatchResult.Ok(Array.Empty<object>());
     }
 
     private ProtocolDispatchResult HandleBackup(string operation, ProtocolEnvelope envelope)
@@ -569,6 +604,26 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             source = holiday.Source,
             countryCode = holiday.CountryCode,
             created = holiday.Created
+        };
+    }
+
+    private static object MapCommute(CommuteProfileRecord commute)
+    {
+        return new
+        {
+            id = commute.Id,
+            loopId = commute.LoopId,
+            memberId = commute.MemberId,
+            isEnabled = commute.IsEnabled,
+            isComplete = commute.IsComplete,
+            mode = commute.Mode,
+            workHour = commute.WorkHour,
+            workMinute = commute.WorkMinute,
+            originName = commute.OriginName,
+            destinationName = commute.DestinationName,
+            typicalDurationMinutes = commute.TypicalDurationMinutes,
+            created = commute.Created,
+            updated = commute.Updated
         };
     }
 

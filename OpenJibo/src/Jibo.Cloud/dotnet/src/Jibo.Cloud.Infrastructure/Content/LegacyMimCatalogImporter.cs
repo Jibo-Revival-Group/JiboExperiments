@@ -170,7 +170,46 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("CalendarOutro", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.CalendarOutro;
 
+        if (fileName.StartsWith("CommuteAppSetup", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteAppSetup;
+
+        if (fileName.StartsWith("CommuteConfirmSpeaker", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteConfirmSpeaker;
+
         if (fileName.StartsWith("CommuteNow", StringComparison.OrdinalIgnoreCase)) return LegacyMimBucket.CommuteNow;
+
+        if (fileName.StartsWith("CommuteMinutesLeft", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteMinutesLeft;
+
+        if (fileName.StartsWith("CommuteDepartTimeNormal", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteDepartTimeNormal;
+
+        if (fileName.StartsWith("CommuteDepartTimeNotNormal", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteDepartTimeNotNormal;
+
+        if (fileName.StartsWith("CommuteDriveNormal", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteDriveNormal;
+
+        if (fileName.StartsWith("CommuteDriveLate", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteDriveLate;
+
+        if (fileName.StartsWith("CommuteDriveHurry", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteDriveHurry;
+
+        if (fileName.StartsWith("CommuteDrivePoor", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteDrivePoor;
+
+        if (fileName.StartsWith("CommuteDriveTerrible", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteDriveTerrible;
+
+        if (fileName.StartsWith("CommuteTransportNormal", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteTransportNormal;
+
+        if (fileName.StartsWith("CommuteTransportLate", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteTransportLate;
+
+        if (fileName.StartsWith("CommuteTransportHurry", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CommuteTransportHurry;
 
         if (fileName.StartsWith("CommuteServiceDown", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.CommuteServiceDown;
@@ -295,7 +334,26 @@ public static class LegacyMimCatalogImporter
             CalendarServiceDownReplies = Merge(baseCatalog.CalendarServiceDownReplies,
                 importedCatalog.CalendarServiceDownReplies),
             CalendarOutroReplies = Merge(baseCatalog.CalendarOutroReplies, importedCatalog.CalendarOutroReplies),
+            CommuteAppSetupReplies = Merge(baseCatalog.CommuteAppSetupReplies, importedCatalog.CommuteAppSetupReplies),
+            CommuteConfirmSpeakerReplies = Merge(baseCatalog.CommuteConfirmSpeakerReplies,
+                importedCatalog.CommuteConfirmSpeakerReplies),
             CommuteNowReplies = Merge(baseCatalog.CommuteNowReplies, importedCatalog.CommuteNowReplies),
+            CommuteMinutesLeftReplies = Merge(baseCatalog.CommuteMinutesLeftReplies, importedCatalog.CommuteMinutesLeftReplies),
+            CommuteDepartTimeNormalReplies = Merge(baseCatalog.CommuteDepartTimeNormalReplies,
+                importedCatalog.CommuteDepartTimeNormalReplies),
+            CommuteDepartTimeNotNormalReplies = Merge(baseCatalog.CommuteDepartTimeNotNormalReplies,
+                importedCatalog.CommuteDepartTimeNotNormalReplies),
+            CommuteDriveNormalReplies = Merge(baseCatalog.CommuteDriveNormalReplies, importedCatalog.CommuteDriveNormalReplies),
+            CommuteDriveLateReplies = Merge(baseCatalog.CommuteDriveLateReplies, importedCatalog.CommuteDriveLateReplies),
+            CommuteDriveHurryReplies = Merge(baseCatalog.CommuteDriveHurryReplies, importedCatalog.CommuteDriveHurryReplies),
+            CommuteDrivePoorReplies = Merge(baseCatalog.CommuteDrivePoorReplies, importedCatalog.CommuteDrivePoorReplies),
+            CommuteDriveTerribleReplies = Merge(baseCatalog.CommuteDriveTerribleReplies, importedCatalog.CommuteDriveTerribleReplies),
+            CommuteTransportNormalReplies = Merge(baseCatalog.CommuteTransportNormalReplies,
+                importedCatalog.CommuteTransportNormalReplies),
+            CommuteTransportLateReplies = Merge(baseCatalog.CommuteTransportLateReplies,
+                importedCatalog.CommuteTransportLateReplies),
+            CommuteTransportHurryReplies = Merge(baseCatalog.CommuteTransportHurryReplies,
+                importedCatalog.CommuteTransportHurryReplies),
             CommuteServiceDownReplies = Merge(baseCatalog.CommuteServiceDownReplies,
                 importedCatalog.CommuteServiceDownReplies),
             NewsIntroReplies = Merge(baseCatalog.NewsIntroReplies, importedCatalog.NewsIntroReplies),
@@ -449,6 +507,19 @@ public static class LegacyMimCatalogImporter
         CalendarServiceDown,
         CalendarOutro,
         CommuteNow,
+        CommuteMinutesLeft,
+        CommuteDepartTimeNormal,
+        CommuteDepartTimeNotNormal,
+        CommuteAppSetup,
+        CommuteConfirmSpeaker,
+        CommuteDriveNormal,
+        CommuteDriveLate,
+        CommuteDriveHurry,
+        CommuteDrivePoor,
+        CommuteDriveTerrible,
+        CommuteTransportNormal,
+        CommuteTransportLate,
+        CommuteTransportHurry,
         CommuteServiceDown,
         NewsIntro,
         NewsCategoryIntro,
@@ -462,7 +533,20 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _calendarNothingTodayReplies = [];
         private readonly List<string> _calendarOutroReplies = [];
         private readonly List<string> _calendarServiceDownReplies = [];
+        private readonly List<string> _commuteAppSetupReplies = [];
+        private readonly List<string> _commuteConfirmSpeakerReplies = [];
+        private readonly List<string> _commuteDepartTimeNormalReplies = [];
+        private readonly List<string> _commuteDepartTimeNotNormalReplies = [];
         private readonly List<string> _commuteNowReplies = [];
+        private readonly List<string> _commuteMinutesLeftReplies = [];
+        private readonly List<string> _commuteDriveNormalReplies = [];
+        private readonly List<string> _commuteDriveLateReplies = [];
+        private readonly List<string> _commuteDriveHurryReplies = [];
+        private readonly List<string> _commuteDrivePoorReplies = [];
+        private readonly List<string> _commuteDriveTerribleReplies = [];
+        private readonly List<string> _commuteTransportNormalReplies = [];
+        private readonly List<string> _commuteTransportLateReplies = [];
+        private readonly List<string> _commuteTransportHurryReplies = [];
         private readonly List<string> _commuteServiceDownReplies = [];
         private readonly List<string> _birthdayCelebrationReplies = [];
         private readonly List<JiboConditionedReply> _emotionReplies = [];
@@ -615,8 +699,47 @@ public static class LegacyMimCatalogImporter
                 case LegacyMimBucket.CalendarOutro:
                     AddDistinct(_calendarOutroReplies, text);
                     return;
+                case LegacyMimBucket.CommuteAppSetup:
+                    AddDistinct(_commuteAppSetupReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteConfirmSpeaker:
+                    AddDistinct(_commuteConfirmSpeakerReplies, text);
+                    return;
                 case LegacyMimBucket.CommuteNow:
                     AddDistinct(_commuteNowReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteMinutesLeft:
+                    AddDistinct(_commuteMinutesLeftReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteDepartTimeNormal:
+                    AddDistinct(_commuteDepartTimeNormalReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteDepartTimeNotNormal:
+                    AddDistinct(_commuteDepartTimeNotNormalReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteDriveNormal:
+                    AddDistinct(_commuteDriveNormalReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteDriveLate:
+                    AddDistinct(_commuteDriveLateReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteDriveHurry:
+                    AddDistinct(_commuteDriveHurryReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteDrivePoor:
+                    AddDistinct(_commuteDrivePoorReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteDriveTerrible:
+                    AddDistinct(_commuteDriveTerribleReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteTransportNormal:
+                    AddDistinct(_commuteTransportNormalReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteTransportLate:
+                    AddDistinct(_commuteTransportLateReplies, text);
+                    return;
+                case LegacyMimBucket.CommuteTransportHurry:
+                    AddDistinct(_commuteTransportHurryReplies, text);
                     return;
                 case LegacyMimBucket.CommuteServiceDown:
                     AddDistinct(_commuteServiceDownReplies, text);
@@ -670,7 +793,20 @@ public static class LegacyMimCatalogImporter
                 CalendarNothingReplies = [.. _calendarNothingReplies],
                 CalendarServiceDownReplies = [.. _calendarServiceDownReplies],
                 CalendarOutroReplies = [.. _calendarOutroReplies],
+                CommuteAppSetupReplies = [.. _commuteAppSetupReplies],
+                CommuteConfirmSpeakerReplies = [.. _commuteConfirmSpeakerReplies],
                 CommuteNowReplies = [.. _commuteNowReplies],
+                CommuteMinutesLeftReplies = [.. _commuteMinutesLeftReplies],
+                CommuteDepartTimeNormalReplies = [.. _commuteDepartTimeNormalReplies],
+                CommuteDepartTimeNotNormalReplies = [.. _commuteDepartTimeNotNormalReplies],
+                CommuteDriveNormalReplies = [.. _commuteDriveNormalReplies],
+                CommuteDriveLateReplies = [.. _commuteDriveLateReplies],
+                CommuteDriveHurryReplies = [.. _commuteDriveHurryReplies],
+                CommuteDrivePoorReplies = [.. _commuteDrivePoorReplies],
+                CommuteDriveTerribleReplies = [.. _commuteDriveTerribleReplies],
+                CommuteTransportNormalReplies = [.. _commuteTransportNormalReplies],
+                CommuteTransportLateReplies = [.. _commuteTransportLateReplies],
+                CommuteTransportHurryReplies = [.. _commuteTransportHurryReplies],
                 CommuteServiceDownReplies = [.. _commuteServiceDownReplies],
                 NewsIntroReplies = [.. _newsIntroReplies],
                 NewsCategoryIntroReplies = [.. _newsCategoryIntroReplies],

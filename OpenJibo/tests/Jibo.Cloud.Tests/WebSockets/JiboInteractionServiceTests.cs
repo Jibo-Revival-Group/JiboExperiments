@@ -2,6 +2,9 @@ using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
+using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.Calendar;
+using Jibo.Cloud.Infrastructure.Commute;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Runtime.Abstractions;
@@ -1891,10 +1894,15 @@ public sealed class JiboInteractionServiceTests
         {
             Snapshot = new WeatherReportSnapshot("Boston, U.S.", "light rain", 61, 65, 54, "rain", false)
         };
-        var calendarProvider = new CapturingCalendarReportProvider
+        var cloudStateStore = new InMemoryCloudStateStore();
+        cloudStateStore.UpsertCalendarEvent(new CalendarEventRecord
         {
-            Snapshot = new CalendarReportSnapshot(["get personal report from jibo"], ["at 6:00 p.m."], [])
-        };
+            LoopId = "openjibo-default-loop",
+            Summary = "get personal report from jibo",
+            TimeLabel = "at 6:00 p.m.",
+            Date = DateOnly.FromDateTime(DateTime.UtcNow)
+        });
+        var calendarProvider = new CloudStateCalendarReportProvider(cloudStateStore);
         var service = CreateService(weatherReportProvider: weatherProvider, calendarReportProvider: calendarProvider);
 
         var decision = await service.BuildDecisionAsync(new TurnContext
@@ -1911,6 +1919,54 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("personal_report_delivered", decision.IntentName);
         Assert.Contains("Your calendar says get personal report from jibo, at 6:00 p.m.", decision.ReplyText,
             StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PersonalReport_UsesCommuteProviderAndNormalTraffic()
+    {
+        var weatherProvider = new CapturingWeatherReportProvider
+        {
+            Snapshot = new WeatherReportSnapshot("Boston, U.S.", "light rain", 61, 65, 54, "rain", false)
+        };
+        var calendarStore = new InMemoryCloudStateStore();
+        calendarStore.UpsertCalendarEvent(new CalendarEventRecord
+        {
+            LoopId = "openjibo-default-loop",
+            Summary = "get personal report from jibo",
+            TimeLabel = "at 6:00 p.m.",
+            Date = DateOnly.FromDateTime(DateTime.UtcNow)
+        });
+        var calendarProvider = new CloudStateCalendarReportProvider(calendarStore);
+        var cloudStateStore = new InMemoryCloudStateStore();
+        var commuteProvider = new CloudStateCommuteReportProvider(cloudStateStore);
+        var commuteTime = DateTimeOffset.Now.AddMinutes(45);
+        cloudStateStore.UpsertCommuteProfile(new CommuteProfileRecord
+        {
+            LoopId = "openjibo-default-loop",
+            Mode = "driving",
+            WorkHour = commuteTime.Hour,
+            WorkMinute = commuteTime.Minute,
+            TypicalDurationMinutes = 25
+        });
+
+        var service = CreateService(
+            weatherReportProvider: weatherProvider,
+            calendarReportProvider: calendarProvider,
+            commuteReportProvider: commuteProvider);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "yes",
+            NormalizedTranscript = "yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                [PersonalReportStateKey] = "awaiting_identity_confirmation",
+                [PersonalReportUserNameKey] = "alex"
+            }
+        });
+
+        Assert.Equal("personal_report_delivered", decision.IntentName);
+        Assert.Contains("commute", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -4192,15 +4248,4 @@ public sealed class JiboInteractionServiceTests
         }
     }
 
-    private sealed class CapturingCalendarReportProvider : ICalendarReportProvider
-    {
-        public CalendarReportSnapshot? Snapshot { get; init; }
-
-        public Task<CalendarReportSnapshot?> GetReportAsync(
-            TurnContext turn,
-            CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(Snapshot);
-        }
-    }
 }

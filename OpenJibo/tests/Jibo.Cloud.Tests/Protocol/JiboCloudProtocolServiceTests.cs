@@ -168,6 +168,43 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task PersonUpsertCommute_ThenListCommute_ReturnsPersistedLoopProfile()
+    {
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore());
+
+        var upsert = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Person_20160715",
+            Operation = "UpsertCommute",
+            BodyText =
+                """{"loopId":"loop-123","mode":"walking","workHour":8,"workMinute":15,"typicalDurationMinutes":22}"""
+        });
+
+        using var upsertPayload = JsonDocument.Parse(upsert.BodyText);
+        Assert.Equal(200, upsert.StatusCode);
+        Assert.Equal("loop-123", upsertPayload.RootElement.GetProperty("loopId").GetString());
+        Assert.Equal("walking", upsertPayload.RootElement.GetProperty("mode").GetString());
+
+        var listed = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Person_20160715",
+            Operation = "ListCommute",
+            BodyText = """{"loopId":"loop-123"}"""
+        });
+
+        using var listedPayload = JsonDocument.Parse(listed.BodyText);
+        Assert.Equal(200, listed.StatusCode);
+        Assert.Contains(listedPayload.RootElement.EnumerateArray(),
+            item => item.GetProperty("loopId").GetString() == "loop-123" &&
+                    item.GetProperty("mode").GetString() == "walking" &&
+                    item.GetProperty("workHour").GetInt32() == 8);
+    }
+
+    [Fact]
     public async Task MediaCreateAndGet_ReturnsCreatedItem()
     {
         var created = await _service.DispatchAsync(new ProtocolEnvelope

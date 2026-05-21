@@ -1,4 +1,5 @@
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Persistence;
 
 namespace Jibo.Cloud.Tests.Infrastructure;
@@ -103,6 +104,21 @@ public sealed class PersistenceStoreTests
             var update = firstStore.CreateUpdate("1.0.0", "1.0.1", "Bug fix", null, 42, "robot", null, null);
             var media = firstStore.CreateMedia("openjibo-default-loop", "persisted-photo", "image", "photo-ref", false,
                 new Dictionary<string, object?> { ["note"] = "roundtrip" });
+            var commute = firstStore.UpsertCommuteProfile(new CommuteProfileRecord
+            {
+                LoopId = "openjibo-default-loop",
+                Mode = "driving",
+                WorkHour = 8,
+                WorkMinute = 30,
+                TypicalDurationMinutes = 25
+            });
+            var calendarEvent = firstStore.UpsertCalendarEvent(new CalendarEventRecord
+            {
+                LoopId = "openjibo-default-loop",
+                Summary = "Report review",
+                TimeLabel = "at 6:00 p.m.",
+                Date = DateOnly.FromDateTime(DateTime.UtcNow)
+            });
             var sessionToken = firstStore.IssueRobotToken("robot-123");
             var device = firstStore.GetOrCreateDevice("robot-123", "3.2.1", "4.5.6");
             firstStore.SavePersistedState();
@@ -117,6 +133,10 @@ public sealed class PersistenceStoreTests
             Assert.Equal(firstInfo.Revision, secondInfo.Revision);
             Assert.Contains(secondStore.ListUpdates("robot"), item => item.UpdateId == update.UpdateId);
             Assert.Contains(secondStore.ListMedia(), item => item.Path == media.Path);
+            Assert.Contains(secondStore.GetCommuteProfiles("openjibo-default-loop"),
+                item => item.Id == commute.Id && item.Mode == commute.Mode);
+            Assert.Contains(secondStore.GetCalendarEvents("openjibo-default-loop"),
+                item => item.Id == calendarEvent.Id && item.Summary == calendarEvent.Summary);
             Assert.NotNull(secondStore.FindSessionByToken(sessionToken));
             Assert.Equal("3.2.1", secondStore.GetOrCreateDevice(device.DeviceId, null, null).FirmwareVersion);
             Assert.NotEmpty(secondStore.GetPeople());

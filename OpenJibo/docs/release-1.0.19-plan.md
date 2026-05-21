@@ -120,6 +120,7 @@ Reference design:
 
 - [persistence-architecture.md](persistence-architecture.md)
 - [holiday-architecture.md](holiday-architecture.md)
+- [commute-architecture.md](commute-architecture.md)
 
 ## First Implemented Slice In `1.0.19`
 
@@ -291,6 +292,10 @@ This confirms the pizza-fact offer state now keeps the yes/no branch open throug
 
 Personal report parity planning is now captured with Pegasus source anchors for weather visuals/animations, live news, commute, and calendar gap coverage.
 
+Calendar is now backed by a loop-scoped provider seam that can merge persisted loop events with birthday and holiday dates, keeping the report aligned with household context.
+
+Commute now uses a loop-scoped commute profile and provider seam so the report can speak in the legacy commute shape without inventing a separate hosted travel service yet.
+
 Reference:
 
 - [personal-report-parity-plan.md](personal-report-parity-plan.md)
@@ -335,7 +340,7 @@ Third completed guardrail slice under this queue:
 
 Next queued implementation track after parser guardrails:
 
-- personal report parity slices (weather visual parity, live news path, commute/calendar gap closure)
+- personal report parity slices (weather visual parity, live news path, commute/calendar refinement)
 
 First completed slice in this personal-report parity track:
 
@@ -344,6 +349,7 @@ First completed slice in this personal-report parity track:
 - added memory/transcript category hinting for provider requests (`sports`, `technology`, `business`, etc.)
 - added provider-side request caching for both news and weather to reduce integration churn and repeated lookups
 - added focused interaction + websocket tests for provider-backed news speech output and request-hint plumbing
+- added loop-scoped calendar and commute provider seams so personal report can use persisted household context instead of static placeholders
 
 ## Next Slices
 

@@ -1626,6 +1626,11 @@ public sealed class JiboInteractionService(
                 "commute",
                 ChooseCommuteServiceDownReply(catalog));
 
+        if (snapshot.RequiresSetup)
+            return new JiboInteractionDecision(
+                "commute_setup",
+                ChooseCommuteAppSetupReply(catalog));
+
         return new JiboInteractionDecision(
             "commute",
             BuildCommuteSpokenReply(snapshot, catalog));
@@ -1754,47 +1759,122 @@ public sealed class JiboInteractionService(
     {
         var duration = snapshot.DurationMinutes;
         var durationText = duration <= 1 ? "1 minute" : $"{duration} minutes";
+        var minutesLeft = snapshot.MinutesUntilWork;
+        var minutesLeftText = minutesLeft <= 1 ? "1 minute" : $"{Math.Abs(minutesLeft)} minutes";
         var mode = string.IsNullOrWhiteSpace(snapshot.Mode) ? "driving" : snapshot.Mode.Trim();
+        var template = ChooseCommuteTemplate(snapshot, catalog, mode);
+        var reply = RenderCommuteTemplate(template, durationText, minutesLeftText);
 
-        var template = ChooseCommuteTemplate(catalog.CommuteNowReplies, mode,
-            "For your commute, it should take about ${skill.commute.durationMins} minutes.");
+        if (minutesLeft > 0 && minutesLeft < 30)
+        {
+            var minutesTemplate = ChooseShortestTemplate(catalog.CommuteMinutesLeftReplies)
+                ?? "That's in about ${skill.commute.minsLeft} minutes.";
+            reply = $"{reply} {RenderCommuteTemplate(minutesTemplate, durationText, minutesLeftText)}";
+        }
 
+        if (minutesLeft > 0 && minutesLeft < 120)
+        {
+            var departTemplate = ChooseCommuteDepartTimeTemplate(snapshot, catalog, mode);
+            if (!string.IsNullOrWhiteSpace(departTemplate))
+                reply = $"{reply} {RenderCommuteTemplate(departTemplate, durationText, minutesLeftText)}";
+        }
+
+        return reply.Replace("  ", " ", StringComparison.Ordinal).Trim();
+    }
+
+    private string ChooseCommuteAppSetupReply(JiboExperienceCatalog catalog)
+    {
+        return SelectLegacyReply(
+            catalog.CommuteAppSetupReplies,
+            [
+                "I need your commute settings before I can give you a commute report."
+            ]);
+    }
+
+    private static string ChooseCommuteTemplate(
+        CommuteReportSnapshot snapshot,
+        JiboExperienceCatalog catalog,
+        string mode)
+    {
+        var minutesUntilWork = snapshot.MinutesUntilWork;
+        var extraMinutes = Math.Max(0, snapshot.ExtraMinutes);
+        var isLate = minutesUntilWork <= 0;
+        var isHurry = minutesUntilWork > 0 && minutesUntilWork <= 10;
+        var isNormal = !isLate && !isHurry;
+        var isFarAway = minutesUntilWork > 120 || minutesUntilWork < -30;
+        var hasTrafficSeverity = minutesUntilWork > 0;
+        var isTerrible = hasTrafficSeverity && extraMinutes >= 15;
+        var isPoor = hasTrafficSeverity && extraMinutes >= 5;
+
+        var loweredMode = mode.Trim().ToLowerInvariant();
+        IReadOnlyList<string> candidates = loweredMode switch
+        {
+            "walking" when isHurry => catalog.CommuteTransportHurryReplies,
+            "walking" when isLate => catalog.CommuteTransportLateReplies,
+            "walking" => catalog.CommuteTransportNormalReplies,
+            "transit" when isHurry => catalog.CommuteTransportHurryReplies,
+            "transit" when isLate => catalog.CommuteTransportLateReplies,
+            "transit" => catalog.CommuteTransportNormalReplies,
+            "bicycling" when isHurry => catalog.CommuteDriveHurryReplies,
+            "bicycling" when isLate => catalog.CommuteDriveLateReplies,
+            "bicycling" => catalog.CommuteDriveNormalReplies,
+            _ when isFarAway => catalog.CommuteNowReplies,
+            _ when isTerrible => catalog.CommuteDriveTerribleReplies,
+            _ when isPoor => catalog.CommuteDrivePoorReplies,
+            _ when isHurry => catalog.CommuteDriveHurryReplies,
+            _ when isLate => catalog.CommuteDriveLateReplies,
+            _ when isNormal => catalog.CommuteDriveNormalReplies,
+            _ => catalog.CommuteNowReplies
+        };
+
+        if (candidates.Count == 0)
+            return "For your commute, it should take about ${skill.commute.durationMins} minutes.";
+
+        var selected = ChooseShortestTemplate(candidates);
+        return string.IsNullOrWhiteSpace(selected)
+            ? "For your commute, it should take about ${skill.commute.durationMins} minutes."
+            : selected!;
+    }
+
+    private static string ChooseCommuteDepartTimeTemplate(
+        CommuteReportSnapshot snapshot,
+        JiboExperienceCatalog catalog,
+        string mode)
+    {
+        var loweredMode = mode.Trim().ToLowerInvariant();
+        var templates = snapshot.MinutesUntilWork <= 0
+            ? catalog.CommuteDepartTimeNotNormalReplies
+            : catalog.CommuteDepartTimeNormalReplies;
+
+        if (templates.Count == 0) return string.Empty;
+
+        var selected = ChooseShortestTemplate(templates);
+        if (!string.IsNullOrWhiteSpace(selected)) return selected!;
+
+        return loweredMode switch
+        {
+            "walking" => "If you leave at the usual time, that should work out fine.",
+            "transit" => "If you leave at the usual time, that should work out fine.",
+            _ => "If you leave at the usual time, that should work out fine."
+        };
+    }
+
+    private static string RenderCommuteTemplate(string template, string durationText, string minutesLeftText)
+    {
         return template
             .Replace("${skill.commute.durationMins}", durationText, StringComparison.OrdinalIgnoreCase)
+            .Replace("${skill.commute.minsLeft}", minutesLeftText, StringComparison.OrdinalIgnoreCase)
             .Replace("${speaker}", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
     }
 
-    private static string ChooseCommuteTemplate(
-        IReadOnlyList<string> templates,
-        string mode,
-        string fallback)
+    private static string? ChooseShortestTemplate(IEnumerable<string> templates)
     {
-        if (templates.Count == 0) return fallback;
-
-        var loweredMode = mode.Trim().ToLowerInvariant();
-        var filtered = templates.Where(template =>
-        {
-            var lowered = template.ToLowerInvariant();
-            return loweredMode switch
-            {
-                "walking" => lowered.Contains("walk", StringComparison.OrdinalIgnoreCase),
-                "transit" => lowered.Contains("public transportation", StringComparison.OrdinalIgnoreCase) ||
-                             lowered.Contains("transit", StringComparison.OrdinalIgnoreCase) ||
-                             lowered.Contains("transportation", StringComparison.OrdinalIgnoreCase),
-                "bicycling" => lowered.Contains("bike", StringComparison.OrdinalIgnoreCase) ||
-                               lowered.Contains("ride", StringComparison.OrdinalIgnoreCase),
-                _ => lowered.Contains("drive", StringComparison.OrdinalIgnoreCase) ||
-                     lowered.Contains("commute", StringComparison.OrdinalIgnoreCase)
-            };
-        }).ToList();
-
-        var selected = filtered.Count > 0
-            ? filtered.OrderBy(static template => template.Length).First()
-            : templates.OrderBy(static template => template.Length).FirstOrDefault();
-
-        return string.IsNullOrWhiteSpace(selected) ? fallback : selected!;
+        return templates
+            .Where(static template => !string.IsNullOrWhiteSpace(template))
+            .OrderBy(static template => template.Length)
+            .FirstOrDefault();
     }
 
     private static string BuildWeeklyForecastSpokenReply(

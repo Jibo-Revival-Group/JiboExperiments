@@ -54,8 +54,10 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
         services.AddSingleton<IHolidayCalendarProvider>(provider =>
             new NagerDateHolidayCalendarProvider(provider.GetRequiredService<HolidayCalendarOptions>()));
-        services.AddSingleton<ICalendarReportProvider, UnavailableCalendarReportProvider>();
-        services.AddSingleton<ICommuteReportProvider, UnavailableCommuteReportProvider>();
+        services.AddSingleton<ICalendarReportProvider>(provider =>
+            new CloudStateCalendarReportProvider(provider.GetRequiredService<ICloudStateStore>()));
+        services.AddSingleton<ICommuteReportProvider>(provider =>
+            new CloudStateCommuteReportProvider(provider.GetRequiredService<ICloudStateStore>()));
         var statePersistencePath = configuration?["OpenJibo:State:PersistencePath"]
                                    ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "cloud-state.json");
         var personalMemoryPersistencePath = configuration?["OpenJibo:PersonalMemory:PersistencePath"]

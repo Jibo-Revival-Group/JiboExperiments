@@ -103,6 +103,33 @@ The default country code is `US`, but you can override it with:
 If you later add custom holiday authoring, disabled records can be used to suppress a holiday for a
 loop without removing the underlying system holiday source.
 
+## Calendar Wiring
+
+Calendar report output is now driven by a loop-scoped in-process provider.
+
+The provider currently:
+
+- reads persisted loop calendar events
+- folds in birthday and holiday dates that already live in the loop-scoped holiday list
+- returns a safe empty calendar view when nothing is scheduled
+
+This keeps the personal report moving toward Pegasus-style household-aware output without forcing a
+full external calendar integration yet.
+
+## Commute Wiring
+
+Commute report output is now driven by a loop-scoped commute profile plus a provider seam.
+
+The provider currently:
+
+- reads persisted loop commute profiles
+- returns a setup view when commute is missing or incomplete
+- computes commute timing from the loop profile and the current clock
+- keeps the personal report flow aligned with the stock `Commute_*` shape
+
+The provider is intentionally conservative for now. It preserves the old report shape and gives us
+room to add a richer travel-time source later without changing the behavior layer again.
+
 ## Recovery Strategy
 
 The first supported device path is:

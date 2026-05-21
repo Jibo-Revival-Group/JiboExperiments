@@ -18,6 +18,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     };
 
     private readonly List<BackupRecord> _backups = [];
+    private readonly List<CommuteProfileRecord> _commuteProfiles = [];
+    private readonly List<CalendarEventRecord> _calendarEvents = [];
     private readonly ConcurrentDictionary<string, DeviceRegistration> _devices = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly ConcurrentDictionary<string, KeyRequestRecord>
@@ -161,6 +163,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _backups.Clear();
         _backups.AddRange(snapshot.Backups ?? []);
 
+        _commuteProfiles.Clear();
+        _commuteProfiles.AddRange(snapshot.CommuteProfiles ?? []);
+
+        _calendarEvents.Clear();
+        _calendarEvents.AddRange(snapshot.CalendarEvents ?? []);
+
         _loops.Clear();
         _loops.AddRange(snapshot.Loops ?? []);
 
@@ -214,6 +222,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 Updates = _updates.ToArray(),
                 Media = _media.ToArray(),
                 Backups = _backups.ToArray(),
+                CommuteProfiles = _commuteProfiles.ToArray(),
+                CalendarEvents = _calendarEvents.ToArray(),
                 Loops = _loops.ToArray(),
                 Holidays = _holidayOverrides.ToArray(),
                 People = _people.ToArray()
@@ -479,6 +489,55 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return backup;
     }
 
+    public IReadOnlyList<CalendarEventRecord> GetCalendarEvents(string? loopId = null)
+    {
+        var resolvedLoopId = string.IsNullOrWhiteSpace(loopId) ? ResolveDefaultLoopId() : loopId.Trim();
+        return _calendarEvents
+            .Where(calendarEvent => calendarEvent.IsEnabled)
+            .Where(calendarEvent =>
+                string.Equals(calendarEvent.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(calendarEvent => calendarEvent.Date)
+            .ThenBy(calendarEvent => calendarEvent.TimeLabel ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(calendarEvent => calendarEvent.Summary, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    public CalendarEventRecord UpsertCalendarEvent(CalendarEventRecord calendarEvent)
+    {
+        var resolvedLoopId = string.IsNullOrWhiteSpace(calendarEvent.LoopId)
+            ? ResolveDefaultLoopId()
+            : calendarEvent.LoopId.Trim();
+        var normalizedId = string.IsNullOrWhiteSpace(calendarEvent.Id)
+            ? $"calendar-{resolvedLoopId}-{Slugify(calendarEvent.Summary)}"
+            : calendarEvent.Id.Trim();
+
+        var resolvedCalendarEvent = new CalendarEventRecord
+        {
+            Id = normalizedId,
+            LoopId = resolvedLoopId,
+            Summary = string.IsNullOrWhiteSpace(calendarEvent.Summary) ? "Calendar event" : calendarEvent.Summary.Trim(),
+            TimeLabel = string.IsNullOrWhiteSpace(calendarEvent.TimeLabel) ? null : calendarEvent.TimeLabel.Trim(),
+            Date = calendarEvent.Date,
+            EndDate = calendarEvent.EndDate,
+            IsAllDay = calendarEvent.IsAllDay,
+            IsEnabled = calendarEvent.IsEnabled,
+            Source = string.IsNullOrWhiteSpace(calendarEvent.Source) ? "manual" : calendarEvent.Source.Trim(),
+            MemberId = calendarEvent.MemberId,
+            Created = calendarEvent.Created
+        };
+
+        var existingIndex = _calendarEvents.FindIndex(existing =>
+            string.Equals(existing.Id, normalizedId, StringComparison.OrdinalIgnoreCase));
+
+        if (existingIndex >= 0)
+            _calendarEvents[existingIndex] = resolvedCalendarEvent;
+        else
+            _calendarEvents.Add(resolvedCalendarEvent);
+
+        TouchState();
+        return resolvedCalendarEvent;
+    }
+
     public bool ShouldCreateSymmetricKey(string loopId)
     {
         return !_symmetricKeys.ContainsKey(loopId);
@@ -580,6 +639,59 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .ToArray();
     }
 
+    public IReadOnlyList<CommuteProfileRecord> GetCommuteProfiles(string? loopId = null)
+    {
+        var resolvedLoopId = string.IsNullOrWhiteSpace(loopId) ? ResolveDefaultLoopId() : loopId.Trim();
+        return _commuteProfiles
+            .Where(commute => commute.IsEnabled)
+            .Where(commute => string.Equals(commute.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(static commute => commute.IsComplete)
+            .ThenByDescending(static commute => commute.Updated)
+            .ToArray();
+    }
+
+    public CommuteProfileRecord UpsertCommuteProfile(CommuteProfileRecord commuteProfile)
+    {
+        var resolvedLoopId = string.IsNullOrWhiteSpace(commuteProfile.LoopId)
+            ? ResolveDefaultLoopId()
+            : commuteProfile.LoopId.Trim();
+        var normalizedId = string.IsNullOrWhiteSpace(commuteProfile.Id)
+            ? $"commute-{resolvedLoopId}"
+            : commuteProfile.Id.Trim();
+
+        var resolvedProfile = new CommuteProfileRecord
+        {
+            Id = normalizedId,
+            LoopId = resolvedLoopId,
+            MemberId = string.IsNullOrWhiteSpace(commuteProfile.MemberId) ? null : commuteProfile.MemberId.Trim(),
+            IsEnabled = commuteProfile.IsEnabled,
+            IsComplete = commuteProfile.IsComplete,
+            Mode = string.IsNullOrWhiteSpace(commuteProfile.Mode) ? "driving" : commuteProfile.Mode.Trim(),
+            WorkHour = commuteProfile.WorkHour,
+            WorkMinute = commuteProfile.WorkMinute,
+            OriginName = string.IsNullOrWhiteSpace(commuteProfile.OriginName) ? null : commuteProfile.OriginName.Trim(),
+            DestinationName = string.IsNullOrWhiteSpace(commuteProfile.DestinationName)
+                ? null
+                : commuteProfile.DestinationName.Trim(),
+            TypicalDurationMinutes = commuteProfile.TypicalDurationMinutes > 0
+                ? commuteProfile.TypicalDurationMinutes
+                : 25,
+            Created = commuteProfile.Created == default ? DateTimeOffset.UtcNow : commuteProfile.Created,
+            Updated = DateTimeOffset.UtcNow
+        };
+
+        var existingIndex = _commuteProfiles.FindIndex(existing =>
+            string.Equals(existing.Id, normalizedId, StringComparison.OrdinalIgnoreCase));
+
+        if (existingIndex >= 0)
+            _commuteProfiles[existingIndex] = resolvedProfile;
+        else
+            _commuteProfiles.Add(resolvedProfile);
+
+        TouchState();
+        return resolvedProfile;
+    }
+
     public HolidayRecord UpsertHoliday(HolidayRecord holiday)
     {
         var resolvedLoopId = string.IsNullOrWhiteSpace(holiday.LoopId) ? ResolveDefaultLoopId() : holiday.LoopId.Trim();
@@ -656,6 +768,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         if (_people.Count != 0)
         {
+            EnsureDefaultCommuteProfile();
             return;
         }
 
@@ -679,6 +792,29 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             DisplayName = "OpenJibo Household Member",
             Alias = "Household Member",
             IsPrimary = false
+        });
+
+        EnsureDefaultCommuteProfile();
+    }
+
+    private void EnsureDefaultCommuteProfile()
+    {
+        if (_commuteProfiles.Any(commute =>
+                string.Equals(commute.LoopId, ResolveDefaultLoopId(), StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        _commuteProfiles.Add(new CommuteProfileRecord
+        {
+            Id = $"commute-{ResolveDefaultLoopId()}",
+            LoopId = ResolveDefaultLoopId(),
+            IsEnabled = true,
+            IsComplete = true,
+            Mode = "driving",
+            WorkHour = 8,
+            WorkMinute = 30,
+            OriginName = "home",
+            DestinationName = "work",
+            TypicalDurationMinutes = 25
         });
     }
 
@@ -767,6 +903,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public UpdateManifest[]? Updates { get; init; }
         public MediaRecord[]? Media { get; init; }
         public BackupRecord[]? Backups { get; init; }
+        public CommuteProfileRecord[]? CommuteProfiles { get; init; }
+        public CalendarEventRecord[]? CalendarEvents { get; init; }
         public LoopRecord[]? Loops { get; init; }
         public HolidayRecord[]? Holidays { get; init; }
         public PersonRecord[]? People { get; init; }

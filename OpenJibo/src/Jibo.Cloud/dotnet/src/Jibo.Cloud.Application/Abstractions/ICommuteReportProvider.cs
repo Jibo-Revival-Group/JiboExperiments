@@ -12,4 +12,7 @@ public sealed record CommuteReportSnapshot(
     string Summary,
     int DurationMinutes,
     string? Mode = null,
-    bool EventIsEarly = false);
+    bool EventIsEarly = false,
+    int MinutesUntilWork = 0,
+    int ExtraMinutes = 0,
+    bool RequiresSetup = false);

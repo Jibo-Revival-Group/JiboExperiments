@@ -180,10 +180,76 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "I heard your calendar request. The cloud knows the phrase, but the real calendar integration is still ahead.",
                 "Calendar is recognized. We still need to connect the actual service path."
             ],
+            CommuteAppSetupReplies =
+            [
+                "I need your commute settings before I can give you a commute report."
+            ],
+            CommuteConfirmSpeakerReplies =
+            [
+                "Let me make sure I have the right speaker for your commute."
+            ],
             CommuteReplies =
             [
                 "I heard your commute request. That one is recognized, but not fully implemented yet.",
                 "Commute is on the discovery list now. The real travel answer still needs a provider."
+            ],
+            CommuteNowReplies =
+            [
+                "For your commute, it should take about {duration}.",
+                "If you head out now, it should take about {duration}."
+            ],
+            CommuteMinutesLeftReplies =
+            [
+                "That's in about {minutes} minutes.",
+                "That's about {minutes} minutes from now."
+            ],
+            CommuteDepartTimeNormalReplies =
+            [
+                "If you leave at the usual time, that should work out fine."
+            ],
+            CommuteDepartTimeNotNormalReplies =
+            [
+                "Your leave-time looks a little off today."
+            ],
+            CommuteDriveNormalReplies =
+            [
+                "Traffic looks about normal today.",
+                "Your drive today looks pretty normal."
+            ],
+            CommuteDriveLateReplies =
+            [
+                "Looking at traffic, if you left now, it'd be a little late for work.",
+                "For your drive, you look a little late today."
+            ],
+            CommuteDriveHurryReplies =
+            [
+                "You should've left a few minutes ago!",
+                "You'd better get moving."
+            ],
+            CommuteDrivePoorReplies =
+            [
+                "Traffic looks a little rough today.",
+                "Your drive looks pretty slow right now."
+            ],
+            CommuteDriveTerribleReplies =
+            [
+                "Traffic looks terrible today.",
+                "Your drive is going to be rough."
+            ],
+            CommuteTransportNormalReplies =
+            [
+                "Your public transportation commute looks pretty normal.",
+                "Transit looks about normal today."
+            ],
+            CommuteTransportLateReplies =
+            [
+                "Your transit commute looks like it may be a little late today.",
+                "You might be late if you leave now and take transit."
+            ],
+            CommuteTransportHurryReplies =
+            [
+                "You should've left a few minutes ago if you want transit to work.",
+                "You're running a little late for transit."
             ],
             NewsReplies =
             [

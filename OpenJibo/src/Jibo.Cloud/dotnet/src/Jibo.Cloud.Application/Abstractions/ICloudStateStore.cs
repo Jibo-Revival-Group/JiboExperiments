@@ -44,5 +44,9 @@ public interface ICloudStateStore
     IReadOnlyList<KeyRequestRecord> GetBinaryRequests();
     IReadOnlyList<HolidayRecord> GetHolidays(string? loopId = null);
     HolidayRecord UpsertHoliday(HolidayRecord holiday);
+    IReadOnlyList<CommuteProfileRecord> GetCommuteProfiles(string? loopId = null);
+    CommuteProfileRecord UpsertCommuteProfile(CommuteProfileRecord commuteProfile);
+    IReadOnlyList<CalendarEventRecord> GetCalendarEvents(string? loopId = null);
+    CalendarEventRecord UpsertCalendarEvent(CalendarEventRecord calendarEvent);
     void UpdateRobot(DeviceRegistration registration);
 }

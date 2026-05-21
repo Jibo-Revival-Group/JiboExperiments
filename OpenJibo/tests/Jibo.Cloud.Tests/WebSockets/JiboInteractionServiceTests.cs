@@ -4192,6 +4192,8 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("provider_success", decision.SkillPayload["news_provider_status"]);
         Assert.Equal(3, decision.SkillPayload["news_provider_requested_headlines"]);
         Assert.Equal(2, decision.SkillPayload["news_provider_resolved_headlines"]);
+        Assert.NotNull(decision.SkillPayload["news_headlines"]);
+        Assert.IsType<Dictionary<string, object?>[]>(decision.SkillPayload["news_headlines"]);
         Assert.Contains("Local robotics team unveils weather-ready helper", decision.ReplyText,
             StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(provider.LastRequest);

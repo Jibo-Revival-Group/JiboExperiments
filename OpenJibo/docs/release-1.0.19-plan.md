@@ -6,6 +6,8 @@ This release starts the shift from `1.0.18` hardening to visible feature growth.
 
 The goal is to keep compatibility work steady while shipping personality and capability slices that make OpenJibo feel less like a placeholder cloud and more like a real assistant platform.
 
+For grocery list capability, the 1.0.19 MVP choice is the existing household list engine with grocery as a first-class spoken alias. That keeps the storage model simple now while leaving integration-backed list orchestration for a later pass.
+
 ## Snapshot
 
 - Kickoff date: `2026-05-05`

@@ -770,7 +770,7 @@ Current release theme:
 
 ### 28. Grocery List Capability (Requested Feature)
 
-- Status: `discovery`
+- Status: `in_progress`
 - Tags: `content`, `docs`, `storage`
 - Why now:
   - directly requested by Jibo owners and fits memory + household utility roadmap
@@ -779,13 +779,14 @@ Current release theme:
   - examples:
     - `C:\Projects\jibo\pegasus\packages\chitchat-skill\mims\scripted-responses\RA_JBO_ShoppingList.mim`
     - `C:\Projects\jibo\pegasus\packages\chitchat-skill\mims\scripted-responses\RA_JBO_ManageToDoList.mim`
-- Candidate delivery paths:
-  - native lightweight list skill (fastest user value)
-  - integration-backed list orchestration (long-term richer ecosystem fit)
+- MVP decision:
+  - use the existing household list engine as the native lightweight grocery MVP
+  - keep grocery as a first-class spoken alias over the shopping list storage path
+  - reserve integration-backed list orchestration for a later discovery pass
 - Exit criteria:
-  - clear decision on MVP path
-  - first schema for list items + ownership scope
-  - initial voice flows and follow-up intent handling defined
+  - grocery prompts, add/recall/done flows, and list follow-ups consistently speak grocery wording
+  - existing shopping/to-do flows remain unchanged
+  - future integration-backed list work remains a separate backlog item
 
 ### 29. Legacy MIM Personality Import Ladder
 

@@ -59,6 +59,13 @@ Main gap:
 
 - no first-class presence/identity perception extraction from runtime context for greeting policy decisions
 
+Current implementation progress:
+
+- runtime presence parsing now extracts speaker, people-present ids, and loop user first names
+- reactive and proactive greeting turns now write durable greeting-presence history into cloud state
+- proactive greeting gating now consults stored greeting history first, then falls back to the current turn metadata
+- the remaining work is to broaden the presence policy surface so it can grow from reactive/proactive greeting split into richer day-part, birthday, and holiday behavior without reworking the storage seam again
+
 ## Implementation Slices
 
 ### Slice G1: Presence Context Extraction And Session Snapshot

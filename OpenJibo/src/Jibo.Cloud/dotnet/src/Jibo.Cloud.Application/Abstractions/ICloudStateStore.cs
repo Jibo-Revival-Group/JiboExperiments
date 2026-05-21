@@ -48,5 +48,7 @@ public interface ICloudStateStore
     CommuteProfileRecord UpsertCommuteProfile(CommuteProfileRecord commuteProfile);
     IReadOnlyList<CalendarEventRecord> GetCalendarEvents(string? loopId = null);
     CalendarEventRecord UpsertCalendarEvent(CalendarEventRecord calendarEvent);
+    IReadOnlyList<GreetingPresenceRecord> GetGreetingPresences(string? loopId = null);
+    GreetingPresenceRecord UpsertGreetingPresence(GreetingPresenceRecord greetingPresence);
     void UpdateRobot(DeviceRegistration registration);
 }

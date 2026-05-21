@@ -702,7 +702,7 @@ Current release theme:
 
 ### 26. Presence-Aware Greetings And Identity Proactivity
 
-- Status: `ready`
+- Status: `in_progress`
 - Tags: `protocol`, `content`, `storage`, `docs`
 - Why now:
   - this is the next personality-charm expansion after parser guardrail and weather bring-up
@@ -719,6 +719,10 @@ Current release theme:
   - add greeting intent families and state-machine split for reactive vs proactive greeting routes
   - add cooldown and trigger-source guardrails for proactive greetings
   - start person-aware greeting hooks (name-aware greeting, morning greeting policy, return greeting policy)
+- Shipped so far:
+  - durable greeting-presence records now persist last-seen and last-greeted per person/loop
+  - proactive greeting gating now consults cloud greeting history when available
+  - reactive and proactive greeting turns write back greeting-history records for later cooldown checks
 - Exit criteria:
   - presence-aware greetings are routed deterministically with tests
   - proactive greetings are frequency-bounded and do not trigger from surprise source when blocked by policy

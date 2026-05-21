@@ -119,6 +119,17 @@ public sealed class PersistenceStoreTests
                 TimeLabel = "at 6:00 p.m.",
                 Date = DateOnly.FromDateTime(DateTime.UtcNow)
             });
+            var greetingPresence = firstStore.UpsertGreetingPresence(new GreetingPresenceRecord
+            {
+                LoopId = "openjibo-default-loop",
+                PersonId = "person-1",
+                SpeakerId = "person-1",
+                PreferredName = "Jake",
+                LastSeenUtc = DateTimeOffset.UtcNow.AddMinutes(-5),
+                LastGreetedUtc = DateTimeOffset.UtcNow.AddMinutes(-4),
+                LastGreetingRoute = "ProactiveGreeting",
+                LastGreetingIntent = "proactive_greeting"
+            });
             var sessionToken = firstStore.IssueRobotToken("robot-123");
             var device = firstStore.GetOrCreateDevice("robot-123", "3.2.1", "4.5.6");
             firstStore.SavePersistedState();
@@ -137,6 +148,10 @@ public sealed class PersistenceStoreTests
                 item => item.Id == commute.Id && item.Mode == commute.Mode);
             Assert.Contains(secondStore.GetCalendarEvents("openjibo-default-loop"),
                 item => item.Id == calendarEvent.Id && item.Summary == calendarEvent.Summary);
+            Assert.Contains(secondStore.GetGreetingPresences("openjibo-default-loop"),
+                item => item.PersonId == greetingPresence.PersonId &&
+                        item.PreferredName == greetingPresence.PreferredName &&
+                        item.LastGreetingRoute == greetingPresence.LastGreetingRoute);
             Assert.NotNull(secondStore.FindSessionByToken(sessionToken));
             Assert.Equal("3.2.1", secondStore.GetOrCreateDevice(device.DeviceId, null, null).FirmwareVersion);
             Assert.NotEmpty(secondStore.GetPeople());

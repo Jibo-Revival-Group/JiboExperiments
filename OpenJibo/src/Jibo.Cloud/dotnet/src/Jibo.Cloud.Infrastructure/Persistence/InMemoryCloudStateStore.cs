@@ -24,6 +24,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private readonly IHolidayCalendarProvider _holidayCalendarProvider;
     private readonly List<HolidayRecord> _holidayOverrides = [];
+    private readonly List<GreetingPresenceRecord> _greetingPresences = [];
 
     private readonly ConcurrentDictionary<string, KeyRequestRecord>
         _keyRequests = new(StringComparer.OrdinalIgnoreCase);
@@ -170,6 +171,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _calendarEvents.Clear();
         _calendarEvents.AddRange(snapshot.CalendarEvents ?? []);
 
+        _greetingPresences.Clear();
+        _greetingPresences.AddRange(snapshot.GreetingPresences ?? []);
+
         _loops.Clear();
         _loops.AddRange(snapshot.Loops ?? []);
 
@@ -225,6 +229,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 Backups = _backups.ToArray(),
                 CommuteProfiles = _commuteProfiles.ToArray(),
                 CalendarEvents = _calendarEvents.ToArray(),
+                GreetingPresences = _greetingPresences.ToArray(),
                 Loops = _loops.ToArray(),
                 Holidays = _holidayOverrides.ToArray(),
                 People = _people.ToArray()
@@ -538,6 +543,66 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         TouchState();
         return resolvedCalendarEvent;
+    }
+
+    public IReadOnlyList<GreetingPresenceRecord> GetGreetingPresences(string? loopId = null)
+    {
+        var resolvedLoopId = string.IsNullOrWhiteSpace(loopId) ? ResolveDefaultLoopId() : loopId.Trim();
+        return _greetingPresences
+            .Where(greeting =>
+                string.Equals(greeting.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(static greeting => greeting.LastGreetedUtc ?? greeting.LastSeenUtc)
+            .ThenByDescending(static greeting => greeting.UpdatedUtc)
+            .ToArray();
+    }
+
+    public GreetingPresenceRecord UpsertGreetingPresence(GreetingPresenceRecord greetingPresence)
+    {
+        var resolvedLoopId = string.IsNullOrWhiteSpace(greetingPresence.LoopId)
+            ? ResolveDefaultLoopId()
+            : greetingPresence.LoopId.Trim();
+        var resolvedPersonId = string.IsNullOrWhiteSpace(greetingPresence.PersonId)
+            ? greetingPresence.SpeakerId?.Trim() ?? "unknown-person"
+            : greetingPresence.PersonId.Trim();
+        var normalizedId = string.IsNullOrWhiteSpace(greetingPresence.Id)
+            ? $"greeting-presence-{resolvedLoopId}-{Slugify(resolvedPersonId)}"
+            : greetingPresence.Id.Trim();
+        var now = DateTimeOffset.UtcNow;
+        var resolvedPresence = new GreetingPresenceRecord
+        {
+            Id = normalizedId,
+            AccountId = string.IsNullOrWhiteSpace(greetingPresence.AccountId)
+                ? _account.AccountId
+                : greetingPresence.AccountId.Trim(),
+            LoopId = resolvedLoopId,
+            PersonId = resolvedPersonId,
+            SpeakerId = string.IsNullOrWhiteSpace(greetingPresence.SpeakerId) ? null : greetingPresence.SpeakerId.Trim(),
+            PreferredName = string.IsNullOrWhiteSpace(greetingPresence.PreferredName)
+                ? null
+                : greetingPresence.PreferredName.Trim(),
+            LastSeenUtc = greetingPresence.LastSeenUtc == default ? now : greetingPresence.LastSeenUtc,
+            LastGreetedUtc = greetingPresence.LastGreetedUtc,
+            LastGreetingRoute = string.IsNullOrWhiteSpace(greetingPresence.LastGreetingRoute)
+                ? null
+                : greetingPresence.LastGreetingRoute.Trim(),
+            LastGreetingIntent = string.IsNullOrWhiteSpace(greetingPresence.LastGreetingIntent)
+                ? null
+                : greetingPresence.LastGreetingIntent.Trim(),
+            CreatedUtc = greetingPresence.CreatedUtc == default ? now : greetingPresence.CreatedUtc,
+            UpdatedUtc = now
+        };
+
+        var existingIndex = _greetingPresences.FindIndex(existing =>
+            string.Equals(existing.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(existing.PersonId, resolvedPersonId, StringComparison.OrdinalIgnoreCase));
+
+        if (existingIndex >= 0)
+            _greetingPresences[existingIndex] = resolvedPresence;
+        else
+            _greetingPresences.Add(resolvedPresence);
+
+        TouchState();
+        return resolvedPresence;
     }
 
     public bool ShouldCreateSymmetricKey(string loopId)
@@ -905,6 +970,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public BackupRecord[]? Backups { get; init; }
         public CommuteProfileRecord[]? CommuteProfiles { get; init; }
         public CalendarEventRecord[]? CalendarEvents { get; init; }
+        public GreetingPresenceRecord[]? GreetingPresences { get; init; }
         public LoopRecord[]? Loops { get; init; }
         public HolidayRecord[]? Holidays { get; init; }
         public PersonRecord[]? People { get; init; }

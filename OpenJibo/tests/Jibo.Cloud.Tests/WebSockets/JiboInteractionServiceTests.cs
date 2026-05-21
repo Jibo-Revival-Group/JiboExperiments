@@ -168,8 +168,9 @@ public sealed class JiboInteractionServiceTests
     public async Task BuildDecisionAsync_GoodMorning_UsesReactiveGreetingWithRememberedName()
     {
         var memoryStore = new InMemoryPersonalMemoryStore();
+        var cloudStateStore = new InMemoryCloudStateStore();
         memoryStore.SetName(new PersonalMemoryTenantScope("acct-a", "loop-a", "device-a"), "jake");
-        var service = CreateService(memoryStore);
+        var service = CreateService(memoryStore, cloudStateStore);
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -178,7 +179,9 @@ public sealed class JiboInteractionServiceTests
             Attributes = new Dictionary<string, object?>
             {
                 ["accountId"] = "acct-a",
-                ["loopId"] = "loop-a"
+                ["loopId"] = "loop-a",
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-a","peoplePresent":[{"id":"person-a"}]},"loop":{"users":[{"id":"person-a","firstName":"jake"}]}}}"""
             },
             DeviceId = "device-a"
         });
@@ -187,8 +190,12 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Good morning, Jake. It is great to see you.", decision.ReplyText);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("ReactiveGreeting", decision.ContextUpdates![GreetingRouteKey]);
-        Assert.Equal(string.Empty, decision.ContextUpdates[GreetingSpeakerKey]);
+        Assert.Equal("person-a", decision.ContextUpdates[GreetingSpeakerKey]);
         Assert.True(DateTimeOffset.TryParse(decision.ContextUpdates[GreetingLastReactiveUtcKey]?.ToString(), out _));
+        Assert.Contains(cloudStateStore.GetGreetingPresences("loop-a"),
+            greeting => greeting.PersonId == "person-a" &&
+                        greeting.LastGreetingRoute == "ReactiveGreeting" &&
+                        greeting.LastGreetingIntent == "good_morning");
     }
 
     [Fact]
@@ -313,7 +320,8 @@ public sealed class JiboInteractionServiceTests
     [Fact]
     public async Task BuildDecisionAsync_TriggerWithKnownIdentity_BuildsProactiveGreetingAndContext()
     {
-        var service = CreateService();
+        var cloudStateStore = new InMemoryCloudStateStore();
+        var service = CreateService(cloudStateStore: cloudStateStore);
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -334,6 +342,43 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("ProactiveGreeting", decision.ContextUpdates![GreetingRouteKey]);
         Assert.Equal("person-1", decision.ContextUpdates[GreetingSpeakerKey]);
         Assert.True(DateTimeOffset.TryParse(decision.ContextUpdates[GreetingLastProactiveUtcKey]?.ToString(), out _));
+        Assert.Contains(cloudStateStore.GetGreetingPresences("openjibo-default-loop"),
+            greeting => greeting.PersonId == "person-1" &&
+                        greeting.LastGreetingRoute == "ProactiveGreeting" &&
+                        greeting.LastGreetingIntent == "proactive_greeting");
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_TriggerWithKnownIdentity_SuppressesRepeatGreetingFromCloudHistory()
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        cloudStateStore.UpsertGreetingPresence(new GreetingPresenceRecord
+        {
+            LoopId = "loop-history",
+            PersonId = "person-1",
+            SpeakerId = "person-1",
+            LastSeenUtc = DateTimeOffset.UtcNow.AddMinutes(-10),
+            LastGreetedUtc = DateTimeOffset.UtcNow,
+            LastGreetingRoute = "ProactiveGreeting",
+            LastGreetingIntent = "proactive_greeting"
+        });
+        var service = CreateService(cloudStateStore: cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["loopId"] = "loop-history",
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
+            }
+        });
+
+        Assert.Equal("trigger_ignored", decision.IntentName);
     }
 
     [Fact]

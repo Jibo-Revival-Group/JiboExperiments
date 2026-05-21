@@ -45,6 +45,7 @@ public sealed partial class JiboInteractionService
         var presence = ResolveGreetingPresenceProfile(turn);
         var displayName = ResolvePreferredGreetingName(turn, presence);
         var replyText = BuildReactiveGreetingReply(greetingIntent, displayName, referenceLocalTime);
+        RecordGreetingPresence(turn, presence, "ReactiveGreeting", greetingIntent, displayName, proactive: false);
         return new JiboInteractionDecision(
             greetingIntent,
             replyText,
@@ -61,6 +62,7 @@ public sealed partial class JiboInteractionService
         var replyText = string.IsNullOrWhiteSpace(displayName)
             ? $"{greetingPrefix}. I am glad to see you."
             : $"{greetingPrefix}, {displayName}. Welcome back.";
+        RecordGreetingPresence(turn, presence, "ProactiveGreeting", "proactive_greeting", displayName, proactive: true);
         return new JiboInteractionDecision(
             "proactive_greeting",
             replyText,
@@ -113,7 +115,7 @@ public sealed partial class JiboInteractionService
             : CultureInfo.InvariantCulture.TextInfo.ToTitleCase(trimmed);
     }
 
-    private static bool ShouldHandleProactiveGreetingTrigger(
+    private bool ShouldHandleProactiveGreetingTrigger(
         TurnContext turn,
         string? triggerSource,
         GreetingPresenceProfile presence)
@@ -122,8 +124,30 @@ public sealed partial class JiboInteractionService
 
         if (!presence.HasKnownIdentity) return false;
 
-        var lastGreetingUtc = ReadTimestampAttribute(turn, LastProactiveGreetingUtcMetadataKey);
+        var lastGreetingUtc = ReadGreetingHistoryLastGreetedUtc(turn, presence);
         return !lastGreetingUtc.HasValue || DateTimeOffset.UtcNow - lastGreetingUtc.Value >= ProactiveGreetingCooldown;
+    }
+
+    private DateTimeOffset? ReadGreetingHistoryLastGreetedUtc(TurnContext turn, GreetingPresenceProfile presence)
+    {
+        var historyIdentity = ResolveGreetingHistoryIdentity(presence);
+        if (!string.IsNullOrWhiteSpace(historyIdentity) && cloudStateStore is not null)
+        {
+            var loopId = ReadTenantAttribute(turn, "loopId") ?? "openjibo-default-loop";
+            var greetingHistory = cloudStateStore.GetGreetingPresences(loopId)
+                .FirstOrDefault(record =>
+                    record.PersonId.Equals(historyIdentity, StringComparison.OrdinalIgnoreCase));
+            if (greetingHistory is not null && greetingHistory.LastGreetedUtc.HasValue)
+                return greetingHistory.LastGreetedUtc;
+        }
+
+        return ReadTimestampAttribute(turn, LastProactiveGreetingUtcMetadataKey);
+    }
+
+    private static string? ResolveGreetingHistoryIdentity(GreetingPresenceProfile presence)
+    {
+        if (!string.IsNullOrWhiteSpace(presence.PrimaryPersonId)) return presence.PrimaryPersonId;
+        return !string.IsNullOrWhiteSpace(presence.SpeakerId) ? presence.SpeakerId : null;
     }
 
     private static DateTimeOffset? ReadTimestampAttribute(TurnContext turn, string key)
@@ -153,6 +177,35 @@ public sealed partial class JiboInteractionService
         };
 
         return updates;
+    }
+
+    private void RecordGreetingPresence(
+        TurnContext turn,
+        GreetingPresenceProfile presence,
+        string route,
+        string intentName,
+        string? preferredName,
+        bool proactive)
+    {
+        if (cloudStateStore is null) return;
+
+        var identityId = ResolveGreetingHistoryIdentity(presence);
+        if (string.IsNullOrWhiteSpace(identityId)) return;
+
+        var now = DateTimeOffset.UtcNow;
+        var tenantScope = ResolveTenantScope(turn, identityId);
+        cloudStateStore.UpsertGreetingPresence(new GreetingPresenceRecord
+        {
+            AccountId = tenantScope.AccountId,
+            LoopId = tenantScope.LoopId,
+            PersonId = identityId,
+            SpeakerId = presence.SpeakerId,
+            PreferredName = preferredName,
+            LastSeenUtc = now,
+            LastGreetedUtc = now,
+            LastGreetingRoute = route,
+            LastGreetingIntent = intentName
+        });
     }
 
     private static string ResolveTimeOfDayGreetingPrefix(DateTimeOffset? referenceLocalTime)

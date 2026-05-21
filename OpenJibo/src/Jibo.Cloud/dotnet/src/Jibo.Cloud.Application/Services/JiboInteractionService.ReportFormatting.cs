@@ -8,6 +8,15 @@ namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService
 {
+    private static string EscapeForEsml(string value)
+    {
+        return value
+            .Replace("&", "&amp;", StringComparison.Ordinal)
+            .Replace("<", "&lt;", StringComparison.Ordinal)
+            .Replace(">", "&gt;", StringComparison.Ordinal)
+            .Replace("\"", "&quot;", StringComparison.Ordinal);
+    }
+
     private static string BuildWeatherSpokenReply(
         WeatherReportSnapshot snapshot,
         WeatherDateEntity weatherDate,

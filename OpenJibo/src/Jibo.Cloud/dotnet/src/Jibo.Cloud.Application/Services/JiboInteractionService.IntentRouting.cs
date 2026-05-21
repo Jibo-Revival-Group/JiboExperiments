@@ -858,7 +858,8 @@ public sealed partial class JiboInteractionService
             "are you friends",
             "are you and i friends",
             "are you and me friends",
-            "are you and jibo friends");
+            "are you and jibo friends")
+            || MatchesFriendQuestionPattern(loweredTranscript);
     }
 
     private static bool IsFriendRelationQuestion(string loweredTranscript)
@@ -874,7 +875,11 @@ public sealed partial class JiboInteractionService
             "i'm friends with you",
             "you are my friend",
             "you re my friend",
-            "you're my friend");
+            "you're my friend")
+            || Regex.IsMatch(
+                loweredTranscript,
+                @"^\s*(is|are)\s+.+\s+(your friend|my friend)\s*$",
+                RegexOptions.CultureInvariant);
     }
 
     private static bool IsBestFriendQuestion(string loweredTranscript)
@@ -890,7 +895,36 @@ public sealed partial class JiboInteractionService
             "i'm best friends with you",
             "you are my best friend",
             "you re my best friend",
-            "you're my best friend");
+            "you're my best friend")
+            || MatchesBestFriendQuestionPattern(loweredTranscript);
+    }
+
+    private static bool MatchesFriendQuestionPattern(string loweredTranscript)
+    {
+        return Regex.IsMatch(
+            loweredTranscript,
+            @"^\s*are you friends with\s+.+\s*$",
+            RegexOptions.CultureInvariant) ||
+               Regex.IsMatch(
+                   loweredTranscript,
+                   @"^\s*are you and\s+.+\s+friends\s*$",
+                   RegexOptions.CultureInvariant);
+    }
+
+    private static bool MatchesBestFriendQuestionPattern(string loweredTranscript)
+    {
+        return Regex.IsMatch(
+            loweredTranscript,
+            @"^\s*are you best friends with\s+.+\s*$",
+            RegexOptions.CultureInvariant) ||
+               Regex.IsMatch(
+                   loweredTranscript,
+                   @"^\s*are you and\s+.+\s+best friends\s*$",
+                   RegexOptions.CultureInvariant) ||
+               Regex.IsMatch(
+                   loweredTranscript,
+                   @"^\s*is\s+.+\s+your best friend\s*$",
+                   RegexOptions.CultureInvariant);
     }
 
 }

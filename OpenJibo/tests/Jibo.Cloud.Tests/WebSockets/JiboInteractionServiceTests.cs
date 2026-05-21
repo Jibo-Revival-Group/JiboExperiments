@@ -478,6 +478,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("do you have friends", "robot_has_friends", "I believe I do have friends")]
     [InlineData("are we friends", "robot_is_friends_with_user", "don't know what I'd do without you")]
     [InlineData("are we best friends", "robot_best_friends", "best friends with anyone in my Loop")]
+    [InlineData("are you friends with Siri", "robot_has_friends", "I believe I do have friends")]
+    [InlineData("is Dr. Breazeal your best friend", "robot_best_friends", "best friends with anyone in my Loop")]
     [InlineData("can you sing", "robot_can_sing", "sing")]
     [InlineData("will you sing", "robot_can_sing", "sing")]
     [InlineData("can you sing a christmas song", "robot_sing_christmas_song", "sing")]

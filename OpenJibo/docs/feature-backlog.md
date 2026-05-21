@@ -503,6 +503,9 @@ Current release theme:
     - shorthand favorites (`my favorite sport football`)
     - weather phrasing (`what's today's weather look like`, `will it be sunny tomorrow`)
   - updated continuation deferral so complete shorthand favorites finalize instead of waiting for missing continuation
+- Progress update (`2026-05-21`):
+  - expanded friendship parsing for Pegasus-style `do you have friends`, `are we friends`, and `are we best friends` phrasing
+  - added named-person guardrails so forms like `are you friends with Siri` and `is Dr. Breazeal your best friend` stay on the friendship route instead of falling into generic chat
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.19` features
   - phrase imports are documented and traceable to Pegasus parser sources

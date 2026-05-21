@@ -85,6 +85,7 @@ The goal is to port these in small batches, capture the source-backed phrasing w
 - continue alarm/gallery/yes-no cleanup from `1.0.18` evidence where regressions are still open
 - improve short-turn STT reliability and low-signal screening
 - the latest STT pass adds a websocket-side low-signal screen for filler-only and stray single-token leftovers while keeping yes/no and word-of-the-day turns intact
+- capture indexing and group-test handoff now have a bundle helper that packages raw event captures, the index manifest, and exported fixtures together for easier review/share flows
 
 ### 3. Pegasus-To-Cloud Platform Porting
 

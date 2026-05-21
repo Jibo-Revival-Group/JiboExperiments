@@ -16,6 +16,8 @@ These scripts help exercise the new .NET hosted cloud locally.
   Runs a small readiness checklist before the first physical Jibo test against the .NET cloud.
 - `Import-WebSocketCaptureFixture.ps1`
   Sanitizes an exported websocket capture fixture and copies it into the checked-in websocket fixture set.
+- `New-CaptureBundle.ps1`
+  Packages the capture root, capture index, and exported fixtures into a single zip bundle for group testing handoff.
 - `start-dotnet-with-node-cert.sh`
   Starts the .NET API on Linux using the same PEM certificate material already used by the Node server.
 - `invoke-live-jibo-prep.sh`

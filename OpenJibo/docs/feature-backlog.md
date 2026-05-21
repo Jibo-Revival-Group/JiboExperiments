@@ -977,6 +977,7 @@ For `1.0.19`:
 11. STT upgrade and noise screening
   - progress update (`2026-05-21`): added a low-signal short-turn screen in websocket finalization so filler-only fragments and stray single-token leftovers like `so command` get rejected before they can become bad turns, while preserving the existing yes/no and word-of-the-day short-turn flows
 12. Hosted capture/storage plan / indexing for group testing
+  - progress update (`2026-05-21`): added a bundle helper so group testers can package raw capture trees, `capture-index.ndjson`, and exported fixtures into one zip handoff artifact
 13. Binary-safe media storage / sync to cloud drive: OneDrive, Google Drive, Box, etc.
 14. Provider-backed news and weather parity polish
 15. Grocery list capability discovery and MVP selection

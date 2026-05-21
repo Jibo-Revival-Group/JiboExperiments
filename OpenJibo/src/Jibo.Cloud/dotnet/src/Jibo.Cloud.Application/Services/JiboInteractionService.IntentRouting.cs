@@ -377,6 +377,40 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what does jibo mean",
+                "what does the name jibo mean",
+                "what is the meaning of jibo"))
+            return "robot_what_does_jibo_mean";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "where do you get info",
+                "where do you get your information",
+                "where do you get information"))
+            return "robot_where_do_you_get_info";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what are you forbidden to do",
+                "what are you not allowed to do",
+                "what can't you do"))
+            return "robot_what_are_you_forbidden_to_do";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what color are you",
+                "what colour are you"))
+            return "robot_what_color_are_you";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what do you do when alone",
+                "what do you do when you're alone",
+                "what do you do by yourself"))
+            return "robot_what_you_do_when_alone";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what do you want",
                 "what is it you want",
                 "what do you really want"))
@@ -766,6 +800,23 @@ public sealed partial class JiboInteractionService
                 "what do you know",
                 "how smart are you"))
             return "robot_knowledge";
+
+        if (MatchesAny(loweredTranscript, "are you god", "are you a god"))
+            return "robot_are_you_god";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "are you here",
+                "are you still here",
+                "are you there"))
+            return "robot_are_you_here";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you have super powers",
+                "do you have superpower",
+                "do you have any super powers"))
+            return "robot_do_you_have_super_powers";
 
         if (MatchesAny(
                 loweredTranscript,

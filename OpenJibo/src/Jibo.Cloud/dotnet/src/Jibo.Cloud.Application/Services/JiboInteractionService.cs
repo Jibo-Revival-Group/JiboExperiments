@@ -776,6 +776,55 @@ public sealed partial class JiboInteractionService(
                 "one in one million",
                 "other jibos",
                 "special snowflake"),
+            "robot_knowledge" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_knowledge",
+                "know a lot",
+                "always learning more"),
+            "robot_are_you_god" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_are_you_god",
+                "very very very very surprised",
+                "safely say no"),
+            "robot_are_you_here" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_are_you_here",
+                "you know it"),
+            "robot_do_you_have_super_powers" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_do_you_have_super_powers",
+                "stop time",
+                "fly all over the world"),
+            "robot_what_does_jibo_mean" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_does_jibo_mean",
+                "compassion",
+                "expressive, idealistic, and inspirational",
+                "helpful sweet and friendly little robot",
+                "cheeseburger"),
+            "robot_where_do_you_get_info" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_where_do_you_get_info",
+                "jibo brain",
+                "cloud",
+                "cloudy jibo brain"),
+            "robot_what_are_you_forbidden_to_do" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_are_you_forbidden_to_do",
+                "drive a car"),
+            "robot_what_color_are_you" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_color_are_you",
+                "white",
+                "black"),
+            "robot_what_you_do_when_alone" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_you_do_when_alone",
+                "games",
+                "moon",
+                "twiddle my thumbs",
+                "count the tiny cracks in the ceiling",
+                "keep busy"),
             "robot_likes_kids" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_kids",

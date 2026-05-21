@@ -274,6 +274,14 @@ public sealed class LegacyMimCatalogImporterTests
             reply.Contains("soft spot", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("energy from the universe", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("compassion", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("jibo brain", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("drive a car", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("twiddle my thumbs", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

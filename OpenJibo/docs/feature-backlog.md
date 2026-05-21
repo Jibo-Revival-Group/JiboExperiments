@@ -891,6 +891,7 @@ Current release theme:
   - mood and affect prompts like `how are you`, `are you happy`, `are you sad`, and `are you angry`
   - self-description charm like `what's your name`, `do you have a nickname`, `do you like being Jibo`, and `what is your favorite name`
   - deeper personality follow-ups like `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` stays deferred until templated placeholder rendering exists
+  - the next identity / knowledge wave adds `are you god`, `are you here`, `do you have super powers`, `how much do you know`, `what does jibo mean`, `where do you get info`, `what are you forbidden to do`, `what color are you`, and `what do you do when alone`
   - additional legacy source-backed `RI_USR` prompts where the text is short and the behavior is easy to verify
 - Exit criteria:
   - a stable checklist exists for the original persona surface

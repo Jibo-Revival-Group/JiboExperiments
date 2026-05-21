@@ -518,7 +518,7 @@ public sealed class JiboInteractionService(
                 randomizer,
                 selected => RenderHolidayTemplate(selected, turn, greetingPresence),
                 out var seasonalHolidayDecision))
-            return seasonalHolidayDecision;
+            return seasonalHolidayDecision!;
 
         return semanticIntent switch
         {
@@ -943,11 +943,10 @@ public sealed class JiboInteractionService(
             [ChitchatStateMachine.RouteMetadataKey] = "ScriptedResponse",
             [ChitchatStateMachine.EmotionMetadataKey] = string.Empty,
             [GreetingRouteMetadataKey] = route,
-            [GreetingSpeakerMetadataKey] = speakerId ?? string.Empty
+            [GreetingSpeakerMetadataKey] = speakerId ?? string.Empty,
+            [proactive ? LastProactiveGreetingUtcMetadataKey : LastReactiveGreetingUtcMetadataKey] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
         };
 
-        updates[proactive ? LastProactiveGreetingUtcMetadataKey : LastReactiveGreetingUtcMetadataKey] =
-            DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
         return updates;
     }
 
@@ -1263,6 +1262,7 @@ public sealed class JiboInteractionService(
 
     private static JiboInteractionDecision BuildProactivePizzaFactOfferDecision()
     {
+        var listenContexts = new[] { "shared/yes_no" };
         return new JiboInteractionDecision(
             "proactive_offer_pizza_fact",
             "Do you want to hear a fun pizza fact?",
@@ -1273,7 +1273,7 @@ public sealed class JiboInteractionService(
                 ["mim_type"] = "question",
                 ["prompt_id"] = "RUNTIME_PROMPT",
                 ["prompt_sub_category"] = "Q",
-                ["listen_contexts"] = new[] { "shared/yes_no" }
+                ["listen_contexts"] = listenContexts
             });
     }
 
@@ -1339,7 +1339,7 @@ public sealed class JiboInteractionService(
             "No problem. We can save the pizza fact for another time.");
     }
 
-    private JiboInteractionDecision BuildCurrentLocationDecision(TurnContext turn)
+    private static JiboInteractionDecision BuildCurrentLocationDecision(TurnContext turn)
     {
         var locationName = TryResolveCurrentLocationName(turn);
         if (string.IsNullOrWhiteSpace(locationName))
@@ -1660,19 +1660,19 @@ public sealed class JiboInteractionService(
         var template = ChooseCommuteTemplate(snapshot, catalog, mode);
         var reply = RenderCommuteTemplate(template, durationText, minutesLeftText);
 
-        if (minutesLeft > 0 && minutesLeft < 30)
+        if (minutesLeft is > 0 and < 30)
         {
             var minutesTemplate = ChooseShortestTemplate(catalog.CommuteMinutesLeftReplies)
                                   ?? "That's in about ${skill.commute.minsLeft} minutes.";
             reply = $"{reply} {RenderCommuteTemplate(minutesTemplate, durationText, minutesLeftText)}";
         }
 
-        if (minutesLeft > 0 && minutesLeft < 120)
-        {
-            var departTemplate = ChooseCommuteDepartTimeTemplate(snapshot, catalog, mode);
-            if (!string.IsNullOrWhiteSpace(departTemplate))
-                reply = $"{reply} {RenderCommuteTemplate(departTemplate, durationText, minutesLeftText)}";
-        }
+        if (minutesLeft is <= 0 or >= 120) 
+            return reply.Replace("  ", " ", StringComparison.Ordinal).Trim();
+
+        var departTemplate = ChooseCommuteDepartTimeTemplate(snapshot, catalog, mode);
+        if (!string.IsNullOrWhiteSpace(departTemplate))
+            reply = $"{reply} {RenderCommuteTemplate(departTemplate, durationText, minutesLeftText)}";
 
         return reply.Replace("  ", " ", StringComparison.Ordinal).Trim();
     }
@@ -1691,9 +1691,9 @@ public sealed class JiboInteractionService(
         var minutesUntilWork = snapshot.MinutesUntilWork;
         var extraMinutes = Math.Max(0, snapshot.ExtraMinutes);
         var isLate = minutesUntilWork <= 0;
-        var isHurry = minutesUntilWork > 0 && minutesUntilWork <= 10;
+        var isHurry = minutesUntilWork is > 0 and <= 10;
         var isNormal = !isLate && !isHurry;
-        var isFarAway = minutesUntilWork > 120 || minutesUntilWork < -30;
+        var isFarAway = minutesUntilWork is > 120 or < -30;
         var hasTrafficSeverity = minutesUntilWork > 0;
         var isTerrible = hasTrafficSeverity && extraMinutes >= 15;
         var isPoor = hasTrafficSeverity && extraMinutes >= 5;
@@ -1796,7 +1796,7 @@ public sealed class JiboInteractionService(
 
         var resolvedReference = referenceLocalTime ?? DateTimeOffset.UtcNow;
         var referenceDate = resolvedReference.Date;
-        return snapshots
+        return [.. snapshots
             .OrderBy(static item => item.DayOffset)
             .Take(MaxWeatherForecastDayOffset)
             .Select(item =>
@@ -1823,8 +1823,7 @@ public sealed class JiboInteractionService(
                     unit,
                     temperatureBand,
                     spokenLine);
-            })
-            .ToArray();
+            })];
     }
 
     private static IDictionary<string, object?> BuildWeeklyWeatherSkillPayload(
@@ -2114,7 +2113,7 @@ public sealed class JiboInteractionService(
         return rendered;
     }
 
-    private string ChooseWeatherServiceDownReply(JiboExperienceCatalog catalog)
+    private static string ChooseWeatherServiceDownReply(JiboExperienceCatalog catalog)
     {
         var template = ChooseWeatherTemplate(
             catalog.WeatherServiceDownReplies,
@@ -2122,7 +2121,7 @@ public sealed class JiboInteractionService(
         return template.Trim();
     }
 
-    private string ChooseCommuteServiceDownReply(JiboExperienceCatalog catalog)
+    private static string ChooseCommuteServiceDownReply(JiboExperienceCatalog catalog)
     {
         var template = ChooseWeatherTemplate(
             catalog.CommuteServiceDownReplies,
@@ -2195,7 +2194,7 @@ public sealed class JiboInteractionService(
             ? filtered.OrderBy(static template => template.Length).First()
             : templates.OrderBy(static template => template.Length).FirstOrDefault();
 
-        return string.IsNullOrWhiteSpace(selected) ? fallback : selected!;
+        return string.IsNullOrWhiteSpace(selected) ? fallback : selected;
     }
 
     private string ChooseCalendarNothingReply(JiboExperienceCatalog catalog)
@@ -2441,7 +2440,7 @@ public sealed class JiboInteractionService(
             ["news_provider_status"] = status,
             ["news_provider_requested_headlines"] = requestedHeadlineCount,
             ["news_provider_preferred_categories"] = preferredCategories.Count > 0
-                ? preferredCategories.ToArray()
+                ? [.. preferredCategories]
                 : Array.Empty<string>()
         };
 
@@ -2537,7 +2536,7 @@ public sealed class JiboInteractionService(
             foreach (var category in MapNewsCategoryText(item)) AddNewsCategory(categories, category);
         }
 
-        return categories.Take(MaxPreferredNewsCategories).ToList();
+        return [.. categories.Take(MaxPreferredNewsCategories)];
     }
 
     private static IEnumerable<string> MapNewsCategoryText(string text)
@@ -2596,7 +2595,7 @@ public sealed class JiboInteractionService(
         var pizzaSignal = ResolvePizzaSignal(tenantScope);
         if (pizzaSignal.Affinity == PersonalAffinity.Dislike) return candidates;
 
-        if (referenceDate.Month == 2 && referenceDate.Day == 9)
+        if (referenceDate is { Month: 2, Day: 9 })
         {
             var holidayWeight = pizzaSignal.Affinity switch
             {
@@ -4096,7 +4095,7 @@ public sealed class JiboInteractionService(
         return false;
     }
 
-    private static YesNoReply TryClassifyTrailingYesNoReply(IReadOnlyList<string> tokens)
+    private static YesNoReply TryClassifyTrailingYesNoReply(string[] tokens)
     {
         var selectedReply = YesNoReply.None;
         var selectedIndex = -1;
@@ -4109,7 +4108,7 @@ public sealed class JiboInteractionService(
             selectedIndex = candidateIndex;
         }
 
-        for (var index = 0; index < tokens.Count; index += 1)
+        for (var index = 0; index < tokens.Length; index += 1)
         {
             var token = tokens[index];
             if (YesNoNegativeLeadTokens.Contains(token))
@@ -4121,7 +4120,7 @@ public sealed class JiboInteractionService(
             if (YesNoAffirmativeLeadTokens.Contains(token)) Consider(YesNoReply.Affirmative, index);
         }
 
-        for (var index = 0; index + 1 < tokens.Count; index += 1)
+        for (var index = 0; index + 1 < tokens.Length; index += 1)
         {
             var phrase = $"{tokens[index]} {tokens[index + 1]}";
             if (YesNoNegativeLeadPhrases.Contains(phrase))
@@ -4133,7 +4132,7 @@ public sealed class JiboInteractionService(
             if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 1);
         }
 
-        for (var index = 0; index + 2 < tokens.Count; index += 1)
+        for (var index = 0; index + 2 < tokens.Length; index += 1)
         {
             var phrase = $"{tokens[index]} {tokens[index + 1]} {tokens[index + 2]}";
             if (YesNoNegativeLeadPhrases.Contains(phrase))
@@ -4721,7 +4720,7 @@ public sealed class JiboInteractionService(
             dayOffset = ((int)DayOfWeek.Saturday - (int)referenceLocalTime.DayOfWeek + 7) % 7;
             if (hasNextWeekend)
             {
-                dayOffset = dayOffset + 7;
+                dayOffset += 7;
                 leadIn = "Next weekend";
             }
             else
@@ -4967,16 +4966,11 @@ public sealed class JiboInteractionService(
             "my bday is "
         };
 
-        foreach (var marker in markers)
-        {
-            var markerIndex = normalized.IndexOf(marker, StringComparison.Ordinal);
-            if (markerIndex < 0) continue;
-
-            var value = normalized[(markerIndex + marker.Length)..].Trim();
-            if (!string.IsNullOrWhiteSpace(value)) return value;
-        }
-
-        return null;
+        return (from marker in markers
+                let markerIndex = normalized.IndexOf(marker, StringComparison.Ordinal)
+                where markerIndex >= 0
+                select normalized[(markerIndex + marker.Length)..].Trim())
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
     }
 
     private static bool IsPreferenceRecallQuestion(string loweredTranscript)
@@ -5762,7 +5756,7 @@ public sealed class JiboInteractionService(
         public static GreetingPresenceProfile Empty { get; } = new(
             null,
             null,
-            Array.Empty<string>(),
+            [],
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
 
         public bool HasKnownIdentity => !string.IsNullOrWhiteSpace(PrimaryPersonId);

@@ -780,8 +780,37 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what do you like to do", "robot_what_do_you_like_to_do",
         "Being helpful, making people smile, counting to a billion.")]
     [InlineData("what are you made of", "robot_what_are_you_made_of",
-        "Let's see, I'm made of wires, motors, belts, gears, processors, cameras, and one baboon's heart in the middle of my body casing. I'm kidding about the baboon part, but everything else is true.")]
+        "robot stuff")]
     public async Task BuildDecisionAsync_MoreLegacyPersonaMims_UseImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("what is your purpose", "robot_what_is_your_purpose", "make your life easier")]
+    [InlineData("what's your purpose", "robot_what_is_your_purpose", "make your life easier")]
+    [InlineData("what is your prime directive", "robot_what_is_prime_directive", "friendly helpful robot")]
+    [InlineData("what is jibo commander", "robot_what_is_jibo_commander", "take over my controls")]
+    [InlineData("do you like commander app", "robot_likes_commander_app", "Commander App")]
+    [InlineData("what if I unplug you", "robot_what_if_i_unplug_you", "don't leave me unplugged")]
+    [InlineData("how much do you weigh", "robot_how_much_do_you_weigh", "4,082 grams")]
+    [InlineData("how tall are you", "robot_how_tall_are_you", "11 inches tall")]
+    [InlineData("how much do you cost", "robot_how_much_you_cost", "don't know how much I cost")]
+    [InlineData("what are you made of", "robot_what_are_you_made_of", "robot stuff")]
+    public async Task BuildDecisionAsync_NewBodyAndMissionMims_UseImportedReplies(
         string transcript,
         string expectedIntent,
         string expectedReplySnippet)

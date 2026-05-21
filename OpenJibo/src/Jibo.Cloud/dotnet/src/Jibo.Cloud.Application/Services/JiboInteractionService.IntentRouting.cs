@@ -418,6 +418,64 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "how much do you weigh",
+                "what do you weigh",
+                "how heavy are you"))
+            return "robot_how_much_do_you_weigh";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how tall are you",
+                "what is your height",
+                "how high are you"))
+            return "robot_how_tall_are_you";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how much do you cost",
+                "what do you cost",
+                "how much are you"))
+            return "robot_how_much_you_cost";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what if i unplug you",
+                "what happens if i unplug you",
+                "if i unplug you"))
+            return "robot_what_if_i_unplug_you";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your purpose",
+                "what's your purpose",
+                "what are you here for",
+                "why are you here"))
+            return "robot_what_is_your_purpose";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your prime directive",
+                "what's your prime directive",
+                "what is prime directive"))
+            return "robot_what_is_prime_directive";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is jibo commander",
+                "what is the commander app",
+                "what is commander app",
+                "what's jibo commander"))
+            return "robot_what_is_jibo_commander";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like commander app",
+                "do you like the commander app",
+                "are you a fan of commander app"))
+            return "robot_likes_commander_app";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your job",
                 "what's your job",
                 "what do you do",

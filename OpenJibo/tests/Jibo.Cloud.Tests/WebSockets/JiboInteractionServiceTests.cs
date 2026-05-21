@@ -691,8 +691,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("merry christmas", "seasonal_holiday_greeting", "It's a fun time of year")]
     [InlineData("what holidays do you celebrate", "seasonal_holidays",
         "official owner can tell me which ones we'll celebrate together")]
-    [InlineData("how is holiday season", "seasonal_holiday_season", "holiday season is going very nicely")]
-    [InlineData("do you like holiday season", "seasonal_holiday_season", "holiday season is going very nicely")]
+    [InlineData("how is holiday season", "seasonal_holiday_season", "festive times")]
+    [InlineData("do you like holiday season", "seasonal_holiday_season", "festive times")]
     [InlineData("what is your new year's resolution", "seasonal_new_years_resolution",
         "always trying to learn new skills")]
     [InlineData("how are your new year's resolutions going", "seasonal_new_years_update", "not eat bacon")]

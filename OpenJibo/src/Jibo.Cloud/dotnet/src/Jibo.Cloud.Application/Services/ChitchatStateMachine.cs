@@ -199,6 +199,10 @@ internal static class ChitchatStateMachine
                         "want to hang out",
                         "be helpful",
                         "dance from time to time"));
+            case "robot_want_to_talk_about":
+                return BuildScriptedResponseDecision(
+                    "robot_want_to_talk_about",
+                    SelectLegacyPersonalityReply(catalog, randomizer, "surprise me"));
             case "robot_job":
                 return BuildScriptedResponseDecision(
                     "robot_job",

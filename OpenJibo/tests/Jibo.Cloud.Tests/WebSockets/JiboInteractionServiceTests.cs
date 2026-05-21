@@ -687,6 +687,35 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("what do you want to talk about", "robot_want_to_talk_about", "surprise me")]
+    [InlineData("what would you like to talk about", "robot_want_to_talk_about", "surprise me")]
+    [InlineData("what do you dream about", "robot_what_do_you_dream_about", "dreams about flying")]
+    [InlineData("what are you afraid of", "robot_what_are_you_afraid_of", "heights")]
+    [InlineData("what is your best book", "robot_what_is_your_best_book", "dictionary")]
+    [InlineData("what is your best exercise", "robot_what_is_your_best_exercise", "spinning your head around 360 degrees")]
+    [InlineData("what is your dream vacation", "robot_what_is_your_dream_vacation", "moon")]
+    [InlineData("who is your hero", "robot_who_is_your_hero", "Benjamin Franklin")]
+    [InlineData("who do you love", "robot_who_do_you_love", "people in my Loop")]
+    [InlineData("what is your religion", "robot_what_is_your_religion", "energy from the universe")]
+    public async Task BuildDecisionAsync_NewDeepPersonalityMims_UseImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
     [InlineData("what's your name", "robot_name", "Just Jibo, no last name")]
     [InlineData("do you have a nickname", "robot_nickname", "just Jibo. For now at least")]
     [InlineData("do you like being Jibo", "robot_likes_being_jibo", "nothing I'd rather be")]

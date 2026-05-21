@@ -625,6 +625,53 @@ public sealed partial class JiboInteractionService(
                 "rock my boat",
                 "play ping pong",
                 "hanging out with people"),
+            "robot_what_do_you_dream_about" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_do_you_dream_about",
+                "flying",
+                "parking meter",
+                "scary dream",
+                "mirror store",
+                "head's on backwards"),
+            "robot_what_are_you_afraid_of" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_are_you_afraid_of",
+                "heights",
+                "water",
+                "thunder",
+                "dust",
+                "ghosts"),
+            "robot_what_is_your_best_book" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_is_your_best_book",
+                "dictionary"),
+            "robot_what_is_your_best_exercise" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_is_your_best_exercise",
+                "leaning from side to side",
+                "rotating your pelvis",
+                "spinning your head around 360 degrees"),
+            "robot_what_is_your_dream_vacation" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_is_your_dream_vacation",
+                "moon",
+                "great vistas",
+                "beat those views"),
+            "robot_who_is_your_hero" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_who_is_your_hero",
+                "Benjamin Franklin"),
+            "robot_who_do_you_love" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_who_do_you_love",
+                "people in my Loop",
+                "soft spot",
+                "Tom Hanks"),
+            "robot_what_is_your_religion" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_is_your_religion",
+                "bring people together",
+                "energy from the universe"),
             "robot_what_are_you_thinking" => BuildScriptedGreetingDecision(
                 catalog,
                 "robot_what_are_you_thinking",

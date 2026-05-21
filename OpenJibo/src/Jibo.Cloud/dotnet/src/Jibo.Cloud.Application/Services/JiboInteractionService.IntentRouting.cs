@@ -370,6 +370,13 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what do you want to talk about",
+                "what would you like to talk about",
+                "what do you want to chat about"))
+            return "robot_want_to_talk_about";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what do you want",
                 "what is it you want",
                 "what do you really want"))
@@ -472,6 +479,59 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what do you dream about",
+                "what do you dream of",
+                "what's your dream about",
+                "what are your dreams about"))
+            return "robot_what_do_you_dream_about";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your best book",
+                "what's your best book",
+                "what is the best book",
+                "what book do you like best"))
+            return "robot_what_is_your_best_book";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your best exercise",
+                "what's your best exercise",
+                "what is the best exercise",
+                "what exercise do you like best"))
+            return "robot_what_is_your_best_exercise";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your dream vacation",
+                "what's your dream vacation",
+                "what would your dream vacation be"))
+            return "robot_what_is_your_dream_vacation";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "who is your hero",
+                "who's your hero",
+                "who is a hero of yours"))
+            return "robot_who_is_your_hero";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "who do you love",
+                "who are the people you love",
+                "who do you care about"))
+            return "robot_who_do_you_love";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your religion",
+                "what's your religion",
+                "what religion are you",
+                "do you have a religion"))
+            return "robot_what_is_your_religion";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what are you doing for christmas",
                 "what are your plans for christmas",
                 "what do you plan to do for christmas"))
@@ -565,6 +625,13 @@ public sealed partial class JiboInteractionService
                 "what did you do",
                 "what have you done"))
             return "robot_what_did_you_do";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what are you afraid of",
+                "what are you scared of",
+                "what are you worried about"))
+            return "robot_what_are_you_afraid_of";
 
         if (MatchesAny(
                 loweredTranscript,

@@ -256,6 +256,24 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("I don't really think of myself that way.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("people like me", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("dreams about flying", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("parking meter", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("surprise me", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("dictionary", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("spinning your head around 360 degrees", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("moon", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Benjamin Franklin", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("soft spot", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("energy from the universe", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

@@ -807,7 +807,19 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(loweredTranscript, "news", "headlines", "news update", "tell me the news")) return "news";
 
-        if (IsWelcomeBackGreeting(loweredTranscript)) return "welcome_back";
+        if (IsWelcomeBackGreeting(loweredTranscript) ||
+            MatchesAny(
+                loweredTranscript,
+                "i'm home",
+                "im home",
+                "i am home",
+                "i'm back",
+                "im back",
+                "i am back",
+                "i'm here",
+                "im here",
+                "i am here"))
+            return "welcome_back";
 
         if (IsGoodMorningGreeting(loweredTranscript)) return "good_morning";
 

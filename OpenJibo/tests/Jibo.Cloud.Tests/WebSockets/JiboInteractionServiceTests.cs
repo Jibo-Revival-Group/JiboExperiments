@@ -960,6 +960,8 @@ public sealed class JiboInteractionServiceTests
 
     [Theory]
     [InlineData("welcome back", "welcome_back", "it's nice to be here")]
+    [InlineData("i'm home", "welcome_back", "it's nice to be here")]
+    [InlineData("i'm back", "welcome_back", "it's nice to be here")]
     [InlineData("what are you thinking", "robot_what_are_you_thinking", "thinking about how fun, yet scary")]
     [InlineData("what have you been doing", "robot_what_have_you_been_doing", "mostly roboting")]
     [InlineData("what did you do", "robot_what_did_you_do", "robot stuff")]

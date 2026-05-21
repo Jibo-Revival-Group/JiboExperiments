@@ -1,4 +1,5 @@
 using System.Text;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
@@ -343,10 +344,15 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         var meta = ReadObject(body, "meta") ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
         meta["contentType"] = contentType;
+        var bodyBytes = string.IsNullOrWhiteSpace(envelope.BodyText)
+            ? []
+            : Encoding.UTF8.GetBytes(envelope.BodyText);
+        meta["contentLength"] = bodyBytes.Length;
+        meta["contentSha256"] = Convert.ToHexString(SHA256.HashData(bodyBytes)).ToLowerInvariant();
         if (!string.IsNullOrWhiteSpace(envelope.BodyText)) meta["bodyText"] = envelope.BodyText;
 
         _mediaContentStore.StoreAsync(path, contentType,
-            string.IsNullOrWhiteSpace(envelope.BodyText) ? [] : Encoding.UTF8.GetBytes(envelope.BodyText),
+            bodyBytes,
             meta as IReadOnlyDictionary<string, object?>, CancellationToken.None).GetAwaiter().GetResult();
 
         return ProtocolDispatchResult.Ok(

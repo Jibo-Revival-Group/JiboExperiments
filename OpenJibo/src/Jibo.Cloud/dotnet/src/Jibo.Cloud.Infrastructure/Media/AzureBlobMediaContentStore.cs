@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Security.Cryptography;
 using Azure.Storage.Blobs;
 using Jibo.Cloud.Application.Abstractions;
 
@@ -31,11 +32,17 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
         var metaBlob = _containerClient.GetBlobClient($"{relative}.json");
         await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
         await contentBlob.UploadAsync(new MemoryStream(content), true, cancellationToken);
+        var manifestMeta = meta is null
+            ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, object?>(meta, StringComparer.OrdinalIgnoreCase);
+        manifestMeta["contentLength"] = content.Length;
+        manifestMeta["contentSha256"] = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        manifestMeta["storedUtc"] = DateTimeOffset.UtcNow;
         var payload = JsonSerializer.Serialize(new
         {
             path,
             contentType,
-            meta
+            meta = manifestMeta
         }, JsonOptions);
         await metaBlob.UploadAsync(BinaryData.FromString(payload), true, cancellationToken);
     }

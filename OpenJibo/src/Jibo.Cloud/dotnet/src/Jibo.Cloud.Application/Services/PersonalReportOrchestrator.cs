@@ -269,11 +269,13 @@ internal static class PersonalReportOrchestrator
                 userName)
         };
         var serviceError = string.Empty;
+        IDictionary<string, object?>? weatherSkillPayload = null;
 
         if (toggles.WeatherEnabled)
         {
-            reportSections.Add("Weather.");
             var weatherDecision = await buildWeatherDecisionAsync(turn, "weather", cancellationToken);
+            weatherSkillPayload = weatherDecision.SkillPayload;
+            reportSections.Add("Weather.");
             reportSections.Add(weatherDecision.ReplyText);
             if (IsWeatherErrorReply(weatherDecision.ReplyText)) serviceError = "weather";
         }
@@ -282,7 +284,10 @@ internal static class PersonalReportOrchestrator
             reportSections.Add((await buildCalendarDecisionAsync(turn, cancellationToken)).ReplyText);
 
         if (toggles.CommuteEnabled)
-            reportSections.Add((await buildCommuteDecisionAsync(turn, cancellationToken)).ReplyText);
+        {
+            var commuteReply = (await buildCommuteDecisionAsync(turn, cancellationToken)).ReplyText;
+            reportSections.Add(ChooseFirstSentence(commuteReply));
+        }
 
         if (toggles.NewsEnabled)
         {
@@ -310,9 +315,12 @@ internal static class PersonalReportOrchestrator
                     "And that's your report for the day. I hope you had as much fun as I did."),
                 userName));
 
+        var reportText = string.Join(" ", reportSections);
         return new JiboInteractionDecision(
             "personal_report_delivered",
-            string.Join(" ", reportSections),
+            reportText,
+            "report-skill",
+            BuildPersonalReportSkillPayload(reportText, weatherSkillPayload),
             ContextUpdates: BuildContextUpdates(
                 IdleState,
                 0,
@@ -321,6 +329,38 @@ internal static class PersonalReportOrchestrator
                 userName,
                 true,
                 serviceError));
+    }
+
+    private static IDictionary<string, object?> BuildPersonalReportSkillPayload(
+        string reportText,
+        IDictionary<string, object?>? weatherSkillPayload)
+    {
+        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["skillId"] = "report-skill",
+            ["cloudSkill"] = "personal_report",
+            ["mim_id"] = "runtime-personal-report",
+            ["mim_type"] = "announcement",
+            ["prompt_id"] = "PersonalReport_AN_01",
+            ["prompt_sub_category"] = "AN",
+            ["esml"] =
+                $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(reportText)}</es></speak>",
+            ["personal_report_report_text"] = reportText
+        };
+
+        if (weatherSkillPayload is null) return payload;
+
+        foreach (var (key, value) in weatherSkillPayload)
+            if (!string.Equals(key, "esml", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(key, "skillId", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(key, "cloudSkill", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(key, "mim_id", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(key, "mim_type", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(key, "prompt_id", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(key, "prompt_sub_category", StringComparison.OrdinalIgnoreCase))
+                payload[key] = value;
+
+        return payload;
     }
 
     private static JiboInteractionDecision BuildNoInputDecision(
@@ -667,6 +707,16 @@ internal static class PersonalReportOrchestrator
         return string.IsNullOrWhiteSpace(firstSentence) ? selected : firstSentence;
     }
 
+    private static string ChooseFirstSentence(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        var firstSentence = value.Split(['.', '!', '?'], 2,
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+        return string.IsNullOrWhiteSpace(firstSentence) ? value.Trim() : firstSentence;
+    }
+
     private static string? ChooseShortestTemplate(IEnumerable<string> templates)
     {
         var selected = templates
@@ -684,6 +734,16 @@ internal static class PersonalReportOrchestrator
             .Replace("${speaker}'s", $"{userName}'s", StringComparison.OrdinalIgnoreCase)
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
+    }
+
+    private static string EscapeForEsml(string value)
+    {
+        return value
+            .Replace("&", "&amp;", StringComparison.Ordinal)
+            .Replace("<", "&lt;", StringComparison.Ordinal)
+            .Replace(">", "&gt;", StringComparison.Ordinal)
+            .Replace("\"", "&quot;", StringComparison.Ordinal)
+            .Replace("'", "&apos;", StringComparison.Ordinal);
     }
 
     private readonly record struct PersonalReportServiceToggles(

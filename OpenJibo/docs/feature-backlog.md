@@ -975,6 +975,7 @@ For `1.0.19`:
   - next implementation pass should supply the real Azure Storage connection string / deployment wiring and validate the live round-trip in the storage account smoke test
 10. Update, backup, and restore proof - implemented (update creation and backup creation now survive persisted reloads; restore is the persisted-state rehydration proof path, not a new cloud API)
 11. STT upgrade and noise screening
+  - progress update (`2026-05-21`): added a low-signal short-turn screen in websocket finalization so filler-only fragments and stray single-token leftovers like `so command` get rejected before they can become bad turns, while preserving the existing yes/no and word-of-the-day short-turn flows
 12. Hosted capture/storage plan / indexing for group testing
 13. Binary-safe media storage / sync to cloud drive: OneDrive, Google Drive, Box, etc.
 14. Provider-backed news and weather parity polish

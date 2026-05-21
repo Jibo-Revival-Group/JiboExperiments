@@ -84,6 +84,7 @@ The goal is to port these in small batches, capture the source-backed phrasing w
 - the restore proof is the persisted-state rehydration path; do not scope it into a new hosted restore API until we have real device evidence
 - continue alarm/gallery/yes-no cleanup from `1.0.18` evidence where regressions are still open
 - improve short-turn STT reliability and low-signal screening
+- the latest STT pass adds a websocket-side low-signal screen for filler-only and stray single-token leftovers while keeping yes/no and word-of-the-day turns intact
 
 ### 3. Pegasus-To-Cloud Platform Porting
 

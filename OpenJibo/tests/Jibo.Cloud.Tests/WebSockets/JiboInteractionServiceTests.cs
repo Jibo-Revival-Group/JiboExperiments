@@ -2704,8 +2704,8 @@ public sealed class JiboInteractionServiceTests
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "what's the weather next saturday",
-            NormalizedTranscript = "what's the weather next saturday",
+            RawTranscript = "what's the weather next sunday",
+            NormalizedTranscript = "what's the weather next sunday",
             Attributes = new Dictionary<string, object?>
             {
                 ["context"] = """{"runtime":{"location":{"iso":"2026-04-20T08:00:00-05:00"}}}"""
@@ -2738,9 +2738,9 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("weather", decision.IntentName);
         Assert.Equal("Paris", provider.LastRequest?.LocationQuery);
-        Assert.Equal(5, provider.LastRequest?.ForecastDayOffset);
+        Assert.Equal(2, provider.LastRequest?.ForecastDayOffset);
         Assert.Equal(
-            "Let's look at the weather. This weekend in Paris, FR, it looks overcast clouds with a high near 70 degrees Fahrenheit and a low around 60 degrees Fahrenheit.",
+            "Let's look at the weather. Later this week in Paris, FR, it looks overcast clouds with a high near 70 degrees Fahrenheit and a low around 60 degrees Fahrenheit.",
             decision.ReplyText);
     }
 

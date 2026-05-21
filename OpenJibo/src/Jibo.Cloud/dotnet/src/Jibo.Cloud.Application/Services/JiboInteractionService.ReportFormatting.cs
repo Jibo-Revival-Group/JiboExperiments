@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 
@@ -564,6 +565,23 @@ public sealed partial class JiboInteractionService
             catalog.WeatherServiceDownReplies,
             "I can't access weather info right now, sorry.");
         return template.Trim();
+    }
+
+    private static string NormalizeLocationForSpeech(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return text;
+
+        return Regex.Replace(
+            text,
+            @"\b(?<token>[A-Z]{2,3})\b",
+            static match =>
+            {
+                var token = match.Groups["token"].Value;
+                if (!SpokenAbbreviationTokens.Contains(token)) return token;
+
+                return string.Join(".", token.ToCharArray()) + ".";
+            },
+            RegexOptions.CultureInvariant);
     }
 
     private static string ChooseCommuteServiceDownReply(JiboExperienceCatalog catalog)

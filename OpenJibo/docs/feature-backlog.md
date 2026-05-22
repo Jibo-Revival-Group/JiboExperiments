@@ -614,6 +614,8 @@ Current release theme:
   - recognition, enrollment, rename, and profile-correction boundaries
   - split between local state and hosted cloud state
   - first useful hosted identity slice
+  - live QA has shown person-identification collisions in the same loop (for example, a parent and child both getting normalized to the same remembered name)
+  - person-identification correction likely needs its own repair pass before we can trust greetings, reports, and presence triggers in mixed-household scenarios
 
 ### 20. Onboarding, Loop Management, And Fresh Start
 
@@ -642,6 +644,8 @@ Current release theme:
 - Follow-up:
   - wire persona age to first-powered-up or durable first-cloud-seen metadata when available
   - add command-vs-question variants so expressive prompts can answer conversationally before launching actions
+  - live QA has shown motion/sleep quirks too: `turn around` can become a no-op and `go to sleep` can fail at the last step before the sleep animation fully completes
+  - reply-selection polish still needs attention on a couple of identity prompts where short variants are over-selected (`how are you`, `what is your favorite flower`)
 
 ### 22. Command Vs Question Reply Style
 

@@ -108,6 +108,10 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("I don't think I have a favorite name.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("Rhymes with bleebo", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.AgeReplies, reply =>
+            reply.Contains("first powered up", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.AgeReplies, reply =>
+            reply.Contains("today is my birthday", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("I really like sunflowers.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("Halloween is my favorite holiday", StringComparison.OrdinalIgnoreCase));
@@ -256,6 +260,32 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("I don't really think of myself that way.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("people like me", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("dreams about flying", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("parking meter", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("surprise me", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("dictionary", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("spinning your head around 360 degrees", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("moon", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Benjamin Franklin", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("soft spot", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("energy from the universe", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("compassion", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("jibo brain", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("drive a car", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("twiddle my thumbs", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

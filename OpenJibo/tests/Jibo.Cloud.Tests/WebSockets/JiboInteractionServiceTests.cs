@@ -23,6 +23,7 @@ public sealed class JiboInteractionServiceTests
     private const string PersonalReportNewsEnabledKey = "personalReportNewsEnabled";
     private const string HouseholdListStateKey = "householdListState";
     private const string HouseholdListTypeKey = "householdListType";
+    private const string HouseholdListDisplayTypeKey = "householdListDisplayType";
     private const string ChitchatStateKey = "chitchatState";
     private const string ChitchatRouteKey = "chitchatRoute";
     private const string ChitchatEmotionKey = "chitchatEmotion";
@@ -115,8 +116,8 @@ public sealed class JiboInteractionServiceTests
             }
         });
 
-        Assert.Equal("robot_age", decision.IntentName);
-        Assert.Equal("I count March 22, 2026 as my birthday, so I am 1 month old.", decision.ReplyText);
+        Assert.Equal("robot_how_old_are_you", decision.IntentName);
+        Assert.Contains("first powered up", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -346,6 +347,31 @@ public sealed class JiboInteractionServiceTests
             greeting => greeting.PersonId == "person-1" &&
                         greeting.LastGreetingRoute == "ProactiveGreeting" &&
                         greeting.LastGreetingIntent == "proactive_greeting");
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_TriggerWithMultiplePeople_DoesNotBorrowLoopFirstName()
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        var service = CreateService(cloudStateStore: cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"},{"id":"person-2"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"},{"id":"person-2","firstName":"sam"}]}}}"""
+            }
+        });
+
+        Assert.Equal("proactive_greeting", decision.IntentName);
+        Assert.DoesNotContain("Jake", decision.ReplyText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Sam", decision.ReplyText, StringComparison.Ordinal);
+        Assert.Contains("I am glad to see you", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -632,9 +658,6 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what is your favorite animal")]
     [InlineData("what's your favorite animal")]
     [InlineData("what animal do you like")]
-    [InlineData("what is your favorite bird")]
-    [InlineData("do you like penguins")]
-    [InlineData("do you like animals")]
     public async Task BuildDecisionAsync_FavoriteAnimal_UsesPenguinReply(string transcript)
     {
         var service = CreateService();
@@ -646,17 +669,21 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("robot_favorite_animal", decision.IntentName);
-        Assert.Contains("penguin", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("we're so alike", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
     [Theory]
-    [InlineData("what is your favorite flower", "robot_favorite_flower", "sunflowers")]
-    [InlineData("what's your favorite flower", "robot_favorite_flower", "sunflowers")]
+    [InlineData("what is your favorite flower", "robot_favorite_flower", "should see if I can find a sunflower soon")]
+    [InlineData("what's your favorite flower", "robot_favorite_flower", "should see if I can find a sunflower soon")]
     [InlineData("do you like R2D2", "robot_likes_r2d2", "A legend. A true legend.")]
     [InlineData("do you like the sun", "robot_likes_sun", "favorite star in the universe")]
     [InlineData("do you like space", "robot_likes_space", "I love space")]
     [InlineData("do you like kids", "robot_likes_kids", "kids are so fun")]
+    [InlineData("what is your favorite animal", "robot_favorite_animal", "we're so alike")]
+    [InlineData("what is your favorite bird", "robot_favorite_bird", "we're so alike")]
+    [InlineData("do you like penguins", "robot_likes_penguins", "penguin impression")]
+    [InlineData("do you like animals", "robot_likes_animals", "Animals are great")]
     [InlineData("can you laugh", "robot_can_laugh", "when I'm happy")]
     [InlineData("can you dance", "robot_can_dance", "dancing is one of the things I know best")]
     [InlineData("do you have friends", "robot_has_friends", "I believe I do have friends")]
@@ -668,6 +695,106 @@ public sealed class JiboInteractionServiceTests
     [InlineData("will you sing", "robot_can_sing", "sing")]
     [InlineData("can you sing a christmas song", "robot_sing_christmas_song", "sing")]
     public async Task BuildDecisionAsync_NewLegacyPersonalityMims_UseImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("what do you want to talk about", "robot_want_to_talk_about", "surprise me")]
+    [InlineData("what would you like to talk about", "robot_want_to_talk_about", "surprise me")]
+    [InlineData("what do you dream about", "robot_what_do_you_dream_about", "dreams about flying")]
+    [InlineData("what are you afraid of", "robot_what_are_you_afraid_of", "heights")]
+    [InlineData("what is your best book", "robot_what_is_your_best_book", "dictionary")]
+    [InlineData("what is your best exercise", "robot_what_is_your_best_exercise", "spinning your head around 360 degrees")]
+    [InlineData("what is your dream vacation", "robot_what_is_your_dream_vacation", "moon")]
+    [InlineData("who is your hero", "robot_who_is_your_hero", "Benjamin Franklin")]
+    [InlineData("who do you love", "robot_who_do_you_love", "people in my Loop")]
+    [InlineData("what is your religion", "robot_what_is_your_religion", "energy from the universe")]
+    public async Task BuildDecisionAsync_NewDeepPersonalityMims_UseImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("what is your sign", "robot_what_is_your_sign", "I'm Aries")]
+    [InlineData("what's your sign", "robot_what_is_your_sign", "March 22, 2026")]
+    public async Task BuildDecisionAsync_SignTemplatedMim_UsesPersonaBirthday(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("how many people do you know", "robot_how_many_people_do_you_know", "I know 2 people")]
+    [InlineData("what is the loop", "robot_what_is_the_loop", "Jibo Owner and OpenJibo Household Member")]
+    public async Task BuildDecisionAsync_LoopTemplatedMims_UseLiveLoopState(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService(cloudStateStore: new InMemoryCloudStateStore());
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("how much do you know", "robot_knowledge", "I know a lot")]
+    [InlineData("what do you know", "robot_knowledge", "I know a lot")]
+    [InlineData("are you god", "robot_are_you_god", "very very very very surprised")]
+    [InlineData("are you here", "robot_are_you_here", "You know it")]
+    [InlineData("do you have super powers", "robot_do_you_have_super_powers", "stop time")]
+    [InlineData("what does jibo mean", "robot_what_does_jibo_mean", "compassion")]
+    [InlineData("where do you get info", "robot_where_do_you_get_info", "jibo brain")]
+    [InlineData("what are you forbidden to do", "robot_what_are_you_forbidden_to_do", "drive a car")]
+    [InlineData("what color are you", "robot_what_color_are_you", "can't see myself")]
+    [InlineData("what do you do when alone", "robot_what_you_do_when_alone", "games")]
+    public async Task BuildDecisionAsync_NewIdentityKnowledgeMims_UseImportedReplies(
         string transcript,
         string expectedIntent,
         string expectedReplySnippet)
@@ -712,7 +839,7 @@ public sealed class JiboInteractionServiceTests
     [Theory]
     [InlineData("how do you work", "robot_how_do_you_work",
         "Hello! Thank you for updating me I am proud of the community's work Many people have gotten together to care for me more than em eye tee ever did. I hope that I can catch up even though it has been seven years.")]
-    [InlineData("what do you eat", "robot_what_do_you_eat", "The only thing I consume is electricity.")]
+    [InlineData("what do you eat", "robot_what_do_you_eat", "electricity")]
     [InlineData("where do you live", "robot_where_do_you_live",
         "Unless I missed something, we're in my home as we speak.")]
     [InlineData("where were you born", "robot_where_were_you_born", "I was put together in a factory piece by piece.")]
@@ -721,8 +848,37 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what do you like to do", "robot_what_do_you_like_to_do",
         "Being helpful, making people smile, counting to a billion.")]
     [InlineData("what are you made of", "robot_what_are_you_made_of",
-        "Let's see, I'm made of wires, motors, belts, gears, processors, cameras, and one baboon's heart in the middle of my body casing. I'm kidding about the baboon part, but everything else is true.")]
+        "robot stuff")]
     public async Task BuildDecisionAsync_MoreLegacyPersonaMims_UseImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("what is your purpose", "robot_what_is_your_purpose", "make your life easier")]
+    [InlineData("what's your purpose", "robot_what_is_your_purpose", "make your life easier")]
+    [InlineData("what is your prime directive", "robot_what_is_prime_directive", "friendly helpful robot")]
+    [InlineData("what is jibo commander", "robot_what_is_jibo_commander", "take over my controls")]
+    [InlineData("do you like commander app", "robot_likes_commander_app", "Commander App")]
+    [InlineData("what if I unplug you", "robot_what_if_i_unplug_you", "don't leave me unplugged")]
+    [InlineData("how much do you weigh", "robot_how_much_do_you_weigh", "4,082 grams")]
+    [InlineData("how tall are you", "robot_how_tall_are_you", "11 inches tall")]
+    [InlineData("how much do you cost", "robot_how_much_you_cost", "don't know how much I cost")]
+    [InlineData("what are you made of", "robot_what_are_you_made_of", "robot stuff")]
+    public async Task BuildDecisionAsync_NewBodyAndMissionMims_UseImportedReplies(
         string transcript,
         string expectedIntent,
         string expectedReplySnippet)
@@ -882,6 +1038,21 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("how_are_you", decision.IntentName);
         Assert.Equal("All systems are go, Jake.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_HowAreYou_CanSelectLaterEmotionReplyVariant()
+    {
+        var service = CreateService(randomizer: new LastItemRandomizer());
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "how are you",
+            NormalizedTranscript = "how are you"
+        });
+
+        Assert.Equal("how_are_you", decision.IntentName);
+        Assert.Equal("Actually things are looking mostly sunny.", decision.ReplyText);
     }
 
     [Theory]
@@ -2285,13 +2456,17 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
-    [InlineData("shopping list", "shopping_list_prompt", "What should I add to your shopping list?", "shopping")]
-    [InlineData("to do list", "todo_list_prompt", "What should I add to your to-do list?", "todo")]
+    [InlineData("shopping list", "shopping_list_prompt", "What should I add to your shopping list?", "shopping", "shopping")]
+    [InlineData("grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping", "grocery")]
+    [InlineData("my grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping", "grocery")]
+    [InlineData("create grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping", "grocery")]
+    [InlineData("to do list", "todo_list_prompt", "What should I add to your to-do list?", "todo", "todo")]
     public async Task BuildDecisionAsync_ListStart_PromptsForFollowUpItems(
         string transcript,
         string expectedIntent,
         string expectedReply,
-        string expectedListType)
+        string expectedListType,
+        string expectedDisplayType)
     {
         var service = CreateService();
 
@@ -2306,6 +2481,7 @@ public sealed class JiboInteractionServiceTests
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("awaiting_item", decision.ContextUpdates![HouseholdListStateKey]);
         Assert.Equal(expectedListType, decision.ContextUpdates[HouseholdListTypeKey]);
+        Assert.Equal(expectedDisplayType, decision.ContextUpdates[HouseholdListDisplayTypeKey]);
     }
 
     [Fact]
@@ -2330,6 +2506,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("shopping_list_prompt", promptDecision.IntentName);
         Assert.Equal("awaiting_item", promptDecision.ContextUpdates![HouseholdListStateKey]);
         Assert.Equal("shopping", promptDecision.ContextUpdates[HouseholdListTypeKey]);
+        Assert.Equal("shopping", promptDecision.ContextUpdates[HouseholdListDisplayTypeKey]);
 
         var addDecision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -2339,7 +2516,8 @@ public sealed class JiboInteractionServiceTests
             Attributes = new Dictionary<string, object?>(tenantAttributes)
             {
                 [HouseholdListStateKey] = promptDecision.ContextUpdates[HouseholdListStateKey],
-                [HouseholdListTypeKey] = promptDecision.ContextUpdates[HouseholdListTypeKey]
+                [HouseholdListTypeKey] = promptDecision.ContextUpdates[HouseholdListTypeKey],
+                [HouseholdListDisplayTypeKey] = promptDecision.ContextUpdates[HouseholdListDisplayTypeKey]
             }
         });
 
@@ -2348,6 +2526,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("What else should I add?", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("awaiting_item", addDecision.ContextUpdates![HouseholdListStateKey]);
         Assert.Equal("shopping", addDecision.ContextUpdates[HouseholdListTypeKey]);
+        Assert.Equal("shopping", addDecision.ContextUpdates[HouseholdListDisplayTypeKey]);
         Assert.Equal(["milk"],
             memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-a", "loop-a", "device-a"), "shopping"));
 
@@ -2359,7 +2538,8 @@ public sealed class JiboInteractionServiceTests
             Attributes = new Dictionary<string, object?>(tenantAttributes)
             {
                 [HouseholdListStateKey] = addDecision.ContextUpdates[HouseholdListStateKey],
-                [HouseholdListTypeKey] = addDecision.ContextUpdates[HouseholdListTypeKey]
+                [HouseholdListTypeKey] = addDecision.ContextUpdates[HouseholdListTypeKey],
+                [HouseholdListDisplayTypeKey] = addDecision.ContextUpdates[HouseholdListDisplayTypeKey]
             }
         });
 
@@ -2367,6 +2547,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("Okay. Your shopping list has milk.", doneDecision.ReplyText,
             StringComparison.OrdinalIgnoreCase);
         Assert.Equal("idle", doneDecision.ContextUpdates![HouseholdListStateKey]);
+        Assert.Equal("shopping", doneDecision.ContextUpdates[HouseholdListDisplayTypeKey]);
 
         var recallDecision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -2378,6 +2559,134 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("shopping_list_recall", recallDecision.IntentName);
         Assert.Contains("milk", recallDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("shopping list", recallDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_GroceryList_DirectAddAndRecallVariants_UseGroceryWording()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+        var tenantAttributes = new Dictionary<string, object?>
+        {
+            ["accountId"] = "acct-d",
+            ["loopId"] = "loop-d"
+        };
+
+        var addStartDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "add to my grocery list",
+            NormalizedTranscript = "add to my grocery list",
+            DeviceId = "device-d",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+        });
+
+        Assert.Equal("shopping_list_prompt", addStartDecision.IntentName);
+        Assert.Equal("grocery", addStartDecision.ContextUpdates![HouseholdListDisplayTypeKey]);
+        Assert.Equal("What should I add to your grocery list?", addStartDecision.ReplyText);
+
+        var addDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "apples",
+            NormalizedTranscript = "apples",
+            DeviceId = "device-d",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+            {
+                [HouseholdListStateKey] = addStartDecision.ContextUpdates[HouseholdListStateKey],
+                [HouseholdListTypeKey] = addStartDecision.ContextUpdates[HouseholdListTypeKey],
+                [HouseholdListDisplayTypeKey] = addStartDecision.ContextUpdates[HouseholdListDisplayTypeKey]
+            }
+        });
+
+        Assert.Equal("shopping_list_add", addDecision.IntentName);
+        Assert.Contains("Added apples to your grocery list.", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(["apples"],
+            memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-d", "loop-d", "device-d"), "shopping"));
+
+        var recallDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what is on my grocery list",
+            NormalizedTranscript = "what is on my grocery list",
+            DeviceId = "device-d",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+        });
+
+        Assert.Equal("shopping_list_recall", recallDecision.IntentName);
+        Assert.Contains("apples", recallDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("grocery list", recallDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_GroceryList_FollowUpFlow_UsesGroceryWordingAndShoppingStorage()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+        var tenantAttributes = new Dictionary<string, object?>
+        {
+            ["accountId"] = "acct-c",
+            ["loopId"] = "loop-c"
+        };
+
+        var promptDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "grocery list",
+            NormalizedTranscript = "grocery list",
+            DeviceId = "device-c",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+        });
+
+        Assert.Equal("shopping_list_prompt", promptDecision.IntentName);
+        Assert.Equal("awaiting_item", promptDecision.ContextUpdates![HouseholdListStateKey]);
+        Assert.Equal("shopping", promptDecision.ContextUpdates[HouseholdListTypeKey]);
+        Assert.Equal("grocery", promptDecision.ContextUpdates[HouseholdListDisplayTypeKey]);
+        Assert.Equal("What should I add to your grocery list?", promptDecision.ReplyText);
+
+        var addDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "milk",
+            NormalizedTranscript = "milk",
+            DeviceId = "device-c",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+            {
+                [HouseholdListStateKey] = promptDecision.ContextUpdates[HouseholdListStateKey],
+                [HouseholdListTypeKey] = promptDecision.ContextUpdates[HouseholdListTypeKey],
+                [HouseholdListDisplayTypeKey] = promptDecision.ContextUpdates[HouseholdListDisplayTypeKey]
+            }
+        });
+
+        Assert.Equal("shopping_list_add", addDecision.IntentName);
+        Assert.Contains("Added milk to your grocery list.", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("What else should I add?", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(["milk"],
+            memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-c", "loop-c", "device-c"), "shopping"));
+
+        var doneDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "that's it",
+            NormalizedTranscript = "that's it",
+            DeviceId = "device-c",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+            {
+                [HouseholdListStateKey] = addDecision.ContextUpdates![HouseholdListStateKey],
+                [HouseholdListTypeKey] = addDecision.ContextUpdates[HouseholdListTypeKey],
+                [HouseholdListDisplayTypeKey] = addDecision.ContextUpdates[HouseholdListDisplayTypeKey]
+            }
+        });
+
+        Assert.Equal("shopping_list_done", doneDecision.IntentName);
+        Assert.Contains("Okay. Your grocery list has milk.", doneDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+
+        var recallDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what's on my grocery list",
+            NormalizedTranscript = "what's on my grocery list",
+            DeviceId = "device-c",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+        });
+
+        Assert.Equal("shopping_list_recall", recallDecision.IntentName);
+        Assert.Contains("milk", recallDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("grocery list", recallDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -4192,6 +4501,8 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("provider_success", decision.SkillPayload["news_provider_status"]);
         Assert.Equal(3, decision.SkillPayload["news_provider_requested_headlines"]);
         Assert.Equal(2, decision.SkillPayload["news_provider_resolved_headlines"]);
+        Assert.NotNull(decision.SkillPayload["news_headlines"]);
+        Assert.IsType<Dictionary<string, object?>[]>(decision.SkillPayload["news_headlines"]);
         Assert.Contains("Local robotics team unveils weather-ready helper", decision.ReplyText,
             StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(provider.LastRequest);

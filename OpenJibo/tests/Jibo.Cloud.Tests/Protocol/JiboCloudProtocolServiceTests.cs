@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
@@ -418,6 +420,46 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal(200, mediaGet.StatusCode);
         Assert.Equal("image/jpeg", mediaGet.ContentType);
         Assert.Equal("binary-photo-placeholder", mediaGet.BodyText);
+    }
+
+    [Fact]
+    public async Task MediaCreate_WritesBinaryManifestMetadataForSync()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(),
+            new FileMediaContentStore(directoryPath));
+        const string bodyText = "binary-photo-placeholder";
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Media_20160725",
+            Operation = "Create",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = "image/jpeg",
+                ["x-path"] = "photo-blob-manifest",
+                ["x-type"] = "image"
+            },
+            BodyText = bodyText
+        });
+
+        using var createdPayload = JsonDocument.Parse(result.BodyText);
+        var meta = createdPayload.RootElement.GetProperty("meta");
+        Assert.Equal(bodyText.Length, meta.GetProperty("contentLength").GetInt32());
+        Assert.Equal(
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(bodyText))).ToLowerInvariant(),
+            meta.GetProperty("contentSha256").GetString());
+
+        var metaPath = Path.Combine(directoryPath, "photo-blob-manifest.json");
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(metaPath));
+        var manifestMeta = manifest.RootElement.GetProperty("meta");
+        Assert.Equal(bodyText.Length, manifestMeta.GetProperty("contentLength").GetInt32());
+        Assert.Equal(
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(bodyText))).ToLowerInvariant(),
+            manifestMeta.GetProperty("contentSha256").GetString());
+        Assert.True(manifestMeta.TryGetProperty("storedUtc", out _));
     }
 
     [Fact]

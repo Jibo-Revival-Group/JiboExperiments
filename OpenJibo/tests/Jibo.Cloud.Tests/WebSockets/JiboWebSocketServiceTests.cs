@@ -3802,6 +3802,35 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_FillerPlusGenericCommand_IsIgnoredAsLowSignalNoise()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-low-signal-command-token",
+            Text = """{"type":"LISTEN","transID":"trans-low-signal-command","data":{"rules":["wake-word"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-low-signal-command-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-low-signal-command","data":{"text":"so command"}}"""
+        });
+
+        Assert.Empty(replies);
+
+        var session = _store.FindSessionByToken("hub-low-signal-command-token");
+        Assert.NotNull(session);
+        Assert.Null(session.LastIntent);
+        Assert.Null(session.LastTranscript);
+    }
+
+    [Fact]
     public async Task BufferedAudio_WithSyntheticTranscriptHint_FinalizesThroughSttSeam()
     {
         var listenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope

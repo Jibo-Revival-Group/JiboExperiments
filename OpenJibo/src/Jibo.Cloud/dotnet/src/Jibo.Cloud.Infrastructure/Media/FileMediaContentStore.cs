@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Security.Cryptography;
 using Jibo.Cloud.Application.Abstractions;
 
 namespace Jibo.Cloud.Infrastructure.Media;
@@ -29,11 +30,17 @@ internal sealed class FileMediaContentStore : IMediaContentStore
 
         Directory.CreateDirectory(Path.GetDirectoryName(contentPath)!);
         await File.WriteAllBytesAsync(contentPath, content, cancellationToken);
+        var manifestMeta = meta is null
+            ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, object?>(meta, StringComparer.OrdinalIgnoreCase);
+        manifestMeta["contentLength"] = content.Length;
+        manifestMeta["contentSha256"] = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
+        manifestMeta["storedUtc"] = DateTimeOffset.UtcNow;
         var payload = new
         {
             path,
             contentType,
-            meta
+            meta = manifestMeta
         };
         await File.WriteAllTextAsync(metaPath, JsonSerializer.Serialize(payload, JsonOptions), cancellationToken);
     }

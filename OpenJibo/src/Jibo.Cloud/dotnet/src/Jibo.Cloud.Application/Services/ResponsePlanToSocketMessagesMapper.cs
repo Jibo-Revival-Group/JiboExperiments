@@ -43,6 +43,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                   string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase);
         var isClockSkillLaunch = string.Equals(skill?.SkillName, "@be/clock", StringComparison.OrdinalIgnoreCase);
         var isReportSkillLaunch = string.Equals(skill?.SkillName, "report-skill", StringComparison.OrdinalIgnoreCase);
+        var idleRedirectDelayMs = isSleepCommand ? 150 : isSpinAroundCommand ? 75 : 75;
+        var idleCompletionDelayMs = isSleepCommand ? 1000 : isSpinAroundCommand ? 750 : 125;
         var localIntent = ReadSkillPayloadString(skill, "localIntent");
         var clockIntent = ReadSkillPayloadString(skill, "clockIntent");
         var clockDomain = ReadSkillPayloadString(skill, "domain");
@@ -246,10 +248,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundAsrText,
                     outboundRules,
                     entities)),
-                75));
+                idleRedirectDelayMs));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/idle")),
-                125));
+                idleCompletionDelayMs));
         }
 
         if (isSettingsLaunch &&

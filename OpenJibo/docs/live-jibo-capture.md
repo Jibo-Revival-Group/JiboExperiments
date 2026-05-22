@@ -77,3 +77,18 @@ Useful helper scripts:
 - [scripts/cloud/get-websocket-capture-summary.sh](/OpenJibo/scripts/cloud/get-websocket-capture-summary.sh)
 - [scripts/cloud/import-websocket-capture-fixture.py](/OpenJibo/scripts/cloud/import-websocket-capture-fixture.py)
 - [live-jibo-test-runbook.md](/OpenJibo/docs/live-jibo-test-runbook.md)
+
+## Group Testing Handoff
+
+When you have a useful capture set and want to share it with another tester, bundle the capture root into a single zip so the raw events, capture index, and exported fixtures stay together.
+
+Recommended helper:
+
+- [scripts/cloud/New-CaptureBundle.ps1](/OpenJibo/scripts/cloud/New-CaptureBundle.ps1)
+
+The bundle includes:
+
+- `capture-index.ndjson`
+- websocket and HTTP `*.events.ndjson` files
+- exported `*.flow.json` fixtures
+- a small `bundle-manifest.json` with file counts and source metadata

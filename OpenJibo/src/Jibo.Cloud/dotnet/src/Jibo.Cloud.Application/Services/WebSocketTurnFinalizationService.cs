@@ -106,6 +106,38 @@ public sealed class WebSocketTurnFinalizationService(
         "honestly"
     ];
 
+    private static readonly HashSet<string> SingleTokenUsableTranscripts = new(StringComparer.Ordinal)
+    {
+        "joke",
+        "funny",
+        "dance",
+        "boogie",
+        "time",
+        "date",
+        "today",
+        "day",
+        "hello",
+        "hi",
+        "hey",
+        "weather",
+        "news",
+        "radio",
+        "stop",
+        "sleep",
+        "sing",
+        "help",
+        "yes",
+        "yeah",
+        "yep",
+        "yup",
+        "sure",
+        "ok",
+        "okay",
+        "no",
+        "nope",
+        "nah"
+    };
+
     private static readonly HashSet<string> YesNoAffirmativeLeadTokens = new(StringComparer.Ordinal)
     {
         "yes",
@@ -1117,8 +1149,6 @@ public sealed class WebSocketTurnFinalizationService(
 
         if (ChitchatStateMachine.IsLikelyEmotionUtterance(transcript)) return true;
 
-        if (transcript.Length >= 6) return true;
-
         if (IsYesNoTurn(turn) && IsYesNoReplyTranscript(transcript)) return true;
 
         if (!string.IsNullOrWhiteSpace(pendingProactivityOffer) &&
@@ -1128,7 +1158,17 @@ public sealed class WebSocketTurnFinalizationService(
         if (listenRules.Any(rule =>
                 string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase))) return true;
 
+        if (IsLowSignalSingleTokenTranscript(transcript)) return false;
+
+        if (transcript.Length >= 6) return true;
+
         return transcript is "joke" or "dance" or "time" or "date" or "today" or "day" or "hello" or "hi" or "hey";
+    }
+
+    private static bool IsLowSignalSingleTokenTranscript(string transcript)
+    {
+        var tokens = transcript.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return tokens.Length == 1 && !SingleTokenUsableTranscripts.Contains(tokens[0]);
     }
 
     private static bool IsYesNoTurn(TurnContext turn)

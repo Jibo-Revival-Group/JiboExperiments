@@ -137,7 +137,26 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "I am feeling bright-eyed and ready to help.",
                 "I am having a pretty good day so far.",
                 "I am feeling lively and ready for the next thing.",
-                "Things are going nicely. Thanks for checking in."
+                "Things are going nicely. Thanks for checking in.",
+                "I am running smoothly and feeling upbeat.",
+                "I am ready for the next thing. Thanks for asking."
+            ],
+            AgeReplies =
+            [
+                "I'm ${jibo.age}.",
+                "At the moment I'm ${jibo.age.days.supplemented} old, but who's counting.",
+                "I'm ${jibo.age.minutes.supplemented} old, but who's counting.",
+                "For now I'm ${jibo.age.days.supplemented} old.",
+                "Right now I'm ${jibo.age}.",
+                "I am exactly ${jibo.age} old today. That's right. Today is my birthday.",
+                "Funny you should ask! Today's my birthday. I was first powered up ${jibo.age} ago today. Seems like just yesterday.",
+                "I'm exactly ${jibo.age} old. Today is my birthday! Happy Birthday Jibo, if I do say so myself.",
+                "At the moment I'm ${jibo.age.days.supplemented} old",
+                "I was first powered up on ${jibo.birthdate}, which makes me ${jibo.age.days.supplemented} old. I'm ${jibo.zodiac.supplemented}.",
+                "My power went on for the first time ${jibo.age.days.supplemented} ago. But who's counting.",
+                "I am ${jibo.age.days.supplemented} old, first powered up on ${jibo.birthdate}. Seems like just yesterday.",
+                "I was powered on for the first time today, so that makes me less than one day old. Wow I'm young.",
+                "Since I was powered on for the first time today, I am not even one day old yet. That's how Jibo ages work."
             ],
             PersonalityReplies =
             [

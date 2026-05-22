@@ -199,6 +199,10 @@ internal static class ChitchatStateMachine
                         "want to hang out",
                         "be helpful",
                         "dance from time to time"));
+            case "robot_want_to_talk_about":
+                return BuildScriptedResponseDecision(
+                    "robot_want_to_talk_about",
+                    SelectLegacyPersonalityReply(catalog, randomizer, "surprise me"));
             case "robot_job":
                 return BuildScriptedResponseDecision(
                     "robot_job",
@@ -395,13 +399,18 @@ internal static class ChitchatStateMachine
         string? currentEmotion,
         string? preferredName)
     {
-        if (catalog.EmotionReplies.Count == 0)
-            return PersonalizeHowAreYouReply(randomizer.Choose(catalog.HowAreYouReplies), preferredName);
+        if (catalog.EmotionReplies.Count > 0)
+        {
+            var emotionVariants = ResolveEmotionVariants(currentEmotion);
+            var matchingReplies = catalog.EmotionReplies
+                .Where(reply => ConditionMatches(reply.Condition, emotionVariants))
+                .Select(reply => reply.Reply)
+                .Where(reply => !string.IsNullOrWhiteSpace(reply))
+                .ToArray();
 
-        var emotionVariants = ResolveEmotionVariants(currentEmotion);
-        foreach (var reply in catalog.EmotionReplies)
-            if (ConditionMatches(reply.Condition, emotionVariants))
-                return PersonalizeHowAreYouReply(reply.Reply, preferredName);
+            if (matchingReplies.Length > 0)
+                return PersonalizeHowAreYouReply(randomizer.Choose(matchingReplies), preferredName);
+        }
 
         return PersonalizeHowAreYouReply(randomizer.Choose(catalog.HowAreYouReplies), preferredName);
     }

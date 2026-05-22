@@ -6,6 +6,8 @@ This release starts the shift from `1.0.18` hardening to visible feature growth.
 
 The goal is to keep compatibility work steady while shipping personality and capability slices that make OpenJibo feel less like a placeholder cloud and more like a real assistant platform.
 
+For grocery list capability, the 1.0.19 MVP choice is the existing household list engine with grocery as a first-class spoken alias. That keeps the storage model simple now while leaving integration-backed list orchestration for a later pass.
+
 ## Snapshot
 
 - Kickoff date: `2026-05-05`
@@ -56,6 +58,13 @@ Current batch note:
 - the favorites batch now includes `what is your favorite animal`, `what is your favorite bird`, `do you like penguins`, and `do you like animals` so the penguin-centered replies stay close to Pegasus
 - the latest social batch adds `welcome back`, `what are you thinking`, `what have you been doing`, and `what did you do` so presence and charm stay lively without distracting from the memory roadmap
 - the newest identity-charm batch adds `what's your name`, `do you have a nickname`, `do you like being Jibo`, `are there others like you`, and `what is your favorite name` so the robot stays familiar while still sounding like Pegasus
+- the next deep-personality batch adds `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` is still deferred until we add templated placeholder rendering
+- the next identity/knowledge batch adds `are you god`, `are you here`, `do you have super powers`, `how much do you know`, `what does jibo mean`, `where do you get info`, `what are you forbidden to do`, `what color are you`, and `what do you do when alone`
+- the next body/mission batch adds `how much do you weigh`, `how tall are you`, `how much do you cost`, `what if I unplug you`, `what is your purpose`, `what is your prime directive`, `what is jibo commander`, `do you like commander app`, and `what are you made of`
+- the templated edge-case batch adds `what is your sign`, `how many people do you know`, and `what is the loop` so the remaining source-backed lines can lean on live birthday and loop state
+- the work/eat/home batch adds `how do you work`, `what do you eat`, `where do you live`, and `what languages do you speak` so the everyday self-description cluster keeps moving toward the original phrasing
+- the age batch adds `how old are you` through `JBO_HowOldAreYou` so the birthday and first-powered-up phrasing stays source-backed instead of falling back to a generic age answer
+- live QA has surfaced a few repair targets to carry into the next pass: person-identification collisions inside the same loop, `turn around` / `go to sleep` motion quirks, and a couple of reply-selection spots where short variants are being over-selected (`how are you`, `what is your favorite flower`)
 - this pass keeps Build B moving while still favoring source-backed phrasing and preserving the command-vs-question boundary
 - the next passes should keep the same pattern and prefer source-backed phrasing whenever the legacy MIM text is available
   - if a source-backed legacy line is missing, use a temporary direct reply only to keep the pass moving, then backfill source text later
@@ -84,6 +93,8 @@ The goal is to port these in small batches, capture the source-backed phrasing w
 - the restore proof is the persisted-state rehydration path; do not scope it into a new hosted restore API until we have real device evidence
 - continue alarm/gallery/yes-no cleanup from `1.0.18` evidence where regressions are still open
 - improve short-turn STT reliability and low-signal screening
+- the latest STT pass adds a websocket-side low-signal screen for filler-only and stray single-token leftovers while keeping yes/no and word-of-the-day turns intact
+- capture indexing and group-test handoff now have a bundle helper that packages raw event captures, the index manifest, and exported fixtures together for easier review/share flows
 
 ### 3. Pegasus-To-Cloud Platform Porting
 

@@ -14,7 +14,8 @@ public sealed partial class JiboInteractionService
         string? sourceName,
         IReadOnlyList<string>? categories,
         int? headlineCount,
-        IReadOnlyDictionary<string, object?>? providerDiagnostics = null)
+        IReadOnlyDictionary<string, object?>? providerDiagnostics = null,
+        IReadOnlyList<NewsHeadline>? headlines = null)
     {
         var speakableBriefing = NormalizeNewsSpeechText(spokenBriefing);
         var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -25,6 +26,9 @@ public sealed partial class JiboInteractionService
             ["mim_type"] = "announcement",
             ["prompt_id"] = "NewsHeadline_AN_01",
             ["prompt_sub_category"] = "AN",
+            ["news_view_enabled"] = true,
+            ["news_view_kind"] = "newsBriefing",
+            ["news_view_mode"] = "provider",
             ["esml"] =
                 $"<speak><anim cat='news' meta='news-stinger' nonBlocking='true' /><break size='0.35'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(speakableBriefing)}</es></speak>"
         };
@@ -34,6 +38,18 @@ public sealed partial class JiboInteractionService
         if (headlineCount is > 0) payload["news_headline_count"] = headlineCount.Value;
 
         if (categories is { Count: > 0 }) payload["news_categories"] = categories.ToArray();
+
+        if (headlines is { Count: > 0 })
+            payload["news_headlines"] = headlines.Select(static headline => new Dictionary<string, object?>(
+                    StringComparer.OrdinalIgnoreCase)
+                {
+                    ["title"] = headline.Title,
+                    ["summary"] = headline.Summary,
+                    ["category"] = headline.Category,
+                    ["sourceName"] = headline.SourceName,
+                    ["url"] = headline.Url
+                })
+                .ToArray();
 
         if (providerDiagnostics is not null)
             foreach (var (key, value) in providerDiagnostics)
@@ -77,7 +93,8 @@ public sealed partial class JiboInteractionService
                 "provider_success",
                 preferredCategories,
                 requestedHeadlineCount,
-                headlines.Length));
+                headlines.Length),
+            headlines);
     }
 
     private static IReadOnlyDictionary<string, object?> BuildNewsProviderDiagnostics(

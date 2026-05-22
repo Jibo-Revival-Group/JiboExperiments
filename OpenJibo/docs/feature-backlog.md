@@ -614,6 +614,8 @@ Current release theme:
   - recognition, enrollment, rename, and profile-correction boundaries
   - split between local state and hosted cloud state
   - first useful hosted identity slice
+  - live QA has shown person-identification collisions in the same loop (for example, a parent and child both getting normalized to the same remembered name)
+  - person-identification correction likely needs its own repair pass before we can trust greetings, reports, and presence triggers in mixed-household scenarios
 
 ### 20. Onboarding, Loop Management, And Fresh Start
 
@@ -638,9 +640,12 @@ Current release theme:
   - `make a pizza` now ports the original scripted-response path through `chitchat-skill` with `mim_id = RA_JBO_MakePizza` and pizza-making animation ESML
   - `can you order pizza` now ports the original scripted-response path through `chitchat-skill` with `mim_id = RA_JBO_OrderPizza`
   - current source answers these with a `1.0.19` rule-based persona baseline, backed by `OpenJiboCloudBuildInfo.PersonaBirthday`
+  - `how old are you` now also uses the imported Build B age prompts so the first-powered-up and birthday phrasing stays source-backed
 - Follow-up:
   - wire persona age to first-powered-up or durable first-cloud-seen metadata when available
   - add command-vs-question variants so expressive prompts can answer conversationally before launching actions
+  - live QA has shown motion/sleep quirks too: `turn around` can become a no-op and `go to sleep` can fail at the last step before the sleep animation fully completes
+  - reply-selection polish still needs attention on a couple of identity prompts where short variants are over-selected (`how are you`, `what is your favorite flower`)
 
 ### 22. Command Vs Question Reply Style
 
@@ -770,7 +775,7 @@ Current release theme:
 
 ### 28. Grocery List Capability (Requested Feature)
 
-- Status: `discovery`
+- Status: `in_progress`
 - Tags: `content`, `docs`, `storage`
 - Why now:
   - directly requested by Jibo owners and fits memory + household utility roadmap
@@ -779,13 +784,14 @@ Current release theme:
   - examples:
     - `C:\Projects\jibo\pegasus\packages\chitchat-skill\mims\scripted-responses\RA_JBO_ShoppingList.mim`
     - `C:\Projects\jibo\pegasus\packages\chitchat-skill\mims\scripted-responses\RA_JBO_ManageToDoList.mim`
-- Candidate delivery paths:
-  - native lightweight list skill (fastest user value)
-  - integration-backed list orchestration (long-term richer ecosystem fit)
+- MVP decision:
+  - use the existing household list engine as the native lightweight grocery MVP
+  - keep grocery as a first-class spoken alias over the shopping list storage path
+  - reserve integration-backed list orchestration for a later discovery pass
 - Exit criteria:
-  - clear decision on MVP path
-  - first schema for list items + ownership scope
-  - initial voice flows and follow-up intent handling defined
+  - grocery prompts, add/recall/done flows, and list follow-ups consistently speak grocery wording
+  - existing shopping/to-do flows remain unchanged
+  - future integration-backed list work remains a separate backlog item
 
 ### 29. Legacy MIM Personality Import Ladder
 
@@ -889,7 +895,10 @@ Current release theme:
   - richer identity follow-ups like `who is this`, `do you know me`, `do you remember me`, and `can you recognize me`
   - mood and affect prompts like `how are you`, `are you happy`, `are you sad`, and `are you angry`
   - self-description charm like `what's your name`, `do you have a nickname`, `do you like being Jibo`, and `what is your favorite name`
+  - deeper personality follow-ups like `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` stays deferred until templated placeholder rendering exists
+  - the next identity / knowledge wave adds `are you god`, `are you here`, `do you have super powers`, `how much do you know`, `what does jibo mean`, `where do you get info`, `what are you forbidden to do`, `what color are you`, and `what do you do when alone`
   - additional legacy source-backed `RI_USR` prompts where the text is short and the behavior is easy to verify
+  - templated edge cases like `what is your sign`, `how many people do you know`, and `what is the loop` where live birthday and loop state are part of the line instead of a plain canned response
 - Exit criteria:
   - a stable checklist exists for the original persona surface
   - each pass can be scoped to a small batch of prompts
@@ -975,7 +984,9 @@ For `1.0.19`:
   - next implementation pass should supply the real Azure Storage connection string / deployment wiring and validate the live round-trip in the storage account smoke test
 10. Update, backup, and restore proof - implemented (update creation and backup creation now survive persisted reloads; restore is the persisted-state rehydration proof path, not a new cloud API)
 11. STT upgrade and noise screening
+  - progress update (`2026-05-21`): added a low-signal short-turn screen in websocket finalization so filler-only fragments and stray single-token leftovers like `so command` get rejected before they can become bad turns, while preserving the existing yes/no and word-of-the-day short-turn flows
 12. Hosted capture/storage plan / indexing for group testing
+  - progress update (`2026-05-21`): added a bundle helper so group testers can package raw capture trees, `capture-index.ndjson`, and exported fixtures into one zip handoff artifact
 13. Binary-safe media storage / sync to cloud drive: OneDrive, Google Drive, Box, etc.
 14. Provider-backed news and weather parity polish
 15. Grocery list capability discovery and MVP selection

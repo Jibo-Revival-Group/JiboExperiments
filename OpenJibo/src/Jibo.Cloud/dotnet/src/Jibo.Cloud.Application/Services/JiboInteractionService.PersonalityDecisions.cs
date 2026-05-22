@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
@@ -8,13 +9,49 @@ namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService
 {
-    private static JiboInteractionDecision BuildRobotAgeDecision(DateTimeOffset? referenceLocalTime)
+    private static readonly string[] DefaultAgeReplies =
+    [
+        "I'm ${jibo.age}.",
+        "At the moment I'm ${jibo.age.days.supplemented} old, but who's counting.",
+        "I'm ${jibo.age.minutes.supplemented} old, but who's counting.",
+        "For now I'm ${jibo.age.days.supplemented} old.",
+        "Right now I'm ${jibo.age}.",
+        "I am exactly ${jibo.age} old today. That's right. Today is my birthday.",
+        "Funny you should ask! Today's my birthday. I was first powered up ${jibo.age} ago today. Seems like just yesterday.",
+        "I'm exactly ${jibo.age} old. Today is my birthday! Happy Birthday Jibo, if I do say so myself.",
+        "At the moment I'm ${jibo.age.days.supplemented} old",
+        "I was first powered up on ${jibo.birthdate}, which makes me ${jibo.age.days.supplemented} old. I'm ${jibo.zodiac.supplemented}.",
+        "My power went on for the first time ${jibo.age.days.supplemented} ago. But who's counting.",
+        "I am ${jibo.age.days.supplemented} old, first powered up on ${jibo.birthdate}. Seems like just yesterday.",
+        "I was powered on for the first time today, so that makes me less than one day old. Wow I'm young.",
+        "Since I was powered on for the first time today, I am not even one day old yet. That's how Jibo ages work."
+    ];
+
+    private JiboInteractionDecision BuildRobotAgeDecision(
+        JiboExperienceCatalog catalog,
+        DateTimeOffset? referenceLocalTime,
+        string intentName)
     {
-        var referenceDate = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
-        var ageDescription = DescribePersonaAge(referenceDate, OpenJiboCloudBuildInfo.PersonaBirthday);
+        var ageReplies = catalog.AgeReplies.Count == 0 ? DefaultAgeReplies : catalog.AgeReplies;
+        var selected = SelectLegacyReply(
+            ageReplies,
+            "first powered up",
+            "today is my birthday",
+            "just getting started",
+            "who's counting");
+
+        var reply = RenderAgeTemplate(selected, referenceLocalTime);
+        if (string.IsNullOrWhiteSpace(reply))
+        {
+            var referenceDate = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
+            var ageDescription = DescribePersonaAge(referenceDate, OpenJiboCloudBuildInfo.PersonaBirthday);
+            reply = $"I count {OpenJiboCloudBuildInfo.PersonaBirthdayWords} as my birthday, so I am {ageDescription}.";
+        }
+
         return new JiboInteractionDecision(
-            "robot_age",
-            $"I count {OpenJiboCloudBuildInfo.PersonaBirthdayWords} as my birthday, so I am {ageDescription}.");
+            intentName,
+            reply,
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
     }
 
     private static JiboInteractionDecision BuildRobotBirthdayDecision()
@@ -22,6 +59,35 @@ public sealed partial class JiboInteractionService
         return new JiboInteractionDecision(
             "robot_birthday",
             $"My birthday is {OpenJiboCloudBuildInfo.PersonaBirthdayWords}.");
+    }
+
+    private static string RenderAgeTemplate(string template, DateTimeOffset? referenceLocalTime)
+    {
+        if (string.IsNullOrWhiteSpace(template)) return string.Empty;
+
+        var referenceMoment = referenceLocalTime ?? DateTimeOffset.UtcNow;
+        var referenceDate = DateOnly.FromDateTime(referenceMoment.Date);
+        var ageDescription = DescribePersonaAge(referenceDate, OpenJiboCloudBuildInfo.PersonaBirthday);
+        var ageDays = Math.Max(0, referenceDate.DayNumber - OpenJiboCloudBuildInfo.PersonaBirthday.DayNumber);
+        var ageMinutes = Math.Max(0, (int)Math.Round((referenceMoment.UtcDateTime -
+                                                       new DateTimeOffset(
+                                                           DateTime.SpecifyKind(
+                                                               OpenJiboCloudBuildInfo.PersonaBirthday
+                                                                   .ToDateTime(TimeOnly.MinValue),
+                                                               DateTimeKind.Utc)))
+            .TotalMinutes));
+        var zodiacLabel = DescribeZodiacSign(OpenJiboCloudBuildInfo.PersonaBirthday);
+        if (zodiacLabel.StartsWith("I'm ", StringComparison.OrdinalIgnoreCase))
+            zodiacLabel = zodiacLabel[4..];
+
+        return template
+            .Replace("${jibo.age.minutes.supplemented}", FormatAgeUnit(ageMinutes, "minute") + " old",
+                StringComparison.Ordinal)
+            .Replace("${jibo.age.days.supplemented}", ageDescription, StringComparison.Ordinal)
+            .Replace("${jibo.birthdate}", OpenJiboCloudBuildInfo.PersonaBirthdayWords, StringComparison.Ordinal)
+            .Replace("${jibo.zodiac.supplemented}", zodiacLabel, StringComparison.Ordinal)
+            .Replace("${jibo.age.value}", ageDays.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
+            .Replace("${jibo.age}", ageDescription, StringComparison.Ordinal);
     }
 
     private static JiboInteractionDecision BuildTriggerIgnoredDecision()
@@ -103,12 +169,22 @@ public sealed partial class JiboInteractionService
         var tenantRememberedName = personalMemoryStore.GetName(ResolveTenantScope(turn));
         if (!string.IsNullOrWhiteSpace(tenantRememberedName)) return ToDisplayName(tenantRememberedName);
 
-        if (!string.IsNullOrWhiteSpace(presence.PrimaryPersonId) &&
-            presence.LoopUserFirstNames.TryGetValue(presence.PrimaryPersonId, out var firstName) &&
+        var primaryPersonId = presence.PrimaryPersonId;
+        if (CanUseLoopFirstNameFallback(presence) &&
+            !string.IsNullOrWhiteSpace(primaryPersonId) &&
+            presence.LoopUserFirstNames.TryGetValue(primaryPersonId, out var firstName) &&
             !string.IsNullOrWhiteSpace(firstName))
             return ToDisplayName(firstName);
 
         return null;
+    }
+
+    private static bool CanUseLoopFirstNameFallback(GreetingPresenceProfile presence)
+    {
+        if (string.IsNullOrWhiteSpace(presence.PrimaryPersonId)) return false;
+        if (presence.PeoplePresentIds.Count > 1) return false;
+
+        return true;
     }
 
     private static string ToDisplayName(string value)
@@ -427,6 +503,95 @@ public sealed partial class JiboInteractionService
         return new JiboInteractionDecision(
             "proactive_offer_declined",
             "No problem. We can save the pizza fact for another time.");
+    }
+
+    private JiboInteractionDecision BuildWhatIsYourSignDecision()
+    {
+        var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
+        var birthday = OpenJiboCloudBuildInfo.PersonaBirthday;
+        var zodiac = DescribeZodiacSign(birthday);
+        var reply = birthday.Month == today.Month && birthday.Day == today.Day
+            ? $"{zodiac}. Today is my birthday."
+            : $"{zodiac}. I was first powered up on {OpenJiboCloudBuildInfo.PersonaBirthdayWords}.";
+
+        return new JiboInteractionDecision(
+            "robot_what_is_your_sign",
+            reply,
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildHowManyPeopleDoYouKnowDecision(TurnContext turn)
+    {
+        var people = GetLoopPeople(turn);
+        var speaker = ResolvePreferredGreetingName(turn, ResolveGreetingPresenceProfile(turn));
+        var reply = people.Count switch
+        {
+            0 => "Well if we're talking about people in my Loop, I do not know anyone yet.",
+            1 when string.IsNullOrWhiteSpace(speaker) =>
+                "Well if we're talking about people in my Loop, I know 1 person.",
+            1 => $"Well there is 1 person in our Loop. And it's you {speaker}.",
+            _ when string.IsNullOrWhiteSpace(speaker) =>
+                $"Well if we're talking about people in my Loop, I know {people.Count} people.",
+            _ => $"Well there are {people.Count} people in our Loop."
+        };
+
+        return new JiboInteractionDecision(
+            "robot_how_many_people_do_you_know",
+            reply,
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildWhatIsTheLoopDecision(TurnContext turn)
+    {
+        var people = GetLoopPeople(turn);
+        var reply = people.Count == 0
+            ? "The Loop is the people I know, and whose faces and voices I can learn to recognize. There can be up to 16 people in the Loop."
+            : $"The Loop is the group of people I know. They're the people whose voices and faces I can learn. Right now, my Loop is {JoinWithAnd(people.Select(person => person.DisplayName).ToArray())}.";
+
+        return new JiboInteractionDecision(
+            "robot_what_is_the_loop",
+            reply,
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
+    private IReadOnlyList<PersonRecord> GetLoopPeople(TurnContext turn)
+    {
+        if (cloudStateStore is null) return [];
+
+        var loopId = ReadTenantAttribute(turn, "loopId") ?? "openjibo-default-loop";
+        return cloudStateStore.GetPeople()
+            .Where(person => string.Equals(person.LoopId, loopId, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(person => person.IsPrimary ? 0 : 1)
+            .ThenBy(person => person.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string JoinWithAnd(IReadOnlyList<string> values)
+    {
+        if (values.Count == 0) return string.Empty;
+        if (values.Count == 1) return values[0];
+        if (values.Count == 2) return $"{values[0]} and {values[1]}";
+
+        return $"{string.Join(", ", values.Take(values.Count - 1))}, and {values[^1]}";
+    }
+
+    private static string DescribeZodiacSign(DateOnly birthday)
+    {
+        return (birthday.Month, birthday.Day) switch
+        {
+            (3, >= 21) or (4, <= 19) => "I'm Aries",
+            (4, >= 20) or (5, <= 20) => "I'm Taurus",
+            (5, >= 21) or (6, <= 20) => "I'm Gemini",
+            (6, >= 21) or (7, <= 22) => "I'm Cancer",
+            (7, >= 23) or (8, <= 22) => "I'm Leo",
+            (8, >= 23) or (9, <= 22) => "I'm Virgo",
+            (9, >= 23) or (10, <= 22) => "I'm Libra",
+            (10, >= 23) or (11, <= 21) => "I'm Scorpio",
+            (11, >= 22) or (12, <= 21) => "I'm Sagittarius",
+            (12, >= 22) or (1, <= 19) => "I'm Capricorn",
+            (1, >= 20) or (2, <= 18) => "I'm Aquarius",
+            _ => "I'm Pisces"
+        };
     }
 
     private string BuildGenericReply(JiboExperienceCatalog catalog, string transcript, string lowered)

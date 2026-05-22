@@ -624,6 +624,28 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your sign",
+                "what's your sign",
+                "what sign are you"))
+            return "robot_what_is_your_sign";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how many people do you know",
+                "how many people are in your loop",
+                "how many people are in the loop",
+                "how many people do you know in your loop"))
+            return "robot_how_many_people_do_you_know";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is the loop",
+                "what's the loop",
+                "tell me about the loop"))
+            return "robot_what_is_the_loop";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what are you doing for christmas",
                 "what are your plans for christmas",
                 "what do you plan to do for christmas"))

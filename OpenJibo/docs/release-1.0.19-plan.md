@@ -61,6 +61,7 @@ Current batch note:
 - the next deep-personality batch adds `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` is still deferred until we add templated placeholder rendering
 - the next identity/knowledge batch adds `are you god`, `are you here`, `do you have super powers`, `how much do you know`, `what does jibo mean`, `where do you get info`, `what are you forbidden to do`, `what color are you`, and `what do you do when alone`
 - the next body/mission batch adds `how much do you weigh`, `how tall are you`, `how much do you cost`, `what if I unplug you`, `what is your purpose`, `what is your prime directive`, `what is jibo commander`, `do you like commander app`, and `what are you made of`
+- the templated edge-case batch adds `what is your sign`, `how many people do you know`, and `what is the loop` so the remaining source-backed lines can lean on live birthday and loop state
 - this pass keeps Build B moving while still favoring source-backed phrasing and preserving the command-vs-question boundary
 - the next passes should keep the same pattern and prefer source-backed phrasing whenever the legacy MIM text is available
   - if a source-backed legacy line is missing, use a temporary direct reply only to keep the pass moving, then backfill source text later

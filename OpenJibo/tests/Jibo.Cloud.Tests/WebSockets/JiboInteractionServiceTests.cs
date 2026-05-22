@@ -716,6 +716,48 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("what is your sign", "robot_what_is_your_sign", "I'm Aries")]
+    [InlineData("what's your sign", "robot_what_is_your_sign", "March 22, 2026")]
+    public async Task BuildDecisionAsync_SignTemplatedMim_UsesPersonaBirthday(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("how many people do you know", "robot_how_many_people_do_you_know", "I know 2 people")]
+    [InlineData("what is the loop", "robot_what_is_the_loop", "Jibo Owner and OpenJibo Household Member")]
+    public async Task BuildDecisionAsync_LoopTemplatedMims_UseLiveLoopState(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService(cloudStateStore: new InMemoryCloudStateStore());
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
     [InlineData("how much do you know", "robot_knowledge", "I know a lot")]
     [InlineData("what do you know", "robot_knowledge", "I know a lot")]
     [InlineData("are you god", "robot_are_you_god", "very very very very surprised")]

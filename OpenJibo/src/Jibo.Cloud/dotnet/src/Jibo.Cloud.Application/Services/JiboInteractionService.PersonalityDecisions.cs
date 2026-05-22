@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
@@ -427,6 +428,95 @@ public sealed partial class JiboInteractionService
         return new JiboInteractionDecision(
             "proactive_offer_declined",
             "No problem. We can save the pizza fact for another time.");
+    }
+
+    private JiboInteractionDecision BuildWhatIsYourSignDecision()
+    {
+        var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
+        var birthday = OpenJiboCloudBuildInfo.PersonaBirthday;
+        var zodiac = DescribeZodiacSign(birthday);
+        var reply = birthday.Month == today.Month && birthday.Day == today.Day
+            ? $"{zodiac}. Today is my birthday."
+            : $"{zodiac}. I was first powered up on {OpenJiboCloudBuildInfo.PersonaBirthdayWords}.";
+
+        return new JiboInteractionDecision(
+            "robot_what_is_your_sign",
+            reply,
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildHowManyPeopleDoYouKnowDecision(TurnContext turn)
+    {
+        var people = GetLoopPeople(turn);
+        var speaker = ResolvePreferredGreetingName(turn, ResolveGreetingPresenceProfile(turn));
+        var reply = people.Count switch
+        {
+            0 => "Well if we're talking about people in my Loop, I do not know anyone yet.",
+            1 when string.IsNullOrWhiteSpace(speaker) =>
+                "Well if we're talking about people in my Loop, I know 1 person.",
+            1 => $"Well there is 1 person in our Loop. And it's you {speaker}.",
+            _ when string.IsNullOrWhiteSpace(speaker) =>
+                $"Well if we're talking about people in my Loop, I know {people.Count} people.",
+            _ => $"Well there are {people.Count} people in our Loop."
+        };
+
+        return new JiboInteractionDecision(
+            "robot_how_many_people_do_you_know",
+            reply,
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildWhatIsTheLoopDecision(TurnContext turn)
+    {
+        var people = GetLoopPeople(turn);
+        var reply = people.Count == 0
+            ? "The Loop is the people I know, and whose faces and voices I can learn to recognize. There can be up to 16 people in the Loop."
+            : $"The Loop is the group of people I know. They're the people whose voices and faces I can learn. Right now, my Loop is {JoinWithAnd(people.Select(person => person.DisplayName).ToArray())}.";
+
+        return new JiboInteractionDecision(
+            "robot_what_is_the_loop",
+            reply,
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
+    private IReadOnlyList<PersonRecord> GetLoopPeople(TurnContext turn)
+    {
+        if (cloudStateStore is null) return [];
+
+        var loopId = ReadTenantAttribute(turn, "loopId") ?? "openjibo-default-loop";
+        return cloudStateStore.GetPeople()
+            .Where(person => string.Equals(person.LoopId, loopId, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(person => person.IsPrimary ? 0 : 1)
+            .ThenBy(person => person.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string JoinWithAnd(IReadOnlyList<string> values)
+    {
+        if (values.Count == 0) return string.Empty;
+        if (values.Count == 1) return values[0];
+        if (values.Count == 2) return $"{values[0]} and {values[1]}";
+
+        return $"{string.Join(", ", values.Take(values.Count - 1))}, and {values[^1]}";
+    }
+
+    private static string DescribeZodiacSign(DateOnly birthday)
+    {
+        return (birthday.Month, birthday.Day) switch
+        {
+            (3, >= 21) or (4, <= 19) => "I'm Aries",
+            (4, >= 20) or (5, <= 20) => "I'm Taurus",
+            (5, >= 21) or (6, <= 20) => "I'm Gemini",
+            (6, >= 21) or (7, <= 22) => "I'm Cancer",
+            (7, >= 23) or (8, <= 22) => "I'm Leo",
+            (8, >= 23) or (9, <= 22) => "I'm Virgo",
+            (9, >= 23) or (10, <= 22) => "I'm Libra",
+            (10, >= 23) or (11, <= 21) => "I'm Scorpio",
+            (11, >= 22) or (12, <= 21) => "I'm Sagittarius",
+            (12, >= 22) or (1, <= 19) => "I'm Capricorn",
+            (1, >= 20) or (2, <= 18) => "I'm Aquarius",
+            _ => "I'm Pisces"
+        };
     }
 
     private string BuildGenericReply(JiboExperienceCatalog catalog, string transcript, string lowered)

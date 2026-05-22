@@ -672,6 +672,9 @@ public sealed partial class JiboInteractionService(
                 "robot_what_is_your_religion",
                 "bring people together",
                 "energy from the universe"),
+            "robot_what_is_your_sign" => BuildWhatIsYourSignDecision(),
+            "robot_how_many_people_do_you_know" => BuildHowManyPeopleDoYouKnowDecision(turn),
+            "robot_what_is_the_loop" => BuildWhatIsTheLoopDecision(turn),
             "robot_what_are_you_thinking" => BuildScriptedGreetingDecision(
                 catalog,
                 "robot_what_are_you_thinking",

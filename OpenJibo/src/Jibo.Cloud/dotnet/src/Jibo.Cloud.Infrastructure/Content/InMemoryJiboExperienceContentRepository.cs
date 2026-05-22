@@ -137,7 +137,9 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "I am feeling bright-eyed and ready to help.",
                 "I am having a pretty good day so far.",
                 "I am feeling lively and ready for the next thing.",
-                "Things are going nicely. Thanks for checking in."
+                "Things are going nicely. Thanks for checking in.",
+                "I am running smoothly and feeling upbeat.",
+                "I am ready for the next thing. Thanks for asking."
             ],
             AgeReplies =
             [

@@ -1040,6 +1040,21 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("All systems are go, Jake.", decision.ReplyText);
     }
 
+    [Fact]
+    public async Task BuildDecisionAsync_HowAreYou_CanSelectLaterEmotionReplyVariant()
+    {
+        var service = CreateService(randomizer: new LastItemRandomizer());
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "how are you",
+            NormalizedTranscript = "how are you"
+        });
+
+        Assert.Equal("how_are_you", decision.IntentName);
+        Assert.Equal("Actually things are looking mostly sunny.", decision.ReplyText);
+    }
+
     [Theory]
     [InlineData("what are you up to", "being helpful")]
     [InlineData("what are you doing", "making people smile")]

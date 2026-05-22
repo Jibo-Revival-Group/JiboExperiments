@@ -851,6 +851,28 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "do you like penguins"))
+            return "robot_likes_penguins";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like birds"))
+            return "robot_favorite_bird";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like animals"))
+            return "robot_likes_animals";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite bird",
+                "what's your favorite bird",
+                "what s your favorite bird"))
+            return "robot_favorite_bird";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite animal",
                 "what's your favorite animal",
                 "what s your favorite animal",
@@ -859,12 +881,9 @@ public sealed partial class JiboInteractionService
                 "what s your favourite animal",
                 "what animal do you like",
                 "what kind of animal do you like",
-                "what is your favorite bird",
-                "what's your favorite bird",
-                "what s your favorite bird",
-                "do you like penguins",
-                "do you like animals",
-                "do you like birds"))
+                "what do you think about penguins",
+                "what do you think about animals",
+                "what do you think about birds"))
             return "robot_favorite_animal";
 
         if (MatchesAny(

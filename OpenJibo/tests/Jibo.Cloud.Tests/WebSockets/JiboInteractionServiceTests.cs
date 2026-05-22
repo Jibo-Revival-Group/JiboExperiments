@@ -658,9 +658,6 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what is your favorite animal")]
     [InlineData("what's your favorite animal")]
     [InlineData("what animal do you like")]
-    [InlineData("what is your favorite bird")]
-    [InlineData("do you like penguins")]
-    [InlineData("do you like animals")]
     public async Task BuildDecisionAsync_FavoriteAnimal_UsesPenguinReply(string transcript)
     {
         var service = CreateService();
@@ -672,17 +669,21 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("robot_favorite_animal", decision.IntentName);
-        Assert.Contains("penguin", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("we're so alike", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
     [Theory]
-    [InlineData("what is your favorite flower", "robot_favorite_flower", "sunflowers")]
-    [InlineData("what's your favorite flower", "robot_favorite_flower", "sunflowers")]
+    [InlineData("what is your favorite flower", "robot_favorite_flower", "should see if I can find a sunflower soon")]
+    [InlineData("what's your favorite flower", "robot_favorite_flower", "should see if I can find a sunflower soon")]
     [InlineData("do you like R2D2", "robot_likes_r2d2", "A legend. A true legend.")]
     [InlineData("do you like the sun", "robot_likes_sun", "favorite star in the universe")]
     [InlineData("do you like space", "robot_likes_space", "I love space")]
     [InlineData("do you like kids", "robot_likes_kids", "kids are so fun")]
+    [InlineData("what is your favorite animal", "robot_favorite_animal", "we're so alike")]
+    [InlineData("what is your favorite bird", "robot_favorite_bird", "we're so alike")]
+    [InlineData("do you like penguins", "robot_likes_penguins", "penguin impression")]
+    [InlineData("do you like animals", "robot_likes_animals", "Animals are great")]
     [InlineData("can you laugh", "robot_can_laugh", "when I'm happy")]
     [InlineData("can you dance", "robot_can_dance", "dancing is one of the things I know best")]
     [InlineData("do you have friends", "robot_has_friends", "I believe I do have friends")]

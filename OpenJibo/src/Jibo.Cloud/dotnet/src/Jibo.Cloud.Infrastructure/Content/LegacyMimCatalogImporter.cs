@@ -264,7 +264,9 @@ public static class LegacyMimCatalogImporter
             fileName.StartsWith("JBO_WhatsYourName", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("JBO_WhereDoYouGetInfo", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("JBO_WhatDoYouLikeToDo", StringComparison.OrdinalIgnoreCase))
-            return LegacyMimBucket.Personality;
+            return fileName.StartsWith("JBO_HowOldAreYou", StringComparison.OrdinalIgnoreCase)
+                ? LegacyMimBucket.Age
+                : LegacyMimBucket.Personality;
 
         if (fileName.StartsWith("OI_JBO_Is", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("OI_JBO_Seems", StringComparison.OrdinalIgnoreCase) ||
@@ -456,6 +458,7 @@ public static class LegacyMimCatalogImporter
             or LegacyMimBucket.WeatherTomorrowHighLow
             or LegacyMimBucket.WeatherServiceDown
             or LegacyMimBucket.ReportSkillTemplate
+            or LegacyMimBucket.Age
             or LegacyMimBucket.Holiday
             or LegacyMimBucket.HolidayTracker;
     }
@@ -524,6 +527,7 @@ public static class LegacyMimCatalogImporter
         Sing,
         HolidaySing,
         FunFactSource,
+        Age,
         Personality,
         PersonalReportKickOff,
         PersonalReportOutro,
@@ -586,6 +590,7 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _bestFriendReplies = [];
         private readonly List<string> _funFacts = [];
         private readonly List<string> _greetings = [];
+        private readonly List<string> _ages = [];
         private readonly List<string> _holidayGiftReplies = [];
         private readonly List<string> _holidayGreetingReplies = [];
         private readonly List<string> _holidayReplies = [];
@@ -654,6 +659,9 @@ public static class LegacyMimCatalogImporter
                         Condition = normalizedCondition,
                         Reply = text
                     });
+                    return;
+                case LegacyMimBucket.Age:
+                    AddDistinct(_ages, text);
                     return;
                 case LegacyMimBucket.Holiday:
                     AddDistinct(_holidayReplies, text);
@@ -831,6 +839,7 @@ public static class LegacyMimCatalogImporter
                 EmotionReplies = [.. _emotionReplies],
                 PersonalityReplies = [.. _personalities],
                 GenericFallbackReplies = [.. _fallbacks],
+                AgeReplies = [.. _ages],
                 PersonalReportKickOffReplies = [.. _personalReportKickOffReplies],
                 PersonalReportOutroReplies = [.. _personalReportOutroReplies],
                 ReportSkillTemplates = [.. _reportSkillTemplates],

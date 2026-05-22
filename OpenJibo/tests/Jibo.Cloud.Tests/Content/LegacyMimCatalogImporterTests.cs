@@ -108,6 +108,10 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("I don't think I have a favorite name.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("Rhymes with bleebo", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.AgeReplies, reply =>
+            reply.Contains("first powered up", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.AgeReplies, reply =>
+            reply.Contains("today is my birthday", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("I really like sunflowers.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("Halloween is my favorite holiday", StringComparison.OrdinalIgnoreCase));

@@ -63,6 +63,7 @@ Current batch note:
 - the next body/mission batch adds `how much do you weigh`, `how tall are you`, `how much do you cost`, `what if I unplug you`, `what is your purpose`, `what is your prime directive`, `what is jibo commander`, `do you like commander app`, and `what are you made of`
 - the templated edge-case batch adds `what is your sign`, `how many people do you know`, and `what is the loop` so the remaining source-backed lines can lean on live birthday and loop state
 - the work/eat/home batch adds `how do you work`, `what do you eat`, `where do you live`, and `what languages do you speak` so the everyday self-description cluster keeps moving toward the original phrasing
+- the age batch adds `how old are you` through `JBO_HowOldAreYou` so the birthday and first-powered-up phrasing stays source-backed instead of falling back to a generic age answer
 - this pass keeps Build B moving while still favoring source-backed phrasing and preserving the command-vs-question boundary
 - the next passes should keep the same pattern and prefer source-backed phrasing whenever the legacy MIM text is available
   - if a source-backed legacy line is missing, use a temporary direct reply only to keep the pass moving, then backfill source text later

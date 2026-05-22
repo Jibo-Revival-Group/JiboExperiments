@@ -638,6 +638,7 @@ Current release theme:
   - `make a pizza` now ports the original scripted-response path through `chitchat-skill` with `mim_id = RA_JBO_MakePizza` and pizza-making animation ESML
   - `can you order pizza` now ports the original scripted-response path through `chitchat-skill` with `mim_id = RA_JBO_OrderPizza`
   - current source answers these with a `1.0.19` rule-based persona baseline, backed by `OpenJiboCloudBuildInfo.PersonaBirthday`
+  - `how old are you` now also uses the imported Build B age prompts so the first-powered-up and birthday phrasing stays source-backed
 - Follow-up:
   - wire persona age to first-powered-up or durable first-cloud-seen metadata when available
   - add command-vs-question variants so expressive prompts can answer conversationally before launching actions

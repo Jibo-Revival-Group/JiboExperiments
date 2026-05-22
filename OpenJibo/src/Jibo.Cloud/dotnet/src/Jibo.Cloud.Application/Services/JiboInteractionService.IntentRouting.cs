@@ -350,7 +350,7 @@ public sealed partial class JiboInteractionService
                 "what is your age",
                 "what s your age",
                 "how old r you"))
-            return "robot_age";
+            return "robot_how_old_are_you";
 
         if (MatchesAny(
                 loweredTranscript,

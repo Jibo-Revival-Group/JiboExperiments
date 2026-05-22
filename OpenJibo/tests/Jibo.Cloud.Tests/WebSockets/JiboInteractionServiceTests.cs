@@ -116,8 +116,8 @@ public sealed class JiboInteractionServiceTests
             }
         });
 
-        Assert.Equal("robot_age", decision.IntentName);
-        Assert.Equal("I count March 22, 2026 as my birthday, so I am 1 month old.", decision.ReplyText);
+        Assert.Equal("robot_how_old_are_you", decision.IntentName);
+        Assert.Contains("first powered up", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

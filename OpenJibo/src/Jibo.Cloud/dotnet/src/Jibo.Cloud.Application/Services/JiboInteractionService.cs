@@ -560,7 +560,7 @@ public sealed partial class JiboInteractionService(
             "photo_gallery" => BuildPhotoGalleryLaunchDecision(),
             "snapshot" => BuildPhotoCreateDecision("snapshot", "Taking a picture.", "createOnePhoto"),
             "photobooth" => BuildPhotoCreateDecision("photobooth", "Starting photobooth.", "createSomePhotos"),
-            "robot_age" => BuildRobotAgeDecision(referenceLocalTime),
+            "robot_age" => BuildRobotAgeDecision(catalog, referenceLocalTime, "robot_age"),
             "robot_birthday" => BuildRobotBirthdayDecision(),
             "robot_how_do_you_work" => BuildScriptedPersonalityDecision(
                 catalog,
@@ -589,6 +589,10 @@ public sealed partial class JiboInteractionService(
                 "robot_where_were_you_born",
                 "factory piece by piece",
                 "put together in a factory"),
+            "robot_how_old_are_you" => BuildRobotAgeDecision(
+                catalog,
+                referenceLocalTime,
+                "robot_how_old_are_you"),
             "robot_name" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_name",
@@ -881,6 +885,14 @@ public sealed partial class JiboInteractionService(
                 "Commander App",
                 "It's fun",
                 "have fun with the Commander App"),
+            "robot_what_are_you" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_are_you",
+                "I am a robot",
+                "I am a Jibo",
+                "helpful and fun",
+                "social robot",
+                "I have a heart"),
             "robot_likes_kids" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_kids",

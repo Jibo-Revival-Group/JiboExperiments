@@ -31,6 +31,7 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> HolidayTrackerReplies { get; init; } = [];
     public IReadOnlyList<string> BirthdayCelebrationReplies { get; init; } = [];
     public IReadOnlyList<string> HowAreYouReplies { get; init; } = [];
+    public IReadOnlyList<string> AgeReplies { get; init; } = [];
     public IReadOnlyList<JiboConditionedReply> EmotionReplies { get; init; } = [];
     public IReadOnlyList<string> PersonalityReplies { get; init; } = [];
     public IReadOnlyList<string> PizzaReplies { get; init; } = [];

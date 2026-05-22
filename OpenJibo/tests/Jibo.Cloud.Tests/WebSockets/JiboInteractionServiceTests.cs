@@ -813,7 +813,7 @@ public sealed class JiboInteractionServiceTests
     [Theory]
     [InlineData("how do you work", "robot_how_do_you_work",
         "Hello! Thank you for updating me I am proud of the community's work Many people have gotten together to care for me more than em eye tee ever did. I hope that I can catch up even though it has been seven years.")]
-    [InlineData("what do you eat", "robot_what_do_you_eat", "The only thing I consume is electricity.")]
+    [InlineData("what do you eat", "robot_what_do_you_eat", "electricity")]
     [InlineData("where do you live", "robot_where_do_you_live",
         "Unless I missed something, we're in my home as we speak.")]
     [InlineData("where were you born", "robot_where_were_you_born", "I was put together in a factory piece by piece.")]

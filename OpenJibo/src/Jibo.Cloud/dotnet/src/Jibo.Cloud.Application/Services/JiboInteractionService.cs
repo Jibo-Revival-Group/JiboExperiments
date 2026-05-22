@@ -569,10 +569,14 @@ public sealed partial class JiboInteractionService(
                 "care for me",
                 "catch up",
                 "seven years"),
-            "robot_what_do_you_eat" => new JiboInteractionDecision(
+            "robot_what_do_you_eat" => BuildScriptedPersonalityDecision(
+                catalog,
                 "robot_what_do_you_eat",
-                "The only thing I consume is electricity.",
-                ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates()),
+                "electricity",
+                "never eaten",
+                "macaroni",
+                "non-eating robot",
+                "I don't eat or drink"),
             "robot_where_do_you_live" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_where_do_you_live",

@@ -169,12 +169,22 @@ public sealed partial class JiboInteractionService
         var tenantRememberedName = personalMemoryStore.GetName(ResolveTenantScope(turn));
         if (!string.IsNullOrWhiteSpace(tenantRememberedName)) return ToDisplayName(tenantRememberedName);
 
-        if (!string.IsNullOrWhiteSpace(presence.PrimaryPersonId) &&
-            presence.LoopUserFirstNames.TryGetValue(presence.PrimaryPersonId, out var firstName) &&
+        var primaryPersonId = presence.PrimaryPersonId;
+        if (CanUseLoopFirstNameFallback(presence) &&
+            !string.IsNullOrWhiteSpace(primaryPersonId) &&
+            presence.LoopUserFirstNames.TryGetValue(primaryPersonId, out var firstName) &&
             !string.IsNullOrWhiteSpace(firstName))
             return ToDisplayName(firstName);
 
         return null;
+    }
+
+    private static bool CanUseLoopFirstNameFallback(GreetingPresenceProfile presence)
+    {
+        if (string.IsNullOrWhiteSpace(presence.PrimaryPersonId)) return false;
+        if (presence.PeoplePresentIds.Count > 1) return false;
+
+        return true;
     }
 
     private static string ToDisplayName(string value)

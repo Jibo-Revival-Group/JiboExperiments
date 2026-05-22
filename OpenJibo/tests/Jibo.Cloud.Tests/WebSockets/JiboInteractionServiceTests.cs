@@ -350,6 +350,31 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_TriggerWithMultiplePeople_DoesNotBorrowLoopFirstName()
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        var service = CreateService(cloudStateStore: cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"},{"id":"person-2"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"},{"id":"person-2","firstName":"sam"}]}}}"""
+            }
+        });
+
+        Assert.Equal("proactive_greeting", decision.IntentName);
+        Assert.DoesNotContain("Jake", decision.ReplyText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Sam", decision.ReplyText, StringComparison.Ordinal);
+        Assert.Contains("I am glad to see you", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_TriggerInTheMorning_UsesGoodMorningProactiveTone()
     {
         var memoryStore = new InMemoryPersonalMemoryStore();

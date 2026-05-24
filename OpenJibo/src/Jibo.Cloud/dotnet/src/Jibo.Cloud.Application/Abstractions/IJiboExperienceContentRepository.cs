@@ -40,6 +40,10 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> PersonalReportKickOffReplies { get; init; } = [];
     public IReadOnlyList<string> PersonalReportOutroReplies { get; init; } = [];
     public IReadOnlyList<string> ReportSkillTemplates { get; init; } = [];
+    public IReadOnlyList<string> BackupHowReplies { get; init; } = [];
+    public IReadOnlyList<string> RestoreHowReplies { get; init; } = [];
+    public IReadOnlyList<string> UpdateNextReplies { get; init; } = [];
+    public IReadOnlyList<string> UpdateLastReplies { get; init; } = [];
     public IReadOnlyList<string> WeatherIntroReplies { get; init; } = [];
     public IReadOnlyList<string> WeatherTomorrowIntroReplies { get; init; } = [];
     public IReadOnlyList<string> WeatherTodayHighLowReplies { get; init; } = [];

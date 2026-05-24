@@ -714,6 +714,21 @@ public sealed partial class JiboInteractionService
             preferredSnippets);
     }
 
+    private JiboInteractionDecision BuildScriptedSupportDecision(
+        IReadOnlyList<string> replies,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        var selected = SelectLegacyReply(replies, preferredSnippets);
+        if (string.IsNullOrWhiteSpace(selected))
+            selected = GetSupportFallbackReply(intentName);
+
+        return new JiboInteractionDecision(
+            intentName,
+            selected,
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
     private JiboInteractionDecision BuildScriptedHolidayGreetingDecision(
         JiboExperienceCatalog catalog,
         string intentName,
@@ -756,6 +771,18 @@ public sealed partial class JiboInteractionService
     private string SelectLegacyReply(IReadOnlyList<string> replies, params string[] preferredSnippets)
     {
         return ScriptedResponseDecisionBuilder.SelectLegacyReply(replies, randomizer, preferredSnippets);
+    }
+
+    private static string GetSupportFallbackReply(string intentName)
+    {
+        return intentName switch
+        {
+            "backup_help" => "That sounds a little bit out of my area of expertise. You can get info on that in the Help section of the Jibo App. Or try the website, support dot jibo dot com.",
+            "restore_backup" => "That sounds a little too complicated for me, I think your best bet is to get some guidance from Jibo Customer Care. Check the Help section of the Jibo App, or go to the website, support dot jibo dot com.",
+            "update_next" => "That's a good question. I think they've been coming every few weeks.",
+            "update_last" => "Good question. The release notes page on the website support dot jibo dot com, will tell you the dates of all my past software updates.",
+            _ => string.Empty
+        };
     }
 
     private string RenderHolidayTemplate(string template, TurnContext turn, GreetingPresenceProfile presence)

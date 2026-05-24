@@ -191,6 +191,29 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsBuildBSupportResponsesIntoDedicatedBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.BackupHowReplies, reply =>
+            reply.Contains("Help section of the Jibo App", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.RestoreHowReplies, reply =>
+            reply.Contains("Jibo Customer Care", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.UpdateNextReplies, reply =>
+            reply.Contains("coming every few weeks", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.UpdateNextReplies, reply =>
+            reply.Contains("pretty regularly", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.UpdateLastReplies, reply =>
+            reply.Contains("release notes page", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBFriendshipResponsesIntoFriendBuckets()
     {
         var rootDirectory = Path.Combine(

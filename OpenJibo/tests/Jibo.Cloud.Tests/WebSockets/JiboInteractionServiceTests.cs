@@ -713,6 +713,29 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("can i backup my jibo", "backup_help", "Help section of the Jibo App")]
+    [InlineData("how can i restore you from a backup", "restore_backup", "Jibo Customer Care")]
+    [InlineData("when is your next update", "update_next", "coming every few weeks")]
+    [InlineData("when was your last update", "update_last", "release notes page")]
+    public async Task BuildDecisionAsync_SupportHelpQuestions_UseImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
     [InlineData("what do you want to talk about", "robot_want_to_talk_about", "surprise me")]
     [InlineData("what would you like to talk about", "robot_want_to_talk_about", "surprise me")]
     [InlineData("what do you dream about", "robot_what_do_you_dream_about", "dreams about flying")]

@@ -102,6 +102,34 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         Assert.False(strategy.CanHandle(turn));
     }
 
+    [Theory]
+    [InlineData("shared/yes_no")]
+    [InlineData("word-of-the-day/surprise")]
+    public void CanHandle_ReturnsTrue_WhenShortAnswerTurnsStayUnderTheStandardNoiseFloor(string listenRule)
+    {
+        var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "ffmpeg",
+                WhisperCliPath = "whisper-cli",
+                WhisperModelPath = "model.bin"
+            },
+            new FakeExternalProcessRunner());
+
+        var turn = new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["bufferedAudioBytes"] = 47,
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() },
+                ["listenRules"] = new[] { listenRule }
+            }
+        };
+
+        Assert.True(strategy.CanHandle(turn));
+    }
+
     [Fact]
     public async Task TranscribeAsync_UsesFfmpegAndWhisperCpp_WhenConfigured()
     {
@@ -141,6 +169,54 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             Assert.Equal("ffmpeg", runner.Calls[0].FileName);
             Assert.Equal("whisper-cli", runner.Calls[1].FileName);
             Assert.Equal(147, result.Metadata["bufferedAudioBytes"]);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Theory]
+    [InlineData("shared/yes_no")]
+    [InlineData("word-of-the-day/surprise")]
+    public async Task TranscribeAsync_HandlesShortAnswerTurnsWithoutHittingTheStandardNoiseFloor(string listenRule)
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var runner = new FakeExternalProcessRunner("[00:00:00.000 --> 00:00:01.000] yes.");
+            var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+                new BufferedAudioSttOptions
+                {
+                    EnableLocalWhisperCpp = true,
+                    FfmpegPath = "ffmpeg",
+                    WhisperCliPath = "whisper-cli",
+                    WhisperModelPath = "model.bin",
+                    TempDirectory = tempDirectory
+                },
+                runner);
+
+            var turn = new TurnContext
+            {
+                TurnId = listenRule == "shared/yes_no"
+                    ? "turn-short-yes-no"
+                    : "turn-short-word-of-the-day",
+                Locale = "en-US",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["bufferedAudioBytes"] = 47,
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() },
+                    ["listenRules"] = new[] { listenRule }
+                }
+            };
+
+            var result = await strategy.TranscribeAsync(turn);
+
+            Assert.Equal("yes", result.Text);
+            Assert.Equal("local-whispercpp-buffered-audio", result.Provider);
+            Assert.Equal(2, runner.Calls.Count);
         }
         finally
         {

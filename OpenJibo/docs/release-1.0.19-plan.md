@@ -382,6 +382,7 @@ First completed slice in this personal-report parity track:
 9. Provider-backed news expansion and deeper weather parity
 10. Capture indexing and retention boundary for group testing, including a lightweight manifest beside raw capture files
 11. Binary-safe media storage seam with file and Azure Blob adapters, ready for original/thumbnails follow-up
+12. Accessibility voice parity planning for menu-equivalent flows, starting with backup / restore / update voice coverage and broader critical-path accessibility in a later release
 
 For slice 1, use the new import ladder above to keep the work grounded in what OpenJibo can already render today versus what needs new scaffolding.
 For slices 2-5, use Pegasus phrase lists, MIM IDs, and behavior patterns as the source anchor before broadening into OpenJibo-native improvements.

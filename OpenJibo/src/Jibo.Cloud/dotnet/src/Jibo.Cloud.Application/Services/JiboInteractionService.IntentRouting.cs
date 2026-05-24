@@ -1028,6 +1028,44 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(loweredTranscript, "commute", "traffic", "drive to work", "how long to work")) return "commute";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "can i backup my jibo",
+                "can i back up my jibo",
+                "how can i backup my jibo",
+                "how can i back up my jibo",
+                "how do i backup my jibo",
+                "how do i back up my jibo",
+                "can you be backed up",
+                "how can i store you in the cloud",
+                "how can i store you online",
+                "how do i store you in the cloud",
+                "how do i store you online"))
+            return "backup_help";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can i restore you from a backup",
+                "how can i restore you from a backup",
+                "how do i restore you from a backup",
+                "restore you from a backup",
+                "restore from a backup"))
+            return "restore_backup";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "when is your next update",
+                "when is my next update",
+                "when's your next update",
+                "when s your next update",
+                "when was your last update",
+                "when was my last update",
+                "when's your last update",
+                "when s your last update"))
+            return loweredTranscript.Contains("last update", StringComparison.OrdinalIgnoreCase)
+                ? "update_last"
+                : "update_next";
+
         if (MatchesAny(loweredTranscript, "news", "headlines", "news update", "tell me the news")) return "news";
 
         if (IsWelcomeBackGreeting(loweredTranscript) ||

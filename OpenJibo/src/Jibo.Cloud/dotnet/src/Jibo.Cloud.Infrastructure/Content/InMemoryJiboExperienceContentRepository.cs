@@ -195,6 +195,23 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             [
                 "The report-skill templates are loaded and waiting to be rendered."
             ],
+            BackupHowReplies =
+            [
+                "That sounds a little bit out of my area of expertise. You can get info on that in the Help section of the Jibo App. Or try the website, support dot jibo dot com."
+            ],
+            RestoreHowReplies =
+            [
+                "That sounds a little bit out of my area of expertise. You can get info on that in the Help section of the Jibo App. Or try the website, support dot jibo dot com."
+            ],
+            UpdateNextReplies =
+            [
+                "That's a good question. I think they've been coming every few weeks.",
+                "I never know exactly when my next update is coming, but they do seem to come pretty regularly."
+            ],
+            UpdateLastReplies =
+            [
+                "Good question. The release notes page on the website support dot jibo dot com, will tell you the dates of all my past software updates."
+            ],
             WeatherIntroReplies =
             [
                 "For your weather.",

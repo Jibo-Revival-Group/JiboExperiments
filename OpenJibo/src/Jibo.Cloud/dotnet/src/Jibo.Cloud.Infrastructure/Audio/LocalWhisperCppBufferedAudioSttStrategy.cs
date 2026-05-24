@@ -8,6 +8,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
     IExternalProcessRunner processRunner) : ISttStrategy
 {
     private const int MinimumBufferedAudioBytes = 64;
+    private const int ShortAnswerBufferedAudioBytes = 16;
 
     public string Name => "local-whispercpp-buffered-audio";
 
@@ -18,7 +19,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
                IsConfiguredPathAvailable(options.WhisperCliPath, true) &&
                IsConfiguredPathAvailable(options.WhisperModelPath, true) &&
                ReadBufferedAudioFrames(turn).Any(ContainsOpusIdentificationHeader) &&
-               !IsBelowNoiseFloor(ReadBufferedAudioBytes(turn));
+               !IsBelowNoiseFloor(turn, ReadBufferedAudioBytes(turn));
     }
 
     public async Task<SttResult> TranscribeAsync(TurnContext turn, CancellationToken cancellationToken = default)
@@ -31,7 +32,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
             throw new InvalidOperationException(
                 "Local whisper.cpp STT requires buffered Ogg/Opus audio with an Opus identification header.");
 
-        if (IsBelowNoiseFloor(ReadBufferedAudioBytes(turn)))
+        if (IsBelowNoiseFloor(turn, ReadBufferedAudioBytes(turn)))
             throw new InvalidOperationException(
                 "Local whisper.cpp STT rejected buffered audio as too short or noisy for transcription.");
 
@@ -119,9 +120,54 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
             : 0;
     }
 
-    private static bool IsBelowNoiseFloor(int bufferedAudioBytes)
+    private static bool IsBelowNoiseFloor(TurnContext turn, int bufferedAudioBytes)
     {
-        return bufferedAudioBytes > 0 && bufferedAudioBytes < MinimumBufferedAudioBytes;
+        if (bufferedAudioBytes <= 0) return false;
+
+        var minimumBufferedAudioBytes = IsShortAnswerTurn(turn)
+            ? ShortAnswerBufferedAudioBytes
+            : MinimumBufferedAudioBytes;
+
+        return bufferedAudioBytes < minimumBufferedAudioBytes;
+    }
+
+    private static bool IsShortAnswerTurn(TurnContext turn)
+    {
+        var rules = ReadRules(turn, "listenRules")
+            .Concat(ReadRules(turn, "clientRules"))
+            .Concat(ReadRules(turn, "listenAsrHints"));
+
+        return rules.Any(IsShortAnswerRule);
+    }
+
+    private static bool IsShortAnswerRule(string rule)
+    {
+        return string.Equals(rule, "$YESNO", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "clock/alarm_timer_change", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "clock/alarm_timer_none_set", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "create/is_it_a_keeper", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "settings/download_now_later", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "shared/yes_no", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "word-of-the-day/right_word", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IEnumerable<string> ReadRules(TurnContext turn, string key)
+    {
+        if (!turn.Attributes.TryGetValue(key, out var value) || value is null) return [];
+
+        return value switch
+        {
+            IReadOnlyList<string> typed => typed,
+            IEnumerable<string> enumerable => enumerable,
+            JsonElement { ValueKind: JsonValueKind.Array } jsonElement => jsonElement.EnumerateArray()
+                .Where(static item => item.ValueKind == JsonValueKind.String)
+                .Select(static item => item.GetString() ?? string.Empty),
+            _ => []
+        };
     }
 
     private static bool ContainsOpusIdentificationHeader(byte[] frame)

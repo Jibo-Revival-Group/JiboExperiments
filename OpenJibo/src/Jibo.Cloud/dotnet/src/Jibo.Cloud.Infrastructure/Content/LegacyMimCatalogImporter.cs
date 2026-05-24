@@ -241,6 +241,18 @@ public static class LegacyMimCatalogImporter
             string.Equals(fileName, "WetNowDryLater", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.ReportSkillTemplate;
 
+        if (fileName.StartsWith("SUP_GEN_HowBackUpData", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.BackupHow;
+
+        if (fileName.StartsWith("SUP_GEN_HowRestoreBackup", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.RestoreHow;
+
+        if (fileName.StartsWith("SUP_UPDATE_WhenIsNextUpdate", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.UpdateNext;
+
+        if (fileName.StartsWith("SUP_UPDATE_WhenWasLastUpdate", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.UpdateLast;
+
         if (fileName.StartsWith("PersonalReportKickOff", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.PersonalReportKickOff;
 
@@ -515,6 +527,10 @@ public static class LegacyMimCatalogImporter
         HolidayGift,
         HolidayTracker,
         BirthdayCelebration,
+        BackupHow,
+        RestoreHow,
+        UpdateNext,
+        UpdateLast,
         Jokes,
         RobotFacts,
         HumanFacts,
@@ -583,6 +599,7 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _commuteTransportHurryReplies = [];
         private readonly List<string> _commuteTransportLateReplies = [];
         private readonly List<string> _commuteTransportNormalReplies = [];
+        private readonly List<string> _backupHowReplies = [];
         private readonly List<JiboConditionedReply> _emotionReplies = [];
         private readonly List<string> _fallbacks = [];
         private readonly List<string> _favoriteAnimalReplies = [];
@@ -603,6 +620,9 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _newsCategoryIntroReplies = [];
         private readonly List<string> _newsIntroReplies = [];
         private readonly List<string> _newsOutroReplies = [];
+        private readonly List<string> _restoreHowReplies = [];
+        private readonly List<string> _updateLastReplies = [];
+        private readonly List<string> _updateNextReplies = [];
         private readonly List<string> _personalities = [];
         private readonly List<string> _personalReportKickOffReplies = [];
         private readonly List<string> _personalReportOutroReplies = [];
@@ -680,6 +700,18 @@ public static class LegacyMimCatalogImporter
                     return;
                 case LegacyMimBucket.BirthdayCelebration:
                     AddDistinct(_birthdayCelebrationReplies, text);
+                    return;
+                case LegacyMimBucket.BackupHow:
+                    AddDistinct(_backupHowReplies, text);
+                    return;
+                case LegacyMimBucket.RestoreHow:
+                    AddDistinct(_restoreHowReplies, text);
+                    return;
+                case LegacyMimBucket.UpdateNext:
+                    AddDistinct(_updateNextReplies, text);
+                    return;
+                case LegacyMimBucket.UpdateLast:
+                    AddDistinct(_updateLastReplies, text);
                     return;
                 case LegacyMimBucket.Personality:
                     if (_personalities.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase)))
@@ -835,6 +867,7 @@ public static class LegacyMimCatalogImporter
                 HolidayGiftReplies = [.. _holidayGiftReplies],
                 HolidayTrackerReplies = [.. _holidayTrackerReplies],
                 BirthdayCelebrationReplies = [.. _birthdayCelebrationReplies],
+                BackupHowReplies = [.. _backupHowReplies],
                 HowAreYouReplies = [.. _howAreYous],
                 EmotionReplies = [.. _emotionReplies],
                 PersonalityReplies = [.. _personalities],
@@ -869,7 +902,10 @@ public static class LegacyMimCatalogImporter
                 CommuteServiceDownReplies = [.. _commuteServiceDownReplies],
                 NewsIntroReplies = [.. _newsIntroReplies],
                 NewsCategoryIntroReplies = [.. _newsCategoryIntroReplies],
-                NewsOutroReplies = [.. _newsOutroReplies]
+                NewsOutroReplies = [.. _newsOutroReplies],
+                RestoreHowReplies = [.. _restoreHowReplies],
+                UpdateNextReplies = [.. _updateNextReplies],
+                UpdateLastReplies = [.. _updateLastReplies]
             };
         }
 

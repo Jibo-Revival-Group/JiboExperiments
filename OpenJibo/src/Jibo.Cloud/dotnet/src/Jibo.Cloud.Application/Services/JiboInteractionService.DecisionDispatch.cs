@@ -119,6 +119,25 @@ public sealed partial class JiboInteractionService
             "day" => BuildClockLaunchDecision("day", "clock", "askForDay", "Showing the day."),
             "current_location" => BuildCurrentLocationDecision(turn),
             "cloud_version" => BuildCloudVersionDecision(),
+            "backup_help" => BuildScriptedSupportDecision(
+                catalog.BackupHowReplies,
+                "backup_help",
+                "cloud backup",
+                "back up",
+                "restore"),
+            "restore_backup" => BuildScriptedSupportDecision(
+                catalog.RestoreHowReplies,
+                "restore_backup",
+                "restore you from a backup",
+                "restore from a backup"),
+            "update_next" => BuildScriptedSupportDecision(
+                catalog.UpdateNextReplies,
+                "update_next",
+                "next update"),
+            "update_last" => BuildScriptedSupportDecision(
+                catalog.UpdateLastReplies,
+                "update_last",
+                "last update"),
             "radio" => BuildRadioLaunchDecision(),
             "radio_genre" => BuildRadioGenreLaunchDecision(lowered),
             "stop" => BuildStopDecision(),

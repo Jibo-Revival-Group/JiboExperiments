@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
+using Jibo.Cloud.Application.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Jibo.Cloud.Tests.Api;
@@ -20,7 +21,7 @@ public sealed class JiboCloudApiIntegrationTests
         Assert.NotNull(body);
         Assert.True(body!.Ok);
         Assert.Equal("OpenJibo Cloud Api", body.Service);
-        Assert.Equal("1.0.19", body.Version);
+        Assert.Equal(OpenJiboCloudBuildInfo.Version, body.Version);
     }
 
     [Fact]

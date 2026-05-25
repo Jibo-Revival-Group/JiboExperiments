@@ -190,6 +190,34 @@ public sealed class PersistenceStoreTests
         }
     }
 
+    [Fact]
+    public void PersonalMemoryStore_IgnoresCorruptSnapshotAndOverwritesWithValidJson()
+    {
+        var persistenceDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-corrupt-memory-{Guid.NewGuid():N}");
+        var persistencePath = Path.Combine(persistenceDirectory, "memory.json");
+
+        try
+        {
+            Directory.CreateDirectory(persistenceDirectory);
+            File.WriteAllText(persistencePath, "{ not valid json");
+
+            var scope = new PersonalMemoryTenantScope("acct-corrupt", "loop-corrupt", "device-corrupt");
+            var store = new InMemoryPersonalMemoryStore(persistencePath);
+            Assert.Null(store.GetName(scope));
+
+            store.SetName(scope, "Recovered");
+
+            var reloaded = new InMemoryPersonalMemoryStore(persistencePath);
+            Assert.Equal("Recovered", reloaded.GetName(scope));
+            Assert.DoesNotContain(Directory.GetFiles(persistenceDirectory),
+                path => Path.GetFileName(path).Contains(".tmp", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            if (Directory.Exists(persistenceDirectory)) Directory.Delete(persistenceDirectory, recursive: true);
+        }
+    }
+
     private sealed class RecordingSnapshotStore : ISnapshotStore
     {
         public List<object> Saves { get; } = [];

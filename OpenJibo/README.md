@@ -14,6 +14,16 @@ We are rebuilding the hosted cloud first, then using that foundation for OTA, Op
 
 Current release truth lives in [docs/development-plan.md](docs/development-plan.md). The current cloud release constant is `1.0.19`.
 
+## Running Locally
+
+For local setup, use [docs/local-cloud-quickstart.md](docs/local-cloud-quickstart.md).
+
+It covers:
+
+- the current `.NET` OpenJibo cloud
+- the legacy Node protocol oracle
+- the Playground direct-to-Jibo ASR/TTS demo
+
 ## Roadmap
 
 The long-range plan is summarized in [docs/roadmap.md](docs/roadmap.md). In short:
@@ -94,6 +104,7 @@ OpenJibo/
 Use these when you want the active technical truth:
 
 - [Development plan](docs/development-plan.md)
+- [Local cloud quickstart](docs/local-cloud-quickstart.md)
 - [Feature backlog](docs/feature-backlog.md)
 - [Release 1.0.19 plan](docs/release-1.0.19-plan.md)
 - [Support tiers](docs/support-tiers.md)

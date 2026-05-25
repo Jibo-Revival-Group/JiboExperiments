@@ -240,3 +240,5 @@ static CloudSession ResolveSession(JiboWebSocketService webSocketService, WebSoc
 }
 
 internal sealed record ReceivedSocketMessage(WebSocketMessageType MessageType, byte[] Buffer);
+
+public partial class Program;

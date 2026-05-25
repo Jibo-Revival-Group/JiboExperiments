@@ -123,7 +123,7 @@ public sealed class CloudStateCommuteReportProvider(ICloudStateStore cloudStateS
         return true;
     }
 
-    private static string? ResolveLoopId(TurnContext turn)
+    private static string ResolveLoopId(TurnContext turn)
     {
         if (turn.Attributes.TryGetValue("loopId", out var loopValue) &&
             loopValue is not null &&

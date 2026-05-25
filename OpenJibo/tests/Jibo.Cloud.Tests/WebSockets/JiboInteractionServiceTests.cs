@@ -333,7 +333,7 @@ public sealed class JiboInteractionServiceTests
                 ["messageType"] = "TRIGGER",
                 ["triggerSource"] = "PRESENCE",
                 ["context"] =
-                    """{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
+                    """{"runtime":{"location":{"iso":"2026-05-21T15:00:00-05:00"},"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
             }
         });
 
@@ -364,7 +364,7 @@ public sealed class JiboInteractionServiceTests
                 ["messageType"] = "TRIGGER",
                 ["triggerSource"] = "PRESENCE",
                 ["context"] =
-                    """{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"},{"id":"person-2"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"},{"id":"person-2","firstName":"sam"}]}}}"""
+                    """{"runtime":{"location":{"iso":"2026-05-21T15:00:00-05:00"},"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"},{"id":"person-2"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"},{"id":"person-2","firstName":"sam"}]}}}"""
             }
         });
 
@@ -511,6 +511,58 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("proactive_holiday_greeting", decision.IntentName);
         Assert.Contains("Happy holidays", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ProactiveHolidayGreeting", decision.ContextUpdates![GreetingRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_TriggerUsesHolidayGreetingOnlyOnMatchingFixedDate()
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        cloudStateStore.UpsertHoliday(new HolidayRecord
+        {
+            LoopId = "loop-fixed-holiday",
+            Name = "Test Holiday",
+            Category = "holiday",
+            Date = new DateOnly(2026, 8, 13),
+            IsEnabled = true,
+            Source = "manual",
+            CountryCode = "US"
+        });
+        var service = CreateService(cloudStateStore: cloudStateStore);
+
+        var ordinaryDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-fixed-holiday",
+                ["loopId"] = "loop-fixed-holiday",
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-08-12T09:00:00-05:00"},"perception":{"speaker":"person-8","peoplePresent":[{"id":"person-8"}]},"loop":{"users":[{"id":"person-8","firstName":"jake"}]}}}"""
+            }
+        });
+
+        var holidayDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-fixed-holiday",
+                ["loopId"] = "loop-fixed-holiday",
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-08-13T09:00:00-05:00"},"perception":{"speaker":"person-9","peoplePresent":[{"id":"person-9"}]},"loop":{"users":[{"id":"person-9","firstName":"sam"}]}}}"""
+            }
+        });
+
+        Assert.Equal("proactive_greeting", ordinaryDecision.IntentName);
+        Assert.Equal("ProactiveGreeting", ordinaryDecision.ContextUpdates![GreetingRouteKey]);
+        Assert.Equal("proactive_holiday_greeting", holidayDecision.IntentName);
+        Assert.Equal("ProactiveHolidayGreeting", holidayDecision.ContextUpdates![GreetingRouteKey]);
     }
 
     [Fact]
@@ -2255,7 +2307,9 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_opt_in", decision.IntentName);
         Assert.Equal("Would you like your personal report now?", decision.ReplyText);
-        Assert.Equal("shared/yes_no", ((IReadOnlyList<string>)decision.SkillPayload!["listen_contexts"])[0]);
+        Assert.NotNull(decision.SkillPayload);
+        var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
+        Assert.Equal("shared/yes_no", listenContexts[0]);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("awaiting_opt_in", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportWeatherEnabledKey]);
@@ -2286,7 +2340,9 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_verify_user", decision.IntentName);
         Assert.Equal("I think this is alex. Is that right?", decision.ReplyText);
-        Assert.Equal("shared/yes_no", ((IReadOnlyList<string>)decision.SkillPayload!["listen_contexts"])[0]);
+        Assert.NotNull(decision.SkillPayload);
+        var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
+        Assert.Equal("shared/yes_no", listenContexts[0]);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("awaiting_identity_confirmation", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal("alex", decision.ContextUpdates[PersonalReportUserNameKey]);

@@ -8,6 +8,15 @@ This is the production-oriented path for restoring device connectivity and creat
 
 Current spoken cloud version: `Cloud version 1.0.19.`
 
+Local startup:
+
+```powershell
+.\scripts\cloud\Start-OpenJiboDotNet.ps1
+```
+
+Run that from the repo root. For the full local guide, including Node and Playground, see
+[local-cloud-quickstart.md](../../../docs/local-cloud-quickstart.md).
+
 Release hygiene reminder:
 
 - bump [OpenJiboCloudBuildInfo.cs](/C:/Projects/JiboExperiments/OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/OpenJiboCloudBuildInfo.cs) whenever we ship a meaningful hosted-cloud update

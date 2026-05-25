@@ -13,6 +13,28 @@ The Node server is still the best place to:
 
 It is no longer the intended production runtime.
 
+## Local Startup
+
+From the repo root:
+
+```powershell
+.\scripts\cloud\Start-OpenJiboNode.ps1 -Install
+```
+
+Manual equivalent:
+
+```powershell
+cd src\Jibo.Cloud\node
+npm install
+npm start
+```
+
+The Node oracle binds HTTPS on port `443` and expects `cert.pem` and `key.pem` in this folder.
+Use the same certificate material that your controlled Jibo routing already trusts.
+
+For the full local guide, including the current `.NET` cloud and Playground, see
+[local-cloud-quickstart.md](../../../docs/local-cloud-quickstart.md).
+
 ## What Stays Here
 
 - reverse-engineering work

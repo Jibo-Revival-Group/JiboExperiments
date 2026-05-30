@@ -255,6 +255,124 @@ Goal: catch the Test 26 no-`LISTEN` buffering regression, the Test 27 diagnostic
 - Expected: a proactive yes/no prompt such as Word of the Day should consume `yes`/`no` without echoing the answer back or leaving the robot listening.
 - Capture check: long-running context-only transactions should not accumulate buffered audio chunks or stay `AwaitingTurnCompletion = true`; a late ignored diagnostic `LISTEN` may appear as cleanup telemetry but should not set `SawListen` or buffer audio; normal cloud/local completions should not be followed by a BE surprise router request.
 
+### 1.0.19 Feature Pack
+
+Goal: cover the newer 1.0.19 feature surfaces without turning the full regression into one giant unbounded pass.
+
+Run these as a focused bundle when validating a release candidate:
+
+#### Personality And Presence
+
+- `how are you`
+- `welcome back`
+- `who am I`
+- `what is your favorite flower`
+- `what is your favorite animal`
+- `what is your favorite bird`
+
+Expected:
+
+- `how are you` can select a richer reply when a remembered name exists
+- `welcome back` stays on the presence-aware path
+- `who am I` should not guess from the wrong loop person when multiple people are present
+- favorite flower / animal / bird should stay on the richer source-backed reply families rather than collapsing to a short default
+
+Capture check:
+
+- presence-triggered greetings should record cooldown metadata and not re-open a generic chat tail
+- loop name fallback should not leak to a second person in the same loop
+
+#### Stop And Motion
+
+- `stop`
+- `stop that`
+- `stop moving`
+- `stop making that noise`
+- `stop ignoring me`
+- `stop staring`
+- `stop talking`
+- `be quiet`
+- `be silent`
+- `shut up`
+- `quiet down`
+- `go to sleep`
+- `turn around`
+
+Expected:
+
+- the specific stop-style variants use the source-backed reply families
+- the generic stop lane still settles the robot locally
+- motion/sleep commands still redirect to the correct idle action and finish cleanly
+
+Capture check:
+
+- stop-style phrases should emit `global_commands` `stop` behavior with the idle redirect
+- `go to sleep` and `turn around` should not no-op or fall through to generic chat
+
+#### Short Proactivity
+
+- allow the robot to offer `Word of the Day`
+- answer the prompt with a short `yes`
+- answer one run with a short `no`
+
+Expected:
+
+- short `yes` / `no` answers are heard and consumed
+- the robot does not abandon the game after responding
+
+Capture check:
+
+- yes/no follow-up turns should stay in the constrained local rule
+- the local STT path should not screen out valid short constrained answers
+
+#### Personal Report
+
+- `personal report`
+- if possible, confirm the weather section still speaks a live current temperature and a separate daily hi/low
+- if possible, confirm calendar and commute sections still appear in the report
+
+Expected:
+
+- report speech still completes cleanly
+- weather, calendar, and commute sections still show up in the report shape
+
+Capture check:
+
+- provider-backed news/weather payloads should still carry the view metadata and structured headline data
+
+#### Grocery
+
+- `grocery list`
+- `add to my grocery list milk`
+- `what's on my grocery list`
+
+Expected:
+
+- grocery behaves like a first-class alias for the shared household list flow
+- the display wording stays `grocery list`
+- the list prompt should not treat the alias itself as an item to add
+
+Capture check:
+
+- the grocery alias should stay scoped to the user-facing label and not contaminate later shopping-list sessions
+
+#### Holidays And Seasonal Personality
+
+- `show santa tracker`
+- `do you like black history month`
+- `what should I do for black history month`
+- `what are you thankful for`
+- `do you like holiday music`
+
+Expected:
+
+- holiday extras remain source-backed
+- black history month and other seasonal prompts stay on their Pegasus-shaped routes
+
+Capture check:
+
+- seasonal prompts should not fall back into generic personality chat when source-backed replies exist
+
 ## Optional Feature Slice Checks
 
 When a new feature is added before a release closes:
@@ -266,6 +384,11 @@ When a new feature is added before a release closes:
 For the current candidate list, add cases here when implemented:
 
 - robot age/persona: `how old are you`
+- stop-style aliases: `stop moving`, `stop making that noise`, `stop ignoring me`, `stop staring`, `stop talking`, `be quiet`, `be silent`, `shut up`, `quiet down`
+- presence-aware greetings: `welcome back`, `i'm home`, `i'm back`, `how are you`
+- holiday/seasonal: `show santa tracker`, `what are you thankful for`, `do you like black history month`
+- grocery aliasing: `grocery list`, `add to my grocery list milk`, `what's on my grocery list`
+- proactivity/STT: short `yes` / `no` answers to constrained yes/no prompts and Word of the Day prompts
 
 ## After The Run
 

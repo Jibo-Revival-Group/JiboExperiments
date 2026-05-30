@@ -729,6 +729,27 @@ public sealed partial class JiboInteractionService
             ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
     }
 
+    private JiboInteractionDecision BuildScriptedStopDecision(
+        IReadOnlyList<string> replies,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        var selected = SelectLegacyReply(replies, preferredSnippets);
+        if (string.IsNullOrWhiteSpace(selected))
+            selected = "Stopping.";
+
+        return new JiboInteractionDecision(
+            intentName,
+            selected,
+            "@be/idle",
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/idle",
+                ["globalIntent"] = "stop",
+                ["nluDomain"] = "global_commands"
+            });
+    }
+
     private JiboInteractionDecision BuildScriptedHolidayGreetingDecision(
         JiboExperienceCatalog catalog,
         string intentName,
@@ -781,6 +802,9 @@ public sealed partial class JiboInteractionService
             "restore_backup" => "That sounds a little too complicated for me, I think your best bet is to get some guidance from Jibo Customer Care. Check the Help section of the Jibo App, or go to the website, support dot jibo dot com.",
             "update_next" => "That's a good question. I think they've been coming every few weeks.",
             "update_last" => "Good question. The release notes page on the website support dot jibo dot com, will tell you the dates of all my past software updates.",
+            "robot_story" => "I don't have any stories for you just yet. But I'd really like to learn some soon.",
+            "robot_recommend_movie" => "Some of my favorites are Back to the Future, Toy Story, March of the Penguins, and everyone's favorite movie about space. Spaceballs.",
+            "robot_search_web" => "I can't exactly search the web, but you can ask me direct questions about things like history, science, art, and that kind of thing.",
             _ => string.Empty
         };
     }

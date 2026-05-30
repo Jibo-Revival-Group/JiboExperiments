@@ -1,3 +1,4 @@
+using System.Globalization;
 using Jibo.Cloud.Application.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -6,6 +7,45 @@ internal static class SeasonalHolidayRouteBuilder
 {
     internal static bool TryResolveSemanticIntent(string loweredTranscript, out string? semanticIntent)
     {
+        if (MatchesAny(
+                loweredTranscript,
+                "do you celebrate black history month",
+                "do you like black history month",
+                "are you excited about black history month",
+                "are you looking forward to black history month",
+                "do you have plans for black history month",
+                "how do you feel about black history month",
+                "what do you think about black history month",
+                "did you have a fun black history month",
+                "what should i do for black history month",
+                "what should i do for black history month?"))
+        {
+            semanticIntent = loweredTranscript.Contains("looking forward", StringComparison.OrdinalIgnoreCase)
+                ? "seasonal_black_history_month_looks_forward"
+                : loweredTranscript.Contains("plans", StringComparison.OrdinalIgnoreCase)
+                    ? "seasonal_black_history_month_plans"
+                    : loweredTranscript.Contains("did you have", StringComparison.OrdinalIgnoreCase) ||
+                      loweredTranscript.Contains("how do you feel", StringComparison.OrdinalIgnoreCase) ||
+                      loweredTranscript.Contains("what do you think", StringComparison.OrdinalIgnoreCase)
+                        ? "seasonal_black_history_month_how_is"
+                        : loweredTranscript.Contains("what should i do", StringComparison.OrdinalIgnoreCase)
+                            ? "seasonal_black_history_month_advice"
+                            : "seasonal_black_history_month_celebrate";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "give me a black history month fact",
+                "give me black history month fact",
+                "tell me a black history month fact",
+                "tell me something about african american history",
+                "tell me something about black history month"))
+        {
+            semanticIntent = "seasonal_black_history_month_fact";
+            return true;
+        }
+
         if (MatchesAny(
                 loweredTranscript,
                 "do you like halloween",
@@ -329,10 +369,59 @@ internal static class SeasonalHolidayRouteBuilder
         JiboExperienceCatalog catalog,
         IJiboRandomizer randomizer,
         Func<string, string> holidayTemplateRenderer,
+        DateTimeOffset? referenceLocalTime,
         out JiboInteractionDecision? decision)
     {
         decision = semanticIntent switch
         {
+            "seasonal_black_history_month_celebrate" => BuildConditionedHolidayDecision(
+                catalog.BlackHistoryMonthReplies,
+                randomizer,
+                semanticIntent,
+                referenceLocalTime,
+                "great chance to share some new interesting historical facts",
+                "perfect time to learn and think about some very great people",
+                "very great people"),
+            "seasonal_black_history_month_looks_forward" => BuildConditionedHolidayDecision(
+                catalog.BlackHistoryMonthReplies,
+                randomizer,
+                semanticIntent,
+                referenceLocalTime,
+                "sharing some interesting historical facts during the month",
+                "i'm enjoying it",
+                "long way off",
+                "share some interesting historical facts"),
+            "seasonal_black_history_month_plans" => BuildConditionedHolidayDecision(
+                catalog.BlackHistoryMonthReplies,
+                randomizer,
+                semanticIntent,
+                referenceLocalTime,
+                "celebrating by sharing some interesting new historical facts",
+                "sharing some interesting new historical facts during the month"),
+            "seasonal_black_history_month_how_is" => BuildConditionedHolidayDecision(
+                catalog.BlackHistoryMonthReplies,
+                randomizer,
+                semanticIntent,
+                referenceLocalTime,
+                "sharing some interesting new historical facts during the month",
+                "celebrated by sharing some interesting historical facts",
+                "good month",
+                "still coming up in the future"),
+            "seasonal_black_history_month_advice" => BuildConditionedHolidayDecision(
+                catalog.BlackHistoryMonthReplies,
+                randomizer,
+                semanticIntent,
+                referenceLocalTime,
+                "great time to learn and think about some very great people",
+                "what should do for black history month",
+                "some very great people"),
+            "seasonal_black_history_month_fact" => BuildHolidayDecision(
+                catalog.BlackHistoryMonthFactReplies,
+                randomizer,
+                semanticIntent,
+                "spingarn medal",
+                "langston hughes",
+                "maya angelou"),
             "seasonal_holiday_greeting" => ScriptedResponseDecisionBuilder.BuildScriptedHolidayGreetingDecision(
                 catalog,
                 randomizer,
@@ -556,6 +645,43 @@ internal static class SeasonalHolidayRouteBuilder
             ContextUpdates: BuildContextUpdates());
     }
 
+    private static JiboInteractionDecision BuildConditionedHolidayDecision(
+        IReadOnlyList<JiboConditionedReply> replies,
+        IJiboRandomizer randomizer,
+        string intentName,
+        DateTimeOffset? referenceLocalTime,
+        params string[] preferredSnippets)
+    {
+        var currentDate = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
+        var matchingReplies = replies
+            .Where(reply => IsDateConditionMatch(reply.Condition, currentDate))
+            .Select(reply => reply.Reply)
+            .Where(reply => !string.IsNullOrWhiteSpace(reply))
+            .ToArray();
+
+        if (matchingReplies.Length == 0)
+        {
+            matchingReplies = replies
+                .Where(reply => string.IsNullOrWhiteSpace(reply.Condition))
+                .Select(reply => reply.Reply)
+                .Where(reply => !string.IsNullOrWhiteSpace(reply))
+                .ToArray();
+        }
+
+        if (matchingReplies.Length == 0)
+        {
+            matchingReplies = replies
+                .Select(reply => reply.Reply)
+                .Where(reply => !string.IsNullOrWhiteSpace(reply))
+                .ToArray();
+        }
+
+        return new JiboInteractionDecision(
+            intentName,
+            SelectLegacyReply(matchingReplies, randomizer, preferredSnippets),
+            ContextUpdates: BuildContextUpdates());
+    }
+
     private static IDictionary<string, object?> BuildContextUpdates()
     {
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -581,6 +707,70 @@ internal static class SeasonalHolidayRouteBuilder
         }
 
         return replies.Count == 0 ? string.Empty : randomizer.Choose(replies);
+    }
+
+    private static bool IsDateConditionMatch(string? condition, DateOnly currentDate)
+    {
+        var normalizedCondition = NormalizeCondition(condition);
+        if (string.IsNullOrWhiteSpace(normalizedCondition)) return false;
+
+        var clauses = normalizedCondition.Split(new[] { "||" },
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var clause in clauses)
+            if (MatchesDateConditionClause(clause, currentDate))
+                return true;
+
+        return false;
+    }
+
+    private static bool MatchesDateConditionClause(string clause, DateOnly currentDate)
+    {
+        var normalizedClause = NormalizeCondition(clause).ToLowerInvariant();
+        if (!normalizedClause.StartsWith("dt.now.isinrange(", StringComparison.OrdinalIgnoreCase)) return false;
+
+        var openParenIndex = normalizedClause.IndexOf('(');
+        var closeParenIndex = normalizedClause.LastIndexOf(')');
+        if (openParenIndex < 0 || closeParenIndex <= openParenIndex) return false;
+
+        var arguments = normalizedClause[(openParenIndex + 1)..closeParenIndex];
+        var parts = arguments.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length != 2) return false;
+
+        if (!TryParseMonthDay(parts[0], out var startMonth, out var startDay)) return false;
+        if (!TryParseMonthDay(parts[1], out var endMonth, out var endDay)) return false;
+
+        var currentValue = currentDate.Month * 100 + currentDate.Day;
+        var startValue = startMonth * 100 + startDay;
+        var endValue = endMonth * 100 + endDay;
+
+        return startValue <= endValue
+            ? currentValue >= startValue && currentValue <= endValue
+            : currentValue >= startValue || currentValue <= endValue;
+    }
+
+    private static bool TryParseMonthDay(string value, out int month, out int day)
+    {
+        month = 0;
+        day = 0;
+
+        var trimmed = value.Trim().Trim('\'', '"');
+        var parts = trimmed.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length != 2) return false;
+
+        if (!int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out month)) return false;
+        if (!int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out day)) return false;
+
+        if (month < 1 || month > 12 || day < 1 || day > 31)
+            return false;
+
+        return true;
+    }
+
+    private static string NormalizeCondition(string? condition)
+    {
+        return string.IsNullOrWhiteSpace(condition)
+            ? string.Empty
+            : condition.Trim();
     }
 
     private static bool MatchesAny(string loweredTranscript, params string[] phrases)

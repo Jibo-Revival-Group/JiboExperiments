@@ -105,6 +105,7 @@ public sealed partial class JiboInteractionService
                 catalog,
                 randomizer,
                 selected => RenderHolidayTemplate(selected, turn, greetingPresence),
+                referenceLocalTime,
                 out var seasonalHolidayDecision))
             return seasonalHolidayDecision!;
 
@@ -138,6 +139,41 @@ public sealed partial class JiboInteractionService
                 catalog.UpdateLastReplies,
                 "update_last",
                 "last update"),
+            "robot_story" => BuildScriptedSupportDecision(
+                catalog.StoryReplies,
+                "robot_story",
+                "story, that sounds fun",
+                "don't have any stories"),
+            "robot_recommend_movie" => BuildScriptedSupportDecision(
+                catalog.RecommendMovieReplies,
+                "robot_recommend_movie",
+                "Back to the Future",
+                "Toy Story",
+                "Spaceballs"),
+            "robot_search_web" => BuildScriptedSupportDecision(
+                catalog.SearchWebReplies,
+                "robot_search_web",
+                "can't exactly search the web",
+                "direct questions"),
+            "request_stop_moving" => BuildScriptedStopDecision(
+                catalog.StopMovingReplies,
+                "request_stop_moving",
+                "stop moving"),
+            "request_stop_making_that_noise" => BuildScriptedStopDecision(
+                catalog.StopMakingThatNoiseReplies,
+                "request_stop_making_that_noise",
+                "stop making that noise",
+                "stop making noise"),
+            "request_stop_ignoring_me" => BuildScriptedStopDecision(
+                catalog.StopIgnoringMeReplies,
+                "request_stop_ignoring_me",
+                "stop ignoring me",
+                "don't ignore me"),
+            "request_stop_staring" => BuildScriptedStopDecision(
+                catalog.StopStaringReplies,
+                "request_stop_staring",
+                "stop staring",
+                "stop staring at me"),
             "radio" => BuildRadioLaunchDecision(),
             "radio_genre" => BuildRadioGenreLaunchDecision(lowered),
             "stop" => BuildStopDecision(),

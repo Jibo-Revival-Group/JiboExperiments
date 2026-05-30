@@ -215,6 +215,41 @@ public sealed partial class JiboInteractionService
                 "turn off timer"))
             return "timer_delete";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "stop moving",
+                "stop moving please",
+                "stop moving around",
+                "don't move",
+                "do not move"))
+            return "request_stop_moving";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "stop making that noise",
+                "stop making noise",
+                "don't make that noise",
+                "do not make that noise",
+                "stop that noise"))
+            return "request_stop_making_that_noise";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "stop ignoring me",
+                "don't ignore me",
+                "do not ignore me",
+                "stop ignoring us",
+                "don't ignore us"))
+            return "request_stop_ignoring_me";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "stop staring",
+                "stop staring at me",
+                "stop looking at me",
+                "stop looking"))
+            return "request_stop_staring";
+
         if (IsGlobalStopRequest(loweredTranscript, clientIntent, clientEntities)) return "stop";
 
         if (TryParseAlarmValue(loweredTranscript, isAlarmValueTurn, referenceLocalTime) is not null)
@@ -712,6 +747,35 @@ public sealed partial class JiboInteractionService
                 "who built you",
                 "who developed you"))
             return "robot_origin_created";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "tell me a story",
+                "can you tell me a story",
+                "could you tell me a story",
+                "can you tell me a bedtime story",
+                "could you tell me a bedtime story",
+                "read me a story",
+                "read a story"))
+            return "robot_story";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "recommend a movie",
+                "can you recommend a movie",
+                "what movie should i watch",
+                "what movie do you recommend",
+                "give me a movie recommendation"))
+            return "robot_recommend_movie";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "search the web",
+                "can you search the web",
+                "could you search the web",
+                "look it up on the web",
+                "look up on the web"))
+            return "robot_search_web";
 
         if (MatchesAny(
                 loweredTranscript,

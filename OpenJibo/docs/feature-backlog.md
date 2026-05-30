@@ -886,6 +886,10 @@ Current release theme:
   - birthday celebration lines are now bucketed separately, and birthday memory writes a loop-scoped holiday record so personal dates can join the holiday list later
   - holiday extras now include `show santa tracker` so the Christmas-time launcher keeps its source-backed animation line
   - the remaining seasonal polish now includes `do you like halloween`, `do you like holiday music`, `do you like holiday parties`, `are you looking forward to christmas`, `what are you doing for christmas`, and `what are you thankful for`
+  - the Black History Month family is now a source-backed seasonal batch with `celebrate`, `like`, `looking forward`, `plans`, `what should I do`, and `fact` replies, so the history lane can keep growing in small, testable slices
+- Stop-style command work in flight:
+  - `stop moving`, `stop making that noise`, `stop ignoring me`, and `stop staring` now have source-backed Build B replies alongside the generic stop lane
+  - the broader stop lane now also catches `stop talking`, `be quiet`, `be silent`, `shut up`, `silence`, `quiet down`, `no more music`, and `no more dancing`
 - Favorite-animal work in flight:
   - the favorites family now includes `what is your favorite animal`, `what is your favorite bird`, `do you like penguins`, and `do you like animals` so the penguin-centric replies stay easy to find
 - Presence and thought follow-ups in flight:

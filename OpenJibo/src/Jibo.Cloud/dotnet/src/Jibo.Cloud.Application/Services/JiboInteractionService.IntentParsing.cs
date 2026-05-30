@@ -1628,9 +1628,9 @@ public sealed partial class JiboInteractionService
 
         var normalizedTranscript = NormalizeCommandPhrase(loweredTranscript);
         return normalizedTranscript is "stop" or "stop it" or "stop that" or "stop talking" or "be quiet"
-                   or "never mind" or "nevermind" or "forget it" ||
+                   or "be silent" or "shut up" or "silence" or "never mind" or "nevermind" or "forget it" ||
                MatchesAny(normalizedTranscript, "that s enough", "that will do", "that ll do", "cut it out",
-                   "cut that out");
+                   "cut that out", "no more music", "no more dancing", "quiet down");
     }
 
     private static bool IsVolumeQueryRequest(string loweredTranscript)

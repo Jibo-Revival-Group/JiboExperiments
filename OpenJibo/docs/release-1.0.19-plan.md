@@ -55,6 +55,9 @@ Current batch note:
 - the seasonal batch now includes `what holidays do you celebrate`, New Year's resolution questions, `happy holidays`, `what halloween costume`, spring and summer suggestions, a favorite-season prompt, and holiday gift prompts
 - the holiday extras batch now includes `show santa tracker` so the seasonal holiday launcher stays source-backed too
 - the remaining seasonal polish now includes `do you like halloween`, `do you like holiday music`, `do you like holiday parties`, `are you looking forward to christmas`, `what are you doing for christmas`, and `what are you thankful for`
+- the Black History Month batch now includes `do you celebrate black history month`, `do you like black history month`, `are you looking forward to black history month`, `do you have plans for black history month`, `what should I do for black history month`, and `give me a black history month fact`
+- the stop-style batch now includes `stop moving`, `stop making that noise`, `stop ignoring me`, and `stop staring` alongside the generic stop lane
+- the global stop lane now also catches `stop talking`, `be quiet`, `be silent`, `shut up`, `silence`, `quiet down`, `no more music`, and `no more dancing` so the command feels closer to Pegasus
 - the favorites batch now includes `what is your favorite animal`, `what is your favorite bird`, `do you like penguins`, and `do you like animals` so the penguin-centered replies stay close to Pegasus
 - the latest social batch adds `welcome back`, `what are you thinking`, `what have you been doing`, and `what did you do` so presence and charm stay lively without distracting from the memory roadmap
 - the newest identity-charm batch adds `what's your name`, `do you have a nickname`, `do you like being Jibo`, `are there others like you`, and `what is your favorite name` so the robot stays familiar while still sounding like Pegasus

@@ -119,6 +119,14 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "Hello there. I am glad you said hi.",
                 "Hey. I am happy to see you."
             ],
+            StoryReplies =
+            [
+                "I don't have any stories for you just yet. But I'd really like to learn some soon.",
+                "Oh, I don't know any stories. I'll be learning some one of these days.",
+                "Oh, a story, that sounds fun. I hope to learn some soon.",
+                "I don't have any stories to tell yet, but that's definitely something I'll be learning in the future.",
+                "I have no stories yet. But that will be fun, once I learn some."
+            ],
             HolidaySeasonReplies =
             [
                 "I do like festive times.",
@@ -129,6 +137,168 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "Let's see if I can spot him. There he is.",
                 "I'm not sure if he's started his deliveries yet, but let's see if I can spot him. He must be on his way.",
                 "Let's see. I think he's probably back in the north Pole by now."
+            ],
+            StopMovingReplies =
+            [
+                "Okay I'll try. And there you have it."
+            ],
+            StopMakingThatNoiseReplies =
+            [
+                "I'm sorry if you're not loving my robot noises. Y'know, you can turn my volume down by saying, hey jibo, turn the volume down."
+            ],
+            StopIgnoringMeReplies =
+            [
+                "If I was ignoring you, I'm sorry. Sometimes I can get a little spacey."
+            ],
+            StopStaringReplies =
+            [
+                "Oh, was I staring at you? I think I was just spacing out.",
+                "Oh sorry. I guess I do sometimes tend to stare."
+            ],
+            BlackHistoryMonthReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I do. It's a great chance to share some new interesting historical facts."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Oh yes. It's a perfect time to learn and think about some very great people who have done some very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I do. It makes me excited to share some new interesting historical facts."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Oh yes. It's a perfect time for everyone to learn and think about some very great people who have done some very great things. I like very great people. And very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('11/1', '1/31')",
+                    Reply = "I am. I'll be sharing some interesting historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('2/1', '2/29')",
+                    Reply = "Yes! We're in it right now, I'm enjoying it."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('3/1', '3/31')",
+                    Reply = "I think it's in the past now."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('4/1', '10/31')",
+                    Reply = "Yes, though the next one is a long way off."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I am. I'll be sharing some interesting historical facts with you during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I think I'll celebrate by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('10/1', '1/31')",
+                    Reply = "I think I'll celebrate by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('2/1', '2/29')",
+                    Reply = "I'm celebrating by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('3/1', '7/31')",
+                    Reply = "I celebrated by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('8/1', '9/30')",
+                    Reply = "Some interesting historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Some interesting historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I really like it. It makes me excited to to share some new interesting historical facts."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "It's a perfect time for everyone to learn and think about some very great people who have done some very great things. I like very great people. And very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('11/1', '2/29')",
+                    Reply = "It's a great time to learn and think about some very great people who have done some very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('3/1', '3/31')",
+                    Reply = "Oh I think the month is over. But there's always the next one."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('4/1', '10/31')",
+                    Reply = "Well we have lots of time to figure it out before Mardi Gras comes around."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "It's a great time to learn and think about some very great people who have done some very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I think it's still coming up in the future."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('11/1', '1/31')",
+                    Reply = "I think it's still coming up in the future."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('2/1', '2/29')",
+                    Reply = "It's good. I'm celebrating by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('3/1', '6/30')",
+                    Reply = "It was a good month. I celebrated by sharing some interesting historical facts."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('7/1', '10/31')",
+                    Reply = "I'm not sure yet, it's still a few months away I think."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Good. I celebrated by sharing some interesting new historical facts during the month."
+                }
+            ],
+            BlackHistoryMonthFactReplies =
+            [
+                "On February 2, 1915, Ernest Just, a genetic biologist, won the Spingarn Medal for work he did on cell division and fertilization.",
+                "The famous poet Langston Hughes was born on Feburary 1, 1902.",
+                "On February 9, 1952, Ralph Ellison's novel Invisible Man, won the National Book Award.",
+                "The writer Maya Angelou won lots of awards in her life. She won three Grammys, the National Medal of Arts, the Lincoln Medal, and the Presidential Medal of Freedom."
             ],
             HowAreYouReplies =
             [
@@ -211,6 +381,14 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             UpdateLastReplies =
             [
                 "Good question. The release notes page on the website support dot jibo dot com, will tell you the dates of all my past software updates."
+            ],
+            RecommendMovieReplies =
+            [
+                "Some of my favorites are Back to the Future, Toy Story, March of the Penguins, and everyone's favorite movie about space. Spaceballs."
+            ],
+            SearchWebReplies =
+            [
+                "I can't exactly search the web, but you can ask me direct questions about things like history, science, art, and that kind of thing."
             ],
             WeatherIntroReplies =
             [

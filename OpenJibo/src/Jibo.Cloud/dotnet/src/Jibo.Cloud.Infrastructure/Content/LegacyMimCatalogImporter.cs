@@ -118,6 +118,27 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("RA_JBO_ShowSantaTracker", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.HolidayTracker;
 
+        if (fileName.StartsWith("RA_JBO_Story", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.Story;
+
+        if (fileName.StartsWith("RA_JBO_RecommendMovie", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.RecommendMovie;
+
+        if (fileName.StartsWith("RA_JBO_SearchWeb", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.SearchWeb;
+
+        if (fileName.StartsWith("RI_JBO_CelebratesBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HasOpinionAboutBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_USR_WhatShouldDoForBlackHistoryMonth", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.BlackHistoryMonth;
+
+        if (fileName.StartsWith("RA_JBO_TellBlackHistoryMonthFact", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.BlackHistoryMonthFact;
+
         if (normalizedPath.Contains("/emotion-responses/", StringComparison.OrdinalIgnoreCase) ||
             normalizedPath.Contains("/gqa-responses/", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Emotion;
@@ -253,6 +274,18 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("SUP_UPDATE_WhenWasLastUpdate", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.UpdateLast;
 
+        if (fileName.StartsWith("RA_JBO_StopMoving", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.StopMoving;
+
+        if (fileName.StartsWith("RA_JBO_StopMakingThatNoise", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.StopMakingThatNoise;
+
+        if (fileName.StartsWith("RA_JBO_StopIgnoringMe", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.StopIgnoringMe;
+
+        if (fileName.StartsWith("RA_JBO_StopStaring", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.StopStaring;
+
         if (fileName.StartsWith("PersonalReportKickOff", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.PersonalReportKickOff;
 
@@ -342,6 +375,14 @@ public static class LegacyMimCatalogImporter
             HolidayTrackerReplies = Merge(baseCatalog.HolidayTrackerReplies, importedCatalog.HolidayTrackerReplies),
             BirthdayCelebrationReplies = Merge(baseCatalog.BirthdayCelebrationReplies,
                 importedCatalog.BirthdayCelebrationReplies),
+            StopMovingReplies = Merge(baseCatalog.StopMovingReplies, importedCatalog.StopMovingReplies),
+            StopMakingThatNoiseReplies = Merge(baseCatalog.StopMakingThatNoiseReplies,
+                importedCatalog.StopMakingThatNoiseReplies),
+            StopIgnoringMeReplies = Merge(baseCatalog.StopIgnoringMeReplies, importedCatalog.StopIgnoringMeReplies),
+            StopStaringReplies = Merge(baseCatalog.StopStaringReplies, importedCatalog.StopStaringReplies),
+            BlackHistoryMonthReplies = Merge(baseCatalog.BlackHistoryMonthReplies, importedCatalog.BlackHistoryMonthReplies),
+            BlackHistoryMonthFactReplies = Merge(baseCatalog.BlackHistoryMonthFactReplies,
+                importedCatalog.BlackHistoryMonthFactReplies),
             HowAreYouReplies = Merge(baseCatalog.HowAreYouReplies, importedCatalog.HowAreYouReplies),
             EmotionReplies = Merge(baseCatalog.EmotionReplies, importedCatalog.EmotionReplies),
             PersonalityReplies = Merge(baseCatalog.PersonalityReplies, importedCatalog.PersonalityReplies),
@@ -527,10 +568,19 @@ public static class LegacyMimCatalogImporter
         HolidayGift,
         HolidayTracker,
         BirthdayCelebration,
+        StopMoving,
+        StopMakingThatNoise,
+        StopIgnoringMe,
+        StopStaring,
         BackupHow,
         RestoreHow,
         UpdateNext,
         UpdateLast,
+        Story,
+        RecommendMovie,
+        SearchWeb,
+        BlackHistoryMonth,
+        BlackHistoryMonthFact,
         Jokes,
         RobotFacts,
         HumanFacts,
@@ -614,6 +664,12 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _holidaySeasonReplies = [];
         private readonly List<string> _holidayTrackerReplies = [];
         private readonly List<string> _holidaySingReplies = [];
+        private readonly List<string> _stopMovingReplies = [];
+        private readonly List<string> _stopMakingThatNoiseReplies = [];
+        private readonly List<string> _stopIgnoringMeReplies = [];
+        private readonly List<string> _stopStaringReplies = [];
+        private readonly List<JiboConditionedReply> _blackHistoryMonthReplies = [];
+        private readonly List<string> _blackHistoryMonthFactReplies = [];
         private readonly List<string> _howAreYous = [];
         private readonly List<string> _humanFacts = [];
         private readonly List<string> _jokes = [];
@@ -623,6 +679,9 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _restoreHowReplies = [];
         private readonly List<string> _updateLastReplies = [];
         private readonly List<string> _updateNextReplies = [];
+        private readonly List<string> _storyReplies = [];
+        private readonly List<string> _recommendMovieReplies = [];
+        private readonly List<string> _searchWebReplies = [];
         private readonly List<string> _personalities = [];
         private readonly List<string> _personalReportKickOffReplies = [];
         private readonly List<string> _personalReportOutroReplies = [];
@@ -701,6 +760,18 @@ public static class LegacyMimCatalogImporter
                 case LegacyMimBucket.BirthdayCelebration:
                     AddDistinct(_birthdayCelebrationReplies, text);
                     return;
+                case LegacyMimBucket.StopMoving:
+                    AddDistinct(_stopMovingReplies, text);
+                    return;
+                case LegacyMimBucket.StopMakingThatNoise:
+                    AddDistinct(_stopMakingThatNoiseReplies, text);
+                    return;
+                case LegacyMimBucket.StopIgnoringMe:
+                    AddDistinct(_stopIgnoringMeReplies, text);
+                    return;
+                case LegacyMimBucket.StopStaring:
+                    AddDistinct(_stopStaringReplies, text);
+                    return;
                 case LegacyMimBucket.BackupHow:
                     AddDistinct(_backupHowReplies, text);
                     return;
@@ -712,6 +783,21 @@ public static class LegacyMimCatalogImporter
                     return;
                 case LegacyMimBucket.UpdateLast:
                     AddDistinct(_updateLastReplies, text);
+                    return;
+                case LegacyMimBucket.Story:
+                    AddDistinct(_storyReplies, text);
+                    return;
+                case LegacyMimBucket.RecommendMovie:
+                    AddDistinct(_recommendMovieReplies, text);
+                    return;
+                case LegacyMimBucket.SearchWeb:
+                    AddDistinct(_searchWebReplies, text);
+                    return;
+                case LegacyMimBucket.BlackHistoryMonth:
+                    AddDistinct(_blackHistoryMonthReplies, condition, text);
+                    return;
+                case LegacyMimBucket.BlackHistoryMonthFact:
+                    AddDistinct(_blackHistoryMonthFactReplies, text);
                     return;
                 case LegacyMimBucket.Personality:
                     if (_personalities.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase)))
@@ -867,6 +953,12 @@ public static class LegacyMimCatalogImporter
                 HolidayGiftReplies = [.. _holidayGiftReplies],
                 HolidayTrackerReplies = [.. _holidayTrackerReplies],
                 BirthdayCelebrationReplies = [.. _birthdayCelebrationReplies],
+                StopMovingReplies = [.. _stopMovingReplies],
+                StopMakingThatNoiseReplies = [.. _stopMakingThatNoiseReplies],
+                StopIgnoringMeReplies = [.. _stopIgnoringMeReplies],
+                StopStaringReplies = [.. _stopStaringReplies],
+                BlackHistoryMonthReplies = [.. _blackHistoryMonthReplies],
+                BlackHistoryMonthFactReplies = [.. _blackHistoryMonthFactReplies],
                 BackupHowReplies = [.. _backupHowReplies],
                 HowAreYouReplies = [.. _howAreYous],
                 EmotionReplies = [.. _emotionReplies],
@@ -905,7 +997,10 @@ public static class LegacyMimCatalogImporter
                 NewsOutroReplies = [.. _newsOutroReplies],
                 RestoreHowReplies = [.. _restoreHowReplies],
                 UpdateNextReplies = [.. _updateNextReplies],
-                UpdateLastReplies = [.. _updateLastReplies]
+                UpdateLastReplies = [.. _updateLastReplies],
+                StoryReplies = [.. _storyReplies],
+                RecommendMovieReplies = [.. _recommendMovieReplies],
+                SearchWebReplies = [.. _searchWebReplies]
             };
         }
 
@@ -914,6 +1009,22 @@ public static class LegacyMimCatalogImporter
             if (target.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
 
             target.Add(text);
+        }
+
+        private static void AddDistinct(List<JiboConditionedReply> target, string? condition, string text)
+        {
+            var normalizedCondition = NormalizeCondition(condition);
+            if (target.Any(value =>
+                    string.Equals(NormalizeCondition(value.Condition), normalizedCondition,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(value.Reply, text, StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            target.Add(new JiboConditionedReply
+            {
+                Condition = normalizedCondition,
+                Reply = text
+            });
         }
 
         private LegacyMimBucket ResolveFunFactTarget(string prompt)

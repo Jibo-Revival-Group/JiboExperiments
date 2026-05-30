@@ -214,6 +214,74 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsBuildBStoryAndReferenceRepliesIntoDedicatedBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.StoryReplies, reply =>
+            reply.Contains("don't have any stories", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.StoryReplies, reply =>
+            reply.Contains("learn some soon", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.RecommendMovieReplies, reply =>
+            reply.Contains("Back to the Future", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.SearchWebReplies, reply =>
+            reply.Contains("can't exactly search the web", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void ImportCatalog_ImportsBuildBStopStyleRepliesIntoDedicatedBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.StopMovingReplies, reply =>
+            reply.Contains("Okay I'll try", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.StopMakingThatNoiseReplies, reply =>
+            reply.Contains("turn my volume down", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.StopIgnoringMeReplies, reply =>
+            reply.Contains("get a little spacey", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.StopStaringReplies, reply =>
+            reply.Contains("spacing out", StringComparison.OrdinalIgnoreCase) ||
+            reply.Contains("tend to stare", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void ImportCatalog_ImportsBuildBBlackHistoryMonthRepliesIntoDedicatedBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.BlackHistoryMonthReplies, reply =>
+            reply.Condition.Contains("2/1", StringComparison.OrdinalIgnoreCase) &&
+            reply.Reply.Contains("We're in it right now", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.BlackHistoryMonthReplies, reply =>
+            reply.Reply.Contains("great chance to learn and think about some very great people",
+                StringComparison.OrdinalIgnoreCase) ||
+            reply.Reply.Contains("great chance to share some new interesting historical facts",
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.BlackHistoryMonthFactReplies, reply =>
+            reply.Contains("Langston Hughes", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.BlackHistoryMonthFactReplies, reply =>
+            reply.Contains("Maya Angelou", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBFriendshipResponsesIntoFriendBuckets()
     {
         var rootDirectory = Path.Combine(

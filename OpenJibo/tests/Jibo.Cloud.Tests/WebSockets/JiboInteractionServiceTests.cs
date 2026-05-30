@@ -979,6 +979,9 @@ public sealed class JiboInteractionServiceTests
         "My story is pretty typical. Some people wanted to create something that would really help people. So they built a robot.")]
     [InlineData("where are you from", "robot_origin_from",
         "Some people think I come from the moon. But they're wrong, I'm from Boston.")]
+    [InlineData("tell me a story", "robot_story", "don't have any stories")]
+    [InlineData("can you recommend a movie", "robot_recommend_movie", "Back to the Future")]
+    [InlineData("can you search the web", "robot_search_web", "can't exactly search the web")]
     public async Task BuildDecisionAsync_LegacyBuildAQuestions_UseImportedScriptedReplies(
         string transcript,
         string expectedIntent,
@@ -993,7 +996,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Equal(expectedReply, decision.ReplyText);
+        Assert.Contains(expectedReply, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Null(decision.SkillName);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
@@ -1173,6 +1176,14 @@ public sealed class JiboInteractionServiceTests
     [InlineData("do you like halloween", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
     [InlineData("do you like holiday music", "seasonal_likes_holiday_music", "holiday music")]
     [InlineData("do you like holiday parties", "seasonal_likes_holiday_parties", "holiday fun can be extra fun")]
+    [InlineData("do you celebrate black history month", "seasonal_black_history_month_celebrate",
+        "long way off")]
+    [InlineData("do you like black history month", "seasonal_black_history_month_celebrate",
+        "long way off")]
+    [InlineData("what should I do for black history month", "seasonal_black_history_month_advice",
+        "long way off")]
+    [InlineData("give me a black history month fact", "seasonal_black_history_month_fact",
+        "Ernest Just")]
     [InlineData("how is thanksgiving", "seasonal_thanksgiving", "Thanksgiving")]
     [InlineData("are you looking forward to christmas", "seasonal_looks_forward_to_christmas", "long way away")]
     [InlineData("what are you doing for christmas", "seasonal_plans_for_christmas", "Christmas sweaters")]
@@ -1200,6 +1211,26 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal(expectedIntent, decision.IntentName);
         Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_BlackHistoryMonth_UsesDateConditionedReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "are you looking forward to black history month",
+            NormalizedTranscript = "are you looking forward to black history month",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = """{"runtime":{"location":{"iso":"2026-02-10T09:00:00-06:00"}}}"""
+            }
+        });
+
+        Assert.Equal("seasonal_black_history_month_looks_forward", decision.IntentName);
+        Assert.Contains("We're in it right now", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -3896,6 +3927,110 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("@be/idle", decision.SkillName);
         Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
         Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_ShutUp_MapsToIdleStopCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "shut up",
+            NormalizedTranscript = "shut up"
+        });
+
+        Assert.Equal("stop", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_BeSilent_MapsToIdleStopCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "be silent",
+            NormalizedTranscript = "be silent"
+        });
+
+        Assert.Equal("stop", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_StopMoving_UsesSourceBackedStopMovingReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "stop moving",
+            NormalizedTranscript = "stop moving"
+        });
+
+        Assert.Equal("request_stop_moving", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Contains("Okay I'll try", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_StopMakingThatNoise_UsesSourceBackedStopNoiseReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "stop making that noise",
+            NormalizedTranscript = "stop making that noise"
+        });
+
+        Assert.Equal("request_stop_making_that_noise", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Contains("turn my volume down", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_StopIgnoringMe_UsesSourceBackedStopIgnoringReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "stop ignoring me",
+            NormalizedTranscript = "stop ignoring me"
+        });
+
+        Assert.Equal("request_stop_ignoring_me", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Contains("spacey", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_StopStaring_UsesSourceBackedStopStaringReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "stop staring at me",
+            NormalizedTranscript = "stop staring at me"
+        });
+
+        Assert.Equal("request_stop_staring", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.True(
+            decision.ReplyText.Contains("spacing out", StringComparison.OrdinalIgnoreCase) ||
+            decision.ReplyText.Contains("tend to stare", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

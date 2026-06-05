@@ -1,16 +1,9 @@
-using System.Globalization;
-using System.Linq;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
-using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService
 {
-
     private static string ResolveSemanticIntentCore(
         string loweredTranscript,
         DateTimeOffset? referenceLocalTime,
@@ -58,9 +51,13 @@ public sealed partial class JiboInteractionService
         if (isYesNoTurn)
         {
             var yesNoReply = TryClassifyYesNoReply(NormalizeCommandPhrase(loweredTranscript));
-            if (yesNoReply == YesNoReply.Affirmative) return ResolveAffirmativeYesNoIntent(yesNoRule);
-
-            if (yesNoReply == YesNoReply.Negative) return ResolveNegativeYesNoIntent(yesNoRule);
+            switch (yesNoReply)
+            {
+                case YesNoReply.Affirmative:
+                    return ResolveAffirmativeYesNoIntent(yesNoRule);
+                case YesNoReply.Negative:
+                    return ResolveNegativeYesNoIntent(yesNoRule);
+            }
         }
 
         if (IsNameSetStatement(loweredTranscript)) return "memory_set_name";
@@ -1189,67 +1186,65 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(loweredTranscript, "what day is it", "what day is today")) return "day";
 
-        if (IsDateRequest(loweredTranscript)) return "date";
-
-        return "chat";
+        return IsDateRequest(loweredTranscript) ? "date" : "chat";
     }
 
     private static bool IsFriendQuestion(string loweredTranscript)
     {
         return MatchesAny(
-            loweredTranscript,
-            "do you have friends",
-            "who are your friends",
-            "are you friends",
-            "are you and i friends",
-            "are you and me friends",
-            "are you and jibo friends")
-            || MatchesFriendQuestionPattern(loweredTranscript);
+                   loweredTranscript,
+                   "do you have friends",
+                   "who are your friends",
+                   "are you friends",
+                   "are you and i friends",
+                   "are you and me friends",
+                   "are you and jibo friends")
+               || MatchesFriendQuestionPattern(loweredTranscript);
     }
 
     private static bool IsFriendRelationQuestion(string loweredTranscript)
     {
         return MatchesAny(
-            loweredTranscript,
-            "are you my friend",
-            "are you friends with me",
-            "are we friends",
-            "are we friends with each other",
-            "is jibo your friend",
-            "i am friends with you",
-            "i'm friends with you",
-            "you are my friend",
-            "you re my friend",
-            "you're my friend")
-            || Regex.IsMatch(
-                loweredTranscript,
-                @"^\s*(is|are)\s+.+\s+(your friend|my friend)\s*$",
-                RegexOptions.CultureInvariant);
+                   loweredTranscript,
+                   "are you my friend",
+                   "are you friends with me",
+                   "are we friends",
+                   "are we friends with each other",
+                   "is jibo your friend",
+                   "i am friends with you",
+                   "i'm friends with you",
+                   "you are my friend",
+                   "you re my friend",
+                   "you're my friend")
+               || Regex.IsMatch(
+                   loweredTranscript,
+                   @"^\s*(is|are)\s+.+\s+(your friend|my friend)\s*$",
+                   RegexOptions.CultureInvariant);
     }
 
     private static bool IsBestFriendQuestion(string loweredTranscript)
     {
         return MatchesAny(
-            loweredTranscript,
-            "are we best friends",
-            "are we best friends with each other",
-            "are you my best friend",
-            "are you best friends with me",
-            "are you and i best friends",
-            "i am best friends with you",
-            "i'm best friends with you",
-            "you are my best friend",
-            "you re my best friend",
-            "you're my best friend")
-            || MatchesBestFriendQuestionPattern(loweredTranscript);
+                   loweredTranscript,
+                   "are we best friends",
+                   "are we best friends with each other",
+                   "are you my best friend",
+                   "are you best friends with me",
+                   "are you and i best friends",
+                   "i am best friends with you",
+                   "i'm best friends with you",
+                   "you are my best friend",
+                   "you re my best friend",
+                   "you're my best friend")
+               || MatchesBestFriendQuestionPattern(loweredTranscript);
     }
 
     private static bool MatchesFriendQuestionPattern(string loweredTranscript)
     {
         return Regex.IsMatch(
-            loweredTranscript,
-            @"^\s*are you friends with\s+.+\s*$",
-            RegexOptions.CultureInvariant) ||
+                   loweredTranscript,
+                   @"^\s*are you friends with\s+.+\s*$",
+                   RegexOptions.CultureInvariant) ||
                Regex.IsMatch(
                    loweredTranscript,
                    @"^\s*are you and\s+.+\s+friends\s*$",
@@ -1259,9 +1254,9 @@ public sealed partial class JiboInteractionService
     private static bool MatchesBestFriendQuestionPattern(string loweredTranscript)
     {
         return Regex.IsMatch(
-            loweredTranscript,
-            @"^\s*are you best friends with\s+.+\s*$",
-            RegexOptions.CultureInvariant) ||
+                   loweredTranscript,
+                   @"^\s*are you best friends with\s+.+\s*$",
+                   RegexOptions.CultureInvariant) ||
                Regex.IsMatch(
                    loweredTranscript,
                    @"^\s*are you and\s+.+\s+best friends\s*$",
@@ -1271,5 +1266,4 @@ public sealed partial class JiboInteractionService
                    @"^\s*is\s+.+\s+your best friend\s*$",
                    RegexOptions.CultureInvariant);
     }
-
 }

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
@@ -52,23 +51,27 @@ public sealed partial class JiboInteractionService
         var tenantScope = ResolveTenantScope(turn);
         personalMemoryStore.SetBirthday(tenantScope, birthday);
         var birthdayDate = TryParseBirthdayDate(birthday);
-        if (birthdayDate is not null)
+        if (birthdayDate is null)
         {
-            var birthdayLabel = ResolvePreferredBirthdayLabel(turn);
-            cloudStateStore?.UpsertHoliday(new HolidayRecord
-            {
-                EventId = $"birthday-{tenantScope.LoopId}-{tenantScope.PersonId ?? "loop"}",
-                Name = string.IsNullOrWhiteSpace(birthdayLabel) ? "Birthday" : $"{birthdayLabel}'s Birthday",
-                Category = "birthday",
-                Subcategory = "personal",
-                LoopId = tenantScope.LoopId,
-                MemberId = tenantScope.PersonId,
-                IsEnabled = true,
-                Date = birthdayDate.Value,
-                Source = "birthday",
-                CountryCode = "US"
-            });
+            return new JiboInteractionDecision(
+                "memory_set_birthday",
+                $"Got it. I will remember your birthday is {birthday}.");
         }
+
+        var birthdayLabel = ResolvePreferredBirthdayLabel(turn);
+        cloudStateStore?.UpsertHoliday(new HolidayRecord
+        {
+            EventId = $"birthday-{tenantScope.LoopId}-{tenantScope.PersonId ?? "loop"}",
+            Name = string.IsNullOrWhiteSpace(birthdayLabel) ? "Birthday" : $"{birthdayLabel}'s Birthday",
+            Category = "birthday",
+            Subcategory = "personal",
+            LoopId = tenantScope.LoopId,
+            MemberId = tenantScope.PersonId,
+            IsEnabled = true,
+            Date = birthdayDate.Value,
+            Source = "birthday",
+            CountryCode = "US"
+        });
 
         return new JiboInteractionDecision(
             "memory_set_birthday",

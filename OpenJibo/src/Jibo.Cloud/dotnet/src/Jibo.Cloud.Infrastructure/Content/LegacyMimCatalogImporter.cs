@@ -332,12 +332,7 @@ public static class LegacyMimCatalogImporter
         return null;
     }
 
-    private static string NormalizePrompt(string? prompt)
-    {
-        return NormalizePrompt(prompt, false);
-    }
-
-    private static string NormalizePrompt(string? prompt, bool preservePlaceholders)
+    private static string NormalizePrompt(string? prompt, bool preservePlaceholders = false)
     {
         if (string.IsNullOrWhiteSpace(prompt)) return string.Empty;
 
@@ -380,7 +375,8 @@ public static class LegacyMimCatalogImporter
                 importedCatalog.StopMakingThatNoiseReplies),
             StopIgnoringMeReplies = Merge(baseCatalog.StopIgnoringMeReplies, importedCatalog.StopIgnoringMeReplies),
             StopStaringReplies = Merge(baseCatalog.StopStaringReplies, importedCatalog.StopStaringReplies),
-            BlackHistoryMonthReplies = Merge(baseCatalog.BlackHistoryMonthReplies, importedCatalog.BlackHistoryMonthReplies),
+            BlackHistoryMonthReplies =
+                Merge(baseCatalog.BlackHistoryMonthReplies, importedCatalog.BlackHistoryMonthReplies),
             BlackHistoryMonthFactReplies = Merge(baseCatalog.BlackHistoryMonthFactReplies,
                 importedCatalog.BlackHistoryMonthFactReplies),
             HowAreYouReplies = Merge(baseCatalog.HowAreYouReplies, importedCatalog.HowAreYouReplies),
@@ -629,7 +625,12 @@ public static class LegacyMimCatalogImporter
 
     private sealed class LegacyMimCatalogBuilder
     {
+        private readonly List<string> _ages = [];
+        private readonly List<string> _backupHowReplies = [];
+        private readonly List<string> _bestFriendReplies = [];
         private readonly List<string> _birthdayCelebrationReplies = [];
+        private readonly List<string> _blackHistoryMonthFactReplies = [];
+        private readonly List<JiboConditionedReply> _blackHistoryMonthReplies = [];
         private readonly List<string> _calendarNothingReplies = [];
         private readonly List<string> _calendarNothingTodayReplies = [];
         private readonly List<string> _calendarOutroReplies = [];
@@ -649,45 +650,40 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _commuteTransportHurryReplies = [];
         private readonly List<string> _commuteTransportLateReplies = [];
         private readonly List<string> _commuteTransportNormalReplies = [];
-        private readonly List<string> _backupHowReplies = [];
         private readonly List<JiboConditionedReply> _emotionReplies = [];
         private readonly List<string> _fallbacks = [];
         private readonly List<string> _favoriteAnimalReplies = [];
         private readonly List<string> _friendReplies = [];
-        private readonly List<string> _bestFriendReplies = [];
         private readonly List<string> _funFacts = [];
         private readonly List<string> _greetings = [];
-        private readonly List<string> _ages = [];
         private readonly List<string> _holidayGiftReplies = [];
         private readonly List<string> _holidayGreetingReplies = [];
         private readonly List<string> _holidayReplies = [];
         private readonly List<string> _holidaySeasonReplies = [];
-        private readonly List<string> _holidayTrackerReplies = [];
         private readonly List<string> _holidaySingReplies = [];
-        private readonly List<string> _stopMovingReplies = [];
-        private readonly List<string> _stopMakingThatNoiseReplies = [];
-        private readonly List<string> _stopIgnoringMeReplies = [];
-        private readonly List<string> _stopStaringReplies = [];
-        private readonly List<JiboConditionedReply> _blackHistoryMonthReplies = [];
-        private readonly List<string> _blackHistoryMonthFactReplies = [];
+        private readonly List<string> _holidayTrackerReplies = [];
         private readonly List<string> _howAreYous = [];
         private readonly List<string> _humanFacts = [];
         private readonly List<string> _jokes = [];
         private readonly List<string> _newsCategoryIntroReplies = [];
         private readonly List<string> _newsIntroReplies = [];
         private readonly List<string> _newsOutroReplies = [];
-        private readonly List<string> _restoreHowReplies = [];
-        private readonly List<string> _updateLastReplies = [];
-        private readonly List<string> _updateNextReplies = [];
-        private readonly List<string> _storyReplies = [];
-        private readonly List<string> _recommendMovieReplies = [];
-        private readonly List<string> _searchWebReplies = [];
         private readonly List<string> _personalities = [];
         private readonly List<string> _personalReportKickOffReplies = [];
         private readonly List<string> _personalReportOutroReplies = [];
+        private readonly List<string> _recommendMovieReplies = [];
         private readonly List<string> _reportSkillTemplates = [];
+        private readonly List<string> _restoreHowReplies = [];
         private readonly List<string> _robotFacts = [];
+        private readonly List<string> _searchWebReplies = [];
         private readonly List<string> _singReplies = [];
+        private readonly List<string> _stopIgnoringMeReplies = [];
+        private readonly List<string> _stopMakingThatNoiseReplies = [];
+        private readonly List<string> _stopMovingReplies = [];
+        private readonly List<string> _stopStaringReplies = [];
+        private readonly List<string> _storyReplies = [];
+        private readonly List<string> _updateLastReplies = [];
+        private readonly List<string> _updateNextReplies = [];
         private readonly List<string> _weatherIntroReplies = [];
         private readonly List<string> _weatherServiceDownReplies = [];
         private readonly List<string> _weatherTodayHighLowReplies = [];
@@ -1027,17 +1023,14 @@ public static class LegacyMimCatalogImporter
             });
         }
 
-        private LegacyMimBucket ResolveFunFactTarget(string prompt)
+        private static LegacyMimBucket ResolveFunFactTarget(string prompt)
         {
-            var lowered = NormalizePrompt(prompt, false).ToLowerInvariant();
+            var lowered = NormalizePrompt(prompt).ToLowerInvariant();
             if (ContainsAny(lowered, "robot", "humanoid", "machine", "about me", "my cameras", "turing", "deep blue",
                     "rossum"))
                 return LegacyMimBucket.RobotFacts;
 
-            if (ContainsAny(lowered, "human", "people", "grown ups", "human being", "humans"))
-                return LegacyMimBucket.HumanFacts;
-
-            return LegacyMimBucket.FunFacts;
+            return ContainsAny(lowered, "human", "people", "grown ups", "human being", "humans") ? LegacyMimBucket.HumanFacts : LegacyMimBucket.FunFacts;
         }
 
         private static bool ContainsAny(string text, params string[] values)

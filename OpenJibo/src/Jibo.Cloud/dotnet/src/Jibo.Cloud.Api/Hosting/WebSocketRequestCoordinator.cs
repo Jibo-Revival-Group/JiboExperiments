@@ -3,7 +3,6 @@ using System.Text;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace Jibo.Cloud.Api.Hosting;
 
@@ -48,13 +47,10 @@ internal sealed class WebSocketRequestCoordinator(
             }
             catch (WebSocketException exception)
             {
-                if (exception.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
-                {
-                    isPrematureClose = true;
-                    break;
-                }
+                if (exception.WebSocketErrorCode != WebSocketError.ConnectionClosedPrematurely) throw;
+                isPrematureClose = true;
+                break;
 
-                throw;
             }
 
             var envelope = CreateEnvelope(

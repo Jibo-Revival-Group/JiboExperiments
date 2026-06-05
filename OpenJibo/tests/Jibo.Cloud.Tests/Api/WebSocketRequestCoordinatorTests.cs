@@ -1,5 +1,4 @@
 using System.Net.WebSockets;
-using System.Text;
 using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
@@ -8,7 +7,6 @@ using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
-using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Tests.Api;
 
@@ -61,7 +59,7 @@ public sealed class WebSocketRequestCoordinatorTests
 
     private static WebSocketRequestCoordinator CreateCoordinator(out RecordingWebSocketTelemetrySink telemetrySink)
     {
-        var service = CreateWebSocketService(out var store);
+        var service = CreateWebSocketService(out _);
         telemetrySink = new RecordingWebSocketTelemetrySink();
         return new WebSocketRequestCoordinator(service, telemetrySink);
     }
@@ -145,7 +143,6 @@ public sealed class WebSocketRequestCoordinatorTests
     private sealed class FakeWebSocketFeature(FakeWebSocket socket) : IHttpWebSocketFeature
     {
         public bool IsWebSocketRequest { get; set; } = true;
-        public ICollection<string> WebSocketRequestedProtocols { get; } = [];
 
         public Task<WebSocket> AcceptAsync(WebSocketAcceptContext context)
         {
@@ -154,23 +151,22 @@ public sealed class WebSocketRequestCoordinatorTests
         }
     }
 
-    private sealed class FakeWebSocket : WebSocket
+    private sealed class FakeWebSocket(params FakeWebSocketFrame[] frames) : WebSocket
     {
-        private readonly Queue<FakeWebSocketFrame> _frames;
+        private readonly Queue<FakeWebSocketFrame> _frames = new(frames);
         private WebSocketState _state = WebSocketState.Open;
-
-        public FakeWebSocket(params FakeWebSocketFrame[] frames)
-        {
-            _frames = new Queue<FakeWebSocketFrame>(frames);
-        }
 
         public bool Accepted { get; set; }
 
         public List<byte[]> SentPayloads { get; } = [];
 
         public override WebSocketCloseStatus? CloseStatus { get; } = null;
+
         public override string? CloseStatusDescription { get; } = null;
+
+        // ReSharper disable once ConvertToAutoPropertyWithPrivateSetter
         public override WebSocketState State => _state;
+
         public override string? SubProtocol { get; } = null;
 
         public override void Abort()
@@ -217,7 +213,10 @@ public sealed class WebSocketRequestCoordinatorTests
         }
     }
 
-    private sealed record FakeWebSocketFrame(WebSocketMessageType MessageType, byte[] Payload, bool EndOfMessage = true);
+    private sealed record FakeWebSocketFrame(
+        WebSocketMessageType MessageType,
+        byte[] Payload,
+        bool EndOfMessage = true);
 
     private sealed class LastItemRandomizer : IJiboRandomizer
     {

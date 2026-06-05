@@ -96,7 +96,7 @@ public sealed class NewsApiBriefingProvider(
                     continue;
                 }
 
-                using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
                 using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
                 if (document.RootElement.TryGetProperty("status", out var statusNode) &&
                     statusNode.ValueKind == JsonValueKind.String &&
@@ -141,19 +141,18 @@ public sealed class NewsApiBriefingProvider(
                     var url = ReadString(article, "url");
                     headlines.Add(new NewsHeadline(title, summary, category, source, url));
 
-                    if (headlines.Count >= requestedHeadlineCount)
-                    {
-                        var snapshot = new NewsBriefingSnapshot(
-                            headlines,
-                            "NewsAPI",
-                            "success");
-                        SetCachedValue(_briefingCache, cacheKey, snapshot, options.CacheTtlSeconds);
-                        logger.LogInformation(
-                            "NewsAPI request succeeded. Categories={Categories} HeadlineCount={HeadlineCount}",
-                            string.Join(",", categories),
-                            headlines.Count);
-                        return snapshot;
-                    }
+                    if (headlines.Count < requestedHeadlineCount) continue;
+
+                    var snapshot = new NewsBriefingSnapshot(
+                        headlines,
+                        "NewsAPI",
+                        "success");
+                    SetCachedValue(_briefingCache, cacheKey, snapshot, options.CacheTtlSeconds);
+                    logger.LogInformation(
+                        "NewsAPI request succeeded. Categories={Categories} HeadlineCount={HeadlineCount}",
+                        string.Join(",", categories),
+                        headlines.Count);
+                    return snapshot;
                 }
             }
 
@@ -167,7 +166,7 @@ public sealed class NewsApiBriefingProvider(
                 using var broadResponse = await SendGetAsync(broadUri, cancellationToken);
                 if (broadResponse.IsSuccessStatusCode)
                 {
-                    using var broadStream = await broadResponse.Content.ReadAsStreamAsync(cancellationToken);
+                    await using var broadStream = await broadResponse.Content.ReadAsStreamAsync(cancellationToken);
                     using var broadDocument =
                         await JsonDocument.ParseAsync(broadStream, cancellationToken: cancellationToken);
                     if (broadDocument.RootElement.TryGetProperty("articles", out var broadArticles) &&
@@ -230,7 +229,7 @@ public sealed class NewsApiBriefingProvider(
                 using var everythingResponse = await SendGetAsync(everythingUri, cancellationToken);
                 if (everythingResponse.IsSuccessStatusCode)
                 {
-                    using var everythingStream = await everythingResponse.Content.ReadAsStreamAsync(cancellationToken);
+                    await using var everythingStream = await everythingResponse.Content.ReadAsStreamAsync(cancellationToken);
                     using var everythingDocument =
                         await JsonDocument.ParseAsync(everythingStream, cancellationToken: cancellationToken);
                     if (everythingDocument.RootElement.TryGetProperty("articles", out var everythingArticles) &&
@@ -333,7 +332,7 @@ public sealed class NewsApiBriefingProvider(
         {
             logger.LogWarning(exception, "NewsAPI lookup failed.");
             var exceptionSnapshot = new NewsBriefingSnapshot(
-                Array.Empty<NewsHeadline>(),
+                [],
                 "NewsAPI",
                 "exception",
                 exception.Message);

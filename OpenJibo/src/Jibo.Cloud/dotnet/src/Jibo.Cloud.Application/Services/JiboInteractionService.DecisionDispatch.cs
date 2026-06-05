@@ -1,5 +1,3 @@
-using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -42,10 +40,9 @@ public sealed partial class JiboInteractionService
 
         if (string.Equals(messageType, "TRIGGER", StringComparison.OrdinalIgnoreCase))
         {
-            if (ShouldHandleProactiveGreetingTrigger(turn, triggerSource, greetingPresence))
-                return BuildProactiveGreetingDecision(turn, greetingPresence, referenceLocalTime);
-
-            return BuildTriggerIgnoredDecision();
+            return ShouldHandleProactiveGreetingTrigger(turn, triggerSource, greetingPresence)
+                ? BuildProactiveGreetingDecision(turn, greetingPresence, referenceLocalTime)
+                : BuildTriggerIgnoredDecision();
         }
 
         var isTimerValueTurn = IsClockTimerValueTurn(clientRules, listenRules);
@@ -636,5 +633,4 @@ public sealed partial class JiboInteractionService
             _ => new JiboInteractionDecision("chat", BuildGenericReply(catalog, transcript, lowered))
         };
     }
-
 }

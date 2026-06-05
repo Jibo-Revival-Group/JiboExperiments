@@ -6,7 +6,7 @@ using Jibo.Cloud.Domain.Models;
 
 namespace Jibo.Cloud.Infrastructure.Holidays;
 
-public sealed class NagerDateHolidayCalendarProvider : IHolidayCalendarProvider
+public sealed class NagerDateHolidayCalendarProvider(HolidayCalendarOptions options) : IHolidayCalendarProvider
 {
     private static readonly HttpClient HttpClient = new();
     private static readonly ConcurrentDictionary<string, HolidayRecord[]> Cache = new(StringComparer.OrdinalIgnoreCase);
@@ -16,16 +16,11 @@ public sealed class NagerDateHolidayCalendarProvider : IHolidayCalendarProvider
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly string _countryCode;
+    private readonly string _countryCode = string.IsNullOrWhiteSpace(options.CountryCode) ? "US" : options.CountryCode.Trim();
 
     public NagerDateHolidayCalendarProvider()
         : this(new HolidayCalendarOptions())
     {
-    }
-
-    public NagerDateHolidayCalendarProvider(HolidayCalendarOptions options)
-    {
-        _countryCode = string.IsNullOrWhiteSpace(options.CountryCode) ? "US" : options.CountryCode.Trim();
     }
 
     public IReadOnlyList<HolidayRecord> GetPublicHolidays(string? countryCode, int year)
@@ -187,11 +182,10 @@ public sealed class NagerDateHolidayCalendarProvider : IHolidayCalendarProvider
                 continue;
             }
 
-            if (!lastWasDash)
-            {
-                builder.Append('-');
-                lastWasDash = true;
-            }
+            if (lastWasDash) continue;
+
+            builder.Append('-');
+            lastWasDash = true;
         }
 
         return builder.ToString().Trim('-');

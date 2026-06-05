@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-
 namespace Jibo.Cloud.Api.Hosting;
 
 internal static class TokenResolver

@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;

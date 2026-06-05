@@ -962,13 +962,12 @@ public sealed class WebSocketTurnFinalizationService(
         if (!turnState.AwaitingTurnCompletion)
             return session.FollowUpOpen ? "DISPATCH_DIALOG" : "PROCESS_LISTENER_QUEUE";
 
-        if (turnState.SawListen && !turnState.SawContext && turnState.BufferedAudioBytes == 0) return "HJ_LISTENING";
-
-        if (turnState.SawListen && turnState.SawContext && turnState.BufferedAudioBytes == 0) return "LISTENING";
-
-        return turnState.BufferedAudioBytes > 0
-            ? "WAIT_LISTEN_FINISHED"
-            : "LISTENING";
+        return turnState.SawListen switch
+        {
+            true when turnState is { SawContext: false, BufferedAudioBytes: 0 } => "HJ_LISTENING",
+            true when turnState is { SawContext: true, BufferedAudioBytes: 0 } => "LISTENING",
+            _ => turnState.BufferedAudioBytes > 0 ? "WAIT_LISTEN_FINISHED" : "LISTENING"
+        };
     }
 
     private static TimeSpan ResolveLateAudioIgnoreWindow(ResponsePlan plan)
@@ -1314,14 +1313,13 @@ public sealed class WebSocketTurnFinalizationService(
         }
 
         var leadingThree = tokens.Length >= 3 ? $"{tokens[0]} {tokens[1]} {tokens[2]}" : null;
-        if (leadingThree is not null)
-        {
-            if (YesNoNegativeLeadPhrases.Contains(leadingThree)) return YesNoReply.Negative;
+        if (leadingThree is null) return TryClassifyTrailingYesNoReply(tokens);
 
-            if (YesNoAffirmativeLeadPhrases.Contains(leadingThree)) return YesNoReply.Affirmative;
-        }
+        if (YesNoNegativeLeadPhrases.Contains(leadingThree)) return YesNoReply.Negative;
 
-        return TryClassifyTrailingYesNoReply(tokens);
+        return YesNoAffirmativeLeadPhrases.Contains(leadingThree)
+            ? YesNoReply.Affirmative
+            : TryClassifyTrailingYesNoReply(tokens);
     }
 
     private static bool TryTrimLeadingAcknowledgement(string normalizedTranscript, out string trimmedTranscript)
@@ -1339,11 +1337,10 @@ public sealed class WebSocketTurnFinalizationService(
                 return true;
             }
 
-            if (normalizedTranscript.StartsWith($"{acknowledgement} ", StringComparison.Ordinal))
-            {
-                trimmedTranscript = normalizedTranscript[(acknowledgement.Length + 1)..].TrimStart();
-                return true;
-            }
+            if (!normalizedTranscript.StartsWith($"{acknowledgement} ", StringComparison.Ordinal)) continue;
+
+            trimmedTranscript = normalizedTranscript[(acknowledgement.Length + 1)..].TrimStart();
+            return true;
         }
 
         trimmedTranscript = normalizedTranscript;
@@ -1374,11 +1371,10 @@ public sealed class WebSocketTurnFinalizationService(
                 return true;
             }
 
-            if (normalizedTranscript.StartsWith($"{noisePrefix} ", StringComparison.Ordinal))
-            {
-                trimmedTranscript = normalizedTranscript[(noisePrefix.Length + 1)..].TrimStart();
-                return true;
-            }
+            if (!normalizedTranscript.StartsWith($"{noisePrefix} ", StringComparison.Ordinal)) continue;
+
+            trimmedTranscript = normalizedTranscript[(noisePrefix.Length + 1)..].TrimStart();
+            return true;
         }
 
         trimmedTranscript = normalizedTranscript;
@@ -1641,11 +1637,10 @@ public sealed class WebSocketTurnFinalizationService(
         return value switch
         {
             int integer => integer,
-            long whole when whole <= int.MaxValue && whole >= int.MinValue => (int)whole,
+            long whole and <= int.MaxValue and >= int.MinValue => (int)whole,
             string text when int.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.Number } json when json.TryGetInt32(out var parsed) => parsed,
-            JsonElement json when json.ValueKind == JsonValueKind.String &&
-                                  int.TryParse(json.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.String } json when int.TryParse(json.GetString(), out var parsed) => parsed,
             _ => 0
         };
     }
@@ -1818,13 +1813,11 @@ public sealed class WebSocketTurnFinalizationService(
                 return true;
             }
 
-        if (LooksLikeIncompleteAffinitySet(normalized))
-        {
-            reason = "affinity_set_incomplete";
-            return true;
-        }
+        if (!LooksLikeIncompleteAffinitySet(normalized)) return false;
 
-        return false;
+        reason = "affinity_set_incomplete";
+        return true;
+
     }
 
     private static bool LooksLikeIncompleteAffinitySet(string normalized)

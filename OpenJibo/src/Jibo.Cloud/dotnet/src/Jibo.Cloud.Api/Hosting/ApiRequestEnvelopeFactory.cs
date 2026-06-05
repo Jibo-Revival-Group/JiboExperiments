@@ -1,6 +1,5 @@
 using System.Text;
 using Jibo.Cloud.Domain.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace Jibo.Cloud.Api.Hosting;
 

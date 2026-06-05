@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using Jibo.Cloud.Domain.Models;
-
 namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService

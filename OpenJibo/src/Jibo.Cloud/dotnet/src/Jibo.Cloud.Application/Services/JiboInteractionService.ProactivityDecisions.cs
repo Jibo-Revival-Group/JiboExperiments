@@ -1,6 +1,4 @@
-using System.Linq;
 using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -89,18 +87,19 @@ public sealed partial class JiboInteractionService
         var affinityMatch = personalMemoryStore.GetAffinities(tenantScope)
             .Where(pair => pair.Key.Contains("pizza", StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(static pair =>
-                pair.Value == PersonalAffinity.Love ? 2 : pair.Value == PersonalAffinity.Like ? 1 : 0)
+                pair.Value switch
+                {
+                    PersonalAffinity.Love => 2,
+                    PersonalAffinity.Like => 1,
+                    _ => 0
+                })
             .FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(affinityMatch.Key)) return new PizzaSignal(affinityMatch.Value);
 
-        foreach (var category in PizzaPreferenceCategories)
-        {
-            var preference = personalMemoryStore.GetPreference(tenantScope, category);
-            if (!string.IsNullOrWhiteSpace(preference) &&
-                preference.Contains("pizza", StringComparison.OrdinalIgnoreCase))
-                return new PizzaSignal(PersonalAffinity.Like);
-        }
-
-        return new PizzaSignal(null);
+        return PizzaPreferenceCategories.Select(category => personalMemoryStore.GetPreference(tenantScope, category))
+            .Any(preference => !string.IsNullOrWhiteSpace(preference) &&
+                               preference.Contains("pizza", StringComparison.OrdinalIgnoreCase))
+            ? new PizzaSignal(PersonalAffinity.Like)
+            : new PizzaSignal(null);
     }
 }

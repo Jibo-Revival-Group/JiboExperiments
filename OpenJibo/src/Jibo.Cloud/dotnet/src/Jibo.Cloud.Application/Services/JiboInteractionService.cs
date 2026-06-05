@@ -1,8 +1,5 @@
-using System.Globalization;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -412,6 +409,7 @@ public sealed partial class JiboInteractionService(
 
     public Task<JiboInteractionDecision> BuildDecisionAsync(TurnContext turn,
         CancellationToken cancellationToken = default)
-        => BuildDecisionCoreAsync(turn, cancellationToken);
-
+    {
+        return BuildDecisionCoreAsync(turn, cancellationToken);
+    }
 }

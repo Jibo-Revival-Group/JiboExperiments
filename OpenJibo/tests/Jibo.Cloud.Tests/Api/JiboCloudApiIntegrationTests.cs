@@ -19,7 +19,7 @@ public sealed class JiboCloudApiIntegrationTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
-        Assert.True(body!.Ok);
+        Assert.True(body.Ok);
         Assert.Equal("OpenJibo Cloud Api", body.Service);
         Assert.Equal(OpenJiboCloudBuildInfo.Version, body.Version);
     }
@@ -41,7 +41,7 @@ public sealed class JiboCloudApiIntegrationTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(payload);
-        Assert.False(string.IsNullOrWhiteSpace(payload!.Token));
+        Assert.False(string.IsNullOrWhiteSpace(payload.Token));
     }
 
     [Fact]
@@ -62,7 +62,8 @@ public sealed class JiboCloudApiIntegrationTests
         await using var factory = CreateFactory();
         var client = factory.Server.CreateWebSocketClient();
 
-        using var socket = await client.ConnectAsync(new Uri("ws://neo-hub.jibo.com/test-token"), CancellationToken.None);
+        using var socket =
+            await client.ConnectAsync(new Uri("ws://neo-hub.jibo.com/test-token"), CancellationToken.None);
 
         Assert.Equal(WebSocketState.Open, socket.State);
         await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "test-complete", CancellationToken.None);
@@ -80,7 +81,8 @@ public sealed class JiboCloudApiIntegrationTests
                 builder.UseSetting("OpenJibo:ProtocolTelemetry:DirectoryPath", Path.Combine(root, "http"));
                 builder.UseSetting("OpenJibo:TurnTelemetry:DirectoryPath", Path.Combine(root, "turn"));
                 builder.UseSetting("OpenJibo:State:PersistencePath", Path.Combine(root, "cloud-state.json"));
-                builder.UseSetting("OpenJibo:PersonalMemory:PersistencePath", Path.Combine(root, "personal-memory.json"));
+                builder.UseSetting("OpenJibo:PersonalMemory:PersistencePath",
+                    Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Media:DirectoryPath", Path.Combine(root, "media"));
             });
     }

@@ -1,6 +1,5 @@
 using System.Text;
 using Jibo.Cloud.Api.Hosting;
-using Jibo.Cloud.Domain.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Jibo.Cloud.Tests.Api;
@@ -10,16 +9,24 @@ public sealed class ApiRequestEnvelopeFactoryTests
     [Fact]
     public async Task CreateAsync_ReadsRequestMetadataAndResetsBodyStream()
     {
-        var context = new DefaultHttpContext();
-        context.Request.Method = HttpMethods.Post;
-        context.Request.Host = new HostString("api.jibo.com");
-        context.Request.Path = "/v1/dispatch";
-        context.Request.Headers["X-Amz-Target"] = "Account_20160715.CreateHubToken";
-        context.Request.Headers["X-Jibo-RobotId"] = "robot-123";
-        context.Request.Headers["X-OpenJibo-Firmware"] = "1.2.3";
-        context.Request.Headers["X-OpenJibo-AppVersion"] = "4.5.6";
-        context.TraceIdentifier = "trace-abc";
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("""{"hello":"world"}"""));
+        var context = new DefaultHttpContext
+        {
+            Request =
+            {
+                Method = HttpMethods.Post,
+                Host = new HostString("api.jibo.com"),
+                Path = "/v1/dispatch",
+                Headers =
+                {
+                    ["X-Amz-Target"] = "Account_20160715.CreateHubToken",
+                    ["X-Jibo-RobotId"] = "robot-123",
+                    ["X-OpenJibo-Firmware"] = "1.2.3",
+                    ["X-OpenJibo-AppVersion"] = "4.5.6"
+                },
+                Body = new MemoryStream(Encoding.UTF8.GetBytes("""{"hello":"world"}"""))
+            },
+            TraceIdentifier = "trace-abc"
+        };
 
         var envelope = await ApiRequestEnvelopeFactory.CreateAsync(context, CancellationToken.None);
 

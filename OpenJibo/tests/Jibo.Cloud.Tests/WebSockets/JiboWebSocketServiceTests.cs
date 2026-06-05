@@ -4772,7 +4772,7 @@ public sealed class JiboWebSocketServiceTests
                     ],
                     "NewsAPI")));
 
-        var token = "hub-smoke-journey-token";
+        const string token = "hub-smoke-journey-token";
 
         var greetingReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -4903,7 +4903,7 @@ public sealed class JiboWebSocketServiceTests
             .GetString();
 
         Assert.NotNull(esml);
-        var stripped = StripMarkup(esml!);
+        var stripped = StripMarkup(esml);
         Assert.Contains("weather", stripped, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("calendar", stripped, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("news", stripped, StringComparison.OrdinalIgnoreCase);
@@ -5196,16 +5196,14 @@ public sealed class JiboWebSocketServiceTests
 
         foreach (var character in text)
         {
-            if (character == '<')
+            switch (character)
             {
-                inTag = true;
-                continue;
-            }
-
-            if (character == '>')
-            {
-                inTag = false;
-                continue;
+                case '<':
+                    inTag = true;
+                    continue;
+                case '>':
+                    inTag = false;
+                    continue;
             }
 
             if (!inTag) builder.Append(character);

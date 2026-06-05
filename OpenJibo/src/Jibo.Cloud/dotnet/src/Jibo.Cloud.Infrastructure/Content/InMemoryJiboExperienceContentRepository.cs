@@ -165,7 +165,8 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 new JiboConditionedReply
                 {
                     Condition = string.Empty,
-                    Reply = "Oh yes. It's a perfect time to learn and think about some very great people who have done some very great things."
+                    Reply =
+                        "Oh yes. It's a perfect time to learn and think about some very great people who have done some very great things."
                 },
                 new JiboConditionedReply
                 {
@@ -175,7 +176,8 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 new JiboConditionedReply
                 {
                     Condition = string.Empty,
-                    Reply = "Oh yes. It's a perfect time for everyone to learn and think about some very great people who have done some very great things. I like very great people. And very great things."
+                    Reply =
+                        "Oh yes. It's a perfect time for everyone to learn and think about some very great people who have done some very great things. I like very great people. And very great things."
                 },
                 new JiboConditionedReply
                 {
@@ -240,12 +242,14 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 new JiboConditionedReply
                 {
                     Condition = string.Empty,
-                    Reply = "It's a perfect time for everyone to learn and think about some very great people who have done some very great things. I like very great people. And very great things."
+                    Reply =
+                        "It's a perfect time for everyone to learn and think about some very great people who have done some very great things. I like very great people. And very great things."
                 },
                 new JiboConditionedReply
                 {
                     Condition = "dt.now.isInRange('11/1', '2/29')",
-                    Reply = "It's a great time to learn and think about some very great people who have done some very great things."
+                    Reply =
+                        "It's a great time to learn and think about some very great people who have done some very great things."
                 },
                 new JiboConditionedReply
                 {
@@ -260,7 +264,8 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 new JiboConditionedReply
                 {
                     Condition = string.Empty,
-                    Reply = "It's a great time to learn and think about some very great people who have done some very great things."
+                    Reply =
+                        "It's a great time to learn and think about some very great people who have done some very great things."
                 },
                 new JiboConditionedReply
                 {
@@ -275,7 +280,8 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 new JiboConditionedReply
                 {
                     Condition = "dt.now.isInRange('2/1', '2/29')",
-                    Reply = "It's good. I'm celebrating by sharing some interesting new historical facts during the month."
+                    Reply =
+                        "It's good. I'm celebrating by sharing some interesting new historical facts during the month."
                 },
                 new JiboConditionedReply
                 {
@@ -296,7 +302,7 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             BlackHistoryMonthFactReplies =
             [
                 "On February 2, 1915, Ernest Just, a genetic biologist, won the Spingarn Medal for work he did on cell division and fertilization.",
-                "The famous poet Langston Hughes was born on Feburary 1, 1902.",
+                "The famous poet Langston Hughes was born on February 1, 1902.",
                 "On February 9, 1952, Ralph Ellison's novel Invisible Man, won the National Book Award.",
                 "The writer Maya Angelou won lots of awards in her life. She won three Grammys, the National Medal of Arts, the Lincoln Medal, and the Presidential Medal of Freedom."
             ],

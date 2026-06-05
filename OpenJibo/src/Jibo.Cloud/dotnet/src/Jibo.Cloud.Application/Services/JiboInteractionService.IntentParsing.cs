@@ -1,9 +1,7 @@
 using System.Globalization;
-using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -195,10 +193,9 @@ public sealed partial class JiboInteractionService
         if (string.Equals(yesNoRule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase))
             return "word_of_the_day";
 
-        if (string.Equals(yesNoRule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase))
-            return "proactive_offer_pizza_fact";
-
-        return "yes";
+        return string.Equals(yesNoRule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase)
+            ? "proactive_offer_pizza_fact"
+            : "yes";
     }
 
     private static string ResolveNegativeYesNoIntent(string? yesNoRule)
@@ -249,14 +246,13 @@ public sealed partial class JiboInteractionService
         }
 
         var leadingThree = tokens.Length >= 3 ? $"{tokens[0]} {tokens[1]} {tokens[2]}" : null;
-        if (leadingThree is not null)
-        {
-            if (YesNoNegativeLeadPhrases.Contains(leadingThree)) return YesNoReply.Negative;
+        if (leadingThree is null) return TryClassifyTrailingYesNoReply(tokens);
 
-            if (YesNoAffirmativeLeadPhrases.Contains(leadingThree)) return YesNoReply.Affirmative;
-        }
+        if (YesNoNegativeLeadPhrases.Contains(leadingThree)) return YesNoReply.Negative;
 
-        return TryClassifyTrailingYesNoReply(tokens);
+        return YesNoAffirmativeLeadPhrases.Contains(leadingThree)
+            ? YesNoReply.Affirmative
+            : TryClassifyTrailingYesNoReply(tokens);
     }
 
     private static bool TryTrimLeadingAcknowledgement(string normalizedTranscript, out string trimmedTranscript)
@@ -274,11 +270,10 @@ public sealed partial class JiboInteractionService
                 return true;
             }
 
-            if (normalizedTranscript.StartsWith($"{acknowledgement} ", StringComparison.Ordinal))
-            {
-                trimmedTranscript = normalizedTranscript[(acknowledgement.Length + 1)..].TrimStart();
-                return true;
-            }
+            if (!normalizedTranscript.StartsWith($"{acknowledgement} ", StringComparison.Ordinal)) continue;
+
+            trimmedTranscript = normalizedTranscript[(acknowledgement.Length + 1)..].TrimStart();
+            return true;
         }
 
         trimmedTranscript = normalizedTranscript;
@@ -289,14 +284,6 @@ public sealed partial class JiboInteractionService
     {
         var selectedReply = YesNoReply.None;
         var selectedIndex = -1;
-
-        void Consider(YesNoReply candidateReply, int candidateIndex)
-        {
-            if (candidateIndex < 0 || candidateIndex < selectedIndex) return;
-
-            selectedReply = candidateReply;
-            selectedIndex = candidateIndex;
-        }
 
         for (var index = 0; index < tokens.Length; index += 1)
         {
@@ -335,6 +322,14 @@ public sealed partial class JiboInteractionService
         }
 
         return selectedReply;
+
+        void Consider(YesNoReply candidateReply, int candidateIndex)
+        {
+            if (candidateIndex < 0 || candidateIndex < selectedIndex) return;
+
+            selectedReply = candidateReply;
+            selectedIndex = candidateIndex;
+        }
     }
 
     private static bool IsTimeRequest(string loweredTranscript)
@@ -409,22 +404,19 @@ public sealed partial class JiboInteractionService
                 "what is today's weather look like"))
             return true;
 
-        if (MatchesAny(
-                loweredTranscript,
-                "will it rain",
-                "will it snow",
-                "is it raining",
-                "is it snowing",
-                "is there going to be hail",
-                "does it look like rain",
-                "does it seem like snow",
-                "is it going to rain",
-                "is it going to snow",
-                "do you think it will rain",
-                "do you think it will snow"))
-            return true;
-
-        return WeatherConditionForecastPattern.IsMatch(loweredTranscript);
+        return MatchesAny(
+            loweredTranscript,
+            "will it rain",
+            "will it snow",
+            "is it raining",
+            "is it snowing",
+            "is there going to be hail",
+            "does it look like rain",
+            "does it seem like snow",
+            "is it going to rain",
+            "is it going to snow",
+            "do you think it will rain",
+            "do you think it will snow") || WeatherConditionForecastPattern.IsMatch(loweredTranscript);
     }
 
     private static bool IsWeatherTopicQuestion(string normalizedTranscript)
@@ -525,10 +517,11 @@ public sealed partial class JiboInteractionService
                 runtime.ValueKind != JsonValueKind.Object)
                 return null;
 
+            string? resolvedLocation;
             if (runtime.TryGetProperty("location", out var location) &&
                 location.ValueKind == JsonValueKind.Object)
             {
-                var resolvedLocation = TryReadStringProperty(location,
+                resolvedLocation = TryReadStringProperty(location,
                     "displayName",
                     "name",
                     "city",
@@ -540,22 +533,24 @@ public sealed partial class JiboInteractionService
                 if (!string.IsNullOrWhiteSpace(resolvedLocation)) return resolvedLocation;
             }
 
-            if (runtime.TryGetProperty("currentLocation", out var currentLocation) &&
-                currentLocation.ValueKind == JsonValueKind.Object)
+            if (!runtime.TryGetProperty("currentLocation", out var currentLocation) ||
+                currentLocation.ValueKind != JsonValueKind.Object)
             {
-                var resolvedLocation = TryReadStringProperty(currentLocation,
-                    "displayName",
-                    "name",
-                    "city",
-                    "locationName",
-                    "placeName",
-                    "label",
-                    "title",
-                    "address");
-                if (!string.IsNullOrWhiteSpace(resolvedLocation)) return resolvedLocation;
+                return TryReadStringProperty(runtime, "locationName", "currentLocation", "city", "placeName");
             }
 
-            return TryReadStringProperty(runtime, "locationName", "currentLocation", "city", "placeName");
+            resolvedLocation = TryReadStringProperty(currentLocation,
+                "displayName",
+                "name",
+                "city",
+                "locationName",
+                "placeName",
+                "label",
+                "title",
+                "address");
+            return !string.IsNullOrWhiteSpace(resolvedLocation)
+                ? resolvedLocation
+                : TryReadStringProperty(runtime, "locationName", "currentLocation", "city", "placeName");
         }
         catch
         {
@@ -597,14 +592,19 @@ public sealed partial class JiboInteractionService
             {
                 if (perception.TryGetProperty("speaker", out var speaker))
                 {
-                    if (speaker.ValueKind == JsonValueKind.String)
-                        speakerId = speaker.GetString() ?? string.Empty;
-                    else if (speaker.ValueKind == JsonValueKind.Object)
-                        speakerId = TryReadStringProperty(speaker, "id", "looperID", "looperId") ?? string.Empty;
+                    speakerId = speaker.ValueKind switch
+                    {
+                        JsonValueKind.String => speaker.GetString() ?? string.Empty,
+                        JsonValueKind.Object => TryReadStringProperty(speaker, "id", "looperID", "looperId") ??
+                                                string.Empty,
+                        _ => speakerId
+                    };
                 }
 
                 if (perception.TryGetProperty("peoplePresent", out var peoplePresent) &&
                     peoplePresent.ValueKind == JsonValueKind.Array)
+                {
+                    // ReSharper disable once ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
                     foreach (var person in peoplePresent.EnumerateArray())
                     {
                         var personId = person.ValueKind switch
@@ -618,6 +618,7 @@ public sealed partial class JiboInteractionService
                             !string.Equals(personId, "NOT_TRAINED", StringComparison.OrdinalIgnoreCase))
                             peoplePresentIds.Add(personId);
                     }
+                }
             }
 
             var triggerLooperId = turn.Attributes.TryGetValue("triggerLooperId", out var rawTriggerLooperId)
@@ -736,16 +737,17 @@ public sealed partial class JiboInteractionService
             return true;
         }
 
-        if (referenceLocalTime is not null &&
-            TryResolveWeatherDayOfWeekOffset(normalizedTranscript, referenceLocalTime.Value, out var dayOffset,
-                out var dayName) &&
-            dayOffset > 0)
+        if (referenceLocalTime is null ||
+            !TryResolveWeatherDayOfWeekOffset(normalizedTranscript, referenceLocalTime.Value, out var dayOffset,
+                out var dayName) ||
+            dayOffset <= 0)
         {
-            weatherDate = new WeatherDateEntity("weekday", dayOffset, $"On {dayName}");
-            return true;
+            return false;
         }
 
-        return false;
+        weatherDate = new WeatherDateEntity("weekday", dayOffset, $"On {dayName}");
+        return true;
+
     }
 
     private static bool ShouldAcceptClientWeatherDateEntity(string normalizedTranscript)
@@ -763,29 +765,26 @@ public sealed partial class JiboInteractionService
     {
         if (string.IsNullOrWhiteSpace(normalizedTranscript)) return false;
 
-        if (MatchesAny(
-                normalizedTranscript,
-                "today",
-                "today s",
-                "today's",
-                "tonight",
-                "tomorrow",
-                "tomorrow s",
-                "tomorrow's",
-                "day after tomorrow",
-                "this week",
-                "next week",
-                "weekend",
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-                "sunday"))
-            return true;
-
-        return WeatherDayOfWeekPattern.IsMatch(normalizedTranscript);
+        return MatchesAny(
+            normalizedTranscript,
+            "today",
+            "today s",
+            "today's",
+            "tonight",
+            "tomorrow",
+            "tomorrow s",
+            "tomorrow's",
+            "day after tomorrow",
+            "this week",
+            "next week",
+            "weekend",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday") || WeatherDayOfWeekPattern.IsMatch(normalizedTranscript);
     }
 
     private static bool HasWeatherLocationClause(string normalizedTranscript)
@@ -914,14 +913,12 @@ public sealed partial class JiboInteractionService
         }
 
         var hasThisWeek = normalizedTranscript.Contains("this week", StringComparison.Ordinal);
-        if (hasThisWeek)
-        {
-            dayOffset = referenceLocalTime.DayOfWeek == DayOfWeek.Saturday ? 1 : 2;
-            leadIn = "Later this week";
-            return true;
-        }
+        if (!hasThisWeek) return false;
 
-        return false;
+        dayOffset = referenceLocalTime.DayOfWeek == DayOfWeek.Saturday ? 1 : 2;
+        leadIn = "Later this week";
+        return true;
+
     }
 
     private static bool TryParseDayOfWeek(string dayToken, out DayOfWeek dayOfWeek)
@@ -944,23 +941,6 @@ public sealed partial class JiboInteractionService
     {
         target = value;
         return true;
-    }
-
-    private static string? TryResolveWeatherConditionEntity(string transcript)
-    {
-        var normalized = NormalizeCommandPhrase(transcript);
-        return normalized switch
-        {
-            _ when normalized.Contains("rain", StringComparison.Ordinal) => "rain",
-            _ when normalized.Contains("snow", StringComparison.Ordinal) => "snow",
-            _ when normalized.Contains("hail", StringComparison.Ordinal) => "hail",
-            _ when normalized.Contains("sunny", StringComparison.Ordinal) ||
-                   normalized.Contains("clear", StringComparison.Ordinal) => "sunny",
-            _ when normalized.Contains("cloud", StringComparison.Ordinal) => "cloudy",
-            _ when normalized.Contains("wind", StringComparison.Ordinal) => "windy",
-            _ when normalized.Contains("fog", StringComparison.Ordinal) => "fog",
-            _ => null
-        };
     }
 
     private static bool IsWelcomeBackGreeting(string loweredTranscript)
@@ -1212,7 +1192,7 @@ public sealed partial class JiboInteractionService
             if (markerIndex < 0) continue;
 
             var preferencePhrase = normalized[(markerIndex + marker.Length)..];
-            var splitMarker = " is ";
+            const string splitMarker = " is ";
             var splitIndex = preferencePhrase.IndexOf(splitMarker, StringComparison.Ordinal);
             if (splitIndex <= 0 || splitIndex >= preferencePhrase.Length - splitMarker.Length)
             {

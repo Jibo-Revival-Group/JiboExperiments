@@ -105,7 +105,7 @@ public sealed class ProviderCachingTests
             await provider.GetReportAsync(new WeatherReportRequest("Lone Jack,US", null, null, false, false, 0));
 
         Assert.NotNull(report);
-        Assert.Equal(83, report!.Temperature);
+        Assert.Equal(83, report.Temperature);
         Assert.Equal(82, report.HighTemperature);
         Assert.Equal(78, report.LowTemperature);
         Assert.Equal(1, handler.GetCallCount("/data/3.0/onecall"));
@@ -153,7 +153,7 @@ public sealed class ProviderCachingTests
         var report = await provider.GetReportAsync(new WeatherReportRequest("Chicago,US", null, null, true, false, 1));
 
         Assert.NotNull(report);
-        Assert.Equal(74, report!.Temperature);
+        Assert.Equal(74, report.Temperature);
         Assert.Equal(76, report.HighTemperature);
         Assert.Equal(60, report.LowTemperature);
         Assert.Equal(1, handler.GetCallCount("/geo/1.0/direct"));
@@ -206,7 +206,7 @@ public sealed class ProviderCachingTests
         var report = await provider.GetReportAsync(new WeatherReportRequest("Boston,US", null, null, false, false, 0));
 
         Assert.NotNull(report);
-        Assert.Equal(70, report!.Temperature);
+        Assert.Equal(70, report.Temperature);
         Assert.Equal(72, report.HighTemperature);
         Assert.Equal(66, report.LowTemperature);
         Assert.Equal(1, handler.GetCallCount("/data/3.0/onecall"));
@@ -279,7 +279,7 @@ public sealed class ProviderCachingTests
         var result = await provider.GetBriefingAsync(new NewsBriefingRequest(["sports"]));
 
         Assert.NotNull(result);
-        Assert.Single(result!.Headlines);
+        Assert.Single(result.Headlines);
         Assert.Equal("General robotics update", result.Headlines[0].Title);
         Assert.Equal(2, handler.GetCallCount("/v2/top-headlines"));
     }
@@ -319,7 +319,7 @@ public sealed class ProviderCachingTests
         var result = await provider.GetBriefingAsync(new NewsBriefingRequest(["sports"]));
 
         Assert.NotNull(result);
-        Assert.Single(result!.Headlines);
+        Assert.Single(result.Headlines);
         Assert.Equal("General robotics update", result.Headlines[0].Title);
         Assert.Equal(2, handler.GetCallCount("/v2/top-headlines"));
     }
@@ -352,7 +352,7 @@ public sealed class ProviderCachingTests
         var result = await provider.GetBriefingAsync(new NewsBriefingRequest([]));
 
         Assert.NotNull(result);
-        Assert.Single(result!.Headlines);
+        Assert.Single(result.Headlines);
         Assert.Equal("Robotics breakthrough announced", result.Headlines[0].Title);
         Assert.Equal(2, handler.GetCallCount("/v2/top-headlines"));
         Assert.Equal(1, handler.GetCallCount("/v2/everything"));
@@ -393,7 +393,7 @@ public sealed class ProviderCachingTests
         var result = await provider.GetBriefingAsync(new NewsBriefingRequest(["sports"]));
 
         Assert.NotNull(result);
-        Assert.Single(result!.Headlines);
+        Assert.Single(result.Headlines);
         Assert.Equal("General robotics update", result.Headlines[0].Title);
         Assert.Equal("success", result.ProviderStatus);
         Assert.Equal(2, handler.GetCallCount("/v2/top-headlines"));
@@ -439,7 +439,7 @@ public sealed class ProviderCachingTests
         var result = await provider.GetBriefingAsync(new NewsBriefingRequest([]));
 
         Assert.NotNull(result);
-        Assert.Empty(result!.Headlines);
+        Assert.Empty(result.Headlines);
         Assert.Equal("http_error", result.ProviderStatus);
         Assert.Equal("parameterInvalid", result.ProviderErrorCode);
         Assert.Equal("Category 'general' is not available for this account.", result.ProviderMessage);

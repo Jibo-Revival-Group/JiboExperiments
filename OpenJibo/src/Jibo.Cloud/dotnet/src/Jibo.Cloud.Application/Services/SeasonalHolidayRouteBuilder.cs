@@ -660,21 +660,17 @@ internal static class SeasonalHolidayRouteBuilder
             .ToArray();
 
         if (matchingReplies.Length == 0)
-        {
             matchingReplies = replies
                 .Where(reply => string.IsNullOrWhiteSpace(reply.Condition))
                 .Select(reply => reply.Reply)
                 .Where(reply => !string.IsNullOrWhiteSpace(reply))
                 .ToArray();
-        }
 
         if (matchingReplies.Length == 0)
-        {
             matchingReplies = replies
                 .Select(reply => reply.Reply)
                 .Where(reply => !string.IsNullOrWhiteSpace(reply))
                 .ToArray();
-        }
 
         return new JiboInteractionDecision(
             intentName,
@@ -714,13 +710,9 @@ internal static class SeasonalHolidayRouteBuilder
         var normalizedCondition = NormalizeCondition(condition);
         if (string.IsNullOrWhiteSpace(normalizedCondition)) return false;
 
-        var clauses = normalizedCondition.Split(new[] { "||" },
+        var clauses = normalizedCondition.Split(["||"],
             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        foreach (var clause in clauses)
-            if (MatchesDateConditionClause(clause, currentDate))
-                return true;
-
-        return false;
+        return clauses.Any(clause => MatchesDateConditionClause(clause, currentDate));
     }
 
     private static bool MatchesDateConditionClause(string clause, DateOnly currentDate)
@@ -760,10 +752,7 @@ internal static class SeasonalHolidayRouteBuilder
         if (!int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out month)) return false;
         if (!int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out day)) return false;
 
-        if (month < 1 || month > 12 || day < 1 || day > 31)
-            return false;
-
-        return true;
+        return month is >= 1 and <= 12 && day is >= 1 and <= 31;
     }
 
     private static string NormalizeCondition(string? condition)

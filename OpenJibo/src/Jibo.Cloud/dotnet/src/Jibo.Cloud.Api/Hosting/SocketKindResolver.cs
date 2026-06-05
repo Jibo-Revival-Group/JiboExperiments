@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-
 namespace Jibo.Cloud.Api.Hosting;
 
 internal static class SocketKindResolver
@@ -21,8 +19,6 @@ internal static class SocketKindResolver
         if (string.Equals(host, NeoHubHost, StringComparison.OrdinalIgnoreCase))
             return path.StartsWithSegments("/v1/proactive") ? "neo-hub-proactive" : "neo-hub-listen";
 
-        if (OpenJiboHosts.Contains(host)) return "openjibo";
-
-        return "neo-hub-listen";
+        return OpenJiboHosts.Contains(host) ? "openjibo" : "neo-hub-listen";
     }
 }

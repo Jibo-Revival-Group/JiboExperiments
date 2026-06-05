@@ -154,9 +154,12 @@ public sealed class FileTurnTelemetrySinkTests
                 AwaitingTurnCompletion = true,
                 SawListen = true,
                 ListenOpenedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(1)
+            },
+            Metadata =
+            {
+                ["glsmPhase"] = "HJ_LISTENING"
             }
         };
-        session.Metadata["glsmPhase"] = "HJ_LISTENING";
 
         await turnService.HandleContextAsync(
             session,

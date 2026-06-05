@@ -195,8 +195,7 @@ public sealed class JiboInteractionServiceTests
         Assert.True(DateTimeOffset.TryParse(decision.ContextUpdates[GreetingLastReactiveUtcKey]?.ToString(), out _));
         Assert.Contains(cloudStateStore.GetGreetingPresences("loop-a"),
             greeting => greeting.PersonId == "person-a" &&
-                        greeting.LastGreetingRoute == "ReactiveGreeting" &&
-                        greeting.LastGreetingIntent == "good_morning");
+                        greeting is { LastGreetingRoute: "ReactiveGreeting", LastGreetingIntent: "good_morning" });
     }
 
     [Fact]
@@ -345,8 +344,7 @@ public sealed class JiboInteractionServiceTests
         Assert.True(DateTimeOffset.TryParse(decision.ContextUpdates[GreetingLastProactiveUtcKey]?.ToString(), out _));
         Assert.Contains(cloudStateStore.GetGreetingPresences("openjibo-default-loop"),
             greeting => greeting.PersonId == "person-1" &&
-                        greeting.LastGreetingRoute == "ProactiveGreeting" &&
-                        greeting.LastGreetingIntent == "proactive_greeting");
+                        greeting is { LastGreetingRoute: "ProactiveGreeting", LastGreetingIntent: "proactive_greeting" });
     }
 
     [Fact]
@@ -793,7 +791,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what do you dream about", "robot_what_do_you_dream_about", "dreams about flying")]
     [InlineData("what are you afraid of", "robot_what_are_you_afraid_of", "heights")]
     [InlineData("what is your best book", "robot_what_is_your_best_book", "dictionary")]
-    [InlineData("what is your best exercise", "robot_what_is_your_best_exercise", "spinning your head around 360 degrees")]
+    [InlineData("what is your best exercise", "robot_what_is_your_best_exercise",
+        "spinning your head around 360 degrees")]
     [InlineData("what is your dream vacation", "robot_what_is_your_dream_vacation", "moon")]
     [InlineData("who is your hero", "robot_who_is_your_hero", "Benjamin Franklin")]
     [InlineData("who do you love", "robot_who_do_you_love", "people in my Loop")]
@@ -2566,10 +2565,14 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
-    [InlineData("shopping list", "shopping_list_prompt", "What should I add to your shopping list?", "shopping", "shopping")]
-    [InlineData("grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping", "grocery")]
-    [InlineData("my grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping", "grocery")]
-    [InlineData("create grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping", "grocery")]
+    [InlineData("shopping list", "shopping_list_prompt", "What should I add to your shopping list?", "shopping",
+        "shopping")]
+    [InlineData("grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping",
+        "grocery")]
+    [InlineData("my grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping",
+        "grocery")]
+    [InlineData("create grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping",
+        "grocery")]
     [InlineData("to do list", "todo_list_prompt", "What should I add to your to-do list?", "todo", "todo")]
     public async Task BuildDecisionAsync_ListStart_PromptsForFollowUpItems(
         string transcript,
@@ -2709,7 +2712,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("shopping_list_add", addDecision.IntentName);
-        Assert.Contains("Added apples to your grocery list.", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Added apples to your grocery list.", addDecision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
         Assert.Equal(["apples"],
             memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-d", "loop-d", "device-d"), "shopping"));
 
@@ -2784,7 +2788,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("shopping_list_done", doneDecision.IntentName);
-        Assert.Contains("Okay. Your grocery list has milk.", doneDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Okay. Your grocery list has milk.", doneDecision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
 
         var recallDecision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -4939,16 +4944,14 @@ public sealed class JiboInteractionServiceTests
 
         foreach (var character in text)
         {
-            if (character == '<')
+            switch (character)
             {
-                inTag = true;
-                continue;
-            }
-
-            if (character == '>')
-            {
-                inTag = false;
-                continue;
+                case '<':
+                    inTag = true;
+                    continue;
+                case '>':
+                    inTag = false;
+                    continue;
             }
 
             if (!inTag) builder.Append(character);

@@ -1,5 +1,5 @@
-using System.Text;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
@@ -375,33 +375,34 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             return ProtocolDispatchResult.Ok(stateStore.GetCommuteProfiles(loopId).Select(MapCommute));
         }
 
-        if (operation.Equals("UpsertCommute", StringComparison.OrdinalIgnoreCase))
+        if (!operation.Equals("UpsertCommute", StringComparison.OrdinalIgnoreCase))
         {
-            var hasIsEnabled = body is { } enabledBody && enabledBody.TryGetProperty("isEnabled", out _);
-            var hasIsComplete = body is { } completeBody && completeBody.TryGetProperty("isComplete", out _);
-            var workHour = ReadLong(body, "workHour");
-            var workMinute = ReadLong(body, "workMinute");
-            var typicalDurationMinutes = ReadLong(body, "typicalDurationMinutes");
-            var commute = new CommuteProfileRecord
-            {
-                Id = ReadString(body, "id") ?? string.Empty,
-                LoopId = ReadString(body, "loopId") ?? string.Empty,
-                MemberId = ReadString(body, "memberId"),
-                IsEnabled = hasIsEnabled ? ReadBool(body, "isEnabled") : true,
-                IsComplete = hasIsComplete ? ReadBool(body, "isComplete") : true,
-                Mode = ReadString(body, "mode") ?? "driving",
-                WorkHour = workHour is > 0 and < 24 ? (int)workHour.Value : 8,
-                WorkMinute = workMinute is >= 0 and < 60 ? (int)workMinute.Value : 30,
-                OriginName = ReadString(body, "originName"),
-                DestinationName = ReadString(body, "destinationName"),
-                TypicalDurationMinutes = typicalDurationMinutes is > 0
-                    ? (int)typicalDurationMinutes.Value
-                    : 25
-            };
-            return ProtocolDispatchResult.Ok(MapCommute(stateStore.UpsertCommuteProfile(commute)));
+            return ProtocolDispatchResult.Ok(Array.Empty<object>());
         }
 
-        return ProtocolDispatchResult.Ok(Array.Empty<object>());
+        var hasIsEnabled = body is { } enabledBody && enabledBody.TryGetProperty("isEnabled", out _);
+        var hasIsComplete = body is { } completeBody && completeBody.TryGetProperty("isComplete", out _);
+        var workHour = ReadLong(body, "workHour");
+        var workMinute = ReadLong(body, "workMinute");
+        var typicalDurationMinutes = ReadLong(body, "typicalDurationMinutes");
+        var commute = new CommuteProfileRecord
+        {
+            Id = ReadString(body, "id") ?? string.Empty,
+            LoopId = ReadString(body, "loopId") ?? string.Empty,
+            MemberId = ReadString(body, "memberId"),
+            IsEnabled = !hasIsEnabled || ReadBool(body, "isEnabled"),
+            IsComplete = !hasIsComplete || ReadBool(body, "isComplete"),
+            Mode = ReadString(body, "mode") ?? "driving",
+            WorkHour = workHour is > 0 and < 24 ? (int)workHour.Value : 8,
+            WorkMinute = workMinute is >= 0 and < 60 ? (int)workMinute.Value : 30,
+            OriginName = ReadString(body, "originName"),
+            DestinationName = ReadString(body, "destinationName"),
+            TypicalDurationMinutes = typicalDurationMinutes is > 0
+                ? (int)typicalDurationMinutes.Value
+                : 25
+        };
+        return ProtocolDispatchResult.Ok(MapCommute(stateStore.UpsertCommuteProfile(commute)));
+
     }
 
     private ProtocolDispatchResult HandleBackup(string operation, ProtocolEnvelope envelope)
@@ -409,15 +410,16 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         if (operation.Equals("List", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(stateStore.GetBackups());
 
-        if (operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
+        if (!operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
         {
-            var body = envelope.TryParseBody();
-            var requestedName = ReadString(body, "name") ?? ReadString(body, "backupName");
-            return ProtocolDispatchResult.Ok(
-                stateStore.CreateBackup(requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"));
+            return ProtocolDispatchResult.Ok(Array.Empty<object>());
         }
 
-        return ProtocolDispatchResult.Ok(Array.Empty<object>());
+        var body = envelope.TryParseBody();
+        var requestedName = ReadString(body, "name") ?? ReadString(body, "backupName");
+        return ProtocolDispatchResult.Ok(
+            stateStore.CreateBackup(requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"));
+
     }
 
     private ProtocolDispatchResult HandleKey(string operation, ProtocolEnvelope envelope)

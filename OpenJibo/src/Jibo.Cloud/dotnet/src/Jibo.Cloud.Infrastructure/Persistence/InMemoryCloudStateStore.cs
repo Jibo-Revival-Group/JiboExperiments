@@ -21,10 +21,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly List<CalendarEventRecord> _calendarEvents = [];
     private readonly List<CommuteProfileRecord> _commuteProfiles = [];
     private readonly ConcurrentDictionary<string, DeviceRegistration> _devices = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<GreetingPresenceRecord> _greetingPresences = [];
 
     private readonly IHolidayCalendarProvider _holidayCalendarProvider;
     private readonly List<HolidayRecord> _holidayOverrides = [];
-    private readonly List<GreetingPresenceRecord> _greetingPresences = [];
 
     private readonly ConcurrentDictionary<string, KeyRequestRecord>
         _keyRequests = new(StringComparer.OrdinalIgnoreCase);
@@ -327,11 +327,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Metadata = BuildSessionMetadata(_account.AccountId, resolvedDeviceId, resolvedLoopId)
         };
 
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            _sessionsByToken[token] = session;
-            TouchState();
-        }
+        if (string.IsNullOrWhiteSpace(token)) return session;
+
+        _sessionsByToken[token] = session;
+        TouchState();
 
         return session;
     }
@@ -576,7 +575,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 : greetingPresence.AccountId.Trim(),
             LoopId = resolvedLoopId,
             PersonId = resolvedPersonId,
-            SpeakerId = string.IsNullOrWhiteSpace(greetingPresence.SpeakerId) ? null : greetingPresence.SpeakerId.Trim(),
+            SpeakerId =
+                string.IsNullOrWhiteSpace(greetingPresence.SpeakerId) ? null : greetingPresence.SpeakerId.Trim(),
             PreferredName = string.IsNullOrWhiteSpace(greetingPresence.PreferredName)
                 ? null
                 : greetingPresence.PreferredName.Trim(),
@@ -615,13 +615,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         if (_symmetricKeys.TryGetValue(loopId, out var existing)) return existing;
 
         var key = Convert.ToBase64String(Encoding.UTF8.GetBytes($"open-jibo-symmetric-key:{loopId}"));
-        if (_symmetricKeys.TryAdd(loopId, key))
+        if (!_symmetricKeys.TryAdd(loopId, key))
         {
-            TouchState();
-            return key;
+            return _symmetricKeys[loopId];
         }
 
-        return _symmetricKeys[loopId];
+        TouchState();
+        return key;
+
     }
 
     public KeyRequestRecord CreateKeyRequest(string loopId, string publicKey)
@@ -690,11 +691,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .Where(holiday => string.Equals(holiday.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        foreach (var overrideHoliday in overrides)
+        foreach (var overrideHoliday in overrides.Where(overrideHoliday => !string.IsNullOrWhiteSpace(overrideHoliday.EventId)))
         {
-            if (string.IsNullOrWhiteSpace(overrideHoliday.EventId))
-                continue;
-
             systemHolidays.RemoveAll(systemHoliday =>
                 string.Equals(systemHoliday.EventId, overrideHoliday.EventId, StringComparison.OrdinalIgnoreCase));
         }
@@ -896,11 +894,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 continue;
             }
 
-            if (!lastWasDash)
-            {
-                builder.Append('-');
-                lastWasDash = true;
-            }
+            if (lastWasDash) continue;
+
+            builder.Append('-');
+            lastWasDash = true;
         }
 
         return builder.ToString().Trim('-');

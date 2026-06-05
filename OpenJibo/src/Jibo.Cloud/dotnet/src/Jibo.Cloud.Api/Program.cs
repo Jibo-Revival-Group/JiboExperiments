@@ -1,9 +1,6 @@
-using System.Net.WebSockets;
-using System.Text;
 using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
-using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,6 +49,5 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
 });
 
 app.Run();
-return;
 
 public partial class Program;

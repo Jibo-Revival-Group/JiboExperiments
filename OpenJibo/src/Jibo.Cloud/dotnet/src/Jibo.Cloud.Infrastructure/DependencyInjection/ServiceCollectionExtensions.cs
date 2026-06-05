@@ -31,20 +31,19 @@ public static class ServiceCollectionExtensions
         }
 
         var openWeatherOptions = new OpenWeatherOptions();
-        if (configuration is not null)
-            configuration.GetSection("OpenJibo:Weather:OpenWeather").Bind(openWeatherOptions);
+        configuration?.GetSection("OpenJibo:Weather:OpenWeather").Bind(openWeatherOptions);
 
         if (string.IsNullOrWhiteSpace(openWeatherOptions.ApiKey))
             openWeatherOptions.ApiKey = Environment.GetEnvironmentVariable("OPENWEATHER_API_KEY");
 
         var newsApiOptions = new NewsApiOptions();
-        if (configuration is not null) configuration.GetSection("OpenJibo:News:NewsApi").Bind(newsApiOptions);
+        configuration?.GetSection("OpenJibo:News:NewsApi").Bind(newsApiOptions);
 
         if (string.IsNullOrWhiteSpace(newsApiOptions.ApiKey))
             newsApiOptions.ApiKey = Environment.GetEnvironmentVariable("NEWSAPI_KEY");
 
         var holidayOptions = new HolidayCalendarOptions();
-        if (configuration is not null) configuration.GetSection("OpenJibo:Holiday").Bind(holidayOptions);
+        configuration?.GetSection("OpenJibo:Holiday").Bind(holidayOptions);
 
         services.AddSingleton(sttOptions);
         services.AddSingleton(openWeatherOptions);
@@ -74,8 +73,7 @@ public static class ServiceCollectionExtensions
                                              ?? Environment.GetEnvironmentVariable(
                                                  "OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
         var mediaOptions = new MediaContentStoreOptions();
-        if (configuration is not null)
-            configuration.GetSection("OpenJibo:Media").Bind(mediaOptions);
+        configuration?.GetSection("OpenJibo:Media").Bind(mediaOptions);
 
         if (string.IsNullOrWhiteSpace(mediaOptions.ConnectionString))
             mediaOptions.ConnectionString =

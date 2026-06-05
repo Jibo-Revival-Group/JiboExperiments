@@ -214,7 +214,7 @@ public sealed class PersistenceStoreTests
         }
         finally
         {
-            if (Directory.Exists(persistenceDirectory)) Directory.Delete(persistenceDirectory, recursive: true);
+            if (Directory.Exists(persistenceDirectory)) Directory.Delete(persistenceDirectory, true);
         }
     }
 

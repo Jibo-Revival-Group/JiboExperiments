@@ -1,7 +1,3 @@
-using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
-using Jibo.Runtime.Abstractions;
-
 namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService

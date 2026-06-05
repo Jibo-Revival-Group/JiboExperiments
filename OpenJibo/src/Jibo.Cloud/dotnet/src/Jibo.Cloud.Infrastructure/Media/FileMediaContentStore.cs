@@ -1,22 +1,17 @@
-using System.Text.Json;
 using System.Security.Cryptography;
+using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 
 namespace Jibo.Cloud.Infrastructure.Media;
 
-internal sealed class FileMediaContentStore : IMediaContentStore
+internal sealed class FileMediaContentStore(string? directoryPath) : IMediaContentStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
     };
 
-    public FileMediaContentStore(string? directoryPath)
-    {
-        DirectoryPath = string.IsNullOrWhiteSpace(directoryPath) ? null : directoryPath;
-    }
-
-    private string? DirectoryPath { get; }
+    private string? DirectoryPath { get; } = string.IsNullOrWhiteSpace(directoryPath) ? null : directoryPath;
 
     public async Task StoreAsync(string path, string contentType, byte[] content,
         IReadOnlyDictionary<string, object?>? meta, CancellationToken cancellationToken = default)
@@ -59,25 +54,34 @@ internal sealed class FileMediaContentStore : IMediaContentStore
         var contentType = "application/octet-stream";
         IDictionary<string, object?> meta = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
-        if (File.Exists(metaPath))
-            try
+        if (!File.Exists(metaPath))
+        {
+            return new MediaContentSnapshot
             {
-                using var document = JsonDocument.Parse(await File.ReadAllTextAsync(metaPath, cancellationToken));
-                var rootElement = document.RootElement;
-                if (rootElement.TryGetProperty("contentType", out var type) &&
-                    type.ValueKind == JsonValueKind.String)
-                    contentType = type.GetString() ?? contentType;
+                ContentType = contentType,
+                Content = content,
+                Meta = meta as IReadOnlyDictionary<string, object?> ?? new Dictionary<string, object?>(meta)
+            };
+        }
 
-                if (rootElement.TryGetProperty("meta", out var metaElement) &&
-                    metaElement.ValueKind == JsonValueKind.Object)
-                    meta = JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(),
-                               JsonOptions) ??
-                           new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            }
-            catch
-            {
-                // Keep binary content available even if the manifest is malformed.
-            }
+        try
+        {
+            using var document = JsonDocument.Parse(await File.ReadAllTextAsync(metaPath, cancellationToken));
+            var rootElement = document.RootElement;
+            if (rootElement.TryGetProperty("contentType", out var type) &&
+                type.ValueKind == JsonValueKind.String)
+                contentType = type.GetString() ?? contentType;
+
+            if (rootElement.TryGetProperty("meta", out var metaElement) &&
+                metaElement.ValueKind == JsonValueKind.Object)
+                meta = JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(),
+                           JsonOptions) ??
+                       new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            // Keep binary content available even if the manifest is malformed.
+        }
 
         return new MediaContentSnapshot
         {

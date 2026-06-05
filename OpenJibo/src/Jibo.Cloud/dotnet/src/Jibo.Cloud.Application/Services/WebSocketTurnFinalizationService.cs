@@ -597,6 +597,15 @@ public sealed class WebSocketTurnFinalizationService(
                          StringComparison.Ordinal))
                 finalizedTurn = WithSanitizedTranscript(finalizedTurn, usableTranscript);
 
+            if (ShouldIgnoreLateHotphraseTurn(session, finalizedTurn))
+            {
+                turnState.AwaitingTurnCompletion = false;
+                session.FollowUpExpiresUtc = null;
+                ResetBufferedAudio(session);
+                ClearListenTracking(turnState);
+                return [];
+            }
+
             if (ShouldTreatBufferedHotphraseAsGreeting(finalizedTurn, turnState, allowFallbackOnMissingTranscript))
                 finalizedTurn = WithSyntheticTranscript(finalizedTurn, "hello");
 
@@ -927,6 +936,18 @@ public sealed class WebSocketTurnFinalizationService(
                ignoreUntilUtc.Value > DateTimeOffset.UtcNow;
     }
 
+    private static bool ShouldIgnoreLateHotphraseTurn(CloudSession session, TurnContext turn)
+    {
+        var ignoreUntilUtc = session.TurnState.IgnoreAdditionalAudioUntilUtc;
+        if (!ignoreUntilUtc.HasValue || ignoreUntilUtc.Value <= DateTimeOffset.UtcNow) return false;
+        if (!ReadBoolAttribute(turn, "listenHotphrase")) return false;
+
+        return ReadRules(turn, "listenRules")
+            .Any(static rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(rule, "globals/global_commands_launch",
+                                    StringComparison.OrdinalIgnoreCase));
+    }
+
     public static bool ShouldIgnoreLateListenSetup(CloudSession session, string? text)
     {
         return ShouldIgnoreLateAudio(session) && IsHotphraseLaunchListenSetup(text);
@@ -972,6 +993,9 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static TimeSpan ResolveLateAudioIgnoreWindow(ResponsePlan plan)
     {
+        if (string.Equals(plan.IntentName, "stop", StringComparison.OrdinalIgnoreCase))
+            return WebSocketTurnState.StopCommandLateAudioIgnoreWindow;
+
         return string.Equals(plan.IntentName, "cloud_version", StringComparison.OrdinalIgnoreCase)
             ? WebSocketTurnState.DiagnosticSpeechLateAudioIgnoreWindow
             : WebSocketTurnState.DefaultLateAudioIgnoreWindow;

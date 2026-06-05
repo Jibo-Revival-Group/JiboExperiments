@@ -372,7 +372,7 @@ Current release theme:
 - Status: `implemented`
 - Tags: `protocol`, `storage`
 - Result:
-  - `GetUpdateFrom` returns an empty object when no update is staged
+  - `GetUpdateFrom` returns a no-op update manifest when no update is staged
   - staged updates can still be created explicitly
 - Follow-up:
   - end-to-end update delivery and restore proof remains future work

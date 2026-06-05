@@ -68,7 +68,7 @@ Current API and protocol scope:
 - token/session issuance for account, hub, and robot startup flows
 - starter account, notification, loop, media, key, person, backup, robot, update, and upload/log handling
 - media lookup through `/media/{path}`
-- no placeholder no-op update from `GetUpdateFrom` when no staged update exists
+- `GetUpdateFrom` returns a no-op update manifest when no staged update exists
 
 Current websocket scope:
 

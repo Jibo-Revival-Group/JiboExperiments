@@ -2830,6 +2830,38 @@ public sealed class JiboWebSocketServiceTests
             redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
         Assert.Equal("stop",
             redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+
+        var session = _store.FindSessionByToken("hub-stop-token");
+        Assert.NotNull(session);
+        Assert.False(session.FollowUpOpen);
+        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc.HasValue);
+        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc > DateTimeOffset.UtcNow.AddSeconds(3));
+
+        var reopenListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-stop-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-stop-reopen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        Assert.Equal(3, reopenListenReplies.Count);
+        Assert.Equal("@be/idle",
+            JsonDocument.Parse(reopenListenReplies[2].Text!).RootElement.GetProperty("data").GetProperty("match")
+                .GetProperty("skillID").GetString());
+
+        var reopenAudioReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-stop-token",
+            Binary = new byte[4096]
+        });
+
+        Assert.Empty(reopenAudioReplies);
     }
 
     [Fact]

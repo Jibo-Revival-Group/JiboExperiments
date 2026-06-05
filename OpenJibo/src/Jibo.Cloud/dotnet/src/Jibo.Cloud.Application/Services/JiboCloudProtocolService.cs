@@ -571,9 +571,18 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
     private ProtocolDispatchResult HandleGetUpdateFrom(string? subsystem, string? fromVersion, string? filter)
     {
         var update = stateStore.GetUpdateFrom(subsystem, fromVersion, filter);
-        return update is null
-            ? ProtocolDispatchResult.Ok(new { })
-            : ProtocolDispatchResult.Ok(MapUpdate(update));
+        return ProtocolDispatchResult.Ok(MapUpdate(update ?? new UpdateManifest
+        {
+            UpdateId = $"noop-update-{subsystem ?? "unknown"}-{fromVersion ?? "unknown"}",
+            FromVersion = fromVersion ?? "unknown",
+            ToVersion = fromVersion ?? "unknown",
+            Changes = "No update available",
+            Url = "https://api.jibo.com/update/noop",
+            ShaHash = "noop",
+            Length = 0,
+            Subsystem = subsystem ?? "unknown",
+            Filter = filter
+        }));
     }
 
     private static object MapUpdate(UpdateManifest update)

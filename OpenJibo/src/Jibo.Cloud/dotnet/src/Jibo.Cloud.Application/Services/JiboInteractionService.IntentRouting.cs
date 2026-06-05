@@ -90,6 +90,29 @@ public sealed partial class JiboInteractionService
             string.Equals(clientIntent, "requestWeather", StringComparison.OrdinalIgnoreCase))
             return "weather";
 
+        if (string.Equals(clientIntent, "canJiboAction", StringComparison.OrdinalIgnoreCase) &&
+            clientEntities.TryGetValue("Action", out var canAction))
+        {
+            return canAction.ToLowerInvariant() switch
+            {
+                "dream" => "robot_can_dream",
+                "exercise" => "robot_can_exercise",
+                "fly" => "robot_can_fly",
+                "learn" => "robot_can_learn",
+                "laugh" => "robot_can_laugh",
+                "read" => "robot_can_read",
+                "hear" => "robot_can_hear",
+                "talk" => "robot_can_talk",
+                "see" => "robot_can_see",
+                "wink" => "robot_can_wink",
+                "walk" => "robot_can_walk",
+                "walkdog" => "robot_can_walk_dog",
+                "watchmovie" => "robot_can_watch_movies",
+                "watchtv" => "robot_can_watch_tv",
+                _ => "chat"
+            };
+        }
+
         if (IsCancelRequest(clientIntent, loweredTranscript))
         {
             if (isAlarmValueTurn) return "alarm_cancel";
@@ -350,6 +373,90 @@ public sealed partial class JiboInteractionService
                 "sing something",
                 "would you sing"))
             return "robot_can_sing";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you walk the dog"))
+            return "robot_can_walk_dog";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you walk",
+                "are you able to walk",
+                "can you learn to walk"))
+            return "robot_can_walk";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you really watch movies",
+                "can you watch movies"))
+            return "robot_can_watch_movies";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you really watch tv",
+                "can you watch tv",
+                "can you watch television"))
+            return "robot_can_watch_tv";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you dream"))
+            return "robot_can_dream";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you exercise",
+                "do you exercise"))
+            return "robot_can_exercise";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you fly",
+                "are you able to fly"))
+            return "robot_can_fly";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you learn",
+                "are you able to learn"))
+            return "robot_can_learn";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you laugh",
+                "do you laugh"))
+            return "robot_can_laugh";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you read",
+                "do you read"))
+            return "robot_can_read";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you hear",
+                "do you hear"))
+            return "robot_can_hear";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you talk",
+                "do you talk"))
+            return "robot_can_talk";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you see",
+                "do you see"))
+            return "robot_can_see";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you wink",
+                "do you wink"))
+            return "robot_can_wink";
 
         if (IsBestFriendQuestion(loweredTranscript))
             return "robot_best_friends";

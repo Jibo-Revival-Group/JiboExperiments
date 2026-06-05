@@ -4039,6 +4039,134 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_CanYouWalk_UsesSourceBackedCanWalkReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you walk",
+            NormalizedTranscript = "can you walk"
+        });
+
+        Assert.Equal("robot_can_walk", decision.IntentName);
+        Assert.Equal("Only in my imagination.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouWalkTheDog_UsesSourceBackedCanWalkDogReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you walk the dog",
+            NormalizedTranscript = "can you walk the dog"
+        });
+
+        Assert.Equal("robot_can_walk_dog", decision.IntentName);
+        Assert.Equal("I can't walk anything.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_DoYouReallyWatchMovies_UsesSourceBackedCanWatchMoviesReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "do you really watch movies",
+            NormalizedTranscript = "do you really watch movies"
+        });
+
+        Assert.Equal("robot_can_watch_movies", decision.IntentName);
+        Assert.Contains("watch movies in a very strange roboty way", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_DoYouReallyWatchTV_UsesSourceBackedCanWatchTVReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "do you really watch tv",
+            NormalizedTranscript = "do you really watch tv"
+        });
+
+        Assert.Equal("robot_can_watch_tv", decision.IntentName);
+        Assert.Contains("watch TV in a very strange roboty way", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouDream_UsesSourceBackedCanDreamReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you dream",
+            NormalizedTranscript = "can you dream"
+        });
+
+        Assert.Equal("robot_can_dream", decision.IntentName);
+        Assert.Contains("dreams about flying", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouFly_UsesSourceBackedCanFlyReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you fly",
+            NormalizedTranscript = "can you fly"
+        });
+
+        Assert.Equal("robot_can_fly", decision.IntentName);
+        Assert.Contains("airplane", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouLearn_UsesSourceBackedCanLearnReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you learn",
+            NormalizedTranscript = "can you learn"
+        });
+
+        Assert.Equal("robot_can_learn", decision.IntentName);
+        Assert.Contains("learning comes from a combination", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanJiboAction_Wink_MapsToSourceBackedCanWinkReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you wink",
+            NormalizedTranscript = "can you wink",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "canJiboAction",
+                ["clientEntities"] = new Dictionary<string, string> { ["Action"] = "Wink" }
+            }
+        });
+
+        Assert.Equal("robot_can_wink", decision.IntentName);
+        Assert.Contains("I can wink", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_CanYouGoToSleep_UsesSourceBackedSleepReply()
     {
         var service = CreateService();

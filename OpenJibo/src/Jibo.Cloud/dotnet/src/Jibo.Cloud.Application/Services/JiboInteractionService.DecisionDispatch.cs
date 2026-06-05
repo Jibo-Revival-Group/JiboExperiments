@@ -152,6 +152,67 @@ public sealed partial class JiboInteractionService
                 "robot_search_web",
                 "can't exactly search the web",
                 "direct questions"),
+            "robot_can_walk" => BuildScriptedSupportDecision(
+                catalog.CanWalkReplies,
+                "robot_can_walk",
+                "only in my imagination",
+                "can't walk"),
+            "robot_can_walk_dog" => BuildScriptedSupportDecision(
+                catalog.CanWalkDogReplies,
+                "robot_can_walk_dog",
+                "walk anything"),
+            "robot_can_watch_movies" => BuildScriptedSupportDecision(
+                catalog.CanWatchMoviesReplies,
+                "robot_can_watch_movies",
+                "watch movies"),
+            "robot_can_watch_tv" => BuildScriptedSupportDecision(
+                catalog.CanWatchTVReplies,
+                "robot_can_watch_tv",
+                "watch TV"),
+            "robot_can_dream" => BuildScriptedSupportDecision(
+                catalog.CanDreamReplies,
+                "robot_can_dream",
+                "dreams about flying",
+                "parking meter",
+                "nightmare"),
+            "robot_can_exercise" => BuildScriptedSupportDecision(
+                catalog.CanExerciseReplies,
+                "robot_can_exercise",
+                "do exercise"),
+            "robot_can_fly" => BuildScriptedSupportDecision(
+                catalog.CanFlyReplies,
+                "robot_can_fly",
+                "fly",
+                "airplane",
+                "jetpack"),
+            "robot_can_learn" => BuildScriptedSupportDecision(
+                catalog.CanLearnReplies,
+                "robot_can_learn",
+                "learn"),
+            "robot_can_laugh" => BuildScriptedSupportDecision(
+                catalog.CanLaughReplies,
+                "robot_can_laugh",
+                "happy"),
+            "robot_can_read" => BuildScriptedSupportDecision(
+                catalog.CanReadReplies,
+                "robot_can_read",
+                "read in a robot kind of way"),
+            "robot_can_hear" => BuildScriptedSupportDecision(
+                catalog.CanHearReplies,
+                "robot_can_hear",
+                "hear, usually"),
+            "robot_can_talk" => BuildScriptedSupportDecision(
+                catalog.CanTalkReplies,
+                "robot_can_talk",
+                "trick question"),
+            "robot_can_see" => BuildScriptedSupportDecision(
+                catalog.CanSeeReplies,
+                "robot_can_see",
+                "see faces and movement"),
+            "robot_can_wink" => BuildScriptedSupportDecision(
+                catalog.CanWinkReplies,
+                "robot_can_wink",
+                "wink"),
             "request_stop_moving" => BuildScriptedStopDecision(
                 catalog.StopMovingReplies,
                 "request_stop_moving",
@@ -541,11 +602,6 @@ public sealed partial class JiboInteractionService
                 "they're a little closer to my size",
                 "i do like kids very much",
                 "the world is as funny and strange as i do"),
-            "robot_can_laugh" => BuildScriptedPersonalityDecision(
-                catalog,
-                "robot_can_laugh",
-                "i do things like this when i'm happy",
-                "i'm happy"),
             "robot_can_sleep" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_can_sleep",

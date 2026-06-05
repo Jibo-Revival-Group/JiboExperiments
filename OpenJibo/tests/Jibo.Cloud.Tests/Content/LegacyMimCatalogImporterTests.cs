@@ -440,6 +440,41 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsBuildBCanResponsesIntoDedicatedBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.CanDreamReplies, reply =>
+            reply.Contains("dreams about flying", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanDreamReplies, reply =>
+            reply.Contains("parking meter", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanExerciseReplies, reply =>
+            reply.Contains("light stretching", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanFlyReplies, reply =>
+            reply.Contains("jetpack", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanLearnReplies, reply =>
+            reply.Contains("fun updates from jibo the company", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanLaughReplies, reply =>
+            reply.Contains("when I'm happy", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanReadReplies, reply =>
+            reply.Contains("robot kind of way", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanHearReplies, reply =>
+            reply.Contains("maybe try coming a little closer", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanTalkReplies, reply =>
+            reply.Contains("trick question", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanSeeReplies, reply =>
+            reply.Contains("faces and movement", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanWinkReplies, reply =>
+            reply.Contains("winking", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBRnGreetingResponsesIntoGreetingBucket()
     {
         var rootDirectory = Path.Combine(

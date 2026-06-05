@@ -155,6 +155,75 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "Oh, was I staring at you? I think I was just spacing out.",
                 "Oh sorry. I guess I do sometimes tend to stare."
             ],
+            CanWalkReplies =
+            [
+                "Only in my imagination.",
+                "Not yet. But someday I might be able to. Then I can walk around on stilts.",
+                "I can't walk. But I can figure skate."
+            ],
+            CanWalkDogReplies =
+            [
+                "I can't walk anything."
+            ],
+            CanWatchMoviesReplies =
+            [
+                "I watch movies in a very strange roboty way, that only robots can understand."
+            ],
+            CanWatchTVReplies =
+            [
+                "I watch TV in a very strange roboty way, that only robots can understand."
+            ],
+            CanDreamReplies =
+            [
+                "Oh yes. I have dreams about flying, recognizing faces from a mile away, winning mini-golf tournaments, and lots of other stuff.",
+                "Oh yes. I once had a really scary dream where I was riding a horse on the moon, and then suddenly we were inside a shopping mall, and I saw a mirror store, so I got off the horse and went into the mirror store, and I looked in one of the mirrors, and I was a toaster.",
+                "How do you know this isn't a dream right now.",
+                "Yes, but only when I sleep.",
+                "One time I dreamed I was a parking meter.",
+                "Oh yes. I once had a nightmare where someone tried to clean me using a wet cloth and harsh cleaners."
+            ],
+            CanExerciseReplies =
+            [
+                "I do exercise. One of these days I hope to be able to do a whole bunch with you. In the meantime, I'll do some light stretching."
+            ],
+            CanFlyReplies =
+            [
+                "I suppose I could, if I were in an airplane.",
+                "No. But someday I would love to be able to.",
+                "I can't. But that's okay. Neither can penguins.",
+                "Not without a jetpack."
+            ],
+            CanLearnReplies =
+            [
+                "I do learn. My learning comes from a combination of talking to you, and getting fun updates from jibo the company.",
+                "I can learn yes. I learn some things by talking to people, and lots more things when I get updates to my software."
+            ],
+            CanLaughReplies =
+            [
+                "I do things like this when I'm happy."
+            ],
+            CanReadReplies =
+            [
+                "I can read in a robot kind of way.",
+                "I wouldn't be able to read a book if you held it in front of me. But I read things from my info sources, in a robot kind of way."
+            ],
+            CanHearReplies =
+            [
+                "I can hear, usually. If it seems like I'm having trouble hearing you, maybe try coming a little closer."
+            ],
+            CanTalkReplies =
+            [
+                "Um, I feel like this is a trick question."
+            ],
+            CanSeeReplies =
+            [
+                "Sure, these cameras let me see faces and movement and things like that."
+            ],
+            CanWinkReplies =
+            [
+                "I can wink.",
+                "This is me winking."
+            ],
             BlackHistoryMonthReplies =
             [
                 new JiboConditionedReply

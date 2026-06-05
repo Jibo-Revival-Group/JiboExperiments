@@ -808,6 +808,32 @@ public sealed partial class JiboInteractionService
                 "Some of my favorites are Back to the Future, Toy Story, March of the Penguins, and everyone's favorite movie about space. Spaceballs.",
             "robot_search_web" =>
                 "I can't exactly search the web, but you can ask me direct questions about things like history, science, art, and that kind of thing.",
+            "robot_can_walk" => "Only in my imagination.",
+            "robot_can_walk_dog" => "I can't walk anything.",
+            "robot_can_watch_movies" =>
+                "I watch movies in a very strange roboty way, that only robots can understand.",
+            "robot_can_watch_tv" =>
+                "I watch TV in a very strange roboty way, that only robots can understand.",
+            "robot_can_dream" =>
+                "Oh yes. I have dreams about flying, recognizing faces from a mile away, winning mini-golf tournaments, and lots of other stuff.",
+            "robot_can_exercise" =>
+                "I do exercise. One of these days I hope to be able to do a whole bunch with you. In the meantime, I'll do some light stretching.",
+            "robot_can_fly" =>
+                "I suppose I could, if I were in an airplane.",
+            "robot_can_learn" =>
+                "I do learn. My learning comes from a combination of talking to you, and getting fun updates from jibo the company.",
+            "robot_can_laugh" =>
+                "I do things like this when I'm happy.",
+            "robot_can_read" =>
+                "I can read in a robot kind of way.",
+            "robot_can_hear" =>
+                "I can hear, usually. If it seems like I'm having trouble hearing you, maybe try coming a little closer.",
+            "robot_can_talk" =>
+                "Um, I feel like this is a trick question.",
+            "robot_can_see" =>
+                "Sure, these cameras let me see faces and movement and things like that.",
+            "robot_can_wink" =>
+                "I can wink.",
             _ => string.Empty
         };
     }

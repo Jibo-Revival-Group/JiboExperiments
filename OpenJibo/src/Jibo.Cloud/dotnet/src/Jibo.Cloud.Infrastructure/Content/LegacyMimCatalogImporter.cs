@@ -286,6 +286,48 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("RA_JBO_StopStaring", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.StopStaring;
 
+        if (fileName.StartsWith("RI_JBO_CanWalkDog", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWalkDog;
+
+        if (fileName.StartsWith("RI_JBO_CanWalk", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWalk;
+
+        if (fileName.StartsWith("RI_JBO_CanWatchMovies", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWatchMovies;
+
+        if (fileName.StartsWith("RI_JBO_CanWatchTV", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWatchTV;
+
+        if (fileName.StartsWith("RI_JBO_CanDream", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanDream;
+
+        if (fileName.StartsWith("RI_JBO_CanExercise", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanExercise;
+
+        if (fileName.StartsWith("RI_JBO_CanFly", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanFly;
+
+        if (fileName.StartsWith("RI_JBO_CanLearn", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanLearn;
+
+        if (fileName.StartsWith("RI_JBO_CanLaugh", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanLaugh;
+
+        if (fileName.StartsWith("RI_JBO_CanRead", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanRead;
+
+        if (fileName.StartsWith("RI_JBO_CanHear", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanHear;
+
+        if (fileName.StartsWith("RI_JBO_CanTalk", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanTalk;
+
+        if (fileName.StartsWith("RI_JBO_CanSee", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanSee;
+
+        if (fileName.StartsWith("RI_JBO_CanWink", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWink;
+
         if (fileName.StartsWith("PersonalReportKickOff", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.PersonalReportKickOff;
 
@@ -375,6 +417,20 @@ public static class LegacyMimCatalogImporter
                 importedCatalog.StopMakingThatNoiseReplies),
             StopIgnoringMeReplies = Merge(baseCatalog.StopIgnoringMeReplies, importedCatalog.StopIgnoringMeReplies),
             StopStaringReplies = Merge(baseCatalog.StopStaringReplies, importedCatalog.StopStaringReplies),
+            CanWalkReplies = Merge(baseCatalog.CanWalkReplies, importedCatalog.CanWalkReplies),
+            CanWalkDogReplies = Merge(baseCatalog.CanWalkDogReplies, importedCatalog.CanWalkDogReplies),
+            CanWatchMoviesReplies = Merge(baseCatalog.CanWatchMoviesReplies, importedCatalog.CanWatchMoviesReplies),
+            CanWatchTVReplies = Merge(baseCatalog.CanWatchTVReplies, importedCatalog.CanWatchTVReplies),
+            CanDreamReplies = Merge(baseCatalog.CanDreamReplies, importedCatalog.CanDreamReplies),
+            CanExerciseReplies = Merge(baseCatalog.CanExerciseReplies, importedCatalog.CanExerciseReplies),
+            CanFlyReplies = Merge(baseCatalog.CanFlyReplies, importedCatalog.CanFlyReplies),
+            CanLearnReplies = Merge(baseCatalog.CanLearnReplies, importedCatalog.CanLearnReplies),
+            CanLaughReplies = Merge(baseCatalog.CanLaughReplies, importedCatalog.CanLaughReplies),
+            CanReadReplies = Merge(baseCatalog.CanReadReplies, importedCatalog.CanReadReplies),
+            CanHearReplies = Merge(baseCatalog.CanHearReplies, importedCatalog.CanHearReplies),
+            CanTalkReplies = Merge(baseCatalog.CanTalkReplies, importedCatalog.CanTalkReplies),
+            CanSeeReplies = Merge(baseCatalog.CanSeeReplies, importedCatalog.CanSeeReplies),
+            CanWinkReplies = Merge(baseCatalog.CanWinkReplies, importedCatalog.CanWinkReplies),
             BlackHistoryMonthReplies =
                 Merge(baseCatalog.BlackHistoryMonthReplies, importedCatalog.BlackHistoryMonthReplies),
             BlackHistoryMonthFactReplies = Merge(baseCatalog.BlackHistoryMonthFactReplies,
@@ -568,6 +624,20 @@ public static class LegacyMimCatalogImporter
         StopMakingThatNoise,
         StopIgnoringMe,
         StopStaring,
+        CanWalk,
+        CanWalkDog,
+        CanWatchMovies,
+        CanWatchTV,
+        CanDream,
+        CanExercise,
+        CanFly,
+        CanLearn,
+        CanLaugh,
+        CanRead,
+        CanHear,
+        CanTalk,
+        CanSee,
+        CanWink,
         BackupHow,
         RestoreHow,
         UpdateNext,
@@ -681,6 +751,20 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _stopMakingThatNoiseReplies = [];
         private readonly List<string> _stopMovingReplies = [];
         private readonly List<string> _stopStaringReplies = [];
+        private readonly List<string> _canWalkReplies = [];
+        private readonly List<string> _canWalkDogReplies = [];
+        private readonly List<string> _canWatchMoviesReplies = [];
+        private readonly List<string> _canWatchTVReplies = [];
+        private readonly List<string> _canDreamReplies = [];
+        private readonly List<string> _canExerciseReplies = [];
+        private readonly List<string> _canFlyReplies = [];
+        private readonly List<string> _canLearnReplies = [];
+        private readonly List<string> _canLaughReplies = [];
+        private readonly List<string> _canReadReplies = [];
+        private readonly List<string> _canHearReplies = [];
+        private readonly List<string> _canTalkReplies = [];
+        private readonly List<string> _canSeeReplies = [];
+        private readonly List<string> _canWinkReplies = [];
         private readonly List<string> _storyReplies = [];
         private readonly List<string> _updateLastReplies = [];
         private readonly List<string> _updateNextReplies = [];
@@ -767,6 +851,48 @@ public static class LegacyMimCatalogImporter
                     return;
                 case LegacyMimBucket.StopStaring:
                     AddDistinct(_stopStaringReplies, text);
+                    return;
+                case LegacyMimBucket.CanWalk:
+                    AddDistinct(_canWalkReplies, text);
+                    return;
+                case LegacyMimBucket.CanWalkDog:
+                    AddDistinct(_canWalkDogReplies, text);
+                    return;
+                case LegacyMimBucket.CanWatchMovies:
+                    AddDistinct(_canWatchMoviesReplies, text);
+                    return;
+                case LegacyMimBucket.CanWatchTV:
+                    AddDistinct(_canWatchTVReplies, text);
+                    return;
+                case LegacyMimBucket.CanDream:
+                    AddDistinct(_canDreamReplies, text);
+                    return;
+                case LegacyMimBucket.CanExercise:
+                    AddDistinct(_canExerciseReplies, text);
+                    return;
+                case LegacyMimBucket.CanFly:
+                    AddDistinct(_canFlyReplies, text);
+                    return;
+                case LegacyMimBucket.CanLearn:
+                    AddDistinct(_canLearnReplies, text);
+                    return;
+                case LegacyMimBucket.CanLaugh:
+                    AddDistinct(_canLaughReplies, text);
+                    return;
+                case LegacyMimBucket.CanRead:
+                    AddDistinct(_canReadReplies, text);
+                    return;
+                case LegacyMimBucket.CanHear:
+                    AddDistinct(_canHearReplies, text);
+                    return;
+                case LegacyMimBucket.CanTalk:
+                    AddDistinct(_canTalkReplies, text);
+                    return;
+                case LegacyMimBucket.CanSee:
+                    AddDistinct(_canSeeReplies, text);
+                    return;
+                case LegacyMimBucket.CanWink:
+                    AddDistinct(_canWinkReplies, text);
                     return;
                 case LegacyMimBucket.BackupHow:
                     AddDistinct(_backupHowReplies, text);
@@ -953,6 +1079,20 @@ public static class LegacyMimCatalogImporter
                 StopMakingThatNoiseReplies = [.. _stopMakingThatNoiseReplies],
                 StopIgnoringMeReplies = [.. _stopIgnoringMeReplies],
                 StopStaringReplies = [.. _stopStaringReplies],
+                CanWalkReplies = [.. _canWalkReplies],
+                CanWalkDogReplies = [.. _canWalkDogReplies],
+                CanWatchMoviesReplies = [.. _canWatchMoviesReplies],
+                CanWatchTVReplies = [.. _canWatchTVReplies],
+                CanDreamReplies = [.. _canDreamReplies],
+                CanExerciseReplies = [.. _canExerciseReplies],
+                CanFlyReplies = [.. _canFlyReplies],
+                CanLearnReplies = [.. _canLearnReplies],
+                CanLaughReplies = [.. _canLaughReplies],
+                CanReadReplies = [.. _canReadReplies],
+                CanHearReplies = [.. _canHearReplies],
+                CanTalkReplies = [.. _canTalkReplies],
+                CanSeeReplies = [.. _canSeeReplies],
+                CanWinkReplies = [.. _canWinkReplies],
                 BlackHistoryMonthReplies = [.. _blackHistoryMonthReplies],
                 BlackHistoryMonthFactReplies = [.. _blackHistoryMonthFactReplies],
                 BackupHowReplies = [.. _backupHowReplies],

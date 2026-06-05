@@ -901,7 +901,8 @@ Current release theme:
   - self-description charm like `what's your name`, `do you have a nickname`, `do you like being Jibo`, and `what is your favorite name`
   - deeper personality follow-ups like `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` stays deferred until templated placeholder rendering exists
   - the next identity / knowledge wave adds `are you god`, `are you here`, `do you have super powers`, `how much do you know`, `what does jibo mean`, `where do you get info`, `what are you forbidden to do`, `what color are you`, and `what do you do when alone`
-  - additional legacy source-backed `RI_USR` prompts where the text is short and the behavior is easy to verify
+- additional legacy source-backed `RI_USR` prompts where the text is short and the behavior is easy to verify
+- the new `Can...` batch adds dream, exercise, fly, learn, laugh, read, hear, talk, see, and wink prompts so the capability lane keeps getting more of Pegasus's playful personality
   - templated edge cases like `what is your sign`, `how many people do you know`, and `what is the loop` where live birthday and loop state are part of the line instead of a plain canned response
 - Exit criteria:
   - a stable checklist exists for the original persona surface

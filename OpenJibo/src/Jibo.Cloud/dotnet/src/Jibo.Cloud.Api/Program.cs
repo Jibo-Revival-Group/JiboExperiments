@@ -1,6 +1,5 @@
 using System.Net.WebSockets;
 using System.Text;
-using System.Text.Json;
 using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
@@ -26,7 +25,7 @@ app.Use(async (context, next) =>
     }
 
     var kind = SocketKindResolver.Resolve(context.Request.Host.Host, context.Request.Path);
-    var token = ResolveToken(context.Request);
+    var token = TokenResolver.Resolve(context.Request);
     switch (kind)
     {
         case "unknown":
@@ -90,7 +89,7 @@ app.Use(async (context, next) =>
 
         var replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);
         var session = ResolveSession(webSocketService, envelope);
-        await telemetrySink.RecordInboundAsync(envelope, session, ReadMessageType(envelope.Text),
+        await telemetrySink.RecordInboundAsync(envelope, session, SocketMessageTypeReader.Read(envelope.Text),
             context.RequestAborted);
         foreach (var reply in replies)
         {
@@ -128,7 +127,7 @@ app.MapGet("/health", () => Results.Json(new
 app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,
     IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>
 {
-    var envelope = await BuildEnvelopeAsync(context, cancellationToken);
+    var envelope = await ApiRequestEnvelopeFactory.CreateAsync(context, cancellationToken);
     var result = await service.DispatchAsync(envelope, cancellationToken);
     await telemetrySink.RecordAsync(envelope, result, cancellationToken);
 
@@ -156,64 +155,6 @@ static async Task<ReceivedSocketMessage> ReceiveAsync(WebSocket socket, Cancella
     } while (!result.EndOfMessage);
 
     return new ReceivedSocketMessage(result.MessageType, ms.ToArray());
-}
-
-static async Task<ProtocolEnvelope> BuildEnvelopeAsync(HttpContext context, CancellationToken cancellationToken)
-{
-    context.Request.EnableBuffering();
-
-    using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, false, leaveOpen: true);
-    var bodyText = await reader.ReadToEndAsync(cancellationToken);
-    context.Request.Body.Position = 0;
-
-    var target = context.Request.Headers["X-Amz-Target"].ToString();
-    var targetParts = target.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
-
-    return new ProtocolEnvelope
-    {
-        RequestId = Guid.NewGuid().ToString("N"),
-        Transport = "http",
-        Method = context.Request.Method,
-        HostName = context.Request.Host.Host,
-        Path = context.Request.Path.Value ?? "/",
-        ServicePrefix = targetParts.Length > 0 ? targetParts[0] : null,
-        Operation = targetParts.Length > 1 ? targetParts[1] : null,
-        DeviceId = context.Request.Headers["X-Jibo-RobotId"].ToString(),
-        CorrelationId = context.TraceIdentifier,
-        FirmwareVersion = context.Request.Headers["X-OpenJibo-Firmware"].ToString(),
-        ApplicationVersion = context.Request.Headers["X-OpenJibo-AppVersion"].ToString(),
-        BodyText = bodyText,
-        Headers = context.Request.Headers.ToDictionary(pair => pair.Key, pair => pair.Value.ToString(),
-            StringComparer.OrdinalIgnoreCase)
-    };
-}
-
-static string? ResolveToken(HttpRequest request)
-{
-    var auth = request.Headers.Authorization.ToString();
-    if (auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return auth["Bearer ".Length..].Trim();
-
-    var path = request.Path.Value;
-    if (!string.IsNullOrWhiteSpace(path) && path.Length > 1) return path.Trim('/');
-
-    return null;
-}
-
-static string ReadMessageType(string? text)
-{
-    if (string.IsNullOrWhiteSpace(text)) return "BINARY_OR_EMPTY";
-
-    try
-    {
-        using var document = JsonDocument.Parse(text);
-        return document.RootElement.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String
-            ? type.GetString() ?? "UNKNOWN"
-            : "UNKNOWN";
-    }
-    catch
-    {
-        return "TEXT";
-    }
 }
 
 static CloudSession ResolveSession(JiboWebSocketService webSocketService, WebSocketMessageEnvelope envelope)

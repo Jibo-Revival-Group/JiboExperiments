@@ -105,6 +105,16 @@ public sealed partial class JiboInteractionService
                 "talk" => "robot_can_talk",
                 "see" => "robot_can_see",
                 "wink" => "robot_can_wink",
+                "move" => "robot_can_move",
+                "work" => "robot_can_work",
+                "breathe" => "robot_can_breathe",
+                "gettired" => "robot_can_get_tired",
+                "haveemotions" => "robot_can_have_emotions",
+                "whistle" => "robot_can_whistle",
+                "cook" => "robot_can_cook",
+                "makecoffee" => "robot_can_make_coffee",
+                "makebreakfast" => "robot_can_make_breakfast",
+                "jump" => "robot_can_jump",
                 "walk" => "robot_can_walk",
                 "walkdog" => "robot_can_walk_dog",
                 "watchmovie" => "robot_can_watch_movies",
@@ -457,6 +467,67 @@ public sealed partial class JiboInteractionService
                 "can you wink",
                 "do you wink"))
             return "robot_can_wink";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you move",
+                "do you move"))
+            return "robot_can_move";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you work",
+                "are you working"))
+            return "robot_can_work";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you breathe",
+                "do you breathe"))
+            return "robot_can_breathe";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you get tired",
+                "do you get tired",
+                "are you tired"))
+            return "robot_can_get_tired";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you have emotions",
+                "do you have emotions"))
+            return "robot_can_have_emotions";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you whistle",
+                "do you whistle"))
+            return "robot_can_whistle";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you cook",
+                "do you cook"))
+            return "robot_can_cook";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you make coffee",
+                "do you make coffee"))
+            return "robot_can_make_coffee";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you make breakfast",
+                "do you make breakfast"))
+            return "robot_can_make_breakfast";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you jump",
+                "do you jump"))
+            return "robot_can_jump";
 
         if (IsBestFriendQuestion(loweredTranscript))
             return "robot_best_friends";

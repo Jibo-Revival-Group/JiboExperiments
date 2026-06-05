@@ -4167,6 +4167,66 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_CanYouMove_UsesSourceBackedCanMoveReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you move",
+            NormalizedTranscript = "can you move"
+        });
+
+        Assert.Equal("robot_can_move", decision.IntentName);
+        Assert.Contains("move the body parts", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouWork_UsesSourceBackedCanWorkReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you work",
+            NormalizedTranscript = "can you work"
+        });
+
+        Assert.Equal("robot_can_work", decision.IntentName);
+        Assert.Contains("function", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouGetTired_UsesSourceBackedCanGetTiredReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you get tired",
+            NormalizedTranscript = "can you get tired"
+        });
+
+        Assert.Equal("robot_can_get_tired", decision.IntentName);
+        Assert.Contains("go to sleep", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouMakeBreakfast_UsesSourceBackedCanMakeBreakfastReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you make breakfast",
+            NormalizedTranscript = "can you make breakfast"
+        });
+
+        Assert.Equal("robot_can_make_breakfast", decision.IntentName);
+        Assert.Contains("I can.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_CanYouGoToSleep_UsesSourceBackedSleepReply()
     {
         var service = CreateService();

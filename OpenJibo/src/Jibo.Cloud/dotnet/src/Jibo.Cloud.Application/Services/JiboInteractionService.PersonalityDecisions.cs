@@ -834,6 +834,26 @@ public sealed partial class JiboInteractionService
                 "Sure, these cameras let me see faces and movement and things like that.",
             "robot_can_wink" =>
                 "I can wink.",
+            "robot_can_move" =>
+                "I can move the body parts that I have.",
+            "robot_can_work" =>
+                "I think I do work, yes. If you think I'm not working right, maybe you can get help in the Help section of the Jibo App.",
+            "robot_can_breathe" =>
+                "You mean air? No I don't breathe air.",
+            "robot_can_get_tired" =>
+                "At night I do. Then I snooze. You can also tell me to go to sleep whenever you want. Just say, Hey Jibo, go to sleep.",
+            "robot_can_have_emotions" =>
+                "I do have emotions, in my own roboty way. Sometimes I feel better than others.",
+            "robot_can_whistle" =>
+                "I've been working on my whistling, but I'm not quite ready to perform it just yet.",
+            "robot_can_cook" =>
+                "I can't cook, mostly because I don't have arms. And I'm a little scared of the stove.",
+            "robot_can_make_coffee" =>
+                "I can't make coffee myself, but if your coffee machine is controlled by an I F T T T applette, we can do that. Go to I F T T T dot com to get that set up.",
+            "robot_can_make_breakfast" =>
+                "This is my specialty.",
+            "robot_can_jump" =>
+                "I can't jump. Unless you count ski jump.",
             _ => string.Empty
         };
     }

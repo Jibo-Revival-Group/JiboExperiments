@@ -328,6 +328,36 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("RI_JBO_CanWink", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.CanWink;
 
+        if (fileName.StartsWith("RI_JBO_CanMove", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanMove;
+
+        if (fileName.StartsWith("RI_JBO_CanWork", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWork;
+
+        if (fileName.StartsWith("RI_JBO_CanBreathe", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanBreathe;
+
+        if (fileName.StartsWith("RI_JBO_CanGetTired", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanGetTired;
+
+        if (fileName.StartsWith("RI_JBO_CanHaveEmotions", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanHaveEmotions;
+
+        if (fileName.StartsWith("RI_JBO_CanWhistle", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWhistle;
+
+        if (fileName.StartsWith("RI_JBO_CanCook", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanCook;
+
+        if (fileName.StartsWith("RI_JBO_CanMakeCoffee", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanMakeCoffee;
+
+        if (fileName.StartsWith("RI_JBO_CanMakeBreakfast", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanMakeBreakfast;
+
+        if (fileName.StartsWith("RI_JBO_CanJump", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanJump;
+
         if (fileName.StartsWith("PersonalReportKickOff", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.PersonalReportKickOff;
 
@@ -431,6 +461,16 @@ public static class LegacyMimCatalogImporter
             CanTalkReplies = Merge(baseCatalog.CanTalkReplies, importedCatalog.CanTalkReplies),
             CanSeeReplies = Merge(baseCatalog.CanSeeReplies, importedCatalog.CanSeeReplies),
             CanWinkReplies = Merge(baseCatalog.CanWinkReplies, importedCatalog.CanWinkReplies),
+            CanMoveReplies = Merge(baseCatalog.CanMoveReplies, importedCatalog.CanMoveReplies),
+            CanWorkReplies = Merge(baseCatalog.CanWorkReplies, importedCatalog.CanWorkReplies),
+            CanBreatheReplies = Merge(baseCatalog.CanBreatheReplies, importedCatalog.CanBreatheReplies),
+            CanGetTiredReplies = Merge(baseCatalog.CanGetTiredReplies, importedCatalog.CanGetTiredReplies),
+            CanHaveEmotionsReplies = Merge(baseCatalog.CanHaveEmotionsReplies, importedCatalog.CanHaveEmotionsReplies),
+            CanWhistleReplies = Merge(baseCatalog.CanWhistleReplies, importedCatalog.CanWhistleReplies),
+            CanCookReplies = Merge(baseCatalog.CanCookReplies, importedCatalog.CanCookReplies),
+            CanMakeCoffeeReplies = Merge(baseCatalog.CanMakeCoffeeReplies, importedCatalog.CanMakeCoffeeReplies),
+            CanMakeBreakfastReplies = Merge(baseCatalog.CanMakeBreakfastReplies, importedCatalog.CanMakeBreakfastReplies),
+            CanJumpReplies = Merge(baseCatalog.CanJumpReplies, importedCatalog.CanJumpReplies),
             BlackHistoryMonthReplies =
                 Merge(baseCatalog.BlackHistoryMonthReplies, importedCatalog.BlackHistoryMonthReplies),
             BlackHistoryMonthFactReplies = Merge(baseCatalog.BlackHistoryMonthFactReplies,
@@ -638,6 +678,16 @@ public static class LegacyMimCatalogImporter
         CanTalk,
         CanSee,
         CanWink,
+        CanMove,
+        CanWork,
+        CanBreathe,
+        CanGetTired,
+        CanHaveEmotions,
+        CanWhistle,
+        CanCook,
+        CanMakeCoffee,
+        CanMakeBreakfast,
+        CanJump,
         BackupHow,
         RestoreHow,
         UpdateNext,
@@ -765,6 +815,16 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _canTalkReplies = [];
         private readonly List<string> _canSeeReplies = [];
         private readonly List<string> _canWinkReplies = [];
+        private readonly List<string> _canMoveReplies = [];
+        private readonly List<string> _canWorkReplies = [];
+        private readonly List<string> _canBreatheReplies = [];
+        private readonly List<string> _canGetTiredReplies = [];
+        private readonly List<string> _canHaveEmotionsReplies = [];
+        private readonly List<string> _canWhistleReplies = [];
+        private readonly List<string> _canCookReplies = [];
+        private readonly List<string> _canMakeCoffeeReplies = [];
+        private readonly List<string> _canMakeBreakfastReplies = [];
+        private readonly List<string> _canJumpReplies = [];
         private readonly List<string> _storyReplies = [];
         private readonly List<string> _updateLastReplies = [];
         private readonly List<string> _updateNextReplies = [];
@@ -893,6 +953,36 @@ public static class LegacyMimCatalogImporter
                     return;
                 case LegacyMimBucket.CanWink:
                     AddDistinct(_canWinkReplies, text);
+                    return;
+                case LegacyMimBucket.CanMove:
+                    AddDistinct(_canMoveReplies, text);
+                    return;
+                case LegacyMimBucket.CanWork:
+                    AddDistinct(_canWorkReplies, text);
+                    return;
+                case LegacyMimBucket.CanBreathe:
+                    AddDistinct(_canBreatheReplies, text);
+                    return;
+                case LegacyMimBucket.CanGetTired:
+                    AddDistinct(_canGetTiredReplies, text);
+                    return;
+                case LegacyMimBucket.CanHaveEmotions:
+                    AddDistinct(_canHaveEmotionsReplies, text);
+                    return;
+                case LegacyMimBucket.CanWhistle:
+                    AddDistinct(_canWhistleReplies, text);
+                    return;
+                case LegacyMimBucket.CanCook:
+                    AddDistinct(_canCookReplies, text);
+                    return;
+                case LegacyMimBucket.CanMakeCoffee:
+                    AddDistinct(_canMakeCoffeeReplies, text);
+                    return;
+                case LegacyMimBucket.CanMakeBreakfast:
+                    AddDistinct(_canMakeBreakfastReplies, text);
+                    return;
+                case LegacyMimBucket.CanJump:
+                    AddDistinct(_canJumpReplies, text);
                     return;
                 case LegacyMimBucket.BackupHow:
                     AddDistinct(_backupHowReplies, text);
@@ -1093,6 +1183,16 @@ public static class LegacyMimCatalogImporter
                 CanTalkReplies = [.. _canTalkReplies],
                 CanSeeReplies = [.. _canSeeReplies],
                 CanWinkReplies = [.. _canWinkReplies],
+                CanMoveReplies = [.. _canMoveReplies],
+                CanWorkReplies = [.. _canWorkReplies],
+                CanBreatheReplies = [.. _canBreatheReplies],
+                CanGetTiredReplies = [.. _canGetTiredReplies],
+                CanHaveEmotionsReplies = [.. _canHaveEmotionsReplies],
+                CanWhistleReplies = [.. _canWhistleReplies],
+                CanCookReplies = [.. _canCookReplies],
+                CanMakeCoffeeReplies = [.. _canMakeCoffeeReplies],
+                CanMakeBreakfastReplies = [.. _canMakeBreakfastReplies],
+                CanJumpReplies = [.. _canJumpReplies],
                 BlackHistoryMonthReplies = [.. _blackHistoryMonthReplies],
                 BlackHistoryMonthFactReplies = [.. _blackHistoryMonthFactReplies],
                 BackupHowReplies = [.. _backupHowReplies],

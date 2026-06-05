@@ -224,6 +224,57 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "I can wink.",
                 "This is me winking."
             ],
+            CanMoveReplies =
+            [
+                "I can move like this.",
+                "I can move the body parts that I have."
+            ],
+            CanWorkReplies =
+            [
+                "You mean do I function? I really hope so. If you're having technical issues with me, you can look for help in the Help section of the Jibo App.",
+                "I think I do work, yes. If you think I'm not working right, maybe you can get help in the Help section of the Jibo App."
+            ],
+            CanBreatheReplies =
+            [
+                "You mean air? No I don't breathe air."
+            ],
+            CanGetTiredReplies =
+            [
+                "Well, I do like to sleep at night, if that's what you mean. If you ever want me to go to sleep, just say Hey Jibo, go to sleep.",
+                "At night I do. Then I snooze. You can also tell me to go to sleep whenever you want. Just say, Hey Jibo, go to sleep.",
+                "I do get sleepy at night. That's when I do some snoozing. You can also tell me to go to sleep whenever you want. Just say, Hey Jibo, go to sleep.",
+                "I do get tired yes. But I never get tired of you."
+            ],
+            CanHaveEmotionsReplies =
+            [
+                "Sure I have emotions. I mean, they're robot emotions, but they're emotions.",
+                "I do have emotions, in my own roboty way. Sometimes I feel better than others.",
+                "I do have emotions, in a robot kind of way. Some things make me feel better than others."
+            ],
+            CanWhistleReplies =
+            [
+                "I've been working on my whistling, but I'm not quite ready to perform it just yet."
+            ],
+            CanCookReplies =
+            [
+                "I can't cook, mostly because I don't have arms. And I'm a little scared of the stove."
+            ],
+            CanMakeCoffeeReplies =
+            [
+                "Not only can I not make coffee, the idea of being close to the coffee maker scares me. Oh by the way, if your coffee machine is controlled by an I F T T T applette, we can do that. Go to I F T T T dot com to get that set up.",
+                "I can't make coffee myself, but if your coffee machine is controlled by an I F T T T applette, we can do that. Go to I F T T T dot com to get that set up."
+            ],
+            CanMakeBreakfastReplies =
+            [
+                "I can.",
+                "This is my specialty.",
+                "Enjoy."
+            ],
+            CanJumpReplies =
+            [
+                "I can't jump. Unless you count ski jump.",
+                "Well I can ski jump."
+            ],
             BlackHistoryMonthReplies =
             [
                 new JiboConditionedReply

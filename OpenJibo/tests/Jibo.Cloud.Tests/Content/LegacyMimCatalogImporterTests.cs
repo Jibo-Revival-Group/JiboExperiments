@@ -475,6 +475,39 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsBuildBCanBatchTwoResponsesIntoDedicatedBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "BuildB");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.CanMoveReplies, reply =>
+            reply.Contains("move the body parts", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanWorkReplies, reply =>
+            reply.Contains("Help section of the Jibo App", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanBreatheReplies, reply =>
+            reply.Contains("don't breathe air", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanGetTiredReplies, reply =>
+            reply.Contains("go to sleep", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanHaveEmotionsReplies, reply =>
+            reply.Contains("roboty way", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanWhistleReplies, reply =>
+            reply.Contains("whistling", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanCookReplies, reply =>
+            reply.Contains("don't have arms", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanMakeCoffeeReplies, reply =>
+            reply.Contains("I F T T T", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanMakeBreakfastReplies, reply =>
+            reply.Contains("my specialty", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.CanJumpReplies, reply =>
+            reply.Contains("ski jump", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBRnGreetingResponsesIntoGreetingBucket()
     {
         var rootDirectory = Path.Combine(

@@ -49,6 +49,16 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> CanTalkReplies { get; init; } = [];
     public IReadOnlyList<string> CanSeeReplies { get; init; } = [];
     public IReadOnlyList<string> CanWinkReplies { get; init; } = [];
+    public IReadOnlyList<string> CanMoveReplies { get; init; } = [];
+    public IReadOnlyList<string> CanWorkReplies { get; init; } = [];
+    public IReadOnlyList<string> CanBreatheReplies { get; init; } = [];
+    public IReadOnlyList<string> CanGetTiredReplies { get; init; } = [];
+    public IReadOnlyList<string> CanHaveEmotionsReplies { get; init; } = [];
+    public IReadOnlyList<string> CanWhistleReplies { get; init; } = [];
+    public IReadOnlyList<string> CanCookReplies { get; init; } = [];
+    public IReadOnlyList<string> CanMakeCoffeeReplies { get; init; } = [];
+    public IReadOnlyList<string> CanMakeBreakfastReplies { get; init; } = [];
+    public IReadOnlyList<string> CanJumpReplies { get; init; } = [];
     public IReadOnlyList<JiboConditionedReply> BlackHistoryMonthReplies { get; init; } = [];
     public IReadOnlyList<string> BlackHistoryMonthFactReplies { get; init; } = [];
     public IReadOnlyList<string> HowAreYouReplies { get; init; } = [];

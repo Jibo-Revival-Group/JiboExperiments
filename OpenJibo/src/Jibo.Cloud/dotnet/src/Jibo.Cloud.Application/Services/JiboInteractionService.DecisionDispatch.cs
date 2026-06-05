@@ -213,6 +213,49 @@ public sealed partial class JiboInteractionService
                 catalog.CanWinkReplies,
                 "robot_can_wink",
                 "wink"),
+            "robot_can_move" => BuildScriptedSupportDecision(
+                catalog.CanMoveReplies,
+                "robot_can_move",
+                "move the body parts"),
+            "robot_can_work" => BuildScriptedSupportDecision(
+                catalog.CanWorkReplies,
+                "robot_can_work",
+                "function",
+                "working right"),
+            "robot_can_breathe" => BuildScriptedSupportDecision(
+                catalog.CanBreatheReplies,
+                "robot_can_breathe",
+                "breathe air"),
+            "robot_can_get_tired" => BuildScriptedSupportDecision(
+                catalog.CanGetTiredReplies,
+                "robot_can_get_tired",
+                "sleep at night",
+                "go to sleep"),
+            "robot_can_have_emotions" => BuildScriptedSupportDecision(
+                catalog.CanHaveEmotionsReplies,
+                "robot_can_have_emotions",
+                "robot emotions"),
+            "robot_can_whistle" => BuildScriptedSupportDecision(
+                catalog.CanWhistleReplies,
+                "robot_can_whistle",
+                "whistling"),
+            "robot_can_cook" => BuildScriptedSupportDecision(
+                catalog.CanCookReplies,
+                "robot_can_cook",
+                "cook"),
+            "robot_can_make_coffee" => BuildScriptedSupportDecision(
+                catalog.CanMakeCoffeeReplies,
+                "robot_can_make_coffee",
+                "make coffee"),
+            "robot_can_make_breakfast" => BuildScriptedSupportDecision(
+                catalog.CanMakeBreakfastReplies,
+                "robot_can_make_breakfast",
+                "breakfast"),
+            "robot_can_jump" => BuildScriptedSupportDecision(
+                catalog.CanJumpReplies,
+                "robot_can_jump",
+                "jump",
+                "ski jump"),
             "request_stop_moving" => BuildScriptedStopDecision(
                 catalog.StopMovingReplies,
                 "request_stop_moving",

@@ -1,6 +1,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
@@ -24,7 +25,7 @@ app.Use(async (context, next) =>
         return;
     }
 
-    var kind = ResolveSocketKind(context.Request.Host.Host, context.Request.Path);
+    var kind = SocketKindResolver.Resolve(context.Request.Host.Host, context.Request.Path);
     var token = ResolveToken(context.Request);
     switch (kind)
     {
@@ -185,25 +186,6 @@ static async Task<ProtocolEnvelope> BuildEnvelopeAsync(HttpContext context, Canc
         Headers = context.Request.Headers.ToDictionary(pair => pair.Key, pair => pair.Value.ToString(),
             StringComparer.OrdinalIgnoreCase)
     };
-}
-
-static string ResolveSocketKind(string host, PathString path)
-{
-    if (host.Equals("api-socket.jibo.com", StringComparison.OrdinalIgnoreCase)) return "api-socket";
-
-    if (host.Equals("neo-hub.jibo.com", StringComparison.OrdinalIgnoreCase) &&
-        path.StartsWithSegments("/v1/proactive"))
-        return "neo-hub-proactive";
-
-    if (host.Equals("neo-hub.jibo.com", StringComparison.OrdinalIgnoreCase)) return "neo-hub-listen";
-
-    if (host.Equals("openjibo.com", StringComparison.OrdinalIgnoreCase) ||
-        host.Equals("openjibo.ai", StringComparison.OrdinalIgnoreCase) ||
-        host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
-        return "openjibo";
-
-    return
-        "neo-hub-listen"; // now it assumes all unknown requests are neo-hub. I did this so that people with custom listen servers (like myself) won't get a bunch of 404 messages when doing a HJ request. -ZaneDev (an awful programmer)
 }
 
 static string? ResolveToken(HttpRequest request)

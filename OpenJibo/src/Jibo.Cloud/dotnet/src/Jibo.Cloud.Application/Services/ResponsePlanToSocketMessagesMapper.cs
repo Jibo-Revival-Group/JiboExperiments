@@ -200,7 +200,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             {
                 type = "EOS",
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                msgID = CreateHubMessageId(),
+                msgID = CloudMessageIdFactory.CreateHubMessageId(),
                 transID = transId,
                 data = new { }
             }))
@@ -352,7 +352,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             {
                 type = "EOS",
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                msgID = CreateHubMessageId(),
+                msgID = CloudMessageIdFactory.CreateHubMessageId(),
                 transID = transId,
                 data = new { }
             })),
@@ -397,7 +397,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             {
                 type = "EOS",
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                msgID = CreateHubMessageId(),
+                msgID = CloudMessageIdFactory.CreateHubMessageId(),
                 transID = transId,
                 data = new { }
             }))
@@ -745,7 +745,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (listenContexts.Count > 0)
             jcpConfig["listen"] = new
             {
-                id = CreateProtocolId(),
+                id = CloudMessageIdFactory.CreateProtocolId(),
                 type = "LISTEN",
                 contexts = listenContexts
             };
@@ -832,7 +832,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             type = "SKILL_ACTION",
             ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            msgID = CreateHubMessageId(),
+            msgID = CloudMessageIdFactory.CreateHubMessageId(),
             transID = transId,
             data = new
             {
@@ -900,7 +900,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             type = "SKILL_ACTION",
             ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            msgID = CreateHubMessageId(),
+            msgID = CloudMessageIdFactory.CreateHubMessageId(),
             transID = transId,
             data = new
             {
@@ -945,7 +945,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             type = "SKILL_ACTION",
             ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            msgID = CreateHubMessageId(),
+            msgID = CloudMessageIdFactory.CreateHubMessageId(),
             transID = transId,
             data = new
             {
@@ -995,7 +995,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             type = "SKILL_REDIRECT",
             ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            msgID = CreateHubMessageId(),
+            msgID = CloudMessageIdFactory.CreateHubMessageId(),
             transID = transId,
             data = new
             {
@@ -1442,16 +1442,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                       bool.TryParse(jsonText.GetString(), out var parsed) => parsed,
             _ => false
         };
-    }
-
-    private static string CreateHubMessageId()
-    {
-        return $"mid-{Guid.NewGuid()}";
-    }
-
-    private static string CreateProtocolId()
-    {
-        return Guid.NewGuid().ToString("N");
     }
 
     private sealed record WeatherHiLoSequenceCard(

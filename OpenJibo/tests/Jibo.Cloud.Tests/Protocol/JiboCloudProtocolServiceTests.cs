@@ -49,7 +49,7 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
-    public async Task GetUpdateFrom_WithoutStagedUpdate_ReturnsNoopUpdatePayload()
+    public async Task GetUpdateFrom_WithoutStagedUpdate_ReturnsNoContent()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -60,16 +60,9 @@ public sealed class JiboCloudProtocolServiceTests
             BodyText = """{"subsystem":"robot","fromVersion":"1.0.0"}"""
         });
 
-        using var payload = JsonDocument.Parse(result.BodyText);
-        Assert.Equal(200, result.StatusCode);
-        Assert.Equal(JsonValueKind.Object, payload.RootElement.ValueKind);
-        Assert.StartsWith("noop-update-", payload.RootElement.GetProperty("_id").GetString());
-        Assert.Equal("1.0.0", payload.RootElement.GetProperty("fromVersion").GetString());
-        Assert.Equal("1.0.0", payload.RootElement.GetProperty("toVersion").GetString());
-        Assert.Equal("No update available", payload.RootElement.GetProperty("changes").GetString());
-        Assert.Equal("https://api.jibo.com/update/noop", payload.RootElement.GetProperty("url").GetString());
-        Assert.Equal("noop", payload.RootElement.GetProperty("shaHash").GetString());
-        Assert.Equal("robot", payload.RootElement.GetProperty("subsystem").GetString());
+        Assert.Equal(204, result.StatusCode);
+        Assert.Equal(string.Empty, result.BodyText);
+        Assert.Equal("text/plain", result.ContentType);
     }
 
     [Fact]

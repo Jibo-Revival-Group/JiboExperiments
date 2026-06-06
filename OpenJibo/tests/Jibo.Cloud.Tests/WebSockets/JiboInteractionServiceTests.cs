@@ -3612,6 +3612,26 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_YesNoFollowUp_MixedReplyRequestsClarification()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "no yes",
+            NormalizedTranscript = "no yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenRules"] = (string[])["settings/download_now_later"],
+                ["listenAsrHints"] = (string[])["$YESNO"]
+            }
+        });
+
+        Assert.Equal("yes_no_clarify", decision.IntentName);
+        Assert.Equal("I heard both yes and no. Could you say that again?", decision.ReplyText);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_SharedYesNoPrompt_MapsShortAffirmationToYesIntent()
     {
         var service = CreateService();

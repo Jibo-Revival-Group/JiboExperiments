@@ -299,6 +299,7 @@ public sealed partial class JiboInteractionService
                 "How long should I set the timer for?"),
             "alarm_clarify" => BuildClockClarifyDecision("alarm_clarify", "alarm",
                 "What time should I set the alarm for?"),
+            "yes_no_clarify" => BuildYesNoClarifyDecision(),
             "photo_gallery" => BuildPhotoGalleryLaunchDecision(),
             "snapshot" => BuildPhotoCreateDecision("snapshot", "Taking a picture.", "createOnePhoto"),
             "photobooth" => BuildPhotoCreateDecision("photobooth", "Starting photobooth.", "createSomePhotos"),

@@ -233,26 +233,7 @@ public sealed partial class JiboInteractionService
         var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (tokens.Length == 0) return YesNoReply.None;
 
-        if (YesNoNegativeLeadTokens.Contains(tokens[0])) return YesNoReply.Negative;
-
-        if (YesNoAffirmativeLeadTokens.Contains(tokens[0])) return YesNoReply.Affirmative;
-
-        var leadingTwo = tokens.Length >= 2 ? $"{tokens[0]} {tokens[1]}" : null;
-        if (leadingTwo is not null)
-        {
-            if (YesNoNegativeLeadPhrases.Contains(leadingTwo)) return YesNoReply.Negative;
-
-            if (YesNoAffirmativeLeadPhrases.Contains(leadingTwo)) return YesNoReply.Affirmative;
-        }
-
-        var leadingThree = tokens.Length >= 3 ? $"{tokens[0]} {tokens[1]} {tokens[2]}" : null;
-        if (leadingThree is null) return TryClassifyTrailingYesNoReply(tokens);
-
-        if (YesNoNegativeLeadPhrases.Contains(leadingThree)) return YesNoReply.Negative;
-
-        return YesNoAffirmativeLeadPhrases.Contains(leadingThree)
-            ? YesNoReply.Affirmative
-            : TryClassifyTrailingYesNoReply(tokens);
+        return TryClassifyTrailingYesNoReply(tokens);
     }
 
     private static bool TryTrimLeadingAcknowledgement(string normalizedTranscript, out string trimmedTranscript)
@@ -284,6 +265,8 @@ public sealed partial class JiboInteractionService
     {
         var selectedReply = YesNoReply.None;
         var selectedIndex = -1;
+        var sawAffirmative = false;
+        var sawNegative = false;
 
         for (var index = 0; index < tokens.Length; index += 1)
         {
@@ -321,7 +304,9 @@ public sealed partial class JiboInteractionService
             if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 2);
         }
 
-        return selectedReply;
+        return sawAffirmative && sawNegative
+            ? YesNoReply.Ambiguous
+            : selectedReply;
 
         void Consider(YesNoReply candidateReply, int candidateIndex)
         {
@@ -329,6 +314,8 @@ public sealed partial class JiboInteractionService
 
             selectedReply = candidateReply;
             selectedIndex = candidateIndex;
+            if (candidateReply == YesNoReply.Affirmative) sawAffirmative = true;
+            else if (candidateReply == YesNoReply.Negative) sawNegative = true;
         }
     }
 
@@ -1922,7 +1909,8 @@ public sealed partial class JiboInteractionService
     {
         None = 0,
         Affirmative = 1,
-        Negative = 2
+        Negative = 2,
+        Ambiguous = 3
     }
 
     private sealed record WeatherForecastCardSegment(

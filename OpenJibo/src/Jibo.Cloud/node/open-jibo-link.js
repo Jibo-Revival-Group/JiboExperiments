@@ -1034,28 +1034,10 @@
           };
         }
 
-        const fromVersion = parsed?.fromVersion || "unknown";
-        const subsystem = parsed?.subsystem || "unknown";
-        const filter = parsed?.filter || null;
-        const created = Date.now();
-
         return {
-          statusCode: 200,
-          note: "Returned placeholder no-op update",
-          body: {
-            _id: `noop-update-${subsystem}-${fromVersion}`,
-            created,
-            accountId: state.account.id,
-            fromVersion,
-            toVersion: fromVersion,
-            changes: "No update available",
-            url: "https://api.jibo.com/update/noop",
-            shaHash: "noop",
-            length: 0,
-            subsystem,
-            filter,
-            dependencies: {}
-          }
+          statusCode: 204,
+          note: "No update available",
+          body: null
         };
       }
 

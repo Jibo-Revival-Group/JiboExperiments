@@ -57,6 +57,8 @@ public sealed partial class JiboInteractionService
                     return ResolveAffirmativeYesNoIntent(yesNoRule);
                 case YesNoReply.Negative:
                     return ResolveNegativeYesNoIntent(yesNoRule);
+                case YesNoReply.Ambiguous:
+                    return "yes_no_clarify";
             }
         }
 

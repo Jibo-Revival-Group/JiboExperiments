@@ -138,6 +138,13 @@ public sealed partial class JiboInteractionService
             });
     }
 
+    private static JiboInteractionDecision BuildYesNoClarifyDecision()
+    {
+        return new JiboInteractionDecision(
+            "yes_no_clarify",
+            "I heard both yes and no. Could you say that again?");
+    }
+
     private static JiboInteractionDecision BuildTimerValueDecision(
         string loweredTranscript,
         bool allowImplicit,

@@ -1035,9 +1035,22 @@
         }
 
         return {
-          statusCode: 204,
+          statusCode: 200,
           note: "No update available",
-          body: null
+          body: normalizeUpdate({
+            _id: `noop-update-${parsed?.subsystem || "unknown"}-${parsed?.fromVersion || "unknown"}`,
+            created: Date.now(),
+            accountId: state.account.id,
+            fromVersion: parsed?.fromVersion || "unknown",
+            toVersion: parsed?.fromVersion || "unknown",
+            changes: "No update available",
+            url: "https://api.jibo.com/update/noop",
+            shaHash: "noop",
+            length: 0,
+            subsystem: parsed?.subsystem || "unknown",
+            filter: parsed?.filter || null,
+            dependencies: {}
+          })
         };
       }
 

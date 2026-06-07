@@ -69,7 +69,8 @@
 
       media: [],
 
-      updates: []
+      updates: [],
+      backups: []
       
     };
 
@@ -833,12 +834,47 @@
       };
     }
 
-    function handleBackupOperation(operation) {
+    function normalizeBackup(backup) {
+      return {
+        modified: backup.modified,
+        etag: backup.etag,
+        size: backup.size ?? "0",
+        location: {
+          expires: backup.location?.expires,
+          url: backup.location?.url
+        }
+      };
+    }
+
+    function handleBackupOperation(operation, parsed) {
       if (operation === "List") {
         return {
           statusCode: 200,
-          note: "No backups available",
-          body: []
+          note: `Returned ${state.backups.length} backups`,
+          body: state.backups.map(normalizeBackup)
+        };
+      }
+
+      if (operation === "New") {
+        const created = nowIso();
+        const backupId = `backup-${Date.now()}`;
+        const backup = {
+          modified: created,
+          etag: backupId,
+          size: "0",
+          location: {
+            expires: created,
+            url: `https://api.jibo.com/backup/${backupId}`
+          },
+          loopId: parsed?.loopId || null
+        };
+        state.backups.push(backup);
+        return {
+          statusCode: 200,
+          note: "Created backup upload URL",
+          body: {
+            uploadUrl: `https://api.jibo.com/upload/backup/${backupId}`
+          }
         };
       }
 

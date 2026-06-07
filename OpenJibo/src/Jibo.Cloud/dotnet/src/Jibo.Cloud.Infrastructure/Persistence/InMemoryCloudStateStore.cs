@@ -482,10 +482,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _backups.ToArray();
     }
 
-    public BackupRecord CreateBackup(string name)
+    public BackupRecord CreateBackup(string loopId, string name)
     {
         var backup = new BackupRecord
         {
+            LoopId = string.IsNullOrWhiteSpace(loopId) ? null : loopId.Trim(),
             Name = string.IsNullOrWhiteSpace(name) ? "backup" : name.Trim()
         };
 

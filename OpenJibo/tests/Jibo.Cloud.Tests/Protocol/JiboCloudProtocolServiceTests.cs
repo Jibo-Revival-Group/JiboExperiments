@@ -71,6 +71,60 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task BackupList_WithoutBackups_ReturnsEmptyList()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Backup_20170222",
+            Operation = "List",
+            BodyText = """{"loopId":"loop-123"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(JsonValueKind.Array, payload.RootElement.ValueKind);
+        Assert.Empty(payload.RootElement.EnumerateArray());
+    }
+
+    [Fact]
+    public async Task BackupNew_ReturnsUploadUrl_AndListIncludesBackup()
+    {
+        var create = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Backup_20170222",
+            Operation = "New",
+            BodyText = """{"loopId":"loop-123"}"""
+        });
+
+        using var createPayload = JsonDocument.Parse(create.BodyText);
+        Assert.Equal(200, create.StatusCode);
+        var uploadUrl = createPayload.RootElement.GetProperty("uploadUrl").GetString();
+        Assert.NotNull(uploadUrl);
+        Assert.Contains("/upload/backup/", uploadUrl);
+
+        var list = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Backup_20170222",
+            Operation = "List",
+            BodyText = """{"loopId":"loop-123"}"""
+        });
+
+        using var listPayload = JsonDocument.Parse(list.BodyText);
+        Assert.Equal(200, list.StatusCode);
+        Assert.NotEmpty(listPayload.RootElement.EnumerateArray());
+        var item = listPayload.RootElement.EnumerateArray().First();
+        Assert.True(item.TryGetProperty("location", out var location));
+        Assert.Contains("/backup/", location.GetProperty("url").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(location.GetProperty("expires").GetString()));
+    }
+
+    [Fact]
     public async Task PutEventsAsync_ReturnsUploadUrl()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope
@@ -343,7 +397,7 @@ public sealed class JiboCloudProtocolServiceTests
                 item => item.GetProperty("changes").GetString() == "Restore proof");
             Assert.NotEmpty(backupsPayload.RootElement.EnumerateArray());
             Assert.Contains(backupsPayload.RootElement.EnumerateArray(),
-                item => item.TryGetProperty("Name", out var name) && name.GetString() == "manual-backup");
+                item => item.GetProperty("location").GetProperty("url").GetString()!.Contains("/backup/", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {

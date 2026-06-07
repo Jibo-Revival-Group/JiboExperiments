@@ -408,17 +408,31 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
     private ProtocolDispatchResult HandleBackup(string operation, ProtocolEnvelope envelope)
     {
         if (operation.Equals("List", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(stateStore.GetBackups());
+            return ProtocolDispatchResult.Ok(stateStore.GetBackups().Select(MapBackup).ToArray());
+
+        if (operation.Equals("New", StringComparison.OrdinalIgnoreCase))
+        {
+            var body = envelope.TryParseBody();
+            var loopId = ReadString(body, "loopId") ?? stateStore.GetLoops()[0].LoopId;
+            var backupName = ReadString(body, "name") ?? ReadString(body, "backupName")
+                ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}";
+            var backup = stateStore.CreateBackup(loopId, backupName);
+            return ProtocolDispatchResult.Ok(new
+            {
+                uploadUrl = $"https://api.jibo.com/upload/backup/{backup.BackupId}"
+            });
+        }
 
         if (!operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
         {
             return ProtocolDispatchResult.Ok(Array.Empty<object>());
         }
 
-        var body = envelope.TryParseBody();
-        var requestedName = ReadString(body, "name") ?? ReadString(body, "backupName");
+        var createBody = envelope.TryParseBody();
+        var requestedName = ReadString(createBody, "name") ?? ReadString(createBody, "backupName");
+        var createLoopId = ReadString(createBody, "loopId") ?? stateStore.GetLoops()[0].LoopId;
         return ProtocolDispatchResult.Ok(
-            stateStore.CreateBackup(requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"));
+            MapBackup(stateStore.CreateBackup(createLoopId, requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}")));
 
     }
 
@@ -606,6 +620,21 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             subsystem = update.Subsystem,
             filter = update.Filter,
             dependencies = new Dictionary<string, object?>()
+        };
+    }
+
+    private static object MapBackup(BackupRecord backup)
+    {
+        return new
+        {
+            modified = backup.CreatedUtc.ToString("O"),
+            etag = backup.BackupId,
+            size = "0",
+            location = new
+            {
+                expires = backup.CreatedUtc.AddHours(1).ToString("O"),
+                url = $"https://api.jibo.com/backup/{backup.BackupId}"
+            }
         };
     }
 

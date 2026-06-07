@@ -124,6 +124,12 @@ Current release theme:
   - Test 26 suggests this should be investigated beside robot-local scheduler status and log/upload load rather than only hosted backup APIs
   - `jibo test 30` showed the backup announcement after gallery came from local `@be/surprises` -> `@be/surprises-ota`, not from a hosted `Backup_*` HTTP call; the local `@be/idle` nighttime OTA helper can also initiate backup through `jibo.scheduler.backupRobot`
   - `jibo test 31` added a startup `Backup_20170222.List` capture before the voice session, which is useful evidence that the legacy backup-status path is active even when the user did not ask for backup
+- Parity plan:
+  - keep the current cloud `GetUpdateFrom` noop-object compatibility only as a short-term updater bridge
+  - add robot-local scheduler/status behavior that matches the original contracts instead of asking the cloud manifest to model menu state
+  - model the original paths separately: `backupStatus` as boolean, `downloadStatus` as null-or-progress object, and `checkForUpdates` as an `updates[]` response
+  - let the update menu decide among `backup`, `downloading`, `updates`, and `none` using those local status calls
+  - keep the robot updater path compatible with `jibo-get-update` / `jibo-download-update` until the robot-side caller is fixed
 - Exit criteria:
   - spoken `yes` and `no` work on update, backup, share/offer, and gallery/create prompts
   - empty or missed short replies retry locally instead of relaunching Nimbus or generic chat

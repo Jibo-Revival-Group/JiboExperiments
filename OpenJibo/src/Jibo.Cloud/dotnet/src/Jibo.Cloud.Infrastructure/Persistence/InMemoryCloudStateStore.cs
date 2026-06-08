@@ -363,7 +363,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         return ListUpdates(subsystem, filter)
             .FirstOrDefault(update =>
-                fromVersion is null || update.FromVersion.Equals(fromVersion, StringComparison.OrdinalIgnoreCase));
+                IsUpdateNewerThanRequest(update.ToVersion, fromVersion));
     }
 
     public UpdateManifest CreateUpdate(string? fromVersion, string? toVersion, string? changes, string? shaHash,
@@ -812,6 +812,21 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             UpdatedUtc = DateTimeOffset.UtcNow
         };
         TouchState();
+    }
+
+    private static bool IsUpdateNewerThanRequest(string candidateVersion, string? fromVersion)
+    {
+        if (string.IsNullOrWhiteSpace(fromVersion)) return true;
+
+        if (string.IsNullOrWhiteSpace(candidateVersion)) return false;
+
+        if (Version.TryParse(candidateVersion, out var candidate) &&
+            Version.TryParse(fromVersion, out var requested))
+        {
+            return candidate > requested;
+        }
+
+        return string.Compare(candidateVersion, fromVersion, StringComparison.OrdinalIgnoreCase) > 0;
     }
 
     private void TouchState()

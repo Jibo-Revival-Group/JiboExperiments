@@ -2230,9 +2230,7 @@ public sealed class JiboWebSocketServiceTests
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
         Assert.Single(rules.EnumerateArray());
         var selectedRule = rules[0].GetString();
-        Assert.True(
-            string.Equals(selectedRule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(selectedRule, "shared/yes_no", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("surprises-date/offer_date_fact", selectedRule);
         Assert.Equal(selectedRule,
             listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
         Assert.Empty(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
@@ -4357,10 +4355,10 @@ public sealed class JiboWebSocketServiceTests
             Assert.Equal("proactive_offer_pizza_fact",
                 offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
                     .GetString());
-            Assert.Equal("shared/yes_no",
+            Assert.Equal("surprises-date/offer_date_fact",
                 offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0]
                     .GetString());
-            Assert.Equal("shared/yes_no",
+            Assert.Equal("surprises-date/offer_date_fact",
                 offerListenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule")
                     .GetString());
         }
@@ -4378,7 +4376,8 @@ public sealed class JiboWebSocketServiceTests
             Assert.Equal("question",
                 jcpConfig.GetProperty("play").GetProperty("meta").GetProperty("mim_type").GetString());
             Assert.Equal("LISTEN", jcpConfig.GetProperty("listen").GetProperty("type").GetString());
-            Assert.Equal("shared/yes_no", jcpConfig.GetProperty("listen").GetProperty("contexts")[0].GetString());
+            Assert.Equal("surprises-date/offer_date_fact",
+                jcpConfig.GetProperty("listen").GetProperty("contexts")[0].GetString());
         }
 
         var session = _store.FindSessionByToken(token);
@@ -4462,7 +4461,7 @@ public sealed class JiboWebSocketServiceTests
             Assert.Equal("proactive_offer_pizza_fact",
                 offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
                     .GetString());
-            Assert.Equal("shared/yes_no",
+            Assert.Equal("surprises-date/offer_date_fact",
                 offerListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0]
                     .GetString());
         }

@@ -108,7 +108,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                                 ? clientIntent
                                                 : transcript;
         var outboundRules = isProactivePizzaFactOffer
-            ? ["shared/yes_no"]
+            ? ["surprises-date/offer_date_fact"]
             : isWordOfDayLaunch
                 ? ["word-of-the-day/menu"]
                 : isGlobalCommand

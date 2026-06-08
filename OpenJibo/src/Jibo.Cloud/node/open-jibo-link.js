@@ -1265,13 +1265,41 @@
       };
     }
 
+    function compareVersionStrings(left, right) {
+      const leftParts = String(left || "").split(".").map((part) => Number.parseInt(part, 10));
+      const rightParts = String(right || "").split(".").map((part) => Number.parseInt(part, 10));
+      const maxLength = Math.max(leftParts.length, rightParts.length);
+
+      for (let index = 0; index < maxLength; index += 1) {
+        const leftPart = Number.isFinite(leftParts[index]) ? leftParts[index] : 0;
+        const rightPart = Number.isFinite(rightParts[index]) ? rightParts[index] : 0;
+        if (leftPart !== rightPart) return leftPart - rightPart;
+      }
+
+      return 0;
+    }
+
+    function isVersionNewer(candidateVersion, fromVersion) {
+      if (!fromVersion) return true;
+      if (!candidateVersion) return false;
+
+      const left = String(candidateVersion || "").trim();
+      const right = String(fromVersion || "").trim();
+      if (!left || !right) return false;
+
+      const comparable = left.includes(".") || right.includes(".");
+      if (comparable) return compareVersionStrings(left, right) > 0;
+
+      return left.localeCompare(right, undefined, { sensitivity: "base" }) > 0;
+    }
+
     function findMatchingUpdates(parsed) {
       const fromVersion = parsed?.fromVersion || null;
       const subsystem = parsed?.subsystem || null;
       const filter = parsed?.filter || null;
 
       return state.updates.filter((u) => {
-        if (fromVersion && u.fromVersion !== fromVersion) return false;
+        if (fromVersion && !isVersionNewer(u.toVersion, fromVersion)) return false;
         if (subsystem && u.subsystem !== subsystem) return false;
         if (filter && u.filter !== filter) return false;
         return true;

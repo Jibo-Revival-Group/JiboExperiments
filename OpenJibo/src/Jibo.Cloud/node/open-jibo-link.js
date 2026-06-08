@@ -70,7 +70,15 @@
       media: [],
 
       updates: [],
-      backups: []
+      backups: [],
+      scheduler: {
+        backingUp: false,
+        backingBeforeUpdate: false,
+        downloadStatus: null,
+        downloadedIds: [],
+        activeFilter: null,
+        downloadTimers: []
+      }
       
     };
 
@@ -846,6 +854,181 @@
       };
     }
 
+    function normalizeSchedulerUpdate(update) {
+      return {
+        id: update._id,
+        subsystem: update.subsystem,
+        changes: update.changes,
+        length: update.length,
+        toVersion: update.toVersion,
+        dependencies: update.dependencies || {},
+        downloaded: Boolean(update.downloaded)
+      };
+    }
+
+    function listSchedulerUpdates(filter) {
+      return state.updates
+        .filter((update) => {
+          if (!filter) return true;
+          return (
+            String(update.subsystem || "").toLowerCase() === String(filter).toLowerCase() ||
+            String(update.filter || "").toLowerCase() === String(filter).toLowerCase()
+          );
+        })
+        .map(normalizeSchedulerUpdate);
+    }
+
+    function isSchedulerUpdateDownloaded(updateId) {
+      return state.scheduler.downloadedIds.includes(updateId);
+    }
+
+    function normalizeSchedulerLiveUpdates(filter) {
+      return state.updates
+        .filter((update) => {
+          if (!filter) return true;
+          return (
+            String(update.subsystem || "").toLowerCase() === String(filter).toLowerCase() ||
+            String(update.filter || "").toLowerCase() === String(filter).toLowerCase()
+          );
+        })
+        .map((update) => ({
+          ...normalizeSchedulerUpdate(update),
+          downloaded: isSchedulerUpdateDownloaded(update._id)
+        }));
+    }
+
+    function clearSchedulerTimers() {
+      for (const timer of state.scheduler.downloadTimers) {
+        clearTimeout(timer);
+      }
+      state.scheduler.downloadTimers = [];
+    }
+
+    function startSchedulerUpdateCycle(filter) {
+      if (
+        state.scheduler.backingUp ||
+        state.scheduler.backingBeforeUpdate ||
+        state.scheduler.downloadStatus
+      ) {
+        return;
+      }
+
+      state.scheduler.backingUp = true;
+      state.scheduler.backingBeforeUpdate = true;
+      state.scheduler.activeFilter = filter || null;
+      state.scheduler.downloadedIds = [];
+      clearSchedulerTimers();
+
+      const backupTimer = setTimeout(() => {
+        const pendingUpdates = state.updates.filter((update) => {
+          if (!filter) return true;
+          return (
+            String(update.subsystem || "").toLowerCase() === String(filter).toLowerCase() ||
+            String(update.filter || "").toLowerCase() === String(filter).toLowerCase()
+          );
+        });
+
+        state.scheduler.backingUp = false;
+        state.scheduler.backingBeforeUpdate = false;
+
+        if (pendingUpdates.length === 0) {
+          state.scheduler.downloadStatus = null;
+          return;
+        }
+
+        state.scheduler.downloadStatus = {
+          updates: pendingUpdates.map((update) => normalizeSchedulerUpdate(update)),
+          status: {
+            id: pendingUpdates[0]._id,
+            length: pendingUpdates[0].length || 1000,
+            received: 0,
+            status: "downloading"
+          }
+        };
+
+        let index = 0;
+        const runNextDownload = () => {
+          if (index >= pendingUpdates.length) {
+            const finishTimer = setTimeout(() => {
+              state.scheduler.downloadStatus = null;
+              state.scheduler.downloadTimers = state.scheduler.downloadTimers.filter((timer) => timer !== finishTimer);
+            }, 150);
+            state.scheduler.downloadTimers.push(finishTimer);
+            return;
+          }
+
+          const update = pendingUpdates[index];
+          const length = update.length || 1000;
+          let received = 0;
+
+          const tick = () => {
+            received = Math.min(length, received + Math.max(100, Math.floor(length / 4)));
+            if (state.scheduler.downloadStatus) {
+              state.scheduler.downloadStatus.status = {
+                id: update._id,
+                length,
+                received,
+                status: "downloading"
+              };
+            }
+
+            if (received < length) {
+              const nextTick = setTimeout(tick, 100);
+              state.scheduler.downloadTimers.push(nextTick);
+              return;
+            }
+
+            if (!state.scheduler.downloadedIds.includes(update._id)) {
+              state.scheduler.downloadedIds.push(update._id);
+            }
+
+            if (state.scheduler.downloadStatus) {
+              state.scheduler.downloadStatus.updates[index] = {
+                ...state.scheduler.downloadStatus.updates[index],
+                downloaded: true
+              };
+              state.scheduler.downloadStatus.status = {
+                id: update._id,
+                length,
+                received: length,
+                status: "finished"
+              };
+            }
+
+            index += 1;
+            const nextUpdateTimer = setTimeout(runNextDownload, 100);
+            state.scheduler.downloadTimers.push(nextUpdateTimer);
+          };
+
+          tick();
+        };
+
+        runNextDownload();
+      }, 250);
+
+      state.scheduler.downloadTimers.push(backupTimer);
+    }
+
+    function startSchedulerBackupCycle() {
+      if (
+        state.scheduler.backingUp ||
+        state.scheduler.backingBeforeUpdate ||
+        state.scheduler.downloadStatus
+      ) {
+        return;
+      }
+
+      state.scheduler.backingUp = true;
+      clearSchedulerTimers();
+
+      const backupTimer = setTimeout(() => {
+        state.scheduler.backingUp = false;
+        state.scheduler.downloadTimers = state.scheduler.downloadTimers.filter((timer) => timer !== backupTimer);
+      }, 250);
+
+      state.scheduler.downloadTimers.push(backupTimer);
+    }
+
     function handleBackupOperation(operation, parsed) {
       if (operation === "List") {
         return {
@@ -883,6 +1066,72 @@
         note: "Default backup handler",
         body: []
       };
+    }
+
+    function handleSchedulerPath(record, parsed) {
+      const path = record.url || "";
+      const filter = path.startsWith("/update/") ? decodeURIComponent(path.slice("/update/".length)) : null;
+
+      if (record.method === "GET" && (path === "/update" || path.startsWith("/update/"))) {
+        return {
+          statusCode: 200,
+          note: "Returned scheduler update list",
+          body: {
+            updates: normalizeSchedulerLiveUpdates(filter)
+          }
+        };
+      }
+
+      if (record.method === "POST" && path === "/backup-status") {
+        return {
+          statusCode: 200,
+          note: "Returned backup status",
+          body: {
+            status: "OK",
+            data: state.scheduler.backingUp || state.scheduler.backingBeforeUpdate
+          }
+        };
+      }
+
+      if (record.method === "POST" && path === "/download-status") {
+        return {
+          statusCode: 200,
+          note: "Returned download status",
+          body: {
+            status: "OK",
+            data: state.scheduler.downloadStatus
+          }
+        };
+      }
+
+      if (record.method === "POST" && path === "/check-updates") {
+        const schedulerFilter = parsed?.filter || null;
+        return {
+          statusCode: 200,
+          note: "Returned scheduler updates",
+          body: {
+            status: "OK",
+            data: normalizeSchedulerLiveUpdates(schedulerFilter)
+          }
+        };
+      }
+
+      if (record.method === "POST" && (path === "/backup-robot" || path === "/ota-update")) {
+        if (path === "/backup-robot") {
+          startSchedulerBackupCycle();
+        } else {
+          startSchedulerUpdateCycle(parsed?.filter || null);
+        }
+        return {
+          statusCode: 200,
+          note: "Acknowledged scheduler action",
+          body: {
+            status: "OK"
+          }
+        };
+      }
+
+      return null;
     }
 
     function handleKeyOperation(operation, parsed) {
@@ -1241,6 +1490,11 @@
           note: "Health check",
           body: { ok: true, host }
         };
+      }
+
+      const schedulerPath = handleSchedulerPath(record, parsed);
+      if (schedulerPath) {
+        return schedulerPath;
       }
 
       if (host !== "api.jibo.com") {

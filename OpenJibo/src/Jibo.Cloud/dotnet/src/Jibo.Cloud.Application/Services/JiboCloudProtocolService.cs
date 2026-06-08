@@ -8,15 +8,22 @@ namespace Jibo.Cloud.Application.Services;
 
 public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMediaContentStore? mediaContentStore = null)
 {
+    private const int SchedulerBackupDelayMs = 250;
+    private const int SchedulerDownloadTickMs = 100;
+    private const int SchedulerDownloadFinishDelayMs = 150;
+
     private static readonly string[] AcceptedHosts =
     [
         "api.jibo.com",
         "openjibo.com",
         "openjibo.ai",
-        "localhost"
+        "localhost",
+        "127.0.0.1"
     ];
 
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
+    private readonly object _schedulerLock = new();
+    private readonly SchedulerRuntimeState _schedulerState = new();
 
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope,
         CancellationToken cancellationToken = default)
@@ -33,6 +40,9 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
             envelope.Path.StartsWith("/media/", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleMediaContent(envelope));
+
+        if (TryHandleLocalSchedulerRequest(envelope, out var schedulerResult))
+            return Task.FromResult(schedulerResult);
 
         if (envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) &&
             (envelope.Path.Equals("/upload/asr-binary", StringComparison.OrdinalIgnoreCase) ||
@@ -588,6 +598,309 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         return ProtocolDispatchResult.Ok(MapUpdate(update ?? BuildNoopUpdate(subsystem, fromVersion, filter)));
     }
 
+    private static string? ReadSchedulerFilterFromPath(string path)
+    {
+        const string prefix = "/update/";
+        if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || path.Length <= prefix.Length)
+            return null;
+
+        return Uri.UnescapeDataString(path[prefix.Length..]);
+    }
+
+    private bool TryHandleLocalSchedulerRequest(ProtocolEnvelope envelope, out ProtocolDispatchResult result)
+    {
+        result = ProtocolDispatchResult.Ok(new { });
+
+        if (string.IsNullOrWhiteSpace(envelope.Path) || !string.IsNullOrWhiteSpace(envelope.ServicePrefix))
+            return false;
+
+        if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
+            envelope.Path.StartsWith("/update", StringComparison.OrdinalIgnoreCase))
+        {
+            var filter = ReadSchedulerFilterFromPath(envelope.Path);
+            result = ProtocolDispatchResult.Ok(new
+            {
+                updates = ListSchedulerUpdates(filter)
+            });
+            return true;
+        }
+
+        if (!envelope.Method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (envelope.Path.Equals("/backup-status", StringComparison.OrdinalIgnoreCase))
+        {
+            result = ProtocolDispatchResult.Ok(new
+            {
+                status = "OK",
+                data = GetSchedulerBackupStatus()
+            });
+            return true;
+        }
+
+        if (envelope.Path.Equals("/download-status", StringComparison.OrdinalIgnoreCase))
+        {
+            result = ProtocolDispatchResult.Ok(new
+            {
+                status = "OK",
+                data = GetSchedulerDownloadStatus()
+            });
+            return true;
+        }
+
+        if (envelope.Path.Equals("/check-updates", StringComparison.OrdinalIgnoreCase))
+        {
+            var body = envelope.TryParseBody();
+            var filter = ReadString(body, "filter");
+            result = ProtocolDispatchResult.Ok(new
+            {
+                status = "OK",
+                data = ListSchedulerUpdates(filter)
+            });
+            return true;
+        }
+
+        if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase) ||
+            envelope.Path.Equals("/ota-update", StringComparison.OrdinalIgnoreCase))
+        {
+            if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase))
+                StartSchedulerBackupCycle();
+            else
+                StartSchedulerUpdateCycle(ReadSchedulerFilterFromPath(envelope.Path));
+
+            result = ProtocolDispatchResult.Ok(new
+            {
+                status = "OK"
+            });
+            return true;
+        }
+
+        return false;
+    }
+
+    private object[] ListSchedulerUpdates(string? filter)
+    {
+        return stateStore.ListUpdates()
+            .Where(update =>
+                string.IsNullOrWhiteSpace(filter) ||
+                update.Subsystem.Equals(filter, StringComparison.OrdinalIgnoreCase) ||
+                (update.Filter is not null &&
+                 update.Filter.Equals(filter, StringComparison.OrdinalIgnoreCase)))
+            .Select(update => MapSchedulerUpdate(update, IsSchedulerUpdateDownloaded(update.UpdateId)))
+            .ToArray();
+    }
+
+    private bool GetSchedulerBackupStatus()
+    {
+        lock (_schedulerLock)
+            return _schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate;
+    }
+
+    private object? GetSchedulerDownloadStatus()
+    {
+        lock (_schedulerLock)
+        {
+            if (_schedulerState.DownloadStatus is null) return null;
+
+            return new
+            {
+                updates = _schedulerState.DownloadStatus.Updates
+                    .Select(update => MapSchedulerUpdate(update, _schedulerState.DownloadedUpdateIds.Contains(update.Id)))
+                    .ToArray(),
+                status = _schedulerState.DownloadStatus.Status is null
+                    ? null
+                    : new
+                    {
+                        id = _schedulerState.DownloadStatus.Status.Id,
+                        length = _schedulerState.DownloadStatus.Status.Length,
+                        received = _schedulerState.DownloadStatus.Status.Received,
+                        status = _schedulerState.DownloadStatus.Status.Status,
+                        reason = _schedulerState.DownloadStatus.Status.Reason,
+                        error = _schedulerState.DownloadStatus.Status.Error
+                    }
+            };
+        }
+    }
+
+    private void StartSchedulerUpdateCycle(string? filter)
+    {
+        lock (_schedulerLock)
+        {
+            if (_schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate || _schedulerState.DownloadStatus is not null)
+                return;
+
+            _schedulerState.BackingUp = true;
+            _schedulerState.BackingBeforeUpdate = true;
+            _schedulerState.ActiveFilter = filter;
+            _schedulerState.DownloadedUpdateIds.Clear();
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(SchedulerBackupDelayMs).ConfigureAwait(false);
+
+                var pendingUpdates = stateStore.ListUpdates()
+                    .Where(update =>
+                        string.IsNullOrWhiteSpace(filter) ||
+                        update.Subsystem.Equals(filter, StringComparison.OrdinalIgnoreCase) ||
+                        (update.Filter is not null &&
+                         update.Filter.Equals(filter, StringComparison.OrdinalIgnoreCase)))
+                    .ToArray();
+
+                lock (_schedulerLock)
+                {
+                    _schedulerState.BackingUp = false;
+                    _schedulerState.BackingBeforeUpdate = false;
+
+                    _schedulerState.DownloadStatus = pendingUpdates.Length == 0
+                        ? null
+                        : new SchedulerDownloadState
+                        {
+                            Updates = pendingUpdates.Select(update => new SchedulerUpdateState
+                            {
+                                Id = update.UpdateId,
+                                Subsystem = update.Subsystem,
+                                Changes = update.Changes,
+                                Length = update.Length,
+                                ToVersion = update.ToVersion,
+                                Dependencies = new Dictionary<string, object?>(),
+                                Downloaded = false
+                            }).ToArray(),
+                            Status = new SchedulerDownloadProgress
+                            {
+                                Id = pendingUpdates[0].UpdateId,
+                                Length = pendingUpdates[0].Length,
+                                Received = 0,
+                                Status = "downloading"
+                            }
+                        };
+                }
+
+                if (pendingUpdates.Length == 0) return;
+
+                for (var i = 0; i < pendingUpdates.Length; i++)
+                {
+                    var update = pendingUpdates[i];
+                    var updateLength = update.Length > 0 ? update.Length : 1000;
+                    var received = 0L;
+
+                    while (received < updateLength)
+                    {
+                        await Task.Delay(SchedulerDownloadTickMs).ConfigureAwait(false);
+                        received = Math.Min(updateLength, received + Math.Max(100L, updateLength / 4));
+                        lock (_schedulerLock)
+                        {
+                            if (_schedulerState.DownloadStatus is not null)
+                            {
+                                _schedulerState.DownloadStatus.Status = new SchedulerDownloadProgress
+                                {
+                                    Id = update.UpdateId,
+                                    Length = updateLength,
+                                    Received = received,
+                                    Status = "downloading"
+                                };
+                            }
+                        }
+                    }
+
+                    lock (_schedulerLock)
+                    {
+                        _schedulerState.DownloadedUpdateIds.Add(update.UpdateId);
+                        if (_schedulerState.DownloadStatus is not null)
+                        {
+                            _schedulerState.DownloadStatus.Updates[i] =
+                                _schedulerState.DownloadStatus.Updates[i] with { Downloaded = true };
+                            _schedulerState.DownloadStatus.Status = new SchedulerDownloadProgress
+                            {
+                                Id = update.UpdateId,
+                                Length = updateLength,
+                                Received = updateLength,
+                                Status = "finished"
+                            };
+                        }
+                    }
+                }
+
+                await Task.Delay(SchedulerDownloadFinishDelayMs).ConfigureAwait(false);
+                lock (_schedulerLock)
+                {
+                    _schedulerState.DownloadStatus = null;
+                }
+            }
+            catch
+            {
+                lock (_schedulerLock)
+                {
+                    _schedulerState.BackingUp = false;
+                    _schedulerState.BackingBeforeUpdate = false;
+                    _schedulerState.DownloadStatus = null;
+                }
+            }
+        });
+    }
+
+    private void StartSchedulerBackupCycle()
+    {
+        lock (_schedulerLock)
+        {
+            if (_schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate || _schedulerState.DownloadStatus is not null)
+                return;
+
+            _schedulerState.BackingUp = true;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(SchedulerBackupDelayMs).ConfigureAwait(false);
+            }
+            finally
+            {
+                lock (_schedulerLock)
+                {
+                    _schedulerState.BackingUp = false;
+                }
+            }
+        });
+    }
+
+    private bool IsSchedulerUpdateDownloaded(string updateId)
+    {
+        lock (_schedulerLock)
+            return _schedulerState.DownloadedUpdateIds.Contains(updateId);
+    }
+
+    private static object MapSchedulerUpdate(UpdateManifest update, bool downloaded)
+    {
+        return new
+        {
+            id = update.UpdateId,
+            subsystem = update.Subsystem,
+            changes = update.Changes,
+            length = update.Length,
+            toVersion = update.ToVersion,
+            dependencies = new Dictionary<string, object?>(),
+            downloaded
+        };
+    }
+
+    private static object MapSchedulerUpdate(SchedulerUpdateState update, bool downloaded)
+    {
+        return new
+        {
+            id = update.Id,
+            subsystem = update.Subsystem,
+            changes = update.Changes,
+            length = update.Length,
+            toVersion = update.ToVersion,
+            dependencies = update.Dependencies ?? new Dictionary<string, object?>(),
+            downloaded
+        };
+    }
+
     private static UpdateManifest BuildNoopUpdate(string? subsystem, string? fromVersion, string? filter)
     {
         return new UpdateManifest
@@ -636,6 +949,42 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
                 url = $"https://api.jibo.com/backup/{backup.BackupId}"
             }
         };
+    }
+
+    private sealed class SchedulerRuntimeState
+    {
+        public bool BackingUp { get; set; }
+        public bool BackingBeforeUpdate { get; set; }
+        public string? ActiveFilter { get; set; }
+        public SchedulerDownloadState? DownloadStatus { get; set; }
+        public HashSet<string> DownloadedUpdateIds { get; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private sealed class SchedulerDownloadState
+    {
+        public SchedulerUpdateState[] Updates { get; set; } = [];
+        public SchedulerDownloadProgress? Status { get; set; }
+    }
+
+    private sealed record SchedulerUpdateState
+    {
+        public string Id { get; init; } = string.Empty;
+        public string Subsystem { get; init; } = "robot";
+        public string Changes { get; init; } = string.Empty;
+        public long Length { get; init; }
+        public string ToVersion { get; init; } = string.Empty;
+        public IDictionary<string, object?> Dependencies { get; init; } = new Dictionary<string, object?>();
+        public bool Downloaded { get; init; }
+    }
+
+    private sealed class SchedulerDownloadProgress
+    {
+        public string Id { get; set; } = string.Empty;
+        public long Length { get; set; }
+        public long Received { get; set; }
+        public string Status { get; set; } = "downloading";
+        public string? Reason { get; set; }
+        public string? Error { get; set; }
     }
 
     private static object MapHoliday(HolidayRecord holiday)

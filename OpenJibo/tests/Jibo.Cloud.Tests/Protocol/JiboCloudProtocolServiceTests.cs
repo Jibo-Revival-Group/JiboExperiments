@@ -71,6 +71,180 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task SchedulerGetUpdate_ReturnsWrappedUpdateList()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "127.0.0.1",
+            Method = "GET",
+            Path = "/update"
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal(200, result.StatusCode);
+        Assert.True(payload.RootElement.TryGetProperty("updates", out var updates));
+        Assert.Equal(JsonValueKind.Array, updates.ValueKind);
+        Assert.Empty(updates.EnumerateArray());
+    }
+
+    [Fact]
+    public async Task SchedulerCheckUpdates_ReturnsWrappedUpdateList()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/check-updates",
+            BodyText = """{"filter":"robot"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal("OK", payload.RootElement.GetProperty("status").GetString());
+        Assert.True(payload.RootElement.TryGetProperty("data", out var data));
+        Assert.Equal(JsonValueKind.Array, data.ValueKind);
+        Assert.Empty(data.EnumerateArray());
+    }
+
+    [Fact]
+    public async Task SchedulerStatusEndpoints_DefaultToNotBackingUpAndNoDownload()
+    {
+        var backupStatus = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/backup-status"
+        });
+
+        using var backupPayload = JsonDocument.Parse(backupStatus.BodyText);
+        Assert.Equal(200, backupStatus.StatusCode);
+        Assert.Equal("OK", backupPayload.RootElement.GetProperty("status").GetString());
+        Assert.False(backupPayload.RootElement.GetProperty("data").GetBoolean());
+
+        var downloadStatus = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/download-status"
+        });
+
+        using var downloadPayload = JsonDocument.Parse(downloadStatus.BodyText);
+        Assert.Equal(200, downloadStatus.StatusCode);
+        Assert.Equal("OK", downloadPayload.RootElement.GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.Null, downloadPayload.RootElement.GetProperty("data").ValueKind);
+    }
+
+    [Fact]
+    public async Task SchedulerBackupRobot_StartsBackupThenClearsIt()
+    {
+        var start = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/backup-robot"
+        });
+
+        using var startPayload = JsonDocument.Parse(start.BodyText);
+        Assert.Equal(200, start.StatusCode);
+        Assert.Equal("OK", startPayload.RootElement.GetProperty("status").GetString());
+
+        var immediate = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/backup-status"
+        });
+
+        using var immediatePayload = JsonDocument.Parse(immediate.BodyText);
+        Assert.True(immediatePayload.RootElement.GetProperty("data").GetBoolean());
+
+        await Task.Delay(400);
+
+        var finished = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/backup-status"
+        });
+
+        using var finishedPayload = JsonDocument.Parse(finished.BodyText);
+        Assert.False(finishedPayload.RootElement.GetProperty("data").GetBoolean());
+    }
+
+    [Fact]
+    public async Task SchedulerOtaUpdate_ProgressesFromBackupToDownloadAndCompletes()
+    {
+        await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "CreateUpdate",
+            BodyText =
+                """{"fromVersion":"1.0.0","toVersion":"1.0.1","changes":"OTA progress","subsystem":"robot","length":1200}"""
+        });
+
+        var start = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/ota-update"
+        });
+
+        using var startPayload = JsonDocument.Parse(start.BodyText);
+        Assert.Equal(200, start.StatusCode);
+        Assert.Equal("OK", startPayload.RootElement.GetProperty("status").GetString());
+
+        var backing = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/backup-status"
+        });
+
+        using var backingPayload = JsonDocument.Parse(backing.BodyText);
+        Assert.True(backingPayload.RootElement.GetProperty("data").GetBoolean());
+
+        await Task.Delay(400);
+
+        var downloading = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/download-status"
+        });
+
+        using var downloadingPayload = JsonDocument.Parse(downloading.BodyText);
+        Assert.Equal("OK", downloadingPayload.RootElement.GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.Object, downloadingPayload.RootElement.GetProperty("data").ValueKind);
+
+        await Task.Delay(1200);
+
+        var completedDownload = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/download-status"
+        });
+
+        using var completedDownloadPayload = JsonDocument.Parse(completedDownload.BodyText);
+        Assert.Equal(JsonValueKind.Null, completedDownloadPayload.RootElement.GetProperty("data").ValueKind);
+
+        var updates = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "GET",
+            Path = "/update"
+        });
+
+        using var updatesPayload = JsonDocument.Parse(updates.BodyText);
+        Assert.Contains(updatesPayload.RootElement.GetProperty("updates").EnumerateArray(),
+            item => item.GetProperty("subsystem").GetString() == "robot" &&
+                    item.GetProperty("changes").GetString() == "OTA progress" &&
+                    item.GetProperty("downloaded").GetBoolean());
+    }
+
+    [Fact]
     public async Task BackupList_WithoutBackups_ReturnsEmptyList()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope
@@ -384,8 +558,16 @@ public sealed class JiboCloudProtocolServiceTests
                 BodyText = "{}"
             });
 
+            var schedulerUpdates = await secondService.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "127.0.0.1",
+                Method = "GET",
+                Path = "/update/robot"
+            });
+
             using var updatesPayload = JsonDocument.Parse(updates.BodyText);
             using var backupsPayload = JsonDocument.Parse(backups.BodyText);
+            using var schedulerPayload = JsonDocument.Parse(schedulerUpdates.BodyText);
 
             Assert.Equal(firstInfo.Revision, secondInfo.Revision);
             Assert.Equal("1", firstInfo.SchemaVersion);
@@ -398,6 +580,9 @@ public sealed class JiboCloudProtocolServiceTests
             Assert.NotEmpty(backupsPayload.RootElement.EnumerateArray());
             Assert.Contains(backupsPayload.RootElement.EnumerateArray(),
                 item => item.GetProperty("location").GetProperty("url").GetString()!.Contains("/backup/", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(schedulerPayload.RootElement.GetProperty("updates").EnumerateArray(),
+                item => item.GetProperty("subsystem").GetString() == "robot" &&
+                        item.GetProperty("changes").GetString() == "Restore proof");
         }
         finally
         {

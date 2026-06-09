@@ -419,5 +419,7 @@ FodyWeavers.xsd
 # OpenJibo live-run capture output
 OpenJibo/captures/
 OpenJibo/.tmp/
+_tmp/
+_jibo_test_*/
 
 OpenJibo/docs/DesignDoc/original server

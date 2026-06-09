@@ -680,7 +680,10 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
 
     private object[] ListSchedulerUpdates(string? filter)
     {
+        var robotVersion = stateStore.GetRobot().FirmwareVersion ?? "12.10.0";
+
         return stateStore.ListUpdates()
+            .Where(update => IsUpdateNewerThanRequest(update.ToVersion, robotVersion))
             .Where(update =>
                 string.IsNullOrWhiteSpace(filter) ||
                 update.Subsystem.Equals(filter, StringComparison.OrdinalIgnoreCase) ||
@@ -741,7 +744,9 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             {
                 await Task.Delay(SchedulerBackupDelayMs).ConfigureAwait(false);
 
+                var robotVersion = stateStore.GetRobot().FirmwareVersion ?? "12.10.0";
                 var pendingUpdates = stateStore.ListUpdates()
+                    .Where(update => IsUpdateNewerThanRequest(update.ToVersion, robotVersion))
                     .Where(update =>
                         string.IsNullOrWhiteSpace(filter) ||
                         update.Subsystem.Equals(filter, StringComparison.OrdinalIgnoreCase) ||

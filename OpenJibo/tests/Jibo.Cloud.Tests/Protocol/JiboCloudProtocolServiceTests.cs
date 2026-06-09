@@ -209,7 +209,7 @@ public sealed class JiboCloudProtocolServiceTests
             ServicePrefix = "Update_20160715",
             Operation = "CreateUpdate",
             BodyText =
-                """{"fromVersion":"1.0.0","toVersion":"1.0.1","changes":"OTA progress","subsystem":"robot","length":1200}"""
+                """{"fromVersion":"12.10.0","toVersion":"12.10.1","changes":"OTA progress","subsystem":"robot","length":1200}"""
         });
 
         var start = await _service.DispatchAsync(new ProtocolEnvelope
@@ -270,6 +270,35 @@ public sealed class JiboCloudProtocolServiceTests
             item => item.GetProperty("subsystem").GetString() == "robot" &&
                     item.GetProperty("changes").GetString() == "OTA progress" &&
                     item.GetProperty("downloaded").GetBoolean());
+    }
+
+    [Fact]
+    public async Task SchedulerCheckUpdates_IgnoresSameVersionNoopUpdates()
+    {
+        await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "CreateUpdate",
+            BodyText =
+                """{"fromVersion":"12.10.0","toVersion":"12.10.0","changes":"No update available","subsystem":"robot","length":0}"""
+        });
+
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/check-updates",
+            BodyText = """{"filter":"robot"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal("OK", payload.RootElement.GetProperty("status").GetString());
+        Assert.True(payload.RootElement.TryGetProperty("data", out var data));
+        Assert.Equal(JsonValueKind.Array, data.ValueKind);
+        Assert.Empty(data.EnumerateArray());
     }
 
     [Fact]
@@ -549,7 +578,7 @@ public sealed class JiboCloudProtocolServiceTests
                 ServicePrefix = "Update_20160715",
                 Operation = "CreateUpdate",
                 BodyText =
-                    """{"fromVersion":"1.0.0","toVersion":"1.0.1","changes":"Restore proof","subsystem":"robot"}"""
+                    """{"fromVersion":"12.10.0","toVersion":"12.10.1","changes":"Restore proof","subsystem":"robot"}"""
             });
 
             await firstService.DispatchAsync(new ProtocolEnvelope

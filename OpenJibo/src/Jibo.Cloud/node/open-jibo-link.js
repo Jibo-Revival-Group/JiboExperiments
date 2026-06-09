@@ -882,9 +882,16 @@
       return state.scheduler.downloadedIds.includes(updateId);
     }
 
+    function getRobotPlatformVersion() {
+      return state.robot?.payload?.platform || "12.10.0";
+    }
+
     function normalizeSchedulerLiveUpdates(filter) {
+      const robotVersion = getRobotPlatformVersion();
+
       return state.updates
         .filter((update) => {
+          if (!isVersionNewer(update.toVersion, robotVersion)) return false;
           if (!filter) return true;
           return (
             String(update.subsystem || "").toLowerCase() === String(filter).toLowerCase() ||
@@ -920,7 +927,9 @@
       clearSchedulerTimers();
 
       const backupTimer = setTimeout(() => {
+        const robotVersion = getRobotPlatformVersion();
         const pendingUpdates = state.updates.filter((update) => {
+          if (!isVersionNewer(update.toVersion, robotVersion)) return false;
           if (!filter) return true;
           return (
             String(update.subsystem || "").toLowerCase() === String(filter).toLowerCase() ||

@@ -35,30 +35,71 @@ internal static partial class PersonalReportOrchestrator
         "forget it"
     ];
 
-    private static readonly string[] AffirmativePhrases =
+    private static readonly string[] YesNoAcknowledgementPrefixes =
     [
+        "uh",
+        "um",
+        "hmm",
+        "well",
+        "so",
+        "actually",
+        "honestly",
+        "thanks",
+        "thank you"
+    ];
+
+    private static readonly HashSet<string> YesNoAffirmativeLeadTokens = new(StringComparer.Ordinal)
+    {
         "yes",
         "yeah",
         "yep",
         "yup",
-        "uh huh",
         "sure",
         "ok",
         "okay",
-        "do it",
-        "please do",
-        "go ahead"
-    ];
+        "absolutely",
+        "affirmative",
+        "definitely",
+        "certainly",
+        "indeed"
+    };
 
-    private static readonly string[] NegativePhrases =
-    [
+    private static readonly HashSet<string> YesNoNegativeLeadTokens = new(StringComparer.Ordinal)
+    {
         "no",
-        "nah",
         "nope",
+        "nah",
+        "negative",
+        "never"
+    };
+
+    private static readonly HashSet<string> YesNoAffirmativeLeadPhrases = new(StringComparer.Ordinal)
+    {
+        "uh huh",
+        "sounds good",
+        "sure thing",
+        "why not",
+        "please do",
+        "go ahead",
+        "of course",
+        "i guess so",
+        "i think so"
+    };
+
+    private static readonly HashSet<string> YesNoNegativeLeadPhrases = new(StringComparer.Ordinal)
+    {
         "not now",
-        "maybe later"
-    ];
-    
+        "not today",
+        "not really",
+        "no thanks",
+        "no thank you",
+        "maybe later",
+        "i guess not",
+        "i do not",
+        "i dont",
+        "i don t"
+    };
+
     public static async Task<JiboInteractionDecision?> TryBuildDecisionAsync(
         TurnContext turn,
         string semanticIntent,
@@ -109,10 +150,11 @@ internal static partial class PersonalReportOrchestrator
 
         if (string.IsNullOrWhiteSpace(loweredTranscript)) return BuildNoInputDecision(turn, state, toggles);
 
+        var yesNoReply = ClassifyYesNoReply(loweredTranscript);
         switch (state)
         {
             case AwaitingOptInState:
-                if (IsAffirmativeReply(loweredTranscript))
+                if (yesNoReply == YesNoReply.Affirmative)
                 {
                     var scope = tenantScopeResolver(turn);
                     var knownName = ReadString(turn, UserNameMetadataKey) ?? personalMemoryStore.GetName(scope);
@@ -143,7 +185,15 @@ internal static partial class PersonalReportOrchestrator
                             string.Empty));
                 }
 
-                if (IsNegativeReply(loweredTranscript)) return BuildDeclinedDecision(toggles);
+                if (yesNoReply == YesNoReply.Negative) return BuildDeclinedDecision(toggles);
+                if (yesNoReply == YesNoReply.Ambiguous)
+                    return BuildNoMatchDecision(
+                        turn,
+                        state,
+                        "I heard both yes and no. Could you say that again?",
+                        toggles,
+                        ReadString(turn, UserNameMetadataKey),
+                        false);
 
                 if (!string.IsNullOrWhiteSpace(inlineToggleSummary))
                     return new JiboInteractionDecision(
@@ -183,7 +233,7 @@ internal static partial class PersonalReportOrchestrator
                             false,
                             string.Empty));
 
-                if (IsAffirmativeReply(loweredTranscript))
+                if (yesNoReply == YesNoReply.Affirmative)
                     return await BuildDeliveredReportDecisionAsync(
                         turn,
                         catalog,
@@ -195,7 +245,7 @@ internal static partial class PersonalReportOrchestrator
                         buildCommuteDecisionAsync,
                         cancellationToken);
 
-                if (IsNegativeReply(loweredTranscript))
+                if (yesNoReply == YesNoReply.Negative)
                     return new JiboInteractionDecision(
                         "personal_report_request_name",
                         "Okay, who is this?",
@@ -207,6 +257,15 @@ internal static partial class PersonalReportOrchestrator
                             null,
                             false,
                             string.Empty));
+
+                if (yesNoReply == YesNoReply.Ambiguous)
+                    return BuildNoMatchDecision(
+                        turn,
+                        state,
+                        $"I heard both yes and no. Is this {currentName}?",
+                        toggles,
+                        currentName,
+                        false);
 
                 return BuildNoMatchDecision(
                     turn,
@@ -480,14 +539,105 @@ internal static partial class PersonalReportOrchestrator
         };
     }
 
-    private static bool IsAffirmativeReply(string loweredTranscript)
+    private static YesNoReply ClassifyYesNoReply(string loweredTranscript)
     {
-        return ContainsAnyPhrase(loweredTranscript, AffirmativePhrases);
+        var normalized = NormalizeYesNoTranscript(loweredTranscript);
+        if (string.IsNullOrWhiteSpace(normalized)) return YesNoReply.None;
+
+        while (TryTrimLeadingAcknowledgement(normalized, out var trimmed)) normalized = trimmed;
+
+        if (string.IsNullOrWhiteSpace(normalized)) return YesNoReply.None;
+
+        var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length == 0) return YesNoReply.None;
+
+        var selectedReply = YesNoReply.None;
+        var selectedIndex = -1;
+        var sawAffirmative = false;
+        var sawNegative = false;
+
+        void Consider(YesNoReply candidateReply, int candidateIndex)
+        {
+            if (candidateIndex < 0 || candidateIndex < selectedIndex) return;
+
+            selectedReply = candidateReply;
+            selectedIndex = candidateIndex;
+            if (candidateReply == YesNoReply.Affirmative) sawAffirmative = true;
+            else if (candidateReply == YesNoReply.Negative) sawNegative = true;
+        }
+
+        for (var index = 0; index < tokens.Length; index += 1)
+        {
+            var token = tokens[index];
+            if (YesNoNegativeLeadTokens.Contains(token))
+            {
+                Consider(YesNoReply.Negative, index);
+                continue;
+            }
+
+            if (YesNoAffirmativeLeadTokens.Contains(token)) Consider(YesNoReply.Affirmative, index);
+        }
+
+        for (var index = 0; index + 1 < tokens.Length; index += 1)
+        {
+            var phrase = $"{tokens[index]} {tokens[index + 1]}";
+            if (YesNoNegativeLeadPhrases.Contains(phrase))
+            {
+                Consider(YesNoReply.Negative, index + 1);
+                continue;
+            }
+
+            if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 1);
+        }
+
+        for (var index = 0; index + 2 < tokens.Length; index += 1)
+        {
+            var phrase = $"{tokens[index]} {tokens[index + 1]} {tokens[index + 2]}";
+            if (YesNoNegativeLeadPhrases.Contains(phrase))
+            {
+                Consider(YesNoReply.Negative, index + 2);
+                continue;
+            }
+
+            if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 2);
+        }
+
+        return sawAffirmative && sawNegative
+            ? YesNoReply.Ambiguous
+            : selectedReply;
     }
 
-    private static bool IsNegativeReply(string loweredTranscript)
+    private static string NormalizeYesNoTranscript(string transcript)
     {
-        return ContainsAnyPhrase(loweredTranscript, NegativePhrases);
+        if (string.IsNullOrWhiteSpace(transcript)) return string.Empty;
+
+        var normalized = NameNoiseRegex().Replace(transcript, " ").ToLowerInvariant();
+        return Regex.Replace(normalized, @"\s+", " ").Trim();
+    }
+
+    private static bool TryTrimLeadingAcknowledgement(string normalizedTranscript, out string trimmedTranscript)
+    {
+        foreach (var acknowledgement in YesNoAcknowledgementPrefixes)
+        {
+            if (string.Equals(acknowledgement, "uh", StringComparison.Ordinal) &&
+                (string.Equals(normalizedTranscript, "uh huh", StringComparison.Ordinal) ||
+                 normalizedTranscript.StartsWith("uh huh ", StringComparison.Ordinal)))
+                continue;
+
+            if (string.Equals(normalizedTranscript, acknowledgement, StringComparison.Ordinal))
+            {
+                trimmedTranscript = string.Empty;
+                return true;
+            }
+
+            if (!normalizedTranscript.StartsWith($"{acknowledgement} ", StringComparison.Ordinal)) continue;
+
+            trimmedTranscript = normalizedTranscript[(acknowledgement.Length + 1)..].TrimStart();
+            return true;
+        }
+
+        trimmedTranscript = normalizedTranscript;
+        return false;
     }
 
     private static bool ContainsAnyPhrase(string loweredTranscript, IEnumerable<string> phrases)
@@ -499,6 +649,14 @@ internal static partial class PersonalReportOrchestrator
                 return true;
 
         return false;
+    }
+
+    private enum YesNoReply
+    {
+        None,
+        Affirmative,
+        Negative,
+        Ambiguous
     }
 
     private static bool IsWeatherErrorReply(string replyText)

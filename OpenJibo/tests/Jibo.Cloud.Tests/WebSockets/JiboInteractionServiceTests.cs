@@ -2564,6 +2564,29 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(true, decision.ContextUpdates[PersonalReportCommuteEnabledKey]);
     }
 
+    [Fact]
+    public async Task BuildDecisionAsync_PersonalReport_MixedYesNoRequestsClarification()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "no yes",
+            NormalizedTranscript = "no yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                [PersonalReportStateKey] = "awaiting_opt_in",
+                [PersonalReportNoMatchCountKey] = 0
+            }
+        });
+
+        Assert.Equal("personal_report_no_match", decision.IntentName);
+        Assert.Contains("both yes and no", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.NotNull(decision.ContextUpdates);
+        Assert.Equal("awaiting_opt_in", decision.ContextUpdates![PersonalReportStateKey]);
+        Assert.Equal(1, decision.ContextUpdates[PersonalReportNoMatchCountKey]);
+    }
+
     [Theory]
     [InlineData("shopping list", "shopping_list_prompt", "What should I add to your shopping list?", "shopping",
         "shopping")]
@@ -4281,7 +4304,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_TurnAround_MapsToIdleSpinAroundCommand()
+    public async Task BuildDecisionAsync_TurnAround_MapsToIdleTurnAroundCommand()
     {
         var service = CreateService();
 
@@ -4291,9 +4314,9 @@ public sealed class JiboInteractionServiceTests
             NormalizedTranscript = "turn around"
         });
 
-        Assert.Equal("spin_around", decision.IntentName);
+        Assert.Equal("turn_around", decision.IntentName);
         Assert.Equal("@be/idle", decision.SkillName);
-        Assert.Equal("spinAround", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("turnAround", decision.SkillPayload!["globalIntent"]);
         Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
     }
 

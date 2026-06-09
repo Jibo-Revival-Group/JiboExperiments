@@ -1,0 +1,99 @@
+{
+  "name": "neohubjibocom-neohubproactive-tid39f027345dca11f1816a5cf821ea55ae",
+  "session": {
+    "hostName": "neo-hub.jibo.com",
+    "path": "/v1/proactive",
+    "kind": "neo-hub-proactive",
+    "token": "hub-usr_openjibo_owner-1780323084653"
+  },
+  "steps": [
+    {
+      "text": {
+        "type": "TRIGGER",
+        "ts": 1780325857572,
+        "msgID": "mid-3ac1512e-5dca-11f1-809c-5cf821ea55ae",
+        "transID": "tid-39f02734-5dca-11f1-816a-5cf821ea55ae",
+        "data": {
+          "triggerSource": "SURPRISE",
+          "triggerData": {
+            "looperID": null
+          }
+        }
+      },
+      "binary": null,
+      "expectedReplyTypes": [
+        "LISTEN",
+        "EOS",
+        "SKILL_ACTION"
+      ]
+    },
+    {
+      "text": {
+        "type": "CONTEXT",
+        "ts": 1780325857631,
+        "msgID": "mid-3aca6732-5dca-11f1-876f-5cf821ea55ae",
+        "transID": "tid-39f02734-5dca-11f1-816a-5cf821ea55ae",
+        "data": {
+          "runtime": {
+            "character": {
+              "emotion": {
+                "name": "NEUTRAL",
+                "valence": 0.45,
+                "confidence": 0.2
+              },
+              "motivation": {
+                "social": 0.3911615277777735,
+                "playful": 0.13038717592592828
+              }
+            },
+            "perception": {
+              "speaker": null,
+              "peoplePresent": []
+            },
+            "location": {
+              "city": "Pleasant Hill",
+              "state": "Missouri",
+              "stateAbbr": "MO",
+              "country": "United States",
+              "countryCode": "US",
+              "lat": 38.8358421,
+              "lng": -94.142731,
+              "iso": "2026-06-01T09:57:37.587-05:00"
+            },
+            "loop": {
+              "loopId": "5c0b221fdf9d450019c5e253",
+              "users": [
+                {
+                  "firstName": "Erin",
+                  "lastName": "Picone",
+                  "phoneticName": "Erin",
+                  "gender": "female",
+                  "birthdate": 649209600000,
+                  "id": "5c0b221fdf9d450019c5e255",
+                  "accountId": "5c0b20547c46170019235759"
+                }
+              ],
+              "jibo": {
+                "color": "WHITE",
+                "birthdate": 1544234645598,
+                "id": "5c0b221fdf9d450019c5e254"
+              },
+              "owner": "5c0b221fdf9d450019c5e255"
+            },
+            "dialog": {
+              "referent": null
+            }
+          },
+          "skill": {
+            "id": null
+          },
+          "general": {
+            "release": "1.9.2"
+          }
+        }
+      },
+      "binary": null,
+      "expectedReplyTypes": []
+    }
+  ]
+}

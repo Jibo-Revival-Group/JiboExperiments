@@ -315,7 +315,7 @@ public sealed partial class JiboInteractionService
                 "spin around",
                 "look back over there",
                 "look again"))
-            return "spin_around";
+            return "turn_around";
 
         if (MatchesAny(
                 loweredTranscript,

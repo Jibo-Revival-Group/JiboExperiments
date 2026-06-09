@@ -36,15 +36,16 @@ public sealed class ResponsePlanToSocketMessagesMapper
             StringComparison.OrdinalIgnoreCase);
         var isSettingsLaunch = string.Equals(skill?.SkillName, "@be/settings", StringComparison.OrdinalIgnoreCase);
         var isSleepCommand = string.Equals(plan.IntentName, "sleep", StringComparison.OrdinalIgnoreCase);
-        var isSpinAroundCommand = string.Equals(plan.IntentName, "spin_around", StringComparison.OrdinalIgnoreCase);
-        var isGlobalCommand = isStopCommand || isSleepCommand || isSpinAroundCommand || isVolumeControl;
+        var isTurnAroundCommand = string.Equals(plan.IntentName, "turn_around", StringComparison.OrdinalIgnoreCase) ||
+                                  string.Equals(plan.IntentName, "spin_around", StringComparison.OrdinalIgnoreCase);
+        var isGlobalCommand = isStopCommand || isSleepCommand || isTurnAroundCommand || isVolumeControl;
         var isPhotoGalleryLaunch = string.Equals(plan.IntentName, "photo_gallery", StringComparison.OrdinalIgnoreCase);
         var isPhotoCreateLaunch = string.Equals(plan.IntentName, "snapshot", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase);
         var isClockSkillLaunch = string.Equals(skill?.SkillName, "@be/clock", StringComparison.OrdinalIgnoreCase);
         var isReportSkillLaunch = string.Equals(skill?.SkillName, "report-skill", StringComparison.OrdinalIgnoreCase);
-        var idleRedirectDelayMs = isSleepCommand ? 150 : isSpinAroundCommand ? 75 : 75;
-        var idleCompletionDelayMs = isSleepCommand ? 1000 : isSpinAroundCommand ? 750 : 125;
+        var idleRedirectDelayMs = isSleepCommand ? 150 : isTurnAroundCommand ? 75 : 75;
+        var idleCompletionDelayMs = isSleepCommand ? 1000 : isTurnAroundCommand ? 750 : 125;
         var localIntent = ReadSkillPayloadString(skill, "localIntent");
         var clockIntent = ReadSkillPayloadString(skill, "clockIntent");
         var clockDomain = ReadSkillPayloadString(skill, "domain");
@@ -238,7 +239,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 125));
         }
 
-        if (isStopCommand || isSleepCommand || isSpinAroundCommand)
+        if (isStopCommand || isSleepCommand || isTurnAroundCommand)
         {
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillRedirectPayload(

@@ -2935,14 +2935,14 @@ public sealed class JiboWebSocketServiceTests
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
-        Assert.Equal("spinAround", nlu.GetProperty("intent").GetString());
+        Assert.Equal("turnAround", nlu.GetProperty("intent").GetString());
         Assert.Equal("global_commands", nlu.GetProperty("domain").GetString());
         Assert.Equal("globals/global_commands_launch", nlu.GetProperty("rules")[0].GetString());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
         Assert.Equal("@be/idle",
             redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("spinAround",
+        Assert.Equal("turnAround",
             redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
@@ -4739,6 +4739,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.NotNull(session);
         Assert.True(session.Metadata.TryGetValue(stateKey, out var stateValue));
         Assert.Equal("awaiting_opt_in", stateValue?.ToString());
+        Assert.True(session.FollowUpOpen);
 
         var optInReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -4761,6 +4762,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.NotNull(session);
         Assert.True(session.Metadata.TryGetValue(stateKey, out stateValue));
         Assert.Equal("awaiting_identity_name", stateValue?.ToString());
+        Assert.True(session.FollowUpOpen);
 
         var identifyReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {

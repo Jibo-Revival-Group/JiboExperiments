@@ -742,8 +742,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("are we best friends", "robot_best_friends", "best friends with anyone in my Loop")]
     [InlineData("are you friends with Siri", "robot_has_friends", "I believe I do have friends")]
     [InlineData("is Dr. Breazeal your best friend", "robot_best_friends", "best friends with anyone in my Loop")]
-    [InlineData("can you sing", "robot_can_sing", "sing")]
-    [InlineData("will you sing", "robot_can_sing", "sing")]
+    [InlineData("can you sing", "robot_can_sing", "row, row, row your boat")]
+    [InlineData("will you sing", "robot_can_sing", "row, row, row your boat")]
     [InlineData("can you sing a christmas song", "robot_sing_christmas_song", "sing")]
     public async Task BuildDecisionAsync_NewLegacyPersonalityMims_UseImportedReplies(
         string transcript,

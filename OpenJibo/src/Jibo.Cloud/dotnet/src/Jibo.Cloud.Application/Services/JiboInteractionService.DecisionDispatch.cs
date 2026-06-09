@@ -678,6 +678,10 @@ public sealed partial class JiboInteractionService
             "robot_can_sing" => BuildScriptedSingDecision(
                 catalog,
                 "robot_can_sing",
+                "row row row your boat",
+                "twinkle twinkle little star",
+                "itsy bitsy spider",
+                "john jacob jingleheimer schmidt",
                 "not much of a singer",
                 "singing is not my strong suit",
                 "not award winning"),

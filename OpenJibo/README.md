@@ -12,7 +12,7 @@ We are rebuilding the hosted cloud first, then using that foundation for OTA, Op
 - support real devices through repeatable bootstrap steps first
 - use OTA later to reduce recovery friction once the cloud is trustworthy
 
-Current release truth lives in [docs/development-plan.md](docs/development-plan.md). The current cloud release constant is `1.0.19`.
+Current release truth lives in [docs/development-plan.md](docs/development-plan.md). The current cloud release constant is `1.0.20`.
 
 ## Running Locally
 
@@ -82,6 +82,7 @@ OpenJibo/
     public-site-plan.md
     regression-test-plan.md
     release-1.0.19-plan.md
+    release-1.0.20-plan.md
     support-tiers.md
     system-diagram-alignment.md
 
@@ -106,7 +107,8 @@ Use these when you want the active technical truth:
 - [Development plan](docs/development-plan.md)
 - [Local cloud quickstart](docs/local-cloud-quickstart.md)
 - [Feature backlog](docs/feature-backlog.md)
-- [Release 1.0.19 plan](docs/release-1.0.19-plan.md)
+- [Release 1.0.19 closeout](docs/release-1.0.19-plan.md)
+- [Release 1.0.20 plan](docs/release-1.0.20-plan.md)
 - [Support tiers](docs/support-tiers.md)
 - [System diagram alignment](docs/system-diagram-alignment.md)
 - [Public site plan](docs/public-site-plan.md)

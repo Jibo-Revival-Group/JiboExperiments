@@ -10,7 +10,7 @@ The current execution truth still lives in:
 
 - [Development plan](development-plan.md)
 - [Feature backlog](feature-backlog.md)
-- [Release 1.0.19 plan](release-1.0.19-plan.md)
+- [Release 1.0.20 plan](release-1.0.20-plan.md)
 - [Device bootstrap path](device-bootstrap.md)
 
 ## North Star
@@ -81,8 +81,8 @@ The goal is not to erase stock Jibo. The goal is to give owners an Open Jibo mod
 
 This is where the breadcrumbs in the repo become important:
 
-- `open-jibo` and `open-jibo-ai` modes
-- a startup migration skill that can invite existing owners to convert
+- `open-jibo`, `open-jibo-ai`, `open-jibo-self-hosted`, and `open-jibo-developer` modes
+- a startup migration skill that can invite existing owners to convert and keep the menu entry available afterward
 - a reversible path back to stock
 - the hosted sites and support docs on `openjibo.com` and `openjibo.ai` that explain the transition clearly
 
@@ -142,7 +142,7 @@ If you want the current execution truth, read:
 
 - [Development plan](development-plan.md)
 - [Feature backlog](feature-backlog.md)
-- [Release 1.0.19 plan](release-1.0.19-plan.md)
+- [Release 1.0.20 plan](release-1.0.20-plan.md)
 
 If you want the first-device path, read:
 

@@ -14,7 +14,7 @@ Run this plan:
 
 - after the last code change before calling a release complete
 - after any fix that touches websocket turn finalization, local skill redirects, constrained yes/no, or STT
-- before moving from `1.0.18` bug-fix closeout into `1.0.19` feature work
+- before moving from `1.0.18` bug-fix closeout into `1.0.20` feature work
 - after the Test 26 and Test 27 fixes, run at least the focused cloud-version, alarm/timer, photo/gallery, stop, volume, and blue-ring cleanup sections before deciding whether `1.0.18` is ready to freeze
 
 For small feature slices, run the automated `.NET` tests plus the smoke checks and only the live sections that share the same machinery. Before release closeout, run the full current-release suite.
@@ -255,9 +255,9 @@ Goal: catch the Test 26 no-`LISTEN` buffering regression, the Test 27 diagnostic
 - Expected: a proactive yes/no prompt such as Word of the Day should consume `yes`/`no` without echoing the answer back or leaving the robot listening.
 - Capture check: long-running context-only transactions should not accumulate buffered audio chunks or stay `AwaitingTurnCompletion = true`; a late ignored diagnostic `LISTEN` may appear as cleanup telemetry but should not set `SawListen` or buffer audio; normal cloud/local completions should not be followed by a BE surprise router request.
 
-### 1.0.19 Feature Pack
+### 1.0.20 Feature Pack
 
-Goal: cover the newer 1.0.19 feature surfaces without turning the full regression into one giant unbounded pass.
+Goal: cover the newer `1.0.20` feature surfaces without turning the full regression into one giant unbounded pass.
 
 Run these as a focused bundle when validating a release candidate:
 
@@ -308,6 +308,39 @@ Capture check:
 
 - stop-style phrases should emit `global_commands` `stop` behavior with the idle redirect
 - `go to sleep` and `turn around` should not no-op or fall through to generic chat
+
+#### Twerk And Command Boundary
+
+- `twerk`
+- `can you twerk`
+
+Expected:
+
+- the bare command should not fall back into a greeting-looking turn
+- the polite question variant can still route through the source-backed response family
+
+Capture check:
+
+- compare the ASR transcript, intent choice, and spoken reply for both variants
+
+#### Update And Grocery
+
+- `update`
+- `backup`
+- `grocery list`
+- `add to my grocery list milk`
+- `what's on my grocery list`
+
+Expected:
+
+- update should only surface when the robot genuinely has update work to do
+- backup/update menu state should stay aligned with the robot-local behavior
+- grocery should keep the follow-up listen open long enough to accept a real item
+
+Capture check:
+
+- verify the update path does not fabricate an update prompt
+- verify the grocery flow keeps listening for the add-item phrase instead of going passive
 
 #### Short Proactivity
 

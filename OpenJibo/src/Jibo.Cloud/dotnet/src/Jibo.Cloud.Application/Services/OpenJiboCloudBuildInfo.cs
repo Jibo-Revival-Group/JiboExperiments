@@ -4,7 +4,7 @@ namespace Jibo.Cloud.Application.Services;
 
 public static class OpenJiboCloudBuildInfo
 {
-    public const string Version = "1.0.19";
+    public const string Version = "1.0.20";
     public static readonly DateOnly PersonaBirthday = new(2026, 3, 22);
 
     public static string VersionWords => Version.Replace(".", " dot ");

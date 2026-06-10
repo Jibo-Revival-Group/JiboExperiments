@@ -6,11 +6,11 @@ This document is the current working plan for the OpenJibo hosted cloud.
 
 The production lane is the `.NET` cloud in `src/Jibo.Cloud/dotnet`. The Node server remains the protocol oracle, capture harness, and fast reverse-engineering lab, but it is no longer the long-term hosted architecture.
 
-Day-to-day feature sequencing lives in [feature-backlog.md](feature-backlog.md). Live closeout checks live in [regression-test-plan.md](regression-test-plan.md). The `1.0.19` release shape is detailed in [release-1.0.19-plan.md](release-1.0.19-plan.md), and the legacy-to-current architecture map is tracked in [system-diagram-alignment.md](system-diagram-alignment.md), while this file keeps the broader evidence and architecture context.
+Day-to-day feature sequencing lives in [feature-backlog.md](feature-backlog.md). Live closeout checks live in [regression-test-plan.md](regression-test-plan.md). The `1.0.20` release shape is detailed in [release-1.0.20-plan.md](release-1.0.20-plan.md), and the legacy-to-current architecture map is tracked in [system-diagram-alignment.md](system-diagram-alignment.md), while this file keeps the broader evidence and architecture context.
 
 ## Current Release Snapshot
 
-- Current OpenJibo Cloud release constant: `1.0.19`
+- Current OpenJibo Cloud release constant: `1.0.20`
 - Source of truth: [OpenJiboCloudBuildInfo.cs](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/OpenJiboCloudBuildInfo.cs)
 - Spoken diagnostic: `Cloud version 1 dot 0 dot 19.`
 - HTTP diagnostic: `/health` returns the same version
@@ -18,7 +18,7 @@ Day-to-day feature sequencing lives in [feature-backlog.md](feature-backlog.md).
 - .NET target framework: `net10.0` across the cloud projects and cloud test project
 - First `1.0.19` shipped slice: persona prompts (`how old are you`, `when's your birthday`, `do you have a personality`, `make a pizza`)
 
-Release `1.0.19` is now in feature kickoff. The `1.0.18` alarm/photo/gallery closeout evidence remains below as historical context while we execute the next feature slices.
+Release `1.0.19` is now in closeout. `1.0.20` is the active feature queue. The `1.0.18` alarm/photo/gallery closeout evidence remains below as historical context while we execute the next feature slices.
 
 ## Latest Live Evidence
 
@@ -50,7 +50,7 @@ This is the working pattern for each hosted-cloud release:
 5. Run the stock robot live test, collect captures, and record the result before moving on.
 6. Keep regressions and bug fixes in the current release; roll larger follow-up work into the next version.
 
-For `1.0.18`, the remaining release work should stay small: finish one or two feature slices, run the live regression pass, and only patch bugs found in that pass before calling the version complete. `1.0.19` should then reopen the broader feature queue.
+For `1.0.18`, the remaining release work should stay small: finish one or two feature slices, run the live regression pass, and only patch bugs found in that pass before calling the version complete. `1.0.20` should then reopen the broader feature queue.
 
 ## Current Code Truth
 
@@ -207,18 +207,17 @@ These are not blockers for calling `1.0.18` complete unless the live test shows 
 - weather, calendar, commute, personal report, identity, memory, and proactivity are still mostly discovery or placeholder content paths
 - remaining stop/volume variants still need live stock-OS proof beyond Test 26's `Never mind.` and `Set Volume 2-6.` passes; robot age and command-versus-question personality routing are not implemented yet
 
-## `1.0.19` Direction
+## `1.0.20` Direction
 
-After `1.0.18` is tested and tagged, `1.0.19` should move back into feature work:
+After `1.0.19` is closed out, `1.0.20` should focus on proving the remaining regression gaps and keeping the release queue tidy:
 
-- harden whichever stop/volume behavior is not fully proven by the `1.0.18` live pass, or pick the next lightweight device/persona slice
-- extend persona with holidays and seasonal content as a first-class character track
-- build multi-tenant internal memory storage (account/loop/device/user scoped) so new personality and history features persist safely
-- end-to-end update/backup/restore proof
-- STT reliability improvements, including noise screening and a managed STT comparison
-- provider-backed first content path, likely news or weather
-- hosted capture/export boundary for group testing
-- continued Pegasus/JiboOS-backed mapping for proactivity, memory/history, Lasso-style aggregation, and identity
+- finish update, backup, and restore proof without the phantom-update false positive
+- tighten grocery list follow-up/listening so add-item flows stay alive
+- separate bare `twerk` from the greeting-looking fallback and keep the polite `can you twerk` route working too
+- keep motion and sleep parity under review so the robot does not fall into the wrong state after a command
+- harden STT and turn-finalization for the short utterances that still misfire
+- continue the source-backed persona and presence ladder once the regression gap list is stable
+- keep the backlog ordered so each regression item stays paired with a concrete proof target
 
 ## Azure Direction
 

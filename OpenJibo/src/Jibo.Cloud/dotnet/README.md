@@ -6,7 +6,7 @@
 
 This is the production-oriented path for restoring device connectivity and creating a foundation for future runtime, AI, and OTA work.
 
-Current spoken cloud version: `Cloud version 1.0.19.`
+Current spoken cloud version: `Cloud version 1.0.20.`
 
 Local startup:
 

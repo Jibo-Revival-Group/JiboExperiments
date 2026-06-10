@@ -1,8 +1,8 @@
-# Release `1.0.19` Plan
+# Release `1.0.19` Closeout
 
 ## Purpose
 
-This release starts the shift from `1.0.18` hardening to visible feature growth.
+This release started the shift from `1.0.18` hardening to visible feature growth and is now being kept as closeout history.
 
 The goal is to keep compatibility work steady while shipping personality and capability slices that make OpenJibo feel less like a placeholder cloud and more like a real assistant platform.
 
@@ -12,7 +12,7 @@ For grocery list capability, the 1.0.19 MVP choice is the existing household lis
 
 - Kickoff date: `2026-05-05`
 - Cloud version source of truth: [OpenJiboCloudBuildInfo.cs](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/OpenJiboCloudBuildInfo.cs)
-- Active release constant: `1.0.19`
+- Historical release constant: `1.0.19`
 
 ## Scope
 
@@ -400,3 +400,7 @@ Release `1.0.19` is complete when:
 - regression checklist passes for the existing stock-OS compatibility paths
 - live runs confirm no critical regressions in alarms, gallery, yes/no, and cloud-version diagnostics
 - memory/personality storage proves tenant isolation by account/loop/device boundaries and is compatible with the target hosted cloud footprint
+
+## Closeout Note
+
+This file is preserved as the `1.0.19` release record. Active planning continues in [release-1.0.20-plan.md](release-1.0.20-plan.md).

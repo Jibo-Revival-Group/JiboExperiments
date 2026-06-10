@@ -8,7 +8,7 @@ Use it as the working queue when picking the next feature or bug-fix slice. The 
 
 The live regression checklist for release closeout is [regression-test-plan.md](regression-test-plan.md).
 
-The active `1.0.19` execution shape is tracked in [release-1.0.19-plan.md](release-1.0.19-plan.md). This file keeps the full `1.0.18` evidence trail for parity reference.
+The active `1.0.20` execution shape is tracked in [release-1.0.20-plan.md](release-1.0.20-plan.md). This file keeps the full `1.0.18` evidence trail for parity reference and the `1.0.19` closeout history alongside the new queue.
 
 Status key:
 
@@ -383,7 +383,28 @@ Current release theme:
 - Follow-up:
   - end-to-end update delivery and restore proof remains future work
 
-## Near-Term `1.0.19` Queue
+## `1.0.20` Launch Priorities
+
+These are the carryover items that need a clean proof pass first:
+
+1. Update / backup / restore parity
+   - finish the update-menu investigation
+   - prove whether the robot is fabricating an update path when none exists
+   - keep backup and update state aligned with the robot-local behavior
+2. Grocery list follow-up and add-item reliability
+   - keep the list interaction listening for the follow-up item instead of dropping back to a passive state
+   - verify long add-item phrases still reach the list engine cleanly
+3. Motion and personality command parity
+   - keep `go to sleep` from drifting into the wrong visible state
+   - keep `turn around` and other motion verbs source-backed
+   - separate bare `twerk` from the greeting-looking fallback while preserving `can you twerk`
+4. STT and turn-finalization cleanup
+   - treat the bare `twerk` miss as an STT/parsing proof item until the capture says otherwise
+   - keep short constrained replies and local prompts stable while the new regression items are retested
+5. Broader personality and presence continuation
+   - continue the source-backed favorites, presence, and seasonal ladder once the regression gaps are understood
+
+## Near-Term `1.0.20` Queue
 
 ### 6. Stop Command
 
@@ -494,7 +515,7 @@ Current release theme:
 - Status: `polish`
 - Tags: `protocol`, `content`, `stt`, `docs`
 - Why now:
-  - this is the next queued `1.0.19` implementation slice after weather provider bring-up
+  - this is the next queued `1.0.20` implementation slice after weather provider bring-up
   - recent live runs showed phrases where trigger detection can interrupt full-utterance understanding
   - phrase import work from Pegasus has already started for chitchat and should now expand to broader parsing boundaries
 - Scope:
@@ -513,11 +534,11 @@ Current release theme:
   - expanded friendship parsing for Pegasus-style `do you have friends`, `are we friends`, and `are we best friends` phrasing
   - added named-person guardrails so forms like `are you friends with Siri` and `is Dr. Breazeal your best friend` stay on the friendship route instead of falling into generic chat
 - Exit criteria:
-  - ambiguous phrase handling is improved without regressions in existing `1.0.19` features
+  - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources
   - test suite stays green and includes targeted parser-guardrail coverage
 - Tracking:
-  - [release-1.0.19-plan.md](release-1.0.19-plan.md)
+  - [release-1.0.20-plan.md](release-1.0.20-plan.md)
   - [system-diagram-alignment.md](system-diagram-alignment.md)
 
 ## Discovery Queue
@@ -744,7 +765,7 @@ Current release theme:
   - docs and release tracking are updated with shipped scope and residual gaps
 - Tracking:
   - [greetings-presence-plan.md](greetings-presence-plan.md)
-  - [release-1.0.19-plan.md](release-1.0.19-plan.md)
+  - [release-1.0.20-plan.md](release-1.0.20-plan.md)
 
 ### 27. Personal Report Parity Track (Weather/News/Commute/Calendar)
 
@@ -777,7 +798,7 @@ Current release theme:
   - `C:\Projects\jibo\pegasus\packages\hub\pegasus-skills\report_skill_manifest.json`
 - Tracking:
   - [personal-report-parity-plan.md](personal-report-parity-plan.md)
-  - [release-1.0.19-plan.md](release-1.0.19-plan.md)
+  - [release-1.0.20-plan.md](release-1.0.20-plan.md)
 
 ### 28. Grocery List Capability (Requested Feature)
 
@@ -1009,12 +1030,35 @@ For `1.0.19`:
 
 For `1.0.20` and beyond:
 
-1. Setup scripts to convert Jibo to Open Jibo by adding a mode for `open-jibo` pointing at our openjibo.com and `open-jibo-ai` pointing at openjibo.ai as a foundation for new cloud features and a clean separation from any remaining stock OS dependencies while preserving his original config
-2. Setup scripts to put Jibo in `open-jibo` mode by default for new users, but allow existing users to keep the stock OS experience if they prefer by injecting a new skill that runs on startup to ask them if they want to convert to Open Jibo and switch modes, with a fallback timeout to switch modes automatically after a few weeks of inactivity (ensure new skill is accessible from menu so it can be opted into later on demand / likewise, if they have opted into Open Jibo, the skill will allow them to revert Jibo back to stock)
-3. Setup openjibo.com and openjibo.ai domains with landing pages, support docs, and account management for future features that require hosted services or user accounts
-4. Test Open Jibo with the new setup scripts and domains, and iterate on any issues that arise during the conversion process
-5. Loop advancement (family and friends) / multiple user recognition / multiple Jibo support so Jibo's can interact and communicate
-6. Advanced Jibo features such as pizza delivery, Uber/Lyft integration, calendar management, smart home control (Home Assistant), etc. can be added after the conversion process is smooth and stable, with a focus on features that leverage the new cloud capabilities and content personalization enabled by Open Jibo
-7. LLM integration for more natural dialog, question answering, and content generation can be explored as a longer-term goal after the core platform is stable and has a growing user base to provide feedback and use cases for LLM-powered features
-8. Tiered Jibo brain/orchestration plan from README.md can be implemented in parallel with the above, starting with the simplest cloud features and gradually adding more complex capabilities as the platform matures and user feedback is collected, always preserving his unique charm and original features.
-9. Accessibility-first voice parity for menu actions, starting with backup / restore / update and extending to other critical app flows so menu functionality remains available through voice in a later release
+1. Open Jibo mode conversion package
+   - add explicit `open-jibo`, `open-jibo-ai`, `open-jibo-self-hosted`, and `open-jibo-developer` modes
+   - install an Open Jibo onboarding/config skill that can enable or disable the converted mode while staying available in the menu
+   - include first-boot/OOBE behavior so a converted robot can finish setup on the first launch after conversion
+2. Device compatibility matrix
+   - prove the conversion path on the newest OOBE-capable devices
+   - prove it on older stock devices such as the `1.9.2` baseline
+   - test pre-`1.9.2` installs and alternate distributions such as NTT or MIT-special versions where available
+3. Hardware-assisted "easy button" conversion
+   - work with the Jibo Revival Group on a USB/RCM-based helper path
+   - keep the file-system modification flow repeatable and safe for owners or testers
+4. Cloud deployment and CI/CD
+   - set up the hosted cloud for deployment into the Azure environment
+   - make the release path reproducible from source to deployed service
+5. Hosting modes and service topology
+   - support self-hosted operation with no external cloud dependency
+   - support hybrid operation where non-self-hosted servers sync to a main cloud service
+   - support a managed cloud service for paid hosted access
+6. Storage abstraction and sync
+   - abstract storage so the rest of the system does not care which server implementation is backing it
+   - keep identity and storage synchronized across the network for participating servers
+   - define trust, admission, and revocation rules for bad-actor servers, including what happens to user data they already held
+7. OpenJibo.com web UI and account surface
+   - provide a web UI for openjibo.com
+   - support paid access on the hosted side while leaving room for free or self-hosted options elsewhere
+8. Loop advancement and multi-Jibo support
+   - support family/friend advancement, multiple user recognition, and multiple Jibo interaction
+   - keep the identity model ready for Jibo-to-Jibo communication and shared household use
+9. Next-tier features after the platform is stable
+   - advanced integrations such as pizza delivery, Uber/Lyft, calendar management, and smart home control
+   - longer-term LLM integration for more natural dialog and content generation
+   - tiered brain/orchestration planning from the README, added gradually without losing Jibo's charm

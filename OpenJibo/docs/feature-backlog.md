@@ -1034,6 +1034,8 @@ For `1.0.20` and beyond:
    - add explicit `open-jibo`, `open-jibo-ai`, `open-jibo-self-hosted`, and `open-jibo-developer` modes
    - install an Open Jibo onboarding/config skill that can enable or disable the converted mode while staying available in the menu
    - include first-boot/OOBE behavior so a converted robot can finish setup on the first launch after conversion
+   - issue Open Jibo identities instead of blindly trusting stock robot identity values, especially for cloned or previously modified robots
+   - planning anchor: [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md)
 2. Device compatibility matrix
    - prove the conversion path on the newest OOBE-capable devices
    - prove it on older stock devices such as the `1.9.2` baseline
@@ -1048,10 +1050,12 @@ For `1.0.20` and beyond:
    - support self-hosted operation with no external cloud dependency
    - support hybrid operation where non-self-hosted servers sync to a main cloud service
    - support a managed cloud service for paid hosted access
+   - treat self-hosted sync enrollment as a one-way setup choice until reset/OOBE recovery is performed
 6. Storage abstraction and sync
    - abstract storage so the rest of the system does not care which server implementation is backing it
    - keep identity and storage synchronized across the network for participating servers
    - define trust, admission, and revocation rules for bad-actor servers, including what happens to user data they already held
+   - issue Open Jibo robot identity from the new cloud rather than trusting legacy stock robot identifiers as primary keys
 7. OpenJibo.com web UI and account surface
    - provide a web UI for openjibo.com
    - support paid access on the hosted side while leaving room for free or self-hosted options elsewhere

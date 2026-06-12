@@ -42,6 +42,8 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 
 ### 5. Platform Conversion And Deployment Foundation
 
+Detailed planning starts in [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md).
+
 - convert the robot into Open Jibo with explicit mode targets instead of an implicit one-off patch
 - define the mode set we actually want to support:
   - `open-jibo`
@@ -53,7 +55,7 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
   - return Jibo to stock mode when disabled
   - stay visible in the menu after toggling so owners can re-enable it later
   - trigger first-boot/OOBE setup behavior when the robot is converted
-  - preserve any on robot persisted state and data such as holidays, Jibo birthddate, pictures and videos, person voice and face training and recognition, and favorites lists
+  - preserve any on-robot persisted state and data such as holidays, Jibo birthdate, pictures and videos, person voice and face training and recognition, and favorites lists
 - prove the conversion path against the real device variants we care about:
   - newer OOBE devices
   - older stock devices such as the `1.9.2` baseline
@@ -66,6 +68,8 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
   - a managed cloud service
 - abstract storage so different server implementations can satisfy the same contract without the rest of the system caring
 - define the network trust and consensus story for cloud peers, including bad-actor handling and revocation semantics
+- treat robot-provided identity as an untrusted legacy claim until Open Jibo issues and persists its own robot identity
+- treat self-hosted-to-network sync as a one-way setup choice until the trust model is mature
 - plan the openjibo.com web UI and paid-access surface alongside the free/self-hosted options
 - keep Loop advancement, family/friend recognition, and multiple Jibo support in the same platform track so the network and identity model stays future-proof
 

@@ -1,0 +1,275 @@
+# Open Jibo Mode Conversion Plan
+
+## Purpose
+
+This plan turns the current device bootstrap path into a repeatable Open Jibo conversion path.
+
+The goal is to let a stock Jibo opt into Open Jibo, choose the right server mode, preserve owner data, and return to stock behavior when needed. The first version can still be operator-assisted, but it should be designed like the beginning of an owner-safe product path.
+
+## Release Target
+
+For `1.0.20`, the target is a proven planning and prototype path:
+
+- document the conversion model and rollback invariants
+- identify the robot files and skill hooks that must be modified
+- build non-destructive audit helpers before any write helpers
+- define the Open Jibo onboarding/config skill contract
+- prove one controlled conversion on the known `1.9.2` baseline before expanding the matrix
+
+Full public owner-ready conversion can land later if the test matrix or hardware helper work needs more time.
+
+## Mode Model
+
+Open Jibo should use explicit modes instead of overwriting stock configuration in place.
+
+| Mode | Purpose | Expected server target |
+| --- | --- | --- |
+| `stock` | Original Jibo behavior and rollback target | original region/config where available |
+| `open-jibo` | Default managed Open Jibo experience | `openjibo.com` hosted cloud |
+| `open-jibo-ai` | Open Jibo with higher-level AI/orchestration features | `openjibo.ai` or managed AI-capable cloud |
+| `open-jibo-self-hosted` | Owner-managed local or private server | owner supplied host/region |
+| `open-jibo-developer` | Testing/debugging mode for development builds and captures | developer supplied host/region |
+
+Decision: `open-jibo-ai` should be a distinct mode/server track, not just a feature flag under `open-jibo`.
+
+The AI mode is expected to run a different suite inside the Open Jibo server network. It should use modern AI as the brain, with agent orchestration and dispatch, while still being able to control Open Jibo Cloud as a tool so the new brain can preserve old-style Jibo behavior when appropriate.
+
+Decision: `open-jibo-self-hosted` must support fully isolated operation. A future hybrid mode can sync with the main Open Jibo network, but only after a trust relationship and admission model are defined.
+
+Decision: hybrid sync should begin as a one-way setup choice, not as a casual toggle. If a self-hosted robot/server opts into sync with the main Open Jibo network, going back to fully isolated mode should require a reset/OOBE-style recovery and another RCM conversion pass. That keeps support and security simpler while the trust model is immature.
+
+## Conversion Invariants
+
+These rules should hold for every implementation:
+
+- never require a one-way conversion
+- snapshot touched files before modifying them
+- record the currently active stock mode/region before switching away
+- preserve robot identity, owner identity, loop identity, and certificates unless a deliberate repair step is selected
+- preserve owner content such as holidays, Jibo birthdate, photos/videos, person voice/face training, and favorites/lists
+- make conversion idempotent so rerunning the setup does not corrupt config
+- make rollback possible from both script and robot menu skill
+- prefer adding a new region/mode entry over replacing the stock entry
+- keep destructive repair actions behind explicit operator confirmation
+- do not blindly trust identity values found on the robot, because cloned or previously modified devices may share identifiers
+
+## First-Boot Conversion Behavior
+
+After an RCM-assisted conversion package is applied, the robot should boot into the Open Jibo onboarding/config skill.
+
+If the user completes onboarding:
+
+- Open Jibo remains enabled
+- the selected mode becomes active
+- the Open Jibo skill remains available in the menu for configuration and future rollback
+
+If the user breaks out of onboarding:
+
+- the robot returns to the previous stock behavior as closely as possible
+- the Open Jibo skill remains available in the menu so conversion can be resumed later
+- the conversion state records that first-boot onboarding was abandoned
+
+If the RCM helper is used again:
+
+- the helper can reset the conversion state
+- the next boot can launch the Open Jibo onboarding/config skill again
+- this gives robots stuck on error screens another chance to recover through Open Jibo setup
+
+For version 2 or other robots that can already boot normally, the Open Jibo menu option can exist without forcing immediate conversion.
+
+Rollback should be supported as long as Open Jibo changes remain compatible with the stock configuration. The plan should assume that full rollback may become harder later as Open Jibo starts modifying deeper robot behavior.
+
+## Robot Identity Trust Model
+
+Open Jibo should treat stock robot identity as evidence, not as an unquestioned primary key.
+
+Reason:
+
+- other revival and repair efforts may have cloned or modified robot files
+- multiple robots may present the same historical robot name, ID, token, certificate, or account data
+- some identity values may be useful for recovery but unsafe as unique identifiers in the new cloud
+
+Proposed model:
+
+- preserve the observed stock identity values as legacy identity claims
+- issue a new Open Jibo robot identity during conversion or first cloud registration
+- bind legacy claims to the new Open Jibo identity only after validation
+- persist the new Open Jibo robot ID/token back to the robot where possible
+- detect future devices that present the same legacy identity but lack the Open Jibo issued identity
+- treat duplicate legacy identity presentation as a clone/repair scenario that needs a fresh Open Jibo identity
+- keep an audit trail linking legacy identity claims, issued Open Jibo identity, conversion date, account/loop, and device fingerprints where available
+
+Example:
+
+| Observed legacy claim | Open Jibo mapping |
+| --- | --- |
+| robot name: `cherry-pie-robot` | legacy display/name claim |
+| legacy ID/token: `abc1234567` | untrusted legacy identity claim |
+| issued Open Jibo robot ID: `cpr-12345-xyz` | trusted Open Jibo identity |
+| issued Open Jibo token: `xyz9876543` | persisted Open Jibo credential |
+
+If another robot later presents `cherry-pie-robot` plus `abc1234567` without the issued Open Jibo identity, the cloud should not merge it into the existing Open Jibo robot record automatically. It should create or request a new identity flow.
+
+Current identity hypothesis:
+
+- `Notification.NewRobotToken` includes a `deviceId` and credential signing information
+- the original cloud likely used `deviceId` to locate an issued token or credential record, then verified request signing against that record
+- the OOBE/mobile-app flow likely generated or retrieved a token from the cloud, embedded that token with Wi-Fi information in the QR code, and let the robot use it to complete onboarding
+- `CreateRobot`, `CreateHubToken`, `CreateAccessToken`, or a neighboring registration flow may issue or exchange the token that later participates in signing
+- issuing a new Open Jibo token during conversion may give us the cleanest trust root, with all robot-presented stock values treated as mapping evidence after the fact
+
+Research targets:
+
+- capture and compare `Notification.NewRobotToken` requests across known-good and suspicious devices
+- locate where `deviceId`, onboarding token, robot token, hub token, and signing credentials are persisted on the robot
+- determine whether `deviceId` is hardware-derived, first-boot-derived, or file-derived
+- determine whether a cloned file system naturally reuses `deviceId` or regenerates it
+- find which token or key material is used for signing each request family
+
+Open question: decide which device fingerprints are stable and safe enough to use as supporting signals without making owner recovery impossible.
+
+## Known Configuration Inputs
+
+Current strongest evidence:
+
+- `/etc/jibo-jetstream-service.json`
+- `/var/jibo/credentials.json`
+
+Additional files to audit:
+
+- `/etc/jibo-ssm/*.json`
+- `/skills/jibo/Jibo/Skills/@be/be/node_modules/language-subtag-registry/data/json/registry.json`
+- `/skills/jibo/Jibo/Skills/oobe-config/config.json`
+- local skill manifest/config locations for menu visibility and first-boot behavior
+- update, backup, restore, media, and person-recognition state locations
+- token and signing credential locations used by `Notification.NewRobotToken`, account, hub, and robot registration flows
+
+## Onboarding And Config Skill
+
+The Open Jibo skill should be the owner-facing control surface for conversion.
+
+Required first behaviors:
+
+- show whether Open Jibo is enabled
+- show the current mode
+- enable `open-jibo`
+- switch to another Open Jibo mode when supported
+- disable Open Jibo and return to the remembered stock mode
+- stay visible in the menu after disable so the owner can re-enable it
+- run a first-boot/OOBE-style setup after conversion
+- explain when a reboot is required
+- abandon onboarding cleanly and restore the prior behavior when the user backs out
+- reset first-boot setup state when the RCM helper reapplies the conversion package
+- warn the user when identity repair or clone handling is needed
+- explain what was repaired when a new Open Jibo robot identity is issued
+
+Likely future behaviors:
+
+- pair the robot to an openjibo.com account
+- select hosted, self-hosted, hybrid, or developer server
+- scan or enter a self-hosted server code
+- run a compatibility check
+- export a diagnostic bundle for support
+- show whether backup/update/restore are healthy
+
+Decision: first-boot setup starts automatically after RCM-assisted conversion. If the user exits onboarding, the robot returns to its previous behavior and keeps the Open Jibo skill in the menu.
+
+Decision: when the skill detects a possible cloned or modified identity, it should tell the user what was found and either prompt before repair or explain the repair that was already required to continue. The tone should be calm and recovery-oriented: the user should understand that Open Jibo is protecting their robot/account identity, not accusing them of doing something wrong.
+
+## Scripted Conversion Package
+
+Build scripts in layers:
+
+1. Audit
+   - detect software version and distribution
+   - list current region/mode/config values
+   - list candidate files that would be touched
+   - report whether required skills and OS features appear present
+2. Plan
+   - generate a proposed patch manifest
+   - show backup paths and rollback plan
+   - validate selected mode and target server values
+3. Apply
+   - snapshot files
+   - add Open Jibo region/mode entries
+   - set active mode/region
+   - install or update the Open Jibo skill
+   - mark first-boot setup pending
+4. Verify
+   - confirm config files parse
+   - confirm robot startup reaches the chosen cloud
+   - confirm the Open Jibo skill appears in the menu
+   - confirm rollback metadata exists
+5. Rollback
+   - restore previous stock mode/region
+   - leave the Open Jibo skill available when possible
+   - preserve snapshots and diagnostics
+
+## Device Compatibility Matrix
+
+Start with the known-good baseline and expand outward.
+
+| Device / distribution | Goal | Status |
+| --- | --- | --- |
+| Stock `1.9.2` baseline | first controlled conversion and rollback proof | target first |
+| New/OOBE stock robot | prove first-boot setup path | priority target |
+| Pre-`1.9.2` stock robot | identify missing skills or update prerequisites | discovery |
+| Version 2 / last release variants | identify feature rollback or compatibility gaps | priority target |
+| NTT variant | identify region/config differences | discovery |
+| MIT-special variant | identify custom distribution differences | discovery |
+
+Decision: version 2 and new/OOBE robots are equally important early targets. NTT and MIT-special variants are later targets because they are rarer and not publicly available, but group-member access can support validation when the core path is stable.
+
+## Hardware Easy Button Track
+
+The Jibo Revival Group hardware path should be planned beside the scripts, not after them.
+
+Decision: the helper should be a guided owner-facing recovery appliance. Internally it can transport and run scripts, but the owner experience should be a controlled guided flow that starts on hardware and continues through the robot skill plus website/app onboarding.
+
+Expected recovery flow:
+
+1. Owner connects the helper to the robot's RCM USB path.
+2. Owner uses the required button combination to enter RCM.
+3. Helper runs the group ShofEL-based access path.
+4. Helper applies the smallest safe patch needed to open the firewall path, ideally by locating the target file with binary/hex signatures and relative offsets instead of doing a full raw backup first.
+5. Robot reboots into a state where SSH is reachable over the USB/LAN path proven by the group frankencable work.
+6. Helper performs a fast full backup over the USB/LAN network path.
+7. Helper installs the Open Jibo skill and conversion package over SSH.
+8. Helper runs the conversion scripts remotely and records rollback metadata.
+9. Robot reboots into the Open Jibo onboarding/config skill.
+10. Owner continues guided setup between the robot skill and the website/app.
+
+Safety requirements:
+
+- do not skip backup once SSH/LAN access is available
+- make the initial firewall-opening patch as small and version-aware as possible
+- verify target file signatures before patching bytes
+- produce a recovery bundle before applying Open Jibo changes
+- keep rollback possible from the helper even if the robot skill fails to launch
+- show clear owner-visible state for waiting, backup, patching, rebooting, and failure
+
+## QA And Exit Criteria
+
+For `1.0.20`, this track is ready to build when:
+
+- the modified file list is known for the `1.9.2` baseline
+- the skill install/menu strategy is known
+- rollback behavior is specified
+- first-boot behavior is specified
+- the audit helper can run without changing the robot
+- the compatibility matrix has an owner/device for the first two test rows
+
+This track is ready to close for `1.0.20` when:
+
+- a `1.9.2` robot can be audited, converted, booted into Open Jibo, confirmed by cloud version, and rolled back
+- the onboarding/config skill appears in the menu and can report the active mode
+- owner data preservation checks pass for the known local data categories
+- all unknowns that cannot be resolved in `1.0.20` are split into follow-up backlog items
+
+## Open Questions
+
+1. Which device fingerprints are stable and safe enough to support identity validation?
+2. Where should the issued Open Jibo robot identity/token be persisted on each robot version?
+3. What should the onboarding skill show when it detects a possible cloned or previously modified identity?
+4. What exact token exchange should Open Jibo emulate or replace during OOBE and `NewRobotToken` registration?
+5. Should `open-jibo-hybrid` become a distinct mode label, even if sync remains a one-way setup choice?

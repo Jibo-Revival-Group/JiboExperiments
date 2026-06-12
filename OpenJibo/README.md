@@ -79,6 +79,7 @@ OpenJibo/
     development-plan.md
     device-bootstrap.md
     feature-backlog.md
+    open-jibo-mode-conversion-plan.md
     public-site-plan.md
     regression-test-plan.md
     release-1.0.19-plan.md
@@ -107,6 +108,7 @@ Use these when you want the active technical truth:
 - [Development plan](docs/development-plan.md)
 - [Local cloud quickstart](docs/local-cloud-quickstart.md)
 - [Feature backlog](docs/feature-backlog.md)
+- [Open Jibo mode conversion plan](docs/open-jibo-mode-conversion-plan.md)
 - [Release 1.0.19 closeout](docs/release-1.0.19-plan.md)
 - [Release 1.0.20 plan](docs/release-1.0.20-plan.md)
 - [Support tiers](docs/support-tiers.md)

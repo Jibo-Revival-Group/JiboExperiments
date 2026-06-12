@@ -11,6 +11,8 @@ RCM/device patch -> Azure-hosted OpenJibo cloud
 
 This is the path we can document, repeat, and improve.
 
+The `1.0.20` conversion planning track builds on this bootstrap path in [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md).
+
 ## Why This Path Comes First
 
 - it matches the region-driven configuration seams observed on the robot

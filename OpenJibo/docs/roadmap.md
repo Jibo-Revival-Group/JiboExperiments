@@ -147,5 +147,6 @@ If you want the current execution truth, read:
 If you want the first-device path, read:
 
 - [Device bootstrap path](device-bootstrap.md)
+- [Open Jibo mode conversion plan](open-jibo-mode-conversion-plan.md)
 - [Support tiers](support-tiers.md)
 - [Public site plan](public-site-plan.md)

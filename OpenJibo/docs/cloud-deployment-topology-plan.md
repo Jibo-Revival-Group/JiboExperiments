@@ -196,6 +196,48 @@ Expected default for most owners:
 
 Managed and community clouds may need provider-specific onboarding steps. For example, a paid hosted cloud can redirect the owner from Open Jibo onboarding into a signup/payment flow, then return to robot onboarding after the account is ready. The onboarding system should support these provider-specific steps without hard-coding one payment provider or one managed operator into the core cloud runtime.
 
+## Provider-Specific Onboarding Extension
+
+The onboarding system should expose extension events around person, robot, and cloud-provider setup.
+
+Candidate events:
+
+- before onboarding starts
+- person onboarding failed
+- person onboarding completed
+- cloud provider selected
+- robot onboarding failed
+- robot onboarding completed
+- onboarding completed
+
+For each configured provider event:
+
+- Open Jibo sends a signed POST to the provider endpoint
+- the request includes a return URI and enough signed context for the provider to trust the session
+- the provider can reply with no action, a continue decision, or a URI that onboarding should send the person to
+- after provider work is complete, the provider returns the person to the supplied URI with signed result data
+- onboarding validates the return signature and resumes
+- onboarding can display provider result information inside the robot/app/web setup flow
+
+Example paid-cloud flow:
+
+1. Onboarding starts.
+2. Person setup completes.
+3. The person sees cloud choices with payment, free/community, security, and feature notes.
+4. The person selects a paid hosted cloud.
+5. Open Jibo sends the provider webhook.
+6. The provider returns a signup/payment URI.
+7. Onboarding sends the person to that URI.
+8. The provider handles payment.
+9. The provider redirects back to the onboarding return URI with signed result data.
+10. Onboarding displays the result, such as `Welcome to my cloud. You paid $10/month for access.`
+11. Robot setup and activation continue.
+12. The robot receives the selected cloud target through the onboarding/token/QR path.
+13. The robot talks to the selected provider cloud.
+14. On later boots, the robot should try the selected provider cloud first and use the root Open Jibo authority only as a recovery/routing fallback when needed.
+
+Open question: define the exact event payload shape and signing scheme after the original onboarding call sequence is mapped.
+
 ### Self-Hosted Isolated
 
 Owner runs the full stack independently.
@@ -206,6 +248,14 @@ Rules:
 - local identities and storage remain local
 - no automatic sync with the main network
 - owner is responsible for backups, updates, TLS, and uptime
+
+TLS/self-hosted decision:
+
+- self-hosted v1 should primarily be handled by robot mode/config patching
+- the conversion path controls the domain/IP Jibo talks to and can control the certificate/trust behavior for that mode
+- self-signed certificate support can remain viable if the conversion disables or redirects the relevant robot-side verification checks
+- research whether the robot can be configured to use local HTTP instead of HTTPS for self-hosted mode, because that may be the simplest local path
+- once a robot enters this self-hosted trust mode, returning to a normal trust posture should require reset/OOBE-style recovery
 
 ### Self-Hosted With Sync
 
@@ -248,10 +298,11 @@ First pipeline should:
 
 Minimum protocol smoke gate:
 
+- prefer recorded onboarding/session replay from the server perspective as the first CI-friendly gate
 - use the revived Jibo Revival Group virtual Jibo when practical
-- if that is not stable enough for CI, build a small virtual-Jibo smoke client that exercises only the deployment gate
+- if virtual Jibo is not stable enough for CI, build a small virtual-Jibo smoke client that exercises only the deployment gate
 - verify robot HTTPS startup reaches the deployed API
-- verify onboarding/registration operations, including `CreateRobot` or the equivalent registration flow once identified
+- verify onboarding/registration operations, likely including create person, `CreateRobot` or the equivalent registration flow, activation, and OOBE calls once identified
 - verify `Notification.NewRobotToken`
 - verify token/session issuance enough to open the expected sockets
 - verify WebSocket listen/proactive endpoints accept connections
@@ -259,6 +310,8 @@ Minimum protocol smoke gate:
 - verify backup and update metadata calls do not break startup or basic operation
 
 The smoke gate does not need full robot parity. Its job is to prevent obviously broken deployments from being promoted to real-device testing.
+
+Research target: record a new-robot onboarding session and reduce it to the smallest replayable sequence that proves the deployment can onboard, issue tokens, accept sockets, and complete basic operation turns.
 
 Migration policy clarification:
 
@@ -269,6 +322,15 @@ For PostgreSQL-backed self-hosting, "migration policy" means the rule for how sc
 - how owners are warned before risky migrations
 - how backups are required or encouraged before migration
 - how failed migrations are detected and recovered
+
+Recommendation:
+
+- use versioned SQL migration scripts as the source of truth
+- run migrations through an explicit Open Jibo migration command in CI/CD and managed deployments
+- for local/self-hosted startup, provide a script or entrypoint switch that can run migrations intentionally
+- default to not applying destructive or risky migrations silently
+- require a dry-run/report mode before public self-hosted release
+- spike a .NET-friendly migration runner such as DbUp-style SQL script execution, FluentMigrator, or another tool that can support PostgreSQL, version journaling, repeatable local execution, and useful dry-run/report behavior
 
 Later pipeline should:
 
@@ -300,13 +362,14 @@ This track is ready to close for `1.0.20` when:
 - the managed cloud can answer `/health`
 - the version endpoint and `cloud version` speech identify the deployed build
 - a virtual-Jibo or purpose-built smoke client gates real-robot deployment
+- recorded onboarding replay or equivalent smoke coverage proves basic onboarding and operation calls
 - the first auth/identity boundary is documented well enough to avoid mixing robot runtime with root identity authority
 - provider-specific onboarding can hand off to signup/payment and return to robot onboarding
 
 ## Open Questions
 
-1. Which exact protocol steps from the revived virtual Jibo are reliable enough for CI?
-2. What database migration tool should we use for PostgreSQL-backed self-hosting?
-3. Should PostgreSQL migrations run automatically on startup, or only through an explicit admin command?
-4. Should self-hosted TLS be handled by a bundled reverse proxy/TLS helper, or by a robot patch/self-signed flow documented as part of conversion?
-5. What should the provider-specific onboarding extension contract look like for paid hosted clouds, free community clouds, and self-hosted servers?
+1. What is the exact new-robot onboarding call sequence, including person creation, robot creation, activation, OOBE, token issuance, and first socket connection?
+2. Which migration runner best fits our SQL-script, dry-run/report, PostgreSQL, and container requirements?
+3. Which self-hosted paths can use HTTP locally, and which robot-side checks must be patched for HTTPS/self-signed operation?
+4. What signing mechanism should provider-specific onboarding events and returns use?
+5. What recovery behavior should happen if a selected provider cloud is unavailable on later robot boots?

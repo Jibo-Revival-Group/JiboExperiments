@@ -70,6 +70,8 @@ Cloud deployment planning starts in [cloud-deployment-topology-plan.md](cloud-de
 - keep auth in the shared repo/solution initially, but as its own project and deployable
 - publish managed images to Azure Container Registry first
 - gate real-robot deployment with a virtual-Jibo or purpose-built smoke client
+- prefer recorded onboarding/session replay as the first CI-friendly deployment gate
+- run PostgreSQL migrations through explicit CI/CD or admin commands, with self-hosted startup migration behind an intentional switch
 - keep the hosted software able to run as:
   - self-hosted with no external cloud dependency
   - hybrid cloud with shared identity/storage
@@ -80,6 +82,7 @@ Cloud deployment planning starts in [cloud-deployment-topology-plan.md](cloud-de
 - treat self-hosted-to-network sync as a one-way setup choice until the trust model is mature
 - plan the openjibo.com web UI and paid-access surface alongside the free/self-hosted options
 - support provider-specific onboarding steps such as signup/payment before returning to robot onboarding
+- support signed provider onboarding events and signed return flows
 - keep Loop advancement, family/friend recognition, and multiple Jibo support in the same platform track so the network and identity model stays future-proof
 
 ## Working Order

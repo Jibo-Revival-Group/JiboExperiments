@@ -1049,6 +1049,7 @@ For `1.0.20` and beyond:
    - first target is Azure Container Apps, with App Service kept as fallback and AKS deferred for later AI/network scale-out
    - first registry target is Azure Container Registry
    - deployment promotion must pass a virtual-Jibo or purpose-built protocol smoke gate
+   - recorded onboarding/session replay is the preferred first CI-friendly smoke gate
    - planning anchor: [cloud-deployment-topology-plan.md](cloud-deployment-topology-plan.md)
 5. Hosting modes and service topology
    - support self-hosted operation with no external cloud dependency
@@ -1057,6 +1058,7 @@ For `1.0.20` and beyond:
    - treat self-hosted sync enrollment as a one-way setup choice until reset/OOBE recovery is performed
    - first self-hosted target is Docker Compose
    - first Docker Compose database is PostgreSQL
+   - PostgreSQL migrations should run through explicit CI/CD or admin commands, with self-hosted startup migration behind an intentional switch
 6. Storage abstraction and sync
    - abstract storage so the rest of the system does not care which server implementation is backing it
    - keep identity and storage synchronized across the network for participating servers
@@ -1068,6 +1070,7 @@ For `1.0.20` and beyond:
    - auth starts as a separate deployable under the Open Jibo domain family
    - auth can live in the shared repo/solution initially, but must be its own project
    - onboarding needs provider-specific extension points for signup/payment, free community clouds, and self-hosted servers
+   - provider-specific onboarding must use signed event callbacks and signed returns
 8. Loop advancement and multi-Jibo support
    - support family/friend advancement, multiple user recognition, and multiple Jibo interaction
    - keep the identity model ready for Jibo-to-Jibo communication and shared household use

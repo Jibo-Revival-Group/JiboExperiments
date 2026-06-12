@@ -1,11 +1,16 @@
 <Solution>
   <Folder Name="/docs/">
+    <File Path="docs/calendar-architecture.md" />
+    <File Path="docs/commute-architecture.md" />
     <File Path="docs/development-plan.md" />
     <File Path="docs/device-bootstrap.md" />
     <File Path="docs/feature-backlog.md" />
     <File Path="docs/greetings-presence-plan.md" />
+    <File Path="docs/holiday-architecture.md" />
     <File Path="docs/live-jibo-capture.md" />
     <File Path="docs/live-jibo-test-runbook.md" />
+    <File Path="docs/local-cloud-quickstart.md" />
+    <File Path="docs/persistence-architecture.md" />
     <File Path="docs/personal-report-parity-plan.md" />
     <File Path="docs/protocol-inventory.md" />
     <File Path="docs/public-site-plan.md" />
@@ -15,6 +20,13 @@
     <File Path="docs/roadmap.md" />
     <File Path="docs/support-tiers.md" />
     <File Path="docs/system-diagram-alignment.md" />
+  </Folder>
+  <Folder Name="/docs/DesignDoc/">
+    <File Path="docs/DesignDoc/additional-sections-design.md" />
+    <File Path="docs/DesignDoc/communication-design.md" />
+    <File Path="docs/DesignDoc/hub-service-design.md" />
+    <File Path="docs/DesignDoc/original-server-design.md" />
+    <File Path="docs/DesignDoc/skill-framework-design.md" />
   </Folder>
   <Folder Name="/docs/prompts/">
     <File Path="docs/prompts/cloud-deploy-and-jibo-rcm-path.md" />
@@ -37,8 +49,12 @@
     <File Path="scripts/cloud/invoke-live-jibo-prep.sh" />
     <File Path="scripts/cloud/Invoke-LiveJiboPrep.ps1" />
     <File Path="scripts/cloud/Invoke-ProtocolFixture.ps1" />
+    <File Path="scripts/cloud/New-CaptureBundle.ps1" />
     <File Path="scripts/cloud/README.md" />
     <File Path="scripts/cloud/start-dotnet-with-node-cert.sh" />
+    <File Path="scripts/cloud/Start-OpenJiboDotNet.ps1" />
+    <File Path="scripts/cloud/Start-OpenJiboNode.ps1" />
+    <File Path="scripts/cloud/Start-OpenJiboPlayground.ps1" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="NuGet.Config" />

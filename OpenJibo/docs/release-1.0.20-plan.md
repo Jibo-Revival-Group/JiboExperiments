@@ -53,6 +53,7 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
   - return Jibo to stock mode when disabled
   - stay visible in the menu after toggling so owners can re-enable it later
   - trigger first-boot/OOBE setup behavior when the robot is converted
+  - preserve any on robot persisted state and data such as holidays, Jibo birthddate, pictures and videos, person voice and face training and recognition, and favorites lists
 - prove the conversion path against the real device variants we care about:
   - newer OOBE devices
   - older stock devices such as the `1.9.2` baseline

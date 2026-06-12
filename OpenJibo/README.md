@@ -75,6 +75,7 @@ That path is documented in [docs/device-bootstrap.md](docs/device-bootstrap.md).
 ```text
 OpenJibo/
   docs/
+    cloud-deployment-topology-plan.md
     roadmap.md
     development-plan.md
     device-bootstrap.md
@@ -106,6 +107,7 @@ OpenJibo/
 Use these when you want the active technical truth:
 
 - [Development plan](docs/development-plan.md)
+- [Cloud deployment and topology plan](docs/cloud-deployment-topology-plan.md)
 - [Local cloud quickstart](docs/local-cloud-quickstart.md)
 - [Feature backlog](docs/feature-backlog.md)
 - [Open Jibo mode conversion plan](docs/open-jibo-mode-conversion-plan.md)

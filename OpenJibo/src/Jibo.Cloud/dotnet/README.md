@@ -37,11 +37,14 @@ This keeps deployment simple while preserving clean boundaries.
 
 The target Azure footprint is:
 
-- Azure App Service for HTTP and WebSocket traffic
+- Azure Container Apps for HTTP and WebSocket traffic
+- Azure Container Registry for the managed cloud image
 - Azure SQL for relational persistence
 - Azure Blob Storage for uploads and update artifacts
 - Azure Key Vault for secrets and certificates
 - Application Insights for observability
+
+Azure App Service remains a fallback if Container Apps proves unsuitable for robot-facing WebSocket/TLS behavior. AKS is deferred until the AI/network suite needs Kubernetes-level control.
 
 Azure SQL is the primary system of record for:
 

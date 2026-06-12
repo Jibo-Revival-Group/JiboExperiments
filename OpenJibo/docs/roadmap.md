@@ -11,6 +11,7 @@ The current execution truth still lives in:
 - [Development plan](development-plan.md)
 - [Feature backlog](feature-backlog.md)
 - [Release 1.0.20 plan](release-1.0.20-plan.md)
+- [Cloud deployment and topology plan](cloud-deployment-topology-plan.md)
 - [Device bootstrap path](device-bootstrap.md)
 
 ## North Star
@@ -148,5 +149,6 @@ If you want the first-device path, read:
 
 - [Device bootstrap path](device-bootstrap.md)
 - [Open Jibo mode conversion plan](open-jibo-mode-conversion-plan.md)
+- [Cloud deployment and topology plan](cloud-deployment-topology-plan.md)
 - [Support tiers](support-tiers.md)
 - [Public site plan](public-site-plan.md)

@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/docs/">
+    <File Path="docs/cloud-deployment-topology-plan.md" />
     <File Path="docs/calendar-architecture.md" />
     <File Path="docs/commute-architecture.md" />
     <File Path="docs/development-plan.md" />

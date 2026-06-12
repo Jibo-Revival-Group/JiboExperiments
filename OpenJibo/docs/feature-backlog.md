@@ -1046,11 +1046,17 @@ For `1.0.20` and beyond:
 4. Cloud deployment and CI/CD
    - set up the hosted cloud for deployment into the Azure environment
    - make the release path reproducible from source to deployed service
+   - first target is Azure Container Apps, with App Service kept as fallback and AKS deferred for later AI/network scale-out
+   - first registry target is Azure Container Registry
+   - deployment promotion must pass a virtual-Jibo or purpose-built protocol smoke gate
+   - planning anchor: [cloud-deployment-topology-plan.md](cloud-deployment-topology-plan.md)
 5. Hosting modes and service topology
    - support self-hosted operation with no external cloud dependency
    - support hybrid operation where non-self-hosted servers sync to a main cloud service
    - support a managed cloud service for paid hosted access
    - treat self-hosted sync enrollment as a one-way setup choice until reset/OOBE recovery is performed
+   - first self-hosted target is Docker Compose
+   - first Docker Compose database is PostgreSQL
 6. Storage abstraction and sync
    - abstract storage so the rest of the system does not care which server implementation is backing it
    - keep identity and storage synchronized across the network for participating servers
@@ -1059,6 +1065,9 @@ For `1.0.20` and beyond:
 7. OpenJibo.com web UI and account surface
    - provide a web UI for openjibo.com
    - support paid access on the hosted side while leaving room for free or self-hosted options elsewhere
+   - auth starts as a separate deployable under the Open Jibo domain family
+   - auth can live in the shared repo/solution initially, but must be its own project
+   - onboarding needs provider-specific extension points for signup/payment, free community clouds, and self-hosted servers
 8. Loop advancement and multi-Jibo support
    - support family/friend advancement, multiple user recognition, and multiple Jibo interaction
    - keep the identity model ready for Jibo-to-Jibo communication and shared household use

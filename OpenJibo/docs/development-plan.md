@@ -223,7 +223,7 @@ After `1.0.19` is closed out, `1.0.20` should focus on proving the remaining reg
 
 The target hosted footprint remains:
 
-- Azure App Service for HTTP and WebSocket traffic
+- Azure Container Apps for HTTP and WebSocket traffic
 - Azure SQL for accounts, devices, sessions, host mappings, updates, media metadata, and provisioning records
 - Azure Blob Storage for media bodies, upload artifacts, update payloads, and curated capture bundles
 - Azure Key Vault for secrets and certificates

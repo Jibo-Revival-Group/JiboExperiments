@@ -930,6 +930,7 @@ These are the carryover items that need a clean proof pass first:
   - the broader stop lane now also catches `stop talking`, `be quiet`, `be silent`, `shut up`, `silence`, `quiet down`, `no more music`, and `no more dancing`
 - Favorite-animal work in flight:
   - the favorites family now includes `what is your favorite animal`, `what is your favorite bird`, `do you like penguins`, and `do you like animals` so the penguin-centric replies stay easy to find
+  - these favorites prompts are already source-backed in the cloud path; any remaining mismatch is live playback or robot-side launch-state handling
 - Presence and thought follow-ups in flight:
   - `welcome back`, `what are you thinking`, `what have you been doing`, and `what did you do` are now part of Build B
   - these keep the social surface lively while the memory and multitenant tracks keep advancing in parallel
@@ -991,6 +992,12 @@ These are the carryover items that need a clean proof pass first:
   - inventory the legacy song / sing / musical prompt families
   - keep the first implementation source-backed if Pegasus has usable authored lines
   - preserve room for a later sing-along launcher if we want one
+- Current note:
+  - `can you sing` and the Christmas-song variant are already source-backed in the cloud path, so the open work is live robot playback verification and any missing song families
+- Holiday tracker follow-up:
+  - `show santa tracker` now emits a tracker presentation payload in the cloud path
+  - the live robot still needs verification for the winter visuals and jingle-bell style audio described in the legacy video
+  - source discovery suggests this is an animation/presentation payload rather than a dedicated skill launch or robot-local handoff
 - Exit criteria:
   - a small song backlog exists with candidate phrases listed
   - the release plan has a clear place for musical personality without crowding out weather/news/report work

@@ -403,11 +403,14 @@ Capture check:
 Expected:
 
 - holiday extras remain source-backed
+- `show santa tracker` should continue past the launch reply into the tracker presentation, including the winter/Santa visuals and the jingle-bell style audio described in the legacy video
+- the cloud path now emits a tracker presentation payload for `show santa tracker`; keep the robot-side replay/visual verification on the regression list until the live capture matches
 - black history month and other seasonal prompts stay on their Pegasus-shaped routes
 
 Capture check:
 
 - seasonal prompts should not fall back into generic personality chat when source-backed replies exist
+- for Santa Tracker specifically, record whether the robot hands off to an animation or just speaks and stops
 
 ## Optional Feature Slice Checks
 

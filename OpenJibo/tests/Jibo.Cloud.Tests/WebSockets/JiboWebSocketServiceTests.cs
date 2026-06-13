@@ -1988,6 +1988,37 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_SharedYesNoPrompt_MixedReplyRequestsClarification()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-shared-yesno-clarify-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-shared-yesno-clarify","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-shared-yesno-clarify-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-shared-yesno-clarify","data":{"text":"no yes"}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("yes_no_clarify",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("no yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+    }
+
+    [Fact]
     public async Task ClientAsr_AlarmTimerChangeYesNoPrompt_StripsGlobalRulesAndStaysLocal()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2379,6 +2410,104 @@ public sealed class JiboWebSocketServiceTests
             .ToArray();
 
         Assert.Contains("household-list/follow_up_item", contexts);
+    }
+
+    [Fact]
+    public async Task ClientAsr_GroceryList_PromptsFollowUpAndAcceptsNextItem()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-grocery-followup-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-grocery-followup","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var promptReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-grocery-followup-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-grocery-followup","data":{"text":"grocery list"}}"""
+        });
+
+        Assert.Equal(3, promptReplies.Count);
+
+        var session = _store.FindSessionByToken("hub-grocery-followup-token");
+        Assert.NotNull(session);
+        Assert.True(session.FollowUpOpen);
+        Assert.Equal("shopping_list_prompt", session.LastIntent);
+        Assert.Equal("follow-up", session.LastListenType);
+
+        using var promptListenPayload = JsonDocument.Parse(promptReplies[0].Text!);
+        Assert.Equal("shopping_list_prompt",
+            promptListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                .GetString());
+
+        using var promptSkillPayload = JsonDocument.Parse(promptReplies[2].Text!);
+        Assert.Equal("SKILL_ACTION", promptSkillPayload.RootElement.GetProperty("type").GetString());
+        Assert.Contains("household-list/follow_up_item",
+            promptSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config")
+                .GetProperty("listen")
+                .GetProperty("contexts")
+                .EnumerateArray()
+                .Select(element => element.GetString())
+                .Where(value => value is not null)
+                .Select(value => value!));
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-grocery-followup-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-grocery-followup-item","data":{"rules":["household-list/follow_up_item"],"asr":{"hints":["$ANYTHING"]}}}"""
+        });
+
+        var addReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-grocery-followup-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-grocery-followup","data":{"text":"milk and eggs"}}"""
+        });
+
+        Assert.Equal(3, addReplies.Count);
+        Assert.True(session.FollowUpOpen);
+        Assert.Equal("shopping_list_add", session.LastIntent);
+
+        using var addListenPayload = JsonDocument.Parse(addReplies[0].Text!);
+        Assert.Equal("shopping_list_add",
+            addListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                .GetString());
+        Assert.Equal("milk and eggs",
+            addListenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+
+        using var addSkillPayload = JsonDocument.Parse(addReplies[2].Text!);
+        Assert.Equal("SKILL_ACTION", addSkillPayload.RootElement.GetProperty("type").GetString());
+        Assert.Contains("household-list/follow_up_item",
+            addSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config")
+                .GetProperty("listen")
+                .GetProperty("contexts")
+                .EnumerateArray()
+                .Select(element => element.GetString())
+                .Where(value => value is not null)
+                .Select(value => value!));
     }
 
     [Fact]

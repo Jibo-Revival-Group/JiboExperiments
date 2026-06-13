@@ -34,6 +34,8 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - the Open Jibo cloud sleep replay path now has regression coverage for the legacy `@be/idle` redirect plus follow-up acknowledgment speech, so the remaining work is parity checking rather than contract discovery
 - keep `turn around` / `spin around` / `twirl` source-backed instead of relying on accidental matches
 - `turn around` is now reported as working on the robot, so the remaining command-gap work is the bare `twerk` short-turn and any other short-utterance mishears
+- favorites, `show santa tracker`, and `can you sing` are already source-backed in the cloud path, so any remaining regression is live robot playback or launch-state handling rather than missing intent coverage
+- Santa Tracker now emits a tracker presentation payload in the cloud path, but the live robot still needs verification for the fuller snow/santa animation and jingle-bell style audio
 
 ### 3. Personality And Presence Continuation
 

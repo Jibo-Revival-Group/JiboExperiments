@@ -602,6 +602,7 @@ internal static class SeasonalHolidayRouteBuilder
                 catalog,
                 randomizer,
                 semanticIntent,
+                referenceLocalTime,
                 "santa tracker",
                 "let's see if i can spot him",
                 "deliveries",

@@ -1215,6 +1215,26 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_SeasonalSantaTracker_UsesAnimatedSkillPayload()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "show santa tracker",
+            NormalizedTranscript = "show santa tracker"
+        });
+
+        Assert.Equal("seasonal_santa_tracker", decision.IntentName);
+        Assert.Equal("chitchat-skill", decision.SkillName);
+        Assert.NotNull(decision.SkillPayload);
+        Assert.Equal("RA_JBO_ShowSantaTracker", decision.SkillPayload!["mim_id"]);
+        Assert.Equal("RA_JBO_ShowSantaTracker_AN_01", decision.SkillPayload["prompt_id"]);
+        Assert.Equal("AN", decision.SkillPayload["prompt_sub_category"]);
+        Assert.Contains("santa-scanner", decision.SkillPayload["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_BlackHistoryMonth_UsesDateConditionedReply()
     {
         var service = CreateService();

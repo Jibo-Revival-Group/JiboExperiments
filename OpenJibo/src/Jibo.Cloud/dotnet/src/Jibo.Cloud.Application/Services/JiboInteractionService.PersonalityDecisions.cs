@@ -703,12 +703,14 @@ public sealed partial class JiboInteractionService
     private JiboInteractionDecision BuildScriptedHolidayTrackerDecision(
         JiboExperienceCatalog catalog,
         string intentName,
+        DateTimeOffset? referenceLocalTime,
         params string[] preferredSnippets)
     {
         return ScriptedResponseDecisionBuilder.BuildScriptedHolidayTrackerDecision(
             catalog,
             randomizer,
             intentName,
+            referenceLocalTime,
             preferredSnippets);
     }
 

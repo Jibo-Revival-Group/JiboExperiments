@@ -68,8 +68,8 @@ Current API and protocol scope:
 - token/session issuance for account, hub, and robot startup flows
 - starter account, notification, loop, media, key, person, backup, robot, update, and upload/log handling
 - media lookup through `/media/{path}`
-- `GetUpdateFrom` returns a no-op update manifest when no staged update exists
-- the phantom-update false positive is now traced to robot-side OTA state, not the cloud bridge: the update menu trusts scheduler/KB `updatesAvailable` state, while the cloud `GetUpdateFrom` placeholder remains only a compatibility shape for the updater helper
+- `GetUpdateFrom` returns no content when no staged update exists
+- the phantom-update false positive is now traced to robot-side OTA state, not the cloud bridge: the update menu trusts scheduler/KB `updatesAvailable` state, while the cloud `GetUpdateFrom` handler remains only a compatibility shape for the updater helper
 
 Current websocket scope:
 

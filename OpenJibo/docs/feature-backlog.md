@@ -125,7 +125,7 @@ Current release theme:
   - `jibo test 30` showed the backup announcement after gallery came from local `@be/surprises` -> `@be/surprises-ota`, not from a hosted `Backup_*` HTTP call; the local `@be/idle` nighttime OTA helper can also initiate backup through `jibo.scheduler.backupRobot`
   - `jibo test 31` added a startup `Backup_20170222.List` capture before the voice session, which is useful evidence that the legacy backup-status path is active even when the user did not ask for backup
 - Parity plan:
-  - keep the current cloud `GetUpdateFrom` noop-object compatibility only as a short-term updater bridge
+  - keep the current cloud `GetUpdateFrom` no-content compatibility only as a short-term updater bridge
   - add robot-local scheduler/status behavior that matches the original contracts instead of asking the cloud manifest to model menu state
   - model the original paths separately: `backupStatus` as boolean, `downloadStatus` as null-or-progress object, and `checkForUpdates` as an `updates[]` response
   - let the update menu decide among `backup`, `downloading`, `updates`, and `none` using those local status calls
@@ -378,7 +378,7 @@ Current release theme:
 - Status: `implemented`
 - Tags: `protocol`, `storage`
 - Result:
-  - `GetUpdateFrom` returns a no-op update manifest when no update is staged
+  - `GetUpdateFrom` returns no content when no update is staged
   - staged updates can still be created explicitly
 - Follow-up:
   - end-to-end update delivery and restore proof remains future work

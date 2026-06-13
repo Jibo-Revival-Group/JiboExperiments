@@ -49,7 +49,7 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
-    public async Task GetUpdateFrom_WithoutStagedUpdate_ReturnsNoopUpdate()
+    public async Task GetUpdateFrom_WithoutStagedUpdate_ReturnsNoContent()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -60,14 +60,9 @@ public sealed class JiboCloudProtocolServiceTests
             BodyText = """{"subsystem":"robot","fromVersion":"1.0.0"}"""
         });
 
-        using var payload = JsonDocument.Parse(result.BodyText);
-        Assert.Equal(200, result.StatusCode);
-        Assert.Equal("application/x-amz-json-1.1", result.ContentType);
-        Assert.Equal("noop-update-robot-1.0.0", payload.RootElement.GetProperty("_id").GetString());
-        Assert.Equal("1.0.0", payload.RootElement.GetProperty("fromVersion").GetString());
-        Assert.Equal("1.0.0", payload.RootElement.GetProperty("toVersion").GetString());
-        Assert.Equal("No update available", payload.RootElement.GetProperty("changes").GetString());
-        Assert.Equal(0, payload.RootElement.GetProperty("length").GetInt64());
+        Assert.Equal(204, result.StatusCode);
+        Assert.Equal("text/plain", result.ContentType);
+        Assert.Empty(result.BodyText);
     }
 
     [Fact]
@@ -91,11 +86,9 @@ public sealed class JiboCloudProtocolServiceTests
             BodyText = """{"subsystem":"robot","fromVersion":"1.0.1"}"""
         });
 
-        using var payload = JsonDocument.Parse(result.BodyText);
-        Assert.Equal(200, result.StatusCode);
-        Assert.Equal("noop-update-robot-1.0.1", payload.RootElement.GetProperty("_id").GetString());
-        Assert.Equal("1.0.1", payload.RootElement.GetProperty("fromVersion").GetString());
-        Assert.Equal("1.0.1", payload.RootElement.GetProperty("toVersion").GetString());
+        Assert.Equal(204, result.StatusCode);
+        Assert.Equal("text/plain", result.ContentType);
+        Assert.Empty(result.BodyText);
     }
 
     [Fact]

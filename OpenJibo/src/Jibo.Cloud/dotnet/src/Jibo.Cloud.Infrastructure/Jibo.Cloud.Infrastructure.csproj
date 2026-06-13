@@ -27,6 +27,7 @@
 	<ItemGroup>
 	  <PackageReference Include="Azure.Storage.Blobs" Version="12.28.0" />
 	  <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+	  <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.5" />
 	</ItemGroup>
 
 	<PropertyGroup>

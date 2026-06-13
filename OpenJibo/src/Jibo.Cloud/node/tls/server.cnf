@@ -1,0 +1,22 @@
+[req]
+prompt = no
+default_bits = 2048
+distinguished_name = dn
+req_extensions = v3_req
+
+[dn]
+CN = api.jibo.com
+
+[v3_req]
+basicConstraints = critical,CA:false
+keyUsage = critical,digitalSignature,keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = api.jibo.com
+DNS.2 = api-socket.jibo.com
+DNS.3 = neo-hub.jibo.com
+DNS.4 = localhost
+IP.1 = 127.0.0.1
+IP.2 = 192.168.1.110

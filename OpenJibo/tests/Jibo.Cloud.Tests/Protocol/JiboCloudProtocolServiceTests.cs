@@ -5,6 +5,7 @@ using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.Persistence;
+using Microsoft.Extensions.Configuration;
 
 namespace Jibo.Cloud.Tests.Protocol;
 
@@ -49,7 +50,142 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
-    public async Task GetUpdateFrom_WithoutStagedUpdate_ReturnsNoopUpdate()
+    public async Task GetRobot_AlignsLoopToRequestedRobotId()
+    {
+        await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Notification_20160715",
+            Operation = "NewRobotToken",
+            BodyText = """{"deviceId":"Ghost-Instance-Onion-Silk"}"""
+        });
+
+        var robot = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Robot_20160225",
+            Operation = "GetRobot",
+            BodyText = """{"id":"5a0b6398faa0f0001c5d0df1"}"""
+        });
+        Assert.Equal(200, robot.StatusCode);
+
+        var loops = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160324",
+            Operation = "ListLoops",
+            BodyText = "{}"
+        });
+
+        using var payload = JsonDocument.Parse(loops.BodyText);
+        var loop = Assert.Single(payload.RootElement.EnumerateArray());
+        Assert.Equal("5a0b6398faa0f0001c5d0df1", loop.GetProperty("robot").GetString());
+        Assert.Equal("Ghost-Instance-Onion-Silk", loop.GetProperty("robotFriendlyId").GetString());
+    }
+
+    [Fact]
+    public async Task ListLoops_UsesConfiguredRobotId_WhenRobotOnlySendsFriendlyId()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:Robot:RobotId"] = "5a0b6398faa0f0001c5d0df1"
+            })
+            .Build();
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(), configuration: configuration);
+
+        await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Notification_20160715",
+            Operation = "NewRobotToken",
+            BodyText = """{"deviceId":"Ghost-Instance-Onion-Silk"}"""
+        });
+
+        var loops = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160324",
+            Operation = "ListLoops",
+            BodyText = "{}"
+        });
+
+        using var payload = JsonDocument.Parse(loops.BodyText);
+        var loop = Assert.Single(payload.RootElement.EnumerateArray());
+        Assert.Equal("5a0b6398faa0f0001c5d0df1", loop.GetProperty("robot").GetString());
+        Assert.Equal("Ghost-Instance-Onion-Silk", loop.GetProperty("robotFriendlyId").GetString());
+    }
+
+    [Fact]
+    public async Task OobePrepareAndSetupRobot_ReturnsRobotCredentialsAndCompletesToken()
+    {
+        var prepare = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "PrepareRobot",
+            BodyText = """{"loopId":"loop-openjibo-default","accountId":"usr_openjibo_owner"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        Assert.Equal(200, prepare.StatusCode);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(token));
+        Assert.Matches("^oobe-[0-9a-f]{12}$", token);
+
+        var setup = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"Royal-Current-Sage-Canvas"}"""
+        });
+
+        using var setupPayload = JsonDocument.Parse(setup.BodyText);
+        Assert.Equal(200, setup.StatusCode);
+        Assert.False(string.IsNullOrWhiteSpace(setupPayload.RootElement.GetProperty("accessKeyId").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(setupPayload.RootElement.GetProperty("secretAccessKey").GetString()));
+        Assert.False(setupPayload.RootElement.GetProperty("serviceMode").GetBoolean());
+
+        var status = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "GetStatus",
+            BodyText = $$"""{"token":"{{token}}"}"""
+        });
+
+        using var statusPayload = JsonDocument.Parse(status.BodyText);
+        Assert.True(statusPayload.RootElement.GetProperty("complete").GetBoolean());
+    }
+
+    [Fact]
+    public async Task LegacyLoopSuspendRestPath_ReturnsExplicitOk()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            Path = "/v1/loop/suspend",
+            BodyText = """{"loopId":"loop-openjibo-default"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal("ok", payload.RootElement.GetProperty("result").GetString());
+        Assert.False(payload.RootElement.TryGetProperty("note", out _));
+    }
+
+    [Fact]
+    public async Task GetUpdateFrom_WithoutStagedUpdate_ReturnsUpdateNotFound()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -60,14 +196,9 @@ public sealed class JiboCloudProtocolServiceTests
             BodyText = """{"subsystem":"robot","fromVersion":"1.0.0"}"""
         });
 
-        using var payload = JsonDocument.Parse(result.BodyText);
-        Assert.Equal(200, result.StatusCode);
-        Assert.Equal("application/x-amz-json-1.1", result.ContentType);
-        Assert.Equal("noop-update-robot-1.0.0", payload.RootElement.GetProperty("_id").GetString());
-        Assert.Equal("1.0.0", payload.RootElement.GetProperty("fromVersion").GetString());
-        Assert.Equal("1.0.0", payload.RootElement.GetProperty("toVersion").GetString());
-        Assert.Equal("No update available", payload.RootElement.GetProperty("changes").GetString());
-        Assert.Equal(0, payload.RootElement.GetProperty("length").GetInt64());
+        Assert.Equal(404, result.StatusCode);
+        using var doc = JsonDocument.Parse(result.BodyText);
+        Assert.Equal("UPDATE_NOT_FOUND", doc.RootElement.GetProperty("__type").GetString());
     }
 
     [Fact]

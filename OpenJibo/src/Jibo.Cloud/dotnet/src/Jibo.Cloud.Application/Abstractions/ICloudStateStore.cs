@@ -51,4 +51,21 @@ public interface ICloudStateStore
     IReadOnlyList<GreetingPresenceRecord> GetGreetingPresences(string? loopId = null);
     GreetingPresenceRecord UpsertGreetingPresence(GreetingPresenceRecord greetingPresence);
     void UpdateRobot(DeviceRegistration registration);
+
+    // User auth
+    UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);
+    UserRecord? AuthenticateUser(string email, string password);
+    UserRecord? GetUserById(string id);
+    UserRecord? GetUserByEmail(string email);
+    UserRecord UpdateUser(string id, string? firstName, string? lastName, string? gender, long? birthday);
+
+    // Loop members
+    IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
+    LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email,
+        string? firstName, string? lastName, string? gender, long? birthday, bool isChild, string type);
+    LoopMemberRecord UpdateLoopMember(string loopId, string memberId, string? firstName,
+        string? lastName, string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName);
+    bool RemoveLoopMember(string loopId, string memberId);
+    LoopMemberRecord SetMemberEnrollment(string loopId, string memberId, bool? face, bool? voice);
+    LoopRecord CreateLoop(string name, string robotId);
 }

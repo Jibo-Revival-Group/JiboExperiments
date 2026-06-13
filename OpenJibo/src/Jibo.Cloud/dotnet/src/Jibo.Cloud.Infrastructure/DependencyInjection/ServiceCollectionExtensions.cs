@@ -72,6 +72,20 @@ public static class ServiceCollectionExtensions
                                                  "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
                                              ?? Environment.GetEnvironmentVariable(
                                                  "OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
+
+        // Auto-derive SQLite connection strings from the persistence path when not explicitly provided.
+        if (stateBackendKind == PersistenceBackendKind.Sqlite && string.IsNullOrWhiteSpace(stateConnectionString))
+        {
+            var dbPath = Path.ChangeExtension(statePersistencePath, ".db");
+            stateConnectionString = $"Data Source={dbPath}";
+        }
+
+        if (personalMemoryBackendKind == PersistenceBackendKind.Sqlite &&
+            string.IsNullOrWhiteSpace(personalMemoryConnectionString))
+        {
+            var dbPath = Path.ChangeExtension(personalMemoryPersistencePath, ".db");
+            personalMemoryConnectionString = $"Data Source={dbPath}";
+        }
         var mediaOptions = new MediaContentStoreOptions();
         configuration?.GetSection("OpenJibo:Media").Bind(mediaOptions);
 
@@ -81,13 +95,18 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IPersistenceSnapshotStoreFactory, PersistenceSnapshotStoreFactory>();
         services.AddSingleton<IMediaContentStoreFactory, MediaContentStoreFactory>();
+        var ownerFirstName = configuration?["OpenJibo:OwnerFirstName"];
+        var ownerLastName = configuration?["OpenJibo:OwnerLastName"];
+
         services.AddSingleton<ICloudStateStore>(provider =>
         {
             var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
             var holidayCalendarProvider = provider.GetRequiredService<IHolidayCalendarProvider>();
             return new InMemoryCloudStateStore(
                 snapshotFactory.Create(statePersistencePath, stateBackendKind, "cloud-state", stateConnectionString),
-                holidayCalendarProvider);
+                holidayCalendarProvider,
+                ownerFirstName,
+                ownerLastName);
         });
         services.AddSingleton<IPersonalMemoryStore>(provider =>
         {
@@ -126,6 +145,6 @@ public static class ServiceCollectionExtensions
     {
         return Enum.TryParse<PersistenceBackendKind>(value, true, out var backendKind)
             ? backendKind
-            : PersistenceBackendKind.File;
+            : PersistenceBackendKind.Sqlite;
     }
 }

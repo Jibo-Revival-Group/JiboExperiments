@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "jibo-qr-generator",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "5500", "src/Jibo WiFi QR Generator"],
+      "port": 5500
+    }
+  ]
+}

@@ -420,4 +420,10 @@ FodyWeavers.xsd
 OpenJibo/captures/
 OpenJibo/.tmp/
 
+# OpenJibo local TLS dev material (generate locally, do not commit)
+OpenJibo/src/Jibo.Cloud/node/cert.pem
+OpenJibo/src/Jibo.Cloud/node/key.pem
+OpenJibo/src/Jibo.Cloud/node/tls/openjibo-ca.crt
+OpenJibo/src/Jibo.Cloud/node/tls/openjibo-ca.key
+
 OpenJibo/docs/DesignDoc/original server

@@ -7,7 +7,9 @@ internal static class ProtocolFixtureLoader
 {
     public static ProtocolFixture Load(string relativePath)
     {
-        var fullPath = Path.Combine(AppContext.BaseDirectory, relativePath);
+        var fullPath = Path.Combine(
+            AppContext.BaseDirectory,
+            relativePath.Replace('\\', Path.DirectorySeparatorChar));
         using var document = JsonDocument.Parse(File.ReadAllText(fullPath));
         var root = document.RootElement;
 

@@ -1,0 +1,13 @@
+<Project>
+  <!-- Exclude stale root-owned build artifacts left from prior sudo builds.
+       These directories contain old auto-generated .cs files that would
+       collide with freshly generated ones and produce CS0579 duplicate-attribute errors. -->
+  <ItemGroup>
+    <Compile Remove="**/*.rootowned/**" />
+    <Compile Remove="**/*.rootowned.bak/**" />
+    <EmbeddedResource Remove="**/*.rootowned/**" />
+    <EmbeddedResource Remove="**/*.rootowned.bak/**" />
+    <None Remove="**/*.rootowned/**" />
+    <None Remove="**/*.rootowned.bak/**" />
+  </ItemGroup>
+</Project>

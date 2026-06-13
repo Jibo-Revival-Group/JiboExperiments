@@ -3,10 +3,19 @@ using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Infrastructure.Audio;
 
-public sealed class LocalWhisperCppBufferedAudioSttStrategy(
-    BufferedAudioSttOptions options,
-    IExternalProcessRunner processRunner) : ISttStrategy
+public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
 {
+    private readonly BufferedAudioSttOptions options;
+    private readonly IExternalProcessRunner processRunner;
+
+    public LocalWhisperCppBufferedAudioSttStrategy(
+        BufferedAudioSttOptions options,
+        IExternalProcessRunner processRunner)
+    {
+        this.options = BufferedAudioSttPathResolver.Resolve(options);
+        this.processRunner = processRunner;
+    }
+
     private const int MinimumBufferedAudioBytes = 64;
     private const int ShortAnswerBufferedAudioBytes = 16;
 

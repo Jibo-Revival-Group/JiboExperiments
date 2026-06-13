@@ -1763,7 +1763,8 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-yesno","data":{"text":"yeah"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        // create/is_it_a_keeper is a robot-local skill turn — no SKILL_ACTION (LISTEN + EOS only)
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yeah",

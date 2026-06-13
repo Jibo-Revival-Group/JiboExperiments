@@ -12,6 +12,7 @@ The current execution truth still lives in:
 - [Feature backlog](feature-backlog.md)
 - [Release 1.0.20 plan](release-1.0.20-plan.md)
 - [Cloud deployment and topology plan](cloud-deployment-topology-plan.md)
+- [Storage trust and consensus plan](storage-trust-consensus-plan.md)
 - [Device bootstrap path](device-bootstrap.md)
 
 ## North Star
@@ -47,7 +48,7 @@ The near-term job is to keep the hosted cloud stable and honest:
 - maintain HTTP and WebSocket compatibility for startup and turn handling
 - keep the .NET cloud as the production track
 - keep Node as the reverse-engineering oracle and fixture source
-- continue update, backup, restore, media, STT, and live-capture proof
+- continue update, backup, restore, media, STT, and live-capture proof, starting with the update/backup/restore slice
 - keep the real-device bootstrap path documented and repeatable
 
 Exit criteria:
@@ -126,6 +127,7 @@ After the core platform is stable, OpenJibo can grow into broader household valu
 - richer media and content experiences
 - provider-backed news, weather, and personal report flows
 - eventual multi-Jibo interaction
+- before direct multi-Jibo transport exists, the identity graph should already support multiple robots, multiple people, and shared household loops
 
 ## What We Must Preserve
 
@@ -150,5 +152,6 @@ If you want the first-device path, read:
 - [Device bootstrap path](device-bootstrap.md)
 - [Open Jibo mode conversion plan](open-jibo-mode-conversion-plan.md)
 - [Cloud deployment and topology plan](cloud-deployment-topology-plan.md)
+- [Storage trust and consensus plan](storage-trust-consensus-plan.md)
 - [Support tiers](support-tiers.md)
 - [Public site plan](public-site-plan.md)

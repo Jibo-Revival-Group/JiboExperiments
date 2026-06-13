@@ -16,6 +16,7 @@ internal static class HouseholdListOrchestrator
     private const string ShoppingListType = "shopping";
     private const string GroceryListType = "grocery";
     private const string TodoListType = "todo";
+    private const string FollowUpListenContext = "household-list/follow_up_item";
 
     private static readonly string[] ItemPrefixes =
     [
@@ -104,6 +105,8 @@ internal static class HouseholdListOrchestrator
                 BuildListIntentName(resolvedListType, "add"),
                 BuildAddedReply(resolvedDisplayType, directItem,
                     personalMemoryStore.GetListItems(tenantScope, resolvedListType)),
+                "chitchat-skill",
+                BuildFollowUpPromptPayload(),
                 ContextUpdates: BuildContextUpdates(resolvedListType, resolvedDisplayType, AwaitingItemState)));
         }
 
@@ -111,11 +114,15 @@ internal static class HouseholdListOrchestrator
             return Task.FromResult<JiboInteractionDecision?>(new JiboInteractionDecision(
                 BuildListIntentName(resolvedListType, "prompt"),
                 BuildPromptReply(resolvedDisplayType),
+                "chitchat-skill",
+                BuildFollowUpPromptPayload(),
                 ContextUpdates: BuildContextUpdates(resolvedListType, resolvedDisplayType, AwaitingItemState)));
 
         return Task.FromResult<JiboInteractionDecision?>(new JiboInteractionDecision(
             BuildListIntentName(resolvedListType, "prompt"),
             BuildPromptReply(resolvedDisplayType),
+            "chitchat-skill",
+            BuildFollowUpPromptPayload(),
             ContextUpdates: BuildContextUpdates(resolvedListType, resolvedDisplayType, AwaitingItemState)));
     }
 
@@ -144,6 +151,18 @@ internal static class HouseholdListOrchestrator
                 [NoMatchCountMetadataKey] = 0,
                 [NoInputCountMetadataKey] = 0
             });
+    }
+
+    private static IDictionary<string, object?> BuildFollowUpPromptPayload()
+    {
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["mim_id"] = "runtime-household-list",
+            ["mim_type"] = "question",
+            ["prompt_id"] = "RUNTIME_PROMPT",
+            ["prompt_sub_category"] = "Q",
+            ["listen_contexts"] = new[] { FollowUpListenContext }
+        };
     }
 
     private static JiboInteractionDecision BuildRecallDecision(string listType, string displayType,

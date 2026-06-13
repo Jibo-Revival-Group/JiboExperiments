@@ -238,6 +238,37 @@ Example paid-cloud flow:
 
 Open question: define the exact event payload shape and signing scheme after the original onboarding call sequence is mapped.
 
+Decision direction:
+
+- use a short-lived Open Jibo onboarding session token signed by the Open Jibo authority
+- bind each provider handoff to a nonce/state value plus the selected provider, person, loop, and robot context
+- sign provider callbacks/returns with the provider's own key material, then verify them against the registered provider identity
+- prefer standard webhook/JWS-style signed payloads over custom crypto
+- allow HMAC-based provider adapters only when a provider cannot practically support asymmetric signatures
+- require HTTPS for the transport and treat the signature as the trust check, not the transport alone
+
+Current sequence hypothesis from the helper tools and local SDK traces:
+
+- server provisioning creates or updates the robot record first
+- `OOBE.prepareRobot(loopId)` issues the onboarding token for the robot/loop setup path
+- `OOBE.setupRobot(id, token)` consumes that token to bind the robot identity
+- after WiFi/device setup, the robot may call `reconnectRobot({token, id})` to notify the server of the completed connection
+- `Notification.NewRobotToken` takes a `deviceId` and returns the device onboarding token used in the QR/token path
+
+This is enough to build a server-side replay smoke test, but it is not yet proof of the full original app-side sequence. We still need the actual app code if we want exact parity.
+
+Minimum replayable onboarding sequence for CI:
+
+- create or confirm the person/account record
+- create or confirm the robot record
+- issue the onboarding token
+- apply the onboarding token during OOBE/setup
+- confirm the robot reconnects with the issued token
+- verify the websocket/session path comes up after onboarding
+- verify a small post-onboarding turn set such as `hello`, `tell me a joke`, and `cloud version`
+
+If the app code later proves the original sequence includes extra calls, the CI replay should expand, but this is the smallest useful gate for now.
+
 ### Self-Hosted Isolated
 
 Owner runs the full stack independently.
@@ -254,7 +285,8 @@ TLS/self-hosted decision:
 - self-hosted v1 should primarily be handled by robot mode/config patching
 - the conversion path controls the domain/IP Jibo talks to and can control the certificate/trust behavior for that mode
 - self-signed certificate support can remain viable if the conversion disables or redirects the relevant robot-side verification checks
-- research whether the robot can be configured to use local HTTP instead of HTTPS for self-hosted mode, because that may be the simplest local path
+- local HTTP is acceptable for developer/smoke-only paths where we fully control both ends and no owner robot trust needs to persist
+- real owner-facing self-hosted robot paths should default to HTTPS/self-signed or equivalent trust-patched behavior until a safe robot-side HTTP mode is proven
 - once a robot enters this self-hosted trust mode, returning to a normal trust posture should require reset/OOBE-style recovery
 
 ### Self-Hosted With Sync
@@ -270,6 +302,14 @@ Rules:
 - must handle bad actor servers and revocation before public use
 
 Open question: decide whether this mode needs a visible `open-jibo-hybrid` label or can remain a self-hosted sync option.
+
+Decision:
+
+- on later boots, try the selected provider cloud first
+- if it is unavailable, enter an explicit recovery flow instead of silently switching clouds
+- use the root Open Jibo authority as a recovery/routing broker for the first recovery step
+- let the owner retry the selected provider, switch to a different provider if the onboarding policy allows it, or fall back to isolated/self-hosted recovery where appropriate
+- do not silently migrate a paid hosted cloud identity to a different provider without owner action
 
 ### Developer
 
@@ -330,7 +370,9 @@ Recommendation:
 - for local/self-hosted startup, provide a script or entrypoint switch that can run migrations intentionally
 - default to not applying destructive or risky migrations silently
 - require a dry-run/report mode before public self-hosted release
-- spike a .NET-friendly migration runner such as DbUp-style SQL script execution, FluentMigrator, or another tool that can support PostgreSQL, version journaling, repeatable local execution, and useful dry-run/report behavior
+- use a DbUp-style SQL script runner as the first implementation path
+- wrap it with an Open Jibo migration command that can provide apply, preview, dry-run/report, and container-entrypoint modes
+- revisit FluentMigrator only if we later need a richer code-first or rollback-oriented model than SQL scripts can reasonably provide
 
 Later pipeline should:
 
@@ -368,8 +410,8 @@ This track is ready to close for `1.0.20` when:
 
 ## Open Questions
 
-1. What is the exact new-robot onboarding call sequence, including person creation, robot creation, activation, OOBE, token issuance, and first socket connection?
+1. What is the exact new-robot onboarding call sequence, including person creation, robot creation, activation, OOBE, token issuance, and first socket connection? App code is still needed to confirm parity beyond the current helper-tool hypothesis.
 2. Which migration runner best fits our SQL-script, dry-run/report, PostgreSQL, and container requirements?
-3. Which self-hosted paths can use HTTP locally, and which robot-side checks must be patched for HTTPS/self-signed operation?
+3. Which self-hosted paths can use HTTP locally, and which robot-side checks must be patched for HTTPS/self-signed operation? Developer/smoke-only paths can use HTTP; owner-facing robot paths should stay on HTTPS/self-signed unless proven safe otherwise.
 4. What signing mechanism should provider-specific onboarding events and returns use?
 5. What recovery behavior should happen if a selected provider cloud is unavailable on later robot boots?

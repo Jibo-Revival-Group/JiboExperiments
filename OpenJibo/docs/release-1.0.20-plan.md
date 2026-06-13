@@ -20,13 +20,20 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - keep the backup prompt and update menu state aligned with the robot-local behavior we observed in stock Jibo
 - prove restore as a persisted-state rehydration path, not as a new hosted API shape
 - keep the cloud compatibility bridge only where the updater helper still expects it
+- verify the update-related protocol shapes against the robot capture: `ListUpdates`, `ListUpdatesFrom`, `GetUpdateFrom`, `CreateUpdate`, and `RemoveUpdate`
+- keep menu truth on robot-local backup/update status, not on the compatibility bridge
+- prove the smallest live or replayable path that shows update, backup, and restore without a fabricated update announcement
+- treat the current false-positive as robot-side OTA KB state first, especially `updatesAvailable`, rather than a cloud `GetUpdateFrom` bug
 
 ### 2. Regression Carryover From The Latest Runs
 
-- grocery list follow-up/listening needs to stay open long enough to accept a real add-item phrase
-- bare `twerk` needs to be separated from greeting-like fallback behavior and from the polite `can you twerk` variant
-- keep `sleep` and motion parity under review so the robot does not drift into an idle-looking state when the original skill should stay asleep
-- keep `turn around` and other motion/personality commands source-backed instead of relying on accidental matches
+- grocery list now carries an explicit follow-up listen context in the cloud path, so the remaining work is live/hardware verification rather than inventing a new capture flow
+- keep the grocery alias on its dedicated listen/capture state so the robot stays active long enough to accept an item phrase
+- bare `twerk` is source-backed in Pegasus/OpenJibo and now has a cloud wire regression, so the remaining issue is the robot-side STT landing on `hello` instead of `twerk`
+- keep `sleep` and motion parity under review so the robot does not drift into an idle-looking state when the original skill should stay asleep; the legacy snapshot already has a real `GlobalCommand.SLEEP` path, the ASLEEP state is event-driven rather than timer-driven, wake is driven by `dayStarts`, `headTouch`, or `hjHeard`, and the legacy sleep behavior tree includes a sleeping-idle loop that we need to preserve in the parity path
+- the Open Jibo cloud sleep replay path now has regression coverage for the legacy `@be/idle` redirect plus follow-up acknowledgment speech, so the remaining work is parity checking rather than contract discovery
+- keep `turn around` / `spin around` / `twirl` source-backed instead of relying on accidental matches
+- `turn around` is now reported as working on the robot, so the remaining command-gap work is the bare `twerk` short-turn and any other short-utterance mishears
 
 ### 3. Personality And Presence Continuation
 
@@ -38,12 +45,14 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 
 - keep the low-signal screen and short-utterance handling tuned against the latest regression evidence
 - treat the bare `twerk` miss as an STT/parsing proof item until the capture says otherwise
+- `turn around` is no longer part of the open STT cleanup because it passed on the robot
 - keep the shared yes/no and constrained follow-up flows stable while the new regression items are retested
 
 ### 5. Platform Conversion And Deployment Foundation
 
 Detailed planning starts in [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md).
 Cloud deployment planning starts in [cloud-deployment-topology-plan.md](cloud-deployment-topology-plan.md).
+Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust-consensus-plan.md).
 
 - convert the robot into Open Jibo with explicit mode targets instead of an implicit one-off patch
 - define the mode set we actually want to support:
@@ -72,18 +81,28 @@ Cloud deployment planning starts in [cloud-deployment-topology-plan.md](cloud-de
 - gate real-robot deployment with a virtual-Jibo or purpose-built smoke client
 - prefer recorded onboarding/session replay as the first CI-friendly deployment gate
 - run PostgreSQL migrations through explicit CI/CD or admin commands, with self-hosted startup migration behind an intentional switch
+- use a DbUp-style SQL script runner with an Open Jibo wrapper for apply, preview, dry-run/report, and container-entrypoint modes
 - keep the hosted software able to run as:
   - self-hosted with no external cloud dependency
   - hybrid cloud with shared identity/storage
   - a managed cloud service
 - abstract storage so different server implementations can satisfy the same contract without the rest of the system caring
+- keep only transient session/onboarding artifacts and device-local secrets permanently local-only for now
 - define the network trust and consensus story for cloud peers, including bad-actor handling and revocation semantics
 - treat robot-provided identity as an untrusted legacy claim until Open Jibo issues and persists its own robot identity
 - treat self-hosted-to-network sync as a one-way setup choice until the trust model is mature
+- use the storage trust plan to define admission, revocation, quarantine, and sync rules before multi-server rollout
+- use deny-by-evidence admission and full versioned snapshots as the first sync model
+- sign identity/topology, admission/revocation, issued-identity, provider handoff, and versioned snapshot records before replication
+- use hardware-stable `DeviceId`, cert thumbprint, issued-identity lineage, and build/config hashes only as corroborating signals for clone detection
 - plan the openjibo.com web UI and paid-access surface alongside the free/self-hosted options
 - support provider-specific onboarding steps such as signup/payment before returning to robot onboarding
 - support signed provider onboarding events and signed return flows
+- use short-lived signed onboarding session tokens plus provider-signed callbacks/returns with nonce/state binding
+- on later boots, prefer the selected provider cloud first and use root Open Jibo as an explicit recovery broker rather than silently switching clouds
+- allow HTTP only for developer/smoke-only self-hosted paths; owner-facing robot paths should default to HTTPS/self-signed or equivalent patched trust behavior until safe HTTP is proven
 - keep Loop advancement, family/friend recognition, and multiple Jibo support in the same platform track so the network and identity model stays future-proof
+- scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 
 ## Working Order
 

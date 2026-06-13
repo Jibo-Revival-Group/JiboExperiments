@@ -2324,6 +2324,64 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public void ResponsePlan_WithListenContexts_EmitsFollowUpListenPacket()
+    {
+        var plan = new ResponsePlan
+        {
+            SessionId = "session-grocery",
+            Actions =
+            {
+                new SpeakAction
+                {
+                    Sequence = 0,
+                    Text = "What should I add to your grocery list?",
+                    Voice = "griffin"
+                },
+                new InvokeNativeSkillAction
+                {
+                    Sequence = 1,
+                    SkillName = "chitchat-skill",
+                    Payload = new Dictionary<string, object?>
+                    {
+                        ["mim_id"] = "runtime-household-list",
+                        ["mim_type"] = "question",
+                        ["prompt_id"] = "RUNTIME_PROMPT",
+                        ["prompt_sub_category"] = "Q",
+                        ["listen_contexts"] = new[] { "household-list/follow_up_item" }
+                    }
+                }
+            }
+        };
+
+        var turn = new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["transID"] = "trans-grocery-follow-up"
+            }
+        };
+
+        var replies = ResponsePlanToSocketMessagesMapper.Map(plan, turn, new CloudSession(), true);
+        Assert.Equal(3, replies.Count);
+        using var payload = JsonDocument.Parse(replies[2].Text);
+        Assert.Equal("SKILL_ACTION", payload.RootElement.GetProperty("type").GetString());
+
+        var contexts = payload.RootElement
+            .GetProperty("data")
+            .GetProperty("action")
+            .GetProperty("config")
+            .GetProperty("jcp")
+            .GetProperty("config")
+            .GetProperty("listen")
+            .GetProperty("contexts")
+            .EnumerateArray()
+            .Select(element => element.GetString())
+            .ToArray();
+
+        Assert.Contains("household-list/follow_up_item", contexts);
+    }
+
+    [Fact]
     public async Task ClientAsr_TellMeTheNews_EmitsNimbusCloudSkillMatchAndNewsSkillAction()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2902,6 +2960,20 @@ public sealed class JiboWebSocketServiceTests
             redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
         Assert.Equal("sleep",
             redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+
+        using var completionPayload = JsonDocument.Parse(replies[3].Text!);
+        Assert.Equal("@be/idle",
+            completionPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+        Assert.Equal("runtime-silent-complete",
+            completionPayload.RootElement.GetProperty("data").GetProperty("action").GetProperty("config")
+                .GetProperty("jcp").GetProperty("config").GetProperty("play").GetProperty("meta")
+                .GetProperty("mim_id").GetString());
+
+        using var speechPayload = JsonDocument.Parse(replies[4].Text!);
+        Assert.Equal("runtime-chat",
+            speechPayload.RootElement.GetProperty("data").GetProperty("action").GetProperty("config")
+                .GetProperty("jcp").GetProperty("config").GetProperty("play").GetProperty("meta")
+                .GetProperty("mim_id").GetString());
     }
 
     [Fact]

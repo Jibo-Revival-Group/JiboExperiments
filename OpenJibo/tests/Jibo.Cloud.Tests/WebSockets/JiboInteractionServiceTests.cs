@@ -2774,6 +2774,11 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("shopping_list_prompt", promptDecision.IntentName);
+        Assert.Equal("chitchat-skill", promptDecision.SkillName);
+        Assert.NotNull(promptDecision.SkillPayload);
+        var promptListenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(
+            promptDecision.SkillPayload!["listen_contexts"]);
+        Assert.Contains("household-list/follow_up_item", promptListenContexts);
         Assert.Equal("awaiting_item", promptDecision.ContextUpdates![HouseholdListStateKey]);
         Assert.Equal("shopping", promptDecision.ContextUpdates[HouseholdListTypeKey]);
         Assert.Equal("grocery", promptDecision.ContextUpdates[HouseholdListDisplayTypeKey]);
@@ -2793,6 +2798,11 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("shopping_list_add", addDecision.IntentName);
+        Assert.Equal("chitchat-skill", addDecision.SkillName);
+        Assert.NotNull(addDecision.SkillPayload);
+        var addListenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(
+            addDecision.SkillPayload!["listen_contexts"]);
+        Assert.Contains("household-list/follow_up_item", addListenContexts);
         Assert.Contains("Added milk to your grocery list.", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("What else should I add?", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(["milk"],

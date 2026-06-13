@@ -391,15 +391,24 @@ These are the carryover items that need a clean proof pass first:
    - finish the update-menu investigation
    - prove whether the robot is fabricating an update path when none exists
    - keep backup and update state aligned with the robot-local behavior
+   - verify the `ListUpdates`, `ListUpdatesFrom`, `GetUpdateFrom`, `CreateUpdate`, and `RemoveUpdate` shapes against the robot capture
+   - separate menu-state truth from the compatibility bridge so `GetUpdateFrom` is not the source of truth
+   - the current false-positive points at robot-side OTA KB state, especially `updatesAvailable`, not the cloud `GetUpdateFrom` placeholder
+   - confirm update prompt state, backup prompt state, and restore rehydration are each driven by the right local status source
+   - capture the minimum live or replayable path that shows update, backup, and restore without a phantom update announcement
+   - hold the cloud compatibility bridge only for the updater helper until robot-local state is fully proven
+   - exit criteria: the robot does not invent an update path when none exists, backup state is reported correctly, and restore is understood as persisted-state rehydration
 2. Grocery list follow-up and add-item reliability
+  - grocery follow-up listen is now emitted from the cloud path; finish hardware verification and any robot-side parity gaps rather than inventing a new capture flow
    - keep the list interaction listening for the follow-up item instead of dropping back to a passive state
    - verify long add-item phrases still reach the list engine cleanly
 3. Motion and personality command parity
-   - keep `go to sleep` from drifting into the wrong visible state
-   - keep `turn around` and other motion verbs source-backed
-   - separate bare `twerk` from the greeting-looking fallback while preserving `can you twerk`
+- keep `go to sleep` from drifting into the wrong visible state; the legacy path is a real sleep global, the ASLEEP state is event-driven rather than timer-driven, wake is driven by `dayStarts`, `headTouch`, or `hjHeard`, and the legacy sleep behavior tree includes a sleeping-idle loop that we need to preserve so the robot stays visibly asleep
+   - keep `turn around` and other motion verbs source-backed; the legacy snapshot backs the lane through `spin around` / `twirl`
+   - separate bare `twerk` from the greeting-looking fallback while preserving `can you twerk`; the intent is source-backed and the remaining gap is robot-side STT mishearing
 4. STT and turn-finalization cleanup
-   - treat the bare `twerk` miss as an STT/parsing proof item until the capture says otherwise
+   - treat the bare `twerk` miss as an STT/parsing proof item until a robot capture proves the cloud path is at fault
+   - `turn around` has been verified as working on the robot, so it no longer belongs in the STT cleanup bucket
    - keep short constrained replies and local prompts stable while the new regression items are retested
 5. Broader personality and presence continuation
    - continue the source-backed favorites, presence, and seasonal ladder once the regression gaps are understood
@@ -671,7 +680,8 @@ These are the carryover items that need a clean proof pass first:
 - Follow-up:
   - wire persona age to first-powered-up or durable first-cloud-seen metadata when available
   - add command-vs-question variants so expressive prompts can answer conversationally before launching actions
-  - live QA has shown motion/sleep quirks too: `turn around` can become a no-op and `go to sleep` can fail at the last step before the sleep animation fully completes
+- live QA has shown motion/sleep quirks too: `turn around` can become a no-op and `go to sleep` can fail at the last step before the sleep animation fully completes; the legacy sleep behavior tree includes sleeping-idle phases that should remain active in the parity path, and the Open Jibo cloud sleep replay now has regression coverage for the legacy `@be/idle` redirect plus follow-up acknowledgement speech
+  - the legacy snapshot backs the motion lane through `spin around` / `twirl`, not a literal `turn around` text prompt
   - reply-selection polish still needs attention on a couple of identity prompts where short variants are over-selected (`how are you`, `what is your favorite flower`)
 
 ### 22. Command Vs Question Reply Style
@@ -807,16 +817,17 @@ These are the carryover items that need a clean proof pass first:
 - Why now:
   - directly requested by Jibo owners and fits memory + household utility roadmap
 - Source findings:
-  - Pegasus has scripted responses for shopping/to-do list requests but no standalone grocery-list skill in this snapshot
+  - Pegasus has scripted responses for shopping/to-do list requests but no standalone grocery-list skill or add-item capture flow in this snapshot
   - examples:
     - `C:\Projects\jibo\pegasus\packages\chitchat-skill\mims\scripted-responses\RA_JBO_ShoppingList.mim`
     - `C:\Projects\jibo\pegasus\packages\chitchat-skill\mims\scripted-responses\RA_JBO_ManageToDoList.mim`
 - MVP decision:
-  - use the existing household list engine as the native lightweight grocery MVP
-  - keep grocery as a first-class spoken alias over the shopping list storage path
+  - use the existing household list engine as the native lightweight grocery MVP, but only after we add a dedicated capture state
+  - keep grocery as a first-class spoken alias over the shopping list storage path once the capture path exists
   - reserve integration-backed list orchestration for a later discovery pass
 - Exit criteria:
   - grocery prompts, add/recall/done flows, and list follow-ups consistently speak grocery wording
+  - the robot stays in a live listen/capture state long enough to accept an item phrase
   - existing shopping/to-do flows remain unchanged
   - future integration-backed list work remains a separate backlog item
 
@@ -1050,6 +1061,7 @@ For `1.0.20` and beyond:
    - first registry target is Azure Container Registry
    - deployment promotion must pass a virtual-Jibo or purpose-built protocol smoke gate
    - recorded onboarding/session replay is the preferred first CI-friendly smoke gate
+   - PostgreSQL migrations should use a DbUp-style SQL runner with an Open Jibo wrapper for apply, preview, dry-run/report, and container-entrypoint modes
    - planning anchor: [cloud-deployment-topology-plan.md](cloud-deployment-topology-plan.md)
 5. Hosting modes and service topology
    - support self-hosted operation with no external cloud dependency
@@ -1061,9 +1073,14 @@ For `1.0.20` and beyond:
    - PostgreSQL migrations should run through explicit CI/CD or admin commands, with self-hosted startup migration behind an intentional switch
 6. Storage abstraction and sync
    - abstract storage so the rest of the system does not care which server implementation is backing it
+   - keep only transient session/onboarding artifacts and device-local secrets permanently local-only for now
    - keep identity and storage synchronized across the network for participating servers
    - define trust, admission, and revocation rules for bad-actor servers, including what happens to user data they already held
    - issue Open Jibo robot identity from the new cloud rather than trusting legacy stock robot identifiers as primary keys
+   - use deny-by-evidence admission and full versioned snapshots as the first sync model
+   - sign trust-boundary records before replication, not every local write
+   - use hardware-stable `DeviceId`, cert thumbprint, issued-identity lineage, and build/config hashes as corroborating clone-detection signals only
+   - planning anchor: [storage-trust-consensus-plan.md](storage-trust-consensus-plan.md)
 7. OpenJibo.com web UI and account surface
    - provide a web UI for openjibo.com
    - support paid access on the hosted side while leaving room for free or self-hosted options elsewhere
@@ -1071,9 +1088,14 @@ For `1.0.20` and beyond:
    - auth can live in the shared repo/solution initially, but must be its own project
    - onboarding needs provider-specific extension points for signup/payment, free community clouds, and self-hosted servers
    - provider-specific onboarding must use signed event callbacks and signed returns
+   - provider onboarding should use short-lived signed session tokens plus provider-signed callbacks/returns with nonce/state binding
+   - later boots should prefer the selected provider cloud first and enter explicit recovery instead of silently switching clouds
+   - developer/smoke-only self-hosted paths can use HTTP locally; owner-facing robot paths should default to HTTPS/self-signed or equivalent patched trust behavior until safe HTTP is proven
 8. Loop advancement and multi-Jibo support
    - support family/friend advancement, multiple user recognition, and multiple Jibo interaction
    - keep the identity model ready for Jibo-to-Jibo communication and shared household use
+   - scope `1.0.20` to the identity graph and relationship model first, not direct robot-to-robot transport
+   - model loops as households that can hold multiple people and multiple robots without assuming a single robot per loop forever
 9. Next-tier features after the platform is stable
    - advanced integrations such as pizza delivery, Uber/Lyft, calendar management, and smart home control
    - longer-term LLM integration for more natural dialog and content generation

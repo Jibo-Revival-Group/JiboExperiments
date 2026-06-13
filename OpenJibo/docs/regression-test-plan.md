@@ -307,7 +307,7 @@ Expected:
 Capture check:
 
 - stop-style phrases should emit `global_commands` `stop` behavior with the idle redirect
-- `go to sleep` and `turn around` should not no-op or fall through to generic chat
+- `go to sleep` should enter ASLEEP and stay visibly asleep until a wake event such as `dayStarts`, `headTouch`, or `hjHeard`; `turn around` should not no-op or fall through to generic chat
 
 #### Twerk And Command Boundary
 
@@ -330,17 +330,20 @@ Capture check:
 - `grocery list`
 - `add to my grocery list milk`
 - `what's on my grocery list`
+- `twerk`
+- `can you twerk`
 
 Expected:
 
 - update should only surface when the robot genuinely has update work to do
 - backup/update menu state should stay aligned with the robot-local behavior
-- grocery should keep the follow-up listen open long enough to accept a real item
+- grocery should keep the follow-up listen open long enough to accept a real item, and the websocket capture should show the follow-up listen directive on the prompt/add turn
+- bare `twerk` should stay source-backed, and a capture that says `hello` instead points to robot-side STT or upstream transcript normalization
 
 Capture check:
 
 - verify the update path does not fabricate an update prompt
-- verify the grocery flow keeps listening for the add-item phrase instead of going passive
+- verify the grocery flow keeps listening for the add-item phrase instead of going passive, and confirm the `LISTEN`/`SKILL_ACTION` shape carries the follow-up listen context
 
 #### Short Proactivity
 

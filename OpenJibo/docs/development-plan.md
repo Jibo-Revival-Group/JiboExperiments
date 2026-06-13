@@ -69,6 +69,7 @@ Current API and protocol scope:
 - starter account, notification, loop, media, key, person, backup, robot, update, and upload/log handling
 - media lookup through `/media/{path}`
 - `GetUpdateFrom` returns a no-op update manifest when no staged update exists
+- the phantom-update false positive is now traced to robot-side OTA state, not the cloud bridge: the update menu trusts scheduler/KB `updatesAvailable` state, while the cloud `GetUpdateFrom` placeholder remains only a compatibility shape for the updater helper
 
 Current websocket scope:
 
@@ -212,9 +213,9 @@ These are not blockers for calling `1.0.18` complete unless the live test shows 
 After `1.0.19` is closed out, `1.0.20` should focus on proving the remaining regression gaps and keeping the release queue tidy:
 
 - finish update, backup, and restore proof without the phantom-update false positive
-- tighten grocery list follow-up/listening so add-item flows stay alive
-- separate bare `twerk` from the greeting-looking fallback and keep the polite `can you twerk` route working too
-- keep motion and sleep parity under review so the robot does not fall into the wrong state after a command
+- build the real grocery capture flow, because the legacy snapshot only shows canned shopping/to-do refusals
+- separate bare `twerk` from the greeting-looking fallback and keep the polite `can you twerk` route working too; the intent is already source-backed and the remaining gap is robot-side STT landing
+- keep motion and sleep parity under review so the robot does not fall into the wrong state after a command; the sleep path appears to need a visible ASLEEP loop, not just the entry transition, and the legacy behavior is event-driven rather than timer-driven with wake driven by `dayStarts`, `headTouch`, or `hjHeard`
 - harden STT and turn-finalization for the short utterances that still misfire
 - continue the source-backed persona and presence ladder once the regression gap list is stable
 - keep the backlog ordered so each regression item stays paired with a concrete proof target

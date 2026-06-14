@@ -10,6 +10,7 @@ KEY_PEM="${KEY_PEM:-${REPO_ROOT}/src/Jibo.Cloud/node/key.pem}"
 CHAIN_PEM="${CHAIN_PEM:-}"
 PFX_OUT="${PFX_OUT:-${REPO_ROOT}/.tmp/openjibo-dev-cert.pfx}"
 PFX_PASSWORD="${PFX_PASSWORD:-openjibo-dev-password}"
+CERT_WITH_CHAIN_PEM="${CERT_WITH_CHAIN_PEM:-${REPO_ROOT}/.tmp/openjibo-dev-cert-chain.pem}"
 ASPNETCORE_URLS="${ASPNETCORE_URLS:-https://0.0.0.0:443;http://0.0.0.0:24605}"
 DOTNET_ENVIRONMENT="${DOTNET_ENVIRONMENT:-Development}"
 CAPTURE_DIRECTORY="${CAPTURE_DIRECTORY:-${REPO_ROOT}/captures/websocket}"
@@ -29,29 +30,33 @@ if [[ ! -f "${KEY_PEM}" ]]; then
   exit 1
 fi
 
-OPENSSL_ARGS=(
-  pkcs12
-  -export
-  -out "${PFX_OUT}"
-  -inkey "${KEY_PEM}"
-  -in "${CERT_PEM}"
-  -passout "pass:${PFX_PASSWORD}"
-)
-
 if [[ -n "${CHAIN_PEM}" ]]; then
   if [[ ! -f "${CHAIN_PEM}" ]]; then
     echo "Missing CHAIN_PEM: ${CHAIN_PEM}" >&2
     exit 1
   fi
 
-  OPENSSL_ARGS+=( -certfile "${CHAIN_PEM}" )
+  cat "${CERT_PEM}" "${CHAIN_PEM}" > "${CERT_WITH_CHAIN_PEM}"
+  CERT_PFX_INPUT="${CERT_WITH_CHAIN_PEM}"
+else
+  CERT_PFX_INPUT="${CERT_PEM}"
 fi
+
+OPENSSL_ARGS=(
+  pkcs12
+  -export
+  -out "${PFX_OUT}"
+  -inkey "${KEY_PEM}"
+  -in "${CERT_PFX_INPUT}"
+  -passout "pass:${PFX_PASSWORD}"
+)
 
 echo "Creating PFX for Kestrel"
 echo " - cert: ${CERT_PEM}"
 echo " - key: ${KEY_PEM}"
 if [[ -n "${CHAIN_PEM}" ]]; then
   echo " - chain: ${CHAIN_PEM}"
+  echo " - cert with chain: ${CERT_WITH_CHAIN_PEM}"
 fi
 echo " - pfx: ${PFX_OUT}"
 openssl "${OPENSSL_ARGS[@]}"
@@ -62,6 +67,14 @@ export ASPNETCORE_Kestrel__Certificates__Default__Path="${PFX_OUT}"
 export ASPNETCORE_Kestrel__Certificates__Default__Password="${PFX_PASSWORD}"
 export OpenJibo__Telemetry__DirectoryPath="${CAPTURE_DIRECTORY}"
 export OpenJibo__ProtocolTelemetry__DirectoryPath="${PROTOCOL_CAPTURE_DIRECTORY}"
+
+# Remove stale root-owned build artifact directories that were created by a
+# previous sudo build. They contain old auto-generated .cs files which cause
+# CS0579 duplicate-attribute errors if left in place next to fresh obj dirs.
+while IFS= read -r -d '' dir; do
+  echo "Removing stale build dir: ${dir}"
+  rm -rf "${dir}"
+done < <(find "${REPO_ROOT}/src" -type d \( -name "*.rootowned" -o -name "*.rootowned.bak" \) -print0 2>/dev/null)
 
 echo ""
 echo "Starting OpenJibo .NET cloud"

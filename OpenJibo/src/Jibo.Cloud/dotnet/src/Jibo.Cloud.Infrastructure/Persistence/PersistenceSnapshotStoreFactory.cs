@@ -24,6 +24,10 @@ public sealed class PersistenceSnapshotStoreFactory : IPersistenceSnapshotStoreF
                 connectionString ??
                 throw new InvalidOperationException("Azure SQL persistence requires a connection string."),
                 snapshotName),
+            PersistenceBackendKind.Sqlite => new SqliteSnapshotStore(
+                connectionString ??
+                throw new InvalidOperationException("SQLite persistence requires a connection string (e.g. Data Source=/path/to/db.db)."),
+                snapshotName),
             _ => new JsonFileSnapshotStore(persistencePath, JsonOptions)
         };
     }

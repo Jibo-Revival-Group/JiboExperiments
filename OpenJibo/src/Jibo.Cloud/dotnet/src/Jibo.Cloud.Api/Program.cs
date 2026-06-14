@@ -7,11 +7,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenJiboCloud(builder.Configuration);
 builder.Services.AddSingleton<WebSocketRequestCoordinator>();
+builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
+    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
 
 app.Logger.LogInformation("Starting Open Jibo Cloud Api version {Version}", OpenJiboCloudBuildInfo.Version);
 
+app.UseCors();
 app.UseWebSockets();
 
 app.Use(async (context, next) =>

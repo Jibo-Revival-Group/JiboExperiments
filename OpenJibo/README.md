@@ -18,6 +18,11 @@ Current release truth lives in [docs/development-plan.md](docs/development-plan.
 
 For local setup, use [docs/local-cloud-quickstart.md](docs/local-cloud-quickstart.md).
 
+For device bootstrap and OOBE QR setup, use:
+
+- [docs/device-bootstrap.md](docs/device-bootstrap.md)
+- [docs/wifi-qr-oobe.md](docs/wifi-qr-oobe.md)
+
 It covers:
 
 - the current `.NET` OpenJibo cloud
@@ -94,10 +99,11 @@ OpenJibo/
     Test-OpenJiboRouting.ps1
 
   src/
-    Jibo.Cloud/
+  Jibo.Cloud/
       node/
       dotnet/
     Jibo.Runtime.Abstractions/
+    Jibo WiFi QR Generator/   ← standalone HTML tool for generating OOBE QR codes
     Playground/
     OpenJibo.Site/
 ```

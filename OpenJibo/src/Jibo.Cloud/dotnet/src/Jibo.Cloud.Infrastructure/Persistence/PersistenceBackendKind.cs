@@ -4,5 +4,6 @@ public enum PersistenceBackendKind
 {
     File,
     AzureBlob,
-    AzureSql
+    AzureSql,
+    Sqlite
 }

@@ -412,6 +412,10 @@ FodyWeavers.xsd
 # Built Visual Studio Code Extensions
 *.vsix
 
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store
+
 # Local .NET CLI home and first-run artifacts
 .dotnet/
 **/.dotnet/
@@ -419,7 +423,16 @@ FodyWeavers.xsd
 # OpenJibo live-run capture output
 OpenJibo/captures/
 OpenJibo/.tmp/
+tmp/
 _tmp/
 _jibo_test_*/
+
+# OpenJibo local TLS dev material and local Claude launch configs
+OpenJibo/src/Jibo.Cloud/node/cert.pem
+OpenJibo/src/Jibo.Cloud/node/key.pem
+OpenJibo/src/Jibo.Cloud/node/tls/openjibo-ca.crt
+OpenJibo/src/Jibo.Cloud/node/tls/openjibo-ca.key
+OpenJibo/.claude/
+.claude/
 
 OpenJibo/docs/DesignDoc/original server

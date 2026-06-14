@@ -28,6 +28,21 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void SnapshotStoreFactory_CanCreateSqliteBackend()
+    {
+        var factory = new PersistenceSnapshotStoreFactory();
+        var databasePath = Path.Combine(Path.GetTempPath(), $"factory-{Guid.NewGuid():N}.db");
+
+        var store = factory.Create(
+            null,
+            PersistenceBackendKind.Sqlite,
+            "sample-snapshot",
+            $"Data Source={databasePath}");
+
+        Assert.Equal("SqliteSnapshotStore", store.GetType().Name);
+    }
+
+    [Fact]
     public void PersonalMemoryStore_CanUseAlternateSnapshotBackend()
     {
         var backend = new RecordingSnapshotStore();

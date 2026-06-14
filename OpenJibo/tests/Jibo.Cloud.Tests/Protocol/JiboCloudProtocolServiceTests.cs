@@ -282,6 +282,24 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LoopList_ReturnsMembersFromPeopleStore()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160715",
+            Operation = "List"
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var loops = payload.RootElement.EnumerateArray().ToArray();
+        Assert.NotEmpty(loops);
+        Assert.True(loops[0].GetProperty("members").EnumerateArray().Any());
+    }
+
+    [Fact]
     public async Task SchedulerStatusEndpoints_DefaultToNotBackingUpAndNoDownload()
     {
         var backupStatus = await _service.DispatchAsync(new ProtocolEnvelope

@@ -96,7 +96,7 @@ public sealed class JiboCloudProtocolService(
             return Task.FromResult(HandleNotification(operation, envelope));
 
         if (servicePrefix.StartsWith("Loop_", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(HandleLoop(operation));
+            return Task.FromResult(HandleLoop(operation, envelope));
 
         if (servicePrefix.Equals("Media_20160725", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleMedia(operation, envelope));
@@ -211,22 +211,47 @@ public sealed class JiboCloudProtocolService(
         return ProtocolDispatchResult.Ok(new { ok = true, operation });
     }
 
-    private ProtocolDispatchResult HandleLoop(string operation)
+    private ProtocolDispatchResult HandleLoop(string operation, ProtocolEnvelope envelope)
     {
         if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
-        return ProtocolDispatchResult.Ok(stateStore.GetLoops().Select(loop => new
+        var people = stateStore.GetPeople();
+        return ProtocolDispatchResult.Ok(stateStore.GetLoops().Select(loop => MapLoopRecord(loop, people)).ToArray());
+    }
+
+    private static object MapLoopRecord(LoopRecord loop, IReadOnlyList<PersonRecord> people)
+    {
+        return new
         {
             id = loop.LoopId,
             name = loop.Name,
             owner = loop.OwnerAccountId,
             robot = loop.RobotId,
             robotFriendlyId = loop.RobotFriendlyId,
-            members = Array.Empty<object>(),
+            members = people
+                .Where(person => string.Equals(person.LoopId, loop.LoopId, StringComparison.OrdinalIgnoreCase))
+                .Select(MapPersonRecord)
+                .ToArray(),
             isSuspended = loop.IsSuspended,
             created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
             updated = loop.UpdatedUtc.ToUnixTimeMilliseconds()
-        }).ToArray());
+        };
+    }
+
+    private static object MapPersonRecord(PersonRecord person)
+    {
+        return new
+        {
+            id = person.PersonId,
+            accountId = person.AccountId,
+            loopId = person.LoopId,
+            robotId = person.RobotId,
+            displayName = person.DisplayName,
+            alias = person.Alias,
+            isPrimary = person.IsPrimary,
+            created = person.CreatedUtc.ToUnixTimeMilliseconds(),
+            updated = person.UpdatedUtc.ToUnixTimeMilliseconds()
+        };
     }
 
     private static ProtocolDispatchResult HandleLog(string operation, ProtocolEnvelope envelope)

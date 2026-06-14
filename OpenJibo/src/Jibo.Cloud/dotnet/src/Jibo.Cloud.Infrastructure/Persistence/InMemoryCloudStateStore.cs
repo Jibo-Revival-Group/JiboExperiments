@@ -40,6 +40,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly ConcurrentDictionary<string, string> _symmetricKeys = new(StringComparer.OrdinalIgnoreCase);
     private readonly Lock _syncRoot = new();
     private readonly List<UpdateManifest> _updates;
+    private readonly string? _ownerFirstName;
+    private readonly string? _ownerLastName;
 
     private AccountProfile _account = new();
     private DateTimeOffset? _lastLoadedUtc;
@@ -58,10 +60,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
     }
 
-    public InMemoryCloudStateStore(ISnapshotStore snapshotStore, IHolidayCalendarProvider holidayCalendarProvider)
+    public InMemoryCloudStateStore(ISnapshotStore snapshotStore, IHolidayCalendarProvider holidayCalendarProvider,
+        string? ownerFirstName = null, string? ownerLastName = null)
     {
         _snapshotStore = snapshotStore;
         _holidayCalendarProvider = holidayCalendarProvider;
+        _ownerFirstName = ownerFirstName;
+        _ownerLastName = ownerLastName;
         _robot = new DeviceRegistration
         {
             HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -118,6 +123,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         ];
 
         _updates = [];
+        ApplyConfiguredOwnerName();
         LoadPersistedState();
     }
 
@@ -183,6 +189,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _people.Clear();
         _people.AddRange(snapshot.People ?? []);
 
+        ApplyConfiguredOwnerName();
         EnsureDefaultTopology();
 
         if (_robotProfile is null ||
@@ -833,6 +840,41 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         Interlocked.Increment(ref _revision);
         SavePersistedState();
+    }
+
+    private void ApplyConfiguredOwnerName()
+    {
+        if (string.IsNullOrWhiteSpace(_ownerFirstName) && string.IsNullOrWhiteSpace(_ownerLastName))
+            return;
+
+        _account = new AccountProfile
+        {
+            AccountId = _account.AccountId,
+            Email = _account.Email,
+            FirstName = !string.IsNullOrWhiteSpace(_ownerFirstName) ? _ownerFirstName : _account.FirstName,
+            LastName = !string.IsNullOrWhiteSpace(_ownerLastName) ? _ownerLastName : _account.LastName,
+            AccessKeyId = _account.AccessKeyId,
+            SecretAccessKey = _account.SecretAccessKey
+        };
+
+        for (var i = 0; i < _people.Count; i++)
+        {
+            var person = _people[i];
+            if (!person.AccountId.Equals(_account.AccountId, StringComparison.OrdinalIgnoreCase)) continue;
+
+            _people[i] = new PersonRecord
+            {
+                PersonId = person.PersonId,
+                AccountId = person.AccountId,
+                LoopId = person.LoopId,
+                RobotId = person.RobotId,
+                DisplayName = $"{_account.FirstName} {_account.LastName}".Trim(),
+                Alias = _account.FirstName,
+                IsPrimary = person.IsPrimary,
+                CreatedUtc = person.CreatedUtc,
+                UpdatedUtc = DateTimeOffset.UtcNow
+            };
+        }
     }
 
     private void EnsureDefaultTopology()

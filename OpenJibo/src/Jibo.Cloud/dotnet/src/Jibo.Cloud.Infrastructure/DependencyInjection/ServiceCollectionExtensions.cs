@@ -72,6 +72,8 @@ public static class ServiceCollectionExtensions
                                                  "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
                                              ?? Environment.GetEnvironmentVariable(
                                                  "OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
+        var ownerFirstName = configuration?["OpenJibo:OwnerFirstName"];
+        var ownerLastName = configuration?["OpenJibo:OwnerLastName"];
         if (stateBackendKind == PersistenceBackendKind.Sqlite && string.IsNullOrWhiteSpace(stateConnectionString))
         {
             var dbPath = Path.ChangeExtension(statePersistencePath, ".db");
@@ -99,7 +101,9 @@ public static class ServiceCollectionExtensions
             var holidayCalendarProvider = provider.GetRequiredService<IHolidayCalendarProvider>();
             return new InMemoryCloudStateStore(
                 snapshotFactory.Create(statePersistencePath, stateBackendKind, "cloud-state", stateConnectionString),
-                holidayCalendarProvider);
+                holidayCalendarProvider,
+                ownerFirstName,
+                ownerLastName);
         });
         services.AddSingleton<IPersonalMemoryStore>(provider =>
         {

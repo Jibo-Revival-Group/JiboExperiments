@@ -209,6 +209,36 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void AddOpenJiboCloud_SeedsConfiguredOwnerNameIntoCloudState()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"openjibo-owner-name-{Guid.NewGuid():N}");
+        var statePath = Path.Combine(root, "cloud-state.json");
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:State:PersistencePath"] = statePath,
+                ["OpenJibo:OwnerFirstName"] = "Jacob",
+                ["OpenJibo:OwnerLastName"] = "Dubin"
+            })
+            .Build();
+
+        Directory.CreateDirectory(root);
+
+        var services = new ServiceCollection();
+        services.AddOpenJiboCloud(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        var cloudStateStore = provider.GetRequiredService<ICloudStateStore>();
+
+        Assert.Equal("Jacob", cloudStateStore.GetAccount().FirstName);
+        Assert.Equal("Dubin", cloudStateStore.GetAccount().LastName);
+        Assert.Contains(cloudStateStore.GetPeople(), person =>
+            person.IsPrimary &&
+            person.DisplayName == "Jacob Dubin" &&
+            person.Alias == "Jacob");
+    }
+
+    [Fact]
     public void AddOpenJiboCloud_AutoDerivesSqliteConnectionStringsFromPersistencePaths()
     {
         var root = Path.Combine(Path.GetTempPath(), $"openjibo-sqlite-bootstrap-{Guid.NewGuid():N}");

@@ -118,6 +118,7 @@ Use these when you want the active technical truth:
 - [Local cloud quickstart](docs/local-cloud-quickstart.md)
 - [Device bootstrap](docs/device-bootstrap.md)
 - [WiFi QR OOBE flow](docs/wifi-qr-oobe.md)
+- [OOBE / wipe / BE audit](docs/oobe-wipe-be-flow-audit.md)
 - [Feature backlog](docs/feature-backlog.md)
 - [Open Jibo mode conversion plan](docs/open-jibo-mode-conversion-plan.md)
 - [Release 1.0.19 closeout](docs/release-1.0.19-plan.md)

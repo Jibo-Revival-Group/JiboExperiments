@@ -54,7 +54,7 @@ public sealed partial class JiboInteractionService
             switch (yesNoReply)
             {
                 case YesNoReply.Affirmative:
-                    return ResolveAffirmativeYesNoIntent(yesNoRule);
+                    return ResolveAffirmativeYesNoIntent(yesNoRule, listenRules);
                 case YesNoReply.Negative:
                     return ResolveNegativeYesNoIntent(yesNoRule);
                 case YesNoReply.Ambiguous:

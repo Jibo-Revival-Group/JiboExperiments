@@ -188,7 +188,7 @@ public sealed partial class JiboInteractionService
                string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string ResolveAffirmativeYesNoIntent(string? yesNoRule)
+    private static string ResolveAffirmativeYesNoIntent(string? yesNoRule, IReadOnlyList<string> listenRules)
     {
         if (string.Equals(yesNoRule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase))
             return "word_of_the_day";

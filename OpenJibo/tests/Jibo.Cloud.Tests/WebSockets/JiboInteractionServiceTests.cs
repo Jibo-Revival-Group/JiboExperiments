@@ -3804,7 +3804,7 @@ public sealed class JiboInteractionServiceTests
             Attributes = new Dictionary<string, object?>
             {
                 ["listenRules"] = (string[])
-                    ["shared/yes_no", "globals/gui_nav", "globals/global_commands_launch"],
+                    ["surprises-date/offer_date_fact", "globals/gui_nav", "globals/global_commands_launch"],
                 ["listenAsrHints"] = (string[])["$YESNO"],
                 ["context"] = """{"runtime":{"location":{"iso":"2026-04-20T08:00:00-05:00"}}}"""
             }
@@ -3814,7 +3814,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Do you want to hear a fun pizza fact?", decision.ReplyText);
         Assert.NotNull(decision.SkillPayload);
         var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
-        Assert.Equal("shared/yes_no", listenContexts[0]);
+        Assert.Equal("surprises-date/offer_date_fact", listenContexts[0]);
     }
 
     [Fact]
@@ -3946,7 +3946,7 @@ public sealed class JiboInteractionServiceTests
             NormalizedTranscript = "Yes!",
             Attributes = new Dictionary<string, object?>
             {
-                ["listenRules"] = (string[])["shared/yes_no", "globals/global_commands_launch"],
+                ["listenRules"] = (string[])["surprises-date/offer_date_fact", "globals/global_commands_launch"],
                 ["listenAsrHints"] = (string[])["$YESNO"]
             }
         });
@@ -3955,7 +3955,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Do you want to hear a fun pizza fact?", decision.ReplyText);
         Assert.NotNull(decision.SkillPayload);
         var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
-        Assert.Equal("shared/yes_no", listenContexts[0]);
+        Assert.Equal("surprises-date/offer_date_fact", listenContexts[0]);
     }
 
     [Fact]

@@ -37,6 +37,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
                               string.Equals(plan.IntentName, "volume_to_value", StringComparison.OrdinalIgnoreCase);
         var isProactivePizzaFactOffer = string.Equals(plan.IntentName, "proactive_offer_pizza_fact",
             StringComparison.OrdinalIgnoreCase);
+        var isProactivePizzaFactFollowUp = string.Equals(plan.IntentName, "proactive_pizza_fact",
+            StringComparison.OrdinalIgnoreCase);
         var isSettingsLaunch = string.Equals(skill?.SkillName, "@be/settings", StringComparison.OrdinalIgnoreCase);
         var isSleepCommand = string.Equals(plan.IntentName, "sleep", StringComparison.OrdinalIgnoreCase);
         var isTurnAroundCommand = string.Equals(plan.IntentName, "turn_around", StringComparison.OrdinalIgnoreCase) ||
@@ -111,7 +113,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                               !string.IsNullOrWhiteSpace(clientIntent)
                                                 ? clientIntent
                                                 : transcript;
-        var outboundRules = isProactivePizzaFactOffer
+        var outboundRules = isProactivePizzaFactOffer || isProactivePizzaFactFollowUp
             ? ["surprises-date/offer_date_fact"]
             : isWordOfDayLaunch
                 ? ["word-of-the-day/menu"]
@@ -727,6 +729,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         InvokeNativeSkillAction? skill)
     {
         var skillPayload = skill?.Payload;
+        if (skillPayload is null && IsHouseholdListFollowUpIntent(plan.IntentName ?? string.Empty))
+            skillPayload = BuildHouseholdListFollowUpPayload();
+
         if (string.Equals(ReadPayloadString(skillPayload, "cloudResponseMode"), "completion_only",
                 StringComparison.OrdinalIgnoreCase))
             return BuildCompletionOnlySkillPayload(
@@ -1028,6 +1033,26 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 analytics = new Dictionary<string, object?>(),
                 final = true
             }
+        };
+    }
+
+    private static bool IsHouseholdListFollowUpIntent(string intentName)
+    {
+        return string.Equals(intentName, "shopping_list_prompt", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(intentName, "shopping_list_add", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(intentName, "todo_list_prompt", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(intentName, "todo_list_add", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IDictionary<string, object?> BuildHouseholdListFollowUpPayload()
+    {
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["mim_id"] = "runtime-household-list",
+            ["mim_type"] = "question",
+            ["prompt_id"] = "RUNTIME_PROMPT",
+            ["prompt_sub_category"] = "Q",
+            ["listen_contexts"] = new[] { "household-list/follow_up_item" }
         };
     }
 

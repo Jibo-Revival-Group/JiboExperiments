@@ -10,6 +10,12 @@ These scripts help exercise the new .NET hosted cloud locally.
   Starts the direct local Jibo ASR/TTS Playground demo.
 - `Invoke-CloudSmoke.ps1`
   Runs a few quick HTTP checks against a local OpenJibo cloud instance.
+- `Invoke-OpenJiboMigration.ps1`
+  Runs the PostgreSQL migration wrapper against the local or managed database targets.
+- `Publish-OpenJiboManaged.ps1`
+  Builds and pushes the managed Open Jibo image to Azure Container Registry.
+- `OPENJIBO_POSTGRES_PASSWORD`
+  Required when running the self-hosted PostgreSQL stack locally or in CI so the database password stays out of source control.
 - `Invoke-ProtocolFixture.ps1`
   Replays a sanitized HTTP fixture against a running local instance.
 - `Get-WebSocketCaptureSummary.ps1`

@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS OpenJiboSchemaMigrations (
+    ScriptName TEXT NOT NULL PRIMARY KEY,
+    Checksum TEXT NOT NULL,
+    AppliedUtc TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

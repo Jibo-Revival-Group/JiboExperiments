@@ -1,0 +1,57 @@
+name: openjibo-cloud-ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore and test
+        run: dotnet test tests/Jibo.Cloud.Tests/Jibo.Cloud.Tests.csproj
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and start stack
+        shell: bash
+        run: docker compose up -d --build postgres migrate api
+        env:
+          OPENJIBO_POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Run smoke checks
+        shell: pwsh
+        run: ./scripts/cloud/Invoke-CloudSmoke.ps1 -BaseUrl http://localhost:8080
+
+      - name: Capture logs
+        if: always()
+        run: docker compose logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

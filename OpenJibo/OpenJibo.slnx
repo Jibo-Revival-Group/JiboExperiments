@@ -69,6 +69,7 @@
     <Project Path="src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Jibo.Cloud.Application.csproj" />
     <Project Path="src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Infrastructure/Jibo.Cloud.Infrastructure.csproj" />
     <Project Path="src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/Jibo.Cloud.Api.csproj" />
+    <Project Path="src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Migrations/Jibo.Cloud.Migrations.csproj" />
     <Project Path="src/Playground/Playground.csproj" />
   </Folder>
   <Folder Name="/tests/">

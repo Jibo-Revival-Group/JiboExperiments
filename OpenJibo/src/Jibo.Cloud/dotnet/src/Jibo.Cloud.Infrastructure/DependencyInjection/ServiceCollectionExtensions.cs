@@ -13,6 +13,7 @@ using Jibo.Cloud.Infrastructure.Weather;
 using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace Jibo.Cloud.Infrastructure.DependencyInjection;
 
@@ -81,7 +82,7 @@ public static class ServiceCollectionExtensions
         }
 
         if (stateBackendKind == PersistenceBackendKind.PostgreSql && string.IsNullOrWhiteSpace(stateConnectionString))
-            stateConnectionString = "Host=postgres;Port=5432;Database=openjibo_state;Username=openjibo;Password=openjibo";
+            stateConnectionString = BuildPostgreSqlConnectionString("openjibo_state");
 
         if (personalMemoryBackendKind == PersistenceBackendKind.Sqlite &&
             string.IsNullOrWhiteSpace(personalMemoryConnectionString))
@@ -92,8 +93,7 @@ public static class ServiceCollectionExtensions
 
         if (personalMemoryBackendKind == PersistenceBackendKind.PostgreSql &&
             string.IsNullOrWhiteSpace(personalMemoryConnectionString))
-            personalMemoryConnectionString =
-                "Host=postgres;Port=5432;Database=openjibo_memory;Username=openjibo;Password=openjibo";
+            personalMemoryConnectionString = BuildPostgreSqlConnectionString("openjibo_memory");
         var mediaOptions = new MediaContentStoreOptions();
         configuration?.GetSection("OpenJibo:Media").Bind(mediaOptions);
 
@@ -152,5 +152,24 @@ public static class ServiceCollectionExtensions
         return Enum.TryParse<PersistenceBackendKind>(value, true, out var backendKind)
             ? backendKind
             : PersistenceBackendKind.Sqlite;
+    }
+
+    private static string BuildPostgreSqlConnectionString(string databaseName)
+    {
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = Environment.GetEnvironmentVariable("OPENJIBO_POSTGRES_HOST") ?? "postgres",
+            Port = int.TryParse(Environment.GetEnvironmentVariable("OPENJIBO_POSTGRES_PORT"), out var port)
+                ? port
+                : 5432,
+            Database = databaseName,
+            Username = Environment.GetEnvironmentVariable("OPENJIBO_POSTGRES_USER") ?? "openjibo"
+        };
+
+        var password = Environment.GetEnvironmentVariable("OPENJIBO_POSTGRES_PASSWORD");
+        if (!string.IsNullOrWhiteSpace(password))
+            builder.Password = password;
+
+        return builder.ConnectionString;
     }
 }

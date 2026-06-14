@@ -1,4 +1,25 @@
 services:
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openjibo-cloud:self-hosted
+    command:
+      - /app/migrations/Jibo.Cloud.Migrations.dll
+      - --apply
+      - --target
+      - all
+    environment:
+      OPENJIBO_POSTGRES_HOST: postgres
+      OPENJIBO_POSTGRES_PORT: "5432"
+      OPENJIBO_POSTGRES_USER: openjibo
+      OPENJIBO_POSTGRES_PASSWORD: ${OPENJIBO_POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - self-hosted
+
   api:
     build:
       context: .
@@ -8,9 +29,11 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       OpenJibo__State__Backend: PostgreSql
-      OpenJibo__State__ConnectionString: Host=postgres;Port=5432;Database=openjibo_state;Username=openjibo;Password=openjibo
+      OPENJIBO_POSTGRES_HOST: postgres
+      OPENJIBO_POSTGRES_PORT: "5432"
+      OPENJIBO_POSTGRES_USER: openjibo
+      OPENJIBO_POSTGRES_PASSWORD: ${OPENJIBO_POSTGRES_PASSWORD}
       OpenJibo__PersonalMemory__Backend: PostgreSql
-      OpenJibo__PersonalMemory__ConnectionString: Host=postgres;Port=5432;Database=openjibo_memory;Username=openjibo;Password=openjibo
       OpenJibo__Media__Backend: File
       OpenJibo__State__PersistencePath: /data/state/cloud-state.json
       OpenJibo__PersonalMemory__PersistencePath: /data/personal-memory/personal-memory.json
@@ -22,6 +45,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
     volumes:
@@ -33,7 +58,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: openjibo
-      POSTGRES_PASSWORD: openjibo
+      POSTGRES_PASSWORD: ${OPENJIBO_POSTGRES_PASSWORD}
       POSTGRES_DB: openjibo_state
     ports:
       - "5432:5432"

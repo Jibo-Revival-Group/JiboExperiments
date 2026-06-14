@@ -5,5 +5,6 @@ public enum PersistenceBackendKind
     File,
     AzureBlob,
     AzureSql,
+    PostgreSql,
     Sqlite
 }

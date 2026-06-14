@@ -1,0 +1,69 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openjibo-cloud:self-hosted
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      OpenJibo__State__Backend: PostgreSql
+      OpenJibo__State__ConnectionString: Host=postgres;Port=5432;Database=openjibo_state;Username=openjibo;Password=openjibo
+      OpenJibo__PersonalMemory__Backend: PostgreSql
+      OpenJibo__PersonalMemory__ConnectionString: Host=postgres;Port=5432;Database=openjibo_memory;Username=openjibo;Password=openjibo
+      OpenJibo__Media__Backend: File
+      OpenJibo__State__PersistencePath: /data/state/cloud-state.json
+      OpenJibo__PersonalMemory__PersistencePath: /data/personal-memory/personal-memory.json
+      OpenJibo__Media__DirectoryPath: /data/media
+      OpenJibo__OwnerFirstName: Jibo
+      OpenJibo__OwnerLastName: Owner
+      OpenJibo__AcceptedHosts__0: localhost
+      OpenJibo__AcceptedHosts__1: api.jibo.com
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - api-data:/data
+    profiles:
+      - self-hosted
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: openjibo
+      POSTGRES_PASSWORD: openjibo
+      POSTGRES_DB: openjibo_state
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openjibo -d openjibo_state"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    profiles:
+      - self-hosted
+
+  smoke:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      api:
+        condition: service_started
+    command:
+      - sh
+      - -c
+      - >
+        until curl -fsS http://api:8080/health;
+        do
+          echo waiting for Open Jibo;
+          sleep 2;
+        done
+    profiles:
+      - smoke
+
+volumes:
+  api-data:
+  postgres-data:

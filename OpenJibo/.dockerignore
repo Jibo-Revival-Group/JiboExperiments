@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/*.user
+**/*.suo
+**/*.log
+**/TestResults/
+**/*.tmp
+**/*.DS_Store
+.git/
+.github/
+.agents/
+.codex/
+tmp/
+artifacts/

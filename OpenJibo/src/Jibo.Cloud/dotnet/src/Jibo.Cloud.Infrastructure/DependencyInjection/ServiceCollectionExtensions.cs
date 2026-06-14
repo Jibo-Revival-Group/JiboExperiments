@@ -80,12 +80,20 @@ public static class ServiceCollectionExtensions
             stateConnectionString = $"Data Source={dbPath}";
         }
 
+        if (stateBackendKind == PersistenceBackendKind.PostgreSql && string.IsNullOrWhiteSpace(stateConnectionString))
+            stateConnectionString = "Host=postgres;Port=5432;Database=openjibo_state;Username=openjibo;Password=openjibo";
+
         if (personalMemoryBackendKind == PersistenceBackendKind.Sqlite &&
             string.IsNullOrWhiteSpace(personalMemoryConnectionString))
         {
             var dbPath = Path.ChangeExtension(personalMemoryPersistencePath, ".db");
             personalMemoryConnectionString = $"Data Source={dbPath}";
         }
+
+        if (personalMemoryBackendKind == PersistenceBackendKind.PostgreSql &&
+            string.IsNullOrWhiteSpace(personalMemoryConnectionString))
+            personalMemoryConnectionString =
+                "Host=postgres;Port=5432;Database=openjibo_memory;Username=openjibo;Password=openjibo";
         var mediaOptions = new MediaContentStoreOptions();
         configuration?.GetSection("OpenJibo:Media").Bind(mediaOptions);
 

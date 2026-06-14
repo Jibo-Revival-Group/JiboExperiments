@@ -105,6 +105,7 @@ public static class ServiceCollectionExtensions
                 ownerFirstName,
                 ownerLastName);
         });
+        services.AddSingleton<ICloudAuthProtocolHandler, CloudAuthProtocolHandler>();
         services.AddSingleton<IPersonalMemoryStore>(provider =>
         {
             var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();

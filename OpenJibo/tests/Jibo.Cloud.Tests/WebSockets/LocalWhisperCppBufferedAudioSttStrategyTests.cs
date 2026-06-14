@@ -102,6 +102,93 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         Assert.False(strategy.CanHandle(turn));
     }
 
+    [Fact]
+    public void Resolve_UsesEnvironmentOverrides_WhenConfiguredPathsAreEmpty()
+    {
+        var resolved = BufferedAudioSttPathResolver.Resolve(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "",
+                WhisperCliPath = "",
+                WhisperModelPath = ""
+            },
+            name => name switch
+            {
+                "OPENJIBO_STT_FFMPEG_PATH" => "/custom/bin/ffmpeg",
+                "OPENJIBO_STT_WHISPER_CLI_PATH" => "/custom/bin/whisper-cli",
+                "OPENJIBO_STT_WHISPER_MODEL_PATH" => "/custom/models/ggml-base.en.bin",
+                _ => null
+            },
+            path => path.StartsWith("/custom/", StringComparison.Ordinal),
+            homeDirectory: null,
+            isMacOS: true,
+            isLinux: false);
+
+        Assert.Equal("/custom/bin/ffmpeg", resolved.FfmpegPath);
+        Assert.Equal("/custom/bin/whisper-cli", resolved.WhisperCliPath);
+        Assert.Equal("/custom/models/ggml-base.en.bin", resolved.WhisperModelPath);
+    }
+
+    [Fact]
+    public void Resolve_UsesMacDiscovery_WhenLegacyLinuxDefaultsAreConfigured()
+    {
+        var homeDirectory = @"C:\Users\test";
+        var existingPaths = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "/opt/homebrew/bin/ffmpeg",
+            "/opt/homebrew/bin/whisper-cli",
+            Path.Combine(homeDirectory, "whisper.cpp", "models", "ggml-base.en.bin")
+        };
+
+        var resolved = BufferedAudioSttPathResolver.Resolve(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "/usr/bin/ffmpeg",
+                WhisperCliPath = "/usr/bin/whisper.cpp/build/bin/whisper-cli",
+                WhisperModelPath = "/usr/bin/whisper.cpp/models/ggml-base.en.bin"
+            },
+            _ => null,
+            existingPaths.Contains,
+            homeDirectory: homeDirectory,
+            isMacOS: true,
+            isLinux: false);
+
+        Assert.Equal("/opt/homebrew/bin/ffmpeg", resolved.FfmpegPath);
+        Assert.Equal("/opt/homebrew/bin/whisper-cli", resolved.WhisperCliPath);
+        Assert.Equal(Path.Combine(homeDirectory, "whisper.cpp", "models", "ggml-base.en.bin"),
+            resolved.WhisperModelPath);
+    }
+
+    [Fact]
+    public void Resolve_KeepsExplicitRelativePaths()
+    {
+        var resolved = BufferedAudioSttPathResolver.Resolve(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "ffmpeg",
+                WhisperCliPath = "whisper-cli",
+                WhisperModelPath = "models/ggml-base.en.bin"
+            },
+            name => name switch
+            {
+                "OPENJIBO_STT_FFMPEG_PATH" => "/custom/bin/ffmpeg",
+                "OPENJIBO_STT_WHISPER_CLI_PATH" => "/custom/bin/whisper-cli",
+                "OPENJIBO_STT_WHISPER_MODEL_PATH" => "/custom/models/ggml-base.en.bin",
+                _ => null
+            },
+            _ => true,
+            homeDirectory: "/Users/test",
+            isMacOS: true,
+            isLinux: false);
+
+        Assert.Equal("ffmpeg", resolved.FfmpegPath);
+        Assert.Equal("whisper-cli", resolved.WhisperCliPath);
+        Assert.Equal("models/ggml-base.en.bin", resolved.WhisperModelPath);
+    }
+
     [Theory]
     [InlineData("shared/yes_no")]
     [InlineData("word-of-the-day/surprise")]

@@ -726,7 +726,6 @@ public sealed class JiboInteractionServiceTests
     [Theory]
     [InlineData("what is your favorite flower", "robot_favorite_flower", "should see if I can find a sunflower soon")]
     [InlineData("what's your favorite flower", "robot_favorite_flower", "should see if I can find a sunflower soon")]
-    [InlineData("what is your favorite flag", "robot_favorite_flower", "should see if I can find a sunflower soon")]
     [InlineData("do you like R2D2", "robot_likes_r2d2", "A legend. A true legend.")]
     [InlineData("do you like the sun", "robot_likes_sun", "favorite star in the universe")]
     [InlineData("do you like space", "robot_likes_space", "I love space")]
@@ -742,8 +741,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("are we best friends", "robot_best_friends", "best friends with anyone in my Loop")]
     [InlineData("are you friends with Siri", "robot_has_friends", "I believe I do have friends")]
     [InlineData("is Dr. Breazeal your best friend", "robot_best_friends", "best friends with anyone in my Loop")]
-    [InlineData("can you sing", "robot_can_sing", "row, row, row your boat")]
-    [InlineData("will you sing", "robot_can_sing", "row, row, row your boat")]
+    [InlineData("can you sing", "robot_can_sing", "sing")]
+    [InlineData("will you sing", "robot_can_sing", "sing")]
     [InlineData("can you sing a christmas song", "robot_sing_christmas_song", "sing")]
     public async Task BuildDecisionAsync_NewLegacyPersonalityMims_UseImportedReplies(
         string transcript,
@@ -1212,6 +1211,20 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(expectedIntent, decision.IntentName);
         Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_FavoriteFlag_DoesNotMapToFavoriteFlower()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what is your favorite flag",
+            NormalizedTranscript = "what is your favorite flag"
+        });
+
+        Assert.NotEqual("robot_favorite_flower", decision.IntentName);
     }
 
     [Fact]

@@ -875,13 +875,7 @@ public sealed partial class JiboInteractionService
                 "what s your favorite flower",
                 "what is your favourite flower",
                 "what's your favourite flower",
-                "what s your favourite flower",
-                "what is your favorite flag",
-                "what's your favorite flag",
-                "what s your favorite flag",
-                "what is your favourite flag",
-                "what's your favourite flag",
-                "what s your favourite flag"))
+                "what s your favourite flower"))
             return "robot_favorite_flower";
 
         if (MatchesAny(

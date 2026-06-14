@@ -28,6 +28,10 @@ public sealed class PersistenceSnapshotStoreFactory : IPersistenceSnapshotStoreF
                 connectionString ??
                 throw new InvalidOperationException("SQLite persistence requires a connection string (e.g. Data Source=/path/to/db.db)."),
                 snapshotName),
+            PersistenceBackendKind.PocketBase => new PocketBaseSnapshotStore(
+                connectionString ??
+                throw new InvalidOperationException("PocketBase persistence requires a connection string (e.g. http://127.0.0.1:8090)."),
+                snapshotName),
             _ => new JsonFileSnapshotStore(persistencePath, JsonOptions)
         };
     }

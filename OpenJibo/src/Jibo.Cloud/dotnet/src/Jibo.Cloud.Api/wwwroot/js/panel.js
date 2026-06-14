@@ -1,9 +1,15 @@
 const API_BASE = '/api/panel';
+const OOBE_API_BASE = ''; // OOBE API endpoints are at root
 let refreshInterval = 5000; // Default 5 seconds
 let refreshTimer = null;
 let isConnected = false;
 let autoScrollEnabled = true;
 let currentTab = 'dashboard';
+
+// OOBE state
+let oobeAuthToken = null;
+let oobeSetupToken = null;
+let oobeStatusInterval = null;
 
 // Initialize the panel
 async function init() {
@@ -395,9 +401,203 @@ function toggleAutoScroll() {
     button.textContent = autoScrollEnabled ? 'Auto Scroll' : 'Scroll Off';
 }
 
+// OOBE Functions
+async function oobeLogin() {
+    const email = document.getElementById('oobe-email').value;
+    const password = document.getElementById('oobe-password').value;
+
+    try {
+        const response = await fetch(`${OOBE_API_BASE}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            oobeAuthToken = data.token;
+            localStorage.setItem('oobeAuthToken', oobeAuthToken);
+            showOobeDashboard();
+        } else {
+            alert(data.error || 'Login failed');
+        }
+    } catch (error) {
+        console.error('OOBE login error:', error);
+        alert('Login failed. Check console for details.');
+    }
+}
+
+async function oobeSignup() {
+    const email = document.getElementById('oobe-email').value;
+    const password = document.getElementById('oobe-password').value;
+    const firstName = document.getElementById('oobe-firstname').value;
+    const lastName = document.getElementById('oobe-lastname').value;
+
+    try {
+        const response = await fetch(`${OOBE_API_BASE}/api/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, firstName, lastName })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            oobeAuthToken = data.token;
+            localStorage.setItem('oobeAuthToken', oobeAuthToken);
+            showOobeDashboard();
+        } else {
+            alert(data.error || 'Signup failed');
+        }
+    } catch (error) {
+        console.error('OOBE signup error:', error);
+        alert('Signup failed. Check console for details.');
+    }
+}
+
+function showOobeDashboard() {
+    document.getElementById('oobe-auth-section').style.display = 'none';
+    document.getElementById('oobe-dashboard-section').style.display = 'block';
+}
+
+function oobeLogout() {
+    oobeAuthToken = null;
+    oobeSetupToken = null;
+    localStorage.removeItem('oobeAuthToken');
+    document.getElementById('oobe-auth-section').style.display = 'block';
+    document.getElementById('oobe-dashboard-section').style.display = 'none';
+    document.getElementById('oobe-qr-section').style.display = 'none';
+}
+
+async function generateOobeQr() {
+    const ssid = document.getElementById('oobe-ssid').value;
+    const password = document.getElementById('oobe-wifi-password').value;
+    const staticIP = document.getElementById('oobe-static-ip').value || null;
+    const netmask = document.getElementById('oobe-netmask').value || null;
+    const gateway = document.getElementById('oobe-gateway').value || null;
+    const dns1 = document.getElementById('oobe-dns1').value || null;
+    const dns2 = document.getElementById('oobe-dns2').value || null;
+
+    if (!ssid || !password) {
+        alert('SSID and password are required');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${OOBE_API_BASE}/api/robots/setup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${oobeAuthToken}`
+            },
+            body: JSON.stringify({
+                ssid,
+                password,
+                staticIP,
+                netmask,
+                gateway,
+                dns1,
+                dns2
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            oobeSetupToken = data.token;
+            displayOobeQrCodes(data.qr.codes);
+            document.getElementById('oobe-dashboard-section').style.display = 'none';
+            document.getElementById('oobe-qr-section').style.display = 'block';
+            startOobeStatusPolling(data.token);
+        } else {
+            alert('Failed to generate QR code');
+        }
+    } catch (error) {
+        console.error('OOBE QR generation error:', error);
+        alert('Failed to generate QR code. Check console for details.');
+    }
+}
+
+function displayOobeQrCodes(codes) {
+    const container = document.getElementById('qr-codes-container');
+    container.innerHTML = codes.map((code, index) => `
+        <div class="qr-code-item">
+            <p class="qr-label">QR Code ${index + 1} of ${codes.length}</p>
+            <div id="oobe-qr-${index}" class="qr-canvas"></div>
+        </div>
+    `).join('');
+
+    codes.forEach((code, index) => {
+        const qrElement = document.getElementById(`oobe-qr-${index}`);
+
+        if (typeof QRCode !== 'undefined') {
+            QRCode.toCanvas(qrElement, code, {
+                width: 256,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff'
+                }
+            }, function(error) {
+                if (error) {
+                    console.error('QR code generation error:', error);
+                    qrElement.innerHTML = `<pre style="font-size: 10px; word-break: break-all; background: white; padding: 10px; border: 1px solid #ccc;">${code}</pre>`;
+                }
+            });
+        } else {
+            qrElement.innerHTML = `<pre style="font-size: 10px; word-break: break-all; background: white; padding: 10px; border: 1px solid #ccc;">${code}</pre>`;
+        }
+    });
+}
+
+function startOobeStatusPolling(token) {
+    if (oobeStatusInterval) {
+        clearInterval(oobeStatusInterval);
+    }
+
+    oobeStatusInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`${OOBE_API_BASE}/api/robots/setup/${token}/status`);
+            const data = await response.json();
+
+            if (data.complete) {
+                clearInterval(oobeStatusInterval);
+                document.getElementById('oobe-setup-status').textContent = 'Setup Complete!';
+                document.getElementById('oobe-setup-status').style.color = 'green';
+            }
+        } catch (error) {
+            console.error('OOBE status polling error:', error);
+        }
+    }, 3000);
+}
+
+function backToOobeDashboard() {
+    if (oobeStatusInterval) {
+        clearInterval(oobeStatusInterval);
+    }
+    document.getElementById('oobe-qr-section').style.display = 'none';
+    document.getElementById('oobe-dashboard-section').style.display = 'block';
+    document.getElementById('oobe-setup-status').textContent = 'Waiting for robot to scan...';
+    document.getElementById('oobe-setup-status').style.color = '';
+}
+
+// Check for existing OOBE auth on page load
+function checkOobeAuth() {
+    const savedToken = localStorage.getItem('oobeAuthToken');
+    if (savedToken) {
+        oobeAuthToken = savedToken;
+        showOobeDashboard();
+    }
+}
+
 // Start the panel when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+        init();
+        checkOobeAuth();
+    });
 } else {
     init();
+    checkOobeAuth();
 }

@@ -49,6 +49,10 @@
                 <span class="material-icons nav-icon">terminal</span>
                 <span class="nav-text">Terminal</span>
             </div>
+            <div class="nav-item" data-tab="oobe" onclick="switchTab('oobe')">
+                <span class="material-icons nav-icon">qr_code_scanner</span>
+                <span class="nav-text">OOBE Setup</span>
+            </div>
         </nav>
 
         <div class="main-wrapper">
@@ -209,9 +213,101 @@
                     </div>
                 </div>
             </div>
+
+            <!-- OOBE Setup Tab -->
+            <div id="tab-oobe" class="main-content">
+                <md-elevated-card>
+                    <div class="card-content">
+                        <h2 class="md-typescale-headline-small">OOBE (Out-of-Box Experience) Setup</h2>
+                        <p class="info-text">Generate QR codes for robot first-boot setup. The app (Open_Jibo_APP) provides the polished UI experience.</p>
+                        
+                        <div id="oobe-auth-section">
+                            <h3 class="md-typescale-title-medium">Authentication</h3>
+                            <div class="oobe-form">
+                                <div class="form-field">
+                                    <label class="form-label">Email</label>
+                                    <md-filled-text-field id="oobe-email" type="email"></md-filled-text-field>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label">Password</label>
+                                    <md-filled-text-field id="oobe-password" type="password"></md-filled-text-field>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label">First Name (optional)</label>
+                                    <md-filled-text-field id="oobe-firstname"></md-filled-text-field>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label">Last Name (optional)</label>
+                                    <md-filled-text-field id="oobe-lastname"></md-filled-text-field>
+                                </div>
+                                <div class="form-actions">
+                                    <md-filled-button onclick="oobeLogin()">Login</md-filled-button>
+                                    <md-outlined-button onclick="oobeSignup()">Sign Up</md-outlined-button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="oobe-dashboard-section" style="display: none;">
+                            <h3 class="md-typescale-title-medium">Robot Setup</h3>
+                            <div class="oobe-form">
+                                <div class="form-field">
+                                    <label class="form-label">WiFi SSID</label>
+                                    <md-filled-text-field id="oobe-ssid"></md-filled-text-field>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label">WiFi Password</label>
+                                    <md-filled-text-field id="oobe-wifi-password" type="password"></md-filled-text-field>
+                                </div>
+                                <details class="advanced-settings">
+                                    <summary>Advanced: Static IP Configuration</summary>
+                                    <div class="form-field">
+                                        <label class="form-label">Static IP</label>
+                                        <md-filled-text-field id="oobe-static-ip" placeholder="192.168.1.100"></md-filled-text-field>
+                                    </div>
+                                    <div class="form-field">
+                                        <label class="form-label">Netmask</label>
+                                        <md-filled-text-field id="oobe-netmask" placeholder="255.255.255.0"></md-filled-text-field>
+                                    </div>
+                                    <div class="form-field">
+                                        <label class="form-label">Gateway</label>
+                                        <md-filled-text-field id="oobe-gateway" placeholder="192.168.1.1"></md-filled-text-field>
+                                    </div>
+                                    <div class="form-field">
+                                        <label class="form-label">DNS Server 1</label>
+                                        <md-filled-text-field id="oobe-dns1" placeholder="8.8.8.8"></md-filled-text-field>
+                                    </div>
+                                    <div class="form-field">
+                                        <label class="form-label">DNS Server 2</label>
+                                        <md-filled-text-field id="oobe-dns2" placeholder="8.8.4.4"></md-filled-text-field>
+                                    </div>
+                                </details>
+                                <div class="form-actions">
+                                    <md-filled-button onclick="generateOobeQr()">Generate QR Code</md-filled-button>
+                                    <md-outlined-button onclick="oobeLogout()">Logout</md-outlined-button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="oobe-qr-section" style="display: none;">
+                            <h3 class="md-typescale-title-medium">QR Code Generated</h3>
+                            <div class="qr-display">
+                                <div id="qr-codes-container"></div>
+                            </div>
+                            <div class="setup-status">
+                                <span class="status-label">Setup Status:</span>
+                                <span class="status-value" id="oobe-setup-status">Waiting for robot to scan...</span>
+                            </div>
+                            <div class="form-actions">
+                                <md-outlined-button onclick="backToOobeDashboard()">Back to Setup</md-outlined-button>
+                            </div>
+                        </div>
+                    </div>
+                </md-elevated-card>
+            </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <script src="/js/panel.js"></script>
 </body>
 </html>

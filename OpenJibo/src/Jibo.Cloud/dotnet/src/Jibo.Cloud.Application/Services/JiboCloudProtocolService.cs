@@ -46,6 +46,9 @@ public sealed class JiboCloudProtocolService(
     private readonly object _schedulerLock = new();
     private readonly SchedulerRuntimeState _schedulerState = new();
     private readonly ConcurrentDictionary<string, OobeTokenState> _oobeTokens = new(StringComparer.Ordinal);
+    
+    // Expose OOBE token state for portal service integration
+    public ConcurrentDictionary<string, OobeTokenState> OobeTokens => _oobeTokens;
 
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope,
         CancellationToken cancellationToken = default)
@@ -1277,7 +1280,7 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
-    private sealed class OobeTokenState
+    public sealed class OobeTokenState
     {
         public string? LoopId { get; init; }
         public string? AccountId { get; init; }

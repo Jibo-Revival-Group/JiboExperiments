@@ -235,6 +235,10 @@ public sealed class JiboCloudProtocolService(
             return ProtocolDispatchResult.Ok(members);
         }
 
+        if (operation is "SuspendLoop" or "Remove" or "RemoveLoop" or
+            "SetLegalGuardian" or "UpdateAgreementStatus" or "Update" or "UpdateLoop")
+            return ProtocolDispatchResult.Ok(new { result = "ok" });
+
         if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
         var people = stateStore.GetPeople();

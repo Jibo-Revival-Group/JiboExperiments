@@ -596,7 +596,8 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
     {
         var update = stateStore.GetUpdateFrom(subsystem, fromVersion, filter);
         return update is null
-            ? ProtocolDispatchResult.NoContent()
+            ? ProtocolDispatchResult.Raw(404,
+                "{\"__type\":\"UPDATE_NOT_FOUND\",\"message\":\"No update available for this subsystem from the specified version\"}")
             : ProtocolDispatchResult.Ok(MapUpdate(update));
     }
 

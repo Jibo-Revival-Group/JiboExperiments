@@ -49,7 +49,7 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
-    public async Task GetUpdateFrom_WithoutStagedUpdate_ReturnsNoContent()
+    public async Task GetUpdateFrom_WithoutStagedUpdate_ReturnsUpdateNotFound()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -60,9 +60,9 @@ public sealed class JiboCloudProtocolServiceTests
             BodyText = """{"subsystem":"robot","fromVersion":"1.0.0"}"""
         });
 
-        Assert.Equal(204, result.StatusCode);
-        Assert.Equal("text/plain", result.ContentType);
-        Assert.Empty(result.BodyText);
+        Assert.Equal(404, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal("UPDATE_NOT_FOUND", payload.RootElement.GetProperty("__type").GetString());
     }
 
     [Fact]
@@ -86,9 +86,9 @@ public sealed class JiboCloudProtocolServiceTests
             BodyText = """{"subsystem":"robot","fromVersion":"1.0.1"}"""
         });
 
-        Assert.Equal(204, result.StatusCode);
-        Assert.Equal("text/plain", result.ContentType);
-        Assert.Empty(result.BodyText);
+        Assert.Equal(404, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal("UPDATE_NOT_FOUND", payload.RootElement.GetProperty("__type").GetString());
     }
 
     [Fact]

@@ -72,6 +72,18 @@ public static class ServiceCollectionExtensions
                                                  "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
                                              ?? Environment.GetEnvironmentVariable(
                                                  "OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
+        if (stateBackendKind == PersistenceBackendKind.Sqlite && string.IsNullOrWhiteSpace(stateConnectionString))
+        {
+            var dbPath = Path.ChangeExtension(statePersistencePath, ".db");
+            stateConnectionString = $"Data Source={dbPath}";
+        }
+
+        if (personalMemoryBackendKind == PersistenceBackendKind.Sqlite &&
+            string.IsNullOrWhiteSpace(personalMemoryConnectionString))
+        {
+            var dbPath = Path.ChangeExtension(personalMemoryPersistencePath, ".db");
+            personalMemoryConnectionString = $"Data Source={dbPath}";
+        }
         var mediaOptions = new MediaContentStoreOptions();
         configuration?.GetSection("OpenJibo:Media").Bind(mediaOptions);
 

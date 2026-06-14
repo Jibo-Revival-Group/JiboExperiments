@@ -1,6 +1,9 @@
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.DependencyInjection;
 using Jibo.Cloud.Infrastructure.Persistence;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Jibo.Cloud.Tests.Infrastructure;
 
@@ -203,6 +206,39 @@ public sealed class PersistenceStoreTests
         {
             if (File.Exists(persistencePath)) File.Delete(persistencePath);
         }
+    }
+
+    [Fact]
+    public void AddOpenJiboCloud_AutoDerivesSqliteConnectionStringsFromPersistencePaths()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"openjibo-sqlite-bootstrap-{Guid.NewGuid():N}");
+        var statePath = Path.Combine(root, "cloud-state.json");
+        var personalMemoryPath = Path.Combine(root, "personal-memory.json");
+
+        Directory.CreateDirectory(root);
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:State:Backend"] = "Sqlite",
+                ["OpenJibo:State:PersistencePath"] = statePath,
+                ["OpenJibo:PersonalMemory:Backend"] = "Sqlite",
+                ["OpenJibo:PersonalMemory:PersistencePath"] = personalMemoryPath
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddOpenJiboCloud(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        var cloudStateStore = provider.GetRequiredService<ICloudStateStore>();
+        var personalMemoryStore = provider.GetRequiredService<IPersonalMemoryStore>();
+
+        cloudStateStore.CreateUpdate("1.0.0", "1.0.1", "Bootstrap smoke", null, 10, "robot", null, null);
+        personalMemoryStore.SetName(new PersonalMemoryTenantScope("acct-sqlite", "loop-sqlite", "device-sqlite"),
+            "SQLite Bootstrap");
+
+        Assert.True(File.Exists(Path.ChangeExtension(statePath, ".db")));
+        Assert.True(File.Exists(Path.ChangeExtension(personalMemoryPath, ".db")));
     }
 
     [Fact]

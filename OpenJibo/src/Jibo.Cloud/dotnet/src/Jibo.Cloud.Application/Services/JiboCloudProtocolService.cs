@@ -563,7 +563,8 @@ public sealed class JiboCloudProtocolService(
                 .ToArray()),
             "ListUpdatesFrom" => ProtocolDispatchResult.Ok(stateStore.ListUpdates(subsystem, filter)
                 .Where(update =>
-                    IsUpdateNewerThanRequest(update.ToVersion, fromVersion))
+                    fromVersion is null ||
+                    update.FromVersion.Equals(fromVersion, StringComparison.OrdinalIgnoreCase))
                 .Select(MapUpdate)
                 .ToArray()),
             "GetUpdateFrom" => HandleGetUpdateFrom(subsystem, fromVersion, filter),

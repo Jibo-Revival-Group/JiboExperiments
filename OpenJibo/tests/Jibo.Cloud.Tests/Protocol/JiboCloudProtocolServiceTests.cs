@@ -209,6 +209,32 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task ListUpdatesFrom_IgnoresSameVersionUpdates()
+    {
+        await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "CreateUpdate",
+            BodyText = """{"fromVersion":"1.0.0","toVersion":"1.0.1","changes":"Bug fix","subsystem":"robot"}"""
+        });
+
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "ListUpdatesFrom",
+            BodyText = """{"subsystem":"robot","fromVersion":"1.0.1"}"""
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Empty(payload.RootElement.EnumerateArray());
+    }
+
+    [Fact]
     public async Task SchedulerGetUpdate_ReturnsWrappedUpdateList()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope

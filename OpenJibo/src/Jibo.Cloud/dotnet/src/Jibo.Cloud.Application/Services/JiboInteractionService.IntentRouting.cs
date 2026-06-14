@@ -312,10 +312,15 @@ public sealed partial class JiboInteractionService
                 "turn around",
                 "turn all the way around",
                 "turn back around",
-                "spin around",
                 "look back over there",
                 "look again"))
             return "turn_around";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "spin around",
+                "twirl"))
+            return "spin_around";
 
         if (MatchesAny(
                 loweredTranscript,

@@ -23,6 +23,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var isYesNoTurn = !string.IsNullOrWhiteSpace(yesNoRule);
         var isYesNoIntent = string.Equals(plan.IntentName, "yes", StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(plan.IntentName, "no", StringComparison.OrdinalIgnoreCase);
+        // tutorial/yes_no is handled entirely by the robot-local tutorial skill: it speaks its own
+        // response and does not need a competing chitchat SKILL_ACTION from the cloud.
+        var isSkillOwnedYesNoTurn = IsYesNoListenTurn(turn);
         var isWordOfDayLaunch = string.Equals(plan.IntentName, "word_of_the_day", StringComparison.OrdinalIgnoreCase);
         var isWordOfDayGuess =
             string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase);
@@ -308,7 +311,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 125));
         }
 
-        if (emitSkillActions && speak is not null)
+        // Don't emit a chitchat SKILL_ACTION for tutorial yes/no turns: the tutorial skill handles
+        // the response locally. Sending a competing chitchat-skill action with final:true causes the
+        // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
+        if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillPayload(plan, turn, transId, speak, skill)),
                 75));
@@ -548,17 +554,34 @@ public sealed class ResponsePlanToSocketMessagesMapper
         };
     }
 
+    private static bool IsYesNoListenTurn(TurnContext turn)
+    {
+        // Robot-local yes/no turns: the active skill speaks its own response and does not need a
+        // competing chitchat SKILL_ACTION from the cloud.
+        //   tutorial/*           - the on-robot tutorial skill (yes_no after dance, keep_photo, ...)
+        //   create/is_it_a_keeper - @be/create photo-save prompt
+        // Other yes/no rules (shared/yes_no, surprises-ota/want_to_download_now, etc.) are
+        // cloud-side and do need a SKILL_ACTION reply.
+        return ReadRuleValues(turn).Any(IsRobotLocalYesNoRule);
+    }
+
+    private static bool IsRobotLocalYesNoRule(string rule)
+    {
+        return rule.StartsWith("tutorial/", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "create/is_it_a_keeper", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string? ReadYesNoRule(TurnContext turn)
     {
         return ReadRuleValues(turn)
             .FirstOrDefault(static rule =>
                 string.Equals(rule, "clock/alarm_timer_change", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "clock/alarm_timer_none_set", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(rule, "create/is_it_a_keeper", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "shared/yes_no", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "settings/download_now_later", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase));
+                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
+                IsRobotLocalYesNoRule(rule));
     }
 
     private static bool ShouldIncludeCreateDomain(string? yesNoRule)

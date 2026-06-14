@@ -1763,7 +1763,7 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-yesno","data":{"text":"yeah"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yeah",
@@ -1777,6 +1777,7 @@ public sealed class JiboWebSocketServiceTests
                 .GetProperty("domain").GetString());
         Assert.Equal("create/is_it_a_keeper",
             listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
     }
 
     [Fact]

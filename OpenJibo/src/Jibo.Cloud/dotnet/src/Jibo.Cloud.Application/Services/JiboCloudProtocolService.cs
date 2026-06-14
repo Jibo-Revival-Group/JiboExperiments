@@ -19,6 +19,7 @@ public sealed class JiboCloudProtocolService(
     private const int SchedulerDownloadFinishDelayMs = 150;
 
     private readonly HashSet<string> _acceptedHosts = BuildAcceptedHosts(configuration);
+    private readonly string? _configuredRobotId = ReadConfiguredRobotId(configuration);
     private readonly bool _enableBackupRestore =
         configuration?["OpenJibo:EnableBackupRestore"]?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? true;
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
@@ -39,6 +40,12 @@ public sealed class JiboCloudProtocolService(
             .ToArray() ?? [];
 
         return new HashSet<string>(hosts, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string? ReadConfiguredRobotId(IConfiguration? configuration)
+    {
+        var robotId = configuration?["OpenJibo:Robot:RobotId"];
+        return string.IsNullOrWhiteSpace(robotId) ? null : robotId.Trim();
     }
 
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope,
@@ -475,13 +482,14 @@ public sealed class JiboCloudProtocolService(
     private ProtocolDispatchResult HandleRobot(string operation, ProtocolEnvelope envelope)
     {
         var robot = stateStore.GetRobot();
+        var effectiveRobotId = _configuredRobotId ?? robot.RobotId;
 
         if (operation.Equals("UpdateRobot", StringComparison.OrdinalIgnoreCase))
         {
             var updated = new DeviceRegistration
             {
                 DeviceId = robot.DeviceId,
-                RobotId = robot.RobotId,
+                RobotId = effectiveRobotId,
                 FriendlyName = robot.FriendlyName,
                 FirmwareVersion = envelope.FirmwareVersion ?? robot.FirmwareVersion,
                 ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
@@ -502,9 +510,24 @@ public sealed class JiboCloudProtocolService(
             });
 
         var profile = stateStore.GetRobotProfile();
+        var requestedRobotId = _configuredRobotId ?? ReadString(envelope.TryParseBody(), "id");
+        if (!string.IsNullOrWhiteSpace(requestedRobotId) &&
+            !requestedRobotId.Equals(robot.RobotId, StringComparison.OrdinalIgnoreCase))
+        {
+            stateStore.UpdateRobot(new DeviceRegistration
+            {
+                DeviceId = robot.DeviceId,
+                RobotId = requestedRobotId,
+                FriendlyName = robot.FriendlyName,
+                FirmwareVersion = envelope.FirmwareVersion ?? robot.FirmwareVersion,
+                ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
+                HostMappings = robot.HostMappings
+            });
+        }
+
         return ProtocolDispatchResult.Ok(new
         {
-            id = ReadString(envelope.TryParseBody(), "id") ?? profile.RobotId,
+            id = requestedRobotId ?? profile.RobotId,
             payload = profile.Payload,
             calibrationPayload = profile.CalibrationPayload,
             updated = profile.UpdatedUtc.ToUnixTimeMilliseconds(),

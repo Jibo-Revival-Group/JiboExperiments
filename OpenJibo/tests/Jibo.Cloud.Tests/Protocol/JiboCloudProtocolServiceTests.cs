@@ -50,6 +50,31 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task GetRobot_UsesConfiguredRobotId_WhenPresent()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:Robot:RobotId"] = "robot-configured-123"
+            })
+            .Build();
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(), configuration: configuration);
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Robot_20160225",
+            Operation = "GetRobot",
+            BodyText = """{"id":"robot-requested-456"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal("robot-configured-123", payload.RootElement.GetProperty("id").GetString());
+    }
+
+    [Fact]
     public async Task PrepareRobot_IssuesOobeTokenAndSetupCompletes()
     {
         var prepare = await _service.DispatchAsync(new ProtocolEnvelope

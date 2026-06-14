@@ -1172,12 +1172,7 @@ public sealed class WebSocketTurnFinalizationService(
 
         if (ChitchatStateMachine.IsLikelyEmotionUtterance(transcript)) return true;
 
-        if (IsYesNoTurn(turn))
-        {
-            var yesNoReply = TryClassifyYesNoReply(transcript);
-            if (yesNoReply is YesNoReply.Affirmative or YesNoReply.Negative or YesNoReply.Ambiguous)
-                return true;
-        }
+        if (IsYesNoTurn(turn) && IsYesNoReplyTranscript(transcript)) return true;
 
         if (!string.IsNullOrWhiteSpace(pendingProactivityOffer) &&
             IsYesNoReplyTranscript(transcript))

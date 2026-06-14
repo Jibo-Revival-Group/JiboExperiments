@@ -44,5 +44,8 @@ for later review of security, stability, and long-term maintainability.
   reviewed before any production deployment.
 - The build-directory cleanup is a local development safeguard and should stay
   narrowly scoped to the known stale-artifact patterns.
+- The QR generator now uses the same `openjibo-default-loop` identifier as the
+  rest of the cloud, but it still depends on a third-party QR script CDN and
+  should be vendored if this tool becomes part of an offline recovery path.
 - The branch-specific OOBE behavior still needs a separate security and
   long-term design review before it is folded into the product path.

@@ -286,7 +286,7 @@
         'Content-Type': 'application/x-amz-json-1.1',
         'X-Amz-Target': 'OOBE_20161026.PrepareRobot',
       },
-      body: JSON.stringify({ loopId: 'loop-openjibo-default' }),
+      body: JSON.stringify({ loopId: 'openjibo-default-loop' }),
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();

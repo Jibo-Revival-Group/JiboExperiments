@@ -138,6 +138,6 @@ public static class ServiceCollectionExtensions
     {
         return Enum.TryParse<PersistenceBackendKind>(value, true, out var backendKind)
             ? backendKind
-            : PersistenceBackendKind.File;
+            : PersistenceBackendKind.Sqlite;
     }
 }

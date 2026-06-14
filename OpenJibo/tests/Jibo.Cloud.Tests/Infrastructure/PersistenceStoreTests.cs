@@ -242,6 +242,37 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void AddOpenJiboCloud_DefaultsPersistenceBackendsToSqliteWhenUnspecified()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"openjibo-sqlite-default-{Guid.NewGuid():N}");
+        var statePath = Path.Combine(root, "cloud-state.json");
+        var personalMemoryPath = Path.Combine(root, "personal-memory.json");
+
+        Directory.CreateDirectory(root);
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:State:PersistencePath"] = statePath,
+                ["OpenJibo:PersonalMemory:PersistencePath"] = personalMemoryPath
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddOpenJiboCloud(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        var cloudStateStore = provider.GetRequiredService<ICloudStateStore>();
+        var personalMemoryStore = provider.GetRequiredService<IPersonalMemoryStore>();
+
+        cloudStateStore.CreateUpdate("1.0.0", "1.0.1", "Bootstrap smoke", null, 10, "robot", null, null);
+        personalMemoryStore.SetName(new PersonalMemoryTenantScope("acct-sqlite-default", "loop-sqlite-default",
+            "device-sqlite-default"), "SQLite Default");
+
+        Assert.True(File.Exists(Path.ChangeExtension(statePath, ".db")));
+        Assert.True(File.Exists(Path.ChangeExtension(personalMemoryPath, ".db")));
+    }
+
+    [Fact]
     public void PersonalMemoryStore_IgnoresCorruptSnapshotAndOverwritesWithValidJson()
     {
         var persistenceDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-corrupt-memory-{Guid.NewGuid():N}");

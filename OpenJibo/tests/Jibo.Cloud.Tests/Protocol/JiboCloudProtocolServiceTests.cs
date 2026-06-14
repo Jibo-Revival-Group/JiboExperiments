@@ -343,6 +343,41 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task SchedulerBackupEndpoints_AreDisabledWhenConfigured()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:EnableBackupRestore"] = "false"
+            })
+            .Build();
+
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(), null, configuration);
+
+        var backupStatus = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/backup-status"
+        });
+
+        using var backupPayload = JsonDocument.Parse(backupStatus.BodyText);
+        Assert.Equal(200, backupStatus.StatusCode);
+        Assert.Equal("unknown target default response", backupPayload.RootElement.GetProperty("note").GetString());
+
+        var backupRobot = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/backup-robot"
+        });
+
+        using var backupRobotPayload = JsonDocument.Parse(backupRobot.BodyText);
+        Assert.Equal(200, backupRobot.StatusCode);
+        Assert.Equal("unknown target default response", backupRobotPayload.RootElement.GetProperty("note").GetString());
+    }
+
+    [Fact]
     public async Task BackupList_WithoutBackups_ReturnsEmptyList()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope

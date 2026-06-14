@@ -17,6 +17,8 @@ public sealed class JiboCloudProtocolService(
     private const int SchedulerDownloadFinishDelayMs = 150;
 
     private readonly HashSet<string> _acceptedHosts = BuildAcceptedHosts(configuration);
+    private readonly bool _enableBackupRestore =
+        configuration?["OpenJibo:EnableBackupRestore"]?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? true;
 
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private readonly object _schedulerLock = new();
@@ -643,6 +645,9 @@ public sealed class JiboCloudProtocolService(
 
         if (envelope.Path.Equals("/backup-status", StringComparison.OrdinalIgnoreCase))
         {
+            if (!_enableBackupRestore)
+                return false;
+
             result = ProtocolDispatchResult.Ok(new
             {
                 status = "OK",
@@ -653,6 +658,9 @@ public sealed class JiboCloudProtocolService(
 
         if (envelope.Path.Equals("/download-status", StringComparison.OrdinalIgnoreCase))
         {
+            if (!_enableBackupRestore)
+                return false;
+
             result = ProtocolDispatchResult.Ok(new
             {
                 status = "OK",
@@ -663,6 +671,9 @@ public sealed class JiboCloudProtocolService(
 
         if (envelope.Path.Equals("/check-updates", StringComparison.OrdinalIgnoreCase))
         {
+            if (!_enableBackupRestore)
+                return false;
+
             var body = envelope.TryParseBody();
             var filter = ReadString(body, "filter");
             result = ProtocolDispatchResult.Ok(new
@@ -676,6 +687,9 @@ public sealed class JiboCloudProtocolService(
         if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase) ||
             envelope.Path.Equals("/ota-update", StringComparison.OrdinalIgnoreCase))
         {
+            if (!_enableBackupRestore)
+                return false;
+
             if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase))
                 StartSchedulerBackupCycle();
             else

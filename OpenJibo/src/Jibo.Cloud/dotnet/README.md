@@ -152,12 +152,26 @@ That enables two distinct STT paths:
 
 The local tool path is intentionally off by default. It exists to help map real robot audio behavior while the stable hosted cloud remains the primary goal.
 
-For local Ubuntu testing, the checked-in API host config now enables that path by default with the current Node-aligned tool locations:
+The checked-in API host config enables that path by default, but it no longer
+pins Linux-only tool locations. At startup OpenJibo resolves `ffmpeg`,
+`whisper-cli`, and the model from explicit config, environment variables,
+common Linux/macOS locations, and finally command names on `PATH`.
 
-- `/usr/bin/ffmpeg`
-- `/usr/bin/whisper.cpp/build/bin/whisper-cli`
-- `/usr/bin/whisper.cpp/models/ggml-base.en.bin`
-- temp audio under `/tmp/openjibo-stt`
+Useful macOS overrides:
+
+- `OPENJIBO_STT_FFMPEG_PATH`
+- `OPENJIBO_STT_WHISPER_CLI_PATH`
+- `OPENJIBO_STT_WHISPER_MODEL_PATH`
+
+Common macOS candidates include Homebrew paths such as
+`/opt/homebrew/bin/ffmpeg`, `/opt/homebrew/bin/whisper-cli`, and
+`~/whisper.cpp/models/ggml-base.en.bin`, plus
+`~/Library/Application Support/openjibo/whisper/ggml-base.en.bin` for a
+user-local model install. Temp audio still defaults to `/tmp/openjibo-stt` in
+the local API config.
+
+This keeps the discovery seam useful on macOS while we continue to treat real
+robot turns as the parity source.
 
 Configuration lives under `OpenJibo:Stt`:
 
@@ -188,6 +202,35 @@ Current local state persistence:
 - default path: `App_Data/cloud-state.json` under the running API directory
 - current contents: media metadata, backup metadata, and staged update metadata
 - current limitation: media bodies are only preserved through the existing text-based HTTP body capture seam, so this is a hosted-gallery bridge, not final binary-safe media storage
+
+## Recent Protocol Fixes
+
+### Tutorial yes/no flow (`tutorial/yes_no`)
+
+The tutorial dance sequence ends with "did you like my dance?" and is handled
+entirely by the robot-local tutorial skill. That flow was previously broken
+because the cloud could emit a competing `SKILL_ACTION` and return the wrong
+`outboundRules` in the `LISTEN` reply.
+
+Two fixes keep the handoff aligned:
+
+- suppress the chitchat `SKILL_ACTION` when the turn is specifically
+  `tutorial/yes_no`
+- return a single outbound rule for that turn, not the full global rule list
+
+This leaves other yes/no flows, including cloud-side prompt handling, intact.
+
+### Family loop member filtering
+
+`EnsureRobotLoopMember()` seeds an internal `type="robot"` loop member used by
+the SSM to avoid `Q4-Server_connection_lost` errors. That internal member must
+not be exposed in API responses because it has no display name and confuses the
+family list UI.
+
+The filtering belongs in:
+
+- `ListMembers` / `ListLoopMembers`
+- `MapLoopRecord()` for loop detail responses
 
 ## Current Interaction Paths
 

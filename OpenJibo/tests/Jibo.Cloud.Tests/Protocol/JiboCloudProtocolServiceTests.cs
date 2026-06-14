@@ -50,6 +50,51 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task AccountCreate_LoginAndCheckEmail_UseUserBackedAuth()
+    {
+        var create = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Account_20160715",
+            Operation = "Create",
+            BodyText = """{"email":"new-user@example.com","password":"secret","firstName":"New","lastName":"User"}"""
+        });
+
+        Assert.Equal(200, create.StatusCode);
+        using var createPayload = JsonDocument.Parse(create.BodyText);
+        Assert.Equal("new-user@example.com", createPayload.RootElement.GetProperty("email").GetString());
+        var createdId = createPayload.RootElement.GetProperty("id").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(createdId));
+
+        var checkEmail = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Account_20160715",
+            Operation = "CheckEmail",
+            BodyText = """{"email":"new-user@example.com"}"""
+        });
+
+        using var checkPayload = JsonDocument.Parse(checkEmail.BodyText);
+        Assert.True(checkPayload.RootElement.GetProperty("exists").GetBoolean());
+
+        var login = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Account_20160715",
+            Operation = "Login",
+            BodyText = """{"email":"new-user@example.com","password":"secret"}"""
+        });
+
+        using var loginPayload = JsonDocument.Parse(login.BodyText);
+        Assert.Equal(200, login.StatusCode);
+        Assert.Equal("new-user@example.com", loginPayload.RootElement.GetProperty("email").GetString());
+        Assert.Equal(createdId, loginPayload.RootElement.GetProperty("id").GetString());
+    }
+
+    [Fact]
     public async Task GetRobot_UsesConfiguredRobotId_WhenPresent()
     {
         var configuration = new ConfigurationBuilder()
@@ -331,7 +376,7 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
-    public async Task LoopList_ReturnsMembersFromPeopleStore()
+    public async Task LoopList_ReturnsSeededMembers()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -345,11 +390,14 @@ public sealed class JiboCloudProtocolServiceTests
         using var payload = JsonDocument.Parse(result.BodyText);
         var loops = payload.RootElement.EnumerateArray().ToArray();
         Assert.NotEmpty(loops);
-        Assert.True(loops[0].GetProperty("members").EnumerateArray().Any());
+        var members = loops[0].GetProperty("members").EnumerateArray().ToArray();
+        Assert.NotEmpty(members);
+        Assert.Contains(members, member => member.GetProperty("type").GetString() == "owner");
+        Assert.DoesNotContain(members, member => member.GetProperty("type").GetString() == "robot");
     }
 
     [Fact]
-    public async Task LoopListMembers_ReturnsPeopleForDefaultLoop()
+    public async Task LoopListMembers_ReturnsSeededMembersForDefaultLoop()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -365,10 +413,11 @@ public sealed class JiboCloudProtocolServiceTests
         var members = payload.RootElement.EnumerateArray().ToArray();
         Assert.NotEmpty(members);
         Assert.All(members, member => Assert.Equal("openjibo-default-loop", member.GetProperty("loopId").GetString()));
+        Assert.Contains(members, member => member.GetProperty("type").GetString() == "owner");
     }
 
     [Fact]
-    public async Task LoopInviteMember_ReturnsOk()
+    public async Task LoopInviteMember_ReturnsUpdatedLoop()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -381,7 +430,8 @@ public sealed class JiboCloudProtocolServiceTests
 
         Assert.Equal(200, result.StatusCode);
         using var payload = JsonDocument.Parse(result.BodyText);
-        Assert.Equal("ok", payload.RootElement.GetProperty("result").GetString());
+        var members = payload.RootElement.GetProperty("members").EnumerateArray().ToArray();
+        Assert.Contains(members, member => member.GetProperty("account").GetProperty("email").GetString() == "friend@example.com");
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
+using System.Security.Cryptography;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Holidays;
@@ -30,8 +31,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _keyRequests = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly List<LoopRecord> _loops;
+    private readonly List<LoopMemberRecord> _loopMembers;
     private readonly List<MediaRecord> _media = [];
     private readonly List<PersonRecord> _people;
+    private readonly List<UserRecord> _users;
 
     private readonly ConcurrentDictionary<string, CloudSession>
         _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
@@ -98,6 +101,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 RobotFriendlyId = _robot.DeviceId
             }
         ];
+        _loopMembers = [];
+        _users = [];
         _people =
         [
             new PersonRecord
@@ -124,6 +129,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         _updates = [];
         ApplyConfiguredOwnerName();
+        EnsureDefaultTopology();
         LoadPersistedState();
     }
 
@@ -186,8 +192,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _holidayOverrides.Clear();
         _holidayOverrides.AddRange(snapshot.Holidays ?? []);
 
+        _loopMembers.Clear();
+        _loopMembers.AddRange(snapshot.LoopMembers ?? []);
+
         _people.Clear();
         _people.AddRange(snapshot.People ?? []);
+
+        _users.Clear();
+        _users.AddRange(snapshot.Users ?? []);
 
         ApplyConfiguredOwnerName();
         EnsureDefaultTopology();
@@ -239,7 +251,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 GreetingPresences = _greetingPresences.ToArray(),
                 Loops = _loops.ToArray(),
                 Holidays = _holidayOverrides.ToArray(),
-                People = _people.ToArray()
+                LoopMembers = _loopMembers.ToArray(),
+                People = _people.ToArray(),
+                Users = _users.ToArray()
             };
             _snapshotStore.Save(snapshot);
             _lastSavedUtc = now;
@@ -285,6 +299,80 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         TouchState();
         return device;
+    }
+
+    public UserRecord? CreateUser(string email, string password, string? firstName, string? lastName)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            return null;
+
+        lock (_syncRoot)
+        {
+            if (_users.Any(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase)))
+                return null;
+
+            var salt = GenerateSalt();
+            var user = new UserRecord
+            {
+                Email = email.Trim().ToLowerInvariant(),
+                PasswordHash = HashPassword(password, salt),
+                Salt = salt,
+                FirstName = firstName?.Trim() ?? string.Empty,
+                LastName = lastName?.Trim() ?? string.Empty
+            };
+            _users.Add(user);
+        }
+
+        TouchState();
+        return _users.Last(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public UserRecord? AuthenticateUser(string email, string password)
+    {
+        var user = _users.FirstOrDefault(u => u.Email.Equals(email.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (user is null) return null;
+
+        var hash = HashPassword(password, user.Salt);
+        return hash == user.PasswordHash ? user : null;
+    }
+
+    public UserRecord? GetUserById(string id)
+    {
+        return _users.FirstOrDefault(u => u.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public UserRecord? GetUserByEmail(string email)
+    {
+        return _users.FirstOrDefault(u => u.Email.Equals(email.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    public UserRecord UpdateUser(string id, string? firstName, string? lastName, string? gender, long? birthday)
+    {
+        lock (_syncRoot)
+        {
+            var index = _users.FindIndex(u => u.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            if (index < 0) throw new InvalidOperationException($"User '{id}' not found.");
+
+            var existing = _users[index];
+            _users[index] = new UserRecord
+            {
+                Id = existing.Id,
+                Email = existing.Email,
+                PasswordHash = existing.PasswordHash,
+                Salt = existing.Salt,
+                FirstName = firstName?.Trim() ?? existing.FirstName,
+                LastName = lastName?.Trim() ?? existing.LastName,
+                Gender = gender ?? existing.Gender,
+                Birthday = birthday ?? existing.Birthday,
+                AccessKeyId = existing.AccessKeyId,
+                SecretAccessKey = existing.SecretAccessKey,
+                IsActive = existing.IsActive,
+                CreatedUtc = existing.CreatedUtc
+            };
+        }
+
+        TouchState();
+        return _users.First(u => u.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 
     public string IssueHubToken()
@@ -355,6 +443,150 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     public IReadOnlyList<PersonRecord> GetPeople()
     {
         return _people.ToArray();
+    }
+
+    public IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId)
+    {
+        return _loopMembers
+            .Where(m => m.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                        !m.Status.Equals("removed", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+    }
+
+    public LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
+        string? lastName, string? gender, long? birthday, bool isChild, string type)
+    {
+        var member = new LoopMemberRecord
+        {
+            LoopId = loopId,
+            AccountId = accountId,
+            Email = email?.Trim(),
+            FirstName = firstName?.Trim(),
+            LastName = lastName?.Trim(),
+            Gender = gender,
+            Birthday = birthday,
+            IsChild = isChild,
+            Type = type,
+            Status = "active"
+        };
+        lock (_syncRoot) _loopMembers.Add(member);
+        TouchState();
+        return member;
+    }
+
+    public LoopMemberRecord UpdateLoopMember(string loopId, string memberId, string? firstName, string? lastName,
+        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName)
+    {
+        lock (_syncRoot)
+        {
+            var index = _loopMembers.FindIndex(m =>
+                m.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+            if (index < 0) throw new InvalidOperationException($"Member '{memberId}' not found in loop '{loopId}'.");
+
+            var existing = _loopMembers[index];
+            _loopMembers[index] = new LoopMemberRecord
+            {
+                Id = existing.Id,
+                LoopId = existing.LoopId,
+                AccountId = existing.AccountId,
+                Email = existing.Email,
+                FirstName = firstName?.Trim() ?? existing.FirstName,
+                LastName = lastName?.Trim() ?? existing.LastName,
+                Gender = gender ?? existing.Gender,
+                Birthday = birthday ?? existing.Birthday,
+                IsChild = isChild,
+                PhoneNumber = existing.PhoneNumber,
+                Status = existing.Status,
+                Type = existing.Type,
+                Nickname = nickname ?? existing.Nickname,
+                PhoneticName = phoneticName ?? existing.PhoneticName,
+                FaceEnrolled = existing.FaceEnrolled,
+                VoiceEnrolled = existing.VoiceEnrolled,
+                LegalGuardianId = existing.LegalGuardianId,
+                AgreementId = existing.AgreementId,
+                CreatedUtc = existing.CreatedUtc
+            };
+        }
+
+        TouchState();
+        return GetLoopMember(loopId, memberId);
+    }
+
+    public bool RemoveLoopMember(string loopId, string memberId)
+    {
+        lock (_syncRoot)
+        {
+            var index = _loopMembers.FindIndex(m =>
+                m.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+            if (index < 0) return false;
+
+            var existing = _loopMembers[index];
+            _loopMembers[index] = new LoopMemberRecord
+            {
+                Id = existing.Id,
+                LoopId = existing.LoopId,
+                AccountId = existing.AccountId,
+                Email = existing.Email,
+                FirstName = existing.FirstName,
+                LastName = existing.LastName,
+                Gender = existing.Gender,
+                Birthday = existing.Birthday,
+                IsChild = existing.IsChild,
+                PhoneNumber = existing.PhoneNumber,
+                Status = "removed",
+                Type = existing.Type,
+                Nickname = existing.Nickname,
+                PhoneticName = existing.PhoneticName,
+                FaceEnrolled = existing.FaceEnrolled,
+                VoiceEnrolled = existing.VoiceEnrolled,
+                LegalGuardianId = existing.LegalGuardianId,
+                AgreementId = existing.AgreementId,
+                CreatedUtc = existing.CreatedUtc
+            };
+        }
+
+        TouchState();
+        return true;
+    }
+
+    public LoopMemberRecord SetMemberEnrollment(string loopId, string memberId, bool? face, bool? voice)
+    {
+        lock (_syncRoot)
+        {
+            var index = _loopMembers.FindIndex(m =>
+                m.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+            if (index < 0) throw new InvalidOperationException($"Member '{memberId}' not found in loop '{loopId}'.");
+
+            var existing = _loopMembers[index];
+            _loopMembers[index] = new LoopMemberRecord
+            {
+                Id = existing.Id,
+                LoopId = existing.LoopId,
+                AccountId = existing.AccountId,
+                Email = existing.Email,
+                FirstName = existing.FirstName,
+                LastName = existing.LastName,
+                Gender = existing.Gender,
+                Birthday = existing.Birthday,
+                IsChild = existing.IsChild,
+                PhoneNumber = existing.PhoneNumber,
+                Status = existing.Status,
+                Type = existing.Type,
+                Nickname = existing.Nickname,
+                PhoneticName = existing.PhoneticName,
+                FaceEnrolled = face ?? existing.FaceEnrolled,
+                VoiceEnrolled = voice ?? existing.VoiceEnrolled,
+                LegalGuardianId = existing.LegalGuardianId,
+                AgreementId = existing.AgreementId,
+                CreatedUtc = existing.CreatedUtc
+            };
+        }
+
+        TouchState();
+        return GetLoopMember(loopId, memberId);
     }
 
     public IReadOnlyList<UpdateManifest> ListUpdates(string? subsystem = null, string? filter = null)
@@ -804,6 +1036,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public void UpdateRobot(DeviceRegistration registration)
     {
+        var oldRobotId = _robot.RobotId;
         _robot = registration;
         _devices[registration.DeviceId] = registration;
         _robotProfile = new RobotProfile
@@ -818,6 +1051,40 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             },
             UpdatedUtc = DateTimeOffset.UtcNow
         };
+
+        for (var i = 0; i < _loopMembers.Count; i++)
+        {
+            var member = _loopMembers[i];
+            if (string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) ||
+                (member.AccountId != null && member.AccountId.Equals(oldRobotId, StringComparison.OrdinalIgnoreCase)))
+            {
+                _loopMembers[i] = new LoopMemberRecord
+                {
+                    Id = member.Id,
+                    LoopId = member.LoopId,
+                    AccountId = string.Equals(member.AccountId, oldRobotId, StringComparison.OrdinalIgnoreCase)
+                        ? registration.RobotId
+                        : member.AccountId,
+                    Email = member.Email,
+                    FirstName = member.FirstName,
+                    LastName = member.LastName,
+                    Gender = member.Gender,
+                    Birthday = member.Birthday,
+                    IsChild = member.IsChild,
+                    PhoneNumber = member.PhoneNumber,
+                    Status = member.Status,
+                    Type = member.Type,
+                    Nickname = member.Nickname,
+                    PhoneticName = member.PhoneticName,
+                    FaceEnrolled = member.FaceEnrolled,
+                    VoiceEnrolled = member.VoiceEnrolled,
+                    LegalGuardianId = member.LegalGuardianId,
+                    AgreementId = member.AgreementId,
+                    CreatedUtc = member.CreatedUtc
+                };
+            }
+        }
+
         TouchState();
     }
 
@@ -834,6 +1101,19 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         }
 
         return string.Compare(candidateVersion, fromVersion, StringComparison.OrdinalIgnoreCase) > 0;
+    }
+
+    private static string GenerateSalt()
+    {
+        Span<byte> saltBytes = stackalloc byte[16];
+        RandomNumberGenerator.Fill(saltBytes);
+        return Convert.ToHexString(saltBytes).ToLowerInvariant();
+    }
+
+    private static string HashPassword(string password, string salt)
+    {
+        var input = Encoding.UTF8.GetBytes($"{salt}:{password}");
+        return Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant();
     }
 
     private void TouchState()
@@ -875,6 +1155,38 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 UpdatedUtc = DateTimeOffset.UtcNow
             };
         }
+
+        for (var i = 0; i < _loopMembers.Count; i++)
+        {
+            var member = _loopMembers[i];
+            if (member.AccountId == null ||
+                !member.AccountId.Equals(_account.AccountId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            _loopMembers[i] = new LoopMemberRecord
+            {
+                Id = member.Id,
+                LoopId = member.LoopId,
+                AccountId = member.AccountId,
+                Email = member.Email,
+                FirstName = _account.FirstName,
+                LastName = _account.LastName,
+                Gender = member.Gender,
+                Birthday = member.Birthday,
+                IsChild = member.IsChild,
+                PhoneNumber = member.PhoneNumber,
+                Status = member.Status,
+                Type = member.Type,
+                Nickname = member.Nickname,
+                PhoneticName = member.PhoneticName,
+                FaceEnrolled = member.FaceEnrolled,
+                VoiceEnrolled = member.VoiceEnrolled,
+                LegalGuardianId = member.LegalGuardianId,
+                AgreementId = member.AgreementId,
+                CreatedUtc = member.CreatedUtc
+            };
+        }
     }
 
     private void EnsureDefaultTopology()
@@ -886,6 +1198,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 RobotId = _robot.RobotId,
                 RobotFriendlyId = _robot.DeviceId
             });
+
+        EnsureOwnerLoopMember(_loops[0].LoopId);
+        EnsureRobotLoopMember(_loops[0].LoopId, _robot.RobotId);
 
         if (_people.Count != 0)
         {
@@ -918,6 +1233,52 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         EnsureDefaultCommuteProfile();
     }
 
+    private void EnsureOwnerLoopMember(string loopId)
+    {
+        if (_loopMembers.Any(member =>
+                member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                member.AccountId != null &&
+                member.AccountId.Equals(_account.AccountId, StringComparison.OrdinalIgnoreCase) &&
+                !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        _loopMembers.Add(new LoopMemberRecord
+        {
+            LoopId = loopId,
+            AccountId = _account.AccountId,
+            Email = _account.Email,
+            FirstName = _account.FirstName,
+            LastName = _account.LastName,
+            Gender = "unknown",
+            Birthday = 631152000000,
+            Type = "owner",
+            Status = "active"
+        });
+    }
+
+    private void EnsureRobotLoopMember(string loopId, string robotId)
+    {
+        if (string.IsNullOrWhiteSpace(robotId)) return;
+
+        if (_loopMembers.Any(member =>
+                member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                member.AccountId != null &&
+                member.AccountId.Equals(robotId, StringComparison.OrdinalIgnoreCase) &&
+                !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        _loopMembers.Add(new LoopMemberRecord
+        {
+            LoopId = loopId,
+            AccountId = robotId,
+            FirstName = "Jibo",
+            LastName = "Robot",
+            Gender = "unknown",
+            Type = "robot",
+            Status = "active"
+        });
+    }
+
     private void EnsureDefaultCommuteProfile()
     {
         if (_commuteProfiles.Any(commute =>
@@ -937,6 +1298,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             DestinationName = "work",
             TypicalDurationMinutes = 25
         });
+    }
+
+    private LoopMemberRecord GetLoopMember(string loopId, string memberId)
+    {
+        return _loopMembers.First(m =>
+            m.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+            m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string Slugify(string value)
@@ -1028,7 +1396,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public GreetingPresenceRecord[]? GreetingPresences { get; init; }
         public LoopRecord[]? Loops { get; init; }
         public HolidayRecord[]? Holidays { get; init; }
+        public LoopMemberRecord[]? LoopMembers { get; init; }
         public PersonRecord[]? People { get; init; }
+        public UserRecord[]? Users { get; init; }
     }
 
     private sealed class CloudSessionSnapshot

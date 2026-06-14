@@ -28,51 +28,64 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
         if (operation.Equals("CheckEmail", StringComparison.OrdinalIgnoreCase))
         {
             var email = ReadString(body, "email") ?? string.Empty;
-            return ProtocolDispatchResult.Ok(new
-            {
-                exists = email.Equals(account.Email, StringComparison.OrdinalIgnoreCase)
-            });
+            var emailExists = stateStore.GetUserByEmail(email) is not null ||
+                              email.Equals(account.Email, StringComparison.OrdinalIgnoreCase);
+            return ProtocolDispatchResult.Ok(new { exists = emailExists });
         }
 
-        if (operation is "Create" or "Login")
-            return ProtocolDispatchResult.Ok(new
-            {
-                id = account.AccountId,
-                email = ReadString(body, "email") ?? account.Email,
-                firstName = ReadString(body, "firstName") ?? account.FirstName,
-                lastName = ReadString(body, "lastName") ?? account.LastName,
-                gender = "unknown",
-                birthday = 631152000000L,
-                phoneNumber = "+10000000000",
-                photoUrl = string.Empty,
-                isActive = true,
-                messagingAllowed = true,
-                accessKeyId = account.AccessKeyId,
-                secretAccessKey = account.SecretAccessKey,
-                roles = Array.Empty<object>(),
-                facebookConnected = false,
-                termsAccepted = true
-            });
+        if (operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
+        {
+            var email = ReadString(body, "email") ?? string.Empty;
+            var password = ReadString(body, "password") ?? string.Empty;
+            var firstName = ReadString(body, "firstName") ?? string.Empty;
+            var lastName = ReadString(body, "lastName") ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                return ProtocolDispatchResult.Raw(400, "{\"message\":\"Email and password are required\"}",
+                    "application/json");
+
+            var created = stateStore.CreateUser(email, password, firstName, lastName);
+            if (created is null)
+                return ProtocolDispatchResult.Raw(409,
+                    "{\"message\":\"An account with this email already exists\"}",
+                    "application/json");
+
+            return ProtocolDispatchResult.Ok(BuildAccountResponse(created));
+        }
+
+        if (operation.Equals("Login", StringComparison.OrdinalIgnoreCase))
+        {
+            var email = ReadString(body, "email") ?? string.Empty;
+            var password = ReadString(body, "password") ?? string.Empty;
+
+            var authenticated = stateStore.AuthenticateUser(email, password);
+            if (authenticated is null)
+                return ProtocolDispatchResult.Raw(401,
+                    "{\"message\":\"Invalid email or password\"}",
+                    "application/json");
+
+            return ProtocolDispatchResult.Ok(BuildAccountResponse(authenticated));
+        }
 
         if (operation.Equals("Get", StringComparison.OrdinalIgnoreCase))
         {
             var ids = ReadStringArray(body, "ids");
-            var matches = ids.Count == 0 || ids.Contains(account.AccountId, StringComparer.OrdinalIgnoreCase);
+            if (ids.Count == 0)
+                return ProtocolDispatchResult.Ok(new[] { BuildAccountResponse(account) });
 
-            if (!matches) return ProtocolDispatchResult.Ok(Array.Empty<object>());
-
-            return ProtocolDispatchResult.Ok(new[]
-            {
-                new
+            var results = ids
+                .Select(id =>
                 {
-                    id = account.AccountId,
-                    email = account.Email,
-                    firstName = account.FirstName,
-                    lastName = account.LastName,
-                    accessKeyId = account.AccessKeyId,
-                    secretAccessKey = account.SecretAccessKey
-                }
-            });
+                    var user = stateStore.GetUserById(id);
+                    if (user is not null) return (object)BuildAccountResponse(user);
+                    if (id.Equals(account.AccountId, StringComparison.OrdinalIgnoreCase))
+                        return (object)BuildAccountResponse(account);
+                    return null;
+                })
+                .Where(result => result is not null)
+                .ToArray();
+
+            return ProtocolDispatchResult.Ok(results);
         }
 
         switch (operation)
@@ -114,15 +127,8 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
                 .ToLowerInvariant();
 
             return ProtocolDispatchResult.Ok(query.Length > 0 && haystack.Contains(query)
-                ?
-                [
-                    new
-                    {
-                        id = account.AccountId,
-                        email = account.Email,
-                        firstName = account.FirstName,
-                        lastName = account.LastName
-                    }
+                ? [
+                    BuildAccountResponse(account)
                 ]
                 : Array.Empty<object>());
         }
@@ -207,5 +213,49 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
                property.ValueKind == JsonValueKind.Object
             ? property
             : null;
+    }
+
+    private static object BuildAccountResponse(AccountProfile account)
+    {
+        return new
+        {
+            id = account.AccountId,
+            email = account.Email,
+            firstName = account.FirstName,
+            lastName = account.LastName,
+            gender = "unknown",
+            birthday = 631152000000L,
+            phoneNumber = "+10000000000",
+            photoUrl = string.Empty,
+            isActive = true,
+            messagingAllowed = true,
+            accessKeyId = account.AccessKeyId,
+            secretAccessKey = account.SecretAccessKey,
+            roles = Array.Empty<object>(),
+            facebookConnected = false,
+            termsAccepted = true
+        };
+    }
+
+    private static object BuildAccountResponse(UserRecord user)
+    {
+        return new
+        {
+            id = user.Id,
+            email = user.Email,
+            firstName = user.FirstName,
+            lastName = user.LastName,
+            gender = user.Gender ?? "unknown",
+            birthday = user.Birthday ?? 631152000000L,
+            phoneNumber = "+10000000000",
+            photoUrl = string.Empty,
+            isActive = user.IsActive,
+            messagingAllowed = true,
+            accessKeyId = user.AccessKeyId,
+            secretAccessKey = user.SecretAccessKey,
+            roles = Array.Empty<object>(),
+            facebookConnected = false,
+            termsAccepted = true
+        };
     }
 }

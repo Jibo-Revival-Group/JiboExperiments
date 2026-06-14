@@ -222,27 +222,118 @@ public sealed class JiboCloudProtocolService(
     {
         if (operation is "ListMembers" or "ListLoopMembers")
         {
-            var body = envelope.TryParseBody();
-            var loopId = ReadString(body, "loopId") ??
-                         ReadString(body, "id") ??
+            var listBody = envelope.TryParseBody();
+            var loopId = ReadString(listBody, "loopId") ??
+                         ReadString(listBody, "id") ??
                          stateStore.GetLoops().FirstOrDefault()?.LoopId;
 
-            var members = stateStore.GetPeople()
-                .Where(person => string.Equals(person.LoopId, loopId, StringComparison.OrdinalIgnoreCase))
-                .Select(MapPersonRecord)
+            var members = stateStore.GetLoopMembers(loopId ?? string.Empty)
+                .Where(static member => !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                .Select(MapLoopMember)
                 .ToArray();
 
             return ProtocolDispatchResult.Ok(members);
         }
 
-        if (operation is "InviteMember" or "InviteLoopMember" or
-            "UpdateMember" or "UpdateLoopMember" or
-            "RemoveMember" or "RemoveLoopMember" or
-            "AcceptInvitation" or "AcceptLoopInvitation" or
-            "DeclineInvitation" or "DeclineLoopInvitation" or
-            "SetEnrollment" or
-            "UpdateNickname" or "UpdatePhoneticName")
+        var body = envelope.TryParseBody();
+        var loopIdForMutation = ReadString(body, "loopId") ??
+                                ReadString(body, "id") ??
+                                stateStore.GetLoops().FirstOrDefault()?.LoopId ??
+                                "openjibo-default-loop";
+
+        if (operation is "InviteMember" or "InviteLoopMember")
+        {
+            stateStore.AddLoopMember(
+                loopIdForMutation,
+                accountId: null,
+                email: ReadString(body, "email"),
+                firstName: ReadString(body, "firstName"),
+                lastName: ReadString(body, "lastName"),
+                gender: ReadString(body, "gender"),
+                birthday: ReadLong(body, "birthday"),
+                isChild: ReadBool(body, "isChild"),
+                type: "member");
+
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
+        }
+
+        if (operation is "UpdateMember" or "UpdateLoopMember")
+        {
+            var memberId = ReadString(body, "id") ?? string.Empty;
+            try
+            {
+                stateStore.UpdateLoopMember(loopIdForMutation, memberId,
+                    ReadString(body, "firstName"), ReadString(body, "lastName"),
+                    ReadString(body, "gender"), ReadLong(body, "birthday"),
+                    ReadBool(body, "isChild"), ReadString(body, "nickname"), ReadString(body, "phoneticName"));
+            }
+            catch (InvalidOperationException)
+            {
+                // Member not found - keep protocol flow moving.
+            }
+
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
+        }
+
+        if (operation is "RemoveMember" or "RemoveLoopMember")
+        {
+            stateStore.RemoveLoopMember(loopIdForMutation, ReadString(body, "id") ?? string.Empty);
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
+        }
+
+        if (operation is "AcceptInvitation" or "AcceptLoopInvitation" or
+            "DeclineInvitation" or "DeclineLoopInvitation")
+        {
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
+        }
+
+        if (operation is "SetEnrollment")
+        {
+            var memberId = ReadString(body, "id") ?? string.Empty;
+            bool? face = body?.TryGetProperty("face", out var faceEl) == true ? faceEl.GetBoolean() : null;
+            bool? voice = body?.TryGetProperty("voice", out var voiceEl) == true ? voiceEl.GetBoolean() : null;
+            try
+            {
+                stateStore.SetMemberEnrollment(loopIdForMutation, memberId, face, voice);
+            }
+            catch (InvalidOperationException)
+            {
+                // Member not found - keep protocol flow moving.
+            }
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
+        }
+
+        if (operation is "UpdateNickname" or "UpdatePhoneticName")
+        {
+            var memberId = ReadString(body, "id") ?? string.Empty;
+            var nickname = operation is "UpdateNickname" ? ReadString(body, "nickname") : null;
+            var phoneticName = operation is "UpdatePhoneticName" ? ReadString(body, "phoneticName") : null;
+            try
+            {
+                stateStore.UpdateLoopMember(loopIdForMutation, memberId,
+                    null, null, null, null, false, nickname, phoneticName);
+            }
+            catch (InvalidOperationException)
+            {
+                // Member not found - keep protocol flow moving.
+            }
             return ProtocolDispatchResult.Ok(new { result = "ok" });
+        }
 
         if (operation is "SuspendLoop" or "Remove" or "RemoveLoop" or
             "SetLegalGuardian" or "UpdateAgreementStatus" or "Update" or "UpdateLoop")
@@ -250,11 +341,40 @@ public sealed class JiboCloudProtocolService(
 
         if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
-        var people = stateStore.GetPeople();
-        return ProtocolDispatchResult.Ok(stateStore.GetLoops().Select(loop => MapLoopRecord(loop, people)).ToArray());
+        return ProtocolDispatchResult.Ok(stateStore.GetLoops()
+            .Select(loop => MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId)))
+            .ToArray());
     }
 
-    private static object MapLoopRecord(LoopRecord loop, IReadOnlyList<PersonRecord> people)
+    private static object MapLoopMember(LoopMemberRecord member)
+    {
+        return new
+        {
+            id = member.Id,
+            loopId = member.LoopId,
+            accountId = member.AccountId,
+            account = new
+            {
+                email = member.Email,
+                firstName = member.FirstName,
+                lastName = member.LastName,
+                gender = member.Gender,
+                birthday = member.Birthday,
+                isChild = member.IsChild,
+                phoneNumber = member.PhoneNumber
+            },
+            enrolled = new { face = member.FaceEnrolled, voice = member.VoiceEnrolled },
+            status = member.Status,
+            type = member.Type,
+            nickname = member.Nickname,
+            phoneticName = member.PhoneticName,
+            legalGuardianId = member.LegalGuardianId,
+            agreementId = member.AgreementId,
+            created = member.CreatedUtc.ToUnixTimeMilliseconds()
+        };
+    }
+
+    private static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members)
     {
         return new
         {
@@ -263,29 +383,13 @@ public sealed class JiboCloudProtocolService(
             owner = loop.OwnerAccountId,
             robot = loop.RobotId,
             robotFriendlyId = loop.RobotFriendlyId,
-            members = people
-                .Where(person => string.Equals(person.LoopId, loop.LoopId, StringComparison.OrdinalIgnoreCase))
-                .Select(MapPersonRecord)
+            members = members
+                .Where(static m => !string.Equals(m.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                .Select(MapLoopMember)
                 .ToArray(),
             isSuspended = loop.IsSuspended,
             created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
             updated = loop.UpdatedUtc.ToUnixTimeMilliseconds()
-        };
-    }
-
-    private static object MapPersonRecord(PersonRecord person)
-    {
-        return new
-        {
-            id = person.PersonId,
-            accountId = person.AccountId,
-            loopId = person.LoopId,
-            robotId = person.RobotId,
-            displayName = person.DisplayName,
-            alias = person.Alias,
-            isPrimary = person.IsPrimary,
-            created = person.CreatedUtc.ToUnixTimeMilliseconds(),
-            updated = person.UpdatedUtc.ToUnixTimeMilliseconds()
         };
     }
 

@@ -11,12 +11,24 @@ public interface ICloudStateStore
     DeviceRegistration GetRobot();
     RobotProfile GetRobotProfile();
     DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion);
+    UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);
+    UserRecord? AuthenticateUser(string email, string password);
+    UserRecord? GetUserById(string id);
+    UserRecord? GetUserByEmail(string email);
+    UserRecord UpdateUser(string id, string? firstName, string? lastName, string? gender, long? birthday);
     string IssueHubToken();
     string IssueRobotToken(string deviceId);
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
     CloudSession? FindSessionByToken(string token);
     IReadOnlyList<LoopRecord> GetLoops();
     IReadOnlyList<PersonRecord> GetPeople();
+    IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
+    LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
+        string? lastName, string? gender, long? birthday, bool isChild, string type);
+    LoopMemberRecord UpdateLoopMember(string loopId, string memberId, string? firstName, string? lastName,
+        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName);
+    bool RemoveLoopMember(string loopId, string memberId);
+    LoopMemberRecord SetMemberEnrollment(string loopId, string memberId, bool? face, bool? voice);
     IReadOnlyList<UpdateManifest> ListUpdates(string? subsystem = null, string? filter = null);
     UpdateManifest? GetUpdateFrom(string? subsystem, string? fromVersion, string? filter);
 

@@ -235,6 +235,15 @@ public sealed class JiboCloudProtocolService(
             return ProtocolDispatchResult.Ok(members);
         }
 
+        if (operation is "InviteMember" or "InviteLoopMember" or
+            "UpdateMember" or "UpdateLoopMember" or
+            "RemoveMember" or "RemoveLoopMember" or
+            "AcceptInvitation" or "AcceptLoopInvitation" or
+            "DeclineInvitation" or "DeclineLoopInvitation" or
+            "SetEnrollment" or
+            "UpdateNickname" or "UpdatePhoneticName")
+            return ProtocolDispatchResult.Ok(new { result = "ok" });
+
         if (operation is "SuspendLoop" or "Remove" or "RemoveLoop" or
             "SetLegalGuardian" or "UpdateAgreementStatus" or "Update" or "UpdateLoop")
             return ProtocolDispatchResult.Ok(new { result = "ok" });

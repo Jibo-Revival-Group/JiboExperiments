@@ -368,6 +368,23 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LoopInviteMember_ReturnsOk()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160715",
+            Operation = "InviteMember",
+            BodyText = """{"loopId":"openjibo-default-loop","email":"friend@example.com","firstName":"Friend"}"""
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal("ok", payload.RootElement.GetProperty("result").GetString());
+    }
+
+    [Fact]
     public async Task SchedulerStatusEndpoints_DefaultToNotBackingUpAndNoDownload()
     {
         var backupStatus = await _service.DispatchAsync(new ProtocolEnvelope

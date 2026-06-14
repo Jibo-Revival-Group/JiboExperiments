@@ -602,8 +602,7 @@ public sealed class JiboCloudProtocolService(
     {
         var update = stateStore.GetUpdateFrom(subsystem, fromVersion, filter);
         return update is null
-            ? ProtocolDispatchResult.Raw(404,
-                "{\"__type\":\"UPDATE_NOT_FOUND\",\"message\":\"No update available for this subsystem from the specified version\"}")
+            ? ProtocolDispatchResult.NoContent()
             : ProtocolDispatchResult.Ok(MapUpdate(update));
     }
 

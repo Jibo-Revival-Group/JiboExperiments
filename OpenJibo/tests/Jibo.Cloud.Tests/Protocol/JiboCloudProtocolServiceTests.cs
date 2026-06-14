@@ -176,6 +176,21 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LegacyLoopSuspendPath_ReturnsOk()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/v1/loop/suspend"
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.True(payload.RootElement.GetProperty("ok").GetBoolean());
+    }
+
+    [Fact]
     public async Task SchedulerStatusEndpoints_DefaultToNotBackingUpAndNoDownload()
     {
         var backupStatus = await _service.DispatchAsync(new ProtocolEnvelope

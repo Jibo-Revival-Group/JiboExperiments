@@ -70,6 +70,9 @@ public sealed class JiboCloudProtocolService(
                 host = envelope.HostName
             }));
 
+        if (TryHandleLegacyRestRequest(envelope, out var legacyResult))
+            return Task.FromResult(legacyResult);
+
         var servicePrefix = envelope.ServicePrefix ?? string.Empty;
         var operation = envelope.Operation ?? string.Empty;
 
@@ -111,6 +114,21 @@ public sealed class JiboCloudProtocolService(
             operation,
             note = "unknown target default response"
         }));
+    }
+
+    private static bool TryHandleLegacyRestRequest(ProtocolEnvelope envelope,
+        out ProtocolDispatchResult result)
+    {
+        if (string.IsNullOrWhiteSpace(envelope.ServicePrefix) &&
+            envelope.Method.Equals("POST", StringComparison.OrdinalIgnoreCase) &&
+            envelope.Path.Equals("/v1/loop/suspend", StringComparison.OrdinalIgnoreCase))
+        {
+            result = ProtocolDispatchResult.Ok(new { ok = true });
+            return true;
+        }
+
+        result = ProtocolDispatchResult.Ok(new { });
+        return false;
     }
 
     private ProtocolDispatchResult HandleAccount(string operation, ProtocolEnvelope envelope)

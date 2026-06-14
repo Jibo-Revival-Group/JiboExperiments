@@ -24,6 +24,8 @@ for later review of security, stability, and long-term maintainability.
 - `OpenJibo/scripts/cloud/start-dotnet-with-node-cert.sh`
   - makes cert-chain handling more robust for local development
   - removes stale root-owned build artifact directories before startup
+- `OpenJibo/src/Jibo WiFi QR Generator/jibo_qr_generator.html`
+  - adds the chunked OOBE QR workflow and optional server-issued token path
 - `OpenJibo/tests/Jibo.Cloud.Tests/Infrastructure/PersistenceStoreTests.cs`
   - adds a backend wiring test for SQLite
 

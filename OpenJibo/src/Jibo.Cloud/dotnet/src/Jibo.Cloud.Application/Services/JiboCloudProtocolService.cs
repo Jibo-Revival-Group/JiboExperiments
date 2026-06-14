@@ -639,9 +639,6 @@ public sealed class JiboCloudProtocolService(
 
         if (envelope.Path.Equals("/backup-status", StringComparison.OrdinalIgnoreCase))
         {
-            if (!_enableBackupRestore)
-                return false;
-
             result = ProtocolDispatchResult.Ok(new
             {
                 status = "OK",
@@ -652,9 +649,6 @@ public sealed class JiboCloudProtocolService(
 
         if (envelope.Path.Equals("/download-status", StringComparison.OrdinalIgnoreCase))
         {
-            if (!_enableBackupRestore)
-                return false;
-
             result = ProtocolDispatchResult.Ok(new
             {
                 status = "OK",

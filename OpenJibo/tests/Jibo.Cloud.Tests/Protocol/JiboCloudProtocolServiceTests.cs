@@ -557,7 +557,8 @@ public sealed class JiboCloudProtocolServiceTests
 
         using var backupPayload = JsonDocument.Parse(backupStatus.BodyText);
         Assert.Equal(200, backupStatus.StatusCode);
-        Assert.Equal("unknown target default response", backupPayload.RootElement.GetProperty("note").GetString());
+        Assert.Equal("OK", backupPayload.RootElement.GetProperty("status").GetString());
+        Assert.False(backupPayload.RootElement.GetProperty("data").GetBoolean());
 
         var backupRobot = await service.DispatchAsync(new ProtocolEnvelope
         {
@@ -569,6 +570,18 @@ public sealed class JiboCloudProtocolServiceTests
         using var backupRobotPayload = JsonDocument.Parse(backupRobot.BodyText);
         Assert.Equal(200, backupRobot.StatusCode);
         Assert.Equal("unknown target default response", backupRobotPayload.RootElement.GetProperty("note").GetString());
+
+        var downloadStatus = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/download-status"
+        });
+
+        using var downloadPayload = JsonDocument.Parse(downloadStatus.BodyText);
+        Assert.Equal(200, downloadStatus.StatusCode);
+        Assert.Equal("OK", downloadPayload.RootElement.GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.Null, downloadPayload.RootElement.GetProperty("data").ValueKind);
     }
 
     [Fact]

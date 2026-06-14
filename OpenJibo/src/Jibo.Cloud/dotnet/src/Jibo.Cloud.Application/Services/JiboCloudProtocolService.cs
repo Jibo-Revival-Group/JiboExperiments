@@ -915,21 +915,6 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
-    private static bool IsUpdateNewerThanRequest(string candidateVersion, string? fromVersion)
-    {
-        if (string.IsNullOrWhiteSpace(fromVersion)) return true;
-
-        if (string.IsNullOrWhiteSpace(candidateVersion)) return false;
-
-        if (Version.TryParse(candidateVersion, out var candidate) &&
-            Version.TryParse(fromVersion, out var requested))
-        {
-            return candidate > requested;
-        }
-
-        return string.Compare(candidateVersion, fromVersion, StringComparison.OrdinalIgnoreCase) > 0;
-    }
-
     private static object MapUpdate(UpdateManifest update)
     {
         return new
@@ -946,6 +931,37 @@ public sealed class JiboCloudProtocolService(
             subsystem = update.Subsystem,
             filter = update.Filter,
             dependencies = new Dictionary<string, object?>()
+        };
+    }
+
+    private static bool IsUpdateNewerThanRequest(string candidateVersion, string? fromVersion)
+    {
+        if (string.IsNullOrWhiteSpace(fromVersion)) return true;
+
+        if (string.IsNullOrWhiteSpace(candidateVersion)) return false;
+
+        if (Version.TryParse(candidateVersion, out var candidate) &&
+            Version.TryParse(fromVersion, out var requested))
+        {
+            return candidate > requested;
+        }
+
+        return string.Compare(candidateVersion, fromVersion, StringComparison.OrdinalIgnoreCase) > 0;
+    }
+
+    private static UpdateManifest BuildNoopUpdate(string? subsystem, string? fromVersion, string? filter)
+    {
+        return new UpdateManifest
+        {
+            UpdateId = $"noop-update-{subsystem ?? "unknown"}-{fromVersion ?? "unknown"}",
+            FromVersion = fromVersion ?? "unknown",
+            ToVersion = fromVersion ?? "unknown",
+            Changes = "No update available",
+            Url = "https://api.jibo.com/update/noop",
+            ShaHash = "noop",
+            Length = 0,
+            Subsystem = subsystem ?? "unknown",
+            Filter = filter
         };
     }
 

@@ -220,6 +220,21 @@ public sealed class JiboCloudProtocolService(
 
     private ProtocolDispatchResult HandleLoop(string operation, ProtocolEnvelope envelope)
     {
+        if (operation is "ListMembers" or "ListLoopMembers")
+        {
+            var body = envelope.TryParseBody();
+            var loopId = ReadString(body, "loopId") ??
+                         ReadString(body, "id") ??
+                         stateStore.GetLoops().FirstOrDefault()?.LoopId;
+
+            var members = stateStore.GetPeople()
+                .Where(person => string.Equals(person.LoopId, loopId, StringComparison.OrdinalIgnoreCase))
+                .Select(MapPersonRecord)
+                .ToArray();
+
+            return ProtocolDispatchResult.Ok(members);
+        }
+
         if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
         var people = stateStore.GetPeople();

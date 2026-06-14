@@ -325,6 +325,25 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LoopListMembers_ReturnsPeopleForDefaultLoop()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160715",
+            Operation = "ListMembers",
+            BodyText = """{"loopId":"openjibo-default-loop"}"""
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var members = payload.RootElement.EnumerateArray().ToArray();
+        Assert.NotEmpty(members);
+        Assert.All(members, member => Assert.Equal("openjibo-default-loop", member.GetProperty("loopId").GetString()));
+    }
+
+    [Fact]
     public async Task SchedulerStatusEndpoints_DefaultToNotBackingUpAndNoDownload()
     {
         var backupStatus = await _service.DispatchAsync(new ProtocolEnvelope

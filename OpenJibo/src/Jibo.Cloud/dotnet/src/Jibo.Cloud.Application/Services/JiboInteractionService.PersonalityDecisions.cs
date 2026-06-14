@@ -423,7 +423,7 @@ public sealed partial class JiboInteractionService
 
     private static JiboInteractionDecision BuildProactivePizzaFactOfferDecision()
     {
-        var listenContexts = new[] { "surprises-date/offer_date_fact" };
+        var listenContexts = new[] { "shared/yes_no" };
         return new JiboInteractionDecision(
             "proactive_offer_pizza_fact",
             "Do you want to hear a fun pizza fact?",

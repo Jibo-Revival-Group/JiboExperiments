@@ -4365,7 +4365,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_SpinAround_MapsToIdleSpinAroundCommand()
+    public async Task BuildDecisionAsync_SpinAround_MapsToIdleTurnAroundCommand()
     {
         var service = CreateService();
 
@@ -4375,9 +4375,9 @@ public sealed class JiboInteractionServiceTests
             NormalizedTranscript = "spin around"
         });
 
-        Assert.Equal("spin_around", decision.IntentName);
+        Assert.Equal("turn_around", decision.IntentName);
         Assert.Equal("@be/idle", decision.SkillName);
-        Assert.Equal("spinAround", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("turnAround", decision.SkillPayload!["globalIntent"]);
         Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
     }
 

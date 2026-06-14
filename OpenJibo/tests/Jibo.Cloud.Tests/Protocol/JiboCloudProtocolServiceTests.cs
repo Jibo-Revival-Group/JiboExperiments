@@ -50,6 +50,70 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task PrepareRobot_IssuesOobeTokenAndSetupCompletes()
+    {
+        var prepare = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "192.168.1.50",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"robot-abc","loopId":"loop-123"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        Assert.Equal(200, prepare.StatusCode);
+        Assert.False(string.IsNullOrWhiteSpace(token));
+        Assert.StartsWith("oobe-", token);
+
+        var setup = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "192.168.1.50",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"open-jibo-abc"}"""
+        });
+
+        using var setupPayload = JsonDocument.Parse(setup.BodyText);
+        Assert.Equal(200, setup.StatusCode);
+        Assert.False(string.IsNullOrWhiteSpace(setupPayload.RootElement.GetProperty("accessKeyId").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(setupPayload.RootElement.GetProperty("secretAccessKey").GetString()));
+        Assert.False(setupPayload.RootElement.GetProperty("serviceMode").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ReconnectRobot_WithPreparedToken_ReturnsOk()
+    {
+        var prepare = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "192.168.1.50",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"robot-reconnect"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var reconnect = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "192.168.1.50",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "ReconnectRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"open-jibo-reconnect"}"""
+        });
+
+        Assert.Equal(200, reconnect.StatusCode);
+        using var reconnectPayload = JsonDocument.Parse(reconnect.BodyText);
+        Assert.Equal("ok", reconnectPayload.RootElement.GetProperty("result").GetString());
+    }
+
+    [Fact]
     public async Task GetUpdateFrom_WithoutStagedUpdate_ReturnsUpdateNotFound()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope

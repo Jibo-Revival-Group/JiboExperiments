@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -23,6 +24,7 @@ public sealed class JiboCloudProtocolService(
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private readonly object _schedulerLock = new();
     private readonly SchedulerRuntimeState _schedulerState = new();
+    private readonly ConcurrentDictionary<string, OobeTokenState> _oobeTokens = new(StringComparer.Ordinal);
     private readonly ICloudAuthProtocolHandler _authHandler =
         authHandler ?? new CloudAuthProtocolHandler(stateStore);
 
@@ -63,6 +65,9 @@ public sealed class JiboCloudProtocolService(
              envelope.Path.Equals("/upload/log-events", StringComparison.OrdinalIgnoreCase) ||
              envelope.Path.Equals("/upload/log-binary", StringComparison.OrdinalIgnoreCase)))
             return Task.FromResult(ProtocolDispatchResult.Raw(200, string.Empty));
+
+        if ((envelope.ServicePrefix ?? string.Empty).StartsWith("OOBE_", StringComparison.OrdinalIgnoreCase))
+            return Task.FromResult(HandleOobe(envelope.Operation ?? string.Empty, envelope));
 
         if (_acceptedHosts.Count > 0 && !_acceptedHosts.Contains(envelope.HostName))
             return Task.FromResult(ProtocolDispatchResult.Ok(new
@@ -141,6 +146,69 @@ public sealed class JiboCloudProtocolService(
     private ProtocolDispatchResult HandleNotification(string operation, ProtocolEnvelope envelope)
     {
         return _authHandler.HandleNotification(operation, envelope);
+    }
+
+    private ProtocolDispatchResult HandleOobe(string operation, ProtocolEnvelope envelope)
+    {
+        var body = envelope.TryParseBody();
+        var token = ReadString(body, "token");
+
+        if (operation.Equals("PrepareRobot", StringComparison.OrdinalIgnoreCase))
+        {
+            var expiresUtc = DateTimeOffset.UtcNow.AddHours(1);
+            var issuedToken = CreateOobeToken();
+            _oobeTokens[issuedToken] = new OobeTokenState
+            {
+                DeviceId = ReadString(body, "deviceId") ?? envelope.DeviceId,
+                LoopId = ReadString(body, "loopId"),
+                ExpiresUtc = expiresUtc
+            };
+
+            return ProtocolDispatchResult.Ok(new
+            {
+                token = issuedToken,
+                expires = expiresUtc.ToUnixTimeMilliseconds()
+            });
+        }
+
+        if (operation.Equals("GetStatus", StringComparison.OrdinalIgnoreCase))
+            return ProtocolDispatchResult.Ok(new
+            {
+                complete = token is not null &&
+                           _oobeTokens.TryGetValue(token, out var current) &&
+                           current.Complete
+            });
+
+        if (operation.Equals("SetupRobot", StringComparison.OrdinalIgnoreCase) ||
+            operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
+        {
+            var robotId = ReadString(body, "id") ??
+                          ReadString(body, "robotId") ??
+                          (string.IsNullOrWhiteSpace(envelope.DeviceId) ? "unknown-robot" : envelope.DeviceId!);
+
+            var state = _oobeTokens.GetOrAdd(token ?? "oobe-implicit", _ => new OobeTokenState
+            {
+                DeviceId = robotId,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
+            });
+            state.Complete = true;
+            state.DeviceId = robotId;
+
+            stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+
+            if (operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
+                return ProtocolDispatchResult.Ok(new { result = "ok" });
+
+            var account = stateStore.GetAccount();
+            return ProtocolDispatchResult.Ok(new
+            {
+                accessKeyId = account.AccessKeyId,
+                secretAccessKey = account.SecretAccessKey,
+                serviceMode = false
+            });
+        }
+
+        return ProtocolDispatchResult.Ok(new { ok = true, operation });
     }
 
     private ProtocolDispatchResult HandleLoop(string operation)
@@ -880,6 +948,14 @@ public sealed class JiboCloudProtocolService(
         public string? Error { get; set; }
     }
 
+    private sealed class OobeTokenState
+    {
+        public string? DeviceId { get; set; }
+        public string? LoopId { get; init; }
+        public bool Complete { get; set; }
+        public DateTimeOffset ExpiresUtc { get; init; }
+    }
+
     private static object MapHoliday(HolidayRecord holiday)
     {
         return new
@@ -1014,6 +1090,13 @@ public sealed class JiboCloudProtocolService(
     private static string? ReadHeader(ProtocolEnvelope envelope, string headerName)
     {
         return envelope.Headers.TryGetValue(headerName, out var value) ? value : null;
+    }
+
+    private static string CreateOobeToken()
+    {
+        Span<byte> bytes = stackalloc byte[6];
+        RandomNumberGenerator.Fill(bytes);
+        return $"oobe-{Convert.ToHexString(bytes).ToLowerInvariant()}";
     }
 
     private static bool ReadBooleanHeader(ProtocolEnvelope envelope, string headerName)

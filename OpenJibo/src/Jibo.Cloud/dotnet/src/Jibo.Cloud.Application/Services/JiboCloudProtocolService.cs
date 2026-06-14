@@ -659,9 +659,6 @@ public sealed class JiboCloudProtocolService(
 
         if (envelope.Path.Equals("/check-updates", StringComparison.OrdinalIgnoreCase))
         {
-            if (!_enableBackupRestore)
-                return false;
-
             var body = envelope.TryParseBody();
             var filter = ReadString(body, "filter");
             result = ProtocolDispatchResult.Ok(new
@@ -675,9 +672,6 @@ public sealed class JiboCloudProtocolService(
         if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase) ||
             envelope.Path.Equals("/ota-update", StringComparison.OrdinalIgnoreCase))
         {
-            if (!_enableBackupRestore)
-                return false;
-
             if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase))
                 StartSchedulerBackupCycle();
             else

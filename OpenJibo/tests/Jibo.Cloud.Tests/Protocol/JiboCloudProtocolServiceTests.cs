@@ -560,6 +560,19 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("OK", backupPayload.RootElement.GetProperty("status").GetString());
         Assert.False(backupPayload.RootElement.GetProperty("data").GetBoolean());
 
+        var checkUpdates = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/check-updates",
+            BodyText = """{"filter":"robot"}"""
+        });
+
+        using var checkUpdatesPayload = JsonDocument.Parse(checkUpdates.BodyText);
+        Assert.Equal(200, checkUpdates.StatusCode);
+        Assert.Equal("OK", checkUpdatesPayload.RootElement.GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.Array, checkUpdatesPayload.RootElement.GetProperty("data").ValueKind);
+
         var backupRobot = await service.DispatchAsync(new ProtocolEnvelope
         {
             HostName = "localhost",
@@ -569,7 +582,18 @@ public sealed class JiboCloudProtocolServiceTests
 
         using var backupRobotPayload = JsonDocument.Parse(backupRobot.BodyText);
         Assert.Equal(200, backupRobot.StatusCode);
-        Assert.Equal("unknown target default response", backupRobotPayload.RootElement.GetProperty("note").GetString());
+        Assert.Equal("OK", backupRobotPayload.RootElement.GetProperty("status").GetString());
+
+        var otaUpdate = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/ota-update"
+        });
+
+        using var otaUpdatePayload = JsonDocument.Parse(otaUpdate.BodyText);
+        Assert.Equal(200, otaUpdate.StatusCode);
+        Assert.Equal("OK", otaUpdatePayload.RootElement.GetProperty("status").GetString());
 
         var downloadStatus = await service.DispatchAsync(new ProtocolEnvelope
         {

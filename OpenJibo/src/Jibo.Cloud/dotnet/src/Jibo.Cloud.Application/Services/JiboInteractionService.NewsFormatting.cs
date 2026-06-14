@@ -1,8 +1,5 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -51,9 +48,10 @@ public sealed partial class JiboInteractionService
                 })
                 .ToArray();
 
-        if (providerDiagnostics is not null)
-            foreach (var (key, value) in providerDiagnostics)
-                payload[key] = value;
+        if (providerDiagnostics is null) return new JiboInteractionDecision("news", spokenBriefing, "news", payload);
+
+        foreach (var (key, value) in providerDiagnostics)
+            payload[key] = value;
 
         return new JiboInteractionDecision("news", spokenBriefing, "news", payload);
     }

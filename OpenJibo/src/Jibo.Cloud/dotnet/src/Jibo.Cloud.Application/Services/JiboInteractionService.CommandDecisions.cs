@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -138,6 +136,13 @@ public sealed partial class JiboInteractionService
                 ["domain"] = domain,
                 ["clockIntent"] = "set"
             });
+    }
+
+    private static JiboInteractionDecision BuildYesNoClarifyDecision()
+    {
+        return new JiboInteractionDecision(
+            "yes_no_clarify",
+            "I heard both yes and no. Could you say that again?");
     }
 
     private static JiboInteractionDecision BuildTimerValueDecision(

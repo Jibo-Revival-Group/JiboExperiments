@@ -99,7 +99,7 @@ public sealed class OpenWeatherReportProvider(
             return null;
         }
 
-        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         if (document.RootElement.ValueKind != JsonValueKind.Array ||
             document.RootElement.GetArrayLength() == 0)
@@ -138,7 +138,7 @@ public sealed class OpenWeatherReportProvider(
         using var response = await httpClient.GetAsync(weatherUri, cancellationToken);
         if (!response.IsSuccessStatusCode) return null;
 
-        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var root = document.RootElement;
         if (!root.TryGetProperty("current", out var current) ||
@@ -188,11 +188,12 @@ public sealed class OpenWeatherReportProvider(
         int forecastDayOffset,
         CancellationToken cancellationToken)
     {
-        if (forecastDayOffset <= 0) return await GetLegacyCurrentWeatherAsync(location, useCelsius, cancellationToken);
-
-        if (forecastDayOffset > MaxForecastDayOffset) return null;
-
-        return await GetForecastForDayOffsetAsync(location, useCelsius, forecastDayOffset, cancellationToken);
+        return forecastDayOffset switch
+        {
+            <= 0 => await GetLegacyCurrentWeatherAsync(location, useCelsius, cancellationToken),
+            > MaxForecastDayOffset => null,
+            _ => await GetForecastForDayOffsetAsync(location, useCelsius, forecastDayOffset, cancellationToken)
+        };
     }
 
     private async Task<WeatherReportSnapshot?> GetLegacyCurrentWeatherAsync(
@@ -209,7 +210,7 @@ public sealed class OpenWeatherReportProvider(
         using var response = await httpClient.GetAsync(weatherUri, cancellationToken);
         if (!response.IsSuccessStatusCode) return null;
 
-        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var root = document.RootElement;
         if (!root.TryGetProperty("main", out var main)) return null;
@@ -250,7 +251,7 @@ public sealed class OpenWeatherReportProvider(
         using var response = await httpClient.GetAsync(forecastUri, cancellationToken);
         if (!response.IsSuccessStatusCode) return null;
 
-        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var root = document.RootElement;
         if (!root.TryGetProperty("list", out var list) || list.ValueKind != JsonValueKind.Array) return null;
@@ -295,7 +296,7 @@ public sealed class OpenWeatherReportProvider(
         using var response = await httpClient.GetAsync(forecastUri, cancellationToken);
         if (!response.IsSuccessStatusCode) return null;
 
-        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var root = document.RootElement;
         if (!root.TryGetProperty("list", out var list) || list.ValueKind != JsonValueKind.Array) return null;

@@ -290,7 +290,7 @@ internal static class ChitchatStateMachine
                     SelectLegacyPersonalityReply(catalog, randomizer, "know a lot", "not as much as i will someday"));
             case "chat":
                 if (IsEmotionQuery(normalizedLoweredTranscript))
-                return BuildEmotionQueryDecision(
+                    return BuildEmotionQueryDecision(
                         "emotion_query",
                         SelectEmotionQueryReply(catalog, randomizer, currentEmotion, preferredName));
 
@@ -399,20 +399,22 @@ internal static class ChitchatStateMachine
         string? currentEmotion,
         string? preferredName)
     {
-        if (catalog.EmotionReplies.Count > 0)
+        if (catalog.EmotionReplies.Count <= 0)
         {
-            var emotionVariants = ResolveEmotionVariants(currentEmotion);
-            var matchingReplies = catalog.EmotionReplies
-                .Where(reply => ConditionMatches(reply.Condition, emotionVariants))
-                .Select(reply => reply.Reply)
-                .Where(reply => !string.IsNullOrWhiteSpace(reply))
-                .ToArray();
-
-            if (matchingReplies.Length > 0)
-                return PersonalizeHowAreYouReply(randomizer.Choose(matchingReplies), preferredName);
+            return PersonalizeHowAreYouReply(randomizer.Choose(catalog.HowAreYouReplies), preferredName);
         }
 
-        return PersonalizeHowAreYouReply(randomizer.Choose(catalog.HowAreYouReplies), preferredName);
+        var emotionVariants = ResolveEmotionVariants(currentEmotion);
+        var matchingReplies = catalog.EmotionReplies
+            .Where(reply => ConditionMatches(reply.Condition, emotionVariants))
+            .Select(reply => reply.Reply)
+            .Where(reply => !string.IsNullOrWhiteSpace(reply))
+            .ToArray();
+
+        return PersonalizeHowAreYouReply(
+            matchingReplies.Length > 0
+                ? randomizer.Choose(matchingReplies)
+                : randomizer.Choose(catalog.HowAreYouReplies), preferredName);
     }
 
     private static string PersonalizeHowAreYouReply(string replyText, string? preferredName)
@@ -427,10 +429,9 @@ internal static class ChitchatStateMachine
         if (firstSentenceEnd <= 0)
             return $"{trimmedReply}, {trimmedName}.";
 
-        if (firstSentenceEnd == trimmedReply.Length - 1)
-            return $"{trimmedReply[..firstSentenceEnd]}, {trimmedName}.";
-
-        return $"{trimmedReply[..firstSentenceEnd]}, {trimmedName}{trimmedReply[firstSentenceEnd..]}";
+        return firstSentenceEnd == trimmedReply.Length - 1
+            ? $"{trimmedReply[..firstSentenceEnd]}, {trimmedName}."
+            : $"{trimmedReply[..firstSentenceEnd]}, {trimmedName}{trimmedReply[firstSentenceEnd..]}";
     }
 
     private static bool ConditionMatches(string? condition, IReadOnlyList<string> emotionVariants)
@@ -438,7 +439,7 @@ internal static class ChitchatStateMachine
         var normalizedCondition = NormalizeCondition(condition);
         if (string.IsNullOrWhiteSpace(normalizedCondition)) return false;
 
-        var clauses = normalizedCondition.Split(new[] { "||" },
+        var clauses = normalizedCondition.Split(["||"],
             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         foreach (var clause in clauses)
             if (MatchesConditionClause(clause, emotionVariants))

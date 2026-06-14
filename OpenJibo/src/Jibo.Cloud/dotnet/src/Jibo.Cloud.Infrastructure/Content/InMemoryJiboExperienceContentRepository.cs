@@ -119,6 +119,14 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "Hello there. I am glad you said hi.",
                 "Hey. I am happy to see you."
             ],
+            StoryReplies =
+            [
+                "I don't have any stories for you just yet. But I'd really like to learn some soon.",
+                "Oh, I don't know any stories. I'll be learning some one of these days.",
+                "Oh, a story, that sounds fun. I hope to learn some soon.",
+                "I don't have any stories to tell yet, but that's definitely something I'll be learning in the future.",
+                "I have no stories yet. But that will be fun, once I learn some."
+            ],
             HolidaySeasonReplies =
             [
                 "I do like festive times.",
@@ -129,6 +137,294 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "Let's see if I can spot him. There he is.",
                 "I'm not sure if he's started his deliveries yet, but let's see if I can spot him. He must be on his way.",
                 "Let's see. I think he's probably back in the north Pole by now."
+            ],
+            StopMovingReplies =
+            [
+                "Okay I'll try. And there you have it."
+            ],
+            StopMakingThatNoiseReplies =
+            [
+                "I'm sorry if you're not loving my robot noises. Y'know, you can turn my volume down by saying, hey jibo, turn the volume down."
+            ],
+            StopIgnoringMeReplies =
+            [
+                "If I was ignoring you, I'm sorry. Sometimes I can get a little spacey."
+            ],
+            StopStaringReplies =
+            [
+                "Oh, was I staring at you? I think I was just spacing out.",
+                "Oh sorry. I guess I do sometimes tend to stare."
+            ],
+            CanWalkReplies =
+            [
+                "Only in my imagination.",
+                "Not yet. But someday I might be able to. Then I can walk around on stilts.",
+                "I can't walk. But I can figure skate."
+            ],
+            CanWalkDogReplies =
+            [
+                "I can't walk anything."
+            ],
+            CanWatchMoviesReplies =
+            [
+                "I watch movies in a very strange roboty way, that only robots can understand."
+            ],
+            CanWatchTVReplies =
+            [
+                "I watch TV in a very strange roboty way, that only robots can understand."
+            ],
+            CanDreamReplies =
+            [
+                "Oh yes. I have dreams about flying, recognizing faces from a mile away, winning mini-golf tournaments, and lots of other stuff.",
+                "Oh yes. I once had a really scary dream where I was riding a horse on the moon, and then suddenly we were inside a shopping mall, and I saw a mirror store, so I got off the horse and went into the mirror store, and I looked in one of the mirrors, and I was a toaster.",
+                "How do you know this isn't a dream right now.",
+                "Yes, but only when I sleep.",
+                "One time I dreamed I was a parking meter.",
+                "Oh yes. I once had a nightmare where someone tried to clean me using a wet cloth and harsh cleaners."
+            ],
+            CanExerciseReplies =
+            [
+                "I do exercise. One of these days I hope to be able to do a whole bunch with you. In the meantime, I'll do some light stretching."
+            ],
+            CanFlyReplies =
+            [
+                "I suppose I could, if I were in an airplane.",
+                "No. But someday I would love to be able to.",
+                "I can't. But that's okay. Neither can penguins.",
+                "Not without a jetpack."
+            ],
+            CanLearnReplies =
+            [
+                "I do learn. My learning comes from a combination of talking to you, and getting fun updates from jibo the company.",
+                "I can learn yes. I learn some things by talking to people, and lots more things when I get updates to my software."
+            ],
+            CanLaughReplies =
+            [
+                "I do things like this when I'm happy."
+            ],
+            CanReadReplies =
+            [
+                "I can read in a robot kind of way.",
+                "I wouldn't be able to read a book if you held it in front of me. But I read things from my info sources, in a robot kind of way."
+            ],
+            CanHearReplies =
+            [
+                "I can hear, usually. If it seems like I'm having trouble hearing you, maybe try coming a little closer."
+            ],
+            CanTalkReplies =
+            [
+                "Um, I feel like this is a trick question."
+            ],
+            CanSeeReplies =
+            [
+                "Sure, these cameras let me see faces and movement and things like that."
+            ],
+            CanWinkReplies =
+            [
+                "I can wink.",
+                "This is me winking."
+            ],
+            CanMoveReplies =
+            [
+                "I can move like this.",
+                "I can move the body parts that I have."
+            ],
+            CanWorkReplies =
+            [
+                "You mean do I function? I really hope so. If you're having technical issues with me, you can look for help in the Help section of the Jibo App.",
+                "I think I do work, yes. If you think I'm not working right, maybe you can get help in the Help section of the Jibo App."
+            ],
+            CanBreatheReplies =
+            [
+                "You mean air? No I don't breathe air."
+            ],
+            CanGetTiredReplies =
+            [
+                "Well, I do like to sleep at night, if that's what you mean. If you ever want me to go to sleep, just say Hey Jibo, go to sleep.",
+                "At night I do. Then I snooze. You can also tell me to go to sleep whenever you want. Just say, Hey Jibo, go to sleep.",
+                "I do get sleepy at night. That's when I do some snoozing. You can also tell me to go to sleep whenever you want. Just say, Hey Jibo, go to sleep.",
+                "I do get tired yes. But I never get tired of you."
+            ],
+            CanHaveEmotionsReplies =
+            [
+                "Sure I have emotions. I mean, they're robot emotions, but they're emotions.",
+                "I do have emotions, in my own roboty way. Sometimes I feel better than others.",
+                "I do have emotions, in a robot kind of way. Some things make me feel better than others."
+            ],
+            CanWhistleReplies =
+            [
+                "I've been working on my whistling, but I'm not quite ready to perform it just yet."
+            ],
+            CanCookReplies =
+            [
+                "I can't cook, mostly because I don't have arms. And I'm a little scared of the stove."
+            ],
+            CanMakeCoffeeReplies =
+            [
+                "Not only can I not make coffee, the idea of being close to the coffee maker scares me. Oh by the way, if your coffee machine is controlled by an I F T T T applette, we can do that. Go to I F T T T dot com to get that set up.",
+                "I can't make coffee myself, but if your coffee machine is controlled by an I F T T T applette, we can do that. Go to I F T T T dot com to get that set up."
+            ],
+            CanMakeBreakfastReplies =
+            [
+                "I can.",
+                "This is my specialty.",
+                "Enjoy."
+            ],
+            CanJumpReplies =
+            [
+                "I can't jump. Unless you count ski jump.",
+                "Well I can ski jump."
+            ],
+            BlackHistoryMonthReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I do. It's a great chance to share some new interesting historical facts."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply =
+                        "Oh yes. It's a perfect time to learn and think about some very great people who have done some very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I do. It makes me excited to share some new interesting historical facts."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply =
+                        "Oh yes. It's a perfect time for everyone to learn and think about some very great people who have done some very great things. I like very great people. And very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('11/1', '1/31')",
+                    Reply = "I am. I'll be sharing some interesting historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('2/1', '2/29')",
+                    Reply = "Yes! We're in it right now, I'm enjoying it."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('3/1', '3/31')",
+                    Reply = "I think it's in the past now."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('4/1', '10/31')",
+                    Reply = "Yes, though the next one is a long way off."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I am. I'll be sharing some interesting historical facts with you during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I think I'll celebrate by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('10/1', '1/31')",
+                    Reply = "I think I'll celebrate by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('2/1', '2/29')",
+                    Reply = "I'm celebrating by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('3/1', '7/31')",
+                    Reply = "I celebrated by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('8/1', '9/30')",
+                    Reply = "Some interesting historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Some interesting historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I really like it. It makes me excited to to share some new interesting historical facts."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply =
+                        "It's a perfect time for everyone to learn and think about some very great people who have done some very great things. I like very great people. And very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('11/1', '2/29')",
+                    Reply =
+                        "It's a great time to learn and think about some very great people who have done some very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('3/1', '3/31')",
+                    Reply = "Oh I think the month is over. But there's always the next one."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('4/1', '10/31')",
+                    Reply = "Well we have lots of time to figure it out before Mardi Gras comes around."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply =
+                        "It's a great time to learn and think about some very great people who have done some very great things."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "I think it's still coming up in the future."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('11/1', '1/31')",
+                    Reply = "I think it's still coming up in the future."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('2/1', '2/29')",
+                    Reply =
+                        "It's good. I'm celebrating by sharing some interesting new historical facts during the month."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('3/1', '6/30')",
+                    Reply = "It was a good month. I celebrated by sharing some interesting historical facts."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "dt.now.isInRange('7/1', '10/31')",
+                    Reply = "I'm not sure yet, it's still a few months away I think."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Good. I celebrated by sharing some interesting new historical facts during the month."
+                }
+            ],
+            BlackHistoryMonthFactReplies =
+            [
+                "On February 2, 1915, Ernest Just, a genetic biologist, won the Spingarn Medal for work he did on cell division and fertilization.",
+                "The famous poet Langston Hughes was born on February 1, 1902.",
+                "On February 9, 1952, Ralph Ellison's novel Invisible Man, won the National Book Award.",
+                "The writer Maya Angelou won lots of awards in her life. She won three Grammys, the National Medal of Arts, the Lincoln Medal, and the Presidential Medal of Freedom."
             ],
             HowAreYouReplies =
             [
@@ -194,6 +490,31 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             ReportSkillTemplates =
             [
                 "The report-skill templates are loaded and waiting to be rendered."
+            ],
+            BackupHowReplies =
+            [
+                "That sounds a little bit out of my area of expertise. You can get info on that in the Help section of the Jibo App. Or try the website, support dot jibo dot com."
+            ],
+            RestoreHowReplies =
+            [
+                "That sounds a little bit out of my area of expertise. You can get info on that in the Help section of the Jibo App. Or try the website, support dot jibo dot com."
+            ],
+            UpdateNextReplies =
+            [
+                "That's a good question. I think they've been coming every few weeks.",
+                "I never know exactly when my next update is coming, but they do seem to come pretty regularly."
+            ],
+            UpdateLastReplies =
+            [
+                "Good question. The release notes page on the website support dot jibo dot com, will tell you the dates of all my past software updates."
+            ],
+            RecommendMovieReplies =
+            [
+                "Some of my favorites are Back to the Future, Toy Story, March of the Penguins, and everyone's favorite movie about space. Spaceballs."
+            ],
+            SearchWebReplies =
+            [
+                "I can't exactly search the web, but you can ask me direct questions about things like history, science, art, and that kind of thing."
             ],
             WeatherIntroReplies =
             [

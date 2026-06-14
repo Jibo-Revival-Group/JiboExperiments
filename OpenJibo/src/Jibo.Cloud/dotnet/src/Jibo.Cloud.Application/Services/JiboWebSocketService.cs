@@ -38,43 +38,44 @@ public sealed class JiboWebSocketService(
         var containsInlineTurnPayload = parsedType == "LISTEN" && ContainsInlineTurnPayload(envelope.Text);
         var staleListenRecovered = false;
         var staleListenAgeMs = 0;
-        if (parsedType == "LISTEN" &&
-            !containsInlineTurnPayload &&
-            WebSocketTurnFinalizationService.ShouldIgnoreLateListenSetup(session, envelope.Text))
+        switch (parsedType)
         {
-            var (lateTransId, lateRules) = ResolveLateListenNoInputPayload(session, envelope.Text);
-            var replies = ResponsePlanToSocketMessagesMapper
-                .MapNoInputAndRedirectToSkill(lateTransId, lateRules, "@be/idle")
-                .Select(map => new WebSocketReply
-                {
-                    Text = map.Text,
-                    DelayMs = map.DelayMs
-                })
-                .ToArray();
+            case "LISTEN" when
+                !containsInlineTurnPayload &&
+                WebSocketTurnFinalizationService.ShouldIgnoreLateListenSetup(session, envelope.Text):
+            {
+                var (lateTransId, lateRules) = ResolveLateListenNoInputPayload(session, envelope.Text);
+                var replies = ResponsePlanToSocketMessagesMapper
+                    .MapNoInputAndRedirectToSkill(lateTransId, lateRules, "@be/idle")
+                    .Select(map => new WebSocketReply
+                    {
+                        Text = map.Text,
+                        DelayMs = map.DelayMs
+                    })
+                    .ToArray();
 
-            await telemetrySink.RecordTurnEventAsync(envelope, session, "late_listen_ignored",
-                new Dictionary<string, object?>
-                {
-                    ["messageType"] = parsedType,
-                    ["activeTransID"] = session.TurnState.TransId,
-                    ["ignoredTransID"] = lateTransId,
-                    ["replyCount"] = replies.Length
-                }, cancellationToken);
-            return replies;
-        }
-
-        if (parsedType == "LISTEN" &&
-            !containsInlineTurnPayload &&
-            WebSocketTurnFinalizationService.TryRecoverStalePendingListen(session, out staleListenAgeMs))
-        {
-            staleListenRecovered = true;
-            await telemetrySink.RecordTurnEventAsync(envelope, session, "glsm_stale_listen_recovered",
-                new Dictionary<string, object?>
-                {
-                    ["staleAgeMs"] = staleListenAgeMs,
-                    ["transID"] = session.TurnState.TransId,
-                    ["glsmPhase"] = WebSocketTurnFinalizationService.ResolveGlsmPhase(session)
-                }, cancellationToken);
+                await telemetrySink.RecordTurnEventAsync(envelope, session, "late_listen_ignored",
+                    new Dictionary<string, object?>
+                    {
+                        ["messageType"] = parsedType,
+                        ["activeTransID"] = session.TurnState.TransId,
+                        ["ignoredTransID"] = lateTransId,
+                        ["replyCount"] = replies.Length
+                    }, cancellationToken);
+                return replies;
+            }
+            case "LISTEN" when
+                !containsInlineTurnPayload &&
+                WebSocketTurnFinalizationService.TryRecoverStalePendingListen(session, out staleListenAgeMs):
+                staleListenRecovered = true;
+                await telemetrySink.RecordTurnEventAsync(envelope, session, "glsm_stale_listen_recovered",
+                    new Dictionary<string, object?>
+                    {
+                        ["staleAgeMs"] = staleListenAgeMs,
+                        ["transID"] = session.TurnState.TransId,
+                        ["glsmPhase"] = WebSocketTurnFinalizationService.ResolveGlsmPhase(session)
+                    }, cancellationToken);
+                break;
         }
 
         WebSocketTurnFinalizationService.ObserveIncomingMessage(session, envelope.Text);

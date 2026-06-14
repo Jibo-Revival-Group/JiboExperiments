@@ -1,16 +1,9 @@
-using System.Globalization;
-using System.Linq;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
-using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService
 {
-
     private static string ResolveSemanticIntentCore(
         string loweredTranscript,
         DateTimeOffset? referenceLocalTime,
@@ -58,9 +51,15 @@ public sealed partial class JiboInteractionService
         if (isYesNoTurn)
         {
             var yesNoReply = TryClassifyYesNoReply(NormalizeCommandPhrase(loweredTranscript));
-            if (yesNoReply == YesNoReply.Affirmative) return ResolveAffirmativeYesNoIntent(yesNoRule);
-
-            if (yesNoReply == YesNoReply.Negative) return ResolveNegativeYesNoIntent(yesNoRule);
+            switch (yesNoReply)
+            {
+                case YesNoReply.Affirmative:
+                    return ResolveAffirmativeYesNoIntent(yesNoRule);
+                case YesNoReply.Negative:
+                    return ResolveNegativeYesNoIntent(yesNoRule);
+                case YesNoReply.Ambiguous:
+                    return "yes_no_clarify";
+            }
         }
 
         if (IsNameSetStatement(loweredTranscript)) return "memory_set_name";
@@ -92,6 +91,39 @@ public sealed partial class JiboInteractionService
         if (string.Equals(clientIntent, "requestWeatherPR", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(clientIntent, "requestWeather", StringComparison.OrdinalIgnoreCase))
             return "weather";
+
+        if (string.Equals(clientIntent, "canJiboAction", StringComparison.OrdinalIgnoreCase) &&
+            clientEntities.TryGetValue("Action", out var canAction))
+        {
+            return canAction.ToLowerInvariant() switch
+            {
+                "dream" => "robot_can_dream",
+                "exercise" => "robot_can_exercise",
+                "fly" => "robot_can_fly",
+                "learn" => "robot_can_learn",
+                "laugh" => "robot_can_laugh",
+                "read" => "robot_can_read",
+                "hear" => "robot_can_hear",
+                "talk" => "robot_can_talk",
+                "see" => "robot_can_see",
+                "wink" => "robot_can_wink",
+                "move" => "robot_can_move",
+                "work" => "robot_can_work",
+                "breathe" => "robot_can_breathe",
+                "gettired" => "robot_can_get_tired",
+                "haveemotions" => "robot_can_have_emotions",
+                "whistle" => "robot_can_whistle",
+                "cook" => "robot_can_cook",
+                "makecoffee" => "robot_can_make_coffee",
+                "makebreakfast" => "robot_can_make_breakfast",
+                "jump" => "robot_can_jump",
+                "walk" => "robot_can_walk",
+                "walkdog" => "robot_can_walk_dog",
+                "watchmovie" => "robot_can_watch_movies",
+                "watchtv" => "robot_can_watch_tv",
+                _ => "chat"
+            };
+        }
 
         if (IsCancelRequest(clientIntent, loweredTranscript))
         {
@@ -215,6 +247,41 @@ public sealed partial class JiboInteractionService
                 "turn off timer"))
             return "timer_delete";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "stop moving",
+                "stop moving please",
+                "stop moving around",
+                "don't move",
+                "do not move"))
+            return "request_stop_moving";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "stop making that noise",
+                "stop making noise",
+                "don't make that noise",
+                "do not make that noise",
+                "stop that noise"))
+            return "request_stop_making_that_noise";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "stop ignoring me",
+                "don't ignore me",
+                "do not ignore me",
+                "stop ignoring us",
+                "don't ignore us"))
+            return "request_stop_ignoring_me";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "stop staring",
+                "stop staring at me",
+                "stop looking at me",
+                "stop looking"))
+            return "request_stop_staring";
+
         if (IsGlobalStopRequest(loweredTranscript, clientIntent, clientEntities)) return "stop";
 
         if (TryParseAlarmValue(loweredTranscript, isAlarmValueTurn, referenceLocalTime) is not null)
@@ -318,6 +385,151 @@ public sealed partial class JiboInteractionService
                 "sing something",
                 "would you sing"))
             return "robot_can_sing";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you walk the dog"))
+            return "robot_can_walk_dog";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you walk",
+                "are you able to walk",
+                "can you learn to walk"))
+            return "robot_can_walk";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you really watch movies",
+                "can you watch movies"))
+            return "robot_can_watch_movies";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you really watch tv",
+                "can you watch tv",
+                "can you watch television"))
+            return "robot_can_watch_tv";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you dream"))
+            return "robot_can_dream";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you exercise",
+                "do you exercise"))
+            return "robot_can_exercise";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you fly",
+                "are you able to fly"))
+            return "robot_can_fly";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you learn",
+                "are you able to learn"))
+            return "robot_can_learn";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you laugh",
+                "do you laugh"))
+            return "robot_can_laugh";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you read",
+                "do you read"))
+            return "robot_can_read";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you hear",
+                "do you hear"))
+            return "robot_can_hear";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you talk",
+                "do you talk"))
+            return "robot_can_talk";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you see",
+                "do you see"))
+            return "robot_can_see";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you wink",
+                "do you wink"))
+            return "robot_can_wink";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you move",
+                "do you move"))
+            return "robot_can_move";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you work",
+                "are you working"))
+            return "robot_can_work";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you breathe",
+                "do you breathe"))
+            return "robot_can_breathe";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you get tired",
+                "do you get tired",
+                "are you tired"))
+            return "robot_can_get_tired";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you have emotions",
+                "do you have emotions"))
+            return "robot_can_have_emotions";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you whistle",
+                "do you whistle"))
+            return "robot_can_whistle";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you cook",
+                "do you cook"))
+            return "robot_can_cook";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you make coffee",
+                "do you make coffee"))
+            return "robot_can_make_coffee";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you make breakfast",
+                "do you make breakfast"))
+            return "robot_can_make_breakfast";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you jump",
+                "do you jump"))
+            return "robot_can_jump";
 
         if (IsBestFriendQuestion(loweredTranscript))
             return "robot_best_friends";
@@ -715,6 +927,35 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "tell me a story",
+                "can you tell me a story",
+                "could you tell me a story",
+                "can you tell me a bedtime story",
+                "could you tell me a bedtime story",
+                "read me a story",
+                "read a story"))
+            return "robot_story";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "recommend a movie",
+                "can you recommend a movie",
+                "what movie should i watch",
+                "what movie do you recommend",
+                "give me a movie recommendation"))
+            return "robot_recommend_movie";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "search the web",
+                "can you search the web",
+                "could you search the web",
+                "look it up on the web",
+                "look up on the web"))
+            return "robot_search_web";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what are you up to",
                 "what are you doing",
                 "what have you been up to",
@@ -1028,6 +1269,44 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(loweredTranscript, "commute", "traffic", "drive to work", "how long to work")) return "commute";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "can i backup my jibo",
+                "can i back up my jibo",
+                "how can i backup my jibo",
+                "how can i back up my jibo",
+                "how do i backup my jibo",
+                "how do i back up my jibo",
+                "can you be backed up",
+                "how can i store you in the cloud",
+                "how can i store you online",
+                "how do i store you in the cloud",
+                "how do i store you online"))
+            return "backup_help";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can i restore you from a backup",
+                "how can i restore you from a backup",
+                "how do i restore you from a backup",
+                "restore you from a backup",
+                "restore from a backup"))
+            return "restore_backup";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "when is your next update",
+                "when is my next update",
+                "when's your next update",
+                "when s your next update",
+                "when was your last update",
+                "when was my last update",
+                "when's your last update",
+                "when s your last update"))
+            return loweredTranscript.Contains("last update", StringComparison.OrdinalIgnoreCase)
+                ? "update_last"
+                : "update_next";
+
         if (MatchesAny(loweredTranscript, "news", "headlines", "news update", "tell me the news")) return "news";
 
         if (IsWelcomeBackGreeting(loweredTranscript) ||
@@ -1087,67 +1366,65 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(loweredTranscript, "what day is it", "what day is today")) return "day";
 
-        if (IsDateRequest(loweredTranscript)) return "date";
-
-        return "chat";
+        return IsDateRequest(loweredTranscript) ? "date" : "chat";
     }
 
     private static bool IsFriendQuestion(string loweredTranscript)
     {
         return MatchesAny(
-            loweredTranscript,
-            "do you have friends",
-            "who are your friends",
-            "are you friends",
-            "are you and i friends",
-            "are you and me friends",
-            "are you and jibo friends")
-            || MatchesFriendQuestionPattern(loweredTranscript);
+                   loweredTranscript,
+                   "do you have friends",
+                   "who are your friends",
+                   "are you friends",
+                   "are you and i friends",
+                   "are you and me friends",
+                   "are you and jibo friends")
+               || MatchesFriendQuestionPattern(loweredTranscript);
     }
 
     private static bool IsFriendRelationQuestion(string loweredTranscript)
     {
         return MatchesAny(
-            loweredTranscript,
-            "are you my friend",
-            "are you friends with me",
-            "are we friends",
-            "are we friends with each other",
-            "is jibo your friend",
-            "i am friends with you",
-            "i'm friends with you",
-            "you are my friend",
-            "you re my friend",
-            "you're my friend")
-            || Regex.IsMatch(
-                loweredTranscript,
-                @"^\s*(is|are)\s+.+\s+(your friend|my friend)\s*$",
-                RegexOptions.CultureInvariant);
+                   loweredTranscript,
+                   "are you my friend",
+                   "are you friends with me",
+                   "are we friends",
+                   "are we friends with each other",
+                   "is jibo your friend",
+                   "i am friends with you",
+                   "i'm friends with you",
+                   "you are my friend",
+                   "you re my friend",
+                   "you're my friend")
+               || Regex.IsMatch(
+                   loweredTranscript,
+                   @"^\s*(is|are)\s+.+\s+(your friend|my friend)\s*$",
+                   RegexOptions.CultureInvariant);
     }
 
     private static bool IsBestFriendQuestion(string loweredTranscript)
     {
         return MatchesAny(
-            loweredTranscript,
-            "are we best friends",
-            "are we best friends with each other",
-            "are you my best friend",
-            "are you best friends with me",
-            "are you and i best friends",
-            "i am best friends with you",
-            "i'm best friends with you",
-            "you are my best friend",
-            "you re my best friend",
-            "you're my best friend")
-            || MatchesBestFriendQuestionPattern(loweredTranscript);
+                   loweredTranscript,
+                   "are we best friends",
+                   "are we best friends with each other",
+                   "are you my best friend",
+                   "are you best friends with me",
+                   "are you and i best friends",
+                   "i am best friends with you",
+                   "i'm best friends with you",
+                   "you are my best friend",
+                   "you re my best friend",
+                   "you're my best friend")
+               || MatchesBestFriendQuestionPattern(loweredTranscript);
     }
 
     private static bool MatchesFriendQuestionPattern(string loweredTranscript)
     {
         return Regex.IsMatch(
-            loweredTranscript,
-            @"^\s*are you friends with\s+.+\s*$",
-            RegexOptions.CultureInvariant) ||
+                   loweredTranscript,
+                   @"^\s*are you friends with\s+.+\s*$",
+                   RegexOptions.CultureInvariant) ||
                Regex.IsMatch(
                    loweredTranscript,
                    @"^\s*are you and\s+.+\s+friends\s*$",
@@ -1157,9 +1434,9 @@ public sealed partial class JiboInteractionService
     private static bool MatchesBestFriendQuestionPattern(string loweredTranscript)
     {
         return Regex.IsMatch(
-            loweredTranscript,
-            @"^\s*are you best friends with\s+.+\s*$",
-            RegexOptions.CultureInvariant) ||
+                   loweredTranscript,
+                   @"^\s*are you best friends with\s+.+\s*$",
+                   RegexOptions.CultureInvariant) ||
                Regex.IsMatch(
                    loweredTranscript,
                    @"^\s*are you and\s+.+\s+best friends\s*$",
@@ -1169,5 +1446,4 @@ public sealed partial class JiboInteractionService
                    @"^\s*is\s+.+\s+your best friend\s*$",
                    RegexOptions.CultureInvariant);
     }
-
 }

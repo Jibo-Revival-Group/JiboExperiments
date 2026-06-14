@@ -45,11 +45,9 @@ internal static class TranscriptTextNormalizer
                 return true;
             }
 
-            if (normalizedValue.StartsWith($"{phrase} ", StringComparison.Ordinal))
-            {
-                trimmed = normalizedValue[(phrase.Length + 1)..].TrimStart();
-                return true;
-            }
+            if (!normalizedValue.StartsWith($"{phrase} ", StringComparison.Ordinal)) continue;
+            trimmed = normalizedValue[(phrase.Length + 1)..].TrimStart();
+            return true;
         }
 
         trimmed = normalizedValue;

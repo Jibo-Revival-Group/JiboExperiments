@@ -1,22 +1,51 @@
-using System.Text;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMediaContentStore? mediaContentStore = null)
+public sealed class JiboCloudProtocolService(
+    ICloudStateStore stateStore,
+    IMediaContentStore? mediaContentStore = null,
+    IConfiguration? configuration = null)
 {
-    private static readonly string[] AcceptedHosts =
-    [
-        "api.jibo.com",
-        "openjibo.com",
-        "openjibo.ai",
-        "localhost"
-    ];
+    private const int SchedulerBackupDelayMs = 250;
+    private const int SchedulerDownloadTickMs = 100;
+    private const int SchedulerDownloadFinishDelayMs = 150;
+
+    // When OpenJibo:AcceptedHosts is set, only those hosts are accepted.
+    // Empty / missing = open mode: accept any host (normal for a local revival server).
+    private readonly HashSet<string> _acceptedHosts = BuildAcceptedHosts(configuration);
+    private readonly string? _configuredRobotId = ReadConfiguredRobotId(configuration);
+    private readonly bool _enableBackupRestore =
+        configuration?["OpenJibo:EnableBackupRestore"]?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? true;
+
+    private static HashSet<string> BuildAcceptedHosts(IConfiguration? configuration)
+    {
+        var hosts = configuration?
+            .GetSection("OpenJibo:AcceptedHosts")
+            .GetChildren()
+            .Select(c => c.Value)
+            .OfType<string>()
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .ToArray() ?? [];
+        return new HashSet<string>(hosts, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string? ReadConfiguredRobotId(IConfiguration? configuration)
+    {
+        var robotId = configuration?["OpenJibo:Robot:RobotId"];
+        return string.IsNullOrWhiteSpace(robotId) ? null : robotId.Trim();
+    }
 
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
+    private readonly object _schedulerLock = new();
+    private readonly SchedulerRuntimeState _schedulerState = new();
+    private readonly ConcurrentDictionary<string, OobeTokenState> _oobeTokens = new(StringComparer.Ordinal);
 
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope,
         CancellationToken cancellationToken = default)
@@ -34,19 +63,30 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             envelope.Path.StartsWith("/media/", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleMediaContent(envelope));
 
+        if (TryHandleLocalSchedulerRequest(envelope, out var schedulerResult))
+            return Task.FromResult(schedulerResult);
+
         if (envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) &&
             (envelope.Path.Equals("/upload/asr-binary", StringComparison.OrdinalIgnoreCase) ||
              envelope.Path.Equals("/upload/log-events", StringComparison.OrdinalIgnoreCase) ||
              envelope.Path.Equals("/upload/log-binary", StringComparison.OrdinalIgnoreCase)))
             return Task.FromResult(ProtocolDispatchResult.Raw(200, string.Empty));
 
-        if (!AcceptedHosts.Contains(envelope.HostName, StringComparer.OrdinalIgnoreCase))
+        // OOBE runs before the robot/app has any credentials or host mapping, so it is
+        // dispatched before the accepted-host gate (the app may reach us by raw IP).
+        if ((envelope.ServicePrefix ?? string.Empty).StartsWith("OOBE_", StringComparison.OrdinalIgnoreCase))
+            return Task.FromResult(HandleOobe(envelope.Operation ?? string.Empty, envelope));
+
+        if (_acceptedHosts.Count > 0 && !_acceptedHosts.Contains(envelope.HostName))
             return Task.FromResult(ProtocolDispatchResult.Ok(new
             {
                 ok = true,
                 accepted = false,
                 host = envelope.HostName
             }));
+
+        if (TryHandleLegacyRestRequest(envelope, out var restResult))
+            return Task.FromResult(restResult);
 
         var servicePrefix = envelope.ServicePrefix ?? string.Empty;
         var operation = envelope.Operation ?? string.Empty;
@@ -64,7 +104,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             return Task.FromResult(HandleNotification(operation, envelope));
 
         if (servicePrefix.StartsWith("Loop_", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(HandleLoop(operation));
+            return Task.FromResult(HandleLoop(operation, envelope));
 
         if (servicePrefix.Equals("Media_20160725", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleMedia(operation, envelope));
@@ -91,6 +131,93 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         }));
     }
 
+    private bool TryHandleLegacyRestRequest(ProtocolEnvelope envelope,
+        out ProtocolDispatchResult result)
+    {
+        if (string.IsNullOrWhiteSpace(envelope.ServicePrefix) &&
+            envelope.Method.Equals("POST", StringComparison.OrdinalIgnoreCase) &&
+            envelope.Path.Equals("/v1/loop/suspend", StringComparison.OrdinalIgnoreCase))
+        {
+            result = HandleLoop("SuspendLoop", envelope);
+            return true;
+        }
+
+        result = ProtocolDispatchResult.Ok();
+        return false;
+    }
+
+    private ProtocolDispatchResult HandleOobe(string operation, ProtocolEnvelope envelope)
+    {
+        var body = envelope.TryParseBody();
+        var token = ReadString(body, "token");
+
+        if (operation.Equals("PrepareRobot", StringComparison.OrdinalIgnoreCase))
+        {
+            var expiresUtc = DateTimeOffset.UtcNow.AddHours(1);
+            var issued = CreateOobeToken();
+            _oobeTokens[issued] = new OobeTokenState
+            {
+                LoopId = ReadString(body, "loopId"),
+                AccountId = ReadString(body, "accountId"),
+                ExpiresUtc = expiresUtc
+            };
+
+            return ProtocolDispatchResult.Ok(new
+            {
+                token = issued,
+                expires = expiresUtc.ToUnixTimeMilliseconds()
+            });
+        }
+
+        if (operation.Equals("GetStatus", StringComparison.OrdinalIgnoreCase))
+            return ProtocolDispatchResult.Ok(new
+            {
+                complete = token is not null &&
+                           _oobeTokens.TryGetValue(token, out var status) &&
+                           status.Complete
+            });
+
+        if (operation.Equals("SetupRobot", StringComparison.OrdinalIgnoreCase) ||
+            operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
+        {
+            var robotId = ReadString(body, "id") ??
+                          (string.IsNullOrWhiteSpace(envelope.DeviceId) ? "unknown-robot" : envelope.DeviceId!);
+
+            // Any token is accepted, including the static fallback baked into QR codes,
+            // so first-boot setup never blocks on app/server ordering.
+            var state = _oobeTokens.GetOrAdd(token ?? "oobe-implicit", _ => new OobeTokenState
+            {
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
+            });
+            state.Complete = true;
+            state.RobotId = robotId;
+            stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+
+            if (operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
+                return ProtocolDispatchResult.Ok(new { result = "ok" });
+
+            // Prefer credentials for the account that called PrepareRobot.
+            var tokenAccountId = state.AccountId;
+            var userRecord = tokenAccountId is not null ? stateStore.GetUserById(tokenAccountId) : null;
+            var account = stateStore.GetAccount();
+            return ProtocolDispatchResult.Ok(new
+            {
+                accessKeyId = userRecord?.AccessKeyId ?? account.AccessKeyId,
+                secretAccessKey = userRecord?.SecretAccessKey ?? account.SecretAccessKey,
+                serviceMode = false
+            });
+        }
+
+        return ProtocolDispatchResult.Ok(new { ok = true, operation });
+    }
+
+    private static string CreateOobeToken()
+    {
+        Span<byte> bytes = stackalloc byte[6];
+        RandomNumberGenerator.Fill(bytes);
+        return $"oobe-{Convert.ToHexString(bytes).ToLowerInvariant()}";
+    }
+
     private ProtocolDispatchResult HandleAccount(string operation, ProtocolEnvelope envelope)
     {
         var account = stateStore.GetAccount();
@@ -113,51 +240,95 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         if (operation.Equals("CheckEmail", StringComparison.OrdinalIgnoreCase))
         {
             var email = ReadString(body, "email") ?? string.Empty;
-            return ProtocolDispatchResult.Ok(new
-            {
-                exists = email.Equals(account.Email, StringComparison.OrdinalIgnoreCase)
-            });
+            var emailExists = stateStore.GetUserByEmail(email) is not null ||
+                              email.Equals(account.Email, StringComparison.OrdinalIgnoreCase);
+            return ProtocolDispatchResult.Ok(new { exists = emailExists });
         }
 
-        if (operation is "Create" or "Login")
-            return ProtocolDispatchResult.Ok(new
-            {
-                id = account.AccountId,
-                email = ReadString(body, "email") ?? account.Email,
-                firstName = ReadString(body, "firstName") ?? account.FirstName,
-                lastName = ReadString(body, "lastName") ?? account.LastName,
-                gender = "unknown",
-                birthday = 631152000000L,
-                phoneNumber = "+10000000000",
-                photoUrl = string.Empty,
-                isActive = true,
-                messagingAllowed = true,
-                accessKeyId = account.AccessKeyId,
-                secretAccessKey = account.SecretAccessKey,
-                roles = Array.Empty<object>(),
-                facebookConnected = false,
-                termsAccepted = true
-            });
+        if (operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
+        {
+            var email = ReadString(body, "email") ?? string.Empty;
+            var password = ReadString(body, "password") ?? string.Empty;
+            var firstName = ReadString(body, "firstName") ?? string.Empty;
+            var lastName = ReadString(body, "lastName") ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                return ProtocolDispatchResult.Raw(400, "{\"message\":\"Email and password are required\"}",
+                    "application/json");
+
+            var created = stateStore.CreateUser(email, password, firstName, lastName);
+            if (created is null)
+                return ProtocolDispatchResult.Raw(409,
+                    "{\"message\":\"An account with this email already exists\"}",
+                    "application/json");
+
+            return ProtocolDispatchResult.Ok(BuildAccountResponse(created));
+        }
+
+        if (operation.Equals("Login", StringComparison.OrdinalIgnoreCase))
+        {
+            var email = ReadString(body, "email") ?? string.Empty;
+            var password = ReadString(body, "password") ?? string.Empty;
+
+            var authenticated = stateStore.AuthenticateUser(email, password);
+            if (authenticated is null)
+                return ProtocolDispatchResult.Raw(401,
+                    "{\"message\":\"Invalid email or password\"}",
+                    "application/json");
+
+            return ProtocolDispatchResult.Ok(BuildAccountResponse(authenticated));
+        }
 
         if (operation.Equals("Get", StringComparison.OrdinalIgnoreCase))
         {
             var ids = ReadStringArray(body, "ids");
-            var matches = ids.Count == 0 || ids.Contains(account.AccountId, StringComparer.OrdinalIgnoreCase);
-
-            if (!matches) return ProtocolDispatchResult.Ok(Array.Empty<object>());
-
-            return ProtocolDispatchResult.Ok(new[]
+            if (ids.Count == 0)
             {
-                new
+                // Return the caller's own account — default to the single account
+                return ProtocolDispatchResult.Ok(new[]
                 {
-                    id = account.AccountId,
-                    email = account.Email,
-                    firstName = account.FirstName,
-                    lastName = account.LastName,
-                    accessKeyId = account.AccessKeyId,
-                    secretAccessKey = account.SecretAccessKey
-                }
-            });
+                    new
+                    {
+                        id = account.AccountId,
+                        email = account.Email,
+                        firstName = account.FirstName,
+                        lastName = account.LastName,
+                        accessKeyId = account.AccessKeyId,
+                        secretAccessKey = account.SecretAccessKey
+                    }
+                });
+            }
+
+            var results = ids
+                .Select(id =>
+                {
+                    var user = stateStore.GetUserById(id);
+                    if (user is not null)
+                        return (object)new
+                        {
+                            id = user.Id,
+                            email = user.Email,
+                            firstName = user.FirstName,
+                            lastName = user.LastName,
+                            accessKeyId = user.AccessKeyId,
+                            secretAccessKey = user.SecretAccessKey
+                        };
+                    if (id.Equals(account.AccountId, StringComparison.OrdinalIgnoreCase))
+                        return (object)new
+                        {
+                            id = account.AccountId,
+                            email = account.Email,
+                            firstName = account.FirstName,
+                            lastName = account.LastName,
+                            accessKeyId = account.AccessKeyId,
+                            secretAccessKey = account.SecretAccessKey
+                        };
+                    return null;
+                })
+                .Where(r => r is not null)
+                .ToArray();
+
+            return ProtocolDispatchResult.Ok(results);
         }
 
         switch (operation)
@@ -259,22 +430,144 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
         });
     }
 
-    private ProtocolDispatchResult HandleLoop(string operation)
+    private ProtocolDispatchResult HandleLoop(string operation, ProtocolEnvelope envelope)
     {
-        if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
+        EnsureConfiguredRobotIdentity(envelope);
+        var body = envelope.TryParseBody();
+        var loopId = ReadString(body, "loopId") ??
+                     (stateStore.GetLoops().FirstOrDefault()?.LoopId ?? "openjibo-default-loop");
 
-        return ProtocolDispatchResult.Ok(stateStore.GetLoops().Select(loop => new
+        if (operation is "List" or "ListLoops")
         {
-            id = loop.LoopId,
-            name = loop.Name,
-            owner = loop.OwnerAccountId,
-            robot = loop.RobotId,
-            robotFriendlyId = loop.RobotFriendlyId,
-            members = Array.Empty<object>(),
-            isSuspended = loop.IsSuspended,
-            created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
-            updated = loop.UpdatedUtc.ToUnixTimeMilliseconds()
-        }).ToArray());
+            var loops = stateStore.GetLoops();
+            return ProtocolDispatchResult.Ok(loops
+                .Select(l => MapLoopRecord(l, stateStore.GetLoopMembers(l.LoopId)))
+                .ToArray());
+        }
+
+        if (operation is "ListMembers" or "ListLoopMembers")
+            return ProtocolDispatchResult.Ok(
+                stateStore.GetLoopMembers(loopId)
+                    .Where(static m => !string.Equals(m.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                    .Select(MapLoopMember).ToArray());
+
+        if (operation is "InviteMember" or "InviteLoopMember")
+        {
+            var member = stateStore.AddLoopMember(
+                loopId,
+                accountId: null,
+                email: ReadString(body, "email"),
+                firstName: ReadString(body, "firstName"),
+                lastName: ReadString(body, "lastName"),
+                gender: ReadString(body, "gender"),
+                birthday: ReadLong(body, "birthday"),
+                isChild: ReadBool(body, "isChild"),
+                type: "member");
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(
+                MapLoopRecord(loop, stateStore.GetLoopMembers(loopId)));
+        }
+
+        if (operation is "UpdateMember" or "UpdateLoopMember")
+        {
+            var memberId = ReadString(body, "id") ?? string.Empty;
+            try
+            {
+                stateStore.UpdateLoopMember(loopId, memberId,
+                    ReadString(body, "firstName"), ReadString(body, "lastName"),
+                    ReadString(body, "gender"), ReadLong(body, "birthday"),
+                    ReadBool(body, "isChild"), null, null);
+            }
+            catch (InvalidOperationException)
+            {
+                // Member not found — no-op
+            }
+
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(
+                MapLoopRecord(loop, stateStore.GetLoopMembers(loopId)));
+        }
+
+        if (operation is "RemoveMember" or "RemoveLoopMember")
+        {
+            stateStore.RemoveLoopMember(loopId, ReadString(body, "id") ?? string.Empty);
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(
+                MapLoopRecord(loop, stateStore.GetLoopMembers(loopId)));
+        }
+
+        if (operation is "AcceptInvitation" or "AcceptLoopInvitation" or
+            "DeclineInvitation" or "DeclineLoopInvitation")
+        {
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(
+                MapLoopRecord(loop, stateStore.GetLoopMembers(loopId)));
+        }
+
+        if (operation is "SetEnrollment")
+        {
+            var memberId = ReadString(body, "id") ?? string.Empty;
+            bool? face = body?.TryGetProperty("face", out var faceEl) == true ? faceEl.GetBoolean() : null;
+            bool? voice = body?.TryGetProperty("voice", out var voiceEl) == true ? voiceEl.GetBoolean() : null;
+            try { stateStore.SetMemberEnrollment(loopId, memberId, face, voice); }
+            catch (InvalidOperationException) { }
+            var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                l.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(
+                MapLoopRecord(loop, stateStore.GetLoopMembers(loopId)));
+        }
+
+        if (operation is "UpdateNickname" or "UpdatePhoneticName")
+        {
+            var memberId = ReadString(body, "id") ?? string.Empty;
+            var nickname = operation is "UpdateNickname" ? ReadString(body, "nickname") : null;
+            var phoneticName = operation is "UpdatePhoneticName" ? ReadString(body, "phoneticName") : null;
+            try
+            {
+                stateStore.UpdateLoopMember(loopId, memberId,
+                    null, null, null, null, false, nickname, phoneticName);
+            }
+            catch (InvalidOperationException) { }
+            return ProtocolDispatchResult.Ok(new { result = "ok" });
+        }
+
+        if (operation is "Create" or "CreateLoop")
+        {
+            var loop = stateStore.CreateLoop(
+                ReadString(body, "name") ?? "My Loop",
+                ReadString(body, "robotId") ?? stateStore.GetRobot().RobotId);
+            return ProtocolDispatchResult.Ok(
+                MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId)));
+        }
+
+        if (operation is "GetRobot")
+        {
+            var robot = stateStore.GetRobot();
+            return ProtocolDispatchResult.Ok(new
+            {
+                accessKeyId = stateStore.GetAccount().AccessKeyId,
+                secretAccessKey = stateStore.GetAccount().SecretAccessKey,
+                friendlyId = robot.DeviceId
+            });
+        }
+
+        if (operation is "FindOwner" or "ListOwnerRobots")
+            return ProtocolDispatchResult.Ok(new[] { stateStore.GetRobot().RobotId });
+
+        if (operation is "SuspendLoop" or "Remove" or "RemoveLoop" or
+            "SetLegalGuardian" or "UpdateAgreementStatus" or "Update" or "UpdateLoop")
+            return ProtocolDispatchResult.Ok(new { result = "ok" });
+
+        return ProtocolDispatchResult.Ok(Array.Empty<object>());
     }
 
     private static ProtocolDispatchResult HandleLog(string operation, ProtocolEnvelope envelope)
@@ -375,49 +668,68 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             return ProtocolDispatchResult.Ok(stateStore.GetCommuteProfiles(loopId).Select(MapCommute));
         }
 
-        if (operation.Equals("UpsertCommute", StringComparison.OrdinalIgnoreCase))
+        if (!operation.Equals("UpsertCommute", StringComparison.OrdinalIgnoreCase))
         {
-            var hasIsEnabled = body is { } enabledBody && enabledBody.TryGetProperty("isEnabled", out _);
-            var hasIsComplete = body is { } completeBody && completeBody.TryGetProperty("isComplete", out _);
-            var workHour = ReadLong(body, "workHour");
-            var workMinute = ReadLong(body, "workMinute");
-            var typicalDurationMinutes = ReadLong(body, "typicalDurationMinutes");
-            var commute = new CommuteProfileRecord
-            {
-                Id = ReadString(body, "id") ?? string.Empty,
-                LoopId = ReadString(body, "loopId") ?? string.Empty,
-                MemberId = ReadString(body, "memberId"),
-                IsEnabled = hasIsEnabled ? ReadBool(body, "isEnabled") : true,
-                IsComplete = hasIsComplete ? ReadBool(body, "isComplete") : true,
-                Mode = ReadString(body, "mode") ?? "driving",
-                WorkHour = workHour is > 0 and < 24 ? (int)workHour.Value : 8,
-                WorkMinute = workMinute is >= 0 and < 60 ? (int)workMinute.Value : 30,
-                OriginName = ReadString(body, "originName"),
-                DestinationName = ReadString(body, "destinationName"),
-                TypicalDurationMinutes = typicalDurationMinutes is > 0
-                    ? (int)typicalDurationMinutes.Value
-                    : 25
-            };
-            return ProtocolDispatchResult.Ok(MapCommute(stateStore.UpsertCommuteProfile(commute)));
+            return ProtocolDispatchResult.Ok(Array.Empty<object>());
         }
 
-        return ProtocolDispatchResult.Ok(Array.Empty<object>());
+        var hasIsEnabled = body is { } enabledBody && enabledBody.TryGetProperty("isEnabled", out _);
+        var hasIsComplete = body is { } completeBody && completeBody.TryGetProperty("isComplete", out _);
+        var workHour = ReadLong(body, "workHour");
+        var workMinute = ReadLong(body, "workMinute");
+        var typicalDurationMinutes = ReadLong(body, "typicalDurationMinutes");
+        var commute = new CommuteProfileRecord
+        {
+            Id = ReadString(body, "id") ?? string.Empty,
+            LoopId = ReadString(body, "loopId") ?? string.Empty,
+            MemberId = ReadString(body, "memberId"),
+            IsEnabled = !hasIsEnabled || ReadBool(body, "isEnabled"),
+            IsComplete = !hasIsComplete || ReadBool(body, "isComplete"),
+            Mode = ReadString(body, "mode") ?? "driving",
+            WorkHour = workHour is > 0 and < 24 ? (int)workHour.Value : 8,
+            WorkMinute = workMinute is >= 0 and < 60 ? (int)workMinute.Value : 30,
+            OriginName = ReadString(body, "originName"),
+            DestinationName = ReadString(body, "destinationName"),
+            TypicalDurationMinutes = typicalDurationMinutes is > 0
+                ? (int)typicalDurationMinutes.Value
+                : 25
+        };
+        return ProtocolDispatchResult.Ok(MapCommute(stateStore.UpsertCommuteProfile(commute)));
+
     }
 
     private ProtocolDispatchResult HandleBackup(string operation, ProtocolEnvelope envelope)
     {
         if (operation.Equals("List", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(stateStore.GetBackups());
+            return ProtocolDispatchResult.Ok(
+                _enableBackupRestore
+                    ? stateStore.GetBackups().Select(MapBackup).ToArray()
+                    : Array.Empty<object>());
 
-        if (operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
+        if (operation.Equals("New", StringComparison.OrdinalIgnoreCase))
         {
             var body = envelope.TryParseBody();
-            var requestedName = ReadString(body, "name") ?? ReadString(body, "backupName");
-            return ProtocolDispatchResult.Ok(
-                stateStore.CreateBackup(requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"));
+            var loopId = ReadString(body, "loopId") ?? stateStore.GetLoops()[0].LoopId;
+            var backupName = ReadString(body, "name") ?? ReadString(body, "backupName")
+                ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}";
+            var backup = stateStore.CreateBackup(loopId, backupName);
+            return ProtocolDispatchResult.Ok(new
+            {
+                uploadUrl = $"https://api.jibo.com/upload/backup/{backup.BackupId}"
+            });
         }
 
-        return ProtocolDispatchResult.Ok(Array.Empty<object>());
+        if (!operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
+        {
+            return ProtocolDispatchResult.Ok(Array.Empty<object>());
+        }
+
+        var createBody = envelope.TryParseBody();
+        var requestedName = ReadString(createBody, "name") ?? ReadString(createBody, "backupName");
+        var createLoopId = ReadString(createBody, "loopId") ?? stateStore.GetLoops()[0].LoopId;
+        return ProtocolDispatchResult.Ok(
+            MapBackup(stateStore.CreateBackup(createLoopId, requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}")));
+
     }
 
     private ProtocolDispatchResult HandleKey(string operation, ProtocolEnvelope envelope)
@@ -481,14 +793,16 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
 
     private ProtocolDispatchResult HandleRobot(string operation, ProtocolEnvelope envelope)
     {
+        EnsureConfiguredRobotIdentity(envelope);
         var robot = stateStore.GetRobot();
+        var effectiveRobotId = _configuredRobotId ?? robot.RobotId;
 
         if (operation.Equals("UpdateRobot", StringComparison.OrdinalIgnoreCase))
         {
             var updated = new DeviceRegistration
             {
                 DeviceId = robot.DeviceId,
-                RobotId = robot.RobotId,
+                RobotId = effectiveRobotId,
                 FriendlyName = robot.FriendlyName,
                 FirmwareVersion = envelope.FirmwareVersion ?? robot.FirmwareVersion,
                 ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
@@ -508,14 +822,49 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
                 result = "ok"
             });
 
+        var requestedRobotId = _configuredRobotId ?? ReadString(envelope.TryParseBody(), "id");
+        if (!string.IsNullOrWhiteSpace(requestedRobotId) &&
+            !requestedRobotId.Equals(robot.RobotId, StringComparison.OrdinalIgnoreCase))
+        {
+            stateStore.UpdateRobot(new DeviceRegistration
+            {
+                DeviceId = robot.DeviceId,
+                RobotId = requestedRobotId,
+                FriendlyName = robot.FriendlyName,
+                FirmwareVersion = envelope.FirmwareVersion ?? robot.FirmwareVersion,
+                ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
+                HostMappings = robot.HostMappings
+            });
+        }
+
         var profile = stateStore.GetRobotProfile();
         return ProtocolDispatchResult.Ok(new
         {
-            id = ReadString(envelope.TryParseBody(), "id") ?? profile.RobotId,
+            id = requestedRobotId ?? profile.RobotId,
             payload = profile.Payload,
             calibrationPayload = profile.CalibrationPayload,
             updated = profile.UpdatedUtc.ToUnixTimeMilliseconds(),
             created = profile.CreatedUtc.ToUnixTimeMilliseconds()
+        });
+    }
+
+    private void EnsureConfiguredRobotIdentity(ProtocolEnvelope envelope)
+    {
+        if (string.IsNullOrWhiteSpace(_configuredRobotId))
+            return;
+
+        var robot = stateStore.GetRobot();
+        if (_configuredRobotId.Equals(robot.RobotId, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        stateStore.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = robot.DeviceId,
+            RobotId = _configuredRobotId,
+            FriendlyName = robot.FriendlyName,
+            FirmwareVersion = envelope.FirmwareVersion ?? robot.FirmwareVersion,
+            ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
+            HostMappings = robot.HostMappings
         });
     }
 
@@ -569,9 +918,329 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
     private ProtocolDispatchResult HandleGetUpdateFrom(string? subsystem, string? fromVersion, string? filter)
     {
         var update = stateStore.GetUpdateFrom(subsystem, fromVersion, filter);
-        return update is null
-            ? ProtocolDispatchResult.Ok(new { })
-            : ProtocolDispatchResult.Ok(MapUpdate(update));
+        if (update is null)
+            return ProtocolDispatchResult.Raw(404,
+                "{\"__type\":\"UPDATE_NOT_FOUND\",\"message\":\"No update available for this subsystem from the specified version\"}");
+        return ProtocolDispatchResult.Ok(MapUpdate(update));
+    }
+
+    private static string? ReadSchedulerFilterFromPath(string path)
+    {
+        const string prefix = "/update/";
+        if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || path.Length <= prefix.Length)
+            return null;
+
+        return Uri.UnescapeDataString(path[prefix.Length..]);
+    }
+
+    private bool TryHandleLocalSchedulerRequest(ProtocolEnvelope envelope, out ProtocolDispatchResult result)
+    {
+        result = ProtocolDispatchResult.Ok(new { });
+
+        if (string.IsNullOrWhiteSpace(envelope.Path) || !string.IsNullOrWhiteSpace(envelope.ServicePrefix))
+            return false;
+
+        if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
+            envelope.Path.StartsWith("/update", StringComparison.OrdinalIgnoreCase))
+        {
+            var filter = ReadSchedulerFilterFromPath(envelope.Path);
+            result = ProtocolDispatchResult.Ok(new
+            {
+                updates = ListSchedulerUpdates(filter)
+            });
+            return true;
+        }
+
+        if (!envelope.Method.Equals("POST", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (envelope.Path.Equals("/backup-status", StringComparison.OrdinalIgnoreCase))
+        {
+            result = ProtocolDispatchResult.Ok(new
+            {
+                status = "OK",
+                data = GetSchedulerBackupStatus()
+            });
+            return true;
+        }
+
+        if (envelope.Path.Equals("/download-status", StringComparison.OrdinalIgnoreCase))
+        {
+            result = ProtocolDispatchResult.Ok(new
+            {
+                status = "OK",
+                data = GetSchedulerDownloadStatus()
+            });
+            return true;
+        }
+
+        if (envelope.Path.Equals("/check-updates", StringComparison.OrdinalIgnoreCase))
+        {
+            var body = envelope.TryParseBody();
+            var filter = ReadString(body, "filter");
+            result = ProtocolDispatchResult.Ok(new
+            {
+                status = "OK",
+                data = ListSchedulerUpdates(filter)
+            });
+            return true;
+        }
+
+        if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase) ||
+            envelope.Path.Equals("/ota-update", StringComparison.OrdinalIgnoreCase))
+        {
+            if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase))
+                StartSchedulerBackupCycle();
+            else
+                StartSchedulerUpdateCycle(ReadSchedulerFilterFromPath(envelope.Path));
+
+            result = ProtocolDispatchResult.Ok(new
+            {
+                status = "OK"
+            });
+            return true;
+        }
+
+        return false;
+    }
+
+    private object[] ListSchedulerUpdates(string? filter)
+    {
+        return stateStore.ListUpdates()
+            .Where(update =>
+                string.IsNullOrWhiteSpace(filter) ||
+                update.Subsystem.Equals(filter, StringComparison.OrdinalIgnoreCase) ||
+                (update.Filter is not null &&
+                 update.Filter.Equals(filter, StringComparison.OrdinalIgnoreCase)))
+            .Select(update => MapSchedulerUpdate(update, IsSchedulerUpdateDownloaded(update.UpdateId)))
+            .ToArray();
+    }
+
+    private bool GetSchedulerBackupStatus()
+    {
+        lock (_schedulerLock)
+            return _schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate;
+    }
+
+    private object? GetSchedulerDownloadStatus()
+    {
+        lock (_schedulerLock)
+        {
+            if (_schedulerState.DownloadStatus is null) return null;
+
+            return new
+            {
+                updates = _schedulerState.DownloadStatus.Updates
+                    .Select(update => MapSchedulerUpdate(update, _schedulerState.DownloadedUpdateIds.Contains(update.Id)))
+                    .ToArray(),
+                status = _schedulerState.DownloadStatus.Status is null
+                    ? null
+                    : new
+                    {
+                        id = _schedulerState.DownloadStatus.Status.Id,
+                        length = _schedulerState.DownloadStatus.Status.Length,
+                        received = _schedulerState.DownloadStatus.Status.Received,
+                        status = _schedulerState.DownloadStatus.Status.Status,
+                        reason = _schedulerState.DownloadStatus.Status.Reason,
+                        error = _schedulerState.DownloadStatus.Status.Error
+                    }
+            };
+        }
+    }
+
+    private void StartSchedulerUpdateCycle(string? filter)
+    {
+        lock (_schedulerLock)
+        {
+            if (_schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate || _schedulerState.DownloadStatus is not null)
+                return;
+
+            _schedulerState.BackingUp = true;
+            _schedulerState.BackingBeforeUpdate = true;
+            _schedulerState.ActiveFilter = filter;
+            _schedulerState.DownloadedUpdateIds.Clear();
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(SchedulerBackupDelayMs).ConfigureAwait(false);
+
+                var pendingUpdates = stateStore.ListUpdates()
+                    .Where(update =>
+                        string.IsNullOrWhiteSpace(filter) ||
+                        update.Subsystem.Equals(filter, StringComparison.OrdinalIgnoreCase) ||
+                        (update.Filter is not null &&
+                         update.Filter.Equals(filter, StringComparison.OrdinalIgnoreCase)))
+                    .ToArray();
+
+                lock (_schedulerLock)
+                {
+                    _schedulerState.BackingUp = false;
+                    _schedulerState.BackingBeforeUpdate = false;
+
+                    _schedulerState.DownloadStatus = pendingUpdates.Length == 0
+                        ? null
+                        : new SchedulerDownloadState
+                        {
+                            Updates = pendingUpdates.Select(update => new SchedulerUpdateState
+                            {
+                                Id = update.UpdateId,
+                                Subsystem = update.Subsystem,
+                                Changes = update.Changes,
+                                Length = update.Length,
+                                ToVersion = update.ToVersion,
+                                Dependencies = new Dictionary<string, object?>(),
+                                Downloaded = false
+                            }).ToArray(),
+                            Status = new SchedulerDownloadProgress
+                            {
+                                Id = pendingUpdates[0].UpdateId,
+                                Length = pendingUpdates[0].Length,
+                                Received = 0,
+                                Status = "downloading"
+                            }
+                        };
+                }
+
+                if (pendingUpdates.Length == 0) return;
+
+                for (var i = 0; i < pendingUpdates.Length; i++)
+                {
+                    var update = pendingUpdates[i];
+                    var updateLength = update.Length > 0 ? update.Length : 1000;
+                    var received = 0L;
+
+                    while (received < updateLength)
+                    {
+                        await Task.Delay(SchedulerDownloadTickMs).ConfigureAwait(false);
+                        received = Math.Min(updateLength, received + Math.Max(100L, updateLength / 4));
+                        lock (_schedulerLock)
+                        {
+                            if (_schedulerState.DownloadStatus is not null)
+                            {
+                                _schedulerState.DownloadStatus.Status = new SchedulerDownloadProgress
+                                {
+                                    Id = update.UpdateId,
+                                    Length = updateLength,
+                                    Received = received,
+                                    Status = "downloading"
+                                };
+                            }
+                        }
+                    }
+
+                    lock (_schedulerLock)
+                    {
+                        _schedulerState.DownloadedUpdateIds.Add(update.UpdateId);
+                        if (_schedulerState.DownloadStatus is not null)
+                        {
+                            _schedulerState.DownloadStatus.Updates[i] =
+                                _schedulerState.DownloadStatus.Updates[i] with { Downloaded = true };
+                            _schedulerState.DownloadStatus.Status = new SchedulerDownloadProgress
+                            {
+                                Id = update.UpdateId,
+                                Length = updateLength,
+                                Received = updateLength,
+                                Status = "finished"
+                            };
+                        }
+                    }
+                }
+
+                await Task.Delay(SchedulerDownloadFinishDelayMs).ConfigureAwait(false);
+                lock (_schedulerLock)
+                {
+                    _schedulerState.DownloadStatus = null;
+                }
+            }
+            catch
+            {
+                lock (_schedulerLock)
+                {
+                    _schedulerState.BackingUp = false;
+                    _schedulerState.BackingBeforeUpdate = false;
+                    _schedulerState.DownloadStatus = null;
+                }
+            }
+        });
+    }
+
+    private void StartSchedulerBackupCycle()
+    {
+        lock (_schedulerLock)
+        {
+            if (_schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate || _schedulerState.DownloadStatus is not null)
+                return;
+
+            _schedulerState.BackingUp = true;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(SchedulerBackupDelayMs).ConfigureAwait(false);
+            }
+            finally
+            {
+                lock (_schedulerLock)
+                {
+                    _schedulerState.BackingUp = false;
+                }
+            }
+        });
+    }
+
+    private bool IsSchedulerUpdateDownloaded(string updateId)
+    {
+        lock (_schedulerLock)
+            return _schedulerState.DownloadedUpdateIds.Contains(updateId);
+    }
+
+    private static object MapSchedulerUpdate(UpdateManifest update, bool downloaded)
+    {
+        return new
+        {
+            id = update.UpdateId,
+            subsystem = update.Subsystem,
+            changes = update.Changes,
+            length = update.Length,
+            toVersion = update.ToVersion,
+            dependencies = new Dictionary<string, object?>(),
+            downloaded
+        };
+    }
+
+    private static object MapSchedulerUpdate(SchedulerUpdateState update, bool downloaded)
+    {
+        return new
+        {
+            id = update.Id,
+            subsystem = update.Subsystem,
+            changes = update.Changes,
+            length = update.Length,
+            toVersion = update.ToVersion,
+            dependencies = update.Dependencies ?? new Dictionary<string, object?>(),
+            downloaded
+        };
+    }
+
+    private static UpdateManifest BuildNoopUpdate(string? subsystem, string? fromVersion, string? filter)
+    {
+        return new UpdateManifest
+        {
+            UpdateId = $"noop-update-{subsystem ?? "unknown"}-{fromVersion ?? "unknown"}",
+            FromVersion = fromVersion ?? "unknown",
+            ToVersion = fromVersion ?? "unknown",
+            Changes = "No update available",
+            Url = "https://api.jibo.com/update/noop",
+            ShaHash = "noop",
+            Length = 0,
+            Subsystem = subsystem ?? "unknown",
+            Filter = filter
+        };
     }
 
     private static object MapUpdate(UpdateManifest update)
@@ -590,6 +1259,134 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
             subsystem = update.Subsystem,
             filter = update.Filter,
             dependencies = new Dictionary<string, object?>()
+        };
+    }
+
+    private static object MapBackup(BackupRecord backup)
+    {
+        return new
+        {
+            modified = backup.CreatedUtc.ToString("O"),
+            etag = backup.BackupId,
+            size = "0",
+            location = new
+            {
+                expires = backup.CreatedUtc.AddHours(1).ToString("O"),
+                url = $"https://api.jibo.com/backup/{backup.BackupId}"
+            }
+        };
+    }
+
+    private sealed class OobeTokenState
+    {
+        public string? LoopId { get; init; }
+        public string? AccountId { get; init; }
+        public string? RobotId { get; set; }
+        public bool Complete { get; set; }
+        public DateTimeOffset ExpiresUtc { get; init; }
+    }
+
+    private sealed class SchedulerRuntimeState
+    {
+        public bool BackingUp { get; set; }
+        public bool BackingBeforeUpdate { get; set; }
+        public string? ActiveFilter { get; set; }
+        public SchedulerDownloadState? DownloadStatus { get; set; }
+        public HashSet<string> DownloadedUpdateIds { get; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private sealed class SchedulerDownloadState
+    {
+        public SchedulerUpdateState[] Updates { get; set; } = [];
+        public SchedulerDownloadProgress? Status { get; set; }
+    }
+
+    private sealed record SchedulerUpdateState
+    {
+        public string Id { get; init; } = string.Empty;
+        public string Subsystem { get; init; } = "robot";
+        public string Changes { get; init; } = string.Empty;
+        public long Length { get; init; }
+        public string ToVersion { get; init; } = string.Empty;
+        public IDictionary<string, object?> Dependencies { get; init; } = new Dictionary<string, object?>();
+        public bool Downloaded { get; init; }
+    }
+
+    private sealed class SchedulerDownloadProgress
+    {
+        public string Id { get; set; } = string.Empty;
+        public long Length { get; set; }
+        public long Received { get; set; }
+        public string Status { get; set; } = "downloading";
+        public string? Reason { get; set; }
+        public string? Error { get; set; }
+    }
+
+    private static object BuildAccountResponse(UserRecord user)
+    {
+        return new
+        {
+            id = user.Id,
+            email = user.Email,
+            firstName = user.FirstName,
+            lastName = user.LastName,
+            gender = user.Gender ?? "unknown",
+            birthday = user.Birthday ?? 631152000000L,
+            phoneNumber = (string?)null,
+            photoUrl = string.Empty,
+            isActive = user.IsActive,
+            messagingAllowed = true,
+            accessKeyId = user.AccessKeyId,
+            secretAccessKey = user.SecretAccessKey,
+            roles = Array.Empty<object>(),
+            facebookConnected = false,
+            termsAccepted = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+        };
+    }
+
+    private static object MapLoopMember(LoopMemberRecord m)
+    {
+        return new
+        {
+            id = m.Id,
+            loopId = m.LoopId,
+            accountId = m.AccountId,
+            account = new
+            {
+                email = m.Email,
+                firstName = m.FirstName,
+                lastName = m.LastName,
+                gender = m.Gender,
+                birthday = m.Birthday,
+                isChild = m.IsChild,
+                phoneNumber = m.PhoneNumber
+            },
+            enrolled = new { face = m.FaceEnrolled, voice = m.VoiceEnrolled },
+            status = m.Status,
+            type = m.Type,
+            nickname = m.Nickname,
+            phoneticName = m.PhoneticName,
+            legalGuardianId = m.LegalGuardianId,
+            agreementId = m.AgreementId,
+            created = m.CreatedUtc.ToUnixTimeMilliseconds()
+        };
+    }
+
+    private static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members)
+    {
+        return new
+        {
+            id = loop.LoopId,
+            name = loop.Name,
+            owner = loop.OwnerAccountId,
+            robot = loop.RobotId,
+            robotFriendlyId = loop.RobotFriendlyId,
+            members = members
+                    .Where(static m => !string.Equals(m.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                    .Select(MapLoopMember).ToArray(),
+            isSuspended = loop.IsSuspended,
+            created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
+            updated = loop.UpdatedUtc.ToUnixTimeMilliseconds()
         };
     }
 

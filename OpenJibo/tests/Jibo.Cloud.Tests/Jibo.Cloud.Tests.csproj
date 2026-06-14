@@ -9,12 +9,14 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
 		<PackageReference Include="Moq" Version="4.20.72" />
 		<PackageReference Include="xunit" Version="2.9.2" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Api\Jibo.Cloud.Api.csproj" />
 		<ProjectReference Include="..\..\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Application\Jibo.Cloud.Application.csproj" />
 		<ProjectReference Include="..\..\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Infrastructure\Jibo.Cloud.Infrastructure.csproj" />
 		<ProjectReference Include="..\..\src\Jibo.Runtime.Abstractions\Jibo.Runtime.Abstractions.csproj" />

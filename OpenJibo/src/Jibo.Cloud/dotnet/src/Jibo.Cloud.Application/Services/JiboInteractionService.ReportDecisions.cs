@@ -1,8 +1,4 @@
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -225,12 +221,11 @@ public sealed partial class JiboInteractionService
         CancellationToken cancellationToken)
     {
         var preferredCategories = ResolvePreferredNewsCategories(turn, transcript);
-        var requestedHeadlineCount = MaxNewsHeadlines;
         if (newsBriefingProvider is not null)
             try
             {
                 var snapshot = await newsBriefingProvider.GetBriefingAsync(
-                    new NewsBriefingRequest(preferredCategories, requestedHeadlineCount),
+                    new NewsBriefingRequest(preferredCategories),
                     cancellationToken);
 
                 if (snapshot?.Headlines.Count > 0)
@@ -238,7 +233,7 @@ public sealed partial class JiboInteractionService
                         snapshot,
                         catalog,
                         preferredCategories,
-                        requestedHeadlineCount);
+                        MaxNewsHeadlines);
 
                 var providerStatus = ResolveNewsProviderStatus(snapshot);
                 var providerMessage = snapshot?.ProviderMessage;
@@ -255,7 +250,7 @@ public sealed partial class JiboInteractionService
                     BuildNewsProviderDiagnostics(
                         providerStatus,
                         preferredCategories,
-                        requestedHeadlineCount,
+                        MaxNewsHeadlines,
                         snapshot?.Headlines.Count ?? 0,
                         providerMessage,
                         providerHttpStatusCode,
@@ -278,7 +273,7 @@ public sealed partial class JiboInteractionService
                     BuildNewsProviderDiagnostics(
                         "provider_exception",
                         preferredCategories,
-                        requestedHeadlineCount));
+                        MaxNewsHeadlines));
             }
 
         var fallbackBriefing = randomizer.Choose(catalog.NewsBriefings);
@@ -290,6 +285,6 @@ public sealed partial class JiboInteractionService
             BuildNewsProviderDiagnostics(
                 "provider_unavailable",
                 preferredCategories,
-                requestedHeadlineCount));
+                MaxNewsHeadlines));
     }
 }

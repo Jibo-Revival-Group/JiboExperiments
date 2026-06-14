@@ -1,8 +1,6 @@
 using System.Globalization;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Domain.Models;
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -115,15 +113,18 @@ public sealed partial class JiboInteractionService
         var template = ChooseCommuteTemplate(snapshot, catalog, mode);
         var reply = RenderCommuteTemplate(template, durationText, minutesLeftText);
 
-        if (minutesLeft is > 0 and < 30)
+        switch (minutesLeft)
         {
-            var minutesTemplate = ChooseShortestTemplate(catalog.CommuteMinutesLeftReplies)
-                                  ?? "That's in about ${skill.commute.minsLeft} minutes.";
-            reply = $"{reply} {RenderCommuteTemplate(minutesTemplate, durationText, minutesLeftText)}";
+            case > 0 and < 30:
+            {
+                var minutesTemplate = ChooseShortestTemplate(catalog.CommuteMinutesLeftReplies)
+                                      ?? "That's in about ${skill.commute.minsLeft} minutes.";
+                reply = $"{reply} {RenderCommuteTemplate(minutesTemplate, durationText, minutesLeftText)}";
+                break;
+            }
+            case <= 0 or >= 120:
+                return reply.Replace("  ", " ", StringComparison.Ordinal).Trim();
         }
-
-        if (minutesLeft is <= 0 or >= 120)
-            return reply.Replace("  ", " ", StringComparison.Ordinal).Trim();
 
         var departTemplate = ChooseCommuteDepartTimeTemplate(snapshot, catalog, mode);
         if (!string.IsNullOrWhiteSpace(departTemplate))
@@ -154,7 +155,7 @@ public sealed partial class JiboInteractionService
         var isPoor = hasTrafficSeverity && extraMinutes >= 5;
 
         var loweredMode = mode.Trim().ToLowerInvariant();
-        IReadOnlyList<string> candidates = loweredMode switch
+        var candidates = loweredMode switch
         {
             "walking" when isHurry => catalog.CommuteTransportHurryReplies,
             "walking" when isLate => catalog.CommuteTransportLateReplies,
@@ -251,34 +252,37 @@ public sealed partial class JiboInteractionService
 
         var resolvedReference = referenceLocalTime ?? DateTimeOffset.UtcNow;
         var referenceDate = resolvedReference.Date;
-        return [.. snapshots
-            .OrderBy(static item => item.DayOffset)
-            .Take(MaxWeatherForecastDayOffset)
-            .Select(item =>
-            {
-                var dayName = referenceDate.AddDays(item.DayOffset).ToString("dddd", CultureInfo.InvariantCulture);
-                var summary = string.IsNullOrWhiteSpace(item.Snapshot.Summary)
-                    ? "partly cloudy"
-                    : item.Snapshot.Summary.Trim().TrimEnd('.');
-                var high = item.Snapshot.HighTemperature ?? item.Snapshot.Temperature;
-                var low = item.Snapshot.LowTemperature ?? item.Snapshot.Temperature;
-                var iconReference = new DateTimeOffset(
-                    resolvedReference.Date.AddDays(item.DayOffset).AddHours(12),
-                    resolvedReference.Offset);
-                var icon = ResolveWeatherAnimationIcon(item.Snapshot, iconReference);
-                var unit = item.Snapshot.UseCelsius ? "C" : "F";
-                var temperatureBand = ResolveWeatherTemperatureBand(high, item.Snapshot.UseCelsius);
-                var spokenLine = $"{dayName}: {summary}, high {high}, low {low}.";
-                return new WeatherForecastCardSegment(
-                    dayName,
-                    summary,
-                    high,
-                    low,
-                    icon,
-                    unit,
-                    temperatureBand,
-                    spokenLine);
-            })];
+        return
+        [
+            .. snapshots
+                .OrderBy(static item => item.DayOffset)
+                .Take(MaxWeatherForecastDayOffset)
+                .Select(item =>
+                {
+                    var dayName = referenceDate.AddDays(item.DayOffset).ToString("dddd", CultureInfo.InvariantCulture);
+                    var summary = string.IsNullOrWhiteSpace(item.Snapshot.Summary)
+                        ? "partly cloudy"
+                        : item.Snapshot.Summary.Trim().TrimEnd('.');
+                    var high = item.Snapshot.HighTemperature ?? item.Snapshot.Temperature;
+                    var low = item.Snapshot.LowTemperature ?? item.Snapshot.Temperature;
+                    var iconReference = new DateTimeOffset(
+                        resolvedReference.Date.AddDays(item.DayOffset).AddHours(12),
+                        resolvedReference.Offset);
+                    var icon = ResolveWeatherAnimationIcon(item.Snapshot, iconReference);
+                    var unit = item.Snapshot.UseCelsius ? "C" : "F";
+                    var temperatureBand = ResolveWeatherTemperatureBand(high, item.Snapshot.UseCelsius);
+                    var spokenLine = $"{dayName}: {summary}, high {high}, low {low}.";
+                    return new WeatherForecastCardSegment(
+                        dayName,
+                        summary,
+                        high,
+                        low,
+                        icon,
+                        unit,
+                        temperatureBand,
+                        spokenLine);
+                })
+        ];
     }
 
     private static IDictionary<string, object?> BuildWeeklyWeatherSkillPayload(
@@ -487,10 +491,12 @@ public sealed partial class JiboInteractionService
             normalized.Contains("overcast", StringComparison.Ordinal))
             return "cloudy";
 
+        /*
+         This is assumed by catch all, but if we have additional cases later, the explicit check can be enabled.
         if (normalized.Contains("clear", StringComparison.Ordinal) ||
             normalized.Contains("sunny", StringComparison.Ordinal))
             return isDaytime ? "clear-day" : "clear-night";
-
+        */
         return isDaytime ? "clear-day" : "clear-night";
     }
 
@@ -518,17 +524,13 @@ public sealed partial class JiboInteractionService
         var coldThreshold = useCelsius ? 4 : 40;
         if (highTemperature > hotThreshold) return "Hot";
 
-        if (highTemperature < coldThreshold) return "Cold";
-
-        return "Normal";
+        return highTemperature < coldThreshold ? "Cold" : "Normal";
     }
 
     private static string ChooseWeatherTemplate(IReadOnlyList<string> templates, string fallback)
     {
         var usableTemplates = templates.Where(static template => !string.IsNullOrWhiteSpace(template)).ToArray();
-        if (usableTemplates.Length == 0) return fallback;
-
-        return usableTemplates[0];
+        return usableTemplates.Length == 0 ? fallback : usableTemplates[0];
     }
 
     private static string RenderWeatherTemplate(
@@ -603,11 +605,12 @@ public sealed partial class JiboInteractionService
 
     private string BuildCalendarSpokenReply(CalendarReportSnapshot snapshot, JiboExperienceCatalog catalog)
     {
+        string? template;
         if (snapshot.EventSummaries.Count > 0 && snapshot.EventTimesOnAt.Count > 0)
         {
             var summary = snapshot.EventSummaries[0];
             var time = snapshot.EventTimesOnAt[0];
-            var template = ChooseCalendarTemplate(
+            template = ChooseCalendarTemplate(
                 catalog.CalendarReplies,
                 "calendar summary",
                 "Your calendar says ${skill.calendar.eventSummaries.shift()}, ${skill.calendar.eventTimesOnAt.shift()}.");
@@ -623,23 +626,21 @@ public sealed partial class JiboInteractionService
             return $"Your calendar says {summary}, {time}.";
         }
 
-        if (snapshot.TomorrowEventSummaries.Count > 0)
-        {
-            var template = ChooseCalendarTemplate(
-                catalog.CalendarReplies,
-                "calendar tomorrow",
-                "Looking at your calendar, there's nothing scheduled for the rest of the day today. Here's what's going on tomorrow.");
-            if (template.Contains("tomorrow", StringComparison.OrdinalIgnoreCase))
-                return template
-                    .Replace("${speaker}", string.Empty, StringComparison.OrdinalIgnoreCase)
-                    .Replace("  ", " ", StringComparison.Ordinal)
-                    .Trim();
+        if (snapshot.TomorrowEventSummaries.Count <= 0) return ChooseCalendarNothingReply(catalog);
 
-            return
-                $"Looking at your calendar, there's nothing scheduled for the rest of the day today. Here's what's going on tomorrow: {snapshot.TomorrowEventSummaries[0]}.";
-        }
+        template = ChooseCalendarTemplate(
+            catalog.CalendarReplies,
+            "calendar tomorrow",
+            "Looking at your calendar, there's nothing scheduled for the rest of the day today. Here's what's going on tomorrow.");
+        if (template.Contains("tomorrow", StringComparison.OrdinalIgnoreCase))
+            return template
+                .Replace("${speaker}", string.Empty, StringComparison.OrdinalIgnoreCase)
+                .Replace("  ", " ", StringComparison.Ordinal)
+                .Trim();
 
-        return ChooseCalendarNothingReply(catalog);
+        return
+            $"Looking at your calendar, there's nothing scheduled for the rest of the day today. Here's what's going on tomorrow: {snapshot.TomorrowEventSummaries[0]}.";
+
     }
 
     private static string ChooseCalendarTemplate(

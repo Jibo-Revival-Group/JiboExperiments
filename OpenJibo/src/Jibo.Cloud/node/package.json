@@ -4,6 +4,7 @@
   "description": "",
   "main": "open-jibo-link.js",
   "scripts": {
+    "start": "node open-jibo-link.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

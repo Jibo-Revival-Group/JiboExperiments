@@ -67,14 +67,16 @@ internal static class HouseholdListOrchestrator
         if (!isActiveState && !isShoppingIntent && !isTodoIntent)
             return Task.FromResult<JiboInteractionDecision?>(null);
 
-        var resolvedListType = isShoppingIntent ? ShoppingListType : isTodoIntent ? TodoListType : NormalizeListType(listType);
+        var resolvedListType = isShoppingIntent ? ShoppingListType :
+            isTodoIntent ? TodoListType : NormalizeListType(listType);
         if (string.IsNullOrWhiteSpace(resolvedListType)) resolvedListType = ShoppingListType;
         var resolvedDisplayType = ResolveDisplayType(resolvedListType, displayType, isActiveState, loweredTranscript);
 
         var tenantScope = tenantScopeResolver(turn);
 
         if (ContainsAny(loweredTranscript, "cancel", "stop", "never mind", "nevermind", "forget it"))
-            return Task.FromResult<JiboInteractionDecision?>(BuildCancelledDecision(resolvedListType, resolvedDisplayType));
+            return Task.FromResult<JiboInteractionDecision?>(BuildCancelledDecision(resolvedListType,
+                resolvedDisplayType));
 
         if (IsRecallRequest(loweredTranscript))
             return Task.FromResult<JiboInteractionDecision?>(BuildRecallDecision(
@@ -88,7 +90,8 @@ internal static class HouseholdListOrchestrator
             if (IsConversationComplete(loweredTranscript))
                 return Task.FromResult<JiboInteractionDecision?>(new JiboInteractionDecision(
                     BuildListIntentName(resolvedListType, "done"),
-                    BuildDoneReply(resolvedDisplayType, personalMemoryStore.GetListItems(tenantScope, resolvedListType)),
+                    BuildDoneReply(resolvedDisplayType,
+                        personalMemoryStore.GetListItems(tenantScope, resolvedListType)),
                     ContextUpdates: BuildContextUpdates(resolvedListType, resolvedDisplayType, IdleState)));
 
             directItem = NormalizeItem(transcript);
@@ -143,7 +146,8 @@ internal static class HouseholdListOrchestrator
             });
     }
 
-    private static JiboInteractionDecision BuildRecallDecision(string listType, string displayType, IReadOnlyList<string> items)
+    private static JiboInteractionDecision BuildRecallDecision(string listType, string displayType,
+        IReadOnlyList<string> items)
     {
         if (items.Count == 0)
             return new JiboInteractionDecision(
@@ -186,10 +190,9 @@ internal static class HouseholdListOrchestrator
 
     private static string BuildDoneReply(string displayType, IReadOnlyList<string> items)
     {
-        if (items.Count == 0)
-            return $"Okay. Your {BuildListLabel(displayType)} is empty.";
-
-        return $"Okay. Your {BuildListLabel(displayType)} has {JoinList(items)}.";
+        return items.Count == 0
+            ? $"Okay. Your {BuildListLabel(displayType)} is empty."
+            : $"Okay. Your {BuildListLabel(displayType)} has {JoinList(items)}.";
     }
 
     private static string BuildListLabel(string displayType)
@@ -224,10 +227,7 @@ internal static class HouseholdListOrchestrator
                 return null;
 
             remainder = TrimTrailingListPhrases(remainder);
-            if (IsListOnlyRemainder(remainder))
-                return null;
-
-            return NormalizeItem(remainder);
+            return IsListOnlyRemainder(remainder) ? null : NormalizeItem(remainder);
         }
 
         return null;
@@ -277,7 +277,8 @@ internal static class HouseholdListOrchestrator
                 : string.Empty;
     }
 
-    private static string ResolveDisplayType(string listType, string? storedDisplayType, bool isActiveState, string loweredTranscript)
+    private static string ResolveDisplayType(string listType, string? storedDisplayType, bool isActiveState,
+        string loweredTranscript)
     {
         var transcriptDisplayType = InferDisplayTypeFromTranscript(loweredTranscript);
         var normalizedStoredDisplayType = NormalizeDisplayType(storedDisplayType);
@@ -304,14 +305,11 @@ internal static class HouseholdListOrchestrator
         if (loweredTranscript.Contains("to do", StringComparison.OrdinalIgnoreCase) ||
             loweredTranscript.Contains("todo", StringComparison.OrdinalIgnoreCase) ||
             loweredTranscript.Contains("task", StringComparison.OrdinalIgnoreCase))
-        {
             return TodoListType;
-        }
 
-        if (loweredTranscript.Contains("shopping", StringComparison.OrdinalIgnoreCase))
-            return ShoppingListType;
-
-        return string.Empty;
+        return loweredTranscript.Contains("shopping", StringComparison.OrdinalIgnoreCase)
+            ? ShoppingListType
+            : string.Empty;
     }
 
     private static string NormalizeDisplayType(string? displayType)
@@ -339,25 +337,25 @@ internal static class HouseholdListOrchestrator
     {
         var normalized = NormalizeItem(value).ToLowerInvariant();
         return normalized is "shopping list" or
-                             "grocery list" or
-                             "to do list" or
-                             "todo list" or
-                             "my shopping list" or
-                             "my grocery list" or
-                             "my to do list" or
-                             "my todo list" or
-                             "to my shopping list" or
-                             "to my grocery list" or
-                             "to my to do list" or
-                             "to my todo list" or
-                             "to the shopping list" or
-                             "to the grocery list" or
-                             "to the to do list" or
-                             "to the todo list" or
-                             "on my shopping list" or
-                             "on my grocery list" or
-                             "on my to do list" or
-                             "on my todo list";
+            "grocery list" or
+            "to do list" or
+            "todo list" or
+            "my shopping list" or
+            "my grocery list" or
+            "my to do list" or
+            "my todo list" or
+            "to my shopping list" or
+            "to my grocery list" or
+            "to my to do list" or
+            "to my todo list" or
+            "to the shopping list" or
+            "to the grocery list" or
+            "to the to do list" or
+            "to the todo list" or
+            "on my shopping list" or
+            "on my grocery list" or
+            "on my to do list" or
+            "on my todo list";
     }
 
     private static bool ContainsAny(string loweredTranscript, params string[] phrases)

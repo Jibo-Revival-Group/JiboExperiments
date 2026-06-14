@@ -54,6 +54,91 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
     }
 
     [Fact]
+    public void Resolve_UsesEnvironmentOverrides_WhenConfiguredPathsAreEmpty()
+    {
+        var resolved = BufferedAudioSttPathResolver.Resolve(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "",
+                WhisperCliPath = "",
+                WhisperModelPath = ""
+            },
+            name => name switch
+            {
+                "OPENJIBO_STT_FFMPEG_PATH" => "/custom/bin/ffmpeg",
+                "OPENJIBO_STT_WHISPER_CLI_PATH" => "/custom/bin/whisper-cli",
+                "OPENJIBO_STT_WHISPER_MODEL_PATH" => "/custom/models/ggml-base.en.bin",
+                _ => null
+            },
+            path => path.StartsWith("/custom/", StringComparison.Ordinal),
+            homeDirectory: null,
+            isMacOS: true,
+            isLinux: false);
+
+        Assert.Equal("/custom/bin/ffmpeg", resolved.FfmpegPath);
+        Assert.Equal("/custom/bin/whisper-cli", resolved.WhisperCliPath);
+        Assert.Equal("/custom/models/ggml-base.en.bin", resolved.WhisperModelPath);
+    }
+
+    [Fact]
+    public void Resolve_UsesMacDiscovery_WhenLegacyLinuxDefaultsAreConfigured()
+    {
+        var existingPaths = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "/opt/homebrew/bin/ffmpeg",
+            "/opt/homebrew/bin/whisper-cli",
+            "/Users/test/whisper.cpp/models/ggml-base.en.bin"
+        };
+
+        var resolved = BufferedAudioSttPathResolver.Resolve(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "/usr/bin/ffmpeg",
+                WhisperCliPath = "/usr/bin/whisper.cpp/build/bin/whisper-cli",
+                WhisperModelPath = "/usr/bin/whisper.cpp/models/ggml-base.en.bin"
+            },
+            _ => null,
+            existingPaths.Contains,
+            homeDirectory: "/Users/test",
+            isMacOS: true,
+            isLinux: false);
+
+        Assert.Equal("/opt/homebrew/bin/ffmpeg", resolved.FfmpegPath);
+        Assert.Equal("/opt/homebrew/bin/whisper-cli", resolved.WhisperCliPath);
+        Assert.Equal("/Users/test/whisper.cpp/models/ggml-base.en.bin", resolved.WhisperModelPath);
+    }
+
+    [Fact]
+    public void Resolve_KeepsExplicitRelativePaths()
+    {
+        var resolved = BufferedAudioSttPathResolver.Resolve(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "ffmpeg",
+                WhisperCliPath = "whisper-cli",
+                WhisperModelPath = "models/ggml-base.en.bin"
+            },
+            name => name switch
+            {
+                "OPENJIBO_STT_FFMPEG_PATH" => "/custom/bin/ffmpeg",
+                "OPENJIBO_STT_WHISPER_CLI_PATH" => "/custom/bin/whisper-cli",
+                "OPENJIBO_STT_WHISPER_MODEL_PATH" => "/custom/models/ggml-base.en.bin",
+                _ => null
+            },
+            _ => true,
+            homeDirectory: "/Users/test",
+            isMacOS: true,
+            isLinux: false);
+
+        Assert.Equal("ffmpeg", resolved.FfmpegPath);
+        Assert.Equal("whisper-cli", resolved.WhisperCliPath);
+        Assert.Equal("models/ggml-base.en.bin", resolved.WhisperModelPath);
+    }
+
+    [Fact]
     public void CanHandle_ReturnsFalse_WhenBufferedAudioHasNoOpusIdentificationHeader()
     {
         var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
@@ -102,6 +187,34 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         Assert.False(strategy.CanHandle(turn));
     }
 
+    [Theory]
+    [InlineData("shared/yes_no")]
+    [InlineData("word-of-the-day/surprise")]
+    public void CanHandle_ReturnsTrue_WhenShortAnswerTurnsStayUnderTheStandardNoiseFloor(string listenRule)
+    {
+        var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "ffmpeg",
+                WhisperCliPath = "whisper-cli",
+                WhisperModelPath = "model.bin"
+            },
+            new FakeExternalProcessRunner());
+
+        var turn = new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["bufferedAudioBytes"] = 47,
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() },
+                ["listenRules"] = new[] { listenRule }
+            }
+        };
+
+        Assert.True(strategy.CanHandle(turn));
+    }
+
     [Fact]
     public async Task TranscribeAsync_UsesFfmpegAndWhisperCpp_WhenConfigured()
     {
@@ -141,6 +254,54 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             Assert.Equal("ffmpeg", runner.Calls[0].FileName);
             Assert.Equal("whisper-cli", runner.Calls[1].FileName);
             Assert.Equal(147, result.Metadata["bufferedAudioBytes"]);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Theory]
+    [InlineData("shared/yes_no")]
+    [InlineData("word-of-the-day/surprise")]
+    public async Task TranscribeAsync_HandlesShortAnswerTurnsWithoutHittingTheStandardNoiseFloor(string listenRule)
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var runner = new FakeExternalProcessRunner("[00:00:00.000 --> 00:00:01.000] yes.");
+            var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+                new BufferedAudioSttOptions
+                {
+                    EnableLocalWhisperCpp = true,
+                    FfmpegPath = "ffmpeg",
+                    WhisperCliPath = "whisper-cli",
+                    WhisperModelPath = "model.bin",
+                    TempDirectory = tempDirectory
+                },
+                runner);
+
+            var turn = new TurnContext
+            {
+                TurnId = listenRule == "shared/yes_no"
+                    ? "turn-short-yes-no"
+                    : "turn-short-word-of-the-day",
+                Locale = "en-US",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["bufferedAudioBytes"] = 47,
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() },
+                    ["listenRules"] = new[] { listenRule }
+                }
+            };
+
+            var result = await strategy.TranscribeAsync(turn);
+
+            Assert.Equal("yes", result.Text);
+            Assert.Equal("local-whispercpp-buffered-audio", result.Provider);
+            Assert.Equal(2, runner.Calls.Count);
         }
         finally
         {

@@ -8,6 +8,15 @@ This is the production-oriented path for restoring device connectivity and creat
 
 Current spoken cloud version: `Cloud version 1.0.19.`
 
+Local startup:
+
+```powershell
+.\scripts\cloud\Start-OpenJiboDotNet.ps1
+```
+
+Run that from the repo root. For the full local guide, including Node and Playground, see
+[local-cloud-quickstart.md](../../../docs/local-cloud-quickstart.md).
+
 Release hygiene reminder:
 
 - bump [OpenJiboCloudBuildInfo.cs](/C:/Projects/JiboExperiments/OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/OpenJiboCloudBuildInfo.cs) whenever we ship a meaningful hosted-cloud update
@@ -140,12 +149,31 @@ That enables two distinct STT paths:
 
 The local tool path is intentionally off by default. It exists to help map real robot audio behavior while the stable hosted cloud remains the primary goal.
 
-For local Ubuntu testing, the checked-in API host config now enables that path by default with the current Node-aligned tool locations:
+The checked-in API host config enables that path by default, but no longer pins
+Linux-only tool paths. At startup OpenJibo resolves `ffmpeg`, `whisper-cli`, and
+the model from explicit config, environment variables, common Linux/macOS
+locations, and finally command names on `PATH`.
 
-- `/usr/bin/ffmpeg`
-- `/usr/bin/whisper.cpp/build/bin/whisper-cli`
-- `/usr/bin/whisper.cpp/models/ggml-base.en.bin`
-- temp audio under `/tmp/openjibo-stt`
+Useful macOS overrides:
+
+- `OPENJIBO_STT_FFMPEG_PATH`
+- `OPENJIBO_STT_WHISPER_CLI_PATH`
+- `OPENJIBO_STT_WHISPER_MODEL_PATH`
+
+Common macOS candidates include Homebrew paths such as
+`/opt/homebrew/bin/ffmpeg`, `/opt/homebrew/bin/whisper-cli`, and
+`~/whisper.cpp/models/ggml-base.en.bin`, plus
+`~/Library/Application Support/openjibo/whisper/ggml-base.en.bin` for a
+user-local model install. Temp audio still defaults to `/tmp/openjibo-stt` in
+the local API config.
+
+On the current macOS development machine this path has been verified with
+Homebrew `ffmpeg`, Homebrew `whisper-cli`, and a local
+`ggml-base.en.bin` model under `~/Library/Application Support/openjibo/whisper`.
+The CLI transcribes test WAV audio and writes the transcript to `stdout`, which
+is the stream parsed by `LocalWhisperCppBufferedAudioSttStrategy`. The remaining
+validation is an end-to-end turn with real Jibo WebSocket audio reaching the
+running server.
 
 Configuration lives under `OpenJibo:Stt`:
 
@@ -176,6 +204,32 @@ Current local state persistence:
 - default path: `App_Data/cloud-state.json` under the running API directory
 - current contents: media metadata, backup metadata, and staged update metadata
 - current limitation: media bodies are only preserved through the existing text-based HTTP body capture seam, so this is a hosted-gallery bridge, not final binary-safe media storage
+
+## Recent Protocol Fixes
+
+### Tutorial yes/no flow (`tutorial/yes_no`)
+
+The tutorial dance sequence ends with "did you like my dance?" — a yes/no question handled entirely by the robot-local tutorial skill. This was previously broken because the cloud was sending a competing `SKILL_ACTION` and returning the wrong `outboundRules` in the `LISTEN` reply.
+
+Two changes in `ResponsePlanToSocketMessagesMapper` fixed this:
+
+**1. Suppress the chitchat `SKILL_ACTION` for `tutorial/yes_no` turns.**
+
+The tutorial skill handles the yes/no response locally. Sending a competing `SKILL_ACTION` with `final:true` caused the GLSM to double-dispatch and the dance question would repeat forever. A new `IsYesNoListenTurn()` helper checks for the `tutorial/yes_no` rule specifically (not any yes/no rule) and suppresses the `SKILL_ACTION` only for that case. Cloud-side yes/no flows (`shared/yes_no`, `surprises-ota/want_to_download_now`, etc.) are unaffected.
+
+**2. Return a single `outboundRule` in the `LISTEN` reply for `tutorial/yes_no` turns.**
+
+The `outboundRules` field tells Jibo which rules to match the response against. For yes/no turns it must be a single rule (e.g. `["tutorial/yes_no"]`), not the full global rules list. `tutorial/yes_no` was missing from `ReadYesNoRule()`, so `isYesNoTurn` was `false` and the full list was sent instead. Adding `tutorial/yes_no` to that method fixes the `outboundRules` to the correct single-rule form.
+
+### Family loop member filtering
+
+`EnsureRobotLoopMember()` seeds an internal `type="robot"` loop member used by the SSM to prevent `Q4-Server_connection_lost` errors. This member must not appear in API responses — it has no display name and confuses the family list UI.
+
+Filtered in `JiboCloudProtocolService` at two points:
+- `ListMembers` / `ListLoopMembers` operations
+- `MapLoopRecord()` — the loop detail returned during session startup
+
+The internal seeding is unchanged; only API-facing responses are filtered.
 
 ## Current Interaction Paths
 

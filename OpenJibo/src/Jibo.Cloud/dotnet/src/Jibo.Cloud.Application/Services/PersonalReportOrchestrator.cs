@@ -5,7 +5,7 @@ using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
-internal static class PersonalReportOrchestrator
+internal static partial class PersonalReportOrchestrator
 {
     internal const string StateMetadataKey = "personalReportState";
     internal const string NoMatchCountMetadataKey = "personalReportNoMatchCount";
@@ -58,9 +58,7 @@ internal static class PersonalReportOrchestrator
         "not now",
         "maybe later"
     ];
-
-    private static readonly Regex NameNoiseRegex = new("[^a-zA-Z\\-\\s']", RegexOptions.Compiled);
-
+    
     public static async Task<JiboInteractionDecision?> TryBuildDecisionAsync(
         TurnContext turn,
         string semanticIntent,
@@ -603,8 +601,7 @@ internal static class PersonalReportOrchestrator
             string text when bool.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.True } => true,
             JsonElement { ValueKind: JsonValueKind.False } => false,
-            JsonElement json when json.ValueKind == JsonValueKind.String &&
-                                  bool.TryParse(json.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.String } json when bool.TryParse(json.GetString(), out var parsed) => parsed,
             _ => null
         };
     }
@@ -616,18 +613,17 @@ internal static class PersonalReportOrchestrator
         return value switch
         {
             int integer => integer,
-            long whole when whole <= int.MaxValue && whole >= int.MinValue => (int)whole,
+            long whole and <= int.MaxValue and >= int.MinValue => (int)whole,
             string text when int.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.Number } number when number.TryGetInt32(out var parsed) => parsed,
-            JsonElement json when json.ValueKind == JsonValueKind.String &&
-                                  int.TryParse(json.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.String } json when int.TryParse(json.GetString(), out var parsed) => parsed,
             _ => 0
         };
     }
 
     private static string? TryExtractName(string loweredTranscript)
     {
-        var normalized = NameNoiseRegex.Replace(loweredTranscript, " ")
+        var normalized = NameNoiseRegex().Replace(loweredTranscript, " ")
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
         if (string.IsNullOrWhiteSpace(normalized)) return null;
@@ -657,12 +653,12 @@ internal static class PersonalReportOrchestrator
     {
         if (string.IsNullOrWhiteSpace(candidate)) return null;
 
-        var cleaned = NameNoiseRegex.Replace(candidate, " ")
+        var cleaned = NameNoiseRegex().Replace(candidate, " ")
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
         if (string.IsNullOrWhiteSpace(cleaned)) return null;
 
-        if (cleaned.Length < 2 || cleaned.Length > 32) return null;
+        if (cleaned.Length is < 2 or > 32) return null;
 
         var words = cleaned.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (words.Length > 4) return null;
@@ -782,4 +778,7 @@ internal static class PersonalReportOrchestrator
         bool CalendarEnabled,
         bool CommuteEnabled,
         bool NewsEnabled);
+
+    [GeneratedRegex(@"[^a-zA-Z\-\s']", RegexOptions.Compiled)]
+    private static partial Regex NameNoiseRegex();
 }

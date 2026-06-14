@@ -70,6 +70,10 @@ For a real storage account, swap `UseDevelopmentStorage=true` with your Azure St
 
 ## Local Startup Note
 
+For the practical local run guide, including `.NET`, Node, and Playground, start with:
+
+- [Local OpenJibo Cloud Quickstart](../../docs/local-cloud-quickstart.md)
+
 To run the API with the Blob-backed sample config in Visual Studio or `dotnet run`, choose the
 `Jibo.Cloud.Api.AzureBlob` launch profile.
 

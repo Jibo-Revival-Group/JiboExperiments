@@ -5,11 +5,7 @@
 	<title>Jibo QR Generator</title>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 	<style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
         font-family: sans-serif;
         background: #1a1a2e;
@@ -20,16 +16,9 @@
         align-items: center;
         padding: 30px 16px;
       }
-      h1 {
-        font-size: 1.4rem;
-        margin-bottom: 4px;
-        color: #7eb8f7;
-      }
-      p.sub {
-        font-size: 0.8rem;
-        color: #888;
-        margin-bottom: 24px;
-      }
+      h1 { font-size: 1.4rem; margin-bottom: 4px; color: #7eb8f7; }
+      p.sub { font-size: 0.8rem; color: #888; margin-bottom: 24px; }
+
       .card {
         background: #16213e;
         border-radius: 12px;
@@ -44,7 +33,10 @@
         margin-bottom: 4px;
         margin-top: 14px;
       }
-      input {
+      input[type="text"],
+      input[type="password"],
+      input[type="url"],
+      select {
         width: 100%;
         padding: 8px 10px;
         border-radius: 6px;
@@ -53,15 +45,10 @@
         color: #eee;
         font-size: 0.9rem;
       }
-      input:focus {
-        outline: none;
-        border-color: #7eb8f7;
-      }
-      .row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
+      select option { background: #0f3460; }
+      input:focus, select:focus { outline: none; border-color: #7eb8f7; }
+
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       .toggle {
         display: flex;
         align-items: center;
@@ -70,16 +57,42 @@
         font-size: 0.85rem;
         cursor: pointer;
       }
-      .toggle input[type="checkbox"] {
-        width: auto;
-        cursor: pointer;
-      }
+      .toggle input[type="checkbox"] { width: auto; cursor: pointer; }
       .static-section {
         display: none;
         margin-top: 8px;
         border-top: 1px solid #333;
         padding-top: 8px;
       }
+
+      .server-section {
+        margin-top: 20px;
+        border-top: 1px solid #2a2a4a;
+        padding-top: 16px;
+      }
+      .section-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #556;
+        margin-bottom: 8px;
+        margin-top: 0;
+      }
+      .token-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.72rem;
+        margin-top: 8px;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+      }
+      .token-badge.server  { background: #1a4a2e; color: #4ade80; }
+      .token-badge.fallback { background: #3a2a0e; color: #fbbf24; }
+      .token-badge.error   { background: #3a0e0e; color: #f87171; }
+
       button {
         margin-top: 20px;
         width: 100%;
@@ -91,48 +104,86 @@
         font-size: 1rem;
         font-weight: bold;
         cursor: pointer;
+        transition: background 0.15s;
       }
-      button:hover {
-        background: #aed4ff;
-      }
+      button:hover:not(:disabled) { background: #aed4ff; }
+      button:disabled { background: #3a5a7a; color: #667; cursor: not-allowed; }
+
+      /* QR output — grid of all codes */
       #qr-out {
-        margin-top: 24px;
+        margin-top: 28px;
+        width: 100%;
+        max-width: 640px;
         display: none;
         flex-direction: column;
         align-items: center;
-        gap: 12px;
+        gap: 20px;
       }
-      #qr-out canvas,
-      #qr-out img {
-        border-radius: 8px;
+
+      .qr-instruction {
+        font-size: 0.82rem;
+        color: #aaa;
+        text-align: center;
+        line-height: 1.5;
+      }
+      .qr-instruction strong { color: #7eb8f7; }
+
+      .qr-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 24px;
+        width: 100%;
+      }
+
+      .qr-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .qr-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: #1e3a5f;
+        color: #7eb8f7;
+      }
+      .qr-badge.solo { background: #1a4a2e; color: #4ade80; }
+
+      .qr-canvas-wrap {
+        border-radius: 10px;
         background: white;
         padding: 10px;
+        cursor: pointer;
+        transition: box-shadow 0.15s;
       }
-      #dl {
+      .qr-canvas-wrap:hover { box-shadow: 0 0 0 3px #7eb8f7; }
+
+      .qr-dl-btn {
+        margin-top: 0;
+        width: auto;
+        padding: 6px 14px;
+        font-size: 0.8rem;
         background: #2ecc71;
         color: #000;
+        border-radius: 6px;
       }
-      #dl:hover {
-        background: #55e89a;
-      }
-      .note {
-        font-size: 0.72rem;
-        color: #666;
-        margin-top: 8px;
-        text-align: center;
-      }
+      .qr-dl-btn:hover:not(:disabled) { background: #55e89a; }
     </style>
 </head>
 <body>
 <h1>🤖 Jibo Wi-Fi QR Generator</h1>
-<p class="sub">Generates a QR code using Jibo's XOR encoding format</p>
-<span id="accessToken"></span>
-<span id="wifiConfig"></span>
+<p class="sub">Generates QR codes using Jibo's XOR encoding — split into easy-to-scan chunks</p>
+
 <div class="card">
 	<label>SSID (Network Name)</label>
-	<input id="ssid" placeholder="MyNetwork"/>
+	<input id="ssid" type="text" placeholder="MyNetwork"/>
 
-	<label>Password (leave blank for open network)</label>
+	<label>Password <span style="color:#556;font-weight:400">(leave blank for open network)</span></label>
 	<input id="password" type="password" placeholder="••••••••"/>
 
 	<label class="toggle">
@@ -143,172 +194,211 @@
 	<div class="static-section" id="staticSection">
 		<div class="row">
 			<div>
-				<label>
-					Static IP
-				</label
-				><input id="staticIP" placeholder="192.168.1.100"/>
+				<label>Static IP</label>
+				<input id="staticIP" type="text" placeholder="192.168.1.100"/>
 			</div>
 			<div>
-				<label>
-					Netmask
-				</label
-				><input id="netmask" placeholder="255.255.255.0"/>
+				<label>Netmask</label>
+				<input id="netmask" type="text" placeholder="255.255.255.0"/>
 			</div>
 		</div>
 		<div class="row">
 			<div>
-				<label>
-					Gateway
-				</label
-				><input id="gateway" placeholder="192.168.1.1"/>
+				<label>Gateway</label>
+				<input id="gateway" type="text" placeholder="192.168.1.1"/>
 			</div>
 			<div>
-				<label>DNS 1</label><input id="dns1" placeholder="8.8.8.8"/>
+				<label>DNS 1</label>
+				<input id="dns1" type="text" placeholder="8.8.8.8"/>
 			</div>
 		</div>
 		<div>
-			<label>DNS 2</label><input id="dns2" placeholder="8.8.4.4"/>
+			<label>DNS 2</label>
+			<input id="dns2" type="text" placeholder="8.8.4.4"/>
 		</div>
 	</div>
 
-	<button onclick="generate()">Generate QR Code</button>
+	<div class="server-section">
+		<p class="section-label">OpenJibo Cloud</p>
+		<label>Server URL <span style="color:#556;font-weight:400">(optional — leave empty to use static token)</span></label>
+		<input id="serverUrl" type="url" placeholder="http://192.168.1.X:24605"/>
+		<div id="tokenBadge"></div>
+	</div>
+
+	<div class="server-section">
+		<p class="section-label">QR Split Settings</p>
+		<label>Characters per QR code <span style="color:#556;font-weight:400">(smaller = easier to scan)</span></label>
+		<select id="chunkSize">
+			<option value="20">20 chars — very small, most readable</option>
+			<option value="25" selected>25 chars — recommended</option>
+			<option value="35">35 chars — compact</option>
+			<option value="50">50 chars — single code when possible</option>
+		</select>
+	</div>
+
+	<button id="generateBtn" onclick="generate()">Generate QR Codes</button>
 </div>
 
 <div id="qr-out">
-	<div id="qrdiv"></div>
-	<button id="dl" onclick="download()">⬇ Download PNG</button>
-	<p class="note">Scan with Jibo's app to configure Wi-Fi</p>
+	<div class="qr-instruction" id="qrInstruction"></div>
+	<div class="qr-grid" id="qrGrid"></div>
 </div>
 
 <script>
-      function toggleStatic() {
-        document.getElementById("staticSection").style.display =
-          document.getElementById("useStatic").checked ? "block" : "none";
+  const STATIC_TOKEN = 'JiboLivesSo';
+  const XOR_KEY = 'Wow, you cracked our secret code. Impressive. Maybe you should check out jibo.com/jobs.';
+
+  function toggleStatic() {
+    document.getElementById('staticSection').style.display =
+      document.getElementById('useStatic').checked ? 'block' : 'none';
+  }
+
+  function xorString(str, key) {
+    let result = '';
+    for (let i = 0; i < str.length; i++)
+      result += String.fromCharCode(key.charCodeAt(i % key.length) ^ str.charCodeAt(i));
+    return result;
+  }
+
+  function buildQrCodes(ssid, password, staticIP, netmask, gateway, dns1, dns2, token, maxChars) {
+    const lines = [ssid, password];
+    if (staticIP && netmask && gateway)
+      lines.push(staticIP, netmask, gateway, dns1, dns2);
+    lines.push(token);
+
+    const encoded = xorString(lines.join('\n'), XOR_KEY);
+    const totalCodes = Math.max(1, Math.ceil(encoded.length / maxChars));
+    const chunkSize  = Math.ceil(encoded.length / totalCodes);
+
+    const codes = [];
+    for (let i = 0; i < totalCodes; i++) {
+      const chunk = encoded.substring(i * chunkSize, (i + 1) * chunkSize);
+      codes.push((i + 1) + '/' + totalCodes + '\n' + chunk);
+    }
+    return codes;
+  }
+
+  async function prepareRobot(serverUrl) {
+    const url = serverUrl.endsWith('/') ? serverUrl : serverUrl + '/';
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-amz-json-1.1',
+        'X-Amz-Target': 'OOBE_20161026.PrepareRobot',
+      },
+      body: JSON.stringify({ loopId: 'loop-openjibo-default' }),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.token) throw new Error('no token in response');
+    return data.token;
+  }
+
+  function setBadge(kind, text) {
+    document.getElementById('tokenBadge').innerHTML =
+      `<span class="token-badge ${kind}">${text}</span>`;
+  }
+
+  async function generate() {
+    const ssid = document.getElementById('ssid').value.trim();
+    if (!ssid) { alert('SSID is required'); return; }
+
+    const password  = document.getElementById('password').value;
+    const useStatic = document.getElementById('useStatic').checked;
+    const staticIP  = useStatic ? document.getElementById('staticIP').value.trim()  : '';
+    const netmask   = useStatic ? document.getElementById('netmask').value.trim()   : '';
+    const gateway   = useStatic ? document.getElementById('gateway').value.trim()   : '';
+    const dns1      = useStatic ? document.getElementById('dns1').value.trim()      : '';
+    const dns2      = useStatic ? document.getElementById('dns2').value.trim()      : '';
+    const serverUrl = document.getElementById('serverUrl').value.trim();
+    const maxChars  = parseInt(document.getElementById('chunkSize').value, 10);
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+
+    let token = STATIC_TOKEN;
+
+    if (serverUrl) {
+      btn.textContent = 'Connecting to server…';
+      try {
+        token = await prepareRobot(serverUrl);
+        setBadge('server', '✓ Token from OpenJibo server');
+      } catch {
+        setBadge('error', '⚠ Server unreachable — using fallback token');
+        token = STATIC_TOKEN;
       }
-
-      function xorString(str, key) {
-        let result = "";
-        for (let i = 0; i < str.length; i++) {
-          result += String.fromCharCode(
-            key.charCodeAt(i % key.length) ^ str.charCodeAt(i),
-          );
-        }
-        return result;
-      }
-
-      function generate() {
-        const ssid = document.getElementById("ssid").value;
-        const password = document.getElementById("password").value;
-        const token = "JiboLivesSo";
-        const useStatic = document.getElementById("useStatic").checked;
-        const staticIP = useStatic
-          ? document.getElementById("staticIP").value
-          : "";
-        const netmask = useStatic
-          ? document.getElementById("netmask").value
-          : "";
-        const gateway = useStatic
-          ? document.getElementById("gateway").value
-          : "";
-        const dns1 = useStatic ? document.getElementById("dns1").value : "";
-        const dns2 = useStatic ? document.getElementById("dns2").value : "";
-
-        if (!ssid) {
-          alert("SSID is required");
-          return;
-        }
-        
-        encoded = _writeQRData(ssid, password, staticIP, netmask, gateway, dns1, dns2, token);        
-_readQR(encoded);
-        const qrDiv = document.getElementById("qrdiv");
-        qrDiv.innerHTML = "";
-
-        new QRCode(qrDiv, {
-          text: encoded,
-          width: 256,
-          height: 256,
-          correctLevel: QRCode.CorrectLevel.M,
-        });
-
-        document.getElementById("qr-out").style.display = "flex";
-      }
-
-      function _writeQRData(ssid, password, staticIP, netmask, gateway, dns1, dns2, token) {
-        let barcodeData = [ssid, password, staticIP, netmask, gateway, dns1, dns2, token].join('\n');
-        
-        let aKey = 'Wow, you cracked our secret code. Impressive. Maybe you should check out jibo.com/jobs.';
-        let data = '1/1\n' + xorString(barcodeData, aKey);
-                        
-        return data;
-      }
-
-      function download() {
-        const canvas = document.querySelector("#qrdiv canvas");
-        if (!canvas) {
-          alert("Generate a QR code first");
-          return;
-        }
-        const a = document.createElement("a");
-        a.download = "jibo-wifi-qr.png";
-        a.href = canvas.toDataURL("image/png");
-        a.click();
-      }
-
-      _readQR(`1/1
-ZI
-e!Ekiaon*%O?'O`);
-
-      function _readQR(barcode) {
-                var metaEnd = barcode.indexOf('\n');
-                var metaData = barcode.substring(0, metaEnd).split('/');
-                var codeId = parseInt(metaData[0]);
-                this.totalCodes = parseInt(metaData[1]);
-                if (codeId > 0 && this.totalCodes > 0) {
-                    var codeData = _parseQRData(barcode.substring(metaEnd + 1));
-                    this._wifiConfig = codeData;
-                }
-                
-                document.getElementById("accessToken").innerHTML = _accessToken;
-                document.getElementById("wifiConfig").innerHTML = JSON.stringify(this._wifiConfig);
+    } else {
+      setBadge('fallback', '⚠ No server URL — using static token');
     }
 
-    function _parseQRData(data) {
-        let barcode = '';
-        for (var i = 0; i < data.length; i++) {
-            barcode += data[i];
-        }
-        function xorString(str, key) {
-            var result = '';
-            for (var i = 0; i < str.length; i++) {
-                result += String.fromCharCode(key.charCodeAt(i % key.length) ^ str.charCodeAt(i));
-            }
-            return result;
-        }
-        let aKey = 'Wow, you cracked our secret code. Impressive. Maybe you should check out jibo.com/jobs.';
-        barcode = xorString(barcode, aKey);
-        let barcodeData = barcode.split('\n');
-        this._accessToken = barcodeData.pop();
-        let [_ssid, _password, _staticIP, _netmask, _gateway, _dns1, _dns2] = barcodeData;
-        let _staticSettings = null;
-        if (_staticIP) {
-            _staticSettings = {
-                staticIP: _staticIP,
-                gateway: _gateway,
-                netmask: _netmask,
-                dns1: (_dns1 ? _dns1 : '8.8.8.8'),
-                dns2: (_dns2 ? _dns2 : '8.8.4.4')
-            };
-        }
-        let wifiConfig = {
-            ssid: _ssid,
-            pswd: _password,
-            security: ((_password && _password.length > 0) ? 'WPA-PSK' : 'NONE'),
-            hidden: 0,
-            networkType: (_staticSettings ? 1 : 0),
-            staticSettings: _staticSettings
-        };
-        return wifiConfig;
+    btn.textContent = 'Generate QR Codes';
+    btn.disabled = false;
+
+    const codes = buildQrCodes(ssid, password, staticIP, netmask, gateway, dns1, dns2, token, maxChars);
+    renderCodes(codes);
+    document.getElementById('qr-out').style.display = 'flex';
+    document.getElementById('qr-out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderCodes(codes) {
+    const grid = document.getElementById('qrGrid');
+    grid.innerHTML = '';
+
+    const multi = codes.length > 1;
+    const instruction = document.getElementById('qrInstruction');
+
+    if (multi) {
+      instruction.innerHTML =
+        `<strong>${codes.length} QR codes</strong> — show them to Jibo <strong>in order</strong>, one at a time. ` +
+        `Jibo will combine them automatically.`;
+    } else {
+      instruction.innerHTML =
+        `Scan this QR code with Jibo's camera to configure Wi-Fi.`;
     }
-    </script>
+
+    const size = codes.length === 1 ? 256 : codes.length <= 3 ? 200 : 160;
+
+    codes.forEach((text, idx) => {
+      const item = document.createElement('div');
+      item.className = 'qr-item';
+
+      const badge = document.createElement('div');
+      badge.className = 'qr-badge' + (codes.length === 1 ? ' solo' : '');
+      badge.textContent = codes.length === 1
+        ? '✓ Single code'
+        : `Step ${idx + 1} of ${codes.length}`;
+      item.appendChild(badge);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'qr-canvas-wrap';
+      wrap.title = 'Click to download';
+      new QRCode(wrap, {
+        text,
+        width: size,
+        height: size,
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+      wrap.onclick = () => downloadCode(wrap, idx + 1, codes.length);
+      item.appendChild(wrap);
+
+      const dlBtn = document.createElement('button');
+      dlBtn.className = 'qr-dl-btn';
+      dlBtn.textContent = codes.length === 1 ? '⬇ Download' : `⬇ Download ${idx + 1}/${codes.length}`;
+      dlBtn.onclick = () => downloadCode(wrap, idx + 1, codes.length);
+      item.appendChild(dlBtn);
+
+      grid.appendChild(item);
+    });
+  }
+
+  function downloadCode(wrap, index, total) {
+    const canvas = wrap.querySelector('canvas');
+    if (!canvas) { alert('QR code not ready'); return; }
+    const a = document.createElement('a');
+    a.download = total > 1 ? `jibo-wifi-qr-${index}-of-${total}.png` : 'jibo-wifi-qr.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }
+</script>
 </body>
 </html>

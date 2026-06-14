@@ -23,6 +23,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var isYesNoTurn = !string.IsNullOrWhiteSpace(yesNoRule);
         var isYesNoIntent = string.Equals(plan.IntentName, "yes", StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(plan.IntentName, "no", StringComparison.OrdinalIgnoreCase);
+        // tutorial/yes_no is handled entirely by the robot-local tutorial skill: it speaks its own
+        // response and does not need a competing chitchat SKILL_ACTION from the cloud.
+        var isSkillOwnedYesNoTurn = IsYesNoListenTurn(turn);
         var isWordOfDayLaunch = string.Equals(plan.IntentName, "word_of_the_day", StringComparison.OrdinalIgnoreCase);
         var isWordOfDayGuess =
             string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase);
@@ -200,7 +203,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             {
                 type = "EOS",
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                msgID = CreateHubMessageId(),
+                msgID = CloudMessageIdFactory.CreateHubMessageId(),
                 transID = transId,
                 data = new { }
             }))
@@ -307,7 +310,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 125));
         }
 
-        if (emitSkillActions && speak is not null)
+        // Don't emit a chitchat SKILL_ACTION for tutorial yes/no turns: the tutorial skill handles
+        // the response locally. Sending a competing chitchat-skill action with final:true causes the
+        // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
+        if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillPayload(plan, turn, transId, speak, skill)),
                 75));
@@ -352,7 +358,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             {
                 type = "EOS",
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                msgID = CreateHubMessageId(),
+                msgID = CloudMessageIdFactory.CreateHubMessageId(),
                 transID = transId,
                 data = new { }
             })),
@@ -397,7 +403,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             {
                 type = "EOS",
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                msgID = CreateHubMessageId(),
+                msgID = CloudMessageIdFactory.CreateHubMessageId(),
                 transID = transId,
                 data = new { }
             }))
@@ -547,17 +553,34 @@ public sealed class ResponsePlanToSocketMessagesMapper
         };
     }
 
+    private static bool IsYesNoListenTurn(TurnContext turn)
+    {
+        // Robot-local yes/no turns: the active skill speaks its own response and does not need a
+        // competing chitchat SKILL_ACTION from the cloud.
+        //   tutorial/*           – the on-robot tutorial skill (yes_no after dance, keep_photo, ...)
+        //   create/is_it_a_keeper – @be/create photo-save prompt
+        // Other yes/no rules (shared/yes_no, surprises-ota/want_to_download_now, etc.) are
+        // cloud-side and do need a SKILL_ACTION reply.
+        return ReadRuleValues(turn).Any(IsRobotLocalYesNoRule);
+    }
+
+    private static bool IsRobotLocalYesNoRule(string rule)
+    {
+        return rule.StartsWith("tutorial/", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "create/is_it_a_keeper", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string? ReadYesNoRule(TurnContext turn)
     {
         return ReadRuleValues(turn)
             .FirstOrDefault(static rule =>
                 string.Equals(rule, "clock/alarm_timer_change", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "clock/alarm_timer_none_set", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(rule, "create/is_it_a_keeper", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "shared/yes_no", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "settings/download_now_later", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase));
+                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
+                IsRobotLocalYesNoRule(rule));
     }
 
     private static bool ShouldIncludeCreateDomain(string? yesNoRule)
@@ -745,7 +768,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (listenContexts.Count > 0)
             jcpConfig["listen"] = new
             {
-                id = CreateProtocolId(),
+                id = CloudMessageIdFactory.CreateProtocolId(),
                 type = "LISTEN",
                 contexts = listenContexts
             };
@@ -819,20 +842,44 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ["type"] = "SLIM",
             ["config"] = jcpConfig
         };
-        if (useWeatherSequence &&
-            jcpConfig.TryGetValue("children", out var sequenceChildren) &&
-            sequenceChildren is not null)
+        if (!useWeatherSequence ||
+            !jcpConfig.TryGetValue("children", out var sequenceChildren) ||
+            sequenceChildren is null)
         {
-            jcp["type"] = "SEQUENCE";
-            jcp.Remove("config");
-            jcp["children"] = sequenceChildren;
+            return new
+            {
+                type = "SKILL_ACTION",
+                ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                msgID = CloudMessageIdFactory.CreateHubMessageId(),
+                transID = transId,
+                data = new
+                {
+                    skill = new
+                    {
+                        id = skillId
+                    },
+                    action = new
+                    {
+                        config = new
+                        {
+                            jcp
+                        }
+                    },
+                    analytics = new Dictionary<string, object?>(),
+                    final = true
+                }
+            };
         }
+
+        jcp["type"] = "SEQUENCE";
+        jcp.Remove("config");
+        jcp["children"] = sequenceChildren;
 
         return new
         {
             type = "SKILL_ACTION",
             ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            msgID = CreateHubMessageId(),
+            msgID = CloudMessageIdFactory.CreateHubMessageId(),
             transID = transId,
             data = new
             {
@@ -900,7 +947,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             type = "SKILL_ACTION",
             ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            msgID = CreateHubMessageId(),
+            msgID = CloudMessageIdFactory.CreateHubMessageId(),
             transID = transId,
             data = new
             {
@@ -945,7 +992,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             type = "SKILL_ACTION",
             ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            msgID = CreateHubMessageId(),
+            msgID = CloudMessageIdFactory.CreateHubMessageId(),
             transID = transId,
             data = new
             {
@@ -995,7 +1042,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             type = "SKILL_REDIRECT",
             ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            msgID = CreateHubMessageId(),
+            msgID = CloudMessageIdFactory.CreateHubMessageId(),
             transID = transId,
             data = new
             {
@@ -1080,9 +1127,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
             return [];
 
         var cards = ReadPayloadObjectArray(rawCards);
-        if (cards.Count == 0) return [];
+        if (cards.Length == 0) return [];
 
-        var sequenceCards = new List<WeatherHiLoSequenceCard>(cards.Count);
+        var sequenceCards = new List<WeatherHiLoSequenceCard>(cards.Length);
         foreach (var card in cards)
         {
             var weatherCardPayload = new Dictionary<string, object?>(card, StringComparer.OrdinalIgnoreCase)
@@ -1175,36 +1222,32 @@ public sealed class ResponsePlanToSocketMessagesMapper
         return children;
     }
 
-    private static IReadOnlyList<IDictionary<string, object?>> ReadPayloadObjectArray(object rawValue)
+    private static IDictionary<string, object?>[] ReadPayloadObjectArray(object rawValue)
     {
-        if (rawValue is JsonElement jsonArray && jsonArray.ValueKind == JsonValueKind.Array)
-            return jsonArray
-                .EnumerateArray()
+        return rawValue switch
+        {
+            JsonElement { ValueKind: JsonValueKind.Array } jsonArray => jsonArray.EnumerateArray()
                 .Select(ConvertJsonObjectToDictionary)
                 .Where(static item => item is not null)
                 .Cast<IDictionary<string, object?>>()
-                .ToArray();
-
-        if (rawValue is IEnumerable<object?> rawObjects)
-            return rawObjects
-                .Select(ConvertObjectToDictionary)
+                .ToArray(),
+            IEnumerable<object?> rawObjects => rawObjects.Select(ConvertObjectToDictionary)
                 .Where(static item => item is not null)
                 .Cast<IDictionary<string, object?>>()
-                .ToArray();
-
-        return [];
+                .ToArray(),
+            _ => []
+        };
     }
 
     private static IDictionary<string, object?>? ConvertObjectToDictionary(object? value)
     {
-        if (value is null) return null;
-
-        if (value is IDictionary<string, object?> dictionary)
-            return new Dictionary<string, object?>(dictionary, StringComparer.OrdinalIgnoreCase);
-
-        return value is JsonElement jsonValue
-            ? ConvertJsonObjectToDictionary(jsonValue)
-            : null;
+        return value switch
+        {
+            null => null,
+            IDictionary<string, object?> dictionary => new Dictionary<string, object?>(dictionary,
+                StringComparer.OrdinalIgnoreCase),
+            _ => value is JsonElement jsonValue ? ConvertJsonObjectToDictionary(jsonValue) : null
+        };
     }
 
     private static IDictionary<string, object?>? ConvertJsonObjectToDictionary(JsonElement value)
@@ -1402,11 +1445,12 @@ public sealed class ResponsePlanToSocketMessagesMapper
     private static int GetTemperatureLabelXPosition(int baseX, int temperature)
     {
         const int xOffset = 70;
-        if (temperature < -9 || temperature > 99) return baseX + xOffset;
-
-        if (temperature is >= 0 and < 10) return baseX - xOffset;
-
-        return baseX;
+        return temperature switch
+        {
+            < -9 or > 99 => baseX + xOffset,
+            >= 0 and < 10 => baseX - xOffset,
+            _ => baseX
+        };
     }
 
     private static int? TryReadPayloadInt(IDictionary<string, object?>? payload, string key)
@@ -1442,16 +1486,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                       bool.TryParse(jsonText.GetString(), out var parsed) => parsed,
             _ => false
         };
-    }
-
-    private static string CreateHubMessageId()
-    {
-        return $"mid-{Guid.NewGuid()}";
-    }
-
-    private static string CreateProtocolId()
-    {
-        return Guid.NewGuid().ToString("N");
     }
 
     private sealed record WeatherHiLoSequenceCard(

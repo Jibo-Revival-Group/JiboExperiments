@@ -195,8 +195,7 @@ public sealed class JiboInteractionServiceTests
         Assert.True(DateTimeOffset.TryParse(decision.ContextUpdates[GreetingLastReactiveUtcKey]?.ToString(), out _));
         Assert.Contains(cloudStateStore.GetGreetingPresences("loop-a"),
             greeting => greeting.PersonId == "person-a" &&
-                        greeting.LastGreetingRoute == "ReactiveGreeting" &&
-                        greeting.LastGreetingIntent == "good_morning");
+                        greeting is { LastGreetingRoute: "ReactiveGreeting", LastGreetingIntent: "good_morning" });
     }
 
     [Fact]
@@ -333,7 +332,7 @@ public sealed class JiboInteractionServiceTests
                 ["messageType"] = "TRIGGER",
                 ["triggerSource"] = "PRESENCE",
                 ["context"] =
-                    """{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
+                    """{"runtime":{"location":{"iso":"2026-05-21T15:00:00-05:00"},"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
             }
         });
 
@@ -345,8 +344,7 @@ public sealed class JiboInteractionServiceTests
         Assert.True(DateTimeOffset.TryParse(decision.ContextUpdates[GreetingLastProactiveUtcKey]?.ToString(), out _));
         Assert.Contains(cloudStateStore.GetGreetingPresences("openjibo-default-loop"),
             greeting => greeting.PersonId == "person-1" &&
-                        greeting.LastGreetingRoute == "ProactiveGreeting" &&
-                        greeting.LastGreetingIntent == "proactive_greeting");
+                        greeting is { LastGreetingRoute: "ProactiveGreeting", LastGreetingIntent: "proactive_greeting" });
     }
 
     [Fact]
@@ -364,7 +362,7 @@ public sealed class JiboInteractionServiceTests
                 ["messageType"] = "TRIGGER",
                 ["triggerSource"] = "PRESENCE",
                 ["context"] =
-                    """{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"},{"id":"person-2"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"},{"id":"person-2","firstName":"sam"}]}}}"""
+                    """{"runtime":{"location":{"iso":"2026-05-21T15:00:00-05:00"},"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"},{"id":"person-2"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"},{"id":"person-2","firstName":"sam"}]}}}"""
             }
         });
 
@@ -511,6 +509,58 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("proactive_holiday_greeting", decision.IntentName);
         Assert.Contains("Happy holidays", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ProactiveHolidayGreeting", decision.ContextUpdates![GreetingRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_TriggerUsesHolidayGreetingOnlyOnMatchingFixedDate()
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        cloudStateStore.UpsertHoliday(new HolidayRecord
+        {
+            LoopId = "loop-fixed-holiday",
+            Name = "Test Holiday",
+            Category = "holiday",
+            Date = new DateOnly(2026, 8, 13),
+            IsEnabled = true,
+            Source = "manual",
+            CountryCode = "US"
+        });
+        var service = CreateService(cloudStateStore: cloudStateStore);
+
+        var ordinaryDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-fixed-holiday",
+                ["loopId"] = "loop-fixed-holiday",
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-08-12T09:00:00-05:00"},"perception":{"speaker":"person-8","peoplePresent":[{"id":"person-8"}]},"loop":{"users":[{"id":"person-8","firstName":"jake"}]}}}"""
+            }
+        });
+
+        var holidayDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-fixed-holiday",
+                ["loopId"] = "loop-fixed-holiday",
+                ["messageType"] = "TRIGGER",
+                ["triggerSource"] = "PRESENCE",
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-08-13T09:00:00-05:00"},"perception":{"speaker":"person-9","peoplePresent":[{"id":"person-9"}]},"loop":{"users":[{"id":"person-9","firstName":"sam"}]}}}"""
+            }
+        });
+
+        Assert.Equal("proactive_greeting", ordinaryDecision.IntentName);
+        Assert.Equal("ProactiveGreeting", ordinaryDecision.ContextUpdates![GreetingRouteKey]);
+        Assert.Equal("proactive_holiday_greeting", holidayDecision.IntentName);
+        Assert.Equal("ProactiveHolidayGreeting", holidayDecision.ContextUpdates![GreetingRouteKey]);
     }
 
     [Fact]
@@ -713,12 +763,36 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("can i backup my jibo", "backup_help", "Help section of the Jibo App")]
+    [InlineData("how can i restore you from a backup", "restore_backup", "Jibo Customer Care")]
+    [InlineData("when is your next update", "update_next", "coming every few weeks")]
+    [InlineData("when was your last update", "update_last", "release notes page")]
+    public async Task BuildDecisionAsync_SupportHelpQuestions_UseImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
     [InlineData("what do you want to talk about", "robot_want_to_talk_about", "surprise me")]
     [InlineData("what would you like to talk about", "robot_want_to_talk_about", "surprise me")]
     [InlineData("what do you dream about", "robot_what_do_you_dream_about", "dreams about flying")]
     [InlineData("what are you afraid of", "robot_what_are_you_afraid_of", "heights")]
     [InlineData("what is your best book", "robot_what_is_your_best_book", "dictionary")]
-    [InlineData("what is your best exercise", "robot_what_is_your_best_exercise", "spinning your head around 360 degrees")]
+    [InlineData("what is your best exercise", "robot_what_is_your_best_exercise",
+        "spinning your head around 360 degrees")]
     [InlineData("what is your dream vacation", "robot_what_is_your_dream_vacation", "moon")]
     [InlineData("who is your hero", "robot_who_is_your_hero", "Benjamin Franklin")]
     [InlineData("who do you love", "robot_who_do_you_love", "people in my Loop")]
@@ -904,6 +978,9 @@ public sealed class JiboInteractionServiceTests
         "My story is pretty typical. Some people wanted to create something that would really help people. So they built a robot.")]
     [InlineData("where are you from", "robot_origin_from",
         "Some people think I come from the moon. But they're wrong, I'm from Boston.")]
+    [InlineData("tell me a story", "robot_story", "don't have any stories")]
+    [InlineData("can you recommend a movie", "robot_recommend_movie", "Back to the Future")]
+    [InlineData("can you search the web", "robot_search_web", "can't exactly search the web")]
     public async Task BuildDecisionAsync_LegacyBuildAQuestions_UseImportedScriptedReplies(
         string transcript,
         string expectedIntent,
@@ -918,7 +995,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Equal(expectedReply, decision.ReplyText);
+        Assert.Contains(expectedReply, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Null(decision.SkillName);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
@@ -1098,6 +1175,14 @@ public sealed class JiboInteractionServiceTests
     [InlineData("do you like halloween", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
     [InlineData("do you like holiday music", "seasonal_likes_holiday_music", "holiday music")]
     [InlineData("do you like holiday parties", "seasonal_likes_holiday_parties", "holiday fun can be extra fun")]
+    [InlineData("do you celebrate black history month", "seasonal_black_history_month_celebrate",
+        "long way off")]
+    [InlineData("do you like black history month", "seasonal_black_history_month_celebrate",
+        "long way off")]
+    [InlineData("what should I do for black history month", "seasonal_black_history_month_advice",
+        "long way off")]
+    [InlineData("give me a black history month fact", "seasonal_black_history_month_fact",
+        "Ernest Just")]
     [InlineData("how is thanksgiving", "seasonal_thanksgiving", "Thanksgiving")]
     [InlineData("are you looking forward to christmas", "seasonal_looks_forward_to_christmas", "long way away")]
     [InlineData("what are you doing for christmas", "seasonal_plans_for_christmas", "Christmas sweaters")]
@@ -1125,6 +1210,26 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal(expectedIntent, decision.IntentName);
         Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_BlackHistoryMonth_UsesDateConditionedReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "are you looking forward to black history month",
+            NormalizedTranscript = "are you looking forward to black history month",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = """{"runtime":{"location":{"iso":"2026-02-10T09:00:00-06:00"}}}"""
+            }
+        });
+
+        Assert.Equal("seasonal_black_history_month_looks_forward", decision.IntentName);
+        Assert.Contains("We're in it right now", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -2232,7 +2337,9 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_opt_in", decision.IntentName);
         Assert.Equal("Would you like your personal report now?", decision.ReplyText);
-        Assert.Equal("shared/yes_no", ((IReadOnlyList<string>)decision.SkillPayload!["listen_contexts"])[0]);
+        Assert.NotNull(decision.SkillPayload);
+        var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
+        Assert.Equal("shared/yes_no", listenContexts[0]);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("awaiting_opt_in", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportWeatherEnabledKey]);
@@ -2263,7 +2370,9 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_verify_user", decision.IntentName);
         Assert.Equal("I think this is alex. Is that right?", decision.ReplyText);
-        Assert.Equal("shared/yes_no", ((IReadOnlyList<string>)decision.SkillPayload!["listen_contexts"])[0]);
+        Assert.NotNull(decision.SkillPayload);
+        var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
+        Assert.Equal("shared/yes_no", listenContexts[0]);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("awaiting_identity_confirmation", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal("alex", decision.ContextUpdates[PersonalReportUserNameKey]);
@@ -2456,10 +2565,14 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
-    [InlineData("shopping list", "shopping_list_prompt", "What should I add to your shopping list?", "shopping", "shopping")]
-    [InlineData("grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping", "grocery")]
-    [InlineData("my grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping", "grocery")]
-    [InlineData("create grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping", "grocery")]
+    [InlineData("shopping list", "shopping_list_prompt", "What should I add to your shopping list?", "shopping",
+        "shopping")]
+    [InlineData("grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping",
+        "grocery")]
+    [InlineData("my grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping",
+        "grocery")]
+    [InlineData("create grocery list", "shopping_list_prompt", "What should I add to your grocery list?", "shopping",
+        "grocery")]
     [InlineData("to do list", "todo_list_prompt", "What should I add to your to-do list?", "todo", "todo")]
     public async Task BuildDecisionAsync_ListStart_PromptsForFollowUpItems(
         string transcript,
@@ -2599,7 +2712,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("shopping_list_add", addDecision.IntentName);
-        Assert.Contains("Added apples to your grocery list.", addDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Added apples to your grocery list.", addDecision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
         Assert.Equal(["apples"],
             memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-d", "loop-d", "device-d"), "shopping"));
 
@@ -2674,7 +2788,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("shopping_list_done", doneDecision.IntentName);
-        Assert.Contains("Okay. Your grocery list has milk.", doneDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Okay. Your grocery list has milk.", doneDecision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
 
         var recallDecision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -3497,6 +3612,26 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_YesNoFollowUp_MixedReplyRequestsClarification()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "no yes",
+            NormalizedTranscript = "no yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenRules"] = (string[])["settings/download_now_later"],
+                ["listenAsrHints"] = (string[])["$YESNO"]
+            }
+        });
+
+        Assert.Equal("yes_no_clarify", decision.IntentName);
+        Assert.Equal("I heard both yes and no. Could you say that again?", decision.ReplyText);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_SharedYesNoPrompt_MapsShortAffirmationToYesIntent()
     {
         var service = CreateService();
@@ -3817,6 +3952,298 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("@be/idle", decision.SkillName);
         Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
         Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_ShutUp_MapsToIdleStopCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "shut up",
+            NormalizedTranscript = "shut up"
+        });
+
+        Assert.Equal("stop", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_BeSilent_MapsToIdleStopCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "be silent",
+            NormalizedTranscript = "be silent"
+        });
+
+        Assert.Equal("stop", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_StopMoving_UsesSourceBackedStopMovingReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "stop moving",
+            NormalizedTranscript = "stop moving"
+        });
+
+        Assert.Equal("request_stop_moving", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Contains("Okay I'll try", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_StopMakingThatNoise_UsesSourceBackedStopNoiseReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "stop making that noise",
+            NormalizedTranscript = "stop making that noise"
+        });
+
+        Assert.Equal("request_stop_making_that_noise", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Contains("turn my volume down", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_StopIgnoringMe_UsesSourceBackedStopIgnoringReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "stop ignoring me",
+            NormalizedTranscript = "stop ignoring me"
+        });
+
+        Assert.Equal("request_stop_ignoring_me", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Contains("spacey", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_StopStaring_UsesSourceBackedStopStaringReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "stop staring at me",
+            NormalizedTranscript = "stop staring at me"
+        });
+
+        Assert.Equal("request_stop_staring", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.True(
+            decision.ReplyText.Contains("spacing out", StringComparison.OrdinalIgnoreCase) ||
+            decision.ReplyText.Contains("tend to stare", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouWalk_UsesSourceBackedCanWalkReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you walk",
+            NormalizedTranscript = "can you walk"
+        });
+
+        Assert.Equal("robot_can_walk", decision.IntentName);
+        Assert.Equal("Only in my imagination.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouWalkTheDog_UsesSourceBackedCanWalkDogReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you walk the dog",
+            NormalizedTranscript = "can you walk the dog"
+        });
+
+        Assert.Equal("robot_can_walk_dog", decision.IntentName);
+        Assert.Equal("I can't walk anything.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_DoYouReallyWatchMovies_UsesSourceBackedCanWatchMoviesReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "do you really watch movies",
+            NormalizedTranscript = "do you really watch movies"
+        });
+
+        Assert.Equal("robot_can_watch_movies", decision.IntentName);
+        Assert.Contains("watch movies in a very strange roboty way", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_DoYouReallyWatchTV_UsesSourceBackedCanWatchTVReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "do you really watch tv",
+            NormalizedTranscript = "do you really watch tv"
+        });
+
+        Assert.Equal("robot_can_watch_tv", decision.IntentName);
+        Assert.Contains("watch TV in a very strange roboty way", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouDream_UsesSourceBackedCanDreamReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you dream",
+            NormalizedTranscript = "can you dream"
+        });
+
+        Assert.Equal("robot_can_dream", decision.IntentName);
+        Assert.Contains("dreams about flying", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouFly_UsesSourceBackedCanFlyReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you fly",
+            NormalizedTranscript = "can you fly"
+        });
+
+        Assert.Equal("robot_can_fly", decision.IntentName);
+        Assert.Contains("airplane", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouLearn_UsesSourceBackedCanLearnReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you learn",
+            NormalizedTranscript = "can you learn"
+        });
+
+        Assert.Equal("robot_can_learn", decision.IntentName);
+        Assert.Contains("learning comes from a combination", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanJiboAction_Wink_MapsToSourceBackedCanWinkReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you wink",
+            NormalizedTranscript = "can you wink",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "canJiboAction",
+                ["clientEntities"] = new Dictionary<string, string> { ["Action"] = "Wink" }
+            }
+        });
+
+        Assert.Equal("robot_can_wink", decision.IntentName);
+        Assert.Contains("I can wink", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouMove_UsesSourceBackedCanMoveReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you move",
+            NormalizedTranscript = "can you move"
+        });
+
+        Assert.Equal("robot_can_move", decision.IntentName);
+        Assert.Contains("move the body parts", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouWork_UsesSourceBackedCanWorkReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you work",
+            NormalizedTranscript = "can you work"
+        });
+
+        Assert.Equal("robot_can_work", decision.IntentName);
+        Assert.Contains("function", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouGetTired_UsesSourceBackedCanGetTiredReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you get tired",
+            NormalizedTranscript = "can you get tired"
+        });
+
+        Assert.Equal("robot_can_get_tired", decision.IntentName);
+        Assert.Contains("go to sleep", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanYouMakeBreakfast_UsesSourceBackedCanMakeBreakfastReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you make breakfast",
+            NormalizedTranscript = "can you make breakfast"
+        });
+
+        Assert.Equal("robot_can_make_breakfast", decision.IntentName);
+        Assert.Contains("I can.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -4725,16 +5152,14 @@ public sealed class JiboInteractionServiceTests
 
         foreach (var character in text)
         {
-            if (character == '<')
+            switch (character)
             {
-                inTag = true;
-                continue;
-            }
-
-            if (character == '>')
-            {
-                inTag = false;
-                continue;
+                case '<':
+                    inTag = true;
+                    continue;
+                case '>':
+                    inTag = false;
+                    continue;
             }
 
             if (!inTag) builder.Append(character);

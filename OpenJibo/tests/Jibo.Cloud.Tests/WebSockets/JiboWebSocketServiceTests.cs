@@ -1763,7 +1763,8 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-yesno","data":{"text":"yeah"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        // create/is_it_a_keeper is a robot-local skill turn — no SKILL_ACTION (LISTEN + EOS only)
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yeah",
@@ -2830,6 +2831,38 @@ public sealed class JiboWebSocketServiceTests
             redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
         Assert.Equal("stop",
             redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+
+        var session = _store.FindSessionByToken("hub-stop-token");
+        Assert.NotNull(session);
+        Assert.False(session.FollowUpOpen);
+        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc.HasValue);
+        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc > DateTimeOffset.UtcNow.AddSeconds(3));
+
+        var reopenListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-stop-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-stop-reopen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        Assert.Equal(3, reopenListenReplies.Count);
+        Assert.Equal("@be/idle",
+            JsonDocument.Parse(reopenListenReplies[2].Text!).RootElement.GetProperty("data").GetProperty("match")
+                .GetProperty("skillID").GetString());
+
+        var reopenAudioReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-stop-token",
+            Binary = new byte[4096]
+        });
+
+        Assert.Empty(reopenAudioReplies);
     }
 
     [Fact]
@@ -4772,7 +4805,7 @@ public sealed class JiboWebSocketServiceTests
                     ],
                     "NewsAPI")));
 
-        var token = "hub-smoke-journey-token";
+        const string token = "hub-smoke-journey-token";
 
         var greetingReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -4903,7 +4936,7 @@ public sealed class JiboWebSocketServiceTests
             .GetString();
 
         Assert.NotNull(esml);
-        var stripped = StripMarkup(esml!);
+        var stripped = StripMarkup(esml);
         Assert.Contains("weather", stripped, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("calendar", stripped, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("news", stripped, StringComparison.OrdinalIgnoreCase);
@@ -5196,16 +5229,14 @@ public sealed class JiboWebSocketServiceTests
 
         foreach (var character in text)
         {
-            if (character == '<')
+            switch (character)
             {
-                inTag = true;
-                continue;
-            }
-
-            if (character == '>')
-            {
-                inTag = false;
-                continue;
+                case '<':
+                    inTag = true;
+                    continue;
+                case '>':
+                    inTag = false;
+                    continue;
             }
 
             if (!inTag) builder.Append(character);

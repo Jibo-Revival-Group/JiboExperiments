@@ -25,6 +25,22 @@ internal sealed class JsonFileSnapshotStore(string? persistencePath, JsonSeriali
         var directory = Path.GetDirectoryName(persistencePath);
         if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
 
-        File.WriteAllText(persistencePath, JsonSerializer.Serialize(snapshot, options));
+        var tempPath = Path.Combine(
+            string.IsNullOrWhiteSpace(directory) ? Directory.GetCurrentDirectory() : directory,
+            $".{Path.GetFileName(persistencePath)}.{Guid.NewGuid():N}.tmp");
+
+        try
+        {
+            File.WriteAllText(tempPath, JsonSerializer.Serialize(snapshot, options));
+
+            if (File.Exists(persistencePath))
+                File.Replace(tempPath, persistencePath, null);
+            else
+                File.Move(tempPath, persistencePath);
+        }
+        finally
+        {
+            if (File.Exists(tempPath)) File.Delete(tempPath);
+        }
     }
 }

@@ -190,6 +190,118 @@ public sealed class PersistenceStoreTests
         }
     }
 
+    [Fact]
+    public void CloudStateStore_AlignsDefaultLoopToRegisteredRobot()
+    {
+        var store = new InMemoryCloudStateStore(new RecordingSnapshotStore());
+
+        var device = store.GetOrCreateDevice("5a0b6398faa0f0001c5d0df1", "10.0.18", "1.9.2");
+
+        var loop = Assert.Single(store.GetLoops());
+        Assert.Equal(device.RobotId, loop.RobotId);
+        Assert.Equal(device.DeviceId, loop.RobotFriendlyId);
+        Assert.All(store.GetPeople(), person => Assert.Equal(device.RobotId, person.RobotId));
+        Assert.Equal(device.DeviceId, store.GetRobot().DeviceId);
+    }
+
+    [Fact]
+    public void CloudStateStore_SeedsDefaultLoopOwnerMemberOnFreshState()
+    {
+        // No persisted snapshot (first boot of a local cloud). The default loop must
+        // already expose an active owner member, otherwise Loop.ListLoops returns
+        // members: [] and SSM raises "loop has no members" (Q4/L-series error).
+        var store = new InMemoryCloudStateStore(new RecordingSnapshotStore());
+
+        var loop = Assert.Single(store.GetLoops());
+        var members = store.GetLoopMembers(loop.LoopId);
+
+        // SSM._isLoopGood() requires members[].accountId to include both loop.owner
+        // and loop.robot, otherwise it raises "owner/robot not in loop".
+        var accountIds = members.Select(m => m.AccountId).ToArray();
+        Assert.Contains(loop.OwnerAccountId, accountIds);
+        Assert.Contains(loop.RobotId, accountIds);
+        Assert.Contains(members, m => m.Type == "owner" && m.Status == "active");
+        Assert.Contains(members, m => m.Type == "robot" && m.Status == "active");
+    }
+
+    [Fact]
+    public void CloudStateStore_SeedsRobotLoopMemberWhenRobotIdChanges()
+    {
+        // When the robot registers a new id (e.g. configured OpenJibo:Robot:RobotId),
+        // the aligned loop must still contain a member whose accountId equals the new
+        // robot id so SSM's "robot <id> not in loop" check passes.
+        var store = new InMemoryCloudStateStore(new RecordingSnapshotStore());
+
+        var device = store.GetOrCreateDevice("5a0b6398faa0f0001c5d0df1", "10.0.18", "1.9.2");
+
+        var loop = Assert.Single(store.GetLoops());
+        Assert.Equal(device.RobotId, loop.RobotId);
+        Assert.Contains(store.GetLoopMembers(loop.LoopId),
+            m => m.AccountId == device.RobotId && m.Status == "active");
+    }
+
+    [Fact]
+    public void CloudStateStore_AutoAssociatesLoopAndRobotIds()
+    {
+        var store = new InMemoryCloudStateStore(new RecordingSnapshotStore());
+
+        // Initial default loop ID and robot ID
+        var defaultLoopId = store.GetLoops()[0].LoopId;
+        var defaultRobotId = store.GetRobot().RobotId;
+
+        // Calling GetHolidays with a 24-character hexadecimal Loop ID
+        var targetLoopId = "5a0b6398faa0f0001c5d0df2";
+        var expectedRobotId = "5a0b6398faa0f0001c5d0df1";
+
+        var holidays = store.GetHolidays(targetLoopId);
+
+        // Verify that default LoopId and RobotId have been aligned
+        var updatedLoop = store.GetLoops()[0];
+        Assert.Equal(targetLoopId, updatedLoop.LoopId);
+        Assert.Equal(expectedRobotId, updatedLoop.RobotId);
+        Assert.Equal(expectedRobotId, store.GetRobot().RobotId);
+
+        // Verify loop members are updated
+        var members = store.GetLoopMembers(targetLoopId);
+        var accountIds = members.Select(m => m.AccountId).ToArray();
+        Assert.Contains(expectedRobotId, accountIds);
+
+        // Verify people records loop/robot IDs are updated
+        var people = store.GetPeople();
+        Assert.All(people, person => {
+            Assert.Equal(targetLoopId, person.LoopId);
+            Assert.Equal(expectedRobotId, person.RobotId);
+        });
+    }
+
+    [Fact]
+    public void PersonalMemoryStore_IgnoresCorruptSnapshotAndOverwritesWithValidJson()
+    {
+        var persistenceDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-corrupt-memory-{Guid.NewGuid():N}");
+        var persistencePath = Path.Combine(persistenceDirectory, "memory.json");
+
+        try
+        {
+            Directory.CreateDirectory(persistenceDirectory);
+            File.WriteAllText(persistencePath, "{ not valid json");
+
+            var scope = new PersonalMemoryTenantScope("acct-corrupt", "loop-corrupt", "device-corrupt");
+            var store = new InMemoryPersonalMemoryStore(persistencePath);
+            Assert.Null(store.GetName(scope));
+
+            store.SetName(scope, "Recovered");
+
+            var reloaded = new InMemoryPersonalMemoryStore(persistencePath);
+            Assert.Equal("Recovered", reloaded.GetName(scope));
+            Assert.DoesNotContain(Directory.GetFiles(persistenceDirectory),
+                path => Path.GetFileName(path).Contains(".tmp", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            if (Directory.Exists(persistenceDirectory)) Directory.Delete(persistenceDirectory, true);
+        }
+    }
+
     private sealed class RecordingSnapshotStore : ISnapshotStore
     {
         public List<object> Saves { get; } = [];

@@ -118,6 +118,27 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("RA_JBO_ShowSantaTracker", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.HolidayTracker;
 
+        if (fileName.StartsWith("RA_JBO_Story", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.Story;
+
+        if (fileName.StartsWith("RA_JBO_RecommendMovie", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.RecommendMovie;
+
+        if (fileName.StartsWith("RA_JBO_SearchWeb", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.SearchWeb;
+
+        if (fileName.StartsWith("RI_JBO_CelebratesBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LooksForwardToBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_PlansForBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HasOpinionAboutBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_HowIsBlackHistoryMonth", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_USR_WhatShouldDoForBlackHistoryMonth", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.BlackHistoryMonth;
+
+        if (fileName.StartsWith("RA_JBO_TellBlackHistoryMonthFact", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.BlackHistoryMonthFact;
+
         if (normalizedPath.Contains("/emotion-responses/", StringComparison.OrdinalIgnoreCase) ||
             normalizedPath.Contains("/gqa-responses/", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Emotion;
@@ -241,6 +262,102 @@ public static class LegacyMimCatalogImporter
             string.Equals(fileName, "WetNowDryLater", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.ReportSkillTemplate;
 
+        if (fileName.StartsWith("SUP_GEN_HowBackUpData", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.BackupHow;
+
+        if (fileName.StartsWith("SUP_GEN_HowRestoreBackup", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.RestoreHow;
+
+        if (fileName.StartsWith("SUP_UPDATE_WhenIsNextUpdate", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.UpdateNext;
+
+        if (fileName.StartsWith("SUP_UPDATE_WhenWasLastUpdate", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.UpdateLast;
+
+        if (fileName.StartsWith("RA_JBO_StopMoving", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.StopMoving;
+
+        if (fileName.StartsWith("RA_JBO_StopMakingThatNoise", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.StopMakingThatNoise;
+
+        if (fileName.StartsWith("RA_JBO_StopIgnoringMe", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.StopIgnoringMe;
+
+        if (fileName.StartsWith("RA_JBO_StopStaring", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.StopStaring;
+
+        if (fileName.StartsWith("RI_JBO_CanWalkDog", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWalkDog;
+
+        if (fileName.StartsWith("RI_JBO_CanWalk", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWalk;
+
+        if (fileName.StartsWith("RI_JBO_CanWatchMovies", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWatchMovies;
+
+        if (fileName.StartsWith("RI_JBO_CanWatchTV", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWatchTV;
+
+        if (fileName.StartsWith("RI_JBO_CanDream", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanDream;
+
+        if (fileName.StartsWith("RI_JBO_CanExercise", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanExercise;
+
+        if (fileName.StartsWith("RI_JBO_CanFly", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanFly;
+
+        if (fileName.StartsWith("RI_JBO_CanLearn", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanLearn;
+
+        if (fileName.StartsWith("RI_JBO_CanLaugh", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanLaugh;
+
+        if (fileName.StartsWith("RI_JBO_CanRead", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanRead;
+
+        if (fileName.StartsWith("RI_JBO_CanHear", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanHear;
+
+        if (fileName.StartsWith("RI_JBO_CanTalk", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanTalk;
+
+        if (fileName.StartsWith("RI_JBO_CanSee", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanSee;
+
+        if (fileName.StartsWith("RI_JBO_CanWink", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWink;
+
+        if (fileName.StartsWith("RI_JBO_CanMove", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanMove;
+
+        if (fileName.StartsWith("RI_JBO_CanWork", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWork;
+
+        if (fileName.StartsWith("RI_JBO_CanBreathe", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanBreathe;
+
+        if (fileName.StartsWith("RI_JBO_CanGetTired", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanGetTired;
+
+        if (fileName.StartsWith("RI_JBO_CanHaveEmotions", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanHaveEmotions;
+
+        if (fileName.StartsWith("RI_JBO_CanWhistle", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanWhistle;
+
+        if (fileName.StartsWith("RI_JBO_CanCook", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanCook;
+
+        if (fileName.StartsWith("RI_JBO_CanMakeCoffee", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanMakeCoffee;
+
+        if (fileName.StartsWith("RI_JBO_CanMakeBreakfast", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanMakeBreakfast;
+
+        if (fileName.StartsWith("RI_JBO_CanJump", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.CanJump;
+
         if (fileName.StartsWith("PersonalReportKickOff", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.PersonalReportKickOff;
 
@@ -287,12 +404,7 @@ public static class LegacyMimCatalogImporter
         return null;
     }
 
-    private static string NormalizePrompt(string? prompt)
-    {
-        return NormalizePrompt(prompt, false);
-    }
-
-    private static string NormalizePrompt(string? prompt, bool preservePlaceholders)
+    private static string NormalizePrompt(string? prompt, bool preservePlaceholders = false)
     {
         if (string.IsNullOrWhiteSpace(prompt)) return string.Empty;
 
@@ -330,6 +442,39 @@ public static class LegacyMimCatalogImporter
             HolidayTrackerReplies = Merge(baseCatalog.HolidayTrackerReplies, importedCatalog.HolidayTrackerReplies),
             BirthdayCelebrationReplies = Merge(baseCatalog.BirthdayCelebrationReplies,
                 importedCatalog.BirthdayCelebrationReplies),
+            StopMovingReplies = Merge(baseCatalog.StopMovingReplies, importedCatalog.StopMovingReplies),
+            StopMakingThatNoiseReplies = Merge(baseCatalog.StopMakingThatNoiseReplies,
+                importedCatalog.StopMakingThatNoiseReplies),
+            StopIgnoringMeReplies = Merge(baseCatalog.StopIgnoringMeReplies, importedCatalog.StopIgnoringMeReplies),
+            StopStaringReplies = Merge(baseCatalog.StopStaringReplies, importedCatalog.StopStaringReplies),
+            CanWalkReplies = Merge(baseCatalog.CanWalkReplies, importedCatalog.CanWalkReplies),
+            CanWalkDogReplies = Merge(baseCatalog.CanWalkDogReplies, importedCatalog.CanWalkDogReplies),
+            CanWatchMoviesReplies = Merge(baseCatalog.CanWatchMoviesReplies, importedCatalog.CanWatchMoviesReplies),
+            CanWatchTVReplies = Merge(baseCatalog.CanWatchTVReplies, importedCatalog.CanWatchTVReplies),
+            CanDreamReplies = Merge(baseCatalog.CanDreamReplies, importedCatalog.CanDreamReplies),
+            CanExerciseReplies = Merge(baseCatalog.CanExerciseReplies, importedCatalog.CanExerciseReplies),
+            CanFlyReplies = Merge(baseCatalog.CanFlyReplies, importedCatalog.CanFlyReplies),
+            CanLearnReplies = Merge(baseCatalog.CanLearnReplies, importedCatalog.CanLearnReplies),
+            CanLaughReplies = Merge(baseCatalog.CanLaughReplies, importedCatalog.CanLaughReplies),
+            CanReadReplies = Merge(baseCatalog.CanReadReplies, importedCatalog.CanReadReplies),
+            CanHearReplies = Merge(baseCatalog.CanHearReplies, importedCatalog.CanHearReplies),
+            CanTalkReplies = Merge(baseCatalog.CanTalkReplies, importedCatalog.CanTalkReplies),
+            CanSeeReplies = Merge(baseCatalog.CanSeeReplies, importedCatalog.CanSeeReplies),
+            CanWinkReplies = Merge(baseCatalog.CanWinkReplies, importedCatalog.CanWinkReplies),
+            CanMoveReplies = Merge(baseCatalog.CanMoveReplies, importedCatalog.CanMoveReplies),
+            CanWorkReplies = Merge(baseCatalog.CanWorkReplies, importedCatalog.CanWorkReplies),
+            CanBreatheReplies = Merge(baseCatalog.CanBreatheReplies, importedCatalog.CanBreatheReplies),
+            CanGetTiredReplies = Merge(baseCatalog.CanGetTiredReplies, importedCatalog.CanGetTiredReplies),
+            CanHaveEmotionsReplies = Merge(baseCatalog.CanHaveEmotionsReplies, importedCatalog.CanHaveEmotionsReplies),
+            CanWhistleReplies = Merge(baseCatalog.CanWhistleReplies, importedCatalog.CanWhistleReplies),
+            CanCookReplies = Merge(baseCatalog.CanCookReplies, importedCatalog.CanCookReplies),
+            CanMakeCoffeeReplies = Merge(baseCatalog.CanMakeCoffeeReplies, importedCatalog.CanMakeCoffeeReplies),
+            CanMakeBreakfastReplies = Merge(baseCatalog.CanMakeBreakfastReplies, importedCatalog.CanMakeBreakfastReplies),
+            CanJumpReplies = Merge(baseCatalog.CanJumpReplies, importedCatalog.CanJumpReplies),
+            BlackHistoryMonthReplies =
+                Merge(baseCatalog.BlackHistoryMonthReplies, importedCatalog.BlackHistoryMonthReplies),
+            BlackHistoryMonthFactReplies = Merge(baseCatalog.BlackHistoryMonthFactReplies,
+                importedCatalog.BlackHistoryMonthFactReplies),
             HowAreYouReplies = Merge(baseCatalog.HowAreYouReplies, importedCatalog.HowAreYouReplies),
             EmotionReplies = Merge(baseCatalog.EmotionReplies, importedCatalog.EmotionReplies),
             PersonalityReplies = Merge(baseCatalog.PersonalityReplies, importedCatalog.PersonalityReplies),
@@ -515,6 +660,43 @@ public static class LegacyMimCatalogImporter
         HolidayGift,
         HolidayTracker,
         BirthdayCelebration,
+        StopMoving,
+        StopMakingThatNoise,
+        StopIgnoringMe,
+        StopStaring,
+        CanWalk,
+        CanWalkDog,
+        CanWatchMovies,
+        CanWatchTV,
+        CanDream,
+        CanExercise,
+        CanFly,
+        CanLearn,
+        CanLaugh,
+        CanRead,
+        CanHear,
+        CanTalk,
+        CanSee,
+        CanWink,
+        CanMove,
+        CanWork,
+        CanBreathe,
+        CanGetTired,
+        CanHaveEmotions,
+        CanWhistle,
+        CanCook,
+        CanMakeCoffee,
+        CanMakeBreakfast,
+        CanJump,
+        BackupHow,
+        RestoreHow,
+        UpdateNext,
+        UpdateLast,
+        Story,
+        RecommendMovie,
+        SearchWeb,
+        BlackHistoryMonth,
+        BlackHistoryMonthFact,
         Jokes,
         RobotFacts,
         HumanFacts,
@@ -563,7 +745,12 @@ public static class LegacyMimCatalogImporter
 
     private sealed class LegacyMimCatalogBuilder
     {
+        private readonly List<string> _ages = [];
+        private readonly List<string> _backupHowReplies = [];
+        private readonly List<string> _bestFriendReplies = [];
         private readonly List<string> _birthdayCelebrationReplies = [];
+        private readonly List<string> _blackHistoryMonthFactReplies = [];
+        private readonly List<JiboConditionedReply> _blackHistoryMonthReplies = [];
         private readonly List<string> _calendarNothingReplies = [];
         private readonly List<string> _calendarNothingTodayReplies = [];
         private readonly List<string> _calendarOutroReplies = [];
@@ -587,16 +774,14 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _fallbacks = [];
         private readonly List<string> _favoriteAnimalReplies = [];
         private readonly List<string> _friendReplies = [];
-        private readonly List<string> _bestFriendReplies = [];
         private readonly List<string> _funFacts = [];
         private readonly List<string> _greetings = [];
-        private readonly List<string> _ages = [];
         private readonly List<string> _holidayGiftReplies = [];
         private readonly List<string> _holidayGreetingReplies = [];
         private readonly List<string> _holidayReplies = [];
         private readonly List<string> _holidaySeasonReplies = [];
-        private readonly List<string> _holidayTrackerReplies = [];
         private readonly List<string> _holidaySingReplies = [];
+        private readonly List<string> _holidayTrackerReplies = [];
         private readonly List<string> _howAreYous = [];
         private readonly List<string> _humanFacts = [];
         private readonly List<string> _jokes = [];
@@ -606,9 +791,43 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _personalities = [];
         private readonly List<string> _personalReportKickOffReplies = [];
         private readonly List<string> _personalReportOutroReplies = [];
+        private readonly List<string> _recommendMovieReplies = [];
         private readonly List<string> _reportSkillTemplates = [];
+        private readonly List<string> _restoreHowReplies = [];
         private readonly List<string> _robotFacts = [];
+        private readonly List<string> _searchWebReplies = [];
         private readonly List<string> _singReplies = [];
+        private readonly List<string> _stopIgnoringMeReplies = [];
+        private readonly List<string> _stopMakingThatNoiseReplies = [];
+        private readonly List<string> _stopMovingReplies = [];
+        private readonly List<string> _stopStaringReplies = [];
+        private readonly List<string> _canWalkReplies = [];
+        private readonly List<string> _canWalkDogReplies = [];
+        private readonly List<string> _canWatchMoviesReplies = [];
+        private readonly List<string> _canWatchTVReplies = [];
+        private readonly List<string> _canDreamReplies = [];
+        private readonly List<string> _canExerciseReplies = [];
+        private readonly List<string> _canFlyReplies = [];
+        private readonly List<string> _canLearnReplies = [];
+        private readonly List<string> _canLaughReplies = [];
+        private readonly List<string> _canReadReplies = [];
+        private readonly List<string> _canHearReplies = [];
+        private readonly List<string> _canTalkReplies = [];
+        private readonly List<string> _canSeeReplies = [];
+        private readonly List<string> _canWinkReplies = [];
+        private readonly List<string> _canMoveReplies = [];
+        private readonly List<string> _canWorkReplies = [];
+        private readonly List<string> _canBreatheReplies = [];
+        private readonly List<string> _canGetTiredReplies = [];
+        private readonly List<string> _canHaveEmotionsReplies = [];
+        private readonly List<string> _canWhistleReplies = [];
+        private readonly List<string> _canCookReplies = [];
+        private readonly List<string> _canMakeCoffeeReplies = [];
+        private readonly List<string> _canMakeBreakfastReplies = [];
+        private readonly List<string> _canJumpReplies = [];
+        private readonly List<string> _storyReplies = [];
+        private readonly List<string> _updateLastReplies = [];
+        private readonly List<string> _updateNextReplies = [];
         private readonly List<string> _weatherIntroReplies = [];
         private readonly List<string> _weatherServiceDownReplies = [];
         private readonly List<string> _weatherTodayHighLowReplies = [];
@@ -680,6 +899,117 @@ public static class LegacyMimCatalogImporter
                     return;
                 case LegacyMimBucket.BirthdayCelebration:
                     AddDistinct(_birthdayCelebrationReplies, text);
+                    return;
+                case LegacyMimBucket.StopMoving:
+                    AddDistinct(_stopMovingReplies, text);
+                    return;
+                case LegacyMimBucket.StopMakingThatNoise:
+                    AddDistinct(_stopMakingThatNoiseReplies, text);
+                    return;
+                case LegacyMimBucket.StopIgnoringMe:
+                    AddDistinct(_stopIgnoringMeReplies, text);
+                    return;
+                case LegacyMimBucket.StopStaring:
+                    AddDistinct(_stopStaringReplies, text);
+                    return;
+                case LegacyMimBucket.CanWalk:
+                    AddDistinct(_canWalkReplies, text);
+                    return;
+                case LegacyMimBucket.CanWalkDog:
+                    AddDistinct(_canWalkDogReplies, text);
+                    return;
+                case LegacyMimBucket.CanWatchMovies:
+                    AddDistinct(_canWatchMoviesReplies, text);
+                    return;
+                case LegacyMimBucket.CanWatchTV:
+                    AddDistinct(_canWatchTVReplies, text);
+                    return;
+                case LegacyMimBucket.CanDream:
+                    AddDistinct(_canDreamReplies, text);
+                    return;
+                case LegacyMimBucket.CanExercise:
+                    AddDistinct(_canExerciseReplies, text);
+                    return;
+                case LegacyMimBucket.CanFly:
+                    AddDistinct(_canFlyReplies, text);
+                    return;
+                case LegacyMimBucket.CanLearn:
+                    AddDistinct(_canLearnReplies, text);
+                    return;
+                case LegacyMimBucket.CanLaugh:
+                    AddDistinct(_canLaughReplies, text);
+                    return;
+                case LegacyMimBucket.CanRead:
+                    AddDistinct(_canReadReplies, text);
+                    return;
+                case LegacyMimBucket.CanHear:
+                    AddDistinct(_canHearReplies, text);
+                    return;
+                case LegacyMimBucket.CanTalk:
+                    AddDistinct(_canTalkReplies, text);
+                    return;
+                case LegacyMimBucket.CanSee:
+                    AddDistinct(_canSeeReplies, text);
+                    return;
+                case LegacyMimBucket.CanWink:
+                    AddDistinct(_canWinkReplies, text);
+                    return;
+                case LegacyMimBucket.CanMove:
+                    AddDistinct(_canMoveReplies, text);
+                    return;
+                case LegacyMimBucket.CanWork:
+                    AddDistinct(_canWorkReplies, text);
+                    return;
+                case LegacyMimBucket.CanBreathe:
+                    AddDistinct(_canBreatheReplies, text);
+                    return;
+                case LegacyMimBucket.CanGetTired:
+                    AddDistinct(_canGetTiredReplies, text);
+                    return;
+                case LegacyMimBucket.CanHaveEmotions:
+                    AddDistinct(_canHaveEmotionsReplies, text);
+                    return;
+                case LegacyMimBucket.CanWhistle:
+                    AddDistinct(_canWhistleReplies, text);
+                    return;
+                case LegacyMimBucket.CanCook:
+                    AddDistinct(_canCookReplies, text);
+                    return;
+                case LegacyMimBucket.CanMakeCoffee:
+                    AddDistinct(_canMakeCoffeeReplies, text);
+                    return;
+                case LegacyMimBucket.CanMakeBreakfast:
+                    AddDistinct(_canMakeBreakfastReplies, text);
+                    return;
+                case LegacyMimBucket.CanJump:
+                    AddDistinct(_canJumpReplies, text);
+                    return;
+                case LegacyMimBucket.BackupHow:
+                    AddDistinct(_backupHowReplies, text);
+                    return;
+                case LegacyMimBucket.RestoreHow:
+                    AddDistinct(_restoreHowReplies, text);
+                    return;
+                case LegacyMimBucket.UpdateNext:
+                    AddDistinct(_updateNextReplies, text);
+                    return;
+                case LegacyMimBucket.UpdateLast:
+                    AddDistinct(_updateLastReplies, text);
+                    return;
+                case LegacyMimBucket.Story:
+                    AddDistinct(_storyReplies, text);
+                    return;
+                case LegacyMimBucket.RecommendMovie:
+                    AddDistinct(_recommendMovieReplies, text);
+                    return;
+                case LegacyMimBucket.SearchWeb:
+                    AddDistinct(_searchWebReplies, text);
+                    return;
+                case LegacyMimBucket.BlackHistoryMonth:
+                    AddDistinct(_blackHistoryMonthReplies, condition, text);
+                    return;
+                case LegacyMimBucket.BlackHistoryMonthFact:
+                    AddDistinct(_blackHistoryMonthFactReplies, text);
                     return;
                 case LegacyMimBucket.Personality:
                     if (_personalities.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase)))
@@ -835,6 +1165,37 @@ public static class LegacyMimCatalogImporter
                 HolidayGiftReplies = [.. _holidayGiftReplies],
                 HolidayTrackerReplies = [.. _holidayTrackerReplies],
                 BirthdayCelebrationReplies = [.. _birthdayCelebrationReplies],
+                StopMovingReplies = [.. _stopMovingReplies],
+                StopMakingThatNoiseReplies = [.. _stopMakingThatNoiseReplies],
+                StopIgnoringMeReplies = [.. _stopIgnoringMeReplies],
+                StopStaringReplies = [.. _stopStaringReplies],
+                CanWalkReplies = [.. _canWalkReplies],
+                CanWalkDogReplies = [.. _canWalkDogReplies],
+                CanWatchMoviesReplies = [.. _canWatchMoviesReplies],
+                CanWatchTVReplies = [.. _canWatchTVReplies],
+                CanDreamReplies = [.. _canDreamReplies],
+                CanExerciseReplies = [.. _canExerciseReplies],
+                CanFlyReplies = [.. _canFlyReplies],
+                CanLearnReplies = [.. _canLearnReplies],
+                CanLaughReplies = [.. _canLaughReplies],
+                CanReadReplies = [.. _canReadReplies],
+                CanHearReplies = [.. _canHearReplies],
+                CanTalkReplies = [.. _canTalkReplies],
+                CanSeeReplies = [.. _canSeeReplies],
+                CanWinkReplies = [.. _canWinkReplies],
+                CanMoveReplies = [.. _canMoveReplies],
+                CanWorkReplies = [.. _canWorkReplies],
+                CanBreatheReplies = [.. _canBreatheReplies],
+                CanGetTiredReplies = [.. _canGetTiredReplies],
+                CanHaveEmotionsReplies = [.. _canHaveEmotionsReplies],
+                CanWhistleReplies = [.. _canWhistleReplies],
+                CanCookReplies = [.. _canCookReplies],
+                CanMakeCoffeeReplies = [.. _canMakeCoffeeReplies],
+                CanMakeBreakfastReplies = [.. _canMakeBreakfastReplies],
+                CanJumpReplies = [.. _canJumpReplies],
+                BlackHistoryMonthReplies = [.. _blackHistoryMonthReplies],
+                BlackHistoryMonthFactReplies = [.. _blackHistoryMonthFactReplies],
+                BackupHowReplies = [.. _backupHowReplies],
                 HowAreYouReplies = [.. _howAreYous],
                 EmotionReplies = [.. _emotionReplies],
                 PersonalityReplies = [.. _personalities],
@@ -869,7 +1230,13 @@ public static class LegacyMimCatalogImporter
                 CommuteServiceDownReplies = [.. _commuteServiceDownReplies],
                 NewsIntroReplies = [.. _newsIntroReplies],
                 NewsCategoryIntroReplies = [.. _newsCategoryIntroReplies],
-                NewsOutroReplies = [.. _newsOutroReplies]
+                NewsOutroReplies = [.. _newsOutroReplies],
+                RestoreHowReplies = [.. _restoreHowReplies],
+                UpdateNextReplies = [.. _updateNextReplies],
+                UpdateLastReplies = [.. _updateLastReplies],
+                StoryReplies = [.. _storyReplies],
+                RecommendMovieReplies = [.. _recommendMovieReplies],
+                SearchWebReplies = [.. _searchWebReplies]
             };
         }
 
@@ -880,17 +1247,30 @@ public static class LegacyMimCatalogImporter
             target.Add(text);
         }
 
-        private LegacyMimBucket ResolveFunFactTarget(string prompt)
+        private static void AddDistinct(List<JiboConditionedReply> target, string? condition, string text)
         {
-            var lowered = NormalizePrompt(prompt, false).ToLowerInvariant();
+            var normalizedCondition = NormalizeCondition(condition);
+            if (target.Any(value =>
+                    string.Equals(NormalizeCondition(value.Condition), normalizedCondition,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(value.Reply, text, StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            target.Add(new JiboConditionedReply
+            {
+                Condition = normalizedCondition,
+                Reply = text
+            });
+        }
+
+        private static LegacyMimBucket ResolveFunFactTarget(string prompt)
+        {
+            var lowered = NormalizePrompt(prompt).ToLowerInvariant();
             if (ContainsAny(lowered, "robot", "humanoid", "machine", "about me", "my cameras", "turing", "deep blue",
                     "rossum"))
                 return LegacyMimBucket.RobotFacts;
 
-            if (ContainsAny(lowered, "human", "people", "grown ups", "human being", "humans"))
-                return LegacyMimBucket.HumanFacts;
-
-            return LegacyMimBucket.FunFacts;
+            return ContainsAny(lowered, "human", "people", "grown ups", "human being", "humans") ? LegacyMimBucket.HumanFacts : LegacyMimBucket.FunFacts;
         }
 
         private static bool ContainsAny(string text, params string[] values)

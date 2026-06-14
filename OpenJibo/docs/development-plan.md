@@ -68,7 +68,7 @@ Current API and protocol scope:
 - token/session issuance for account, hub, and robot startup flows
 - starter account, notification, loop, media, key, person, backup, robot, update, and upload/log handling
 - media lookup through `/media/{path}`
-- no placeholder no-op update from `GetUpdateFrom` when no staged update exists
+- `GetUpdateFrom` returns a no-op update manifest when no staged update exists
 
 Current websocket scope:
 
@@ -185,6 +185,11 @@ Before calling `1.0.18` complete, prove or explicitly defer these:
 - Recheck constrained yes/no prompts for update/backup/share/gallery/alarm replacement without leaking global rules.
 - Recheck that stock OS no longer logs OpenJibo-only websocket events such as synthetic pending/context/ack packets from the current build.
 - Recheck backup/update behavior with explicit attention to robot-local `jibo.scheduler.backupStatus`, the local `@be/idle` nighttime OTA helper, CPU/load, log/upload activity, and whether the deployed cloud is involved at all.
+- Parity target for OTA:
+  - robot-local `backupStatus` should stay boolean and drive the update menu's `backup` branch
+  - robot-local `downloadStatus` should stay null-or-progress so the menu can distinguish `downloading` from `none`
+  - robot-local `checkForUpdates` should continue returning an `updates[]` list, not a single manifest object
+  - the hosted cloud `GetUpdateFrom` handler can stay as a compatibility bridge for the updater helper, but it should not be treated as the source of truth for the update menu state machine
 - Treat remaining empty-ASR, `ffmpeg`, or `whisper.cpp` transcript failures as STT work unless the capture proves a separate turn-routing regression.
 
 ## Known Gaps

@@ -62,6 +62,10 @@ Bootstrap helper scripts live in [scripts/bootstrap](/OpenJibo/scripts/bootstrap
 
 These are intentionally conservative helpers for discovery and verification, not destructive patch tools. They remain useful for controlled-network testing, even though the preferred long-term device path is region injection.
 
+For the currently verified physical-device local setup, including the tested
+`.NET` server command, region caveat, persistent init script, TLS patch, and
+post-reboot verification, see [local-jibo-device-runbook.md](local-jibo-device-runbook.md).
+
 ## TLS And Runtime Patching
 
 Patching requirements will vary by device version and by where certificate validation is enforced.

@@ -124,6 +124,12 @@ Current release theme:
   - Test 26 suggests this should be investigated beside robot-local scheduler status and log/upload load rather than only hosted backup APIs
   - `jibo test 30` showed the backup announcement after gallery came from local `@be/surprises` -> `@be/surprises-ota`, not from a hosted `Backup_*` HTTP call; the local `@be/idle` nighttime OTA helper can also initiate backup through `jibo.scheduler.backupRobot`
   - `jibo test 31` added a startup `Backup_20170222.List` capture before the voice session, which is useful evidence that the legacy backup-status path is active even when the user did not ask for backup
+- Parity plan:
+  - keep the current cloud `GetUpdateFrom` noop-object compatibility only as a short-term updater bridge
+  - add robot-local scheduler/status behavior that matches the original contracts instead of asking the cloud manifest to model menu state
+  - model the original paths separately: `backupStatus` as boolean, `downloadStatus` as null-or-progress object, and `checkForUpdates` as an `updates[]` response
+  - let the update menu decide among `backup`, `downloading`, `updates`, and `none` using those local status calls
+  - keep the robot updater path compatible with `jibo-get-update` / `jibo-download-update` until the robot-side caller is fixed
 - Exit criteria:
   - spoken `yes` and `no` work on update, backup, share/offer, and gallery/create prompts
   - empty or missed short replies retry locally instead of relaunching Nimbus or generic chat
@@ -372,7 +378,7 @@ Current release theme:
 - Status: `implemented`
 - Tags: `protocol`, `storage`
 - Result:
-  - `GetUpdateFrom` returns an empty object when no update is staged
+  - `GetUpdateFrom` returns a no-op update manifest when no update is staged
   - staged updates can still be created explicitly
 - Follow-up:
   - end-to-end update delivery and restore proof remains future work
@@ -886,6 +892,10 @@ Current release theme:
   - birthday celebration lines are now bucketed separately, and birthday memory writes a loop-scoped holiday record so personal dates can join the holiday list later
   - holiday extras now include `show santa tracker` so the Christmas-time launcher keeps its source-backed animation line
   - the remaining seasonal polish now includes `do you like halloween`, `do you like holiday music`, `do you like holiday parties`, `are you looking forward to christmas`, `what are you doing for christmas`, and `what are you thankful for`
+  - the Black History Month family is now a source-backed seasonal batch with `celebrate`, `like`, `looking forward`, `plans`, `what should I do`, and `fact` replies, so the history lane can keep growing in small, testable slices
+- Stop-style command work in flight:
+  - `stop moving`, `stop making that noise`, `stop ignoring me`, and `stop staring` now have source-backed Build B replies alongside the generic stop lane
+  - the broader stop lane now also catches `stop talking`, `be quiet`, `be silent`, `shut up`, `silence`, `quiet down`, `no more music`, and `no more dancing`
 - Favorite-animal work in flight:
   - the favorites family now includes `what is your favorite animal`, `what is your favorite bird`, `do you like penguins`, and `do you like animals` so the penguin-centric replies stay easy to find
 - Presence and thought follow-ups in flight:
@@ -897,7 +907,9 @@ Current release theme:
   - self-description charm like `what's your name`, `do you have a nickname`, `do you like being Jibo`, and `what is your favorite name`
   - deeper personality follow-ups like `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` stays deferred until templated placeholder rendering exists
   - the next identity / knowledge wave adds `are you god`, `are you here`, `do you have super powers`, `how much do you know`, `what does jibo mean`, `where do you get info`, `what are you forbidden to do`, `what color are you`, and `what do you do when alone`
-  - additional legacy source-backed `RI_USR` prompts where the text is short and the behavior is easy to verify
+- additional legacy source-backed `RI_USR` prompts where the text is short and the behavior is easy to verify
+- the new `Can...` batch adds dream, exercise, fly, learn, laugh, read, hear, talk, see, and wink prompts so the capability lane keeps getting more of Pegasus's playful personality
+- the second `Can...` batch adds move, work, breathe, get tired, have emotions, whistle, cook, make coffee, make breakfast, and jump prompts so the broader capability lane keeps filling out in small, testable chunks
   - templated edge cases like `what is your sign`, `how many people do you know`, and `what is the loop` where live birthday and loop state are part of the line instead of a plain canned response
 - Exit criteria:
   - a stable checklist exists for the original persona surface
@@ -1005,3 +1017,4 @@ For `1.0.20` and beyond:
 6. Advanced Jibo features such as pizza delivery, Uber/Lyft integration, calendar management, smart home control (Home Assistant), etc. can be added after the conversion process is smooth and stable, with a focus on features that leverage the new cloud capabilities and content personalization enabled by Open Jibo
 7. LLM integration for more natural dialog, question answering, and content generation can be explored as a longer-term goal after the core platform is stable and has a growing user base to provide feedback and use cases for LLM-powered features
 8. Tiered Jibo brain/orchestration plan from README.md can be implemented in parallel with the above, starting with the simplest cloud features and gradually adding more complex capabilities as the platform matures and user feedback is collected, always preserving his unique charm and original features.
+9. Accessibility-first voice parity for menu actions, starting with backup / restore / update and extending to other critical app flows so menu functionality remains available through voice in a later release

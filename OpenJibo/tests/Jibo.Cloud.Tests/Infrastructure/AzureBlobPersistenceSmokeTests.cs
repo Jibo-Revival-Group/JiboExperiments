@@ -32,7 +32,7 @@ public sealed class AzureBlobPersistenceSmokeTests
         var loaded = store.Load<SmokeSnapshot>();
 
         Assert.NotNull(loaded);
-        Assert.Equal(payload.Name, loaded!.Name);
+        Assert.Equal(payload.Name, loaded.Name);
         Assert.Equal(payload.Value, loaded.Value);
         Assert.Equal("AzureBlob", stateBackend);
         Assert.Equal("AzureBlob", personalMemoryBackend);

@@ -55,12 +55,17 @@ Current batch note:
 - the seasonal batch now includes `what holidays do you celebrate`, New Year's resolution questions, `happy holidays`, `what halloween costume`, spring and summer suggestions, a favorite-season prompt, and holiday gift prompts
 - the holiday extras batch now includes `show santa tracker` so the seasonal holiday launcher stays source-backed too
 - the remaining seasonal polish now includes `do you like halloween`, `do you like holiday music`, `do you like holiday parties`, `are you looking forward to christmas`, `what are you doing for christmas`, and `what are you thankful for`
+- the Black History Month batch now includes `do you celebrate black history month`, `do you like black history month`, `are you looking forward to black history month`, `do you have plans for black history month`, `what should I do for black history month`, and `give me a black history month fact`
+- the stop-style batch now includes `stop moving`, `stop making that noise`, `stop ignoring me`, and `stop staring` alongside the generic stop lane
+- the global stop lane now also catches `stop talking`, `be quiet`, `be silent`, `shut up`, `silence`, `quiet down`, `no more music`, and `no more dancing` so the command feels closer to Pegasus
 - the favorites batch now includes `what is your favorite animal`, `what is your favorite bird`, `do you like penguins`, and `do you like animals` so the penguin-centered replies stay close to Pegasus
 - the latest social batch adds `welcome back`, `what are you thinking`, `what have you been doing`, and `what did you do` so presence and charm stay lively without distracting from the memory roadmap
 - the newest identity-charm batch adds `what's your name`, `do you have a nickname`, `do you like being Jibo`, `are there others like you`, and `what is your favorite name` so the robot stays familiar while still sounding like Pegasus
 - the next deep-personality batch adds `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` is still deferred until we add templated placeholder rendering
 - the next identity/knowledge batch adds `are you god`, `are you here`, `do you have super powers`, `how much do you know`, `what does jibo mean`, `where do you get info`, `what are you forbidden to do`, `what color are you`, and `what do you do when alone`
 - the next body/mission batch adds `how much do you weigh`, `how tall are you`, `how much do you cost`, `what if I unplug you`, `what is your purpose`, `what is your prime directive`, `what is jibo commander`, `do you like commander app`, and `what are you made of`
+- the new `Can...` batch adds `can you dream`, `can you exercise`, `can you fly`, `can you learn`, `can you laugh`, `can you read`, `can you hear`, `can you talk`, `can you see`, and `can you wink` so capability prompts stay playful and source-backed
+- the second `Can...` batch adds `can you move`, `can you work`, `can you breathe`, `can you get tired`, `can you have emotions`, `can you whistle`, `can you cook`, `can you make coffee`, `can you make breakfast`, and `can you jump` so the rest of the capability lane keeps filling out in testable slices
 - the templated edge-case batch adds `what is your sign`, `how many people do you know`, and `what is the loop` so the remaining source-backed lines can lean on live birthday and loop state
 - the work/eat/home batch adds `how do you work`, `what do you eat`, `where do you live`, and `what languages do you speak` so the everyday self-description cluster keeps moving toward the original phrasing
 - the age batch adds `how old are you` through `JBO_HowOldAreYou` so the birthday and first-powered-up phrasing stays source-backed instead of falling back to a generic age answer
@@ -382,6 +387,7 @@ First completed slice in this personal-report parity track:
 9. Provider-backed news expansion and deeper weather parity
 10. Capture indexing and retention boundary for group testing, including a lightweight manifest beside raw capture files
 11. Binary-safe media storage seam with file and Azure Blob adapters, ready for original/thumbnails follow-up
+12. Accessibility voice parity planning for menu-equivalent flows, starting with backup / restore / update voice coverage and broader critical-path accessibility in a later release
 
 For slice 1, use the new import ladder above to keep the work grounded in what OpenJibo can already render today versus what needs new scaffolding.
 For slices 2-5, use Pegasus phrase lists, MIM IDs, and behavior patterns as the source anchor before broadening into OpenJibo-native improvements.

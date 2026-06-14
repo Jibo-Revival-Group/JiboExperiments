@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Security.Cryptography;
+using System.Text.Json;
 using Azure.Storage.Blobs;
 using Jibo.Cloud.Application.Abstractions;
 
@@ -58,24 +58,33 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
         IDictionary<string, object?> meta = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         var metaBlob = _containerClient.GetBlobClient($"{relative}.json");
 
-        if (await metaBlob.ExistsAsync(cancellationToken))
-            try
+        if (!await metaBlob.ExistsAsync(cancellationToken))
+        {
+            return new MediaContentSnapshot
             {
-                var json = (await metaBlob.DownloadContentAsync(cancellationToken)).Value.Content.ToString();
-                using var document = JsonDocument.Parse(json);
-                var root = document.RootElement;
-                if (root.TryGetProperty("contentType", out var type) && type.ValueKind == JsonValueKind.String)
-                    contentType = type.GetString() ?? contentType;
+                ContentType = contentType,
+                Content = content.Value.Content.ToArray(),
+                Meta = meta as IReadOnlyDictionary<string, object?> ?? new Dictionary<string, object?>(meta)
+            };
+        }
 
-                if (root.TryGetProperty("meta", out var metaElement) && metaElement.ValueKind == JsonValueKind.Object)
-                    meta = JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(),
-                               JsonOptions) ??
-                           new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            }
-            catch
-            {
-                // Keep the raw binary available even if metadata parsing fails.
-            }
+        try
+        {
+            var json = (await metaBlob.DownloadContentAsync(cancellationToken)).Value.Content.ToString();
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            if (root.TryGetProperty("contentType", out var type) && type.ValueKind == JsonValueKind.String)
+                contentType = type.GetString() ?? contentType;
+
+            if (root.TryGetProperty("meta", out var metaElement) && metaElement.ValueKind == JsonValueKind.Object)
+                meta = JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(),
+                           JsonOptions) ??
+                       new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            // Keep the raw binary available even if metadata parsing fails.
+        }
 
         return new MediaContentSnapshot
         {

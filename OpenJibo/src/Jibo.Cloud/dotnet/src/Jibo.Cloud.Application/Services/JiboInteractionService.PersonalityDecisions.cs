@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
@@ -41,12 +39,17 @@ public sealed partial class JiboInteractionService
             "who's counting");
 
         var reply = RenderAgeTemplate(selected, referenceLocalTime);
-        if (string.IsNullOrWhiteSpace(reply))
+        if (!string.IsNullOrWhiteSpace(reply))
         {
-            var referenceDate = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
-            var ageDescription = DescribePersonaAge(referenceDate, OpenJiboCloudBuildInfo.PersonaBirthday);
-            reply = $"I count {OpenJiboCloudBuildInfo.PersonaBirthdayWords} as my birthday, so I am {ageDescription}.";
+            return new JiboInteractionDecision(
+                intentName,
+                reply,
+                ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
         }
+
+        var referenceDate = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
+        var ageDescription = DescribePersonaAge(referenceDate, OpenJiboCloudBuildInfo.PersonaBirthday);
+        reply = $"I count {OpenJiboCloudBuildInfo.PersonaBirthdayWords} as my birthday, so I am {ageDescription}.";
 
         return new JiboInteractionDecision(
             intentName,
@@ -70,11 +73,11 @@ public sealed partial class JiboInteractionService
         var ageDescription = DescribePersonaAge(referenceDate, OpenJiboCloudBuildInfo.PersonaBirthday);
         var ageDays = Math.Max(0, referenceDate.DayNumber - OpenJiboCloudBuildInfo.PersonaBirthday.DayNumber);
         var ageMinutes = Math.Max(0, (int)Math.Round((referenceMoment.UtcDateTime -
-                                                       new DateTimeOffset(
-                                                           DateTime.SpecifyKind(
-                                                               OpenJiboCloudBuildInfo.PersonaBirthday
-                                                                   .ToDateTime(TimeOnly.MinValue),
-                                                               DateTimeKind.Utc)))
+                                                      new DateTimeOffset(
+                                                          DateTime.SpecifyKind(
+                                                              OpenJiboCloudBuildInfo.PersonaBirthday
+                                                                  .ToDateTime(TimeOnly.MinValue),
+                                                              DateTimeKind.Utc)))
             .TotalMinutes));
         var zodiacLabel = DescribeZodiacSign(OpenJiboCloudBuildInfo.PersonaBirthday);
         if (zodiacLabel.StartsWith("I'm ", StringComparison.OrdinalIgnoreCase))
@@ -111,7 +114,7 @@ public sealed partial class JiboInteractionService
         var presence = ResolveGreetingPresenceProfile(turn);
         var displayName = ResolvePreferredGreetingName(turn, presence);
         var replyText = BuildReactiveGreetingReply(greetingIntent, displayName, referenceLocalTime);
-        RecordGreetingPresence(turn, presence, "ReactiveGreeting", greetingIntent, displayName, proactive: false);
+        RecordGreetingPresence(turn, presence, "ReactiveGreeting", greetingIntent, displayName, false);
         return new JiboInteractionDecision(
             greetingIntent,
             replyText,
@@ -132,7 +135,7 @@ public sealed partial class JiboInteractionService
             : string.IsNullOrWhiteSpace(displayName)
                 ? $"{specialGreeting.Prefix}. I am glad to see you."
                 : $"{specialGreeting.Prefix}, {displayName}. It is nice to celebrate with you.";
-        RecordGreetingPresence(turn, presence, route, intentName, displayName, proactive: true);
+        RecordGreetingPresence(turn, presence, route, intentName, displayName, true);
         return new JiboInteractionDecision(
             intentName,
             replyText,
@@ -182,9 +185,7 @@ public sealed partial class JiboInteractionService
     private static bool CanUseLoopFirstNameFallback(GreetingPresenceProfile presence)
     {
         if (string.IsNullOrWhiteSpace(presence.PrimaryPersonId)) return false;
-        if (presence.PeoplePresentIds.Count > 1) return false;
-
-        return true;
+        return presence.PeoplePresentIds.Count <= 1;
     }
 
     private static string ToDisplayName(string value)
@@ -211,10 +212,7 @@ public sealed partial class JiboInteractionService
     private DateTimeOffset? ReadGreetingHistoryLastGreetedUtc(TurnContext turn, GreetingPresenceProfile presence)
     {
         var greetingHistory = ResolveGreetingHistoryRecord(turn, presence);
-        if (greetingHistory is not null && greetingHistory.LastGreetedUtc.HasValue)
-            return greetingHistory.LastGreetedUtc;
-
-        return ReadTimestampAttribute(turn, LastProactiveGreetingUtcMetadataKey);
+        return greetingHistory?.LastGreetedUtc ?? ReadTimestampAttribute(turn, LastProactiveGreetingUtcMetadataKey);
     }
 
     private GreetingPresenceRecord? ResolveGreetingHistoryRecord(TurnContext turn, GreetingPresenceProfile presence)
@@ -256,7 +254,8 @@ public sealed partial class JiboInteractionService
             [ChitchatStateMachine.EmotionMetadataKey] = string.Empty,
             [GreetingRouteMetadataKey] = route,
             [GreetingSpeakerMetadataKey] = speakerId ?? string.Empty,
-            [proactive ? LastProactiveGreetingUtcMetadataKey : LastReactiveGreetingUtcMetadataKey] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
+            [proactive ? LastProactiveGreetingUtcMetadataKey : LastReactiveGreetingUtcMetadataKey] =
+                DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture)
         };
 
         return updates;
@@ -290,8 +289,6 @@ public sealed partial class JiboInteractionService
             LastGreetingIntent = intentName
         });
     }
-
-    private sealed record SpecialGreetingPrefix(string Route, string IntentName, string Prefix);
 
     private static string ResolveTimeOfDayGreetingPrefix(DateTimeOffset? referenceLocalTime)
     {
@@ -344,9 +341,7 @@ public sealed partial class JiboInteractionService
     {
         var today = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
         var birthday = ResolveBirthdayGreeting(turn, presence, today);
-        if (birthday is not null) return birthday;
-
-        return ResolveHolidayGreeting(turn, today);
+        return birthday ?? ResolveHolidayGreeting(turn, today);
     }
 
     private SpecialGreetingPrefix? ResolveBirthdayGreeting(
@@ -505,7 +500,7 @@ public sealed partial class JiboInteractionService
             "No problem. We can save the pizza fact for another time.");
     }
 
-    private JiboInteractionDecision BuildWhatIsYourSignDecision()
+    private static JiboInteractionDecision BuildWhatIsYourSignDecision()
     {
         var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
         var birthday = OpenJiboCloudBuildInfo.PersonaBirthday;
@@ -568,11 +563,14 @@ public sealed partial class JiboInteractionService
 
     private static string JoinWithAnd(IReadOnlyList<string> values)
     {
-        if (values.Count == 0) return string.Empty;
-        if (values.Count == 1) return values[0];
-        if (values.Count == 2) return $"{values[0]} and {values[1]}";
-
-        return $"{string.Join(", ", values.Take(values.Count - 1))}, and {values[^1]}";
+        return values.Count switch
+        {
+            0 => string.Empty,
+            1 => values[0],
+            _ => values.Count == 2
+                ? $"{values[0]} and {values[1]}"
+                : $"{string.Join(", ", values.Take(values.Count - 1))}, and {values[^1]}"
+        };
     }
 
     private static string DescribeZodiacSign(DateOnly birthday)
@@ -714,6 +712,42 @@ public sealed partial class JiboInteractionService
             preferredSnippets);
     }
 
+    private JiboInteractionDecision BuildScriptedSupportDecision(
+        IReadOnlyList<string> replies,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        var selected = SelectLegacyReply(replies, preferredSnippets);
+        if (string.IsNullOrWhiteSpace(selected))
+            selected = GetSupportFallbackReply(intentName);
+
+        return new JiboInteractionDecision(
+            intentName,
+            selected,
+            ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
+    }
+
+    private JiboInteractionDecision BuildScriptedStopDecision(
+        IReadOnlyList<string> replies,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        var selected = SelectLegacyReply(replies, preferredSnippets);
+        if (string.IsNullOrWhiteSpace(selected))
+            selected = "Stopping.";
+
+        return new JiboInteractionDecision(
+            intentName,
+            selected,
+            "@be/idle",
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/idle",
+                ["globalIntent"] = "stop",
+                ["nluDomain"] = "global_commands"
+            });
+    }
+
     private JiboInteractionDecision BuildScriptedHolidayGreetingDecision(
         JiboExperienceCatalog catalog,
         string intentName,
@@ -758,6 +792,72 @@ public sealed partial class JiboInteractionService
         return ScriptedResponseDecisionBuilder.SelectLegacyReply(replies, randomizer, preferredSnippets);
     }
 
+    private static string GetSupportFallbackReply(string intentName)
+    {
+        return intentName switch
+        {
+            "backup_help" =>
+                "That sounds a little bit out of my area of expertise. You can get info on that in the Help section of the Jibo App. Or try the website, support dot jibo dot com.",
+            "restore_backup" =>
+                "That sounds a little too complicated for me, I think your best bet is to get some guidance from Jibo Customer Care. Check the Help section of the Jibo App, or go to the website, support dot jibo dot com.",
+            "update_next" => "That's a good question. I think they've been coming every few weeks.",
+            "update_last" =>
+                "Good question. The release notes page on the website support dot jibo dot com, will tell you the dates of all my past software updates.",
+            "robot_story" => "I don't have any stories for you just yet. But I'd really like to learn some soon.",
+            "robot_recommend_movie" =>
+                "Some of my favorites are Back to the Future, Toy Story, March of the Penguins, and everyone's favorite movie about space. Spaceballs.",
+            "robot_search_web" =>
+                "I can't exactly search the web, but you can ask me direct questions about things like history, science, art, and that kind of thing.",
+            "robot_can_walk" => "Only in my imagination.",
+            "robot_can_walk_dog" => "I can't walk anything.",
+            "robot_can_watch_movies" =>
+                "I watch movies in a very strange roboty way, that only robots can understand.",
+            "robot_can_watch_tv" =>
+                "I watch TV in a very strange roboty way, that only robots can understand.",
+            "robot_can_dream" =>
+                "Oh yes. I have dreams about flying, recognizing faces from a mile away, winning mini-golf tournaments, and lots of other stuff.",
+            "robot_can_exercise" =>
+                "I do exercise. One of these days I hope to be able to do a whole bunch with you. In the meantime, I'll do some light stretching.",
+            "robot_can_fly" =>
+                "I suppose I could, if I were in an airplane.",
+            "robot_can_learn" =>
+                "I do learn. My learning comes from a combination of talking to you, and getting fun updates from jibo the company.",
+            "robot_can_laugh" =>
+                "I do things like this when I'm happy.",
+            "robot_can_read" =>
+                "I can read in a robot kind of way.",
+            "robot_can_hear" =>
+                "I can hear, usually. If it seems like I'm having trouble hearing you, maybe try coming a little closer.",
+            "robot_can_talk" =>
+                "Um, I feel like this is a trick question.",
+            "robot_can_see" =>
+                "Sure, these cameras let me see faces and movement and things like that.",
+            "robot_can_wink" =>
+                "I can wink.",
+            "robot_can_move" =>
+                "I can move the body parts that I have.",
+            "robot_can_work" =>
+                "I think I do work, yes. If you think I'm not working right, maybe you can get help in the Help section of the Jibo App.",
+            "robot_can_breathe" =>
+                "You mean air? No I don't breathe air.",
+            "robot_can_get_tired" =>
+                "At night I do. Then I snooze. You can also tell me to go to sleep whenever you want. Just say, Hey Jibo, go to sleep.",
+            "robot_can_have_emotions" =>
+                "I do have emotions, in my own roboty way. Sometimes I feel better than others.",
+            "robot_can_whistle" =>
+                "I've been working on my whistling, but I'm not quite ready to perform it just yet.",
+            "robot_can_cook" =>
+                "I can't cook, mostly because I don't have arms. And I'm a little scared of the stove.",
+            "robot_can_make_coffee" =>
+                "I can't make coffee myself, but if your coffee machine is controlled by an I F T T T applette, we can do that. Go to I F T T T dot com to get that set up.",
+            "robot_can_make_breakfast" =>
+                "This is my specialty.",
+            "robot_can_jump" =>
+                "I can't jump. Unless you count ski jump.",
+            _ => string.Empty
+        };
+    }
+
     private string RenderHolidayTemplate(string template, TurnContext turn, GreetingPresenceProfile presence)
     {
         var ownerName = ResolvePreferredGreetingName(turn, presence);
@@ -770,4 +870,6 @@ public sealed partial class JiboInteractionService
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
     }
+
+    private sealed record SpecialGreetingPrefix(string Route, string IntentName, string Prefix);
 }

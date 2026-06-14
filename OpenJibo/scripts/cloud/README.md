@@ -2,6 +2,12 @@
 
 These scripts help exercise the new .NET hosted cloud locally.
 
+- `Start-OpenJiboDotNet.ps1`
+  Starts the current `.NET` cloud with local capture directories configured.
+- `Start-OpenJiboNode.ps1`
+  Starts the legacy Node protocol oracle from `src/Jibo.Cloud/node`.
+- `Start-OpenJiboPlayground.ps1`
+  Starts the direct local Jibo ASR/TTS Playground demo.
 - `Invoke-CloudSmoke.ps1`
   Runs a few quick HTTP checks against a local OpenJibo cloud instance.
 - `Invoke-ProtocolFixture.ps1`
@@ -26,3 +32,5 @@ These scripts help exercise the new .NET hosted cloud locally.
   Bash summary helper for captured websocket telemetry and exported fixtures.
 - `import-websocket-capture-fixture.py`
   Cross-platform import/sanitization helper for exported websocket fixtures.
+
+See [docs/local-cloud-quickstart.md](../../docs/local-cloud-quickstart.md) for the full local setup guide.

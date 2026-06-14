@@ -5,6 +5,7 @@ using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.Persistence;
+using Microsoft.Extensions.Configuration;
 
 namespace Jibo.Cloud.Tests.Protocol;
 
@@ -125,6 +126,53 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.True(payload.RootElement.TryGetProperty("data", out var data));
         Assert.Equal(JsonValueKind.Array, data.ValueKind);
         Assert.Empty(data.EnumerateArray());
+    }
+
+    [Fact]
+    public async Task DispatchAsync_WithoutConfiguredAcceptedHosts_AllowsUnknownHosts()
+    {
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(), null,
+            new ConfigurationBuilder().Build());
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "example.invalid",
+            Method = "POST",
+            ServicePrefix = "Account_20160715",
+            Operation = "CreateHubToken",
+            BodyText = "{}"
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.StartsWith("hub-", payload.RootElement.GetProperty("token").GetString());
+    }
+
+    [Fact]
+    public async Task DispatchAsync_WithConfiguredAcceptedHosts_RejectsUnknownHost()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:AcceptedHosts:0"] = "api.jibo.com"
+            })
+            .Build();
+
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(), null, configuration);
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "example.invalid",
+            Method = "POST",
+            ServicePrefix = "Account_20160715",
+            Operation = "CreateHubToken",
+            BodyText = "{}"
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.False(payload.RootElement.GetProperty("accepted").GetBoolean());
+        Assert.Equal("example.invalid", payload.RootElement.GetProperty("host").GetString());
     }
 
     [Fact]

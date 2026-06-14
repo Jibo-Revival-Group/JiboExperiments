@@ -3,27 +3,37 @@ using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMediaContentStore? mediaContentStore = null)
+public sealed class JiboCloudProtocolService(
+    ICloudStateStore stateStore,
+    IMediaContentStore? mediaContentStore = null,
+    IConfiguration? configuration = null)
 {
     private const int SchedulerBackupDelayMs = 250;
     private const int SchedulerDownloadTickMs = 100;
     private const int SchedulerDownloadFinishDelayMs = 150;
 
-    private static readonly string[] AcceptedHosts =
-    [
-        "api.jibo.com",
-        "openjibo.com",
-        "openjibo.ai",
-        "localhost",
-        "127.0.0.1"
-    ];
+    private readonly HashSet<string> _acceptedHosts = BuildAcceptedHosts(configuration);
 
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private readonly object _schedulerLock = new();
     private readonly SchedulerRuntimeState _schedulerState = new();
+
+    private static HashSet<string> BuildAcceptedHosts(IConfiguration? configuration)
+    {
+        var hosts = configuration?
+            .GetSection("OpenJibo:AcceptedHosts")
+            .GetChildren()
+            .Select(child => child.Value)
+            .OfType<string>()
+            .Where(host => !string.IsNullOrWhiteSpace(host))
+            .ToArray() ?? [];
+
+        return new HashSet<string>(hosts, StringComparer.OrdinalIgnoreCase);
+    }
 
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope,
         CancellationToken cancellationToken = default)
@@ -50,7 +60,7 @@ public sealed class JiboCloudProtocolService(ICloudStateStore stateStore, IMedia
              envelope.Path.Equals("/upload/log-binary", StringComparison.OrdinalIgnoreCase)))
             return Task.FromResult(ProtocolDispatchResult.Raw(200, string.Empty));
 
-        if (!AcceptedHosts.Contains(envelope.HostName, StringComparer.OrdinalIgnoreCase))
+        if (_acceptedHosts.Count > 0 && !_acceptedHosts.Contains(envelope.HostName))
             return Task.FromResult(ProtocolDispatchResult.Ok(new
             {
                 ok = true,

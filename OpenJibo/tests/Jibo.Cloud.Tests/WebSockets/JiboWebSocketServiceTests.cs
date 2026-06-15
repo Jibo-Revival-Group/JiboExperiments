@@ -3163,6 +3163,88 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_SpinAround_EmitsIdleTurnAroundRedirect()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-spin-around-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-spin-around","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-spin-around-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-spin-around","data":{"text":"spin around"}}"""
+        });
+
+        Assert.Equal(5, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[4]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
+        Assert.Equal("turnAround", nlu.GetProperty("intent").GetString());
+        Assert.Equal("global_commands", nlu.GetProperty("domain").GetString());
+
+        using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
+        Assert.Equal("@be/idle",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("turnAround",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+    }
+
+    [Fact]
+    public async Task ClientAsr_Twirl_EmitsIdleTurnAroundRedirect()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-twirl-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-twirl","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-twirl-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-twirl","data":{"text":"twirl"}}"""
+        });
+
+        Assert.Equal(5, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[4]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
+        Assert.Equal("turnAround", nlu.GetProperty("intent").GetString());
+        Assert.Equal("global_commands", nlu.GetProperty("domain").GetString());
+
+        using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
+        Assert.Equal("@be/idle",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+        Assert.Equal("turnAround",
+            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+    }
+
+    [Fact]
     public async Task ClientAsr_TurnItDown_EmitsGlobalVolumeDownWithoutCloudSpeech()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope

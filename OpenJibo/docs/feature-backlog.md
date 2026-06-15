@@ -1054,13 +1054,16 @@ For `1.0.20` and beyond:
    - include first-boot/OOBE behavior so a converted robot can finish setup on the first launch after conversion
    - issue Open Jibo identities instead of blindly trusting stock robot identity values, especially for cloned or previously modified robots
    - planning anchor: [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md)
+   - status: `discovery` until the app-side onboarding sequence is mapped and the conversion audit helpers are ready
 2. Device compatibility matrix
    - prove the conversion path on the newest OOBE-capable devices
    - prove it on older stock devices such as the `1.9.2` baseline
    - test pre-`1.9.2` installs and alternate distributions such as NTT or MIT-special versions where available
+   - status: `discovery`
 3. Hardware-assisted "easy button" conversion
    - work with the Jibo Revival Group on a USB/RCM-based helper path
    - keep the file-system modification flow repeatable and safe for owners or testers
+   - status: `discovery`
 4. Cloud deployment and CI/CD
    - set up the hosted cloud for deployment into the Azure environment
    - make the release path reproducible from source to deployed service
@@ -1070,6 +1073,7 @@ For `1.0.20` and beyond:
    - recorded onboarding/session replay is the preferred first CI-friendly smoke gate
    - PostgreSQL migrations should use a DbUp-style SQL runner with an Open Jibo wrapper for apply, preview, dry-run/report, and container-entrypoint modes
    - planning anchor: [cloud-deployment-topology-plan.md](cloud-deployment-topology-plan.md)
+   - status: `ready`
 5. Hosting modes and service topology
    - support self-hosted operation with no external cloud dependency
    - support hybrid operation where non-self-hosted servers sync to a main cloud service
@@ -1078,6 +1082,7 @@ For `1.0.20` and beyond:
    - first self-hosted target is Docker Compose
    - first Docker Compose database is PostgreSQL
    - PostgreSQL migrations should run through explicit CI/CD or admin commands, with self-hosted startup migration behind an intentional switch
+   - status: `ready`
 6. Storage abstraction and sync
    - abstract storage so the rest of the system does not care which server implementation is backing it
    - keep only transient session/onboarding artifacts and device-local secrets permanently local-only for now
@@ -1088,6 +1093,7 @@ For `1.0.20` and beyond:
    - sign trust-boundary records before replication, not every local write
    - use hardware-stable `DeviceId`, cert thumbprint, issued-identity lineage, and build/config hashes as corroborating clone-detection signals only
    - planning anchor: [storage-trust-consensus-plan.md](storage-trust-consensus-plan.md)
+   - status: `discovery`
 7. OpenJibo.com web UI and account surface
    - provide a web UI for openjibo.com
    - support paid access on the hosted side while leaving room for free or self-hosted options elsewhere
@@ -1098,11 +1104,13 @@ For `1.0.20` and beyond:
    - provider onboarding should use short-lived signed session tokens plus provider-signed callbacks/returns with nonce/state binding
    - later boots should prefer the selected provider cloud first and enter explicit recovery instead of silently switching clouds
    - developer/smoke-only self-hosted paths can use HTTP locally; owner-facing robot paths should default to HTTPS/self-signed or equivalent patched trust behavior until safe HTTP is proven
+   - status: `discovery`
 8. Loop advancement and multi-Jibo support
    - support family/friend advancement, multiple user recognition, and multiple Jibo interaction
    - keep the identity model ready for Jibo-to-Jibo communication and shared household use
    - scope `1.0.20` to the identity graph and relationship model first, not direct robot-to-robot transport
    - model loops as households that can hold multiple people and multiple robots without assuming a single robot per loop forever
+   - status: `discovery`
 9. Next-tier features after the platform is stable
    - advanced integrations such as pizza delivery, Uber/Lyft, calendar management, and smart home control
    - longer-term LLM integration for more natural dialog and content generation

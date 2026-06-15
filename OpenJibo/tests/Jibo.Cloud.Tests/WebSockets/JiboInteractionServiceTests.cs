@@ -4424,6 +4424,23 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_Twirl_MapsToIdleTurnAroundCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "twirl",
+            NormalizedTranscript = "twirl"
+        });
+
+        Assert.Equal("turn_around", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("turnAround", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_NeverMindWithPunctuation_MapsToIdleStopCommand()
     {
         var service = CreateService();

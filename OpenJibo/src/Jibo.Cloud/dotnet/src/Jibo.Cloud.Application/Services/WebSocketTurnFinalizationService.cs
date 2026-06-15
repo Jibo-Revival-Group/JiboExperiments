@@ -112,6 +112,7 @@ public sealed class WebSocketTurnFinalizationService(
         "funny",
         "dance",
         "boogie",
+        "twirl",
         "time",
         "date",
         "today",

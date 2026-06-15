@@ -4410,7 +4410,7 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
-    public async Task BufferedHotphraseAudio_WithSttFailure_BecomesGreetingAndKeepsFollowUpOpen()
+    public async Task BufferedHotphraseAudio_WithSttFailure_DoesNotSyntheticGreeting()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -4459,18 +4459,8 @@ public sealed class JiboWebSocketServiceTests
             Binary = new byte[3000]
         });
 
-        Assert.Equal(3, replies.Count);
-        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
-        Assert.Equal("EOS", ReadReplyType(replies[1]));
-        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
-
-        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("hello",
-            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
-        Assert.Equal("hello",
-            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-
-        Assert.True(session.FollowUpOpen);
+        Assert.Empty(replies);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
     }
 
     [Fact]

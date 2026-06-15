@@ -679,7 +679,7 @@ public sealed class WebSocketTurnFinalizationService(
                 return [];
             }
 
-            if (ShouldTreatEmptyHotphraseTurnAsGreeting(finalizedTurn))
+            if (ShouldTreatEmptyHotphraseTurnAsGreeting(finalizedTurn, turnState))
                 finalizedTurn = WithSyntheticTranscript(finalizedTurn, "hello");
 
             if (ShouldIgnoreLateEmptyTurn(finalizedTurn, session, messageType))
@@ -1746,6 +1746,7 @@ public sealed class WebSocketTurnFinalizationService(
         bool allowFallbackOnMissingTranscript)
     {
         if (!allowFallbackOnMissingTranscript || !ReadBoolAttribute(turn, "listenHotphrase")) return false;
+        if (!string.IsNullOrWhiteSpace(turnState.LastSttError)) return false;
 
         if (!ReadRules(turn, "listenRules")
                 .Any(static rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase)))
@@ -1757,10 +1758,12 @@ public sealed class WebSocketTurnFinalizationService(
         return turnState.BufferedAudioBytes >= AutoFinalizeMinBufferedAudioBytes;
     }
 
-    private static bool ShouldTreatEmptyHotphraseTurnAsGreeting(TurnContext turn)
+    private static bool ShouldTreatEmptyHotphraseTurnAsGreeting(TurnContext turn, WebSocketTurnState turnState)
     {
         if (!string.IsNullOrWhiteSpace(turn.NormalizedTranscript) ||
             !string.IsNullOrWhiteSpace(turn.RawTranscript)) return false;
+
+        if (!string.IsNullOrWhiteSpace(turnState.LastSttError)) return false;
 
         var messageType = ReadMessageType(turn);
         if (messageType is not ("CLIENT_ASR" or "CLIENT_NLU")) return false;

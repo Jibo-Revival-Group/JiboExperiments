@@ -48,6 +48,7 @@ public interface ICloudStateStore
 
     IReadOnlyList<BackupRecord> GetBackups();
     BackupRecord CreateBackup(string loopId, string name);
+    BackupRecord? RestoreBackup(string? backupId = null);
     bool ShouldCreateSymmetricKey(string loopId);
     string GetOrCreateSymmetricKey(string loopId);
     KeyRequestRecord CreateKeyRequest(string loopId, string publicKey);

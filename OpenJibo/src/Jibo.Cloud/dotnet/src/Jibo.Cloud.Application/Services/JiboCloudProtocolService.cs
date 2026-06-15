@@ -539,6 +539,22 @@ public sealed class JiboCloudProtocolService(
             });
         }
 
+        if (operation.Equals("Restore", StringComparison.OrdinalIgnoreCase))
+        {
+            var body = envelope.TryParseBody();
+            var backupId = ReadString(body, "backupId") ?? ReadString(body, "id") ??
+                           ReadString(body, "etag") ?? ReadString(body, "location");
+            var restored = stateStore.RestoreBackup(backupId);
+            return restored is null
+                ? ProtocolDispatchResult.Raw(404, "{\"error\":\"backup not found\"}", "application/json")
+                : ProtocolDispatchResult.Ok(new
+                {
+                    result = "ok",
+                    rebootRequired = true,
+                    backupId = restored.BackupId
+                });
+        }
+
         if (!operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
         {
             return ProtocolDispatchResult.Ok(Array.Empty<object>());

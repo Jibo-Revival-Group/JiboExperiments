@@ -146,82 +146,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         var snapshot = _snapshotStore.Load<PersistentStateSnapshot>();
         if (snapshot is null) return;
-
-        _account = snapshot.Account ?? _account;
-        _robot = snapshot.Robot ?? _robot;
-        _robotProfile = snapshot.RobotProfile ?? _robotProfile;
-
-        _devices.Clear();
-        foreach (var device in snapshot.Devices ?? []) _devices[device.DeviceId] = device;
-
-        if (_devices.IsEmpty || !_devices.ContainsKey(_robot.DeviceId)) _devices[_robot.DeviceId] = _robot;
-
-        _sessionsByToken.Clear();
-        foreach (var session in snapshot.Sessions ?? [])
-            if (!string.IsNullOrWhiteSpace(session.Token))
-                _sessionsByToken[session.Token] = session.ToRecord();
-
-        _symmetricKeys.Clear();
-        foreach (var pair in snapshot.SymmetricKeys ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase))
-            _symmetricKeys[pair.Key] = pair.Value;
-
-        _keyRequests.Clear();
-        foreach (var keyRequest in snapshot.KeyRequests ?? []) _keyRequests[keyRequest.RequestId] = keyRequest;
-
-        _updates.Clear();
-        _updates.AddRange(snapshot.Updates ?? []);
-
-        _media.Clear();
-        _media.AddRange(snapshot.Media ?? []);
-
-        _backups.Clear();
-        _backups.AddRange(snapshot.Backups ?? []);
-
-        _commuteProfiles.Clear();
-        _commuteProfiles.AddRange(snapshot.CommuteProfiles ?? []);
-
-        _calendarEvents.Clear();
-        _calendarEvents.AddRange(snapshot.CalendarEvents ?? []);
-
-        _greetingPresences.Clear();
-        _greetingPresences.AddRange(snapshot.GreetingPresences ?? []);
-
-        _loops.Clear();
-        _loops.AddRange(snapshot.Loops ?? []);
-
-        _holidayOverrides.Clear();
-        _holidayOverrides.AddRange(snapshot.Holidays ?? []);
-
-        _loopMembers.Clear();
-        _loopMembers.AddRange(snapshot.LoopMembers ?? []);
-
-        _people.Clear();
-        _people.AddRange(snapshot.People ?? []);
-
-        _users.Clear();
-        _users.AddRange(snapshot.Users ?? []);
-
-        ApplyConfiguredOwnerName();
-        EnsureDefaultTopology();
-
-        if (_robotProfile is null ||
-            !string.Equals(_robotProfile.RobotId, _robot.RobotId, StringComparison.OrdinalIgnoreCase))
-            _robotProfile = new RobotProfile
-            {
-                RobotId = _robot.RobotId,
-                Payload = new Dictionary<string, object?>
-                {
-                    ["SSID"] = "my-ssid",
-                    ["connectedAt"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                    ["platform"] = _robot.FirmwareVersion ?? "12.10.0",
-                    ["serialNumber"] = _robot.DeviceId
-                },
-                UpdatedUtc = DateTimeOffset.UtcNow
-            };
-
-        Interlocked.Exchange(ref _revision, snapshot.Revision);
-        _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
-        _lastSavedUtc = snapshot.LastSavedUtc;
+        ApplySnapshot(snapshot);
     }
 
     public void SavePersistedState()
@@ -229,32 +154,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         lock (_syncRoot)
         {
             var now = DateTimeOffset.UtcNow;
-            var snapshot = new PersistentStateSnapshot
-            {
-                SchemaVersion = CurrentSchemaVersion,
-                Revision = Interlocked.Read(ref _revision),
-                LastLoadedUtc = _lastLoadedUtc,
-                LastSavedUtc = now,
-                Account = _account,
-                Robot = _robot,
-                RobotProfile = _robotProfile,
-                Devices = _devices.Values.ToArray(),
-                Sessions = _sessionsByToken.Values.Select(MapSessionSnapshot).ToArray(),
-                SymmetricKeys = _symmetricKeys.ToDictionary(entry => entry.Key, entry => entry.Value,
-                    StringComparer.OrdinalIgnoreCase),
-                KeyRequests = _keyRequests.Values.ToArray(),
-                Updates = _updates.ToArray(),
-                Media = _media.ToArray(),
-                Backups = _backups.ToArray(),
-                CommuteProfiles = _commuteProfiles.ToArray(),
-                CalendarEvents = _calendarEvents.ToArray(),
-                GreetingPresences = _greetingPresences.ToArray(),
-                Loops = _loops.ToArray(),
-                Holidays = _holidayOverrides.ToArray(),
-                LoopMembers = _loopMembers.ToArray(),
-                People = _people.ToArray(),
-                Users = _users.ToArray()
-            };
+            var snapshot = CaptureSnapshot(now);
             _snapshotStore.Save(snapshot);
             _lastSavedUtc = now;
         }
@@ -723,14 +623,49 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public BackupRecord CreateBackup(string loopId, string name)
     {
+        var snapshotJson = JsonSerializer.Serialize(CaptureSnapshot(DateTimeOffset.UtcNow), PersistenceJsonOptions);
         var backup = new BackupRecord
         {
             LoopId = string.IsNullOrWhiteSpace(loopId) ? null : loopId.Trim(),
-            Name = string.IsNullOrWhiteSpace(name) ? "backup" : name.Trim()
+            Name = string.IsNullOrWhiteSpace(name) ? "backup" : name.Trim(),
+            SnapshotJson = snapshotJson
         };
 
         _backups.Add(backup);
         TouchState();
+        return backup;
+    }
+
+    public BackupRecord? RestoreBackup(string? backupId = null)
+    {
+        BackupRecord? backup;
+        lock (_syncRoot)
+        {
+            backup = string.IsNullOrWhiteSpace(backupId)
+                ? _backups.OrderByDescending(item => item.CreatedUtc).FirstOrDefault()
+                : _backups.FirstOrDefault(item => item.BackupId.Equals(backupId, StringComparison.OrdinalIgnoreCase));
+
+            if (backup is null || string.IsNullOrWhiteSpace(backup.SnapshotJson))
+                return null;
+
+            PersistentStateSnapshot? snapshot;
+            try
+            {
+                snapshot = JsonSerializer.Deserialize<PersistentStateSnapshot>(backup.SnapshotJson, PersistenceJsonOptions);
+            }
+            catch
+            {
+                snapshot = null;
+            }
+
+            if (snapshot is null)
+                return null;
+
+            ApplySnapshot(snapshot);
+            Interlocked.Increment(ref _revision);
+        }
+
+        SavePersistedState();
         return backup;
     }
 
@@ -1373,6 +1308,115 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             LastTransId = session.LastTransId,
             Metadata = session.Metadata
         };
+    }
+
+    private PersistentStateSnapshot CaptureSnapshot(DateTimeOffset now)
+    {
+        return new PersistentStateSnapshot
+        {
+            SchemaVersion = CurrentSchemaVersion,
+            Revision = Interlocked.Read(ref _revision),
+            LastLoadedUtc = _lastLoadedUtc,
+            LastSavedUtc = now,
+            Account = _account,
+            Robot = _robot,
+            RobotProfile = _robotProfile,
+            Devices = _devices.Values.ToArray(),
+            Sessions = _sessionsByToken.Values.Select(MapSessionSnapshot).ToArray(),
+            SymmetricKeys = _symmetricKeys.ToDictionary(entry => entry.Key, entry => entry.Value,
+                StringComparer.OrdinalIgnoreCase),
+            KeyRequests = _keyRequests.Values.ToArray(),
+            Updates = _updates.ToArray(),
+            Media = _media.ToArray(),
+            Backups = _backups.ToArray(),
+            CommuteProfiles = _commuteProfiles.ToArray(),
+            CalendarEvents = _calendarEvents.ToArray(),
+            GreetingPresences = _greetingPresences.ToArray(),
+            Loops = _loops.ToArray(),
+            Holidays = _holidayOverrides.ToArray(),
+            LoopMembers = _loopMembers.ToArray(),
+            People = _people.ToArray(),
+            Users = _users.ToArray()
+        };
+    }
+
+    private void ApplySnapshot(PersistentStateSnapshot snapshot)
+    {
+        _account = snapshot.Account ?? _account;
+        _robot = snapshot.Robot ?? _robot;
+        _robotProfile = snapshot.RobotProfile ?? _robotProfile;
+
+        _devices.Clear();
+        foreach (var device in snapshot.Devices ?? []) _devices[device.DeviceId] = device;
+
+        if (_devices.IsEmpty || !_devices.ContainsKey(_robot.DeviceId)) _devices[_robot.DeviceId] = _robot;
+
+        _sessionsByToken.Clear();
+        foreach (var session in snapshot.Sessions ?? [])
+            if (!string.IsNullOrWhiteSpace(session.Token))
+                _sessionsByToken[session.Token] = session.ToRecord();
+
+        _symmetricKeys.Clear();
+        foreach (var pair in snapshot.SymmetricKeys ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase))
+            _symmetricKeys[pair.Key] = pair.Value;
+
+        _keyRequests.Clear();
+        foreach (var keyRequest in snapshot.KeyRequests ?? []) _keyRequests[keyRequest.RequestId] = keyRequest;
+
+        _updates.Clear();
+        _updates.AddRange(snapshot.Updates ?? []);
+
+        _media.Clear();
+        _media.AddRange(snapshot.Media ?? []);
+
+        _backups.Clear();
+        _backups.AddRange(snapshot.Backups ?? []);
+
+        _commuteProfiles.Clear();
+        _commuteProfiles.AddRange(snapshot.CommuteProfiles ?? []);
+
+        _calendarEvents.Clear();
+        _calendarEvents.AddRange(snapshot.CalendarEvents ?? []);
+
+        _greetingPresences.Clear();
+        _greetingPresences.AddRange(snapshot.GreetingPresences ?? []);
+
+        _loops.Clear();
+        _loops.AddRange(snapshot.Loops ?? []);
+
+        _holidayOverrides.Clear();
+        _holidayOverrides.AddRange(snapshot.Holidays ?? []);
+
+        _loopMembers.Clear();
+        _loopMembers.AddRange(snapshot.LoopMembers ?? []);
+
+        _people.Clear();
+        _people.AddRange(snapshot.People ?? []);
+
+        _users.Clear();
+        _users.AddRange(snapshot.Users ?? []);
+
+        ApplyConfiguredOwnerName();
+        EnsureDefaultTopology();
+
+        if (_robotProfile is null ||
+            !string.Equals(_robotProfile.RobotId, _robot.RobotId, StringComparison.OrdinalIgnoreCase))
+            _robotProfile = new RobotProfile
+            {
+                RobotId = _robot.RobotId,
+                Payload = new Dictionary<string, object?>
+                {
+                    ["SSID"] = "my-ssid",
+                    ["connectedAt"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    ["platform"] = _robot.FirmwareVersion ?? "12.10.0",
+                    ["serialNumber"] = _robot.DeviceId
+                },
+                UpdatedUtc = DateTimeOffset.UtcNow
+            };
+
+        Interlocked.Exchange(ref _revision, snapshot.Revision);
+        _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
+        _lastSavedUtc = snapshot.LastSavedUtc;
     }
 
     private sealed class PersistentStateSnapshot

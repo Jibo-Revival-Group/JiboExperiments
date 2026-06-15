@@ -19,6 +19,7 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - finish the update path investigation with the phantom-update false positive resolved or explicitly characterized
 - keep the backup prompt and update menu state aligned with the robot-local behavior we observed in stock Jibo
 - prove restore as a persisted-state rehydration path, not as a new hosted API shape
+- the concrete restore contract is `Backup_20170222.Restore`: it rehydrates a prior backup snapshot, returns success with `rebootRequired = true`, and does not introduce a new top-level restore service
 - keep the cloud compatibility bridge only where the updater helper still expects it, and keep it returning no content instead of a fabricated manifest when nothing is staged
 - verify the update-related protocol shapes against the robot capture: `ListUpdates`, `ListUpdatesFrom`, `GetUpdateFrom`, `CreateUpdate`, and `RemoveUpdate`
 - keep menu truth on robot-local backup/update status, not on the compatibility bridge

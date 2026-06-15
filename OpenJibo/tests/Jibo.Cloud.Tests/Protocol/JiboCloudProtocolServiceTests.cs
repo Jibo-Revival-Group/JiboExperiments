@@ -1020,6 +1020,84 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task BackupRestore_RehydratesPersistedStateAcrossStoreRecreation()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-restore-{Guid.NewGuid():N}.json");
+        try
+        {
+            var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(persistencePath));
+
+            await service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Update_20160715",
+                Operation = "CreateUpdate",
+                BodyText =
+                    """{"fromVersion":"12.10.0","toVersion":"12.10.1","changes":"Restore baseline","subsystem":"robot"}"""
+            });
+
+            var backup = await service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Backup_20170222",
+                Operation = "Create",
+                BodyText = """{"name":"restore-point"}"""
+            });
+
+            using var backupPayload = JsonDocument.Parse(backup.BodyText);
+            var backupId = backupPayload.RootElement.GetProperty("etag").GetString();
+            Assert.False(string.IsNullOrWhiteSpace(backupId));
+
+            await service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Update_20160715",
+                Operation = "CreateUpdate",
+                BodyText =
+                    """{"fromVersion":"12.10.1","toVersion":"12.10.2","changes":"After backup","subsystem":"robot"}"""
+            });
+
+            var restore = await service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Backup_20170222",
+                Operation = "Restore",
+                BodyText = $$"""{"backupId":"{{backupId}}"}"""
+            });
+
+            using var restorePayload = JsonDocument.Parse(restore.BodyText);
+            Assert.Equal(200, restore.StatusCode);
+            Assert.Equal("ok", restorePayload.RootElement.GetProperty("result").GetString());
+            Assert.True(restorePayload.RootElement.GetProperty("rebootRequired").GetBoolean());
+            Assert.Equal(backupId, restorePayload.RootElement.GetProperty("backupId").GetString());
+
+            var secondService = new JiboCloudProtocolService(new InMemoryCloudStateStore(persistencePath));
+            var updates = await secondService.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "api.jibo.com",
+                Method = "POST",
+                ServicePrefix = "Update_20160715",
+                Operation = "ListUpdates",
+                BodyText = """{"subsystem":"robot"}"""
+            });
+
+            using var updatesPayload = JsonDocument.Parse(updates.BodyText);
+            Assert.Contains(updatesPayload.RootElement.EnumerateArray(),
+                item => item.GetProperty("changes").GetString() == "Restore baseline");
+            Assert.DoesNotContain(updatesPayload.RootElement.EnumerateArray(),
+                item => item.GetProperty("changes").GetString() == "After backup");
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
+    [Fact]
     public async Task MediaCreate_StoresBodyAndServesMediaUrl()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope

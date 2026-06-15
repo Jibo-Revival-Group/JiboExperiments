@@ -6,4 +6,5 @@ public sealed class BackupRecord
     public DateTimeOffset CreatedUtc { get; init; } = DateTimeOffset.UtcNow;
     public string? LoopId { get; init; }
     public string Name { get; init; } = "backup";
+    public string? SnapshotJson { get; init; }
 }

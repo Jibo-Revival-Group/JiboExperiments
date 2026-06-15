@@ -18,6 +18,8 @@ These scripts help exercise the new .NET hosted cloud locally.
   Deploys the managed foundation resources, then seeds Key Vault secrets from the deployment outputs and supplied bootstrap values.
 - `Deploy-OpenJiboManaged.ps1`
   Deploys the first Azure Container Apps stack from the Bicep template under `infra/azure/container-apps/`. Use `-RunMigration` to apply schema changes and `-RunSmoke` to verify the deployed endpoint.
+- `Test-OpenJiboManagedDeploymentContract.ps1`
+  Validates the managed deployment contract by checking the Bicep templates, workflow, and deploy scripts for expected markers before any Azure calls run.
 - GitHub Actions `openjibo-cloud-managed-deploy`
   Manual workflow that deploys the foundation, builds the managed image, deploys the ACA stack, runs migrations, and smokes the deployed endpoint.
 - `OPENJIBO_POSTGRES_PASSWORD`

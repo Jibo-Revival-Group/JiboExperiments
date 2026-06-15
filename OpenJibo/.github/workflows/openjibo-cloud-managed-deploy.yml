@@ -21,6 +21,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Validate managed deployment contract
+        shell: pwsh
+        run: ./scripts/cloud/Test-OpenJiboManagedDeploymentContract.ps1
+
       - name: Azure login
         uses: azure/login@v2
         with:

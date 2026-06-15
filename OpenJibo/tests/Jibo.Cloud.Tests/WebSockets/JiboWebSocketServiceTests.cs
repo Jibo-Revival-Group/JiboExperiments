@@ -4063,6 +4063,36 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task Listen_BareTwerk_IsPreservedAndRoutesToDanceIntent()
+    {
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-twerk-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-twerk","data":{"text":"twerk","rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("twerk",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("twerk",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+
+        var session = _store.FindSessionByToken("hub-twerk-token");
+        Assert.NotNull(session);
+        Assert.Equal("twerk", session.LastIntent);
+        Assert.Equal("twerk", session.LastTranscript);
+    }
+
+    [Fact]
     public async Task BufferedAudio_WithSyntheticTranscriptHint_FinalizesThroughSttSeam()
     {
         var listenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope

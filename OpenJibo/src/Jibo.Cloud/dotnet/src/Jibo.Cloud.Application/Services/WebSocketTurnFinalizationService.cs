@@ -119,6 +119,7 @@ public sealed class WebSocketTurnFinalizationService(
         "hello",
         "hi",
         "hey",
+        "twerk",
         "weather",
         "news",
         "radio",
@@ -1183,9 +1184,9 @@ public sealed class WebSocketTurnFinalizationService(
 
         if (IsLowSignalSingleTokenTranscript(transcript)) return false;
 
-        if (transcript.Length >= 6) return true;
+        if (SingleTokenUsableTranscripts.Contains(transcript)) return true;
 
-        return transcript is "joke" or "dance" or "time" or "date" or "today" or "day" or "hello" or "hi" or "hey";
+        return transcript.Length >= 6;
     }
 
     private static bool IsLowSignalSingleTokenTranscript(string transcript)

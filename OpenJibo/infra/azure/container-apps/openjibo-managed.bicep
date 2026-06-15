@@ -9,45 +9,14 @@ param managedEnvironmentName string = 'openjibo-managed-env'
 @description('Name of the Azure Container Apps resource.')
 param containerAppName string = 'openjibo-cloud'
 
-@description('Log Analytics workspace name used by the Container Apps environment.')
-param logAnalyticsWorkspaceName string = 'openjibo-managed-logs'
-
 @description('Login server for Azure Container Registry, for example myregistry.azurecr.io.')
 param registryLoginServer string
 
-@secure()
-@description('Username for Azure Container Registry.')
-param registryUsername string
+@description('Name of the Key Vault that stores managed secrets.')
+param keyVaultName string
 
-@secure()
-@description('Password for Azure Container Registry.')
-param registryPassword string
-
-@description('Repository name for the managed Open Jibo image.')
-param imageRepository string = 'openjibo-cloud'
-
-@description('Image tag for the managed Open Jibo image.')
+@description('Tag for the managed Open Jibo image.')
 param imageTag string = 'managed'
-
-@secure()
-@description('Azure SQL connection string for Open Jibo state persistence.')
-param stateConnectionString string
-
-@secure()
-@description('Azure SQL connection string for Open Jibo personal memory persistence.')
-param personalMemoryConnectionString string
-
-@secure()
-@description('Azure Blob Storage connection string for media persistence.')
-param mediaConnectionString string
-
-@secure()
-@description('Optional OpenWeather API key.')
-param openWeatherApiKey string = ''
-
-@secure()
-@description('Optional NewsAPI key.')
-param newsApiKey string = ''
 
 @description('Minimum number of replicas for the runtime container.')
 param minReplicas int = 1
@@ -55,18 +24,20 @@ param minReplicas int = 1
 @description('Maximum number of replicas for the runtime container.')
 param maxReplicas int = 2
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
-  name: logAnalyticsWorkspaceName
-  location: location
-  properties: {
-    sku: {
-      name: 'PerGB2018'
-    }
-    retentionInDays: 30
-  }
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
+  name: 'openjibo-managed-logs'
 }
 
 var logAnalyticsWorkspaceKey = listKeys(logAnalyticsWorkspace.id, '2022-10-01').primarySharedKey
+var registryName = split(registryLoginServer, '.')[0]
+
+resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+  name: registryName
+}
+
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
+}
 
 resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: managedEnvironmentName
@@ -85,6 +56,9 @@ resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
   location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     managedEnvironmentId: managedEnvironment.id
     configuration: {
@@ -104,34 +78,34 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       registries: [
         {
           server: registryLoginServer
-          username: registryUsername
-          passwordSecretRef: 'acr-password'
+          identity: 'system'
         }
       ]
       secrets: [
         {
-          name: 'acr-password'
-          value: registryPassword
-        }
-        {
           name: 'state-connection-string'
-          value: stateConnectionString
+          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-state-connection-string'
+          identity: 'system'
         }
         {
           name: 'personal-memory-connection-string'
-          value: personalMemoryConnectionString
+          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-personal-memory-connection-string'
+          identity: 'system'
         }
         {
           name: 'media-connection-string'
-          value: mediaConnectionString
+          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-media-connection-string'
+          identity: 'system'
         }
         {
           name: 'open-weather-api-key'
-          value: openWeatherApiKey
+          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-openweather-api-key'
+          identity: 'system'
         }
         {
           name: 'news-api-key'
-          value: newsApiKey
+          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-newsapi-key'
+          identity: 'system'
         }
       ]
     }
@@ -139,7 +113,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'openjibo-cloud'
-          image: '${registryLoginServer}/${imageRepository}:${imageTag}'
+          image: '${registryLoginServer}/openjibo-cloud:${imageTag}'
           env: [
             {
               name: 'ASPNETCORE_ENVIRONMENT'
@@ -193,6 +167,36 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         maxReplicas: maxReplicas
       }
     }
+  }
+}
+
+var acrPullRoleDefinitionId = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '7f951dda-4ed3-4680-a7ca-43fe172d538d'
+)
+
+var keyVaultSecretsUserRoleDefinitionId = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '4633458b-17de-408a-b874-0445c86b69e6'
+)
+
+resource registryPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(registry.id, containerApp.name, 'acr-pull')
+  scope: registry
+  properties: {
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: acrPullRoleDefinitionId
+  }
+}
+
+resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, containerApp.name, 'kv-secrets-user')
+  scope: keyVault
+  properties: {
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: keyVaultSecretsUserRoleDefinitionId
   }
 }
 

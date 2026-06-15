@@ -7,15 +7,6 @@
     },
     "containerAppName": {
       "value": "openjibo-cloud"
-    },
-    "logAnalyticsWorkspaceName": {
-      "value": "openjibo-managed-logs"
-    },
-    "imageRepository": {
-      "value": "openjibo-cloud"
-    },
-    "imageTag": {
-      "value": "managed"
     }
   }
 }

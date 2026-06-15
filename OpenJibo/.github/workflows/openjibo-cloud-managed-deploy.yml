@@ -26,35 +26,41 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Deploy managed foundation
+        shell: pwsh
+        run: >
+          ./scripts/cloud/Deploy-OpenJiboManagedFoundation.ps1
+          -ResourceGroupName $env:OPENJIBO_RESOURCE_GROUP
+          -StateConnectionString $env:OPENJIBO_STATE_CONNECTION_STRING
+          -PersonalMemoryConnectionString $env:OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING
+          -MediaConnectionString $env:OPENJIBO_MEDIA_CONNECTION_STRING
+          -OpenWeatherApiKey $env:OPENWEATHER_API_KEY
+          -NewsApiKey $env:NEWSAPI_KEY
+        env:
+          OPENJIBO_RESOURCE_GROUP: ${{ secrets.OPENJIBO_RESOURCE_GROUP }}
+          OPENJIBO_STATE_CONNECTION_STRING: ${{ secrets.OPENJIBO_STATE_CONNECTION_STRING }}
+          OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING: ${{ secrets.OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING }}
+          OPENJIBO_MEDIA_CONNECTION_STRING: ${{ secrets.OPENJIBO_MEDIA_CONNECTION_STRING }}
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+
       - name: Build and push managed image
         shell: pwsh
         run: ./scripts/cloud/Publish-OpenJiboManaged.ps1 -RegistryName $env:OPENJIBO_ACR_NAME -Tag ${{ inputs.image_tag }}
         env:
-          OPENJIBO_ACR_NAME: ${{ secrets.OPENJIBO_ACR_NAME }}
+          OPENJIBO_ACR_NAME: openjiboacr
 
       - name: Deploy managed Container Apps stack
         shell: pwsh
         run: >
           ./scripts/cloud/Deploy-OpenJiboManaged.ps1
           -ResourceGroupName $env:OPENJIBO_RESOURCE_GROUP
-          -RegistryLoginServer $env:OPENJIBO_ACR_LOGIN_SERVER
-          -RegistryUsername $env:OPENJIBO_ACR_USERNAME
-          -RegistryPassword $env:OPENJIBO_ACR_PASSWORD
+          -KeyVaultName $env:OPENJIBO_KEY_VAULT_NAME
+          -RegistryName $env:OPENJIBO_ACR_NAME
           -ImageTag ${{ inputs.image_tag }}
-          -StateConnectionString $env:OPENJIBO_STATE_CONNECTION_STRING
-          -PersonalMemoryConnectionString $env:OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING
-          -MediaConnectionString $env:OPENJIBO_MEDIA_CONNECTION_STRING
-          -OpenWeatherApiKey $env:OPENWEATHER_API_KEY
-          -NewsApiKey $env:NEWSAPI_KEY
           -RunMigration
           -RunSmoke
         env:
           OPENJIBO_RESOURCE_GROUP: ${{ secrets.OPENJIBO_RESOURCE_GROUP }}
-          OPENJIBO_ACR_LOGIN_SERVER: ${{ secrets.OPENJIBO_ACR_LOGIN_SERVER }}
-          OPENJIBO_ACR_USERNAME: ${{ secrets.OPENJIBO_ACR_USERNAME }}
-          OPENJIBO_ACR_PASSWORD: ${{ secrets.OPENJIBO_ACR_PASSWORD }}
-          OPENJIBO_STATE_CONNECTION_STRING: ${{ secrets.OPENJIBO_STATE_CONNECTION_STRING }}
-          OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING: ${{ secrets.OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING }}
-          OPENJIBO_MEDIA_CONNECTION_STRING: ${{ secrets.OPENJIBO_MEDIA_CONNECTION_STRING }}
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          OPENJIBO_KEY_VAULT_NAME: openjibokv
+          OPENJIBO_ACR_NAME: openjiboacr

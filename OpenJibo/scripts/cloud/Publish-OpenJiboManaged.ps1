@@ -20,8 +20,5 @@ if (-not (Test-Path -LiteralPath $resolvedDockerfilePath)) {
 
 $image = "$RegistryName.azurecr.io/$ImageName:$Tag"
 
-Write-Host "Building managed Open Jibo image: $image"
-docker build -f $resolvedDockerfilePath -t $image $repoRoot
-
-Write-Host "Pushing managed Open Jibo image: $image"
-docker push $image
+Write-Host "Building managed Open Jibo image in ACR: $image"
+az acr build --registry $RegistryName --image "$ImageName`:$Tag" --file $resolvedDockerfilePath $repoRoot

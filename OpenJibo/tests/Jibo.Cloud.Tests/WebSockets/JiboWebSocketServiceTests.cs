@@ -4292,6 +4292,72 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task PrematureSocketClose_DefersAutoFinalizeUntilGraceExpires()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-premature-close-token",
+            Text = """{"type":"LISTEN","transID":"trans-premature-close","data":{"rules":["wake-word"]}}"""
+        });
+
+        for (var index = 0; index < 4; index += 1)
+        {
+            var interimReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-premature-close-token",
+                Binary = new byte[3000]
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = _store.FindSessionByToken("hub-premature-close-token");
+        Assert.NotNull(session);
+
+        _service.MarkPrematureSocketLoopEnded(session);
+
+        var deferredReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-premature-close-token",
+            Binary = new byte[3000]
+        });
+
+        Assert.Empty(deferredReplies);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(5, session.TurnState.BufferedAudioChunkCount);
+        Assert.Equal(15000, session.TurnState.BufferedAudioBytes);
+
+        session.TurnState.AutoFinalizeBlockedUntilUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(1);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+
+        var finalReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-premature-close-token",
+            Binary = new byte[3000]
+        });
+
+        Assert.Equal(3, finalReplies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(finalReplies[0]));
+        Assert.Equal("EOS", ReadReplyType(finalReplies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(finalReplies[2]));
+        Assert.Equal("heyJibo",
+            JsonDocument.Parse(finalReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
+                .GetProperty("intent").GetString());
+    }
+
+    [Fact]
     public async Task BufferedAudio_WithChatTranscriptHint_FinalizesAsChat()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope

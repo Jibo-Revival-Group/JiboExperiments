@@ -15,6 +15,7 @@ public sealed class WebSocketTurnFinalizationService(
     private const int AutoFinalizeMinBufferedAudioChunks = 5;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
+    private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(1800);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
     private static readonly TimeSpan AutoFinalizeContinuationDeferralMaxAge = TimeSpan.FromMilliseconds(3600);
@@ -200,6 +201,14 @@ public sealed class WebSocketTurnFinalizationService(
             ResetTurnState(session.TurnState, nextTransId);
 
         session.LastTransId = nextTransId;
+    }
+
+    public static void MarkPrematureSocketLoopEnded(CloudSession session)
+    {
+        var turnState = session.TurnState;
+        if (!turnState.AwaitingTurnCompletion && turnState.BufferedAudioBytes <= 0) return;
+
+        turnState.AutoFinalizeBlockedUntilUtc = DateTimeOffset.UtcNow.Add(AutoFinalizeReconnectGrace);
     }
 
     public async Task<IReadOnlyList<WebSocketReply>> HandleBinaryAudioAsync(
@@ -504,6 +513,7 @@ public sealed class WebSocketTurnFinalizationService(
         session.TurnState.LastAudioReceivedUtc = null;
         session.TurnState.BufferedAudioFrames.Clear();
         session.TurnState.FinalizeAttemptCount = 0;
+        session.TurnState.AutoFinalizeBlockedUntilUtc = null;
         session.Metadata.Remove("audioTranscriptHint");
     }
 
@@ -529,6 +539,7 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.IgnoreAdditionalAudioUntilUtc = null;
         turnState.ListenRules = [];
         turnState.ListenAsrHints = [];
+        turnState.AutoFinalizeBlockedUntilUtc = null;
     }
 
     private async Task<IReadOnlyList<WebSocketReply>> FinalizeTurnAsync(
@@ -917,6 +928,10 @@ public sealed class WebSocketTurnFinalizationService(
     private static bool ShouldAutoFinalize(CloudSession session)
     {
         var turnState = session.TurnState;
+        if (turnState.AutoFinalizeBlockedUntilUtc.HasValue &&
+            turnState.AutoFinalizeBlockedUntilUtc.Value > DateTimeOffset.UtcNow)
+            return false;
+
         var turnAge = turnState.FirstAudioReceivedUtc.HasValue
             ? DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value
             : TimeSpan.Zero;

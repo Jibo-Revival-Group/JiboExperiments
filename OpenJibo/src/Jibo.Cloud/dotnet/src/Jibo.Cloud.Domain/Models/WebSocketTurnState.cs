@@ -12,6 +12,7 @@ public sealed class WebSocketTurnState
     public bool ListenHotphrase { get; set; }
     public int HotphraseEmptyTurnCount { get; set; }
     public DateTimeOffset? IgnoreAdditionalAudioUntilUtc { get; set; }
+    public DateTimeOffset? AutoFinalizeBlockedUntilUtc { get; set; }
     public string? AudioTranscriptHint { get; set; }
     public string? LastSttError { get; set; }
     public DateTimeOffset? LastSttErrorUtc { get; set; }

@@ -131,6 +131,11 @@ public sealed class JiboWebSocketService(
         }
     }
 
+    public void MarkPrematureSocketLoopEnded(CloudSession session)
+    {
+        WebSocketTurnFinalizationService.MarkPrematureSocketLoopEnded(session);
+    }
+
     private static string ReadMessageType(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return "UNKNOWN";

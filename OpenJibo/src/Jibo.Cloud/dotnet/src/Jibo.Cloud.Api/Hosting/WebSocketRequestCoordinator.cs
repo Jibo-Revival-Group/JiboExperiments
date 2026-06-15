@@ -78,6 +78,9 @@ internal sealed class WebSocketRequestCoordinator(
 
         var closeEnvelope = CreateEnvelope(context, kind, token);
         var closeSession = webSocketService.GetOrCreateSession(closeEnvelope);
+        if (isPrematureClose)
+            webSocketService.MarkPrematureSocketLoopEnded(closeSession);
+
         await telemetrySink.RecordConnectionClosedAsync(closeEnvelope, closeSession,
             $"socket-loop-ended{(isPrematureClose ? "-prematurely" : string.Empty)}", context.RequestAborted);
     }

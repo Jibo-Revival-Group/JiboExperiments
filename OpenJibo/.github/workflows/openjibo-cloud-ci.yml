@@ -18,6 +18,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Validate self-hosted deployment contract
+        shell: pwsh
+        run: ./scripts/cloud/Test-OpenJiboSelfHostedDeploymentContract.ps1
+
       - name: Restore and test
         run: dotnet test tests/Jibo.Cloud.Tests/Jibo.Cloud.Tests.csproj
 

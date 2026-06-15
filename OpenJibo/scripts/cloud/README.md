@@ -15,7 +15,7 @@ These scripts help exercise the new .NET hosted cloud locally.
 - `Publish-OpenJiboManaged.ps1`
   Builds and pushes the managed Open Jibo image to Azure Container Registry using `az acr build`.
 - `Deploy-OpenJiboManagedFoundation.ps1`
-  Deploys the managed foundation resources, creates Key Vault secrets, and prepares the Azure environment.
+  Deploys the managed foundation resources, then seeds Key Vault secrets from the deployment outputs and supplied bootstrap values.
 - `Deploy-OpenJiboManaged.ps1`
   Deploys the first Azure Container Apps stack from the Bicep template under `infra/azure/container-apps/`. Use `-RunMigration` to apply schema changes and `-RunSmoke` to verify the deployed endpoint.
 - GitHub Actions `openjibo-cloud-managed-deploy`

@@ -15,26 +15,6 @@ param keyVaultName string = 'openjibokv'
 @description('Name of the storage account used by Open Jibo managed.')
 param storageAccountName string = 'openjibostore'
 
-@secure()
-@description('Azure SQL connection string for Open Jibo state persistence.')
-param stateConnectionString string
-
-@secure()
-@description('Azure SQL connection string for Open Jibo personal memory persistence.')
-param personalMemoryConnectionString string
-
-@secure()
-@description('Azure Blob Storage connection string for Open Jibo media persistence.')
-param mediaConnectionString string
-
-@secure()
-@description('Optional OpenWeather API key.')
-param openWeatherApiKey string = ''
-
-@secure()
-@description('Optional NewsAPI key.')
-param newsApiKey string = ''
-
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: logAnalyticsWorkspaceName
   location: location
@@ -83,46 +63,6 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     allowBlobPublicAccess: false
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
-  }
-}
-
-resource stateConnectionSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'openjibo-state-connection-string'
-  properties: {
-    value: stateConnectionString
-  }
-}
-
-resource personalMemoryConnectionSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'openjibo-personal-memory-connection-string'
-  properties: {
-    value: personalMemoryConnectionString
-  }
-}
-
-resource mediaConnectionSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'openjibo-media-connection-string'
-  properties: {
-    value: mediaConnectionString
-  }
-}
-
-resource openWeatherSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!empty(openWeatherApiKey)) {
-  parent: keyVault
-  name: 'openjibo-openweather-api-key'
-  properties: {
-    value: openWeatherApiKey
-  }
-}
-
-resource newsApiSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!empty(newsApiKey)) {
-  parent: keyVault
-  name: 'openjibo-newsapi-key'
-  properties: {
-    value: newsApiKey
   }
 }
 

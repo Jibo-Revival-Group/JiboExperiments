@@ -3,12 +3,8 @@ param(
     [string]$ResourceGroupName,
 
     [string]$TemplatePath = "infra/azure/foundation/openjibo-managed-foundation.bicep",
-    [Parameter(Mandatory = $true)]
-    [string]$StateConnectionString,
-    [Parameter(Mandatory = $true)]
-    [string]$PersonalMemoryConnectionString,
-    [Parameter(Mandatory = $true)]
-    [string]$MediaConnectionString,
+    [string]$StateConnectionString = "",
+    [string]$PersonalMemoryConnectionString = "",
     [string]$OpenWeatherApiKey = "",
     [string]$NewsApiKey = ""
 )
@@ -29,14 +25,31 @@ $arguments = @(
     "--resource-group", $ResourceGroupName,
     "--name", $deploymentName,
     "--template-file", $resolvedTemplatePath,
-    "--parameters", "stateConnectionString=$StateConnectionString",
-    "--parameters", "personalMemoryConnectionString=$PersonalMemoryConnectionString",
-    "--parameters", "mediaConnectionString=$MediaConnectionString",
-    "--parameters", "openWeatherApiKey=$OpenWeatherApiKey",
-    "--parameters", "newsApiKey=$NewsApiKey",
     "--output", "json"
 )
 
 Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceGroupName'"
 $deploymentJson = az @arguments | ConvertFrom-Json
+$outputs = $deploymentJson.properties.outputs
+
+if (-not [string]::IsNullOrWhiteSpace($StateConnectionString)) {
+    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-state-connection-string --value $StateConnectionString | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) {
+    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-personal-memory-connection-string --value $PersonalMemoryConnectionString | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($outputs.storageConnectionString.value)) {
+    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-media-connection-string --value $outputs.storageConnectionString.value | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($OpenWeatherApiKey)) {
+    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-openweather-api-key --value $OpenWeatherApiKey | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($NewsApiKey)) {
+    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-newsapi-key --value $NewsApiKey | Out-Null
+}
+
 $deploymentJson

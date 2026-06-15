@@ -6,7 +6,7 @@ Current split:
 
 - `foundation/`
   - creates the shared Azure resources such as Key Vault, ACR, Log Analytics, and storage
-  - stores runtime secret values in Key Vault during deployment
+  - outputs the storage connection string so the deploy script can seed Key Vault secrets after deployment
 - `container-apps/`
   - deploys the Open Jibo Container Apps runtime
   - reads runtime secrets from Key Vault via managed identity

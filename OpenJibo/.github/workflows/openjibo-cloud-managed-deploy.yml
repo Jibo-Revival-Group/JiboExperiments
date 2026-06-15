@@ -33,14 +33,12 @@ jobs:
           -ResourceGroupName $env:OPENJIBO_RESOURCE_GROUP
           -StateConnectionString $env:OPENJIBO_STATE_CONNECTION_STRING
           -PersonalMemoryConnectionString $env:OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING
-          -MediaConnectionString $env:OPENJIBO_MEDIA_CONNECTION_STRING
           -OpenWeatherApiKey $env:OPENWEATHER_API_KEY
           -NewsApiKey $env:NEWSAPI_KEY
         env:
           OPENJIBO_RESOURCE_GROUP: ${{ secrets.OPENJIBO_RESOURCE_GROUP }}
           OPENJIBO_STATE_CONNECTION_STRING: ${{ secrets.OPENJIBO_STATE_CONNECTION_STRING }}
           OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING: ${{ secrets.OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING }}
-          OPENJIBO_MEDIA_CONNECTION_STRING: ${{ secrets.OPENJIBO_MEDIA_CONNECTION_STRING }}
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
 

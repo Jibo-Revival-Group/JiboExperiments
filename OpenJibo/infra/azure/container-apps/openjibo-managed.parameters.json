@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "managedEnvironmentName": {
+      "value": "openjibo-managed-env"
+    },
+    "containerAppName": {
+      "value": "openjibo-cloud"
+    },
+    "logAnalyticsWorkspaceName": {
+      "value": "openjibo-managed-logs"
+    },
+    "imageRepository": {
+      "value": "openjibo-cloud"
+    },
+    "imageTag": {
+      "value": "managed"
+    }
+  }
+}

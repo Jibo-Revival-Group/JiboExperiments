@@ -14,6 +14,8 @@ These scripts help exercise the new .NET hosted cloud locally.
   Runs the PostgreSQL migration wrapper against the local or managed database targets.
 - `Publish-OpenJiboManaged.ps1`
   Builds and pushes the managed Open Jibo image to Azure Container Registry.
+- `Deploy-OpenJiboManaged.ps1`
+  Deploys the first Azure Container Apps stack from the Bicep template under `infra/azure/container-apps/`.
 - `OPENJIBO_POSTGRES_PASSWORD`
   Required when running the self-hosted PostgreSQL stack locally or in CI so the database password stays out of source control.
 - `Invoke-ProtocolFixture.ps1`

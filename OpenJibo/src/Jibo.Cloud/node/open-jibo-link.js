@@ -1772,7 +1772,10 @@
         "-y",
         "-i", inputWavPath,
         "-af",
-        "silenceremove=start_periods=1:start_duration=0.08:start_threshold=-42dB:stop_periods=-1:stop_duration=0.60:stop_threshold=-42dB,apad=pad_dur=0.6,volume=6dB",
+        // Keep the whole turn audio intact. Aggressive silence trimming can clip
+        // wake-word-adjacent commands, which makes the temp WAV misleading and
+        // can erase the command we actually need to transcribe.
+        "apad=pad_dur=0.6,volume=6dB",
         "-ar", "16000",
         "-ac", "1",
         "-f", "wav",

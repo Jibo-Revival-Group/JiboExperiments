@@ -44,12 +44,12 @@ internal sealed class SqliteSnapshotStore(string connectionString, string snapsh
 
         using var command = connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO PersistenceSnapshots (SnapshotName, SnapshotJson, UpdatedUtc)
-            VALUES (@name, @json, @updated)
-            ON CONFLICT(SnapshotName) DO UPDATE SET
-                SnapshotJson = excluded.SnapshotJson,
-                UpdatedUtc   = excluded.UpdatedUtc
-            """;
+                              INSERT INTO PersistenceSnapshots (SnapshotName, SnapshotJson, UpdatedUtc)
+                              VALUES (@name, @json, @updated)
+                              ON CONFLICT(SnapshotName) DO UPDATE SET
+                                  SnapshotJson = excluded.SnapshotJson,
+                                  UpdatedUtc   = excluded.UpdatedUtc
+                              """;
         command.Parameters.AddWithValue("@name", snapshotName);
         command.Parameters.AddWithValue("@json", json);
         command.Parameters.AddWithValue("@updated", DateTimeOffset.UtcNow.ToString("O"));
@@ -60,13 +60,13 @@ internal sealed class SqliteSnapshotStore(string connectionString, string snapsh
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE IF NOT EXISTS PersistenceSnapshots (
-                SnapshotName TEXT NOT NULL PRIMARY KEY,
-                SnapshotJson TEXT NOT NULL,
-                CreatedUtc   TEXT NOT NULL DEFAULT (datetime('now')),
-                UpdatedUtc   TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-            """;
+                              CREATE TABLE IF NOT EXISTS PersistenceSnapshots (
+                                  SnapshotName TEXT NOT NULL PRIMARY KEY,
+                                  SnapshotJson TEXT NOT NULL,
+                                  CreatedUtc   TEXT NOT NULL DEFAULT (datetime('now')),
+                                  UpdatedUtc   TEXT NOT NULL DEFAULT (datetime('now'))
+                              )
+                              """;
         command.ExecuteNonQuery();
     }
 }

@@ -19,15 +19,19 @@ public sealed class JiboCloudProtocolService(
     private const int SchedulerDownloadFinishDelayMs = 150;
 
     private readonly HashSet<string> _acceptedHosts = BuildAcceptedHosts(configuration);
-    private readonly string? _configuredRobotId = ReadConfiguredRobotId(configuration);
-    private readonly bool _enableBackupRestore =
-        configuration?["OpenJibo:EnableBackupRestore"]?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? true;
-    private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
-    private readonly object _schedulerLock = new();
-    private readonly SchedulerRuntimeState _schedulerState = new();
-    private readonly ConcurrentDictionary<string, OobeTokenState> _oobeTokens = new(StringComparer.Ordinal);
+
     private readonly ICloudAuthProtocolHandler _authHandler =
         authHandler ?? new CloudAuthProtocolHandler(stateStore);
+
+    private readonly string? _configuredRobotId = ReadConfiguredRobotId(configuration);
+
+    private readonly bool _enableBackupRestore =
+        configuration?["OpenJibo:EnableBackupRestore"]?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? true;
+
+    private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
+    private readonly ConcurrentDictionary<string, OobeTokenState> _oobeTokens = new(StringComparer.Ordinal);
+    private readonly object _schedulerLock = new();
+    private readonly SchedulerRuntimeState _schedulerState = new();
 
     private static HashSet<string> BuildAcceptedHosts(IConfiguration? configuration)
     {
@@ -245,14 +249,14 @@ public sealed class JiboCloudProtocolService(
         {
             stateStore.AddLoopMember(
                 loopIdForMutation,
-                accountId: null,
-                email: ReadString(body, "email"),
-                firstName: ReadString(body, "firstName"),
-                lastName: ReadString(body, "lastName"),
-                gender: ReadString(body, "gender"),
-                birthday: ReadLong(body, "birthday"),
-                isChild: ReadBool(body, "isChild"),
-                type: "member");
+                null,
+                ReadString(body, "email"),
+                ReadString(body, "firstName"),
+                ReadString(body, "lastName"),
+                ReadString(body, "gender"),
+                ReadLong(body, "birthday"),
+                ReadBool(body, "isChild"),
+                "member");
 
             var loop = stateStore.GetLoops().FirstOrDefault(l =>
                 l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
@@ -312,6 +316,7 @@ public sealed class JiboCloudProtocolService(
             {
                 // Member not found - keep protocol flow moving.
             }
+
             var loop = stateStore.GetLoops().FirstOrDefault(l =>
                 l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
             if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
@@ -332,6 +337,7 @@ public sealed class JiboCloudProtocolService(
             {
                 // Member not found - keep protocol flow moving.
             }
+
             return ProtocolDispatchResult.Ok(new { result = "ok" });
         }
 
@@ -492,9 +498,7 @@ public sealed class JiboCloudProtocolService(
         }
 
         if (!operation.Equals("UpsertCommute", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(Array.Empty<object>());
-        }
 
         var hasIsEnabled = body is { } enabledBody && enabledBody.TryGetProperty("isEnabled", out _);
         var hasIsComplete = body is { } completeBody && completeBody.TryGetProperty("isComplete", out _);
@@ -518,7 +522,6 @@ public sealed class JiboCloudProtocolService(
                 : 25
         };
         return ProtocolDispatchResult.Ok(MapCommute(stateStore.UpsertCommuteProfile(commute)));
-
     }
 
     private ProtocolDispatchResult HandleBackup(string operation, ProtocolEnvelope envelope)
@@ -543,7 +546,7 @@ public sealed class JiboCloudProtocolService(
         {
             var body = envelope.TryParseBody();
             var backupId = ReadString(body, "backupId") ?? ReadString(body, "id") ??
-                           ReadString(body, "etag") ?? ReadString(body, "location");
+                ReadString(body, "etag") ?? ReadString(body, "location");
             var restored = stateStore.RestoreBackup(backupId);
             return restored is null
                 ? ProtocolDispatchResult.Raw(404, "{\"error\":\"backup not found\"}", "application/json")
@@ -556,16 +559,14 @@ public sealed class JiboCloudProtocolService(
         }
 
         if (!operation.Equals("Create", StringComparison.OrdinalIgnoreCase))
-        {
             return ProtocolDispatchResult.Ok(Array.Empty<object>());
-        }
 
         var createBody = envelope.TryParseBody();
         var requestedName = ReadString(createBody, "name") ?? ReadString(createBody, "backupName");
         var createLoopId = ReadString(createBody, "loopId") ?? stateStore.GetLoops()[0].LoopId;
         return ProtocolDispatchResult.Ok(
-            MapBackup(stateStore.CreateBackup(createLoopId, requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}")));
-
+            MapBackup(stateStore.CreateBackup(createLoopId,
+                requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}")));
     }
 
     private ProtocolDispatchResult HandleKey(string operation, ProtocolEnvelope envelope)
@@ -661,7 +662,6 @@ public sealed class JiboCloudProtocolService(
         var requestedRobotId = _configuredRobotId ?? ReadString(envelope.TryParseBody(), "id");
         if (!string.IsNullOrWhiteSpace(requestedRobotId) &&
             !requestedRobotId.Equals(robot.RobotId, StringComparison.OrdinalIgnoreCase))
-        {
             stateStore.UpdateRobot(new DeviceRegistration
             {
                 DeviceId = robot.DeviceId,
@@ -671,7 +671,6 @@ public sealed class JiboCloudProtocolService(
                 ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
                 HostMappings = robot.HostMappings
             });
-        }
 
         return ProtocolDispatchResult.Ok(new
         {
@@ -837,7 +836,9 @@ public sealed class JiboCloudProtocolService(
     private bool GetSchedulerBackupStatus()
     {
         lock (_schedulerLock)
+        {
             return _schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate;
+        }
     }
 
     private object? GetSchedulerDownloadStatus()
@@ -849,7 +850,8 @@ public sealed class JiboCloudProtocolService(
             return new
             {
                 updates = _schedulerState.DownloadStatus.Updates
-                    .Select(update => MapSchedulerUpdate(update, _schedulerState.DownloadedUpdateIds.Contains(update.Id)))
+                    .Select(update =>
+                        MapSchedulerUpdate(update, _schedulerState.DownloadedUpdateIds.Contains(update.Id)))
                     .ToArray(),
                 status = _schedulerState.DownloadStatus.Status is null
                     ? null
@@ -870,7 +872,8 @@ public sealed class JiboCloudProtocolService(
     {
         lock (_schedulerLock)
         {
-            if (_schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate || _schedulerState.DownloadStatus is not null)
+            if (_schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate ||
+                _schedulerState.DownloadStatus is not null)
                 return;
 
             _schedulerState.BackingUp = true;
@@ -939,7 +942,6 @@ public sealed class JiboCloudProtocolService(
                         lock (_schedulerLock)
                         {
                             if (_schedulerState.DownloadStatus is not null)
-                            {
                                 _schedulerState.DownloadStatus.Status = new SchedulerDownloadProgress
                                 {
                                     Id = update.UpdateId,
@@ -947,7 +949,6 @@ public sealed class JiboCloudProtocolService(
                                     Received = received,
                                     Status = "downloading"
                                 };
-                            }
                         }
                     }
 
@@ -991,7 +992,8 @@ public sealed class JiboCloudProtocolService(
     {
         lock (_schedulerLock)
         {
-            if (_schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate || _schedulerState.DownloadStatus is not null)
+            if (_schedulerState.BackingUp || _schedulerState.BackingBeforeUpdate ||
+                _schedulerState.DownloadStatus is not null)
                 return;
 
             _schedulerState.BackingUp = true;
@@ -1016,7 +1018,9 @@ public sealed class JiboCloudProtocolService(
     private bool IsSchedulerUpdateDownloaded(string updateId)
     {
         lock (_schedulerLock)
+        {
             return _schedulerState.DownloadedUpdateIds.Contains(updateId);
+        }
     }
 
     private static object MapSchedulerUpdate(UpdateManifest update, bool downloaded)
@@ -1074,9 +1078,7 @@ public sealed class JiboCloudProtocolService(
 
         if (Version.TryParse(candidateVersion, out var candidate) &&
             Version.TryParse(fromVersion, out var requested))
-        {
             return candidate > requested;
-        }
 
         return string.Compare(candidateVersion, fromVersion, StringComparison.OrdinalIgnoreCase) > 0;
     }
@@ -1110,50 +1112,6 @@ public sealed class JiboCloudProtocolService(
                 url = $"https://api.jibo.com/backup/{backup.BackupId}"
             }
         };
-    }
-
-    private sealed class SchedulerRuntimeState
-    {
-        public bool BackingUp { get; set; }
-        public bool BackingBeforeUpdate { get; set; }
-        public string? ActiveFilter { get; set; }
-        public SchedulerDownloadState? DownloadStatus { get; set; }
-        public HashSet<string> DownloadedUpdateIds { get; } = new(StringComparer.OrdinalIgnoreCase);
-    }
-
-    private sealed class SchedulerDownloadState
-    {
-        public SchedulerUpdateState[] Updates { get; set; } = [];
-        public SchedulerDownloadProgress? Status { get; set; }
-    }
-
-    private sealed record SchedulerUpdateState
-    {
-        public string Id { get; init; } = string.Empty;
-        public string Subsystem { get; init; } = "robot";
-        public string Changes { get; init; } = string.Empty;
-        public long Length { get; init; }
-        public string ToVersion { get; init; } = string.Empty;
-        public IDictionary<string, object?> Dependencies { get; init; } = new Dictionary<string, object?>();
-        public bool Downloaded { get; init; }
-    }
-
-    private sealed class SchedulerDownloadProgress
-    {
-        public string Id { get; set; } = string.Empty;
-        public long Length { get; set; }
-        public long Received { get; set; }
-        public string Status { get; set; } = "downloading";
-        public string? Reason { get; set; }
-        public string? Error { get; set; }
-    }
-
-    private sealed class OobeTokenState
-    {
-        public string? DeviceId { get; set; }
-        public string? LoopId { get; init; }
-        public bool Complete { get; set; }
-        public DateTimeOffset ExpiresUtc { get; init; }
     }
 
     private static object MapHoliday(HolidayRecord holiday)
@@ -1304,6 +1262,50 @@ public sealed class JiboCloudProtocolService(
         return envelope.Headers.TryGetValue(headerName, out var value) &&
                bool.TryParse(value, out var parsed) &&
                parsed;
+    }
+
+    private sealed class SchedulerRuntimeState
+    {
+        public bool BackingUp { get; set; }
+        public bool BackingBeforeUpdate { get; set; }
+        public string? ActiveFilter { get; set; }
+        public SchedulerDownloadState? DownloadStatus { get; set; }
+        public HashSet<string> DownloadedUpdateIds { get; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private sealed class SchedulerDownloadState
+    {
+        public SchedulerUpdateState[] Updates { get; set; } = [];
+        public SchedulerDownloadProgress? Status { get; set; }
+    }
+
+    private sealed record SchedulerUpdateState
+    {
+        public string Id { get; init; } = string.Empty;
+        public string Subsystem { get; init; } = "robot";
+        public string Changes { get; init; } = string.Empty;
+        public long Length { get; init; }
+        public string ToVersion { get; init; } = string.Empty;
+        public IDictionary<string, object?> Dependencies { get; init; } = new Dictionary<string, object?>();
+        public bool Downloaded { get; init; }
+    }
+
+    private sealed class SchedulerDownloadProgress
+    {
+        public string Id { get; set; } = string.Empty;
+        public long Length { get; set; }
+        public long Received { get; set; }
+        public string Status { get; set; } = "downloading";
+        public string? Reason { get; set; }
+        public string? Error { get; set; }
+    }
+
+    private sealed class OobeTokenState
+    {
+        public string? DeviceId { get; set; }
+        public string? LoopId { get; init; }
+        public bool Complete { get; set; }
+        public DateTimeOffset ExpiresUtc { get; init; }
     }
 
     private sealed class NullMediaContentStore : IMediaContentStore

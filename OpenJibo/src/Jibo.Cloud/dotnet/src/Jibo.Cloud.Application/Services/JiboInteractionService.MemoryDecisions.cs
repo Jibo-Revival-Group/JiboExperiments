@@ -52,11 +52,9 @@ public sealed partial class JiboInteractionService
         personalMemoryStore.SetBirthday(tenantScope, birthday);
         var birthdayDate = TryParseBirthdayDate(birthday);
         if (birthdayDate is null)
-        {
             return new JiboInteractionDecision(
                 "memory_set_birthday",
                 $"Got it. I will remember your birthday is {birthday}.");
-        }
 
         var birthdayLabel = ResolvePreferredBirthdayLabel(turn);
         cloudStateStore?.UpsertHoliday(new HolidayRecord

@@ -522,9 +522,7 @@ public sealed partial class JiboInteractionService
 
             if (!runtime.TryGetProperty("currentLocation", out var currentLocation) ||
                 currentLocation.ValueKind != JsonValueKind.Object)
-            {
                 return TryReadStringProperty(runtime, "locationName", "currentLocation", "city", "placeName");
-            }
 
             resolvedLocation = TryReadStringProperty(currentLocation,
                 "displayName",
@@ -578,7 +576,6 @@ public sealed partial class JiboInteractionService
                 perception.ValueKind == JsonValueKind.Object)
             {
                 if (perception.TryGetProperty("speaker", out var speaker))
-                {
                     speakerId = speaker.ValueKind switch
                     {
                         JsonValueKind.String => speaker.GetString() ?? string.Empty,
@@ -586,11 +583,9 @@ public sealed partial class JiboInteractionService
                                                 string.Empty,
                         _ => speakerId
                     };
-                }
 
                 if (perception.TryGetProperty("peoplePresent", out var peoplePresent) &&
                     peoplePresent.ValueKind == JsonValueKind.Array)
-                {
                     // ReSharper disable once ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
                     foreach (var person in peoplePresent.EnumerateArray())
                     {
@@ -605,7 +600,6 @@ public sealed partial class JiboInteractionService
                             !string.Equals(personId, "NOT_TRAINED", StringComparison.OrdinalIgnoreCase))
                             peoplePresentIds.Add(personId);
                     }
-                }
             }
 
             var triggerLooperId = turn.Attributes.TryGetValue("triggerLooperId", out var rawTriggerLooperId)
@@ -728,13 +722,10 @@ public sealed partial class JiboInteractionService
             !TryResolveWeatherDayOfWeekOffset(normalizedTranscript, referenceLocalTime.Value, out var dayOffset,
                 out var dayName) ||
             dayOffset <= 0)
-        {
             return false;
-        }
 
         weatherDate = new WeatherDateEntity("weekday", dayOffset, $"On {dayName}");
         return true;
-
     }
 
     private static bool ShouldAcceptClientWeatherDateEntity(string normalizedTranscript)
@@ -905,7 +896,6 @@ public sealed partial class JiboInteractionService
         dayOffset = referenceLocalTime.DayOfWeek == DayOfWeek.Saturday ? 1 : 2;
         leadIn = "Later this week";
         return true;
-
     }
 
     private static bool TryParseDayOfWeek(string dayToken, out DayOfWeek dayOfWeek)

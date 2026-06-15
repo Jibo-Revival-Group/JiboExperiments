@@ -23,10 +23,13 @@ public interface ICloudStateStore
     IReadOnlyList<LoopRecord> GetLoops();
     IReadOnlyList<PersonRecord> GetPeople();
     IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
+
     LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
         string? lastName, string? gender, long? birthday, bool isChild, string type);
+
     LoopMemberRecord UpdateLoopMember(string loopId, string memberId, string? firstName, string? lastName,
         string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName);
+
     bool RemoveLoopMember(string loopId, string memberId);
     LoopMemberRecord SetMemberEnrollment(string loopId, string memberId, bool? face, bool? voice);
     IReadOnlyList<UpdateManifest> ListUpdates(string? subsystem = null, string? filter = null);

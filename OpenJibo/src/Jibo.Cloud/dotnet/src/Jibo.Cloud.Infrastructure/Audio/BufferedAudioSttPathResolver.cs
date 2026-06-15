@@ -122,20 +122,16 @@ public static class BufferedAudioSttPathResolver
     {
         var candidates = new List<string>();
         if (isMacOS)
-        {
             candidates.AddRange([
                 "/opt/homebrew/bin/ffmpeg",
                 "/usr/local/bin/ffmpeg"
             ]);
-        }
 
         if (isLinux)
-        {
             candidates.AddRange([
                 LegacyLinuxFfmpegPath,
                 "/usr/local/bin/ffmpeg"
             ]);
-        }
 
         candidates.Add("ffmpeg");
         return candidates;
@@ -145,31 +141,25 @@ public static class BufferedAudioSttPathResolver
     {
         var candidates = new List<string>();
         if (isMacOS)
-        {
             candidates.AddRange([
                 "/opt/homebrew/bin/whisper-cli",
                 "/usr/local/bin/whisper-cli",
                 "/opt/homebrew/opt/whisper-cpp/bin/whisper-cli",
                 "/usr/local/opt/whisper-cpp/bin/whisper-cli"
             ]);
-        }
 
         if (isLinux)
-        {
             candidates.AddRange([
                 LegacyLinuxWhisperCliPath,
                 "/usr/local/bin/whisper-cli"
             ]);
-        }
 
         if (!string.IsNullOrWhiteSpace(homeDirectory))
-        {
             candidates.AddRange([
                 Path.Combine(homeDirectory, "whisper.cpp", "build", "bin", "whisper-cli"),
                 Path.Combine(homeDirectory, "src", "whisper.cpp", "build", "bin", "whisper-cli"),
                 Path.Combine(homeDirectory, "Code", "whisper.cpp", "build", "bin", "whisper-cli")
             ]);
-        }
 
         candidates.Add("whisper-cli");
         return candidates;
@@ -179,7 +169,6 @@ public static class BufferedAudioSttPathResolver
     {
         var candidates = new List<string>();
         if (isMacOS)
-        {
             candidates.AddRange([
                 "/opt/homebrew/share/whisper-cpp/models/ggml-base.en.bin",
                 "/opt/homebrew/share/whisper.cpp/models/ggml-base.en.bin",
@@ -188,19 +177,15 @@ public static class BufferedAudioSttPathResolver
                 "/usr/local/share/whisper-cpp/models/ggml-base.en.bin",
                 "/usr/local/share/whisper.cpp/models/ggml-base.en.bin"
             ]);
-        }
 
         if (isLinux)
-        {
             candidates.AddRange([
                 LegacyLinuxWhisperModelPath,
                 "/usr/local/share/whisper-cpp/models/ggml-base.en.bin",
                 "/usr/local/share/whisper.cpp/models/ggml-base.en.bin"
             ]);
-        }
 
         if (!string.IsNullOrWhiteSpace(homeDirectory))
-        {
             candidates.AddRange([
                 Path.Combine(homeDirectory, "whisper.cpp", "models", "ggml-base.en.bin"),
                 Path.Combine(homeDirectory, "src", "whisper.cpp", "models", "ggml-base.en.bin"),
@@ -208,7 +193,6 @@ public static class BufferedAudioSttPathResolver
                 Path.Combine(homeDirectory, "Library", "Application Support", "openjibo", "whisper",
                     "ggml-base.en.bin")
             ]);
-        }
 
         return candidates;
     }

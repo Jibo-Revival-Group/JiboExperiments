@@ -19,10 +19,10 @@ internal sealed class PostgreSqlSnapshotStore(string connectionString, string sn
 
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT SnapshotJson
-            FROM PersistenceSnapshots
-            WHERE SnapshotName = @name
-            """;
+                              SELECT SnapshotJson
+                              FROM PersistenceSnapshots
+                              WHERE SnapshotName = @name
+                              """;
         command.Parameters.AddWithValue("@name", snapshotName);
 
         var result = command.ExecuteScalar();
@@ -48,12 +48,12 @@ internal sealed class PostgreSqlSnapshotStore(string connectionString, string sn
 
         using var command = connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO PersistenceSnapshots (SnapshotName, SnapshotJson, UpdatedUtc)
-            VALUES (@name, @json, @updated)
-            ON CONFLICT (SnapshotName) DO UPDATE SET
-                SnapshotJson = EXCLUDED.SnapshotJson,
-                UpdatedUtc = EXCLUDED.UpdatedUtc
-            """;
+                              INSERT INTO PersistenceSnapshots (SnapshotName, SnapshotJson, UpdatedUtc)
+                              VALUES (@name, @json, @updated)
+                              ON CONFLICT (SnapshotName) DO UPDATE SET
+                                  SnapshotJson = EXCLUDED.SnapshotJson,
+                                  UpdatedUtc = EXCLUDED.UpdatedUtc
+                              """;
         command.Parameters.AddWithValue("@name", snapshotName);
         command.Parameters.AddWithValue("@json", json);
         command.Parameters.AddWithValue("@updated", DateTimeOffset.UtcNow);
@@ -64,13 +64,13 @@ internal sealed class PostgreSqlSnapshotStore(string connectionString, string sn
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE IF NOT EXISTS PersistenceSnapshots (
-                SnapshotName TEXT NOT NULL PRIMARY KEY,
-                SnapshotJson TEXT NOT NULL,
-                CreatedUtc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                UpdatedUtc TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            )
-            """;
+                              CREATE TABLE IF NOT EXISTS PersistenceSnapshots (
+                                  SnapshotName TEXT NOT NULL PRIMARY KEY,
+                                  SnapshotJson TEXT NOT NULL,
+                                  CreatedUtc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                                  UpdatedUtc TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                              )
+                              """;
         command.ExecuteNonQuery();
     }
 }

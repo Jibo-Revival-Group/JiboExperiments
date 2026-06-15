@@ -5,6 +5,8 @@ namespace Jibo.Cloud.Infrastructure.Audio;
 
 public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
 {
+    private const int MinimumBufferedAudioBytes = 64;
+    private const int ShortAnswerBufferedAudioBytes = 16;
     private readonly BufferedAudioSttOptions options;
     private readonly IExternalProcessRunner processRunner;
 
@@ -15,9 +17,6 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
         this.options = BufferedAudioSttPathResolver.Resolve(options);
         this.processRunner = processRunner;
     }
-
-    private const int MinimumBufferedAudioBytes = 64;
-    private const int ShortAnswerBufferedAudioBytes = 16;
 
     public string Name => "local-whispercpp-buffered-audio";
 

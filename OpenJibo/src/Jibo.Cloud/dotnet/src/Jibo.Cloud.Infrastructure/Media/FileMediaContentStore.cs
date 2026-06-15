@@ -55,14 +55,12 @@ internal sealed class FileMediaContentStore(string? directoryPath) : IMediaConte
         IDictionary<string, object?> meta = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
         if (!File.Exists(metaPath))
-        {
             return new MediaContentSnapshot
             {
                 ContentType = contentType,
                 Content = content,
                 Meta = meta as IReadOnlyDictionary<string, object?> ?? new Dictionary<string, object?>(meta)
             };
-        }
 
         try
         {

@@ -30,7 +30,8 @@ public sealed class PersistenceSnapshotStoreFactory : IPersistenceSnapshotStoreF
                 snapshotName),
             PersistenceBackendKind.Sqlite => new SqliteSnapshotStore(
                 connectionString ??
-                throw new InvalidOperationException("SQLite persistence requires a connection string (e.g. Data Source=/path/to/db.db)."),
+                throw new InvalidOperationException(
+                    "SQLite persistence requires a connection string (e.g. Data Source=/path/to/db.db)."),
                 snapshotName),
             _ => new JsonFileSnapshotStore(persistencePath, JsonOptions)
         };

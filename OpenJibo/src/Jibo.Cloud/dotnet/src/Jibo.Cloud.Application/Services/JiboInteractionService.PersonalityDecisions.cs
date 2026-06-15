@@ -40,12 +40,10 @@ public sealed partial class JiboInteractionService
 
         var reply = RenderAgeTemplate(selected, referenceLocalTime);
         if (!string.IsNullOrWhiteSpace(reply))
-        {
             return new JiboInteractionDecision(
                 intentName,
                 reply,
                 ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
-        }
 
         var referenceDate = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
         var ageDescription = DescribePersonaAge(referenceDate, OpenJiboCloudBuildInfo.PersonaBirthday);

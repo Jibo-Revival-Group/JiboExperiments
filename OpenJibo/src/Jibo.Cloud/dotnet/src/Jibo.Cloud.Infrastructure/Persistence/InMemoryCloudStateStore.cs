@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Security.Cryptography;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Holidays;
@@ -30,11 +30,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly ConcurrentDictionary<string, KeyRequestRecord>
         _keyRequests = new(StringComparer.OrdinalIgnoreCase);
 
-    private readonly List<LoopRecord> _loops;
     private readonly List<LoopMemberRecord> _loopMembers;
+
+    private readonly List<LoopRecord> _loops;
     private readonly List<MediaRecord> _media = [];
+    private readonly string? _ownerFirstName;
+    private readonly string? _ownerLastName;
     private readonly List<PersonRecord> _people;
-    private readonly List<UserRecord> _users;
 
     private readonly ConcurrentDictionary<string, CloudSession>
         _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
@@ -43,8 +45,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly ConcurrentDictionary<string, string> _symmetricKeys = new(StringComparer.OrdinalIgnoreCase);
     private readonly Lock _syncRoot = new();
     private readonly List<UpdateManifest> _updates;
-    private readonly string? _ownerFirstName;
-    private readonly string? _ownerLastName;
+    private readonly List<UserRecord> _users;
 
     private AccountProfile _account = new();
     private DateTimeOffset? _lastLoadedUtc;
@@ -369,7 +370,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Type = type,
             Status = "active"
         };
-        lock (_syncRoot) _loopMembers.Add(member);
+        lock (_syncRoot)
+        {
+            _loopMembers.Add(member);
+        }
+
         TouchState();
         return member;
     }
@@ -651,7 +656,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             PersistentStateSnapshot? snapshot;
             try
             {
-                snapshot = JsonSerializer.Deserialize<PersistentStateSnapshot>(backup.SnapshotJson, PersistenceJsonOptions);
+                snapshot = JsonSerializer.Deserialize<PersistentStateSnapshot>(backup.SnapshotJson,
+                    PersistenceJsonOptions);
             }
             catch
             {
@@ -790,14 +796,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         if (_symmetricKeys.TryGetValue(loopId, out var existing)) return existing;
 
         var key = Convert.ToBase64String(Encoding.UTF8.GetBytes($"open-jibo-symmetric-key:{loopId}"));
-        if (!_symmetricKeys.TryAdd(loopId, key))
-        {
-            return _symmetricKeys[loopId];
-        }
+        if (!_symmetricKeys.TryAdd(loopId, key)) return _symmetricKeys[loopId];
 
         TouchState();
         return key;
-
     }
 
     public KeyRequestRecord CreateKeyRequest(string loopId, string publicKey)
@@ -866,11 +868,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .Where(holiday => string.Equals(holiday.LoopId, resolvedLoopId, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        foreach (var overrideHoliday in overrides.Where(overrideHoliday => !string.IsNullOrWhiteSpace(overrideHoliday.EventId)))
-        {
+        foreach (var overrideHoliday in overrides.Where(overrideHoliday =>
+                     !string.IsNullOrWhiteSpace(overrideHoliday.EventId)))
             systemHolidays.RemoveAll(systemHoliday =>
                 string.Equals(systemHoliday.EventId, overrideHoliday.EventId, StringComparison.OrdinalIgnoreCase));
-        }
 
         return systemHolidays
             .Concat(overrides.Where(holiday => holiday.IsEnabled))
@@ -992,7 +993,6 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             var member = _loopMembers[i];
             if (string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) ||
                 (member.AccountId != null && member.AccountId.Equals(oldRobotId, StringComparison.OrdinalIgnoreCase)))
-            {
                 _loopMembers[i] = new LoopMemberRecord
                 {
                     Id = member.Id,
@@ -1017,7 +1017,6 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                     AgreementId = member.AgreementId,
                     CreatedUtc = member.CreatedUtc
                 };
-            }
         }
 
         TouchState();
@@ -1031,9 +1030,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         if (Version.TryParse(candidateVersion, out var candidate) &&
             Version.TryParse(fromVersion, out var requested))
-        {
             return candidate > requested;
-        }
 
         return string.Compare(candidateVersion, fromVersion, StringComparison.OrdinalIgnoreCase) > 0;
     }

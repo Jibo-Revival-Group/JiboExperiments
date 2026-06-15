@@ -50,7 +50,6 @@ internal sealed class WebSocketRequestCoordinator(
                 if (exception.WebSocketErrorCode != WebSocketError.ConnectionClosedPrematurely) throw;
                 isPrematureClose = true;
                 break;
-
             }
 
             var envelope = CreateEnvelope(

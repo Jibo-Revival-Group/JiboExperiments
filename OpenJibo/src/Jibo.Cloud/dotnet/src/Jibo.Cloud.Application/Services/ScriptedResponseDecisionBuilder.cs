@@ -66,7 +66,7 @@ internal static class ScriptedResponseDecisionBuilder
             selectedReply,
             "chitchat-skill",
             trackerPayload,
-            ContextUpdates: BuildScriptedResponseContextUpdates());
+            BuildScriptedResponseContextUpdates());
     }
 
     internal static JiboInteractionDecision BuildScriptedHolidayGreetingDecision(

@@ -16,7 +16,8 @@ public sealed class NagerDateHolidayCalendarProvider(HolidayCalendarOptions opti
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly string _countryCode = string.IsNullOrWhiteSpace(options.CountryCode) ? "US" : options.CountryCode.Trim();
+    private readonly string _countryCode =
+        string.IsNullOrWhiteSpace(options.CountryCode) ? "US" : options.CountryCode.Trim();
 
     public NagerDateHolidayCalendarProvider()
         : this(new HolidayCalendarOptions())

@@ -19,10 +19,12 @@ internal sealed class AzureSqlSnapshotStore(
     private readonly string _connectionString = string.IsNullOrWhiteSpace(connectionString)
         ? throw new InvalidOperationException("Azure SQL persistence requires a connection string.")
         : connectionString;
+
     private readonly string _snapshotName = string.IsNullOrWhiteSpace(snapshotName)
         ? throw new ArgumentException("A snapshot name is required for Azure SQL persistence.",
             nameof(snapshotName))
         : snapshotName;
+
     private readonly string _tableName = string.IsNullOrWhiteSpace(tableName) ? "PersistenceSnapshots" : tableName;
 
     public TSnapshot? Load<TSnapshot>() where TSnapshot : class

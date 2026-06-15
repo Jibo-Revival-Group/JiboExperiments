@@ -400,9 +400,7 @@ internal static class ChitchatStateMachine
         string? preferredName)
     {
         if (catalog.EmotionReplies.Count <= 0)
-        {
             return PersonalizeHowAreYouReply(randomizer.Choose(catalog.HowAreYouReplies), preferredName);
-        }
 
         var emotionVariants = ResolveEmotionVariants(currentEmotion);
         var matchingReplies = catalog.EmotionReplies

@@ -39,11 +39,9 @@ public sealed partial class JiboInteractionService
         var greetingPresence = ResolveGreetingPresenceProfile(turn);
 
         if (string.Equals(messageType, "TRIGGER", StringComparison.OrdinalIgnoreCase))
-        {
             return ShouldHandleProactiveGreetingTrigger(turn, triggerSource, greetingPresence)
                 ? BuildProactiveGreetingDecision(turn, greetingPresence, referenceLocalTime)
                 : BuildTriggerIgnoredDecision();
-        }
 
         var isTimerValueTurn = IsClockTimerValueTurn(clientRules, listenRules);
         var isAlarmValueTurn = IsClockAlarmValueTurn(clientRules, listenRules);

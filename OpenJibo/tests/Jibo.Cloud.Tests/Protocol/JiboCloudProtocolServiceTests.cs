@@ -431,7 +431,8 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal(200, result.StatusCode);
         using var payload = JsonDocument.Parse(result.BodyText);
         var members = payload.RootElement.GetProperty("members").EnumerateArray().ToArray();
-        Assert.Contains(members, member => member.GetProperty("account").GetProperty("email").GetString() == "friend@example.com");
+        Assert.Contains(members,
+            member => member.GetProperty("account").GetProperty("email").GetString() == "friend@example.com");
     }
 
     [Fact]
@@ -1008,7 +1009,8 @@ public sealed class JiboCloudProtocolServiceTests
                 item => item.GetProperty("changes").GetString() == "Restore proof");
             Assert.NotEmpty(backupsPayload.RootElement.EnumerateArray());
             Assert.Contains(backupsPayload.RootElement.EnumerateArray(),
-                item => item.GetProperty("location").GetProperty("url").GetString()!.Contains("/backup/", StringComparison.OrdinalIgnoreCase));
+                item => item.GetProperty("location").GetProperty("url").GetString()!.Contains("/backup/",
+                    StringComparison.OrdinalIgnoreCase));
             Assert.Contains(schedulerPayload.RootElement.GetProperty("updates").EnumerateArray(),
                 item => item.GetProperty("subsystem").GetString() == "robot" &&
                         item.GetProperty("changes").GetString() == "Restore proof");

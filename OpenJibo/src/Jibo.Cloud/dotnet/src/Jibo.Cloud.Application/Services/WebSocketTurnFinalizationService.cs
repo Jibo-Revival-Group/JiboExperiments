@@ -1652,7 +1652,8 @@ public sealed class WebSocketTurnFinalizationService(
             long whole and <= int.MaxValue and >= int.MinValue => (int)whole,
             string text when int.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.Number } json when json.TryGetInt32(out var parsed) => parsed,
-            JsonElement { ValueKind: JsonValueKind.String } json when int.TryParse(json.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.String } json when int.TryParse(json.GetString(), out var parsed) =>
+                parsed,
             _ => 0
         };
     }
@@ -1829,7 +1830,6 @@ public sealed class WebSocketTurnFinalizationService(
 
         reason = "affinity_set_incomplete";
         return true;
-
     }
 
     private static bool LooksLikeIncompleteAffinitySet(string normalized)

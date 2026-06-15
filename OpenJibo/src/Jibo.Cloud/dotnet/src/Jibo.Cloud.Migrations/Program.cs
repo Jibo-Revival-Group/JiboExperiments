@@ -72,12 +72,12 @@ foreach (var target in targets)
         }
 
         await using (var insert = new NpgsqlCommand("""
-            INSERT INTO OpenJiboSchemaMigrations (ScriptName, Checksum, AppliedUtc)
-            VALUES (@scriptName, @checksum, NOW())
-            ON CONFLICT (ScriptName) DO UPDATE SET
-                Checksum = EXCLUDED.Checksum,
-                AppliedUtc = EXCLUDED.AppliedUtc
-            """, connection, transaction))
+                                                    INSERT INTO OpenJiboSchemaMigrations (ScriptName, Checksum, AppliedUtc)
+                                                    VALUES (@scriptName, @checksum, NOW())
+                                                    ON CONFLICT (ScriptName) DO UPDATE SET
+                                                        Checksum = EXCLUDED.Checksum,
+                                                        AppliedUtc = EXCLUDED.AppliedUtc
+                                                    """, connection, transaction))
         {
             insert.Parameters.AddWithValue("@scriptName", scriptName);
             insert.Parameters.AddWithValue("@checksum", checksum);
@@ -108,12 +108,12 @@ static string ComputeChecksum(string value)
 static async Task EnsureTrackingTableAsync(NpgsqlConnection connection)
 {
     await using var command = new NpgsqlCommand("""
-        CREATE TABLE IF NOT EXISTS OpenJiboSchemaMigrations (
-            ScriptName TEXT NOT NULL PRIMARY KEY,
-            Checksum TEXT NOT NULL,
-            AppliedUtc TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-        """, connection);
+                                                CREATE TABLE IF NOT EXISTS OpenJiboSchemaMigrations (
+                                                    ScriptName TEXT NOT NULL PRIMARY KEY,
+                                                    Checksum TEXT NOT NULL,
+                                                    AppliedUtc TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                                                )
+                                                """, connection);
     await command.ExecuteNonQueryAsync();
 }
 
@@ -122,10 +122,10 @@ static async Task<Dictionary<string, string>> LoadAppliedScriptsAsync(NpgsqlConn
     var applied = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     await using var command = new NpgsqlCommand("""
-        SELECT ScriptName, Checksum
-        FROM OpenJiboSchemaMigrations
-        ORDER BY ScriptName
-        """, connection);
+                                                SELECT ScriptName, Checksum
+                                                FROM OpenJiboSchemaMigrations
+                                                ORDER BY ScriptName
+                                                """, connection);
 
     await using var reader = await command.ExecuteReaderAsync();
     while (await reader.ReadAsync())
@@ -154,20 +154,40 @@ internal sealed record MigrationOptions(
     string? PersonalMemoryConnectionString,
     bool ShowHelp)
 {
+    public static string HelpText =>
+        """
+        Open Jibo migration runner
+
+        Usage:
+          dotnet Jibo.Cloud.Migrations.dll --apply
+          dotnet Jibo.Cloud.Migrations.dll --preview
+          dotnet Jibo.Cloud.Migrations.dll --target state|personal-memory|all
+
+        Options:
+          --apply                 Apply pending SQL migrations
+          --preview, --dry-run    List pending migrations without applying them
+          --target                Choose a target database
+          --scripts               Override the SQL script directory
+          --state-connection      Override the state database connection string
+          --memory-connection     Override the personal memory connection string
+          --verbose               Print already-applied scripts too
+          --help                  Show this help
+        """;
+
     public static MigrationOptions Parse(string[] args)
     {
         var target = MigrationTarget.All;
         var previewOnly = false;
         var verbose = false;
         string? scriptsDirectory = null;
-        string? stateConnectionString = Environment.GetEnvironmentVariable("OpenJibo__State__ConnectionString")
-                                        ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_STORAGE_CONNECTION_STRING")
-                                        ?? BuildPostgreSqlConnectionString("openjibo_state");
-        string? personalMemoryConnectionString = Environment.GetEnvironmentVariable(
-                                                     "OpenJibo__PersonalMemory__ConnectionString")
-                                                 ?? Environment.GetEnvironmentVariable(
-                                                     "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
-                                                 ?? BuildPostgreSqlConnectionString("openjibo_memory");
+        var stateConnectionString = Environment.GetEnvironmentVariable("OpenJibo__State__ConnectionString")
+                                    ?? Environment.GetEnvironmentVariable("OPENJIBO_STATE_STORAGE_CONNECTION_STRING")
+                                    ?? BuildPostgreSqlConnectionString("openjibo_state");
+        var personalMemoryConnectionString = Environment.GetEnvironmentVariable(
+                                                 "OpenJibo__PersonalMemory__ConnectionString")
+                                             ?? Environment.GetEnvironmentVariable(
+                                                 "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
+                                             ?? BuildPostgreSqlConnectionString("openjibo_memory");
         var showHelp = false;
 
         for (var index = 0; index < args.Length; index += 1)
@@ -262,24 +282,4 @@ internal sealed record MigrationOptions(
         index += 1;
         return args[index];
     }
-
-    public static string HelpText =>
-        """
-        Open Jibo migration runner
-
-        Usage:
-          dotnet Jibo.Cloud.Migrations.dll --apply
-          dotnet Jibo.Cloud.Migrations.dll --preview
-          dotnet Jibo.Cloud.Migrations.dll --target state|personal-memory|all
-
-        Options:
-          --apply                 Apply pending SQL migrations
-          --preview, --dry-run    List pending migrations without applying them
-          --target                Choose a target database
-          --scripts               Override the SQL script directory
-          --state-connection      Override the state database connection string
-          --memory-connection     Override the personal memory connection string
-          --verbose               Print already-applied scripts too
-          --help                  Show this help
-        """;
 }

@@ -59,14 +59,12 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
         var metaBlob = _containerClient.GetBlobClient($"{relative}.json");
 
         if (!await metaBlob.ExistsAsync(cancellationToken))
-        {
             return new MediaContentSnapshot
             {
                 ContentType = contentType,
                 Content = content.Value.Content.ToArray(),
                 Meta = meta as IReadOnlyDictionary<string, object?> ?? new Dictionary<string, object?>(meta)
             };
-        }
 
         try
         {

@@ -469,7 +469,8 @@ public static class LegacyMimCatalogImporter
             CanWhistleReplies = Merge(baseCatalog.CanWhistleReplies, importedCatalog.CanWhistleReplies),
             CanCookReplies = Merge(baseCatalog.CanCookReplies, importedCatalog.CanCookReplies),
             CanMakeCoffeeReplies = Merge(baseCatalog.CanMakeCoffeeReplies, importedCatalog.CanMakeCoffeeReplies),
-            CanMakeBreakfastReplies = Merge(baseCatalog.CanMakeBreakfastReplies, importedCatalog.CanMakeBreakfastReplies),
+            CanMakeBreakfastReplies =
+                Merge(baseCatalog.CanMakeBreakfastReplies, importedCatalog.CanMakeBreakfastReplies),
             CanJumpReplies = Merge(baseCatalog.CanJumpReplies, importedCatalog.CanJumpReplies),
             BlackHistoryMonthReplies =
                 Merge(baseCatalog.BlackHistoryMonthReplies, importedCatalog.BlackHistoryMonthReplies),
@@ -755,6 +756,30 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _calendarNothingTodayReplies = [];
         private readonly List<string> _calendarOutroReplies = [];
         private readonly List<string> _calendarServiceDownReplies = [];
+        private readonly List<string> _canBreatheReplies = [];
+        private readonly List<string> _canCookReplies = [];
+        private readonly List<string> _canDreamReplies = [];
+        private readonly List<string> _canExerciseReplies = [];
+        private readonly List<string> _canFlyReplies = [];
+        private readonly List<string> _canGetTiredReplies = [];
+        private readonly List<string> _canHaveEmotionsReplies = [];
+        private readonly List<string> _canHearReplies = [];
+        private readonly List<string> _canJumpReplies = [];
+        private readonly List<string> _canLaughReplies = [];
+        private readonly List<string> _canLearnReplies = [];
+        private readonly List<string> _canMakeBreakfastReplies = [];
+        private readonly List<string> _canMakeCoffeeReplies = [];
+        private readonly List<string> _canMoveReplies = [];
+        private readonly List<string> _canReadReplies = [];
+        private readonly List<string> _canSeeReplies = [];
+        private readonly List<string> _canTalkReplies = [];
+        private readonly List<string> _canWalkDogReplies = [];
+        private readonly List<string> _canWalkReplies = [];
+        private readonly List<string> _canWatchMoviesReplies = [];
+        private readonly List<string> _canWatchTVReplies = [];
+        private readonly List<string> _canWhistleReplies = [];
+        private readonly List<string> _canWinkReplies = [];
+        private readonly List<string> _canWorkReplies = [];
         private readonly List<string> _commuteAppSetupReplies = [];
         private readonly List<string> _commuteConfirmSpeakerReplies = [];
         private readonly List<string> _commuteDepartTimeNormalReplies = [];
@@ -801,30 +826,6 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _stopMakingThatNoiseReplies = [];
         private readonly List<string> _stopMovingReplies = [];
         private readonly List<string> _stopStaringReplies = [];
-        private readonly List<string> _canWalkReplies = [];
-        private readonly List<string> _canWalkDogReplies = [];
-        private readonly List<string> _canWatchMoviesReplies = [];
-        private readonly List<string> _canWatchTVReplies = [];
-        private readonly List<string> _canDreamReplies = [];
-        private readonly List<string> _canExerciseReplies = [];
-        private readonly List<string> _canFlyReplies = [];
-        private readonly List<string> _canLearnReplies = [];
-        private readonly List<string> _canLaughReplies = [];
-        private readonly List<string> _canReadReplies = [];
-        private readonly List<string> _canHearReplies = [];
-        private readonly List<string> _canTalkReplies = [];
-        private readonly List<string> _canSeeReplies = [];
-        private readonly List<string> _canWinkReplies = [];
-        private readonly List<string> _canMoveReplies = [];
-        private readonly List<string> _canWorkReplies = [];
-        private readonly List<string> _canBreatheReplies = [];
-        private readonly List<string> _canGetTiredReplies = [];
-        private readonly List<string> _canHaveEmotionsReplies = [];
-        private readonly List<string> _canWhistleReplies = [];
-        private readonly List<string> _canCookReplies = [];
-        private readonly List<string> _canMakeCoffeeReplies = [];
-        private readonly List<string> _canMakeBreakfastReplies = [];
-        private readonly List<string> _canJumpReplies = [];
         private readonly List<string> _storyReplies = [];
         private readonly List<string> _updateLastReplies = [];
         private readonly List<string> _updateNextReplies = [];
@@ -1270,7 +1271,9 @@ public static class LegacyMimCatalogImporter
                     "rossum"))
                 return LegacyMimBucket.RobotFacts;
 
-            return ContainsAny(lowered, "human", "people", "grown ups", "human being", "humans") ? LegacyMimBucket.HumanFacts : LegacyMimBucket.FunFacts;
+            return ContainsAny(lowered, "human", "people", "grown ups", "human being", "humans")
+                ? LegacyMimBucket.HumanFacts
+                : LegacyMimBucket.FunFacts;
         }
 
         private static bool ContainsAny(string text, params string[] values)

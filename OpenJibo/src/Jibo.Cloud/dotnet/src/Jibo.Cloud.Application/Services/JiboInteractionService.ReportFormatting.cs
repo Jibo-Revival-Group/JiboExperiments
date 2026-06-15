@@ -640,7 +640,6 @@ public sealed partial class JiboInteractionService
 
         return
             $"Looking at your calendar, there's nothing scheduled for the rest of the day today. Here's what's going on tomorrow: {snapshot.TomorrowEventSummaries[0]}.";
-
     }
 
     private static string ChooseCalendarTemplate(

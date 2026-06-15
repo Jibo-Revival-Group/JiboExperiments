@@ -344,7 +344,10 @@ public sealed class JiboInteractionServiceTests
         Assert.True(DateTimeOffset.TryParse(decision.ContextUpdates[GreetingLastProactiveUtcKey]?.ToString(), out _));
         Assert.Contains(cloudStateStore.GetGreetingPresences("openjibo-default-loop"),
             greeting => greeting.PersonId == "person-1" &&
-                        greeting is { LastGreetingRoute: "ProactiveGreeting", LastGreetingIntent: "proactive_greeting" });
+                        greeting is
+                        {
+                            LastGreetingRoute: "ProactiveGreeting", LastGreetingIntent: "proactive_greeting"
+                        });
     }
 
     [Fact]

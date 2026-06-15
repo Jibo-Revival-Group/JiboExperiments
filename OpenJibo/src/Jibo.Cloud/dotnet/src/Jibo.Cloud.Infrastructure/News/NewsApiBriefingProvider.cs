@@ -229,7 +229,8 @@ public sealed class NewsApiBriefingProvider(
                 using var everythingResponse = await SendGetAsync(everythingUri, cancellationToken);
                 if (everythingResponse.IsSuccessStatusCode)
                 {
-                    await using var everythingStream = await everythingResponse.Content.ReadAsStreamAsync(cancellationToken);
+                    await using var everythingStream =
+                        await everythingResponse.Content.ReadAsStreamAsync(cancellationToken);
                     using var everythingDocument =
                         await JsonDocument.ParseAsync(everythingStream, cancellationToken: cancellationToken);
                     if (everythingDocument.RootElement.TryGetProperty("articles", out var everythingArticles) &&

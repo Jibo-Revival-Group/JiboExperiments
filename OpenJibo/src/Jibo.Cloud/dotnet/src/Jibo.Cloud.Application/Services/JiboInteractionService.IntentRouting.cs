@@ -94,7 +94,6 @@ public sealed partial class JiboInteractionService
 
         if (string.Equals(clientIntent, "canJiboAction", StringComparison.OrdinalIgnoreCase) &&
             clientEntities.TryGetValue("Action", out var canAction))
-        {
             return canAction.ToLowerInvariant() switch
             {
                 "dream" => "robot_can_dream",
@@ -123,7 +122,6 @@ public sealed partial class JiboInteractionService
                 "watchtv" => "robot_can_watch_tv",
                 _ => "chat"
             };
-        }
 
         if (IsCancelRequest(clientIntent, loweredTranscript))
         {

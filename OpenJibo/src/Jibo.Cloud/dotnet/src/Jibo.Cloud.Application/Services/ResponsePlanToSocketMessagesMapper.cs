@@ -851,7 +851,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (!useWeatherSequence ||
             !jcpConfig.TryGetValue("children", out var sequenceChildren) ||
             sequenceChildren is null)
-        {
             return new
             {
                 type = "SKILL_ACTION",
@@ -875,7 +874,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     final = true
                 }
             };
-        }
 
         jcp["type"] = "SEQUENCE";
         jcp.Remove("config");

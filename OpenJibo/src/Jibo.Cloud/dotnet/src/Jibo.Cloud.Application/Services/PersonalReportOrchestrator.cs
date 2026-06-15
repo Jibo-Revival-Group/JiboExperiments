@@ -651,14 +651,6 @@ internal static partial class PersonalReportOrchestrator
         return false;
     }
 
-    private enum YesNoReply
-    {
-        None,
-        Affirmative,
-        Negative,
-        Ambiguous
-    }
-
     private static bool IsWeatherErrorReply(string replyText)
     {
         if (string.IsNullOrWhiteSpace(replyText)) return false;
@@ -759,7 +751,8 @@ internal static partial class PersonalReportOrchestrator
             string text when bool.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.True } => true,
             JsonElement { ValueKind: JsonValueKind.False } => false,
-            JsonElement { ValueKind: JsonValueKind.String } json when bool.TryParse(json.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.String } json when bool.TryParse(json.GetString(), out var parsed) =>
+                parsed,
             _ => null
         };
     }
@@ -774,7 +767,8 @@ internal static partial class PersonalReportOrchestrator
             long whole and <= int.MaxValue and >= int.MinValue => (int)whole,
             string text when int.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.Number } number when number.TryGetInt32(out var parsed) => parsed,
-            JsonElement { ValueKind: JsonValueKind.String } json when int.TryParse(json.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.String } json when int.TryParse(json.GetString(), out var parsed) =>
+                parsed,
             _ => 0
         };
     }
@@ -931,12 +925,20 @@ internal static partial class PersonalReportOrchestrator
             .Replace("'", "&apos;", StringComparison.Ordinal);
     }
 
+    [GeneratedRegex(@"[^a-zA-Z\-\s']", RegexOptions.Compiled)]
+    private static partial Regex NameNoiseRegex();
+
+    private enum YesNoReply
+    {
+        None,
+        Affirmative,
+        Negative,
+        Ambiguous
+    }
+
     private readonly record struct PersonalReportServiceToggles(
         bool WeatherEnabled,
         bool CalendarEnabled,
         bool CommuteEnabled,
         bool NewsEnabled);
-
-    [GeneratedRegex(@"[^a-zA-Z\-\s']", RegexOptions.Compiled)]
-    private static partial Regex NameNoiseRegex();
 }

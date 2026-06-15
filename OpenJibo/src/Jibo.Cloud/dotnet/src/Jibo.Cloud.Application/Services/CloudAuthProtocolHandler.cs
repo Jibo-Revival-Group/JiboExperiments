@@ -127,7 +127,8 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
                 .ToLowerInvariant();
 
             return ProtocolDispatchResult.Ok(query.Length > 0 && haystack.Contains(query)
-                ? [
+                ?
+                [
                     BuildAccountResponse(account)
                 ]
                 : Array.Empty<object>());

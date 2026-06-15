@@ -121,9 +121,9 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
                 _ => null
             },
             path => path.StartsWith("/custom/", StringComparison.Ordinal),
-            homeDirectory: null,
-            isMacOS: true,
-            isLinux: false);
+            null,
+            true,
+            false);
 
         Assert.Equal("/custom/bin/ffmpeg", resolved.FfmpegPath);
         Assert.Equal("/custom/bin/whisper-cli", resolved.WhisperCliPath);
@@ -151,9 +151,9 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             },
             _ => null,
             existingPaths.Contains,
-            homeDirectory: homeDirectory,
-            isMacOS: true,
-            isLinux: false);
+            homeDirectory,
+            true,
+            false);
 
         Assert.Equal("/opt/homebrew/bin/ffmpeg", resolved.FfmpegPath);
         Assert.Equal("/opt/homebrew/bin/whisper-cli", resolved.WhisperCliPath);
@@ -180,9 +180,9 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
                 _ => null
             },
             _ => true,
-            homeDirectory: "/Users/test",
-            isMacOS: true,
-            isLinux: false);
+            "/Users/test",
+            true,
+            false);
 
         Assert.Equal("ffmpeg", resolved.FfmpegPath);
         Assert.Equal("whisper-cli", resolved.WhisperCliPath);

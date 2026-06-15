@@ -127,6 +127,10 @@ public sealed class FileTurnTelemetrySinkTests
         Assert.True(session.TurnState.AwaitingTurnCompletion);
         Assert.Equal(15000, session.TurnState.BufferedAudioBytes);
         Assert.Equal("ffmpeg failed", session.TurnState.LastSttError);
+        Assert.True(session.TurnState.AutoFinalizeBlockedUntilUtc.HasValue);
+        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc.HasValue);
+        Assert.True(session.TurnState.AutoFinalizeBlockedUntilUtc > DateTimeOffset.UtcNow);
+        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc > DateTimeOffset.UtcNow);
 
         sink.Verify(
             s => s.RecordTranscriptError(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),

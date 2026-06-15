@@ -213,6 +213,16 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.IgnoreAdditionalAudioUntilUtc = blockedUntilUtc;
     }
 
+    private static void MarkSttFailureGrace(CloudSession session)
+    {
+        var turnState = session.TurnState;
+        if (turnState.BufferedAudioBytes <= 0 && !turnState.AwaitingTurnCompletion) return;
+
+        var blockedUntilUtc = DateTimeOffset.UtcNow.Add(AutoFinalizeReconnectGrace);
+        turnState.AutoFinalizeBlockedUntilUtc = blockedUntilUtc;
+        turnState.IgnoreAdditionalAudioUntilUtc = blockedUntilUtc;
+    }
+
     public async Task<IReadOnlyList<WebSocketReply>> HandleBinaryAudioAsync(
         CloudSession session,
         WebSocketMessageEnvelope envelope,
@@ -378,6 +388,7 @@ public sealed class WebSocketTurnFinalizationService(
         {
             session.TurnState.LastSttError = ex.Message;
             session.TurnState.LastSttErrorUtc = DateTimeOffset.UtcNow;
+            MarkSttFailureGrace(session);
             await sink.RecordTranscriptError(ex, "Error during STT processing", cancellationToken);
             return turn;
         }
@@ -423,6 +434,7 @@ public sealed class WebSocketTurnFinalizationService(
         {
             session.TurnState.LastSttError = ex.Message;
             session.TurnState.LastSttErrorUtc = DateTimeOffset.UtcNow;
+            MarkSttFailureGrace(session);
             await sink.RecordTranscriptError(ex, "Error during STT processing", cancellationToken);
             return turn;
         }

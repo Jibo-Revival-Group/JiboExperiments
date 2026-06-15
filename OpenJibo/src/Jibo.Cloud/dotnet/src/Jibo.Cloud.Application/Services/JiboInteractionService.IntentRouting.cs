@@ -1359,13 +1359,15 @@ public sealed partial class JiboInteractionService
                 "what are you into"))
             return "robot_what_do_you_like_to_do";
 
-        if (MatchesAny(loweredTranscript, "hello", "hi", "hey")) return "hello";
-
         if (IsTimeRequest(loweredTranscript)) return "time";
 
         if (MatchesAny(loweredTranscript, "what day is it", "what day is today")) return "day";
 
-        return IsDateRequest(loweredTranscript) ? "date" : "chat";
+        if (IsDateRequest(loweredTranscript)) return "date";
+
+        if (MatchesAny(loweredTranscript, "hello", "hi", "hey")) return "hello";
+
+        return "chat";
     }
 
     private static bool IsFriendQuestion(string loweredTranscript)

@@ -5165,6 +5165,21 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_HeyJiboTime_StillRoutesToTime()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "hey jibo what time is it",
+            NormalizedTranscript = "hey jibo what time is it"
+        });
+
+        Assert.Equal("time", decision.IntentName);
+        Assert.Equal("Showing the time.", decision.ReplyText);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_WordOfDayGuess_UsesStructuredClientNluGuess()
     {
         var service = CreateService();

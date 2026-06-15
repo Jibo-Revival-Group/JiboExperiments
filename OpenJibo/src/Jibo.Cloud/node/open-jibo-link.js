@@ -1883,17 +1883,17 @@
       if (/\bgood night\b|\bnight night\b|\bbed time\b/.test(lower)) {
         return { intent: "good_night", replyType: "chat", heardText: heard };
       }
-      
-      if (/\bhello\b|\bhi\b|\bhey\b/.test(lower)) {
-        return { intent: "hello", replyType: "chat", heardText: heard };
-      }
-      
+
       if (/\byes\b|\bsure\b|\byeah\b|\byup\b|\buh huh\b/.test(lower)) {
         return { intent: "yes", replyType: "chat", heardText: heard };
       }
       
       if (/\bno\b|\bnope\b|\bnah\b/.test(lower)) {
         return { intent: "no", replyType: "chat", heardText: heard };
+      }
+
+      if (/\bhello\b|\bhi\b|\bhey\b/.test(lower)) {
+        return { intent: "hello", replyType: "chat", heardText: heard };
       }
       
       return { intent: "chat", replyType: "chat", heardText: heard };

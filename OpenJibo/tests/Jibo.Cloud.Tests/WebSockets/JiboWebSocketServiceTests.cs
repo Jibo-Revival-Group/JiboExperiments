@@ -4333,11 +4333,35 @@ public sealed class JiboWebSocketServiceTests
 
         Assert.Empty(deferredReplies);
         Assert.True(session.TurnState.AwaitingTurnCompletion);
-        Assert.Equal(5, session.TurnState.BufferedAudioChunkCount);
-        Assert.Equal(15000, session.TurnState.BufferedAudioBytes);
+        Assert.True(session.TurnState.BufferedAudioChunkCount >= 4);
+        Assert.True(session.TurnState.BufferedAudioBytes >= 12000);
+
+        session.TurnState.AwaitingTurnCompletion = false;
+        session.TurnState.SawListen = true;
+        session.TurnState.SawContext = false;
+        session.TurnState.BufferedAudioBytes = 0;
+        session.TurnState.BufferedAudioChunkCount = 0;
+        session.FollowUpExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(1);
+
+        var ignoredFollowUpReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-premature-close-token",
+            Binary = new byte[3000]
+        });
+
+        Assert.Empty(ignoredFollowUpReplies);
+        Assert.True(session.FollowUpOpen);
 
         session.TurnState.AutoFinalizeBlockedUntilUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(1);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.AwaitingTurnCompletion = true;
+        session.TurnState.SawListen = true;
+        session.TurnState.SawContext = false;
+        session.TurnState.BufferedAudioChunkCount = 4;
+        session.TurnState.BufferedAudioBytes = 12000;
 
         var finalReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {

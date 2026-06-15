@@ -208,7 +208,9 @@ public sealed class WebSocketTurnFinalizationService(
         var turnState = session.TurnState;
         if (!turnState.AwaitingTurnCompletion && turnState.BufferedAudioBytes <= 0) return;
 
-        turnState.AutoFinalizeBlockedUntilUtc = DateTimeOffset.UtcNow.Add(AutoFinalizeReconnectGrace);
+        var blockedUntilUtc = DateTimeOffset.UtcNow.Add(AutoFinalizeReconnectGrace);
+        turnState.AutoFinalizeBlockedUntilUtc = blockedUntilUtc;
+        turnState.IgnoreAdditionalAudioUntilUtc = blockedUntilUtc;
     }
 
     public async Task<IReadOnlyList<WebSocketReply>> HandleBinaryAudioAsync(
@@ -947,6 +949,10 @@ public sealed class WebSocketTurnFinalizationService(
     private static bool ShouldIgnoreLateAudio(CloudSession session)
     {
         var ignoreUntilUtc = session.TurnState.IgnoreAdditionalAudioUntilUtc;
+        if (session.TurnState.AutoFinalizeBlockedUntilUtc.HasValue &&
+            session.TurnState.AutoFinalizeBlockedUntilUtc.Value > DateTimeOffset.UtcNow)
+            return true;
+
         return !session.TurnState.AwaitingTurnCompletion &&
                !session.FollowUpOpen &&
                ignoreUntilUtc.HasValue &&

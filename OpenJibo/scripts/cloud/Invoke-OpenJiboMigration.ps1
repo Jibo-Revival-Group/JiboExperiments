@@ -1,7 +1,10 @@
 param(
     [string]$ProjectPath = "src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Migrations/Jibo.Cloud.Migrations.csproj",
+    [string]$ScriptsDirectory = "src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Migrations/Migrations/PostgreSql",
     [ValidateSet("state", "personal-memory", "all")]
     [string]$Target = "all",
+    [string]$StateConnectionString,
+    [string]$PersonalMemoryConnectionString,
     [switch]$Preview,
     [switch]$VerboseOutput
 )
@@ -21,6 +24,21 @@ $arguments = @(
     "--",
     "--target", $Target
 )
+
+$resolvedScriptsDirectory = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $ScriptsDirectory))
+if (-not (Test-Path -LiteralPath $resolvedScriptsDirectory)) {
+    throw "Could not find migration scripts at $resolvedScriptsDirectory"
+}
+
+$arguments += @("--scripts", $resolvedScriptsDirectory)
+
+if (-not [string]::IsNullOrWhiteSpace($StateConnectionString)) {
+    $arguments += @("--state-connection", $StateConnectionString)
+}
+
+if (-not [string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) {
+    $arguments += @("--memory-connection", $PersonalMemoryConnectionString)
+}
 
 if ($Preview) {
     $arguments += "--preview"

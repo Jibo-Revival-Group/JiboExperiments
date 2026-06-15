@@ -19,7 +19,9 @@ param(
     [string]$PersonalMemoryConnectionString,
     [string]$MediaConnectionString,
     [string]$OpenWeatherApiKey = "",
-    [string]$NewsApiKey = ""
+    [string]$NewsApiKey = "",
+    [switch]$RunMigration,
+    [switch]$RunSmoke
 )
 
 $ErrorActionPreference = "Stop"
@@ -65,8 +67,29 @@ $arguments = @(
     "--parameters", "personalMemoryConnectionString=$PersonalMemoryConnectionString",
     "--parameters", "mediaConnectionString=$MediaConnectionString",
     "--parameters", "openWeatherApiKey=$OpenWeatherApiKey",
-    "--parameters", "newsApiKey=$NewsApiKey"
+    "--parameters", "newsApiKey=$NewsApiKey",
+    "--output", "json"
 )
 
 Write-Host "Deploying Open Jibo managed Container Apps stack to resource group '$ResourceGroupName'"
-az @arguments
+$deploymentJson = az @arguments | ConvertFrom-Json
+
+if ($RunMigration) {
+    $migrationScript = Join-Path $repoRoot "scripts/cloud/Invoke-OpenJiboMigration.ps1"
+    & $migrationScript `
+        -Target all `
+        -StateConnectionString $StateConnectionString `
+        -PersonalMemoryConnectionString $PersonalMemoryConnectionString
+}
+
+if ($RunSmoke) {
+    $containerAppFqdn = $deploymentJson.properties.outputs.containerAppFqdn.value
+    if ([string]::IsNullOrWhiteSpace($containerAppFqdn)) {
+        throw "Container app FQDN was not returned from the deployment."
+    }
+
+    $smokeScript = Join-Path $repoRoot "scripts/cloud/Invoke-CloudSmoke.ps1"
+    & $smokeScript -BaseUrl "https://$containerAppFqdn"
+}
+
+$deploymentJson

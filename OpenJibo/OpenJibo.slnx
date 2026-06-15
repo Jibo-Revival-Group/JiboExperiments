@@ -7,10 +7,14 @@
     <File Path="docs/device-bootstrap.md" />
     <File Path="docs/feature-backlog.md" />
     <File Path="docs/greetings-presence-plan.md" />
+    <File Path="docs/group-oobe-port-notes.md" />
     <File Path="docs/holiday-architecture.md" />
+    <File Path="docs/jibo-internals.md" />
     <File Path="docs/live-jibo-capture.md" />
     <File Path="docs/live-jibo-test-runbook.md" />
     <File Path="docs/local-cloud-quickstart.md" />
+    <File Path="docs/local-jibo-device-runbook.md" />
+    <File Path="docs/oobe-wipe-be-flow-audit.md" />
     <File Path="docs/open-jibo-mode-conversion-plan.md" />
     <File Path="docs/persistence-architecture.md" />
     <File Path="docs/personal-report-parity-plan.md" />
@@ -23,6 +27,7 @@
     <File Path="docs/roadmap.md" />
     <File Path="docs/support-tiers.md" />
     <File Path="docs/system-diagram-alignment.md" />
+    <File Path="docs/wifi-qr-oobe.md" />
   </Folder>
   <Folder Name="/docs/DesignDoc/">
     <File Path="docs/DesignDoc/additional-sections-design.md" />
@@ -35,6 +40,17 @@
     <File Path="docs/prompts/cloud-deploy-and-jibo-rcm-path.md" />
     <File Path="docs/prompts/stt-upgrade-path.md" />
   </Folder>
+  <Folder Name="/infra/" />
+  <Folder Name="/infra/azure/">
+    <File Path="infra/azure/README.md" />
+  </Folder>
+  <Folder Name="/infra/azure/container-apps/">
+    <File Path="infra/azure/container-apps/openjibo-managed.bicep" />
+    <File Path="infra/azure/container-apps/openjibo-managed.parameters.json" />
+  </Folder>
+  <Folder Name="/infra/azure/foundation/">
+    <File Path="infra/azure/foundation/openjibo-managed-foundation.bicep" />
+  </Folder>
   <Folder Name="/scripts/" />
   <Folder Name="/scripts/bootstrap/">
     <File Path="scripts/bootstrap/Discover-JiboHosts.ps1" />
@@ -44,6 +60,8 @@
     <File Path="scripts/bootstrap/Test-OpenJiboRouting.ps1" />
   </Folder>
   <Folder Name="/scripts/cloud/">
+    <File Path="scripts/cloud/Deploy-OpenJiboManaged.ps1" />
+    <File Path="scripts/cloud/Deploy-OpenJiboManagedFoundation.ps1" />
     <File Path="scripts/cloud/get-websocket-capture-summary.sh" />
     <File Path="scripts/cloud/Get-WebSocketCaptureSummary.ps1" />
     <File Path="scripts/cloud/import-websocket-capture-fixture.py" />
@@ -51,13 +69,17 @@
     <File Path="scripts/cloud/Invoke-CloudSmoke.ps1" />
     <File Path="scripts/cloud/invoke-live-jibo-prep.sh" />
     <File Path="scripts/cloud/Invoke-LiveJiboPrep.ps1" />
+    <File Path="scripts/cloud/Invoke-OpenJiboMigration.ps1" />
     <File Path="scripts/cloud/Invoke-ProtocolFixture.ps1" />
     <File Path="scripts/cloud/New-CaptureBundle.ps1" />
+    <File Path="scripts/cloud/Publish-OpenJiboManaged.ps1" />
     <File Path="scripts/cloud/README.md" />
     <File Path="scripts/cloud/start-dotnet-with-node-cert.sh" />
     <File Path="scripts/cloud/Start-OpenJiboDotNet.ps1" />
     <File Path="scripts/cloud/Start-OpenJiboNode.ps1" />
     <File Path="scripts/cloud/Start-OpenJiboPlayground.ps1" />
+    <File Path="scripts/cloud/Test-OpenJiboManagedDeploymentContract.ps1" />
+    <File Path="scripts/cloud/Test-OpenJiboSelfHostedDeploymentContract.ps1" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="NuGet.Config" />

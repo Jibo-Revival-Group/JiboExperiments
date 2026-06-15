@@ -119,6 +119,10 @@ The suggested order for early `1.0.20` execution is:
 6. split the platform-conversion track into named backlog items and work the topmost one at a time
 7. keep the cloud deployment, self-hosting, storage, and multi-Jibo architecture tracks in discovery until they are ready for their own proof slices
 
+## Deferred Full Regression Milestone
+
+After the current `1.0.20` build reaches the next stability checkpoint, run the named full regression bundle in [regression-test-plan.md](regression-test-plan.md) before expanding into the next platform slice.
+
 ## Closeout Note
 
 `1.0.19` is now treated as closed history. This plan is the active queue for the next pass, and the backlog should point here for current work ordering.

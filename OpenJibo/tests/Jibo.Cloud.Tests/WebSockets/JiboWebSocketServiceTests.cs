@@ -2463,6 +2463,20 @@ public sealed class JiboWebSocketServiceTests
                 .Select(element => element.GetString())
                 .Where(value => value is not null)
                 .Select(value => value!));
+        Assert.Contains("$ANYTHING",
+            promptSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config")
+                .GetProperty("listen")
+                .GetProperty("asr")
+                .GetProperty("hints")
+                .EnumerateArray()
+                .Select(element => element.GetString())
+                .Where(value => value is not null)
+                .Select(value => value!));
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {

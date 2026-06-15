@@ -755,6 +755,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var promptId = ReadPayloadString(skillPayload, "prompt_id") ?? "RUNTIME_PROMPT";
         var promptSubCategory = ReadPayloadString(skillPayload, "prompt_sub_category") ?? "AN";
         var listenContexts = ReadPayloadStringArray(skillPayload, "listen_contexts");
+        var listenAsrHints = ReadPayloadStringArray(skillPayload, "listen_asr_hints");
         var playConfig = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["esml"] = esml,
@@ -772,12 +773,22 @@ public sealed class ResponsePlanToSocketMessagesMapper
         };
 
         if (listenContexts.Count > 0)
-            jcpConfig["listen"] = new
+        {
+            var listenConfig = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
-                id = CloudMessageIdFactory.CreateProtocolId(),
-                type = "LISTEN",
-                contexts = listenContexts
+                ["id"] = CloudMessageIdFactory.CreateProtocolId(),
+                ["type"] = "LISTEN",
+                ["contexts"] = listenContexts
             };
+
+            if (listenAsrHints.Count > 0)
+                listenConfig["asr"] = new
+                {
+                    hints = listenAsrHints
+                };
+
+            jcpConfig["listen"] = listenConfig;
+        }
 
         var weatherHiLoView = BuildWeatherHiLoView(skillPayload);
         var weeklyWeatherCards = BuildWeatherHiLoSequenceCards(skillPayload);
@@ -1050,7 +1061,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ["mim_type"] = "question",
             ["prompt_id"] = "RUNTIME_PROMPT",
             ["prompt_sub_category"] = "Q",
-            ["listen_contexts"] = new[] { "household-list/follow_up_item" }
+            ["listen_contexts"] = new[] { "household-list/follow_up_item" },
+            ["listen_asr_hints"] = new[] { "$ANYTHING" }
         };
     }
 

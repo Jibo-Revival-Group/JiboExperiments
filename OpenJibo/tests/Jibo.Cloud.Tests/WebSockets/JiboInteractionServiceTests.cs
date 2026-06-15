@@ -2869,6 +2869,45 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_GroceryList_FollowUpFlow_AcceptsLongFormItemPhrases()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+        var tenantAttributes = new Dictionary<string, object?>
+        {
+            ["accountId"] = "acct-c",
+            ["loopId"] = "loop-c"
+        };
+
+        var promptDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "grocery list",
+            NormalizedTranscript = "grocery list",
+            DeviceId = "device-c",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+        });
+
+        var addDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "I need milk and eggs for tonight",
+            NormalizedTranscript = "I need milk and eggs for tonight",
+            DeviceId = "device-c",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+            {
+                [HouseholdListStateKey] = promptDecision.ContextUpdates![HouseholdListStateKey],
+                [HouseholdListTypeKey] = promptDecision.ContextUpdates[HouseholdListTypeKey],
+                [HouseholdListDisplayTypeKey] = promptDecision.ContextUpdates[HouseholdListDisplayTypeKey]
+            }
+        });
+
+        Assert.Equal("shopping_list_add", addDecision.IntentName);
+        Assert.Contains("Added milk and eggs for tonight to your grocery list.", addDecision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(["milk and eggs for tonight"],
+            memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-c", "loop-c", "device-c"), "shopping"));
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_TodoList_FollowUpFlow_AddsItemAndCanBeCompleted()
     {
         var memoryStore = new InMemoryPersonalMemoryStore();

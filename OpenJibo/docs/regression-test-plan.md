@@ -412,6 +412,35 @@ Capture check:
 - seasonal prompts should not fall back into generic personality chat when source-backed replies exist
 - for Santa Tracker specifically, record whether the robot hands off to an animation or just speaks and stops
 
+## Deferred Full Regression Milestone
+
+Use this checkpoint for the later all-up live regression pass once the build is ready.
+
+Carry these items together in one named artifact folder:
+
+- update menu, backup prompt, and restore proof
+- phantom update false positive
+- grocery list follow-up and add-item reliability
+- bare `twerk` and `can you twerk`
+- `go to sleep`
+- `turn around`, `spin around`, and `twirl`
+- `show santa tracker`
+- favorite bird, favorite flower, and favorite animal
+- personal report
+- proactive yes/no prompts
+- mixed yes/no phrases such as `no yes`
+- stop command reply shape and the greeting-looking turn after stop
+- short-utterance STT misses and filler stripping behavior
+- any remaining motion, sleep, or follow-up listen boundary drift
+
+For each item, record:
+
+- phrase attempted
+- transcript heard
+- turn type and active listen rule
+- whether the robot stayed listening or settled cleanly
+- whether the reply matched stock Jibo behavior or the current OpenJibo parity target
+
 ## Optional Feature Slice Checks
 
 When a new feature is added before a release closes:

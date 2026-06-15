@@ -125,7 +125,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.False(session.FollowUpOpen);
         Assert.False(session.TurnState.AwaitingTurnCompletion);
         Assert.False(session.TurnState.SawListen);
-        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc > DateTimeOffset.UtcNow.AddSeconds(3));
+        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc > DateTimeOffset.UtcNow.AddSeconds(6));
 
         var tailListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {

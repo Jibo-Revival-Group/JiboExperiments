@@ -247,27 +247,54 @@ Decision direction:
 - allow HMAC-based provider adapters only when a provider cannot practically support asymmetric signatures
 - require HTTPS for the transport and treat the signature as the trust check, not the transport alone
 
-Current sequence hypothesis from the helper tools and local SDK traces:
+Confirmed app-side onboarding sequence from the Open_Jibo_APP tree and the archived app research:
 
-- server provisioning creates or updates the robot record first
-- `OOBE.prepareRobot(loopId)` issues the onboarding token for the robot/loop setup path
-- `OOBE.setupRobot(id, token)` consumes that token to bind the robot identity
-- after WiFi/device setup, the robot may call `reconnectRobot({token, id})` to notify the server of the completed connection
-- `Notification.NewRobotToken` takes a `deviceId` and returns the device onboarding token used in the QR/token path
+- `ScreenWelcome`
+- `ScreenTip`
+- `ScreenAuth`
+- `ScreenWifi`
+- `ScreenQR`
+- `ScreenSetup`
+- `ScreenSuccess`
 
-This is enough to build a server-side replay smoke test, but it is not yet proof of the full original app-side sequence. We still need the actual app code if we want exact parity.
+Confirmed app-side service calls:
+
+- `Account_20151111.Create`
+- `Account_20151111.Login`
+- `Loop_20160324.List`
+- `Loop_20160324.ListMembers`
+- `Loop_20160324.InviteMember`
+- `Loop_20160324.UpdateMember`
+- `Media_20160725.List`
+- `OOBE_20161026.PrepareRobot`
+- `OOBE_20161026.GetStatus`
+
+Confirmed QR/token shape:
+
+- SSID + password + optional static IP block + access token
+- XOR obfuscation with the classic Jibo key phrase
+- chunked QR codes when the payload is long
+- static fallback token `JiboLivesSo` when the app cannot reach the server
+
+This is now enough to build a server-side replay smoke test and a much more exact app/server parity target.
+
+Current implementation:
+
+- `scripts/cloud/Invoke-CloudSmoke.ps1` now walks the onboarding spine in order
+- `tests/Jibo.Cloud.Tests/Protocol/OnboardingReplaySmokeTests.cs` replays the same account/loop/OOBE sequence against the protocol service
+- the managed and self-hosted deployment contract scripts now verify the replay smoke markers instead of the older bootstrap-only markers
 
 Minimum replayable onboarding sequence for CI:
 
 - create or confirm the person/account record
-- create or confirm the robot record
-- issue the onboarding token
-- apply the onboarding token during OOBE/setup
-- confirm the robot reconnects with the issued token
-- verify the websocket/session path comes up after onboarding
+- create or confirm the loop record
+- issue the onboarding token with `OOBE_20161026.PrepareRobot`
+- display and consume the QR payload
+- confirm `OOBE_20161026.GetStatus` completes
+- confirm the robot reconnects or reaches the post-onboarding socket/session path
 - verify a small post-onboarding turn set such as `hello`, `tell me a joke`, and `cloud version`
 
-If the app code later proves the original sequence includes extra calls, the CI replay should expand, but this is the smallest useful gate for now.
+If the robot-side app or firmware later proves the original sequence includes extra calls, the CI replay should expand, but this is now the smallest useful gate for the first parity slice.
 
 ### Self-Hosted Isolated
 

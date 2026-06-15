@@ -1054,7 +1054,8 @@ For `1.0.20` and beyond:
    - include first-boot/OOBE behavior so a converted robot can finish setup on the first launch after conversion
    - issue Open Jibo identities instead of blindly trusting stock robot identity values, especially for cloned or previously modified robots
    - planning anchor: [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md)
-   - status: `discovery` until the app-side onboarding sequence is mapped and the conversion audit helpers are ready
+   - status: `ready`
+   - note: the app-side onboarding sequence is now mapped, and the existing bootstrap / cloud contract scripts give us enough structure to start implementation rather than only discovery
 2. Device compatibility matrix
    - prove the conversion path on the newest OOBE-capable devices
    - prove it on older stock devices such as the `1.9.2` baseline

@@ -163,6 +163,37 @@ Required first behaviors:
 - warn the user when identity repair or clone handling is needed
 - explain what was repaired when a new Open Jibo robot identity is issued
 
+## Confirmed App Contract
+
+The app research and the new `Open_Jibo_APP` tree now give us a concrete onboarding shape to align against:
+
+- app-side flow:
+  - `ScreenWelcome`
+  - `ScreenTip`
+  - `ScreenAuth`
+  - `ScreenWifi`
+  - `ScreenQR`
+  - `ScreenSetup`
+  - `ScreenSuccess`
+- app-side server calls:
+  - `Account_20151111.Create`
+  - `Account_20151111.Login`
+  - `Loop_20160324.List`
+  - `Loop_20160324.ListMembers`
+  - `Loop_20160324.InviteMember`
+  - `Loop_20160324.UpdateMember`
+  - `Media_20160725.List`
+  - `OOBE_20161026.PrepareRobot`
+  - `OOBE_20161026.GetStatus`
+- QR construction:
+  - SSID, password, optional static IP block, then access token
+  - XOR obfuscation with the classic Jibo key phrase
+  - chunked QR display when the encoded payload is too large
+- fallback behavior:
+  - if `EXPO_PUBLIC_OPENJIBO_SERVER_URL` is missing or unreachable, the app falls back to the static token `JiboLivesSo`
+
+Implication: the first conversion proof should not invent a brand-new setup shape. It should align the robot skill and cloud endpoints to this app sequence, then use the original protocol docs to fill in the remaining robot-side handoff details.
+
 Likely future behaviors:
 
 - pair the robot to an openjibo.com account
@@ -185,10 +216,12 @@ Build scripts in layers:
    - list current region/mode/config values
    - list candidate files that would be touched
    - report whether required skills and OS features appear present
+   - use `scripts/bootstrap/Audit-OpenJiboConversion.ps1` as the first non-destructive helper
 2. Plan
    - generate a proposed patch manifest
    - show backup paths and rollback plan
    - validate selected mode and target server values
+   - use `scripts/bootstrap/Plan-OpenJiboConversion.ps1` to turn the audit into a proposed manifest
 3. Apply
    - snapshot files
    - add Open Jibo region/mode entries
@@ -254,6 +287,7 @@ For `1.0.20`, this track is ready to build when:
 
 - the modified file list is known for the `1.9.2` baseline
 - the skill install/menu strategy is known
+- the app-side onboarding contract above is mapped to the robot handoff and backend endpoints
 - rollback behavior is specified
 - first-boot behavior is specified
 - the audit helper can run without changing the robot

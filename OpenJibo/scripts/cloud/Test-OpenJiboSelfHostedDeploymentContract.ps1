@@ -46,8 +46,12 @@ $requiredMigrationMarkers = @(
 
 $requiredSmokeMarkers = @(
     "/health",
-    "CreateHubToken",
-    "NewRobotToken"
+    "Account_20151111.Create",
+    "Account_20151111.Login",
+    "Loop_20160324.ListLoops",
+    "OOBE_20161026.PrepareRobot",
+    "OOBE_20161026.GetStatus",
+    "OOBE_20161026.SetupRobot"
 )
 
 foreach ($marker in $requiredComposeMarkers) {

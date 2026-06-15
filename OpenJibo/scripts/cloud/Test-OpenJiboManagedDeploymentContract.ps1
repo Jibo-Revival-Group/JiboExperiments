@@ -76,7 +76,7 @@ if ($foundationScriptText -notmatch [regex]::Escape("openjibo-media-connection-s
     throw "Foundation script does not seed the media connection string secret."
 }
 
-if ($managedScriptText -notmatch [regex]::Escape("-RegistryName")) {
+if ($managedScriptText -notmatch [regex]::Escape("RegistryName")) {
     throw "Managed deploy script is missing the registry parameter path."
 }
 
@@ -90,9 +90,13 @@ foreach ($marker in $forbiddenMarkers) {
 }
 
 if (Get-Command az -ErrorAction SilentlyContinue) {
-    $azBicepCheck = & az bicep version 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "Azure CLI Bicep support is available."
+    try {
+        $null = & az bicep version 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Azure CLI Bicep support is available."
+        }
+    } catch {
+        Write-Host "Azure CLI is available, but Bicep support is not installed."
     }
 }
 

@@ -27,6 +27,21 @@ The `1.0.20` conversion planning track builds on this bootstrap path in [open-ji
 4. Gain RCM/device access for targeted TLS or host validation changes.
 5. Verify robot startup, token flow, socket flow, and first-turn behavior.
 
+## Easy Button Flow
+
+The "easy button" recovery appliance should follow the same staged sequence every time:
+
+1. Enter RCM through the robot's button sequence and USB recovery port.
+2. Use the exploit path to open the patch window.
+3. Patch only enough to make SSH reachable over the USB/LAN path.
+4. Reboot out of RCM and confirm SSH access.
+5. Snapshot the robot before any conversion writes.
+6. Install the Open Jibo skill and conversion assets.
+7. Apply the region, mode, and first-boot/OOBE pending state.
+8. Reboot into the Open Jibo mode.
+9. Let the skill complete the onboarding and conversion.
+10. If onboarding is abandoned or a write step fails, restore the snapshot and return to stock behavior.
+
 ## Region-Driven Configuration
 
 Current findings suggest the preferred OpenJibo bootstrap path is to inject a new region configuration rather than override every hostname manually.

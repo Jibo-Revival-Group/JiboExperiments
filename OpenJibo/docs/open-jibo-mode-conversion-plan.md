@@ -259,6 +259,25 @@ The Jibo Revival Group hardware path should be planned beside the scripts, not a
 
 Decision: the helper should be a guided owner-facing recovery appliance. Internally it can transport and run scripts, but the owner experience should be a controlled guided flow that starts on hardware and continues through the robot skill plus website/app onboarding.
 
+Planned helper-device sequence:
+
+1. Owner connects the helper device to the robot's RCM USB path.
+2. Owner puts the robot into RCM with the required button sequence.
+3. The helper runs the exploit/recovery transport needed to gain the initial patch window.
+4. The helper applies the smallest version-aware firewall or trust patch needed to make SSH reachable over the USB/LAN path.
+5. The robot reboots out of RCM and becomes reachable over SSH.
+6. The helper snapshots the robot before any conversion writes.
+7. The helper installs or updates the Open Jibo skill and supporting conversion assets over SSH.
+8. The helper writes the minimum conversion state:
+   - region / jetstream routing
+   - mode selection
+   - first-boot / onboarding pending state
+   - any version-specific bookkeeping we later confirm is required
+9. The robot reboots into the Open Jibo mode.
+10. The Open Jibo skill completes onboarding and finalizes the conversion.
+11. If the owner exits onboarding, the skill remains in the menu and the robot falls back to the prior state as cleanly as possible.
+12. If any step fails before completion, the helper restores the snapshot and returns the robot to the original state.
+
 Expected recovery flow:
 
 1. Owner connects the helper to the robot's RCM USB path.

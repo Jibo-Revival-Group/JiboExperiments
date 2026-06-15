@@ -5,3 +5,4 @@
 
 # Local restore workaround
 .tmp-appdata/
+.tmp/

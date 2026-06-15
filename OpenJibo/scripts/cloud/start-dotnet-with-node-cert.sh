@@ -9,7 +9,7 @@ CERT_PEM="${CERT_PEM:-${REPO_ROOT}/src/Jibo.Cloud/node/cert.pem}"
 KEY_PEM="${KEY_PEM:-${REPO_ROOT}/src/Jibo.Cloud/node/key.pem}"
 CHAIN_PEM="${CHAIN_PEM:-}"
 PFX_OUT="${PFX_OUT:-${REPO_ROOT}/.tmp/openjibo-dev-cert.pfx}"
-PFX_PASSWORD="${PFX_PASSWORD:-openjibo-dev-password}"
+PFX_PASSWORD="${PFX_PASSWORD:-}"
 CERT_WITH_CHAIN_PEM="${CERT_WITH_CHAIN_PEM:-${REPO_ROOT}/.tmp/openjibo-dev-cert-chain.pem}"
 ASPNETCORE_URLS="${ASPNETCORE_URLS:-https://0.0.0.0:443;http://0.0.0.0:24605}"
 DOTNET_ENVIRONMENT="${DOTNET_ENVIRONMENT:-Development}"
@@ -40,6 +40,10 @@ if [[ -n "${CHAIN_PEM}" ]]; then
   CERT_PFX_INPUT="${CERT_WITH_CHAIN_PEM}"
 else
   CERT_PFX_INPUT="${CERT_PEM}"
+fi
+
+if [[ -z "${PFX_PASSWORD}" ]]; then
+  PFX_PASSWORD="$(openssl rand -hex 16)"
 fi
 
 OPENSSL_ARGS=(

@@ -39,8 +39,8 @@
         photoUrl: "",
         isActive: true,
         messagingAllowed: true,
-        accessKeyId: "fake-access-key-id",
-        secretAccessKey: "fake-secret-access-key",
+        accessKeyId: "placeholder-access-key-id",
+        secretAccessKey: "placeholder-secret-access-key",
         roles: [],
         facebookConnected: false,
         termsAccepted: true

@@ -25,6 +25,7 @@ public sealed class WebSocketTurnState
     public string? LastLocalNoInputRule { get; set; }
     public int LocalNoInputCount { get; set; }
     public bool AwaitingTurnCompletion { get; set; }
+    public bool IsFinalizingTurn { get; set; }
     public bool SawListen { get; set; }
     public bool SawContext { get; set; }
     public IReadOnlyList<string> ListenRules { get; set; } = [];

@@ -5570,6 +5570,36 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task BinaryAudio_IsIgnoredWhileTurnIsFinalizing()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-finalizing-token",
+            Text = """{"type":"LISTEN","transID":"trans-finalizing","data":{"rules":["wake-word"]}}"""
+        });
+
+        var session = _store.FindSessionByToken("hub-finalizing-token");
+        Assert.NotNull(session);
+        session.TurnState.IsFinalizingTurn = true;
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-finalizing-token",
+            Binary = new byte[4096]
+        });
+
+        Assert.Empty(replies);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+        Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
+    }
+
+    [Fact]
     public async Task GraceWindow_StillIgnoresReplyAudioFromPreviousTurn()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope

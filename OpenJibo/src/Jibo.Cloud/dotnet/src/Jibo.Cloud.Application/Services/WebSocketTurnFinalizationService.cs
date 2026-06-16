@@ -562,7 +562,6 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.ListenRules = [];
         turnState.ListenAsrHints = [];
         turnState.AutoFinalizeBlockedUntilUtc = null;
-        turnState.IsFinalizingTurn = false;
     }
 
     private static bool IsTurnInFlight(WebSocketTurnState turnState)
@@ -577,7 +576,6 @@ public sealed class WebSocketTurnFinalizationService(
         bool allowFallbackOnMissingTranscript,
         CancellationToken cancellationToken)
     {
-        session.TurnState.IsFinalizingTurn = true;
         try
         {
             var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, messageType);
@@ -950,7 +948,6 @@ public sealed class WebSocketTurnFinalizationService(
         }
         finally
         {
-            session.TurnState.IsFinalizingTurn = false;
             await TrackGlsmPhaseAsync(session, envelope, $"finalize:{messageType}", cancellationToken);
         }
     }
@@ -976,8 +973,6 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static bool ShouldIgnoreLateAudio(CloudSession session)
     {
-        if (session.TurnState.IsFinalizingTurn) return true;
-
         var ignoreUntilUtc = session.TurnState.IgnoreAdditionalAudioUntilUtc;
         if (session.TurnState.AutoFinalizeBlockedUntilUtc.HasValue &&
             session.TurnState.AutoFinalizeBlockedUntilUtc.Value > DateTimeOffset.UtcNow)

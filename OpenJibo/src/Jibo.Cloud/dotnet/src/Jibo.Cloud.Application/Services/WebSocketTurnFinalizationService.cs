@@ -521,6 +521,7 @@ public sealed class WebSocketTurnFinalizationService(
     {
         session.TurnState.BufferedAudioBytes = 0;
         session.TurnState.BufferedAudioChunkCount = 0;
+        session.TurnState.AudioTranscriptHint = null;
         session.TurnState.LastSttError = null;
         session.TurnState.LastSttErrorUtc = null;
         session.TurnState.FirstAudioReceivedUtc = null;

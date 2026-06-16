@@ -4250,6 +4250,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.NotNull(session);
         Assert.Equal(0, session.TurnState.BufferedAudioBytes);
         Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
+        Assert.Null(session.TurnState.AudioTranscriptHint);
         Assert.False(session.Metadata.ContainsKey("audioTranscriptHint"));
     }
 

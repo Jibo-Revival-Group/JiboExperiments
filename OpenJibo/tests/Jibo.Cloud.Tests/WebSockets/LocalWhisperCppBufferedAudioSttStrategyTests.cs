@@ -263,6 +263,52 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         }
     }
 
+    [Fact]
+    public async Task TranscribeAsync_WritesTheRawBufferedPagesToFfmpeg()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var runner = new InspectingExternalProcessRunner();
+            var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+                new BufferedAudioSttOptions
+                {
+                    EnableLocalWhisperCpp = true,
+                    FfmpegPath = "ffmpeg",
+                    WhisperCliPath = "whisper-cli",
+                    WhisperModelPath = "model.bin",
+                    TempDirectory = tempDirectory
+                },
+                runner);
+
+            var pageOne = BuildMinimalOggPage();
+            var pageTwo = BuildMinimalOggPage();
+            var expected = pageOne.Concat(pageTwo).ToArray();
+
+            var turn = new TurnContext
+            {
+                TurnId = "turn-local-stt-raw-pages",
+                Locale = "en-US",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["bufferedAudioBytes"] = expected.Length,
+                    ["bufferedAudioFrames"] = new[] { pageOne, pageTwo }
+                }
+            };
+
+            var result = await strategy.TranscribeAsync(turn);
+
+            Assert.Equal("tell me a joke", result.Text);
+            Assert.Equal(expected, runner.WrittenFfmpegInputBytes);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
+        }
+    }
+
     [Theory]
     [InlineData("shared/yes_no")]
     [InlineData("word-of-the-day/surprise")]
@@ -436,6 +482,28 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             var outputPath = arguments[^1];
             File.WriteAllBytes(outputPath, "RIFF"u8);
             return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
+        }
+    }
+
+    private sealed class InspectingExternalProcessRunner : IExternalProcessRunner
+    {
+        public byte[]? WrittenFfmpegInputBytes { get; private set; }
+
+        public Task<ExternalProcessResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
+            {
+                WrittenFfmpegInputBytes = File.ReadAllBytes(arguments[2]);
+                File.WriteAllBytes(arguments[^1], "RIFF"u8);
+                return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
+            }
+
+            return Task.FromResult(new ExternalProcessResult(0,
+                "[00:00:00.000 --> 00:00:01.000] tell me a joke",
+                string.Empty));
         }
     }
 }

@@ -197,7 +197,8 @@ public sealed class WebSocketTurnFinalizationService(
     {
         if (!TryReadTransId(text, out var nextTransId) || string.IsNullOrWhiteSpace(nextTransId)) return;
 
-        if (!string.Equals(session.TurnState.TransId, nextTransId, StringComparison.Ordinal))
+        if (!string.Equals(session.TurnState.TransId, nextTransId, StringComparison.Ordinal) &&
+            !IsTurnInFlight(session.TurnState))
             ResetTurnState(session.TurnState, nextTransId);
 
         session.LastTransId = nextTransId;
@@ -464,6 +465,12 @@ public sealed class WebSocketTurnFinalizationService(
                 if (!string.IsNullOrWhiteSpace(nextTransId) &&
                     !string.Equals(turnState.TransId, nextTransId, StringComparison.Ordinal))
                 {
+                    if (IsTurnInFlight(turnState))
+                    {
+                        session.LastTransId = nextTransId;
+                        return;
+                    }
+
                     ResetTurnState(turnState, nextTransId);
                     session.LastTransId = nextTransId;
                 }
@@ -555,6 +562,11 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.ListenRules = [];
         turnState.ListenAsrHints = [];
         turnState.AutoFinalizeBlockedUntilUtc = null;
+    }
+
+    private static bool IsTurnInFlight(WebSocketTurnState turnState)
+    {
+        return turnState.AwaitingTurnCompletion || turnState.BufferedAudioBytes > 0;
     }
 
     private async Task<IReadOnlyList<WebSocketReply>> FinalizeTurnAsync(

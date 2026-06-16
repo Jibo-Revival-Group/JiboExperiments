@@ -5515,6 +5515,60 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
     }
 
+    [Fact]
+    public async Task NewTransId_WhileAudioIsBuffered_DoesNotBlowAwayTheActiveTurn()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-buffered-transid-token",
+            Text = """{"type":"LISTEN","transID":"trans-first","data":{"rules":["wake-word"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-buffered-transid-token",
+            Text = """{"type":"CONTEXT","transID":"trans-first","data":{"audioTranscriptHint":"tell me a joke"}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-buffered-transid-token",
+            Binary = [1, 2, 3, 4]
+        });
+
+        var session = _store.FindSessionByToken("hub-buffered-transid-token");
+        Assert.NotNull(session);
+        Assert.Equal("trans-first", session.TurnState.TransId);
+        Assert.Equal(4, session.TurnState.BufferedAudioBytes);
+        Assert.Equal("tell me a joke", session.TurnState.AudioTranscriptHint);
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-buffered-transid-token",
+            Text = """{"type":"LISTEN","transID":"trans-second","data":{"rules":["follow-up"]}}"""
+        });
+
+        session = _store.FindSessionByToken("hub-buffered-transid-token");
+        Assert.NotNull(session);
+        Assert.Equal("trans-first", session.TurnState.TransId);
+        Assert.Equal(4, session.TurnState.BufferedAudioBytes);
+        Assert.Equal(1, session.TurnState.BufferedAudioChunkCount);
+        Assert.Equal("tell me a joke", session.TurnState.AudioTranscriptHint);
+        Assert.Equal("trans-second", session.LastTransId);
+    }
+
     [Theory]
     [InlineData("fixtures\\neo-hub-client-asr-joke.flow.json")]
     [InlineData("fixtures\\neo-hub-context-client-nlu.flow.json")]

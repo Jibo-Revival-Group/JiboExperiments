@@ -74,6 +74,9 @@ public sealed class FileTurnTelemetrySinkTests
     public async Task RecordsTranscriptErrorOnTurnError()
     {
         var sink = new Mock<ITurnTelemetrySink>();
+        sink.Setup(s => s.RecordTurnDiagnosticAsync(It.IsAny<string>(),
+                It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         var sttStrategySelector = new Mock<ISttStrategySelector>();
         sttStrategySelector.Setup(s => s.SelectAsync(It.IsAny<TurnContext>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("dummy"));
@@ -88,6 +91,12 @@ public sealed class FileTurnTelemetrySinkTests
             CancellationToken.None);
 
         sink.Verify(
+            s => s.RecordTurnDiagnosticAsync(
+                "stt_processing_failure",
+                It.IsAny<IReadOnlyDictionary<string, object?>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once());
+        sink.Verify(
             s => s.RecordTranscriptError(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once());
     }
@@ -96,6 +105,9 @@ public sealed class FileTurnTelemetrySinkTests
     public async Task AutoFinalize_DoesNotFallbackImmediately_WhenSttThrows()
     {
         var sink = new Mock<ITurnTelemetrySink>();
+        sink.Setup(s => s.RecordTurnDiagnosticAsync(It.IsAny<string>(),
+                It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         var sttStrategySelector = new Mock<ISttStrategySelector>();
         sttStrategySelector.Setup(s => s.SelectAsync(It.IsAny<TurnContext>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("ffmpeg failed"));
@@ -132,6 +144,12 @@ public sealed class FileTurnTelemetrySinkTests
         Assert.True(session.TurnState.AutoFinalizeBlockedUntilUtc > DateTimeOffset.UtcNow);
         Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc > DateTimeOffset.UtcNow);
 
+        sink.Verify(
+            s => s.RecordTurnDiagnosticAsync(
+                "stt_processing_failure",
+                It.IsAny<IReadOnlyDictionary<string, object?>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once());
         sink.Verify(
             s => s.RecordTranscriptError(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once());

@@ -57,7 +57,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
         {
             await File.WriteAllBytesAsync(oggPath, OggOpusAudioNormalizer.Normalize(frames), cancellationToken);
 
-            await processRunner.RunAsync(
+            var ffmpegResult = await processRunner.RunAsync(
                 options.FfmpegPath!,
                 ["-y", "-i", oggPath, "-ar", "16000", "-ac", "1", "-f", "wav", wavPath],
                 cancellationToken);
@@ -73,7 +73,14 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(ReadTranscriptHint(turn));
 
             if (string.IsNullOrWhiteSpace(transcript))
-                throw new InvalidOperationException("whisper.cpp returned no transcript for the buffered audio turn.");
+            {
+                var wavBytes = File.Exists(wavPath) ? new FileInfo(wavPath).Length : 0;
+                throw new InvalidOperationException(
+                    "whisper.cpp returned no transcript for the buffered audio turn. " +
+                    $"ffmpegExit={ffmpegResult.ExitCode}, whisperExit={whisperResult.ExitCode}, " +
+                    $"oggBytes={new FileInfo(oggPath).Length}, wavBytes={wavBytes}, " +
+                    $"whisperStdOutBytes={whisperResult.StdOut.Length}, whisperStdErrBytes={whisperResult.StdErr.Length}");
+            }
 
             return new SttResult
             {
@@ -86,7 +93,11 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                     ["bufferedAudioChunks"] = frames.Count,
                     ["ffmpegPath"] = options.FfmpegPath,
                     ["whisperCliPath"] = options.WhisperCliPath,
-                    ["wavPath"] = wavPath
+                    ["wavPath"] = wavPath,
+                    ["ffmpegStdOut"] = ffmpegResult.StdOut,
+                    ["ffmpegStdErr"] = ffmpegResult.StdErr,
+                    ["whisperStdOut"] = whisperResult.StdOut,
+                    ["whisperStdErr"] = whisperResult.StdErr
                 }
             };
         }

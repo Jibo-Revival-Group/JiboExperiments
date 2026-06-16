@@ -368,7 +368,7 @@ public sealed class WebSocketTurnFinalizationService(
     }
 
     private async Task<TurnContext> ResolveTranscriptAsync(TurnContext turn, CloudSession session,
-        CancellationToken cancellationToken)
+        WebSocketMessageEnvelope envelope, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrWhiteSpace(turn.NormalizedTranscript) || !string.IsNullOrWhiteSpace(turn.RawTranscript) ||
             session.TurnState.BufferedAudioBytes <= 0) return turn;
@@ -389,6 +389,8 @@ public sealed class WebSocketTurnFinalizationService(
             session.TurnState.LastSttError = ex.Message;
             session.TurnState.LastSttErrorUtc = DateTimeOffset.UtcNow;
             MarkSttFailureGrace(session);
+            await RecordSttProcessingFailureDiagnosticAsync(session, envelope, "strategy_selection", ex,
+                cancellationToken);
             await sink.RecordTranscriptError(ex, "Error during STT processing", cancellationToken);
             return turn;
         }
@@ -435,6 +437,8 @@ public sealed class WebSocketTurnFinalizationService(
             session.TurnState.LastSttError = ex.Message;
             session.TurnState.LastSttErrorUtc = DateTimeOffset.UtcNow;
             MarkSttFailureGrace(session);
+            await RecordSttProcessingFailureDiagnosticAsync(session, envelope, "transcription", ex,
+                cancellationToken);
             await sink.RecordTranscriptError(ex, "Error during STT processing", cancellationToken);
             return turn;
         }
@@ -596,7 +600,7 @@ public sealed class WebSocketTurnFinalizationService(
                 return [];
             }
 
-            var finalizedTurn = await ResolveTranscriptAsync(turn, session, cancellationToken);
+            var finalizedTurn = await ResolveTranscriptAsync(turn, session, envelope, cancellationToken);
             if (!TryGetUsableTranscript(finalizedTurn, out var usableTranscript))
                 finalizedTurn = new TurnContext
                 {
@@ -876,6 +880,23 @@ public sealed class WebSocketTurnFinalizationService(
             turnState.IgnoreAdditionalAudioUntilUtc = plan.FollowUp.KeepMicOpen
                 ? null
                 : DateTimeOffset.UtcNow.Add(ResolveLateAudioIgnoreWindow(plan));
+
+            await sink.RecordTurnDiagnosticAsync(
+                "turn_finalize_plan",
+                BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                {
+                    ["messageType"] = messageType,
+                    ["intent"] = plan.IntentName,
+                    ["actionCount"] = plan.Actions.Count,
+                    ["actionTypes"] = plan.Actions.Select(action => action.GetType().Name).ToArray(),
+                    ["keepMicOpen"] = plan.FollowUp.KeepMicOpen,
+                    ["followUpTimeoutMs"] = plan.FollowUp.KeepMicOpen
+                        ? (int)plan.FollowUp.Timeout.TotalMilliseconds
+                        : null,
+                    ["followUpOpen"] = session.FollowUpOpen,
+                    ["lastTranscript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript
+                }),
+                cancellationToken);
 
             var emitSkillActions =
                 !string.Equals(plan.IntentName, "word_of_the_day", StringComparison.OrdinalIgnoreCase) &&
@@ -1949,6 +1970,29 @@ public sealed class WebSocketTurnFinalizationService(
         details["sawContext"] = session.TurnState.SawContext;
         details["glsmState"] = ResolveGlsmPhase(session);
         return details;
+    }
+
+    private async Task RecordSttProcessingFailureDiagnosticAsync(
+        CloudSession session,
+        WebSocketMessageEnvelope envelope,
+        string stage,
+        Exception ex,
+        CancellationToken cancellationToken)
+    {
+        await sink.RecordTurnDiagnosticAsync(
+            "stt_processing_failure",
+            BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+            {
+                ["stage"] = stage,
+                ["error"] = ex.Message,
+                ["exceptionType"] = ex.GetType().FullName,
+                ["listenRules"] = session.TurnState.ListenRules,
+                ["listenAsrHints"] = session.TurnState.ListenAsrHints,
+                ["audioTranscriptHint"] = session.TurnState.AudioTranscriptHint,
+                ["lastSttError"] = session.TurnState.LastSttError,
+                ["lastSttErrorUtc"] = session.TurnState.LastSttErrorUtc
+            }),
+            cancellationToken);
     }
 
     private static TurnContext WithSyntheticTranscript(TurnContext turn, string transcript)

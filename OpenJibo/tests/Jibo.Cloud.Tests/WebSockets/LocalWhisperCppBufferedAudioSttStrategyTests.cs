@@ -329,7 +329,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
 
             var pageOne = BuildMinimalOggPage();
             var pageTwo = BuildMinimalOggPage();
-            var expected = pageOne.Concat(pageTwo).ToArray();
+            var expected = OggOpusAudioNormalizer.Normalize([pageOne, pageTwo]);
 
             var turn = new TurnContext
             {

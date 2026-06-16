@@ -244,7 +244,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 125));
         }
 
-        if (isStopCommand || isSleepCommand || isTurnAroundCommand)
+        if (isStopCommand)
+            return messages;
+
+        if (isSleepCommand || isTurnAroundCommand)
         {
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillRedirectPayload(

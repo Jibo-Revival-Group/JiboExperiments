@@ -168,6 +168,95 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task BufferedAudio_CloudVersionThenStop_FinalizesPromptlyAndKeepsStopClean()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-cloud-version-stop-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-cloud-version-stop","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-cloud-version-stop-token",
+            Text =
+                """{"type":"CONTEXT","transID":"trans-cloud-version-stop","data":{"audioTranscriptHint":"what's your cloud version"}}"""
+        });
+
+        IReadOnlyList<WebSocketReply> replies = [];
+        for (var index = 0; index < 2; index += 1)
+        {
+            replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-cloud-version-stop-token",
+                Binary = new byte[3000]
+            });
+
+            Assert.Empty(replies);
+        }
+
+        var session = _store.FindSessionByToken("hub-cloud-version-stop-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+
+        replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-cloud-version-stop-token",
+            Binary = new byte[3000]
+        });
+
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("cloud_version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+
+        var stopReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-cloud-version-stop-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-cloud-version-stop-stop","data":{"text":"stop"}}"""
+        });
+
+        Assert.Equal(2, stopReplies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(stopReplies[0]));
+        Assert.Equal("EOS", ReadReplyType(stopReplies[1]));
+
+        var reopenedListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-cloud-version-stop-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-cloud-version-stop-reopen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        Assert.Empty(reopenedListenReplies);
+        Assert.Equal("trans-cloud-version-stop-reopen", session.TurnState.TransId);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+        Assert.True(session.TurnState.SawListen);
+    }
+
+    [Fact]
     public async Task BinaryMessage_BuffersAudioWithoutEmittingSyntheticAck()
     {
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2992,7 +3081,7 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
-    public async Task ClientAsr_StopThat_EmitsGlobalStopAndIdleRedirect()
+    public async Task ClientAsr_StopThat_EmitsGlobalStopWithoutReply()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -3013,23 +3102,15 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-stop","data":{"text":"stop that"}}"""
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
-        Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
-        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
         Assert.Equal("stop", nlu.GetProperty("intent").GetString());
         Assert.Equal("global_commands", nlu.GetProperty("domain").GetString());
         Assert.Equal("globals/global_commands_launch", nlu.GetProperty("rules")[0].GetString());
-
-        using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/idle",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("stop",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         var session = _store.FindSessionByToken("hub-stop-token");
         Assert.NotNull(session);

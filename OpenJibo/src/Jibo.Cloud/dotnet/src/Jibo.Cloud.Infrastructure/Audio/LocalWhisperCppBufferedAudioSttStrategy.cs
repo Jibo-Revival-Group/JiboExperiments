@@ -70,6 +70,9 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
             var transcript = ExtractTranscript(whisperResult.StdOut);
             transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(transcript);
             if (string.IsNullOrWhiteSpace(transcript))
+                transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(ReadTranscriptHint(turn));
+
+            if (string.IsNullOrWhiteSpace(transcript))
                 throw new InvalidOperationException("whisper.cpp returned no transcript for the buffered audio turn.");
 
             return new SttResult
@@ -95,6 +98,13 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 TryDelete(wavPath);
             }
         }
+    }
+
+    private static string? ReadTranscriptHint(TurnContext turn)
+    {
+        return turn.Attributes.TryGetValue("audioTranscriptHint", out var transcriptHint)
+            ? transcriptHint?.ToString()
+            : null;
     }
 
     private static IReadOnlyList<byte[]> ReadBufferedAudioFrames(TurnContext turn)

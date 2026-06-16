@@ -2,15 +2,26 @@ using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
 public sealed class WebSocketTurnFinalizationService(
     IConversationBroker conversationBroker,
     ISttStrategySelector sttStrategySelector,
-    ITurnTelemetrySink sink
+    ITurnTelemetrySink sink,
+    ILogger<WebSocketTurnFinalizationService> logger
 )
 {
+    public WebSocketTurnFinalizationService(
+        IConversationBroker conversationBroker,
+        ISttStrategySelector sttStrategySelector,
+        ITurnTelemetrySink sink)
+        : this(conversationBroker, sttStrategySelector, sink, NullLogger<WebSocketTurnFinalizationService>.Instance)
+    {
+    }
+
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
     private const int AutoFinalizeMinBufferedAudioChunks = 3;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
@@ -231,6 +242,15 @@ public sealed class WebSocketTurnFinalizationService(
         try
         {
             var turnState = session.TurnState;
+            logger.LogDebug(
+                "Turn binary audio entered session={SessionId} transId={TransId} bytes={Bytes} chunks={Chunks} awaiting={Awaiting} sawListen={SawListen} sawContext={SawContext}",
+                session.SessionId,
+                turnState.TransId,
+                envelope.Binary?.Length ?? 0,
+                turnState.BufferedAudioChunkCount,
+                turnState.AwaitingTurnCompletion,
+                turnState.SawListen,
+                turnState.SawContext);
             var ignoreLateAudio = ShouldIgnoreLateAudio(session);
             var ignoreAudioWithoutListen = ShouldIgnoreAudioWithoutListen(turnState);
             if (ignoreLateAudio || ignoreAudioWithoutListen)
@@ -247,6 +267,12 @@ public sealed class WebSocketTurnFinalizationService(
                         ["sawListen"] = turnState.SawListen,
                         ["sawContext"] = turnState.SawContext
                     }), cancellationToken);
+                logger.LogDebug(
+                    "Turn binary audio ignored session={SessionId} transId={TransId} ignoreLateAudio={IgnoreLateAudio} ignoreWithoutListen={IgnoreWithoutListen}",
+                    session.SessionId,
+                    turnState.TransId,
+                    ignoreLateAudio,
+                    ignoreAudioWithoutListen);
                 return [];
             }
 
@@ -272,8 +298,20 @@ public sealed class WebSocketTurnFinalizationService(
                 }), cancellationToken);
 
             if (ShouldAutoFinalize(session))
+            {
+                logger.LogDebug("Turn binary audio auto-finalizing session={SessionId} transId={TransId} bytes={Bytes} chunks={Chunks}",
+                    session.SessionId,
+                    turnState.TransId,
+                    turnState.BufferedAudioBytes,
+                    turnState.BufferedAudioChunkCount);
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
+            }
 
+            logger.LogDebug("Turn binary audio exit without finalization session={SessionId} transId={TransId} bytes={Bytes} chunks={Chunks}",
+                session.SessionId,
+                turnState.TransId,
+                turnState.BufferedAudioBytes,
+                turnState.BufferedAudioChunkCount);
             return [];
         }
         finally
@@ -290,6 +328,14 @@ public sealed class WebSocketTurnFinalizationService(
         try
         {
             var turnState = session.TurnState;
+            logger.LogDebug(
+                "Turn context entered session={SessionId} transId={TransId} textBytes={TextBytes} awaiting={Awaiting} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks}",
+                session.SessionId,
+                turnState.TransId,
+                envelope.Text?.Length ?? 0,
+                turnState.AwaitingTurnCompletion,
+                turnState.BufferedAudioBytes,
+                turnState.BufferedAudioChunkCount);
             turnState.SawContext = true;
             turnState.ContextPayload = ExtractDataPayload(envelope.Text);
             session.Metadata["context"] = turnState.ContextPayload;
@@ -303,6 +349,9 @@ public sealed class WebSocketTurnFinalizationService(
 
             if (ShouldIgnorePassiveLocalSkillContext(session, envelope.Text))
             {
+                logger.LogDebug("Turn context ignored for passive local skill session={SessionId} transId={TransId}",
+                    session.SessionId,
+                    turnState.TransId);
                 turnState.AwaitingTurnCompletion = false;
                 turnState.IgnoreAdditionalAudioUntilUtc =
                     DateTimeOffset.UtcNow.Add(WebSocketTurnState.DefaultLateAudioIgnoreWindow);
@@ -312,8 +361,18 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             if (ShouldAutoFinalize(session))
+            {
+                logger.LogDebug("Turn context auto-finalizing session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks}",
+                    session.SessionId,
+                    turnState.TransId,
+                    turnState.BufferedAudioBytes,
+                    turnState.BufferedAudioChunkCount);
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
+            }
 
+            logger.LogDebug("Turn context exit without finalization session={SessionId} transId={TransId}",
+                session.SessionId,
+                turnState.TransId);
             return [];
         }
         finally
@@ -328,18 +387,33 @@ public sealed class WebSocketTurnFinalizationService(
         string messageType,
         CancellationToken cancellationToken = default)
     {
+        logger.LogDebug("Turn direct message entered session={SessionId} messageType={MessageType} transId={TransId}",
+            session.SessionId,
+            messageType,
+            session.TurnState.TransId);
         PersistTurnHints(session, envelope.Text);
-        return await FinalizeTurnAsync(session, envelope, messageType, false, cancellationToken);
+        var replies = await FinalizeTurnAsync(session, envelope, messageType, false, cancellationToken);
+        logger.LogDebug("Turn direct message exit session={SessionId} messageType={MessageType} replyCount={ReplyCount}",
+            session.SessionId,
+            messageType,
+            replies.Count);
+        return replies;
     }
 
-    public static IReadOnlyList<WebSocketReply> HandleListenSetup(CloudSession session,
+    public IReadOnlyList<WebSocketReply> HandleListenSetup(CloudSession session,
         WebSocketMessageEnvelope envelope)
     {
+        logger.LogDebug("Listen setup entered session={SessionId} transId={TransId}",
+            session.SessionId,
+            session.TurnState.TransId);
         PersistTurnHints(session, envelope.Text);
 
         var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, "LISTEN");
         if (ShouldIgnoreCompletedWordOfDayTurn(turn))
         {
+            logger.LogDebug("Listen setup ignored completed word-of-day turn session={SessionId} transId={TransId}",
+                session.SessionId,
+                session.TurnState.TransId);
             session.TurnState.AwaitingTurnCompletion = false;
             session.TurnState.IgnoreAdditionalAudioUntilUtc =
                 DateTimeOffset.UtcNow.Add(WebSocketTurnState.DefaultLateAudioIgnoreWindow);
@@ -364,24 +438,49 @@ public sealed class WebSocketTurnFinalizationService(
         session.TurnState.AwaitingTurnCompletion = true;
         session.TurnState.ListenOpenedUtc ??= DateTimeOffset.UtcNow;
         UpdateGlsmPhaseMarker(session);
+        logger.LogDebug("Listen setup exit session={SessionId} transId={TransId} awaiting={Awaiting}",
+            session.SessionId,
+            session.TurnState.TransId,
+            session.TurnState.AwaitingTurnCompletion);
         return [];
     }
 
     private async Task<TurnContext> ResolveTranscriptAsync(TurnContext turn, CloudSession session,
         WebSocketMessageEnvelope envelope, CancellationToken cancellationToken)
     {
+        logger.LogDebug("Resolve transcript entered session={SessionId} turnId={TurnId} bufferedBytes={BufferedBytes}",
+            session.SessionId,
+            turn.TurnId,
+            session.TurnState.BufferedAudioBytes);
         if (!string.IsNullOrWhiteSpace(turn.NormalizedTranscript) || !string.IsNullOrWhiteSpace(turn.RawTranscript) ||
-            session.TurnState.BufferedAudioBytes <= 0) return turn;
+            session.TurnState.BufferedAudioBytes <= 0)
+        {
+            logger.LogDebug(
+                "Resolve transcript bypassed session={SessionId} turnId={TurnId} hasTranscript={HasTranscript} bufferedBytes={BufferedBytes}",
+                session.SessionId,
+                turn.TurnId,
+                !string.IsNullOrWhiteSpace(turn.NormalizedTranscript) ||
+                !string.IsNullOrWhiteSpace(turn.RawTranscript),
+                session.TurnState.BufferedAudioBytes);
+            return turn;
+        }
 
         ISttStrategy? strategy;
         try
         {
             strategy = await sttStrategySelector.SelectAsync(turn, cancellationToken);
+            logger.LogDebug("Resolve transcript selected strategy session={SessionId} turnId={TurnId} strategy={Strategy}",
+                session.SessionId,
+                turn.TurnId,
+                strategy?.Name);
         }
         catch (InvalidOperationException ex) when (string.Equals(ex.Message,
                                                        "No STT strategy can handle the current turn.",
                                                        StringComparison.Ordinal))
         {
+            logger.LogDebug(ex, "Resolve transcript no strategy available session={SessionId} turnId={TurnId}",
+                session.SessionId,
+                turn.TurnId);
             return turn;
         }
         catch (Exception ex)
@@ -400,6 +499,13 @@ public sealed class WebSocketTurnFinalizationService(
             var sttResult = await strategy.TranscribeAsync(turn, cancellationToken);
             session.TurnState.LastSttError = null;
             session.TurnState.LastSttErrorUtc = null;
+            logger.LogDebug(
+                "Resolve transcript succeeded session={SessionId} turnId={TurnId} provider={Provider} locale={Locale} text={Text}",
+                session.SessionId,
+                turn.TurnId,
+                sttResult.Provider,
+                sttResult.Locale ?? turn.Locale,
+                sttResult.Text);
 
             var attributes = new Dictionary<string, object?>(turn.Attributes, StringComparer.OrdinalIgnoreCase)
             {
@@ -437,6 +543,8 @@ public sealed class WebSocketTurnFinalizationService(
             session.TurnState.LastSttError = ex.Message;
             session.TurnState.LastSttErrorUtc = DateTimeOffset.UtcNow;
             MarkSttFailureGrace(session);
+            logger.LogDebug(ex, "Resolve transcript failed session={SessionId} turnId={TurnId}", session.SessionId,
+                turn.TurnId);
             await RecordSttProcessingFailureDiagnosticAsync(session, envelope, "transcription", ex,
                 cancellationToken);
             await sink.RecordTranscriptError(ex, "Error during STT processing", cancellationToken);
@@ -568,6 +676,15 @@ public sealed class WebSocketTurnFinalizationService(
         bool allowFallbackOnMissingTranscript,
         CancellationToken cancellationToken)
     {
+        logger.LogDebug(
+            "Finalize turn entered session={SessionId} messageType={MessageType} transId={TransId} allowFallback={AllowFallback} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks} awaiting={Awaiting}",
+            session.SessionId,
+            messageType,
+            session.TurnState.TransId,
+            allowFallbackOnMissingTranscript,
+            session.TurnState.BufferedAudioBytes,
+            session.TurnState.BufferedAudioChunkCount,
+            session.TurnState.AwaitingTurnCompletion);
         try
         {
             var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, messageType);
@@ -930,6 +1047,14 @@ public sealed class WebSocketTurnFinalizationService(
                     ["lastTranscript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript
                 }),
                 cancellationToken);
+            logger.LogDebug(
+                "Finalize turn plan session={SessionId} messageType={MessageType} intent={Intent} actionCount={ActionCount} keepMicOpen={KeepMicOpen} followUpOpen={FollowUpOpen}",
+                session.SessionId,
+                messageType,
+                plan.IntentName,
+                plan.Actions.Count,
+                plan.FollowUp.KeepMicOpen,
+                session.FollowUpOpen);
 
             var emitSkillActions =
                 !string.Equals(plan.IntentName, "word_of_the_day", StringComparison.OrdinalIgnoreCase) &&
@@ -982,6 +1107,13 @@ public sealed class WebSocketTurnFinalizationService(
                     ["lastTranscript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript
                 }),
                 cancellationToken);
+            logger.LogDebug(
+                "Finalize turn replies emitted session={SessionId} messageType={MessageType} intent={Intent} replyCount={ReplyCount} hasEos={HasEos}",
+                session.SessionId,
+                messageType,
+                plan.IntentName,
+                replies.Length,
+                replies.Any(reply => string.Equals(ReadReplyType(reply), "EOS", StringComparison.OrdinalIgnoreCase)));
 
             if (IsYesNoTurn(finalizedTurn))
                 await sink.RecordTurnDiagnosticAsync("yes_no_turn_resolved", BuildTurnDiagnosticSnapshot(session,
@@ -1007,6 +1139,10 @@ public sealed class WebSocketTurnFinalizationService(
         finally
         {
             await TrackGlsmPhaseAsync(session, envelope, $"finalize:{messageType}", cancellationToken);
+            logger.LogDebug("Finalize turn exit session={SessionId} messageType={MessageType} transId={TransId}",
+                session.SessionId,
+                messageType,
+                session.TurnState.TransId);
         }
     }
 

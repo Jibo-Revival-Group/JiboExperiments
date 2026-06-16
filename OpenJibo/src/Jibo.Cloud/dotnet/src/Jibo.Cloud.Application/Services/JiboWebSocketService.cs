@@ -1,14 +1,25 @@
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
 public sealed class JiboWebSocketService(
     ICloudStateStore stateStore,
     IWebSocketTelemetrySink telemetrySink,
-    WebSocketTurnFinalizationService turnFinalizationService)
+    WebSocketTurnFinalizationService turnFinalizationService,
+    ILogger<JiboWebSocketService> logger)
 {
+    public JiboWebSocketService(
+        ICloudStateStore stateStore,
+        IWebSocketTelemetrySink telemetrySink,
+        WebSocketTurnFinalizationService turnFinalizationService)
+        : this(stateStore, telemetrySink, turnFinalizationService, NullLogger<JiboWebSocketService>.Instance)
+    {
+    }
+
     public CloudSession GetOrCreateSession(WebSocketMessageEnvelope envelope)
     {
         return stateStore.FindSessionByToken(envelope.Token ?? string.Empty) ??
@@ -20,10 +31,25 @@ public sealed class JiboWebSocketService(
     {
         var session = GetOrCreateSession(envelope);
         session.LastSeenUtc = DateTimeOffset.UtcNow;
+        logger.LogDebug(
+            "WebSocket message received session={SessionId} kind={Kind} host={Host} path={Path} token={Token} isBinary={IsBinary} textBytes={TextBytes} binaryBytes={BinaryBytes}",
+            session.SessionId,
+            envelope.Kind,
+            envelope.HostName,
+            envelope.Path,
+            envelope.Token,
+            envelope.IsBinary,
+            envelope.Text?.Length ?? 0,
+            envelope.Binary?.Length ?? 0);
 
         if (envelope.IsBinary)
         {
             var replies = await turnFinalizationService.HandleBinaryAudioAsync(session, envelope, cancellationToken);
+            logger.LogDebug(
+                "WebSocket binary audio handled session={SessionId} replyCount={ReplyCount} glsmPhase={GlsmPhase}",
+                session.SessionId,
+                replies.Count,
+                WebSocketTurnFinalizationService.ResolveGlsmPhase(session));
             await telemetrySink.RecordTurnEventAsync(envelope, session, "binary_audio_received",
                 new Dictionary<string, object?>
                 {
@@ -35,6 +61,10 @@ public sealed class JiboWebSocketService(
 
         var parsedType = ReadMessageType(envelope.Text);
         session.LastMessageType = parsedType;
+        logger.LogDebug("WebSocket parsed message session={SessionId} messageType={MessageType} glsmPhase={GlsmPhase}",
+            session.SessionId,
+            parsedType,
+            WebSocketTurnFinalizationService.ResolveGlsmPhase(session));
         var containsInlineTurnPayload = parsedType == "LISTEN" && ContainsInlineTurnPayload(envelope.Text);
         var staleListenRecovered = false;
         var staleListenAgeMs = 0;
@@ -62,6 +92,12 @@ public sealed class JiboWebSocketService(
                         ["ignoredTransID"] = lateTransId,
                         ["replyCount"] = replies.Length
                     }, cancellationToken);
+                logger.LogDebug(
+                    "WebSocket late listen ignored session={SessionId} activeTransID={ActiveTransId} ignoredTransID={IgnoredTransId} replyCount={ReplyCount}",
+                    session.SessionId,
+                    session.TurnState.TransId,
+                    lateTransId,
+                    replies.Length);
                 return replies;
             }
             case "LISTEN" when
@@ -97,7 +133,14 @@ public sealed class JiboWebSocketService(
             {
                 var replies = containsInlineTurnPayload
                     ? await turnFinalizationService.HandleTurnAsync(session, envelope, parsedType, cancellationToken)
-                    : WebSocketTurnFinalizationService.HandleListenSetup(session, envelope);
+                    : turnFinalizationService.HandleListenSetup(session, envelope);
+                logger.LogDebug(
+                    "WebSocket listen handled session={SessionId} inlineTurn={InlineTurn} replyCount={ReplyCount} transId={TransId} intent={Intent}",
+                    session.SessionId,
+                    containsInlineTurnPayload,
+                    replies.Count,
+                    session.TurnState.TransId,
+                    session.LastIntent);
                 await telemetrySink.RecordTurnEventAsync(envelope, session, "turn_processed",
                     new Dictionary<string, object?>
                     {
@@ -115,6 +158,13 @@ public sealed class JiboWebSocketService(
             {
                 var replies =
                     await turnFinalizationService.HandleTurnAsync(session, envelope, parsedType, cancellationToken);
+                logger.LogDebug(
+                    "WebSocket turn handled session={SessionId} messageType={MessageType} replyCount={ReplyCount} transId={TransId} intent={Intent}",
+                    session.SessionId,
+                    parsedType,
+                    replies.Count,
+                    session.TurnState.TransId,
+                    session.LastIntent);
                 await telemetrySink.RecordTurnEventAsync(envelope, session, "turn_processed",
                     new Dictionary<string, object?>
                     {
@@ -133,6 +183,12 @@ public sealed class JiboWebSocketService(
 
     public void MarkPrematureSocketLoopEnded(CloudSession session)
     {
+        logger.LogDebug(
+            "WebSocket premature socket loop ended session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} awaitingTurnCompletion={AwaitingTurnCompletion}",
+            session.SessionId,
+            session.TurnState.TransId,
+            session.TurnState.BufferedAudioBytes,
+            session.TurnState.AwaitingTurnCompletion);
         WebSocketTurnFinalizationService.MarkPrematureSocketLoopEnded(session);
     }
 

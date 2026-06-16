@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Jibo.Runtime.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Infrastructure.Audio;
 
@@ -9,19 +11,36 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
     private const int ShortAnswerBufferedAudioBytes = 16;
     private readonly BufferedAudioSttOptions options;
     private readonly IExternalProcessRunner processRunner;
+    private readonly ILogger<LocalWhisperCppBufferedAudioSttStrategy> logger;
+
+    public LocalWhisperCppBufferedAudioSttStrategy(
+        BufferedAudioSttOptions options,
+        IExternalProcessRunner processRunner,
+        ILogger<LocalWhisperCppBufferedAudioSttStrategy> logger)
+    {
+        this.options = BufferedAudioSttPathResolver.Resolve(options);
+        this.processRunner = processRunner;
+        this.logger = logger;
+    }
 
     public LocalWhisperCppBufferedAudioSttStrategy(
         BufferedAudioSttOptions options,
         IExternalProcessRunner processRunner)
+        : this(options, processRunner, NullLogger<LocalWhisperCppBufferedAudioSttStrategy>.Instance)
     {
-        this.options = BufferedAudioSttPathResolver.Resolve(options);
-        this.processRunner = processRunner;
     }
 
     public string Name => "local-whispercpp-buffered-audio";
 
     public bool CanHandle(TurnContext turn)
     {
+        logger.LogDebug(
+            "STT can-handle check start turnId={TurnId} bufferedBytes={BufferedBytes} frames={FrameCount} enabled={Enabled}",
+            turn.TurnId,
+            ReadBufferedAudioBytes(turn),
+            ReadBufferedAudioFrames(turn).Count,
+            options.EnableLocalWhisperCpp);
+
         return options.EnableLocalWhisperCpp &&
                IsConfiguredPathAvailable(options.FfmpegPath, false) &&
                IsConfiguredPathAvailable(options.WhisperCliPath, true) &&
@@ -33,6 +52,13 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
     public async Task<SttResult> TranscribeAsync(TurnContext turn, CancellationToken cancellationToken = default)
     {
         var frames = ReadBufferedAudioFrames(turn);
+        logger.LogDebug(
+            "STT transcription start turnId={TurnId} bufferedBytes={BufferedBytes} frames={FrameCount} locale={Locale}",
+            turn.TurnId,
+            ReadBufferedAudioBytes(turn),
+            frames.Count,
+            turn.Locale);
+
         if (frames.Count == 0)
             throw new InvalidOperationException("Local whisper.cpp STT requires buffered websocket audio frames.");
 
@@ -52,29 +78,67 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
         var baseName = $"turn-{turn.TurnId}";
         var oggPath = Path.Combine(tempDirectory, $"{baseName}.ogg");
         var wavPath = Path.Combine(tempDirectory, $"{baseName}.wav");
+        logger.LogDebug("STT transcription files prepared tempDirectory={TempDirectory} oggPath={OggPath} wavPath={WavPath}",
+            tempDirectory,
+            oggPath,
+            wavPath);
 
         try
         {
-            await File.WriteAllBytesAsync(oggPath, OggOpusAudioNormalizer.Normalize(frames), cancellationToken);
+            var normalizedOgg = OggOpusAudioNormalizer.Normalize(frames);
+            await File.WriteAllBytesAsync(oggPath, normalizedOgg, cancellationToken);
+            logger.LogDebug(
+                "STT normalized OGG written turnId={TurnId} oggBytes={OggBytes} frameCount={FrameCount}",
+                turn.TurnId,
+                normalizedOgg.Length,
+                frames.Count);
 
+            logger.LogDebug("STT ffmpeg launch turnId={TurnId} ffmpegPath={FfmpegPath}", turn.TurnId, options.FfmpegPath);
             var ffmpegResult = await processRunner.RunAsync(
                 options.FfmpegPath!,
                 ["-y", "-i", oggPath, "-ar", "16000", "-ac", "1", "-f", "wav", wavPath],
                 cancellationToken);
+            logger.LogDebug(
+                "STT ffmpeg finished turnId={TurnId} exitCode={ExitCode} stdoutBytes={StdOutBytes} stderrBytes={StdErrBytes}",
+                turn.TurnId,
+                ffmpegResult.ExitCode,
+                ffmpegResult.StdOut.Length,
+                ffmpegResult.StdErr.Length);
 
+            logger.LogDebug("STT whisper launch turnId={TurnId} whisperCliPath={WhisperCliPath} modelPath={ModelPath}",
+                turn.TurnId,
+                options.WhisperCliPath,
+                options.WhisperModelPath);
             var whisperResult = await processRunner.RunAsync(
                 options.WhisperCliPath!,
                 ["-m", options.WhisperModelPath!, "-f", wavPath, "-l", options.WhisperLanguage],
                 cancellationToken);
+            logger.LogDebug(
+                "STT whisper finished turnId={TurnId} exitCode={ExitCode} stdoutBytes={StdOutBytes} stderrBytes={StdErrBytes}",
+                turn.TurnId,
+                whisperResult.ExitCode,
+                whisperResult.StdOut.Length,
+                whisperResult.StdErr.Length);
 
             var transcript = ExtractTranscript(whisperResult.StdOut);
+            logger.LogDebug("STT extracted transcript turnId={TurnId} rawTranscript={Transcript}", turn.TurnId, transcript);
             transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(transcript);
             if (string.IsNullOrWhiteSpace(transcript))
+            {
+                logger.LogDebug("STT falling back to transcript hint turnId={TurnId}", turn.TurnId);
                 transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(ReadTranscriptHint(turn));
+            }
 
             if (string.IsNullOrWhiteSpace(transcript))
             {
                 var wavBytes = File.Exists(wavPath) ? new FileInfo(wavPath).Length : 0;
+                logger.LogDebug(
+                    "STT transcription failed turnId={TurnId} oggBytes={OggBytes} wavBytes={WavBytes} ffmpegExit={FfmpegExit} whisperExit={WhisperExit}",
+                    turn.TurnId,
+                    new FileInfo(oggPath).Length,
+                    wavBytes,
+                    ffmpegResult.ExitCode,
+                    whisperResult.ExitCode);
                 throw new InvalidOperationException(
                     "whisper.cpp returned no transcript for the buffered audio turn. " +
                     $"ffmpegExit={ffmpegResult.ExitCode}, whisperExit={whisperResult.ExitCode}, " +
@@ -108,6 +172,9 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 TryDelete(oggPath);
                 TryDelete(wavPath);
             }
+
+            logger.LogDebug("STT transcription end turnId={TurnId} cleanupTempFiles={CleanupTempFiles}", turn.TurnId,
+                options.CleanupTempFiles);
         }
     }
 

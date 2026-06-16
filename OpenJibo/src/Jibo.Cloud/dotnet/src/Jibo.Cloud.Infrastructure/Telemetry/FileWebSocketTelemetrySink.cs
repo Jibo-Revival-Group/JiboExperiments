@@ -162,7 +162,7 @@ public sealed class FileWebSocketTelemetrySink(
             _writeLock.Release();
         }
 
-        logger.LogInformation(
+        logger.LogDebug(
             "WebSocket telemetry {EventType} session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} replyTypes={ReplyTypes}",
             record.EventType,
             record.SessionId,

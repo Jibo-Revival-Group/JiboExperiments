@@ -2,8 +2,39 @@ using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.DependencyInjection;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (ShouldResetDiagnosticsOnStartup(builder.Configuration))
+    ResetDiagnosticsDirectories(builder.Configuration);
+
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+{
+    var minimumLevel = ParseLogEventLevel(context.Configuration["OpenJibo:Logging:MinimumLevel"]);
+    var logDirectory = ResolveConfiguredPath(context.Configuration,
+        "OpenJibo:Logging:DirectoryPath",
+        "captures/logs");
+    var logFileName = context.Configuration["OpenJibo:Logging:FileName"] ?? "openjibo-.log";
+    Directory.CreateDirectory(logDirectory);
+
+    loggerConfiguration
+        .MinimumLevel.Is(minimumLevel)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "OpenJibo.Cloud.Api")
+        .WriteTo.Console(
+            theme: AnsiConsoleTheme.Code,
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}")
+        .WriteTo.File(
+            Path.Combine(logDirectory, logFileName),
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 14,
+            shared: true,
+            restrictedToMinimumLevel: minimumLevel,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
+});
 
 builder.Services.AddOpenJiboCloud(builder.Configuration);
 builder.Services.AddSingleton<WebSocketRequestCoordinator>();
@@ -52,5 +83,71 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
 });
 
 app.Run();
+
+static bool ShouldResetDiagnosticsOnStartup(IConfiguration configuration)
+{
+    return bool.TryParse(configuration["OpenJibo:Logging:ResetOnStartup"], out var reset) && reset;
+}
+
+static void ResetDiagnosticsDirectories(IConfiguration configuration)
+{
+    var paths = new[]
+    {
+        ResolveConfiguredPath(configuration, "OpenJibo:Telemetry:DirectoryPath", "captures/websocket"),
+        ResolveConfiguredPath(configuration, "OpenJibo:ProtocolTelemetry:DirectoryPath", "captures/http"),
+        ResolveConfiguredPath(configuration, "OpenJibo:TurnTelemetry:DirectoryPath", "captures/turn"),
+        ResolveConfiguredPath(configuration, "OpenJibo:Logging:DirectoryPath", "captures/logs")
+    };
+
+    foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
+    {
+        try
+        {
+            if (Directory.Exists(path)) Directory.Delete(path, true);
+        }
+        catch
+        {
+            // Startup cleanup is best-effort so a stale file never blocks the app.
+        }
+    }
+}
+
+static string ResolveConfiguredPath(IConfiguration configuration, string key, string defaultPath)
+{
+    var configuredPath = configuration[key];
+    if (string.IsNullOrWhiteSpace(configuredPath)) configuredPath = defaultPath;
+
+    if (Path.IsPathRooted(configuredPath)) return Path.GetFullPath(configuredPath);
+
+    var repoRoot = FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
+                   FindOpenJiboRepoRoot(AppContext.BaseDirectory) ??
+                   Directory.GetCurrentDirectory();
+
+    return Path.GetFullPath(configuredPath, repoRoot);
+}
+
+static string? FindOpenJiboRepoRoot(string? startPath)
+{
+    if (string.IsNullOrWhiteSpace(startPath)) return null;
+
+    var directory = new DirectoryInfo(Path.GetFullPath(startPath));
+    if (directory is { Exists: false, Parent: not null }) directory = directory.Parent;
+
+    while (directory is not null)
+    {
+        if (File.Exists(Path.Combine(directory.FullName, "OpenJibo.slnx"))) return directory.FullName;
+
+        directory = directory.Parent;
+    }
+
+    return null;
+}
+
+static LogEventLevel ParseLogEventLevel(string? value)
+{
+    return Enum.TryParse<LogEventLevel>(value, true, out var level)
+        ? level
+        : LogEventLevel.Debug;
+}
 
 public partial class Program;

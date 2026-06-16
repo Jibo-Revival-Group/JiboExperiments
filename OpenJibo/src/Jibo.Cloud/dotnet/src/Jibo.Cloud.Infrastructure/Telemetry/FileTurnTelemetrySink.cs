@@ -25,7 +25,7 @@ public sealed class FileTurnTelemetrySink(
         {
             Type = category,
             Details = details
-        }, "Turn telemetry diagnostic", LogLevel.Information, cancellationToken);
+        }, "Turn telemetry diagnostic", LogLevel.Debug, cancellationToken);
     }
 
     public async Task RecordTranscriptError(Exception ex, string message, CancellationToken cancellationToken = default)

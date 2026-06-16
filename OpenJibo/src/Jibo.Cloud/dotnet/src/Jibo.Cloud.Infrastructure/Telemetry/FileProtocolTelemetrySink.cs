@@ -81,7 +81,7 @@ public sealed class FileProtocolTelemetrySink(
             },
             cancellationToken);
 
-        logger.LogInformation(
+        logger.LogDebug(
             "HTTP telemetry {Method} {Host}{Path} target={Target} status={StatusCode}",
             envelope.Method,
             envelope.HostName,

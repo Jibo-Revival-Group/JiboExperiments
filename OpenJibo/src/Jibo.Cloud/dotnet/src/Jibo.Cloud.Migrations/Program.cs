@@ -1,94 +1,123 @@
 using System.Security.Cryptography;
 using System.Text;
 using Npgsql;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 
 var options = MigrationOptions.Parse(args);
-if (options.ShowHelp)
-{
-    Console.WriteLine(MigrationOptions.HelpText);
-    return 0;
-}
+var minimumLevel = ParseLogEventLevel(Environment.GetEnvironmentVariable("OPENJIBO_MIGRATIONS_LOG_LEVEL") ?? "Debug");
+var logDirectory = ResolvePath("captures/logs");
+Directory.CreateDirectory(logDirectory);
 
-MigrationTarget[] targets = options.Target switch
-{
-    MigrationTarget.All => [MigrationTarget.State, MigrationTarget.PersonalMemory],
-    _ => [options.Target]
-};
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Is(minimumLevel)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        theme: AnsiConsoleTheme.Code,
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File(
+        Path.Combine(logDirectory, "migrations-.log"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14,
+        shared: true,
+        restrictedToMinimumLevel: minimumLevel,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
 
-var scriptsDirectory = ResolveScriptsDirectory(options.ScriptsDirectory);
-var scripts = Directory.EnumerateFiles(scriptsDirectory, "*.sql", SearchOption.TopDirectoryOnly)
-    .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-    .ToArray();
-
-if (scripts.Length == 0)
+try
 {
-    Console.Error.WriteLine($"No PostgreSQL migration scripts found in '{scriptsDirectory}'.");
-    return 1;
-}
-
-foreach (var target in targets)
-{
-    var connectionString = options.ResolveConnectionString(target);
-    if (string.IsNullOrWhiteSpace(connectionString))
+    if (options.ShowHelp)
     {
-        Console.Error.WriteLine($"No connection string was provided for target '{target}'.");
+        Log.Information("{HelpText}", MigrationOptions.HelpText);
+        return 0;
+    }
+
+    MigrationTarget[] targets = options.Target switch
+    {
+        MigrationTarget.All => [MigrationTarget.State, MigrationTarget.PersonalMemory],
+        _ => [options.Target]
+    };
+
+    var scriptsDirectory = ResolveScriptsDirectory(options.ScriptsDirectory);
+    var scripts = Directory.EnumerateFiles(scriptsDirectory, "*.sql", SearchOption.TopDirectoryOnly)
+        .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    if (scripts.Length == 0)
+    {
+        Log.Error("No PostgreSQL migration scripts found in '{ScriptsDirectory}'.", scriptsDirectory);
         return 1;
     }
 
-    await using var connection = new NpgsqlConnection(connectionString);
-    await connection.OpenAsync();
-    await EnsureTrackingTableAsync(connection);
-
-    var applied = await LoadAppliedScriptsAsync(connection);
-
-    foreach (var scriptPath in scripts)
+    foreach (var target in targets)
     {
-        var scriptName = Path.GetFileName(scriptPath);
-        var scriptText = await File.ReadAllTextAsync(scriptPath);
-        var checksum = ComputeChecksum(scriptText);
-
-        if (applied.TryGetValue(scriptName, out var knownChecksum))
+        var connectionString = options.ResolveConnectionString(target);
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
-            if (!string.Equals(knownChecksum, checksum, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException(
-                    $"Migration script '{scriptName}' has changed after being applied to '{target}'.");
-
-            if (options.Verbose) Console.WriteLine($"[{target}] already applied: {scriptName}");
-            continue;
+            Log.Error("No connection string was provided for target '{Target}'.", target);
+            return 1;
         }
 
-        if (options.PreviewOnly)
-        {
-            Console.WriteLine($"[{target}] would apply: {scriptName}");
-            continue;
-        }
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await EnsureTrackingTableAsync(connection);
 
-        Console.WriteLine($"[{target}] applying: {scriptName}");
-        await using var transaction = await connection.BeginTransactionAsync();
-        await using (var command = new NpgsqlCommand(scriptText, connection, transaction))
-        {
-            command.CommandTimeout = 0;
-            await command.ExecuteNonQueryAsync();
-        }
+        var applied = await LoadAppliedScriptsAsync(connection);
 
-        await using (var insert = new NpgsqlCommand("""
-                                                    INSERT INTO OpenJiboSchemaMigrations (ScriptName, Checksum, AppliedUtc)
-                                                    VALUES (@scriptName, @checksum, NOW())
-                                                    ON CONFLICT (ScriptName) DO UPDATE SET
-                                                        Checksum = EXCLUDED.Checksum,
-                                                        AppliedUtc = EXCLUDED.AppliedUtc
-                                                    """, connection, transaction))
+        foreach (var scriptPath in scripts)
         {
-            insert.Parameters.AddWithValue("@scriptName", scriptName);
-            insert.Parameters.AddWithValue("@checksum", checksum);
-            await insert.ExecuteNonQueryAsync();
-        }
+            var scriptName = Path.GetFileName(scriptPath);
+            var scriptText = await File.ReadAllTextAsync(scriptPath);
+            var checksum = ComputeChecksum(scriptText);
 
-        await transaction.CommitAsync();
+            if (applied.TryGetValue(scriptName, out var knownChecksum))
+            {
+                if (!string.Equals(knownChecksum, checksum, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException(
+                        $"Migration script '{scriptName}' has changed after being applied to '{target}'.");
+
+                if (options.Verbose) Log.Debug("[{Target}] already applied: {ScriptName}", target, scriptName);
+                continue;
+            }
+
+            if (options.PreviewOnly)
+            {
+                Log.Information("[{Target}] would apply: {ScriptName}", target, scriptName);
+                continue;
+            }
+
+            Log.Information("[{Target}] applying: {ScriptName}", target, scriptName);
+            await using var transaction = await connection.BeginTransactionAsync();
+            await using (var command = new NpgsqlCommand(scriptText, connection, transaction))
+            {
+                command.CommandTimeout = 0;
+                await command.ExecuteNonQueryAsync();
+            }
+
+            await using (var insert = new NpgsqlCommand("""
+                                                        INSERT INTO OpenJiboSchemaMigrations (ScriptName, Checksum, AppliedUtc)
+                                                        VALUES (@scriptName, @checksum, NOW())
+                                                        ON CONFLICT (ScriptName) DO UPDATE SET
+                                                            Checksum = EXCLUDED.Checksum,
+                                                            AppliedUtc = EXCLUDED.AppliedUtc
+                                                        """, connection, transaction))
+            {
+                insert.Parameters.AddWithValue("@scriptName", scriptName);
+                insert.Parameters.AddWithValue("@checksum", checksum);
+                await insert.ExecuteNonQueryAsync();
+            }
+
+            await transaction.CommitAsync();
+        }
     }
-}
 
-return 0;
+    return 0;
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 static string ResolveScriptsDirectory(string? configured)
 {
@@ -97,6 +126,41 @@ static string ResolveScriptsDirectory(string? configured)
         : configured;
 
     return Path.GetFullPath(candidate);
+}
+
+static string ResolvePath(string configuredPath)
+{
+    if (Path.IsPathRooted(configuredPath)) return Path.GetFullPath(configuredPath);
+
+    var repoRoot = FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
+                   FindOpenJiboRepoRoot(AppContext.BaseDirectory) ??
+                   Directory.GetCurrentDirectory();
+
+    return Path.GetFullPath(configuredPath, repoRoot);
+}
+
+static string? FindOpenJiboRepoRoot(string? startPath)
+{
+    if (string.IsNullOrWhiteSpace(startPath)) return null;
+
+    var directory = new DirectoryInfo(Path.GetFullPath(startPath));
+    if (directory is { Exists: false, Parent: not null }) directory = directory.Parent;
+
+    while (directory is not null)
+    {
+        if (File.Exists(Path.Combine(directory.FullName, "OpenJibo.slnx"))) return directory.FullName;
+
+        directory = directory.Parent;
+    }
+
+    return null;
+}
+
+static LogEventLevel ParseLogEventLevel(string? value)
+{
+    return Enum.TryParse<LogEventLevel>(value, true, out var level)
+        ? level
+        : LogEventLevel.Debug;
 }
 
 static string ComputeChecksum(string value)

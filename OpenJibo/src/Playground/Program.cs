@@ -1,175 +1,204 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using Playground;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 
-Console.Write("Enter Jibo IP: ");
-var jiboIp = (Console.ReadLine() ?? "").Trim();
+var minimumLevel = ParseLogEventLevel(Environment.GetEnvironmentVariable("OPENJIBO_PLAYGROUND_LOG_LEVEL") ?? "Debug");
+var logDirectory = ResolvePath("captures/logs");
+Directory.CreateDirectory(logDirectory);
 
-if (string.IsNullOrWhiteSpace(jiboIp))
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Is(minimumLevel)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        theme: AnsiConsoleTheme.Code,
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File(
+        Path.Combine(logDirectory, "playground-.log"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14,
+        shared: true,
+        restrictedToMinimumLevel: minimumLevel,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+
+try
 {
-    Console.WriteLine("No IP entered.");
-    return;
-}
+    Log.Information("Enter Jibo IP and press Enter.");
+    var jiboIp = (Console.ReadLine() ?? "").Trim();
 
-var baseHttp = $"http://{jiboIp}:8088";
-var ttsHttp = $"http://{jiboIp}:8089";
-var wsUri = new Uri($"ws://{jiboIp}:8088/simple_port");
-
-using var http = new HttpClient();
-using var cts = new CancellationTokenSource();
-
-Console.WriteLine($"Connecting to Jibo at {jiboIp}...");
-Console.WriteLine("Press Ctrl+C to quit.");
-
-Console.CancelKeyPress += (_, e) =>
-{
-    e.Cancel = true;
-    cts.Cancel();
-};
-
-while (!cts.IsCancellationRequested)
-{
-    var taskId = $"DEBUG:demo-{Guid.NewGuid():N}";
-    var requestId = $"stt_start_{Guid.NewGuid():N}";
-
-    try
+    if (string.IsNullOrWhiteSpace(jiboIp))
     {
-        using var ws = new ClientWebSocket();
-        await ws.ConnectAsync(wsUri, cts.Token);
-        Console.WriteLine("WebSocket connected.");
+        Log.Warning("No IP entered.");
+        return;
+    }
 
-        var utteranceTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+    var baseHttp = $"http://{jiboIp}:8088";
+    var ttsHttp = $"http://{jiboIp}:8089";
+    var wsUri = new Uri($"ws://{jiboIp}:8088/simple_port");
 
-        var wsReaderTask = Task.Run(async () =>
+    using var http = new HttpClient();
+    using var cts = new CancellationTokenSource();
+
+    Log.Information("Connecting to Jibo at {JiboIp}...", jiboIp);
+    Log.Information("Press Ctrl+C to quit.");
+
+    Console.CancelKeyPress += (_, e) =>
+    {
+        e.Cancel = true;
+        cts.Cancel();
+    };
+
+    while (!cts.IsCancellationRequested)
+    {
+        var taskId = $"DEBUG:demo-{Guid.NewGuid():N}";
+        var requestId = $"stt_start_{Guid.NewGuid():N}";
+
+        try
         {
-            var buffer = new byte[8192];
+            using var ws = new ClientWebSocket();
+            await ws.ConnectAsync(wsUri, cts.Token);
+            Log.Information("WebSocket connected.");
 
-            while (ws.State == WebSocketState.Open && !cts.Token.IsCancellationRequested)
+            var utteranceTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var wsReaderTask = Task.Run(async () =>
             {
-                WebSocketReceiveResult result;
-                using var ms = new MemoryStream();
+                var buffer = new byte[8192];
 
-                do
+                while (ws.State == WebSocketState.Open && !cts.Token.IsCancellationRequested)
                 {
-                    result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), cts.Token);
+                    WebSocketReceiveResult result;
+                    using var ms = new MemoryStream();
 
-                    if (result.MessageType == WebSocketMessageType.Close)
+                    do
                     {
-                        Console.WriteLine("WebSocket closed by server.");
-                        return;
+                        result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), cts.Token);
+
+                        if (result.MessageType == WebSocketMessageType.Close)
+                        {
+                            Log.Information("WebSocket closed by server.");
+                            return;
+                        }
+
+                        ms.Write(buffer, 0, result.Count);
+                    } while (!result.EndOfMessage);
+
+                    var json = Encoding.UTF8.GetString(ms.ToArray());
+
+                    AsrEvent? evt;
+                    try
+                    {
+                        evt = JsonSerializer.Deserialize<AsrEvent>(json);
+                    }
+                    catch
+                    {
+                        Log.Debug("Non-JSON WS message: {Json}", json);
+                        continue;
                     }
 
-                    ms.Write(buffer, 0, result.Count);
-                } while (!result.EndOfMessage);
+                    if (evt == null)
+                        continue;
 
-                var json = Encoding.UTF8.GetString(ms.ToArray());
+                    if (evt.TaskId != taskId)
+                        continue;
 
-                AsrEvent? evt;
-                try
-                {
-                    evt = JsonSerializer.Deserialize<AsrEvent>(json);
+                    Log.Information("[{EventType}] {Json}", evt.EventType, json);
+
+                    if (evt.EventType != "speech_to_text_final") continue;
+                    var best = PickBestUtterance(evt.Utterances);
+                    if (string.IsNullOrWhiteSpace(best)) continue;
+                    utteranceTcs.TrySetResult(best);
+                    return;
                 }
-                catch
-                {
-                    Console.WriteLine($"Non-JSON WS message: {json}");
-                    continue;
-                }
+            }, cts.Token);
 
-                if (evt == null)
-                    continue;
-
-                if (evt.TaskId != taskId)
-                    continue;
-
-                Console.WriteLine($"[{evt.EventType}] {json}");
-
-                if (evt.EventType != "speech_to_text_final") continue;
-                var best = PickBestUtterance(evt.Utterances);
-                if (string.IsNullOrWhiteSpace(best)) continue;
-                utteranceTcs.TrySetResult(best);
-                return;
-            }
-        }, cts.Token);
-
-        var startPayload = new
-        {
-            command = "start",
-            task_id = taskId,
-            audio_source_id = "alsa1",
-            hotphrase = "none",
-            speech_to_text = true,
-            request_id = requestId
-        };
-
-        var startResp = await http.PostAsJsonAsync($"{baseHttp}/asr_simple_interface", startPayload, cts.Token);
-        var startBody = await startResp.Content.ReadAsStringAsync(cts.Token);
-
-        Console.WriteLine($"ASR start: {(int)startResp.StatusCode} {startResp.ReasonPhrase}");
-        Console.WriteLine(startBody);
-
-        if (!startResp.IsSuccessStatusCode)
-            continue;
-
-        Console.WriteLine("Speak now...");
-
-        var completed = await Task.WhenAny(utteranceTcs.Task, Task.Delay(TimeSpan.FromSeconds(15), cts.Token));
-
-        if (completed != utteranceTcs.Task)
-        {
-            Console.WriteLine("Timed out waiting for speech_to_text_final.");
-        }
-        else
-        {
-            var heard = utteranceTcs.Task.Result;
-            Console.WriteLine($"Heard: {heard}");
-
-            var reply = BuildReply(heard);
-            Console.WriteLine($"Reply: {reply}");
-
-            var ttsPayload = new
+            var startPayload = new
             {
-                prompt = reply,
-                locale = "en-us",
-                voice = "griffin",
-                mode = "text",
-                outputMode = "stream"
+                command = "start",
+                task_id = taskId,
+                audio_source_id = "alsa1",
+                hotphrase = "none",
+                speech_to_text = true,
+                request_id = requestId
             };
 
-            var ttsResp = await http.PostAsJsonAsync($"{ttsHttp}/tts_speak", ttsPayload, cts.Token);
-            var ttsBody = await ttsResp.Content.ReadAsStringAsync(cts.Token);
+            var startResp = await http.PostAsJsonAsync($"{baseHttp}/asr_simple_interface", startPayload, cts.Token);
+            var startBody = await startResp.Content.ReadAsStringAsync(cts.Token);
 
-            Console.WriteLine($"TTS: {(int)ttsResp.StatusCode} {ttsResp.ReasonPhrase}");
-            if (!string.IsNullOrWhiteSpace(ttsBody))
-                Console.WriteLine(ttsBody);
+            Log.Information("ASR start: {StatusCode} {ReasonPhrase}", (int)startResp.StatusCode, startResp.ReasonPhrase);
+            if (!string.IsNullOrWhiteSpace(startBody))
+                Log.Information("{Body}", startBody);
+
+            if (!startResp.IsSuccessStatusCode)
+                continue;
+
+            Log.Information("Speak now...");
+
+            var completed = await Task.WhenAny(utteranceTcs.Task, Task.Delay(TimeSpan.FromSeconds(15), cts.Token));
+
+            if (completed != utteranceTcs.Task)
+            {
+                Log.Warning("Timed out waiting for speech_to_text_final.");
+            }
+            else
+            {
+                var heard = utteranceTcs.Task.Result;
+                Log.Information("Heard: {Heard}", heard);
+
+                var reply = BuildReply(heard);
+                Log.Information("Reply: {Reply}", reply);
+
+                var ttsPayload = new
+                {
+                    prompt = reply,
+                    locale = "en-us",
+                    voice = "griffin",
+                    mode = "text",
+                    outputMode = "stream"
+                };
+
+                var ttsResp = await http.PostAsJsonAsync($"{ttsHttp}/tts_speak", ttsPayload, cts.Token);
+                var ttsBody = await ttsResp.Content.ReadAsStringAsync(cts.Token);
+
+                Log.Information("TTS: {StatusCode} {ReasonPhrase}", (int)ttsResp.StatusCode, ttsResp.ReasonPhrase);
+                if (!string.IsNullOrWhiteSpace(ttsBody))
+                    Log.Information("{Body}", ttsBody);
+            }
+
+            var stopPayload = new
+            {
+                command = "stop",
+                task_id = taskId,
+                request_id = $"stt_stop_{Guid.NewGuid():N}"
+            };
+
+            var stopResp = await http.PostAsJsonAsync($"{baseHttp}/asr_simple_interface", stopPayload, cts.Token);
+            _ = await stopResp.Content.ReadAsStringAsync(cts.Token);
+
+            Log.Information("STT task stopped.");
+            Log.Information("Press Enter to run another round, or Ctrl+C to quit.");
+            Console.ReadLine();
         }
-
-        var stopPayload = new
+        catch (OperationCanceledException)
         {
-            command = "stop",
-            task_id = taskId,
-            request_id = $"stt_stop_{Guid.NewGuid():N}"
-        };
-
-        var stopResp = await http.PostAsJsonAsync($"{baseHttp}/asr_simple_interface", stopPayload, cts.Token);
-        _ = await stopResp.Content.ReadAsStringAsync(cts.Token);
-
-        Console.WriteLine("STT task stopped.");
-        Console.WriteLine();
-        Console.WriteLine("Press Enter to run another round, or Ctrl+C to quit.");
-        Console.ReadLine();
+            break;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while running the playground round.");
+            Log.Information("Retrying in 2 seconds...");
+            await Task.Delay(2000, cts.Token);
+        }
     }
-    catch (OperationCanceledException)
-    {
-        break;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error: {ex.Message}");
-        Console.WriteLine("Retrying in 2 seconds...");
-        await Task.Delay(2000, cts.Token);
-    }
+}
+finally
+{
+    Log.CloseAndFlush();
 }
 
 return;
@@ -196,7 +225,6 @@ static string NormalizeUtterance(string? text)
 
     var s = text.Trim();
 
-    // Very light cleanup for occasional weird leading duplication like "wWhat"
     if (s.Length >= 2 && char.ToLowerInvariant(s[0]) == char.ToLowerInvariant(s[1]))
         s = s[1..];
 
@@ -214,4 +242,39 @@ static string BuildReply(string heard)
         return "Hello! I heard you loud and clear.";
 
     return text.Contains("your name") ? "I am Jibo, running with a local demo bridge." : $"You said: {heard}";
+}
+
+static string ResolvePath(string configuredPath)
+{
+    if (Path.IsPathRooted(configuredPath)) return Path.GetFullPath(configuredPath);
+
+    var repoRoot = FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
+                   FindOpenJiboRepoRoot(AppContext.BaseDirectory) ??
+                   Directory.GetCurrentDirectory();
+
+    return Path.GetFullPath(configuredPath, repoRoot);
+}
+
+static string? FindOpenJiboRepoRoot(string? startPath)
+{
+    if (string.IsNullOrWhiteSpace(startPath)) return null;
+
+    var directory = new DirectoryInfo(Path.GetFullPath(startPath));
+    if (directory is { Exists: false, Parent: not null }) directory = directory.Parent;
+
+    while (directory is not null)
+    {
+        if (File.Exists(Path.Combine(directory.FullName, "OpenJibo.slnx"))) return directory.FullName;
+
+        directory = directory.Parent;
+    }
+
+    return null;
+}
+
+static LogEventLevel ParseLogEventLevel(string? value)
+{
+    return Enum.TryParse<LogEventLevel>(value, true, out var level)
+        ? level
+        : LogEventLevel.Debug;
 }

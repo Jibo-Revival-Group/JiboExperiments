@@ -11,8 +11,8 @@ public sealed class WebSocketTurnFinalizationService(
     ITurnTelemetrySink sink
 )
 {
-    private const int AutoFinalizeMinBufferedAudioBytes = 15000;
-    private const int AutoFinalizeMinBufferedAudioChunks = 5;
+    private const int AutoFinalizeMinBufferedAudioBytes = 12000;
+    private const int AutoFinalizeMinBufferedAudioChunks = 4;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);

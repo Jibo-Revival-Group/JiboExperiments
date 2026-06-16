@@ -208,7 +208,7 @@ public sealed class JiboWebSocketServiceTests
         });
 
         IReadOnlyList<WebSocketReply> replies;
-        for (var index = 0; index < 4; index += 1)
+        for (var index = 0; index < 3; index += 1)
         {
             replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
             {
@@ -270,7 +270,7 @@ public sealed class JiboWebSocketServiceTests
         });
 
         IReadOnlyList<WebSocketReply> replies;
-        for (var index = 0; index < 4; index += 1)
+        for (var index = 0; index < 3; index += 1)
         {
             replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
             {

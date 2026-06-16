@@ -998,6 +998,9 @@ public sealed class WebSocketTurnFinalizationService(
 
     public static bool ShouldIgnoreLateListenSetup(CloudSession session, string? text)
     {
+        if (string.Equals(session.LastIntent, "stop", StringComparison.OrdinalIgnoreCase))
+            return false;
+
         return ShouldIgnoreLateAudio(session) && IsHotphraseLaunchListenSetup(text);
     }
 

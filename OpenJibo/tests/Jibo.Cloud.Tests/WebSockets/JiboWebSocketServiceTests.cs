@@ -3047,10 +3047,10 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"LISTEN","transID":"trans-stop-reopen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
-        Assert.Equal(3, reopenListenReplies.Count);
-        Assert.Equal("@be/idle",
-            JsonDocument.Parse(reopenListenReplies[2].Text!).RootElement.GetProperty("data").GetProperty("match")
-                .GetProperty("skillID").GetString());
+        Assert.Empty(reopenListenReplies);
+        Assert.Equal("trans-stop-reopen", session.TurnState.TransId);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+        Assert.True(session.TurnState.SawListen);
 
         var reopenAudioReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {

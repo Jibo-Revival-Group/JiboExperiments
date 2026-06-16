@@ -978,9 +978,9 @@ public sealed class WebSocketTurnFinalizationService(
             session.TurnState.AutoFinalizeBlockedUntilUtc.Value > DateTimeOffset.UtcNow)
             return true;
 
-        return !session.TurnState.AwaitingTurnCompletion &&
-               !session.FollowUpOpen &&
-               ignoreUntilUtc.HasValue &&
+        if (session.FollowUpOpen) return false;
+
+        return ignoreUntilUtc.HasValue &&
                ignoreUntilUtc.Value > DateTimeOffset.UtcNow;
     }
 

@@ -5569,6 +5569,42 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("trans-second", session.LastTransId);
     }
 
+    [Fact]
+    public async Task GraceWindow_StillIgnoresReplyAudioFromPreviousTurn()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-grace-window-token",
+            Text = """{"type":"LISTEN","transID":"trans-first","data":{"rules":["wake-word"]}}"""
+        });
+
+        var session = _store.FindSessionByToken("hub-grace-window-token");
+        Assert.NotNull(session);
+        session.TurnState.AwaitingTurnCompletion = false;
+        session.TurnState.SawListen = false;
+        session.TurnState.SawContext = false;
+        session.TurnState.BufferedAudioBytes = 0;
+        session.TurnState.BufferedAudioChunkCount = 0;
+        session.TurnState.IgnoreAdditionalAudioUntilUtc = DateTimeOffset.UtcNow.AddSeconds(7);
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-grace-window-token",
+            Binary = new byte[4096]
+        });
+
+        Assert.Empty(replies);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+        Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+    }
+
     [Theory]
     [InlineData("fixtures\\neo-hub-client-asr-joke.flow.json")]
     [InlineData("fixtures\\neo-hub-context-client-nlu.flow.json")]

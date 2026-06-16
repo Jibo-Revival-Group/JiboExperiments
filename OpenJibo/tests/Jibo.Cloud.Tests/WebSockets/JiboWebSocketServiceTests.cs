@@ -208,7 +208,7 @@ public sealed class JiboWebSocketServiceTests
         });
 
         IReadOnlyList<WebSocketReply> replies;
-        for (var index = 0; index < 3; index += 1)
+        for (var index = 0; index < 2; index += 1)
         {
             replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
             {
@@ -270,7 +270,7 @@ public sealed class JiboWebSocketServiceTests
         });
 
         IReadOnlyList<WebSocketReply> replies;
-        for (var index = 0; index < 3; index += 1)
+        for (var index = 0; index < 2; index += 1)
         {
             replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
             {
@@ -334,7 +334,7 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"CONTEXT","transID":"trans-preference-continuation","data":{"audioTranscriptHint":"my favorite sport"}}"""
         });
 
-        for (var index = 0; index < 4; index += 1)
+        for (var index = 0; index < 3; index += 1)
         {
             var chunkReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
             {
@@ -407,7 +407,7 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"CONTEXT","transID":"trans-preference-bare","data":{"audioTranscriptHint":"my favorite sport football"}}"""
         });
 
-        for (var index = 0; index < 4; index += 1)
+        for (var index = 0; index < 3; index += 1)
         {
             var chunkReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
             {
@@ -468,7 +468,7 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"CONTEXT","transID":"trans-affinity-continuation","data":{"audioTranscriptHint":"i do like"}}"""
         });
 
-        for (var index = 0; index < 4; index += 1)
+        for (var index = 0; index < 3; index += 1)
         {
             var chunkReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
             {
@@ -541,7 +541,7 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"CONTEXT","transID":"trans-affinity-we-continuation","data":{"audioTranscriptHint":"we like"}}"""
         });
 
-        for (var index = 0; index < 4; index += 1)
+        for (var index = 0; index < 3; index += 1)
         {
             var chunkReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
             {

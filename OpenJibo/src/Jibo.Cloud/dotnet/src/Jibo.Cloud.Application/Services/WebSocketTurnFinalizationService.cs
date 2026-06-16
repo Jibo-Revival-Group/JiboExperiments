@@ -11,12 +11,12 @@ public sealed class WebSocketTurnFinalizationService(
     ITurnTelemetrySink sink
 )
 {
-    private const int AutoFinalizeMinBufferedAudioBytes = 12000;
-    private const int AutoFinalizeMinBufferedAudioChunks = 4;
+    private const int AutoFinalizeMinBufferedAudioBytes = 8500;
+    private const int AutoFinalizeMinBufferedAudioChunks = 3;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
-    private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(1800);
+    private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(1200);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
     private static readonly TimeSpan AutoFinalizeContinuationDeferralMaxAge = TimeSpan.FromMilliseconds(3600);
     private static readonly TimeSpan StaleListenSetupRecoveryAge = TimeSpan.FromSeconds(9);

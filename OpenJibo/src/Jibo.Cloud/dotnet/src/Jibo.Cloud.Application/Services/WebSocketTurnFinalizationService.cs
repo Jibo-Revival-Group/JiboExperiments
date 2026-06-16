@@ -639,7 +639,23 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             if (ShouldTreatBufferedHotphraseAsGreeting(finalizedTurn, turnState, allowFallbackOnMissingTranscript))
+            {
+                await sink.RecordTurnDiagnosticAsync(
+                    "hotphrase_greeting_synthesized",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["messageType"] = messageType,
+                        ["reason"] = "buffered_hotphrase_missing_transcript",
+                        ["listenHotphrase"] = ReadBoolAttribute(finalizedTurn, "listenHotphrase"),
+                        ["listenRules"] = ReadRules(finalizedTurn, "listenRules").ToArray(),
+                        ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                        ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount,
+                        ["lastSttError"] = turnState.LastSttError,
+                        ["allowFallbackOnMissingTranscript"] = allowFallbackOnMissingTranscript
+                    }),
+                    cancellationToken);
                 finalizedTurn = WithSyntheticTranscript(finalizedTurn, "hello");
+            }
 
             if (ShouldIgnoreCompletedWordOfDayTurn(finalizedTurn))
             {
@@ -699,7 +715,22 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             if (ShouldTreatEmptyHotphraseTurnAsGreeting(finalizedTurn, turnState))
+            {
+                await sink.RecordTurnDiagnosticAsync(
+                    "hotphrase_greeting_synthesized",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["messageType"] = messageType,
+                        ["reason"] = "empty_hotphrase_turn",
+                        ["listenHotphrase"] = ReadBoolAttribute(finalizedTurn, "listenHotphrase"),
+                        ["listenRules"] = ReadRules(finalizedTurn, "listenRules").ToArray(),
+                        ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                        ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount,
+                        ["lastSttError"] = turnState.LastSttError
+                    }),
+                    cancellationToken);
                 finalizedTurn = WithSyntheticTranscript(finalizedTurn, "hello");
+            }
 
             if (ShouldIgnoreLateEmptyTurn(finalizedTurn, session, messageType))
             {
@@ -766,6 +797,8 @@ public sealed class WebSocketTurnFinalizationService(
                     }
                     case true when
                         turnState.BufferedAudioBytes >= AutoFinalizeMinBufferedAudioBytes &&
+                        (!ReadBoolAttribute(finalizedTurn, "listenHotphrase") ||
+                         turnState.HotphraseEmptyTurnCount > 0) &&
                         string.IsNullOrWhiteSpace(turnState.LastSttError):
                     {
                         turnState.AwaitingTurnCompletion = false;
@@ -933,6 +966,22 @@ public sealed class WebSocketTurnFinalizationService(
                     Text = map.Text,
                     DelayMs = map.DelayMs
                 }).ToArray();
+
+            await sink.RecordTurnDiagnosticAsync(
+                "turn_reply_emitted",
+                BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                {
+                    ["messageType"] = messageType,
+                    ["intent"] = plan.IntentName,
+                    ["replyCount"] = replies.Length,
+                    ["replyTypes"] = ReadReplyTypes(replies),
+                    ["hasEos"] = replies.Any(reply => string.Equals(ReadReplyType(reply), "EOS",
+                        StringComparison.OrdinalIgnoreCase)),
+                    ["keepMicOpen"] = plan.FollowUp.KeepMicOpen,
+                    ["followUpOpen"] = session.FollowUpOpen,
+                    ["lastTranscript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript
+                }),
+                cancellationToken);
 
             if (IsYesNoTurn(finalizedTurn))
                 await sink.RecordTurnDiagnosticAsync("yes_no_turn_resolved", BuildTurnDiagnosticSnapshot(session,
@@ -1798,7 +1847,9 @@ public sealed class WebSocketTurnFinalizationService(
         if (!string.IsNullOrWhiteSpace(turn.NormalizedTranscript) ||
             !string.IsNullOrWhiteSpace(turn.RawTranscript)) return false;
 
-        return turnState.BufferedAudioBytes >= AutoFinalizeMinBufferedAudioBytes;
+        return turnState.BufferedAudioBytes >= AutoFinalizeMinBufferedAudioBytes &&
+               turnState.FinalizeAttemptCount > 0 &&
+               turnState.HotphraseEmptyTurnCount > 0;
     }
 
     private static bool ShouldTreatEmptyHotphraseTurnAsGreeting(TurnContext turn, WebSocketTurnState turnState)
@@ -1970,6 +2021,32 @@ public sealed class WebSocketTurnFinalizationService(
         details["sawContext"] = session.TurnState.SawContext;
         details["glsmState"] = ResolveGlsmPhase(session);
         return details;
+    }
+
+    private static string[] ReadReplyTypes(IReadOnlyList<WebSocketReply> replies)
+    {
+        return replies
+            .Select(ReadReplyType)
+            .Where(replyType => !string.IsNullOrWhiteSpace(replyType))
+            .ToArray();
+    }
+
+    private static string ReadReplyType(WebSocketReply reply)
+    {
+        if (string.IsNullOrWhiteSpace(reply.Text)) return string.Empty;
+
+        try
+        {
+            using var document = JsonDocument.Parse(reply.Text);
+            return document.RootElement.TryGetProperty("type", out var type) &&
+                   type.ValueKind == JsonValueKind.String
+                ? type.GetString() ?? string.Empty
+                : string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private async Task RecordSttProcessingFailureDiagnosticAsync(

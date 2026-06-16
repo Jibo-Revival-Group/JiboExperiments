@@ -4570,6 +4570,60 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task BufferedHotphraseAudio_FirstMissingTranscriptStaysPending()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-pending-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-pending","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-pending-token",
+            Text = """{"type":"CONTEXT","transID":"trans-hotphrase-pending","data":{"topic":"conversation"}}"""
+        });
+
+        for (var index = 0; index < 4; index += 1)
+        {
+            var interimReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-pending-token",
+                Binary = new byte[3000]
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = _store.FindSessionByToken("hub-hotphrase-pending-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-pending-token",
+            Binary = new byte[3000]
+        });
+
+        Assert.Empty(replies);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(0, session.TurnState.HotphraseEmptyTurnCount);
+    }
+
+    [Fact]
     public async Task ClientAsrJokeFlow_MatchesNodePayloadShapeForEosAndSkillAction()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope

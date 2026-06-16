@@ -5643,10 +5643,11 @@ public sealed class JiboWebSocketServiceTests
 
         session = _store.FindSessionByToken("hub-buffered-transid-token");
         Assert.NotNull(session);
-        Assert.Equal("trans-first", session.TurnState.TransId);
-        Assert.Equal(4, session.TurnState.BufferedAudioBytes);
-        Assert.Equal(1, session.TurnState.BufferedAudioChunkCount);
-        Assert.Equal("tell me a joke", session.TurnState.AudioTranscriptHint);
+        Assert.Equal("trans-second", session.TurnState.TransId);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+        Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
+        Assert.Null(session.TurnState.AudioTranscriptHint);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
         Assert.Equal("trans-second", session.LastTransId);
     }
 

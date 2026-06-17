@@ -25,8 +25,8 @@ public sealed class WebSocketTurnFinalizationService(
 
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
     private const int AutoFinalizeMinBufferedAudioPages = 3;
-    private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 50_000;
-    private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 11;
+    private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 42_000;
+    private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 9;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
     private const int AutoFinalizeHotphraseOnlyNoInputAttempts = 4;
@@ -34,7 +34,7 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(5500);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(4800);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(1000);
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
@@ -2410,13 +2410,29 @@ public sealed class WebSocketTurnFinalizationService(
         var normalized = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
         if (string.IsNullOrWhiteSpace(normalized)) return false;
 
-        if (normalized is "what time is" or "what time is it in" or "what time is it at")
+        if (LooksLikeCloudVersionSelfAudioOnly(normalized))
+        {
+            reason = "cloud_version_self_audio";
+            return true;
+        }
+
+        if (normalized is "what time" or "what time is" or "what time is it in" or "what time is it at")
         {
             reason = "clock_command_incomplete";
             return true;
         }
 
         return false;
+    }
+
+    private static bool LooksLikeCloudVersionSelfAudioOnly(string normalized)
+    {
+        return normalized.StartsWith("cloud version 1 ", StringComparison.Ordinal) ||
+               normalized.StartsWith("cloud version one ", StringComparison.Ordinal) ||
+               normalized.StartsWith("version 1 ", StringComparison.Ordinal) ||
+               normalized.StartsWith("version one ", StringComparison.Ordinal) ||
+               normalized.StartsWith("first 1 0 ", StringComparison.Ordinal) ||
+               normalized.StartsWith("one dot zero dot twenty", StringComparison.Ordinal);
     }
 
     private static bool IsHotphraseOnlyTranscript(string normalized)

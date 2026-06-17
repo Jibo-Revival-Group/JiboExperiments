@@ -5103,7 +5103,7 @@ public sealed class JiboWebSocketServiceTests
             Binary = BuildOggFrame(0x00, "OpusTags")
         });
 
-        for (var index = 0; index < 10; index += 1)
+        for (var index = 0; index < 8; index += 1)
         {
             var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
             {
@@ -5119,7 +5119,7 @@ public sealed class JiboWebSocketServiceTests
 
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-early-probe-token");
         Assert.NotNull(session);
-        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5800);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
         session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -5182,7 +5182,7 @@ public sealed class JiboWebSocketServiceTests
             Binary = BuildOggFrame(0x00, "OpusTags")
         });
 
-        for (var index = 0; index < 10; index += 1)
+        for (var index = 0; index < 8; index += 1)
         {
             var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
             {
@@ -5198,7 +5198,7 @@ public sealed class JiboWebSocketServiceTests
 
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-blank-early-probe-token");
         Assert.NotNull(session);
-        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5800);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
         session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -5207,6 +5207,77 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-hotphrase-ogg-blank-early-probe-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Empty(replies);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(1, session.TurnState.FinalizeAttemptCount);
+        Assert.Null(session.LastIntent);
+        Assert.Null(session.LastTranscript);
+    }
+
+    [Fact]
+    public async Task BufferedHotphraseOggAudio_RobotVersionSelfAudioEarlyProbeStaysOpenBeforeHardTimeout()
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies:
+        [
+            new QueuedBufferedAudioSttStrategy("cloud version 1 dot 0 dot 20")
+        ]);
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-version-self-audio-early-probe-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-ogg-version-self-audio-early-probe","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-version-self-audio-early-probe-token",
+            Binary = BuildOggFrame(0x02, "OpusHead")
+        });
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-version-self-audio-early-probe-token",
+            Binary = BuildOggFrame(0x00, "OpusTags")
+        });
+
+        for (var index = 0; index < 8; index += 1)
+        {
+            var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-ogg-version-self-audio-early-probe-token",
+                Binary = BuildOggFrame(0x00)
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-version-self-audio-early-probe-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
+
+        var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-version-self-audio-early-probe-token",
             Binary = BuildOggFrame(0x00)
         });
 
@@ -5253,7 +5324,7 @@ public sealed class JiboWebSocketServiceTests
             Binary = BuildOggFrame(0x00, "OpusTags")
         });
 
-        for (var index = 0; index < 10; index += 1)
+        for (var index = 0; index < 8; index += 1)
         {
             var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
             {
@@ -5269,7 +5340,7 @@ public sealed class JiboWebSocketServiceTests
 
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-incomplete-clock-early-probe-token");
         Assert.NotNull(session);
-        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5800);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
         session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope

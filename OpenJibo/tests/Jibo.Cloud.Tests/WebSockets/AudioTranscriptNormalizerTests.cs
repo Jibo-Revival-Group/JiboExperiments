@@ -8,6 +8,7 @@ public sealed class AudioTranscriptNormalizerTests
     [Theory]
     [InlineData("Jupo. What's your cloud version?", "what's your cloud version")]
     [InlineData("Hey Jibo stop", "stop")]
+    [InlineData("Hey j bowl, what's your cloud version?", "what's your cloud version")]
     [InlineData("jibo what time is it", "what time is it")]
     public void StripLeadingWakePhrase_RemovesKnownWakePhraseVariants(string value, string expected)
     {
@@ -18,6 +19,7 @@ public sealed class AudioTranscriptNormalizerTests
     [InlineData("dot version 1 dot 0 dot 20. Hey Jibo, what time is it?", "what time is it")]
     [InlineData("one dot zero dot twenty. Hey Jibo, what time is it?", "what time is it")]
     [InlineData("first 1.0.20. Hey Geebo, what time is", "what time is")]
+    [InlineData("that fixed foot. Hey j bowl, does James have a floopy diaper?", "does james have a floopy diaper")]
     [InlineData("Jibo. What's your cloud version?", "what's your cloud version")]
     public void ExtractWakePhraseCommand_RemovesLeadingOrEmbeddedWakePhrase(string value, string expected)
     {
@@ -27,6 +29,7 @@ public sealed class AudioTranscriptNormalizerTests
     [Theory]
     [InlineData("Hey, Jibo.")]
     [InlineData("Jupo.")]
+    [InlineData("Hey j bowl.")]
     [InlineData("hello gebo")]
     public void IsWakePhraseOnly_ReturnsTrue_ForWakePhraseOnlyTranscripts(string value)
     {

@@ -24,6 +24,7 @@ internal static class TranscriptTextNormalizer
         "hey jimbo",
         "hey chibo",
         "hey jupo",
+        "hey j bowl",
         "hey g bo",
         "hey gee bow",
         "jibo",
@@ -36,6 +37,7 @@ internal static class TranscriptTextNormalizer
         "jimbo",
         "chibo",
         "jupo",
+        "j bowl",
         "g bo",
         "gee bow"
     ];

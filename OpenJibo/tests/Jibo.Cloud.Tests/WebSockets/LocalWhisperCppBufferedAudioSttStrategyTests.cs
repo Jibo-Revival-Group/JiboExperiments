@@ -308,6 +308,49 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
     }
 
     [Fact]
+    public async Task TranscribeAsync_UsesTranscriptHint_WhenWhisperOnlyHeardRobotSelfAudio()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var runner = new FakeExternalProcessRunner("I heard you.");
+            var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+                new BufferedAudioSttOptions
+                {
+                    EnableLocalWhisperCpp = true,
+                    FfmpegPath = "ffmpeg",
+                    WhisperCliPath = "whisper-cli",
+                    WhisperModelPath = "model.bin",
+                    TempDirectory = tempDirectory
+                },
+                runner);
+
+            var turn = new TurnContext
+            {
+                TurnId = "turn-local-stt-self-audio-hint",
+                Locale = "en-US",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["bufferedAudioBytes"] = 147,
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() },
+                    ["audioTranscriptHint"] = "What's your cloud version?"
+                }
+            };
+
+            var result = await strategy.TranscribeAsync(turn);
+
+            Assert.Equal("what's your cloud version", result.Text);
+            Assert.Equal("local-whispercpp-buffered-audio", result.Provider);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Fact]
     public async Task TranscribeAsync_WritesTheRawBufferedPagesToFfmpeg()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
@@ -524,7 +567,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
                 return Task.FromResult(new ExternalProcessResult(0, whisperStdOut, string.Empty));
 
             var outputPath = arguments[^1];
-            File.WriteAllBytes(outputPath, "RIFF"u8);
+            File.WriteAllBytes(outputPath, Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
             return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
         }
     }
@@ -541,7 +584,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             if (string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
             {
                 WrittenFfmpegInputBytes = File.ReadAllBytes(arguments[2]);
-                File.WriteAllBytes(arguments[^1], "RIFF"u8);
+                File.WriteAllBytes(arguments[^1], Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
                 return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
             }
 

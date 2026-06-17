@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Jibo.Cloud.Application.Services;
 using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -9,6 +10,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
 {
     private const int MinimumBufferedAudioBytes = 64;
     private const int ShortAnswerBufferedAudioBytes = 16;
+    private const int MinimumTranscribableWavBytes = 1024;
     private readonly BufferedAudioSttOptions options;
     private readonly IExternalProcessRunner processRunner;
     private readonly ILogger<LocalWhisperCppBufferedAudioSttStrategy> logger;
@@ -105,6 +107,17 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 ffmpegResult.StdOut.Length,
                 ffmpegResult.StdErr.Length);
 
+            var wavBytes = File.Exists(wavPath) ? new FileInfo(wavPath).Length : 0;
+            if (wavBytes < MinimumTranscribableWavBytes)
+            {
+                logger.LogDebug(
+                    "STT rejecting tiny WAV turnId={TurnId} wavBytes={WavBytes} minimum={MinimumWavBytes}",
+                    turn.TurnId,
+                    wavBytes,
+                    MinimumTranscribableWavBytes);
+                return BuildResult(string.Empty, turn, wavPath, ffmpegResult, string.Empty, string.Empty);
+            }
+
             logger.LogDebug("STT whisper launch turnId={TurnId} whisperCliPath={WhisperCliPath} modelPath={ModelPath}",
                 turn.TurnId,
                 options.WhisperCliPath,
@@ -123,6 +136,29 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
             var transcript = ExtractTranscript(whisperResult.StdOut);
             logger.LogDebug("STT extracted transcript turnId={TurnId} rawTranscript={Transcript}", turn.TurnId, transcript);
             transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(transcript);
+            if (TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(transcript))
+            {
+                logger.LogDebug(
+                    "STT rejected likely robot self-audio transcript turnId={TurnId} transcript={Transcript}",
+                    turn.TurnId,
+                    transcript);
+
+                var transcriptHint = AudioTranscriptNormalizer.NormalizeLooseTranscript(ReadTranscriptHint(turn));
+                if (!string.IsNullOrWhiteSpace(transcriptHint) &&
+                    !TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(transcriptHint))
+                {
+                    logger.LogDebug(
+                        "STT using transcript hint after self-audio rejection turnId={TurnId} transcriptHint={TranscriptHint}",
+                        turn.TurnId,
+                        transcriptHint);
+                    transcript = transcriptHint;
+                }
+                else
+                {
+                    transcript = string.Empty;
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(transcript))
             {
                 logger.LogDebug("STT falling back to transcript hint turnId={TurnId}", turn.TurnId);
@@ -131,39 +167,22 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
 
             if (string.IsNullOrWhiteSpace(transcript))
             {
-                var wavBytes = File.Exists(wavPath) ? new FileInfo(wavPath).Length : 0;
                 logger.LogDebug(
-                    "STT transcription failed turnId={TurnId} oggBytes={OggBytes} wavBytes={WavBytes} ffmpegExit={FfmpegExit} whisperExit={WhisperExit}",
+                    "STT returning blank transcript turnId={TurnId} oggBytes={OggBytes} wavBytes={WavBytes} ffmpegExit={FfmpegExit} whisperExit={WhisperExit}",
                     turn.TurnId,
                     new FileInfo(oggPath).Length,
                     wavBytes,
                     ffmpegResult.ExitCode,
                     whisperResult.ExitCode);
-                throw new InvalidOperationException(
-                    "whisper.cpp returned no transcript for the buffered audio turn. " +
-                    $"ffmpegExit={ffmpegResult.ExitCode}, whisperExit={whisperResult.ExitCode}, " +
-                    $"oggBytes={new FileInfo(oggPath).Length}, wavBytes={wavBytes}, " +
-                    $"whisperStdOutBytes={whisperResult.StdOut.Length}, whisperStdErrBytes={whisperResult.StdErr.Length}");
             }
 
-            return new SttResult
-            {
-                Text = transcript,
-                Provider = Name,
-                Locale = turn.Locale,
-                Metadata = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["bufferedAudioBytes"] = ReadBufferedAudioBytes(turn),
-                    ["bufferedAudioChunks"] = frames.Count,
-                    ["ffmpegPath"] = options.FfmpegPath,
-                    ["whisperCliPath"] = options.WhisperCliPath,
-                    ["wavPath"] = wavPath,
-                    ["ffmpegStdOut"] = ffmpegResult.StdOut,
-                    ["ffmpegStdErr"] = ffmpegResult.StdErr,
-                    ["whisperStdOut"] = whisperResult.StdOut,
-                    ["whisperStdErr"] = whisperResult.StdErr
-                }
-            };
+            return BuildResult(
+                transcript,
+                turn,
+                wavPath,
+                ffmpegResult,
+                whisperResult.StdOut,
+                whisperResult.StdErr);
         }
         finally
         {
@@ -269,6 +288,34 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
     private static bool ContainsOpusIdentificationHeader(byte[] frame)
     {
         return frame.AsSpan().IndexOf("OpusHead"u8) >= 0;
+    }
+
+    private SttResult BuildResult(
+        string transcript,
+        TurnContext turn,
+        string wavPath,
+        ExternalProcessResult ffmpegResult,
+        string whisperStdOut,
+        string whisperStdErr)
+    {
+        return new SttResult
+        {
+            Text = transcript,
+            Provider = Name,
+            Locale = turn.Locale,
+            Metadata = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bufferedAudioBytes"] = ReadBufferedAudioBytes(turn),
+                ["bufferedAudioChunks"] = ReadBufferedAudioFrames(turn).Count,
+                ["ffmpegPath"] = options.FfmpegPath,
+                ["whisperCliPath"] = options.WhisperCliPath,
+                ["wavPath"] = wavPath,
+                ["ffmpegStdOut"] = ffmpegResult.StdOut,
+                ["ffmpegStdErr"] = ffmpegResult.StdErr,
+                ["whisperStdOut"] = whisperStdOut,
+                ["whisperStdErr"] = whisperStdErr
+            }
+        };
     }
 
     private static string ExtractTranscript(string standardOutput)

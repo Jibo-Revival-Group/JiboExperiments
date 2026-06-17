@@ -1406,6 +1406,9 @@ public sealed class WebSocketTurnFinalizationService(
 
         if (string.IsNullOrWhiteSpace(transcript)) return false;
 
+        if (TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(transcript))
+            return false;
+
         if (!string.IsNullOrWhiteSpace(personalReportState) &&
             !string.Equals(personalReportState, PersonalReportOrchestrator.IdleState,
                 StringComparison.OrdinalIgnoreCase))

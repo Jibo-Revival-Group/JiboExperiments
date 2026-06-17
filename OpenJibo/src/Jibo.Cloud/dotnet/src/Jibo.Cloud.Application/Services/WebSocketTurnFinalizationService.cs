@@ -27,7 +27,7 @@ public sealed class WebSocketTurnFinalizationService(
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
-    private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(1200);
+    private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
     private static readonly TimeSpan AutoFinalizeContinuationDeferralMaxAge = TimeSpan.FromMilliseconds(3600);
     private static readonly TimeSpan StaleListenSetupRecoveryAge = TimeSpan.FromSeconds(9);

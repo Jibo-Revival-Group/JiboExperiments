@@ -4,6 +4,38 @@ namespace Jibo.Cloud.Application.Services;
 
 internal static class TranscriptTextNormalizer
 {
+    private static readonly string[] WakePhraseLeadPhrases =
+    [
+        "hey jibo",
+        "hi jibo",
+        "hello jibo",
+        "okay jibo",
+        "ok jibo",
+        "hey gibo",
+        "hey gebo",
+        "hi gebo",
+        "hello gebo",
+        "hey jeebo",
+        "hey jebo",
+        "hey jibbo",
+        "hey jimbo",
+        "hey chibo",
+        "hey jupo",
+        "hey g bo",
+        "hey gee bow",
+        "jibo",
+        "gibo",
+        "gebo",
+        "jeebo",
+        "jebo",
+        "jibbo",
+        "jimbo",
+        "chibo",
+        "jupo",
+        "g bo",
+        "gee bow"
+    ];
+
     private static readonly Regex PunctuationToSpaceRegex = new(
         @"[^\p{L}\p{N}\s']+",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
@@ -31,6 +63,21 @@ internal static class TranscriptTextNormalizer
             normalized = trimmed;
 
         return normalized;
+    }
+
+    internal static string StripLeadingWakePhrase(string? value)
+    {
+        var normalized = NormalizeLooseText(value);
+        if (string.IsNullOrWhiteSpace(normalized)) return string.Empty;
+
+        return StripLeadingPhrases(normalized, WakePhraseLeadPhrases);
+    }
+
+    internal static bool IsWakePhraseOnly(string? value)
+    {
+        var normalized = NormalizeLooseText(value);
+        return !string.IsNullOrWhiteSpace(normalized) &&
+               string.IsNullOrWhiteSpace(StripLeadingWakePhrase(normalized));
     }
 
     private static bool TryStripLeadingPhrase(string normalizedValue, IReadOnlyList<string> phrases, out string trimmed)

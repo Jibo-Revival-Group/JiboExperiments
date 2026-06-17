@@ -5,6 +5,7 @@ public sealed class WebSocketTurnState
     public static readonly TimeSpan DefaultLateAudioIgnoreWindow = TimeSpan.FromSeconds(2);
     public static readonly TimeSpan DiagnosticSpeechLateAudioIgnoreWindow = TimeSpan.FromSeconds(7);
     public static readonly TimeSpan StopCommandLateAudioIgnoreWindow = TimeSpan.FromSeconds(4);
+    public static readonly TimeSpan LateListenSetupIgnoreWindow = TimeSpan.FromMilliseconds(1500);
 
     public string? TransId { get; set; }
     public string? ContextPayload { get; set; }
@@ -12,6 +13,7 @@ public sealed class WebSocketTurnState
     public bool ListenHotphrase { get; set; }
     public int HotphraseEmptyTurnCount { get; set; }
     public DateTimeOffset? IgnoreAdditionalAudioUntilUtc { get; set; }
+    public DateTimeOffset? IgnoreLateListenSetupUntilUtc { get; set; }
     public DateTimeOffset? AutoFinalizeBlockedUntilUtc { get; set; }
     public string? AudioTranscriptHint { get; set; }
     public string? LastSttError { get; set; }

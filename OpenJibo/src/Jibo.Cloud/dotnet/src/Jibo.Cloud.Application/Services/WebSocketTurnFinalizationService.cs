@@ -31,7 +31,7 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(950);
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
@@ -157,26 +157,6 @@ public sealed class WebSocketTurnFinalizationService(
         "no",
         "nope",
         "nah"
-    };
-
-    private static readonly HashSet<string> HotphraseOnlyTranscripts = new(StringComparer.Ordinal)
-    {
-        "hey jibo",
-        "hi jibo",
-        "hello jibo",
-        "okay jibo",
-        "ok jibo",
-        "hey gibo",
-        "hey gebo",
-        "hi gebo",
-        "hello gebo",
-        "hey jeebo",
-        "hey jebo",
-        "hey jibbo",
-        "hey jimbo",
-        "hey chibo",
-        "hey g bo",
-        "hey gee bow"
     };
 
     private static readonly HashSet<string> YesNoAffirmativeLeadTokens = new(StringComparer.Ordinal)
@@ -583,6 +563,9 @@ public sealed class WebSocketTurnFinalizationService(
 
             foreach (var pair in sttResult.Metadata) attributes[$"stt:{pair.Key}"] = pair.Value;
 
+            var rawTranscript = sttResult.Text.Trim();
+            var normalizedTranscript = NormalizeBufferedAudioTranscript(turn, rawTranscript);
+
             return new TurnContext
             {
                 TurnId = turn.TurnId,
@@ -591,8 +574,8 @@ public sealed class WebSocketTurnFinalizationService(
                 InputMode = turn.InputMode,
                 SourceKind = turn.SourceKind,
                 WakePhrase = turn.WakePhrase,
-                RawTranscript = sttResult.Text,
-                NormalizedTranscript = sttResult.Text.Trim(),
+                RawTranscript = rawTranscript,
+                NormalizedTranscript = normalizedTranscript,
                 DeviceId = turn.DeviceId,
                 HostName = turn.HostName,
                 RequestId = turn.RequestId,
@@ -732,6 +715,7 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.ListenHotphrase = false;
         turnState.HotphraseEmptyTurnCount = 0;
         turnState.IgnoreAdditionalAudioUntilUtc = null;
+        turnState.IgnoreLateListenSetupUntilUtc = null;
         turnState.ListenRules = [];
         turnState.ListenAsrHints = [];
         turnState.AutoFinalizeBlockedUntilUtc = null;
@@ -1176,9 +1160,13 @@ public sealed class WebSocketTurnFinalizationService(
                 ? DateTimeOffset.UtcNow.Add(plan.FollowUp.Timeout)
                 : null;
             turnState.AwaitingTurnCompletion = false;
+            var finalizedAtUtc = DateTimeOffset.UtcNow;
             turnState.IgnoreAdditionalAudioUntilUtc = plan.FollowUp.KeepMicOpen
                 ? null
-                : DateTimeOffset.UtcNow.Add(ResolveLateAudioIgnoreWindow(plan));
+                : finalizedAtUtc.Add(ResolveLateAudioIgnoreWindow(plan));
+            turnState.IgnoreLateListenSetupUntilUtc = plan.FollowUp.KeepMicOpen
+                ? null
+                : finalizedAtUtc.Add(WebSocketTurnState.LateListenSetupIgnoreWindow);
 
             await sink.RecordTurnDiagnosticAsync(
                 "turn_finalize_plan",
@@ -1503,7 +1491,10 @@ public sealed class WebSocketTurnFinalizationService(
         if (string.Equals(session.LastIntent, "stop", StringComparison.OrdinalIgnoreCase))
             return false;
 
-        return ShouldIgnoreLateAudio(session) && IsHotphraseLaunchListenSetup(text);
+        var ignoreUntilUtc = session.TurnState.IgnoreLateListenSetupUntilUtc;
+        return ignoreUntilUtc.HasValue &&
+               ignoreUntilUtc.Value > DateTimeOffset.UtcNow &&
+               IsHotphraseLaunchListenSetup(text);
     }
 
     public static bool TryRecoverStalePendingListen(CloudSession session, out int staleAgeMs)
@@ -2308,18 +2299,31 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static bool IsHotphraseOnlyTranscript(string normalized)
     {
-        if (string.IsNullOrWhiteSpace(normalized)) return false;
-        if (HotphraseOnlyTranscripts.Contains(normalized)) return true;
+        return TranscriptTextNormalizer.IsWakePhraseOnly(normalized);
+    }
 
-        var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (tokens.Length is < 2 or > 3) return false;
+    private static string NormalizeBufferedAudioTranscript(TurnContext turn, string transcript)
+    {
+        var normalized = NormalizeTranscript(transcript);
+        if (string.IsNullOrWhiteSpace(normalized) || !IsHotphraseLaunchTurn(turn)) return normalized;
 
-        var lead = tokens[0];
-        if (lead is not ("hey" or "hi" or "hello")) return false;
+        var withoutWakePhrase = TranscriptTextNormalizer.StripLeadingWakePhrase(normalized);
+        return string.IsNullOrWhiteSpace(withoutWakePhrase) ? normalized : withoutWakePhrase;
+    }
 
-        var target = string.Join(' ', tokens.Skip(1));
-        return target is "jibo" or "gibo" or "gebo" or "jeebo" or "jebo" or "jibbo" or "jimbo" or "g bo"
-            or "gee bow";
+    private static bool IsHotphraseLaunchTurn(TurnContext turn)
+    {
+        if (!ReadBoolAttribute(turn, "listenHotphrase")) return false;
+
+        return ReadRules(turn, "listenRules")
+            .Concat(ReadRules(turn, "clientRules"))
+            .Any(IsLaunchRule);
+    }
+
+    private static bool IsLaunchRule(string rule)
+    {
+        return string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "globals/global_commands_launch", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool ShouldIgnoreLateEmptyTurn(TurnContext turn, CloudSession session, string messageType)

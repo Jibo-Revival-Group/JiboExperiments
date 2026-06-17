@@ -254,8 +254,14 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             Assert.Equal("local-whispercpp-buffered-audio", result.Provider);
             Assert.Equal(2, runner.Calls.Count);
             Assert.Equal("ffmpeg", runner.Calls[0].FileName);
+            Assert.Contains("-af", runner.Calls[0].Arguments);
+            Assert.Contains(runner.Calls[0].Arguments,
+                argument => argument.Contains("silenceremove", StringComparison.OrdinalIgnoreCase) &&
+                            argument.Contains("volume=8dB", StringComparison.OrdinalIgnoreCase));
             Assert.Equal("whisper-cli", runner.Calls[1].FileName);
             Assert.Equal(147, result.Metadata["bufferedAudioBytes"]);
+            Assert.Equal("silenceremove=start_periods=1:start_duration=0.12:start_threshold=-45dB,volume=8dB",
+                result.Metadata["ffmpegAudioFilter"]);
         }
         finally
         {
@@ -342,6 +348,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
 
             Assert.Equal(string.Empty, result.Text);
             Assert.Equal("local-whispercpp-buffered-audio", result.Provider);
+            Assert.False(File.Exists(Path.Combine(tempDirectory, "turn-turn-local-stt-blank-audio.wav")));
         }
         finally
         {

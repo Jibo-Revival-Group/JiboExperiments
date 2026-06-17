@@ -258,6 +258,86 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task BufferedHotphraseOggAudio_WaitsThroughMidStreamGapButFinalizesOnEos()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-gap-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-ogg-gap","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-gap-token",
+            Text =
+                """{"type":"CONTEXT","transID":"trans-hotphrase-ogg-gap","data":{"audioTranscriptHint":"what's your cloud version"}}"""
+        });
+
+        foreach (var frame in new[]
+                 {
+                     BuildOggFrame(0x02, "OpusHead"),
+                     BuildOggFrame(0x00, "OpusTags"),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00)
+                 })
+        {
+            var interimReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-ogg-gap-token",
+                Binary = frame
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = _store.FindSessionByToken("hub-hotphrase-ogg-gap-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
+
+        var gapReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-gap-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Empty(gapReplies);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+
+        var eosReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-gap-token",
+            Binary = BuildOggFrame(0x04)
+        });
+
+        Assert.Equal(3, eosReplies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(eosReplies[0]));
+        Assert.Equal("EOS", ReadReplyType(eosReplies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(eosReplies[2]));
+
+        using var listenPayload = JsonDocument.Parse(eosReplies[0].Text!);
+        Assert.Equal("cloud_version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+    }
+
+    [Fact]
     public async Task BinaryMessage_BuffersAudioWithoutEmittingSyntheticAck()
     {
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -6114,6 +6194,16 @@ public sealed class JiboWebSocketServiceTests
         }
 
         return builder.ToString();
+    }
+
+    private static byte[] BuildOggFrame(byte headerType, string marker = "audio")
+    {
+        var frame = Enumerable.Range(0, 4300).Select(index => (byte)(index % 251)).ToArray();
+        "OggS"u8.CopyTo(frame);
+        frame[4] = 0;
+        frame[5] = headerType;
+        Encoding.ASCII.GetBytes(marker).CopyTo(frame, 32);
+        return frame;
     }
 
     private sealed class StubWeatherReportProvider(WeatherReportSnapshot snapshot) : IWeatherReportProvider

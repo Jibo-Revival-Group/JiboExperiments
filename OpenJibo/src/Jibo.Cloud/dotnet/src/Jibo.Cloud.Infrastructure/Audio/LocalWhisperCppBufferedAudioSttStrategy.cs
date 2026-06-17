@@ -11,6 +11,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
     private const int MinimumBufferedAudioBytes = 64;
     private const int ShortAnswerBufferedAudioBytes = 16;
     private const int MinimumTranscribableWavBytes = 1024;
+    private const string FfmpegAudioPreprocessFilter =
+        "silenceremove=start_periods=1:start_duration=0.12:start_threshold=-45dB,volume=8dB";
     private readonly BufferedAudioSttOptions options;
     private readonly IExternalProcessRunner processRunner;
     private readonly ILogger<LocalWhisperCppBufferedAudioSttStrategy> logger;
@@ -108,10 +110,21 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 pageCounts.AudioBearingPageCount,
                 pageCounts.MetadataPageCount);
 
-            logger.LogDebug("STT ffmpeg launch turnId={TurnId} ffmpegPath={FfmpegPath}", turn.TurnId, options.FfmpegPath);
+            logger.LogDebug(
+                "STT ffmpeg launch turnId={TurnId} ffmpegPath={FfmpegPath} audioFilter={AudioFilter}",
+                turn.TurnId,
+                options.FfmpegPath,
+                FfmpegAudioPreprocessFilter);
             var ffmpegResult = await processRunner.RunAsync(
                 options.FfmpegPath!,
-                ["-y", "-i", oggPath, "-ar", "16000", "-ac", "1", "-f", "wav", wavPath],
+                [
+                    "-y", "-i", oggPath,
+                    "-af", FfmpegAudioPreprocessFilter,
+                    "-ar", "16000",
+                    "-ac", "1",
+                    "-f", "wav",
+                    wavPath
+                ],
                 cancellationToken);
             logger.LogDebug(
                 "STT ffmpeg finished turnId={TurnId} exitCode={ExitCode} stdoutBytes={StdOutBytes} stderrBytes={StdErrBytes}",
@@ -121,6 +134,12 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 ffmpegResult.StdErr.Length);
 
             var wavBytes = File.Exists(wavPath) ? new FileInfo(wavPath).Length : 0;
+            logger.LogDebug(
+                "STT WAV prepared turnId={TurnId} wavBytes={WavBytes} audioFilter={AudioFilter}",
+                turn.TurnId,
+                wavBytes,
+                FfmpegAudioPreprocessFilter);
+
             if (wavBytes < MinimumTranscribableWavBytes)
             {
                 logger.LogDebug(
@@ -191,6 +210,15 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                     pageCounts.AudioBearingPageCount,
                     ffmpegResult.ExitCode,
                     whisperResult.ExitCode);
+
+                if (!options.CleanupTempFiles)
+                {
+                    TryDelete(wavPath);
+                    logger.LogDebug(
+                        "STT deleted blank WAV artifact turnId={TurnId} wavPath={WavPath}",
+                        turn.TurnId,
+                        wavPath);
+                }
             }
 
             return BuildResult(
@@ -332,6 +360,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 ["ffmpegPath"] = options.FfmpegPath,
                 ["whisperCliPath"] = options.WhisperCliPath,
                 ["wavPath"] = wavPath,
+                ["ffmpegAudioFilter"] = FfmpegAudioPreprocessFilter,
                 ["ffmpegStdOut"] = ffmpegResult.StdOut,
                 ["ffmpegStdErr"] = ffmpegResult.StdErr,
                 ["whisperStdOut"] = whisperStdOut,

@@ -15,6 +15,15 @@ public sealed class AudioTranscriptNormalizerTests
     }
 
     [Theory]
+    [InlineData("dot version 1 dot 0 dot 20. Hey Jibo, what time is it?", "what time is it")]
+    [InlineData("one dot zero dot twenty. Hey Jibo, what time is it?", "what time is it")]
+    [InlineData("Jibo. What's your cloud version?", "what's your cloud version")]
+    public void ExtractWakePhraseCommand_RemovesLeadingOrEmbeddedWakePhrase(string value, string expected)
+    {
+        Assert.Equal(expected, TranscriptTextNormalizer.ExtractWakePhraseCommand(value));
+    }
+
+    [Theory]
     [InlineData("Hey, Jibo.")]
     [InlineData("Jupo.")]
     [InlineData("hello gebo")]

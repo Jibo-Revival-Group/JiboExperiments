@@ -73,6 +73,18 @@ internal static class TranscriptTextNormalizer
         return StripLeadingPhrases(normalized, WakePhraseLeadPhrases);
     }
 
+    internal static string ExtractWakePhraseCommand(string? value)
+    {
+        var normalized = NormalizeLooseText(value);
+        if (string.IsNullOrWhiteSpace(normalized)) return string.Empty;
+
+        var withoutLeadingWakePhrase = StripLeadingPhrases(normalized, WakePhraseLeadPhrases);
+        if (!string.Equals(withoutLeadingWakePhrase, normalized, StringComparison.Ordinal))
+            return withoutLeadingWakePhrase;
+
+        return TryExtractEmbeddedWakePhraseCommand(normalized, out var command) ? command : normalized;
+    }
+
     internal static bool IsWakePhraseOnly(string? value)
     {
         var normalized = NormalizeLooseText(value);
@@ -99,5 +111,48 @@ internal static class TranscriptTextNormalizer
 
         trimmed = normalizedValue;
         return false;
+    }
+
+    private static bool TryExtractEmbeddedWakePhraseCommand(string normalizedValue, out string command)
+    {
+        var tokens = normalizedValue.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var bestCommandStart = -1;
+        var bestPhraseLength = 0;
+
+        for (var index = 1; index < tokens.Length; index += 1)
+        {
+            foreach (var phrase in WakePhraseLeadPhrases)
+            {
+                var phraseTokens = phrase.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (phraseTokens.Length == 0 ||
+                    index + phraseTokens.Length >= tokens.Length ||
+                    !TokensMatch(tokens, index, phraseTokens))
+                    continue;
+
+                var commandStart = index + phraseTokens.Length;
+                if (commandStart < bestCommandStart ||
+                    commandStart == bestCommandStart && phraseTokens.Length <= bestPhraseLength)
+                    continue;
+
+                bestCommandStart = commandStart;
+                bestPhraseLength = phraseTokens.Length;
+            }
+        }
+
+        command = bestCommandStart < 0 ? string.Empty : string.Join(' ', tokens.Skip(bestCommandStart));
+        return !string.IsNullOrWhiteSpace(command);
+    }
+
+    private static bool TokensMatch(IReadOnlyList<string> tokens, int startIndex, IReadOnlyList<string> phraseTokens)
+    {
+        if (startIndex + phraseTokens.Count > tokens.Count) return false;
+
+        for (var offset = 0; offset < phraseTokens.Count; offset += 1)
+        {
+            if (!string.Equals(tokens[startIndex + offset], phraseTokens[offset], StringComparison.Ordinal))
+                return false;
+        }
+
+        return true;
     }
 }

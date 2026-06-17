@@ -2339,7 +2339,7 @@ public sealed class WebSocketTurnFinalizationService(
         var normalized = NormalizeTranscript(transcript);
         if (string.IsNullOrWhiteSpace(normalized) || !IsHotphraseLaunchTurn(turn)) return normalized;
 
-        var withoutWakePhrase = TranscriptTextNormalizer.StripLeadingWakePhrase(normalized);
+        var withoutWakePhrase = TranscriptTextNormalizer.ExtractWakePhraseCommand(normalized);
         return string.IsNullOrWhiteSpace(withoutWakePhrase) ? normalized : withoutWakePhrase;
     }
 

@@ -308,6 +308,48 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
     }
 
     [Fact]
+    public async Task TranscribeAsync_ReturnsEmptyTranscript_WhenWhisperReturnsBlankAudioMarker()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var runner = new FakeExternalProcessRunner("[BLANK_AUDIO]");
+            var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+                new BufferedAudioSttOptions
+                {
+                    EnableLocalWhisperCpp = true,
+                    FfmpegPath = "ffmpeg",
+                    WhisperCliPath = "whisper-cli",
+                    WhisperModelPath = "model.bin",
+                    TempDirectory = tempDirectory
+                },
+                runner);
+
+            var turn = new TurnContext
+            {
+                TurnId = "turn-local-stt-blank-audio",
+                Locale = "en-US",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["bufferedAudioBytes"] = 147,
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                }
+            };
+
+            var result = await strategy.TranscribeAsync(turn);
+
+            Assert.Equal(string.Empty, result.Text);
+            Assert.Equal("local-whispercpp-buffered-audio", result.Provider);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Fact]
     public async Task TranscribeAsync_UsesTranscriptHint_WhenWhisperOnlyHeardRobotSelfAudio()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");

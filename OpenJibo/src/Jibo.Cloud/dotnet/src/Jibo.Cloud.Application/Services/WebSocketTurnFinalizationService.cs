@@ -900,6 +900,33 @@ public sealed class WebSocketTurnFinalizationService(
                     ? DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value
                     : TimeSpan.Zero;
 
+                if (ShouldCloseEmptyHotphraseAutoFinalize(finalizedTurn, turnState, messageType,
+                        allowFallbackOnMissingTranscript, turnAge))
+                {
+                    turnState.AwaitingTurnCompletion = false;
+                    session.LastTranscript = string.Empty;
+                    session.LastIntent = null;
+                    session.LastListenType = "no-input";
+                    await sink.RecordTurnDiagnosticAsync("auto_finalize_hotphrase_no_input",
+                        BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                        {
+                            ["messageType"] = messageType,
+                            ["finalizeAttemptCount"] = turnState.FinalizeAttemptCount,
+                            ["turnAgeMs"] = (int)turnAge.TotalMilliseconds,
+                            ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                            ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount,
+                            ["lastSttError"] = turnState.LastSttError
+                        }), cancellationToken);
+                    var noInputReplies = ResponsePlanToSocketMessagesMapper.MapNoInput(
+                            turnState.TransId ?? session.LastTransId ?? string.Empty,
+                            turnState.ListenRules)
+                        .Select(map => new WebSocketReply { Text = map.Text, DelayMs = map.DelayMs })
+                        .ToArray();
+                    ResetBufferedAudio(session);
+                    ClearListenTracking(turnState);
+                    return noInputReplies;
+                }
+
                 switch (allowFallbackOnMissingTranscript)
                 {
                     case true when
@@ -959,6 +986,8 @@ public sealed class WebSocketTurnFinalizationService(
                         return fallbackReplies;
                     }
                     default:
+                        if (string.Equals(messageType, "AUTO_FINALIZE", StringComparison.OrdinalIgnoreCase))
+                            turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
                         return [];
                 }
             }
@@ -2021,6 +2050,28 @@ public sealed class WebSocketTurnFinalizationService(
 
         return ReadRules(turn, "listenRules")
             .Any(static rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool ShouldCloseEmptyHotphraseAutoFinalize(
+        TurnContext turn,
+        WebSocketTurnState turnState,
+        string messageType,
+        bool allowFallbackOnMissingTranscript,
+        TimeSpan turnAge)
+    {
+        if (!allowFallbackOnMissingTranscript ||
+            !string.Equals(messageType, "AUTO_FINALIZE", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (turnState.FinalizeAttemptCount < 2 || turnAge < AutoFinalizeMissingTranscriptFallbackAge)
+            return false;
+
+        if (!ReadBoolAttribute(turn, "listenHotphrase")) return false;
+
+        return ReadRules(turn, "listenRules")
+            .Any(static rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(rule, "globals/global_commands_launch",
+                                    StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool ShouldIgnoreLateEmptyTurn(TurnContext turn, CloudSession session, string messageType)

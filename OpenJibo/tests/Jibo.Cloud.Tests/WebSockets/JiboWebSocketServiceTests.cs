@@ -4638,6 +4638,71 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task BufferedHotphraseAudio_RepeatedMissingTranscriptClosesAsNoInputWithoutNimbusFallback()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-no-input-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-no-input","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-no-input-token",
+            Text = """{"type":"CONTEXT","transID":"trans-hotphrase-no-input","data":{"topic":"conversation"}}"""
+        });
+
+        for (var index = 0; index < 4; index += 1)
+        {
+            var interimReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-no-input-token",
+                Binary = new byte[3000]
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = _store.FindSessionByToken("hub-hotphrase-no-input-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(5);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
+        session.TurnState.FinalizeAttemptCount = 1;
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-no-input-token",
+            Binary = new byte[3000]
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+        Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
+    }
+
+    [Fact]
     public async Task ClientAsrJokeFlow_MatchesNodePayloadShapeForEosAndSkillAction()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope

@@ -16,9 +16,13 @@ internal static class AudioTranscriptNormalizer
     {
         if (string.IsNullOrWhiteSpace(value)) return string.Empty;
 
-        return WhitespaceRegex.Replace(
+        var normalized = WhitespaceRegex.Replace(
                 PunctuationToSpaceRegex.Replace(value.Trim().ToLowerInvariant(), " "),
                 " ")
             .Trim();
+
+        return normalized is "blank audio" or "blank_audio"
+            ? string.Empty
+            : normalized;
     }
 }

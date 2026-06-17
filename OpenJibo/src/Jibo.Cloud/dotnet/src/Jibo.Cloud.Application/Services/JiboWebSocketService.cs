@@ -181,15 +181,22 @@ public sealed class JiboWebSocketService(
         }
     }
 
-    public void MarkPrematureSocketLoopEnded(CloudSession session)
+    public bool MarkPrematureSocketLoopEnded(CloudSession session, string? expectedTransId = null)
     {
         logger.LogDebug(
-            "WebSocket premature socket loop ended session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} awaitingTurnCompletion={AwaitingTurnCompletion}",
+            "WebSocket premature socket loop ended session={SessionId} transId={TransId} expectedTransId={ExpectedTransId} bufferedBytes={BufferedBytes} awaitingTurnCompletion={AwaitingTurnCompletion}",
             session.SessionId,
             session.TurnState.TransId,
+            expectedTransId,
             session.TurnState.BufferedAudioBytes,
             session.TurnState.AwaitingTurnCompletion);
-        WebSocketTurnFinalizationService.MarkPrematureSocketLoopEnded(session);
+        var marked = WebSocketTurnFinalizationService.MarkPrematureSocketLoopEnded(session, expectedTransId);
+        logger.LogDebug(
+            "WebSocket premature socket loop mark result session={SessionId} expectedTransId={ExpectedTransId} marked={Marked}",
+            session.SessionId,
+            expectedTransId,
+            marked);
+        return marked;
     }
 
     private static string ReadMessageType(string? text)

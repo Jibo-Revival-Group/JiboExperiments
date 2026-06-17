@@ -338,6 +338,125 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task BufferedHotphraseOggAudio_FinalizesOnHardAge_WhenOggNeverSendsEos()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-hard-timeout-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-ogg-hard-timeout","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-hard-timeout-token",
+            Text =
+                """{"type":"CONTEXT","transID":"trans-hotphrase-ogg-hard-timeout","data":{"audioTranscriptHint":"what's your cloud version"}}"""
+        });
+
+        foreach (var frame in new[]
+                 {
+                     BuildOggFrame(0x02, "OpusHead"),
+                     BuildOggFrame(0x00, "OpusTags"),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00)
+                 })
+        {
+            var interimReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-ogg-hard-timeout-token",
+                Binary = frame
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = _store.FindSessionByToken("hub-hotphrase-ogg-hard-timeout-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(8500);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(900);
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-hard-timeout-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("cloud_version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+    }
+
+    [Fact]
+    public async Task BufferedHotphraseOggAudio_MetadataOnlyListenClosesAsNoInputAfterTimeout()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-metadata-timeout-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-metadata-timeout","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        foreach (var frame in new[]
+                 {
+                     BuildOggFrame(0x02, "OpusHead"),
+                     BuildOggFrame(0x00, "OpusTags")
+                 })
+        {
+            var interimReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-metadata-timeout-token",
+                Binary = frame
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = _store.FindSessionByToken("hub-hotphrase-metadata-timeout-token");
+        Assert.NotNull(session);
+        session.TurnState.ListenOpenedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(9500);
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-metadata-timeout-token",
+            Binary = BuildOggFrame(0x00, "OpusTags")
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+    }
+
+    [Fact]
     public async Task BinaryMessage_BuffersAudioWithoutEmittingSyntheticAck()
     {
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -4553,6 +4672,62 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("heyJibo",
             JsonDocument.Parse(finalReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
                 .GetProperty("intent").GetString());
+    }
+
+    [Fact]
+    public async Task PrematureSocketClose_ForPreviousTransId_DoesNotPoisonCurrentListen()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-overlap-close-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-overlap-old","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-overlap-close-token",
+            Binary = BuildOggFrame(0x02, "OpusHead")
+        });
+
+        var session = _store.FindSessionByToken("hub-overlap-close-token");
+        Assert.NotNull(session);
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-overlap-close-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-overlap-new","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var marked = _service.MarkPrematureSocketLoopEnded(session, "trans-overlap-old");
+
+        Assert.False(marked);
+        Assert.Null(session.TurnState.AutoFinalizeBlockedUntilUtc);
+        Assert.Null(session.TurnState.IgnoreAdditionalAudioUntilUtc);
+        Assert.Equal("trans-overlap-new", session.TurnState.TransId);
+
+        var audioReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-overlap-close-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Empty(audioReplies);
+        Assert.True(session.TurnState.BufferedAudioBytes > 0);
+        Assert.False(session.TurnState.AutoFinalizeBlockedUntilUtc > DateTimeOffset.UtcNow);
     }
 
     [Fact]

@@ -32,6 +32,8 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
+    private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
+    private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
     private static readonly TimeSpan AutoFinalizeContinuationDeferralMaxAge = TimeSpan.FromMilliseconds(3600);
     private static readonly TimeSpan AutoFinalizeHotphraseOnlyNoInputAge = TimeSpan.FromSeconds(9);
@@ -239,14 +241,19 @@ public sealed class WebSocketTurnFinalizationService(
         session.LastTransId = nextTransId;
     }
 
-    public static void MarkPrematureSocketLoopEnded(CloudSession session)
+    public static bool MarkPrematureSocketLoopEnded(CloudSession session, string? expectedTransId = null)
     {
         var turnState = session.TurnState;
-        if (!turnState.AwaitingTurnCompletion && turnState.BufferedAudioBytes <= 0) return;
+        if (!string.IsNullOrWhiteSpace(expectedTransId) &&
+            !string.Equals(turnState.TransId, expectedTransId, StringComparison.Ordinal))
+            return false;
+
+        if (!turnState.AwaitingTurnCompletion && turnState.BufferedAudioBytes <= 0) return false;
 
         var blockedUntilUtc = DateTimeOffset.UtcNow.Add(AutoFinalizeReconnectGrace);
         turnState.AutoFinalizeBlockedUntilUtc = blockedUntilUtc;
         turnState.IgnoreAdditionalAudioUntilUtc = blockedUntilUtc;
+        return true;
     }
 
     private static void MarkSttFailureGrace(CloudSession session)
@@ -332,6 +339,10 @@ public sealed class WebSocketTurnFinalizationService(
                 }), cancellationToken);
 
             LogAutoFinalizeDecision("binary_audio", session, turnState);
+            if (await TryCloseStalledListenAsNoInputAsync(session, envelope, "binary_audio", cancellationToken) is
+                { } stalledListenReplies)
+                return stalledListenReplies;
+
             if (ShouldAutoFinalize(session))
             {
                 logger.LogDebug("Turn binary audio auto-finalizing session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
@@ -399,6 +410,10 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             LogAutoFinalizeDecision("context", session, turnState);
+            if (await TryCloseStalledListenAsNoInputAsync(session, envelope, "context", cancellationToken) is
+                { } stalledListenReplies)
+                return stalledListenReplies;
+
             if (ShouldAutoFinalize(session))
             {
                 logger.LogDebug("Turn context auto-finalizing session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks}",
@@ -525,6 +540,7 @@ public sealed class WebSocketTurnFinalizationService(
                 session.SessionId,
                 turn.TurnId,
                 strategy?.Name);
+            if (strategy is null) return turn;
         }
         catch (InvalidOperationException ex) when (string.Equals(ex.Message,
                                                        "No STT strategy can handle the current turn.",
@@ -1293,6 +1309,7 @@ public sealed class WebSocketTurnFinalizationService(
         var pageCounts = DescribeBufferedAudioPages(turnState);
         var silenceWindow = ResolveAutoFinalizeSilenceWindow(turnState);
         var receivedEndOfStream = HasReceivedOggEndOfStream(turnState);
+        var reachedHardTimeout = turnAge >= AutoFinalizeHardBufferedAudioAge;
 
         return turnState is
                {
@@ -1302,8 +1319,85 @@ public sealed class WebSocketTurnFinalizationService(
                } &&
                pageCounts.AudioBearingPageCount >= AutoFinalizeMinBufferedAudioPages &&
                turnState.LastAudioReceivedUtc.HasValue &&
-               (receivedEndOfStream || DateTimeOffset.UtcNow - turnState.LastAudioReceivedUtc.Value >= silenceWindow) &&
+               (receivedEndOfStream || reachedHardTimeout ||
+                DateTimeOffset.UtcNow - turnState.LastAudioReceivedUtc.Value >= silenceWindow) &&
                turnAge >= AutoFinalizeMinTurnAge;
+    }
+
+    private async Task<IReadOnlyList<WebSocketReply>?> TryCloseStalledListenAsNoInputAsync(
+        CloudSession session,
+        WebSocketMessageEnvelope envelope,
+        string phase,
+        CancellationToken cancellationToken)
+    {
+        if (!ShouldCloseStalledListenAsNoInput(session, out var listenAge, out var pageCounts))
+            return null;
+
+        var turnState = session.TurnState;
+        logger.LogWarning(
+            "Turn stalled listen closing as no-input phase={Phase} session={SessionId} transId={TransId} listenAgeMs={ListenAgeMs} bufferedBytes={BufferedBytes} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages}",
+            phase,
+            session.SessionId,
+            turnState.TransId,
+            (int)listenAge.TotalMilliseconds,
+            turnState.BufferedAudioBytes,
+            pageCounts.RawFrameCount,
+            pageCounts.AudioBearingPageCount,
+            pageCounts.MetadataPageCount);
+
+        await sink.RecordTurnDiagnosticAsync(
+            "auto_finalize_stalled_listen_no_input",
+            BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+            {
+                ["phase"] = phase,
+                ["listenAgeMs"] = (int)listenAge.TotalMilliseconds,
+                ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount,
+                ["bufferedAudioRawFrames"] = pageCounts.RawFrameCount,
+                ["bufferedAudioMetadataPages"] = pageCounts.MetadataPageCount,
+                ["bufferedAudioAudioBearingPages"] = pageCounts.AudioBearingPageCount,
+                ["sawListen"] = turnState.SawListen,
+                ["sawContext"] = turnState.SawContext
+            }),
+            cancellationToken);
+
+        turnState.AwaitingTurnCompletion = false;
+        session.LastTranscript = string.Empty;
+        session.LastIntent = null;
+        session.LastListenType = "no-input";
+
+        var replies = ResponsePlanToSocketMessagesMapper.MapNoInput(
+                turnState.TransId ?? session.LastTransId ?? string.Empty,
+                turnState.ListenRules)
+            .Select(map => new WebSocketReply { Text = map.Text, DelayMs = map.DelayMs })
+            .ToArray();
+
+        ResetBufferedAudio(session);
+        ClearListenTracking(turnState);
+        return replies;
+    }
+
+    private static bool ShouldCloseStalledListenAsNoInput(
+        CloudSession session,
+        out TimeSpan listenAge,
+        out BufferedAudioPageCounts pageCounts)
+    {
+        var turnState = session.TurnState;
+        pageCounts = DescribeBufferedAudioPages(turnState);
+        listenAge = TimeSpan.Zero;
+
+        if (!turnState.AwaitingTurnCompletion || !turnState.SawListen)
+            return false;
+
+        var startedUtc = turnState.ListenOpenedUtc ?? turnState.FirstAudioReceivedUtc;
+        if (!startedUtc.HasValue)
+            return false;
+
+        listenAge = DateTimeOffset.UtcNow - startedUtc.Value;
+        if (listenAge < AutoFinalizeNoAudioListenAge)
+            return false;
+
+        return pageCounts.AudioBearingPageCount < AutoFinalizeMinBufferedAudioPages;
     }
 
     private static BufferedAudioPageCounts DescribeBufferedAudioPages(WebSocketTurnState turnState)
@@ -1332,9 +1426,10 @@ public sealed class WebSocketTurnFinalizationService(
         var pageCounts = DescribeBufferedAudioPages(turnState);
         var silenceWindow = ResolveAutoFinalizeSilenceWindow(turnState);
         var receivedEndOfStream = HasReceivedOggEndOfStream(turnState);
+        var reachedHardTimeout = firstAudioAgeMs >= AutoFinalizeHardBufferedAudioAge.TotalMilliseconds;
 
         logger.LogDebug(
-            "Turn auto-finalize check phase={Phase} session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} bytes={Bytes} firstAudioAgeMs={FirstAudioAgeMs} lastAudioAgeMs={LastAudioAgeMs} minAgeMs={MinAgeMs} silenceMs={SilenceMs} receivedEndOfStream={ReceivedEndOfStream}",
+            "Turn auto-finalize check phase={Phase} session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} bytes={Bytes} firstAudioAgeMs={FirstAudioAgeMs} lastAudioAgeMs={LastAudioAgeMs} minAgeMs={MinAgeMs} silenceMs={SilenceMs} hardTimeoutMs={HardTimeoutMs} reachedHardTimeout={ReachedHardTimeout} receivedEndOfStream={ReceivedEndOfStream}",
             phase,
             session.SessionId,
             turnState.TransId,
@@ -1348,6 +1443,8 @@ public sealed class WebSocketTurnFinalizationService(
             lastAudioAgeMs,
             AutoFinalizeMinTurnAge.TotalMilliseconds,
             silenceWindow.TotalMilliseconds,
+            AutoFinalizeHardBufferedAudioAge.TotalMilliseconds,
+            reachedHardTimeout,
             receivedEndOfStream);
     }
 

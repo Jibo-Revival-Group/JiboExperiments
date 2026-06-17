@@ -49,6 +49,7 @@ internal sealed class WebSocketRequestCoordinator(
         await telemetrySink.RecordConnectionOpenedAsync(openEnvelope, openSession, context.RequestAborted);
 
         var isPrematureClose = false;
+        var loopTransId = openSession.TurnState.TransId;
 
         while (socket.State == WebSocketState.Open)
         {
@@ -86,6 +87,8 @@ internal sealed class WebSocketRequestCoordinator(
 
             var replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);
             var session = webSocketService.GetOrCreateSession(envelope);
+            if (!string.IsNullOrWhiteSpace(session.TurnState.TransId))
+                loopTransId = session.TurnState.TransId;
             logger.LogDebug(
                 "WebSocket reply batch ready kind={Kind} token={Token} messageType={MessageType} replyCount={ReplyCount}",
                 kind,
@@ -110,7 +113,7 @@ internal sealed class WebSocketRequestCoordinator(
         var closeEnvelope = CreateEnvelope(context, kind, token);
         var closeSession = webSocketService.GetOrCreateSession(closeEnvelope);
         if (isPrematureClose)
-            webSocketService.MarkPrematureSocketLoopEnded(closeSession);
+            webSocketService.MarkPrematureSocketLoopEnded(closeSession, loopTransId);
 
         await telemetrySink.RecordConnectionClosedAsync(closeEnvelope, closeSession,
             $"socket-loop-ended{(isPrematureClose ? "-prematurely" : string.Empty)}", context.RequestAborted);

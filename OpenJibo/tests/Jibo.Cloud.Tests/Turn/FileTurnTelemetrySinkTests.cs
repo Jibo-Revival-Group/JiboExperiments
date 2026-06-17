@@ -126,7 +126,8 @@ public sealed class FileTurnTelemetrySinkTests
                 SawContext = true,
                 BufferedAudioBytes = 15000,
                 BufferedAudioChunkCount = 5,
-                FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2)
+                FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2),
+                LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600)
             }
         };
 

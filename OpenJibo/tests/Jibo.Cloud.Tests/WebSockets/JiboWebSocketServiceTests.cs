@@ -208,6 +208,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-cloud-version-stop-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -314,6 +315,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-auto-finalize-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -376,6 +378,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-auto-fallback-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -440,6 +443,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-preference-continuation-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         var deferredReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -513,6 +517,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-preference-bare-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         var finalizedReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -574,6 +579,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-affinity-continuation-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         var deferredReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -647,6 +653,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-affinity-we-continuation-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         var deferredReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -1585,6 +1592,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-gallery-yesno-context-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -2181,6 +2189,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-yesno-noinput-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
         session.TurnState.LastSttError = "whisper.cpp returned no transcript";
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2245,6 +2254,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-shared-yesno-noinput-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
         session.TurnState.LastSttError = "ffmpeg decode failed";
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -3732,6 +3742,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-wod-auto-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -4439,6 +4450,7 @@ public sealed class JiboWebSocketServiceTests
 
         session.TurnState.AutoFinalizeBlockedUntilUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(1);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
         session.TurnState.AwaitingTurnCompletion = true;
         session.TurnState.SawListen = true;
         session.TurnState.SawContext = false;
@@ -4554,6 +4566,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-hotphrase-greeting-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
         session.TurnState.LastSttError = "ffmpeg decode failed";
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -4608,6 +4621,7 @@ public sealed class JiboWebSocketServiceTests
         var session = _store.FindSessionByToken("hub-hotphrase-pending-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
 
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {

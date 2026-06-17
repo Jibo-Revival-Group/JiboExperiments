@@ -49,4 +49,5 @@ public static class TranscriptHeuristics
                 " ")
             .Trim();
     }
+
 }

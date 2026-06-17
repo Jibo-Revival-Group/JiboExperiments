@@ -28,6 +28,7 @@ public sealed class WebSocketTurnFinalizationService(
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
+    private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
     private static readonly TimeSpan AutoFinalizeContinuationDeferralMaxAge = TimeSpan.FromMilliseconds(3600);
     private static readonly TimeSpan StaleListenSetupRecoveryAge = TimeSpan.FromSeconds(9);
@@ -281,7 +282,6 @@ public sealed class WebSocketTurnFinalizationService(
             turnState.BufferedAudioChunkCount += 1;
             turnState.BufferedAudioBytes += envelope.Binary?.Length ?? 0;
             if (envelope.Binary is { Length: > 0 }) turnState.BufferedAudioFrames.Add([.. envelope.Binary]);
-            turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
             turnState.AwaitingTurnCompletion = true;
             session.Metadata["lastAudioBytes"] = envelope.Binary?.Length ?? 0;
             await sink.RecordTurnDiagnosticAsync("binary_audio_received", BuildTurnDiagnosticSnapshot(session, envelope,
@@ -297,6 +297,7 @@ public sealed class WebSocketTurnFinalizationService(
                     ["yesNoRule"] = turnState.ListenRules.FirstOrDefault(IsConstrainedYesNoRule)
                 }), cancellationToken);
 
+            LogAutoFinalizeDecision("binary_audio", session, turnState);
             if (ShouldAutoFinalize(session))
             {
                 logger.LogDebug("Turn binary audio auto-finalizing session={SessionId} transId={TransId} bytes={Bytes} chunks={Chunks}",
@@ -307,6 +308,7 @@ public sealed class WebSocketTurnFinalizationService(
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
             }
 
+            turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
             logger.LogDebug("Turn binary audio exit without finalization session={SessionId} transId={TransId} bytes={Bytes} chunks={Chunks}",
                 session.SessionId,
                 turnState.TransId,
@@ -360,6 +362,7 @@ public sealed class WebSocketTurnFinalizationService(
                 return [];
             }
 
+            LogAutoFinalizeDecision("context", session, turnState);
             if (ShouldAutoFinalize(session))
             {
                 logger.LogDebug("Turn context auto-finalizing session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks}",
@@ -1162,7 +1165,34 @@ public sealed class WebSocketTurnFinalizationService(
                    BufferedAudioChunkCount: >= AutoFinalizeMinBufferedAudioChunks,
                    BufferedAudioBytes: >= AutoFinalizeMinBufferedAudioBytes
                } &&
+               turnState.LastAudioReceivedUtc.HasValue &&
+               DateTimeOffset.UtcNow - turnState.LastAudioReceivedUtc.Value >= AutoFinalizeSilenceWindow &&
                turnAge >= AutoFinalizeMinTurnAge;
+    }
+
+    private void LogAutoFinalizeDecision(string phase, CloudSession session, WebSocketTurnState turnState)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var firstAudioAgeMs = turnState.FirstAudioReceivedUtc.HasValue
+            ? (now - turnState.FirstAudioReceivedUtc.Value).TotalMilliseconds
+            : -1;
+        var lastAudioAgeMs = turnState.LastAudioReceivedUtc.HasValue
+            ? (now - turnState.LastAudioReceivedUtc.Value).TotalMilliseconds
+            : -1;
+
+        logger.LogDebug(
+            "Turn auto-finalize check phase={Phase} session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} chunks={Chunks} bytes={Bytes} firstAudioAgeMs={FirstAudioAgeMs} lastAudioAgeMs={LastAudioAgeMs} minAgeMs={MinAgeMs} silenceMs={SilenceMs}",
+            phase,
+            session.SessionId,
+            turnState.TransId,
+            turnState.AwaitingTurnCompletion,
+            turnState.SawListen,
+            turnState.BufferedAudioChunkCount,
+            turnState.BufferedAudioBytes,
+            firstAudioAgeMs,
+            lastAudioAgeMs,
+            AutoFinalizeMinTurnAge.TotalMilliseconds,
+            AutoFinalizeSilenceWindow.TotalMilliseconds);
     }
 
     private static bool ShouldIgnoreLateAudio(CloudSession session)

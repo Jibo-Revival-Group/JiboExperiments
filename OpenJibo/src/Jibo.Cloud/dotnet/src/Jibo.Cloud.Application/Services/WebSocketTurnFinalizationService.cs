@@ -27,11 +27,13 @@ public sealed class WebSocketTurnFinalizationService(
     private const int AutoFinalizeMinBufferedAudioPages = 3;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
+    private const int AutoFinalizeHotphraseOnlyNoInputAttempts = 4;
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
     private static readonly TimeSpan AutoFinalizeContinuationDeferralMaxAge = TimeSpan.FromMilliseconds(3600);
+    private static readonly TimeSpan AutoFinalizeHotphraseOnlyNoInputAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan StaleListenSetupRecoveryAge = TimeSpan.FromSeconds(9);
 
     private static readonly HashSet<string> PegasusAffinityContinuationStems = new(StringComparer.Ordinal)
@@ -152,6 +154,26 @@ public sealed class WebSocketTurnFinalizationService(
         "no",
         "nope",
         "nah"
+    };
+
+    private static readonly HashSet<string> HotphraseOnlyTranscripts = new(StringComparer.Ordinal)
+    {
+        "hey jibo",
+        "hi jibo",
+        "hello jibo",
+        "okay jibo",
+        "ok jibo",
+        "hey gibo",
+        "hey gebo",
+        "hi gebo",
+        "hello gebo",
+        "hey jeebo",
+        "hey jebo",
+        "hey jibbo",
+        "hey jimbo",
+        "hey chibo",
+        "hey g bo",
+        "hey gee bow"
     };
 
     private static readonly HashSet<string> YesNoAffirmativeLeadTokens = new(StringComparer.Ordinal)
@@ -990,6 +1012,58 @@ public sealed class WebSocketTurnFinalizationService(
                             turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
                         return [];
                 }
+            }
+
+            if (ShouldWaitForBufferedHotphraseOnlyTranscript(finalizedTurn, turnState, messageType,
+                    allowFallbackOnMissingTranscript, out var hotphraseOnlyReason))
+            {
+                turnState.AwaitingTurnCompletion = true;
+                turnState.FinalizeAttemptCount += 1;
+                turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
+                var turnAge = turnState.FirstAudioReceivedUtc.HasValue
+                    ? DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value
+                    : TimeSpan.Zero;
+                await sink.RecordTurnDiagnosticAsync("auto_finalize_deferred_for_hotphrase_only",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["messageType"] = messageType,
+                        ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                        ["reason"] = hotphraseOnlyReason,
+                        ["finalizeAttemptCount"] = turnState.FinalizeAttemptCount,
+                        ["turnAgeMs"] = (int)turnAge.TotalMilliseconds,
+                        ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                        ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
+                    }), cancellationToken);
+
+                if (turnAge >= AutoFinalizeHotphraseOnlyNoInputAge ||
+                    turnState.FinalizeAttemptCount >= AutoFinalizeHotphraseOnlyNoInputAttempts)
+                {
+                    turnState.AwaitingTurnCompletion = false;
+                    session.LastTranscript = string.Empty;
+                    session.LastIntent = null;
+                    session.LastListenType = "no-input";
+                    await sink.RecordTurnDiagnosticAsync("auto_finalize_hotphrase_only_no_input",
+                        BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                        {
+                            ["messageType"] = messageType,
+                            ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                            ["reason"] = hotphraseOnlyReason,
+                            ["finalizeAttemptCount"] = turnState.FinalizeAttemptCount,
+                            ["turnAgeMs"] = (int)turnAge.TotalMilliseconds,
+                            ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                            ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
+                        }), cancellationToken);
+                    var noInputReplies = ResponsePlanToSocketMessagesMapper.MapNoInput(
+                            turnState.TransId ?? session.LastTransId ?? string.Empty,
+                            turnState.ListenRules)
+                        .Select(map => new WebSocketReply { Text = map.Text, DelayMs = map.DelayMs })
+                        .ToArray();
+                    ResetBufferedAudio(session);
+                    ClearListenTracking(turnState);
+                    return noInputReplies;
+                }
+
+                return [];
             }
 
             if (ShouldDeferForLikelyContinuation(finalizedTurn, turnState, messageType,
@@ -2072,6 +2146,51 @@ public sealed class WebSocketTurnFinalizationService(
             .Any(static rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||
                                 string.Equals(rule, "globals/global_commands_launch",
                                     StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool ShouldWaitForBufferedHotphraseOnlyTranscript(
+        TurnContext turn,
+        WebSocketTurnState turnState,
+        string messageType,
+        bool allowFallbackOnMissingTranscript,
+        out string reason)
+    {
+        reason = string.Empty;
+        if (!allowFallbackOnMissingTranscript ||
+            !string.Equals(messageType, "AUTO_FINALIZE", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!ReadBoolAttribute(turn, "listenHotphrase")) return false;
+
+        if (!ReadRules(turn, "listenRules")
+                .Any(static rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(rule, "globals/global_commands_launch",
+                                        StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        if (turnState.BufferedAudioBytes < AutoFinalizeMinBufferedAudioBytes) return false;
+
+        var normalized = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
+        if (!IsHotphraseOnlyTranscript(normalized)) return false;
+
+        reason = "hotphrase_only_transcript";
+        return true;
+    }
+
+    private static bool IsHotphraseOnlyTranscript(string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(normalized)) return false;
+        if (HotphraseOnlyTranscripts.Contains(normalized)) return true;
+
+        var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length is < 2 or > 3) return false;
+
+        var lead = tokens[0];
+        if (lead is not ("hey" or "hi" or "hello")) return false;
+
+        var target = string.Join(' ', tokens.Skip(1));
+        return target is "jibo" or "gibo" or "gebo" or "jeebo" or "jebo" or "jibbo" or "jimbo" or "g bo"
+            or "gee bow";
     }
 
     private static bool ShouldIgnoreLateEmptyTurn(TurnContext turn, CloudSession session, string messageType)

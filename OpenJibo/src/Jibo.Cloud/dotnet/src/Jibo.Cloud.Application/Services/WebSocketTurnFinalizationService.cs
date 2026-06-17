@@ -25,8 +25,8 @@ public sealed class WebSocketTurnFinalizationService(
 
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
     private const int AutoFinalizeMinBufferedAudioPages = 3;
-    private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 42_000;
-    private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 9;
+    private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 30_000;
+    private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 7;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
     private const int AutoFinalizeHotphraseOnlyNoInputAttempts = 4;
@@ -34,8 +34,8 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(4800);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(1000);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(3500);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(850);
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
@@ -1068,7 +1068,6 @@ public sealed class WebSocketTurnFinalizationService(
             {
                 turnState.AwaitingTurnCompletion = true;
                 turnState.FinalizeAttemptCount += 1;
-                turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
                 var turnAge = turnState.FirstAudioReceivedUtc.HasValue
                     ? DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value
                     : TimeSpan.Zero;
@@ -1120,7 +1119,6 @@ public sealed class WebSocketTurnFinalizationService(
             {
                 turnState.AwaitingTurnCompletion = true;
                 turnState.FinalizeAttemptCount += 1;
-                turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
                 var turnAge = turnState.FirstAudioReceivedUtc.HasValue
                     ? DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value
                     : TimeSpan.Zero;
@@ -1132,6 +1130,49 @@ public sealed class WebSocketTurnFinalizationService(
                         ["reason"] = incompleteCommandReason,
                         ["finalizeAttemptCount"] = turnState.FinalizeAttemptCount,
                         ["turnAgeMs"] = (int)turnAge.TotalMilliseconds,
+                        ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                        ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
+                    }), cancellationToken);
+                return [];
+            }
+
+            if (ShouldHandleUnexpectedYesNoAutoFinalizeTranscript(finalizedTurn, turnState, messageType,
+                    allowFallbackOnMissingTranscript, out var unexpectedYesNoReason, out var closeYesNoAsNoInput,
+                    out var unexpectedYesNoTurnAge))
+            {
+                if (closeYesNoAsNoInput)
+                {
+                    turnState.AwaitingTurnCompletion = false;
+                    session.LastTranscript = string.Empty;
+                    session.LastIntent = null;
+                    session.LastListenType = "no-input";
+                    await sink.RecordTurnDiagnosticAsync("auto_finalize_yes_no_unexpected_transcript_no_input",
+                        BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                        {
+                            ["messageType"] = messageType,
+                            ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                            ["reason"] = unexpectedYesNoReason,
+                            ["turnAgeMs"] = (int)unexpectedYesNoTurnAge.TotalMilliseconds,
+                            ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                            ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
+                        }), cancellationToken);
+                    var localRule = ReadPrimaryNoInputRule(finalizedTurn);
+                    var noInputReplies = BuildLocalNoInputReplies(session, turnState, localRule);
+                    ResetBufferedAudio(session);
+                    ClearListenTracking(turnState);
+                    return noInputReplies;
+                }
+
+                turnState.AwaitingTurnCompletion = true;
+                turnState.FinalizeAttemptCount += 1;
+                await sink.RecordTurnDiagnosticAsync("auto_finalize_deferred_for_unexpected_yes_no_transcript",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["messageType"] = messageType,
+                        ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                        ["reason"] = unexpectedYesNoReason,
+                        ["finalizeAttemptCount"] = turnState.FinalizeAttemptCount,
+                        ["turnAgeMs"] = (int)unexpectedYesNoTurnAge.TotalMilliseconds,
                         ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
                         ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
                     }), cancellationToken);
@@ -2479,6 +2520,56 @@ public sealed class WebSocketTurnFinalizationService(
         }
 
         return false;
+    }
+
+    private static bool ShouldHandleUnexpectedYesNoAutoFinalizeTranscript(
+        TurnContext turn,
+        WebSocketTurnState turnState,
+        string messageType,
+        bool allowFallbackOnMissingTranscript,
+        out string reason,
+        out bool closeAsNoInput,
+        out TimeSpan turnAge)
+    {
+        reason = string.Empty;
+        closeAsNoInput = false;
+        turnAge = TimeSpan.Zero;
+
+        if (!allowFallbackOnMissingTranscript ||
+            !string.Equals(messageType, "AUTO_FINALIZE", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!IsYesNoTurn(turn) || !turnState.FirstAudioReceivedUtc.HasValue) return false;
+        if (!HasOggOpusFrames(turnState)) return false;
+        if (!string.IsNullOrWhiteSpace(turnState.LastSttError)) return false;
+        if (turnState.BufferedAudioBytes < AutoFinalizeMinBufferedAudioBytes) return false;
+
+        var normalized = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
+        if (string.IsNullOrWhiteSpace(normalized)) return false;
+        if (IsAllowedYesNoAutoFinalizeTranscript(turn, normalized)) return false;
+
+        turnAge = DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value;
+        closeAsNoInput = turnAge >= AutoFinalizeHardBufferedAudioAge || HasReceivedOggEndOfStream(turnState);
+        reason = closeAsNoInput ? "unexpected_yes_no_transcript_timeout" : "unexpected_yes_no_transcript";
+        return true;
+    }
+
+    private static bool IsAllowedYesNoAutoFinalizeTranscript(TurnContext turn, string normalizedTranscript)
+    {
+        var yesNoReply = TryClassifyYesNoReply(normalizedTranscript);
+        if (yesNoReply is YesNoReply.Affirmative or YesNoReply.Negative or YesNoReply.Ambiguous) return true;
+
+        if (!ReadRules(turn, "listenRules")
+                .Concat(ReadRules(turn, "clientRules"))
+                .Any(IsLaunchRule))
+            return false;
+
+        var command = TranscriptTextNormalizer.ExtractWakePhraseCommand(normalizedTranscript);
+        var commandTranscript = string.IsNullOrWhiteSpace(command)
+            ? normalizedTranscript
+            : NormalizeUsableTranscript(command);
+
+        return commandTranscript is "stop" or "cancel" or "never mind" or "nevermind";
     }
 
     private static bool LooksLikeCloudVersionSelfAudioOnly(string normalized)

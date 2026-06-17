@@ -35,7 +35,7 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(5500);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(900);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(1000);
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
@@ -1075,6 +1075,29 @@ public sealed class WebSocketTurnFinalizationService(
                     return noInputReplies;
                 }
 
+                return [];
+            }
+
+            if (ShouldDeferForIncompleteHotphraseLaunchCommand(finalizedTurn, turnState, messageType,
+                    allowFallbackOnMissingTranscript, out var incompleteCommandReason))
+            {
+                turnState.AwaitingTurnCompletion = true;
+                turnState.FinalizeAttemptCount += 1;
+                turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
+                var turnAge = turnState.FirstAudioReceivedUtc.HasValue
+                    ? DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value
+                    : TimeSpan.Zero;
+                await sink.RecordTurnDiagnosticAsync("auto_finalize_deferred_for_incomplete_hotphrase_command",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["messageType"] = messageType,
+                        ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                        ["reason"] = incompleteCommandReason,
+                        ["finalizeAttemptCount"] = turnState.FinalizeAttemptCount,
+                        ["turnAgeMs"] = (int)turnAge.TotalMilliseconds,
+                        ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                        ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
+                    }), cancellationToken);
                 return [];
             }
 
@@ -2365,6 +2388,35 @@ public sealed class WebSocketTurnFinalizationService(
 
         reason = "hotphrase_only_transcript";
         return true;
+    }
+
+    private static bool ShouldDeferForIncompleteHotphraseLaunchCommand(
+        TurnContext turn,
+        WebSocketTurnState turnState,
+        string messageType,
+        bool allowFallbackOnMissingTranscript,
+        out string reason)
+    {
+        reason = string.Empty;
+        if (!allowFallbackOnMissingTranscript ||
+            !string.Equals(messageType, "AUTO_FINALIZE", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!IsHotphraseLaunchTurn(turn) || !turnState.FirstAudioReceivedUtc.HasValue) return false;
+
+        var turnAge = DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value;
+        if (turnAge >= AutoFinalizeHardBufferedAudioAge) return false;
+
+        var normalized = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
+        if (string.IsNullOrWhiteSpace(normalized)) return false;
+
+        if (normalized is "what time is" or "what time is it in" or "what time is it at")
+        {
+            reason = "clock_command_incomplete";
+            return true;
+        }
+
+        return false;
     }
 
     private static bool IsHotphraseOnlyTranscript(string normalized)

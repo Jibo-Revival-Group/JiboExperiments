@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Microsoft.Extensions.Logging;
@@ -162,12 +163,18 @@ public sealed class FileWebSocketTelemetrySink(
             _writeLock.Release();
         }
 
+        var rawFrameCount = record.BufferedAudioRawFrames;
+        var audioBearingPageCount = record.BufferedAudioAudioBearingPages;
+        var metadataPageCount = record.BufferedAudioMetadataPages;
         logger.LogDebug(
-            "WebSocket telemetry {EventType} session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} replyTypes={ReplyTypes}",
+            "WebSocket telemetry {EventType} session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} replyTypes={ReplyTypes}",
             record.EventType,
             record.SessionId,
             record.TransId,
             record.BufferedAudioBytes,
+            rawFrameCount,
+            audioBearingPageCount,
+            metadataPageCount,
             string.Join(",", record.ReplyTypes));
     }
 
@@ -180,6 +187,7 @@ public sealed class FileWebSocketTelemetrySink(
         IReadOnlyList<string>? replyTypes,
         IReadOnlyDictionary<string, object?>? details)
     {
+        var audioPageCounts = BufferedAudioPageClassifier.Describe(session.TurnState.BufferedAudioFrames);
         return new WebSocketTelemetryRecord
         {
             EventType = eventType,
@@ -197,6 +205,9 @@ public sealed class FileWebSocketTelemetrySink(
             ReplyTypes = replyTypes ?? [],
             BufferedAudioBytes = session.TurnState.BufferedAudioBytes,
             BufferedAudioChunks = session.TurnState.BufferedAudioChunkCount,
+            BufferedAudioRawFrames = audioPageCounts.RawFrameCount,
+            BufferedAudioMetadataPages = audioPageCounts.MetadataPageCount,
+            BufferedAudioAudioBearingPages = audioPageCounts.AudioBearingPageCount,
             FinalizeAttempts = session.TurnState.FinalizeAttemptCount,
             AwaitingTurnCompletion = session.TurnState.AwaitingTurnCompletion,
             Details = details ?? new Dictionary<string, object?>()

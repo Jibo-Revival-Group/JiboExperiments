@@ -36,29 +36,39 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
 
     public bool CanHandle(TurnContext turn)
     {
+        var frames = ReadBufferedAudioFrames(turn);
+        var audioBearingPageCount = BufferedAudioPageClassifier.CountAudioBearingPages(frames);
+        var metadataPageCount = BufferedAudioPageClassifier.CountMetadataPages(frames);
+
         logger.LogDebug(
-            "STT can-handle check start turnId={TurnId} bufferedBytes={BufferedBytes} frames={FrameCount} enabled={Enabled}",
+            "STT can-handle check start turnId={TurnId} bufferedBytes={BufferedBytes} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} enabled={Enabled}",
             turn.TurnId,
             ReadBufferedAudioBytes(turn),
-            ReadBufferedAudioFrames(turn).Count,
+            frames.Count,
+            audioBearingPageCount,
+            metadataPageCount,
             options.EnableLocalWhisperCpp);
 
         return options.EnableLocalWhisperCpp &&
                IsConfiguredPathAvailable(options.FfmpegPath, false) &&
                IsConfiguredPathAvailable(options.WhisperCliPath, true) &&
                IsConfiguredPathAvailable(options.WhisperModelPath, true) &&
-               ReadBufferedAudioFrames(turn).Any(ContainsOpusIdentificationHeader) &&
+               frames.Any(ContainsOpusIdentificationHeader) &&
                !IsBelowNoiseFloor(turn, ReadBufferedAudioBytes(turn));
     }
 
     public async Task<SttResult> TranscribeAsync(TurnContext turn, CancellationToken cancellationToken = default)
     {
         var frames = ReadBufferedAudioFrames(turn);
+        var audioBearingPageCount = BufferedAudioPageClassifier.CountAudioBearingPages(frames);
+        var metadataPageCount = BufferedAudioPageClassifier.CountMetadataPages(frames);
         logger.LogDebug(
-            "STT transcription start turnId={TurnId} bufferedBytes={BufferedBytes} frames={FrameCount} locale={Locale}",
+            "STT transcription start turnId={TurnId} bufferedBytes={BufferedBytes} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} locale={Locale}",
             turn.TurnId,
             ReadBufferedAudioBytes(turn),
             frames.Count,
+            audioBearingPageCount,
+            metadataPageCount,
             turn.Locale);
 
         if (frames.Count == 0)
@@ -87,13 +97,16 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
 
         try
         {
+            var pageCounts = BufferedAudioPageClassifier.Describe(frames);
             var normalizedOgg = OggOpusAudioNormalizer.Normalize(frames);
             await File.WriteAllBytesAsync(oggPath, normalizedOgg, cancellationToken);
             logger.LogDebug(
-                "STT normalized OGG written turnId={TurnId} oggBytes={OggBytes} frameCount={FrameCount}",
+                "STT normalized OGG written turnId={TurnId} oggBytes={OggBytes} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages}",
                 turn.TurnId,
                 normalizedOgg.Length,
-                frames.Count);
+                pageCounts.RawFrameCount,
+                pageCounts.AudioBearingPageCount,
+                pageCounts.MetadataPageCount);
 
             logger.LogDebug("STT ffmpeg launch turnId={TurnId} ffmpegPath={FfmpegPath}", turn.TurnId, options.FfmpegPath);
             var ffmpegResult = await processRunner.RunAsync(
@@ -111,11 +124,13 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
             if (wavBytes < MinimumTranscribableWavBytes)
             {
                 logger.LogDebug(
-                    "STT rejecting tiny WAV turnId={TurnId} wavBytes={WavBytes} minimum={MinimumWavBytes}",
+                    "STT rejecting tiny WAV turnId={TurnId} wavBytes={WavBytes} minimum={MinimumWavBytes} rawFrames={RawFrames} audioPages={AudioPages}",
                     turn.TurnId,
                     wavBytes,
-                    MinimumTranscribableWavBytes);
-                return BuildResult(string.Empty, turn, wavPath, ffmpegResult, string.Empty, string.Empty);
+                    MinimumTranscribableWavBytes,
+                    pageCounts.RawFrameCount,
+                    pageCounts.AudioBearingPageCount);
+                return BuildResult(string.Empty, turn, wavPath, ffmpegResult, string.Empty, string.Empty, pageCounts);
             }
 
             logger.LogDebug("STT whisper launch turnId={TurnId} whisperCliPath={WhisperCliPath} modelPath={ModelPath}",
@@ -168,10 +183,12 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
             if (string.IsNullOrWhiteSpace(transcript))
             {
                 logger.LogDebug(
-                    "STT returning blank transcript turnId={TurnId} oggBytes={OggBytes} wavBytes={WavBytes} ffmpegExit={FfmpegExit} whisperExit={WhisperExit}",
+                    "STT returning blank transcript turnId={TurnId} oggBytes={OggBytes} wavBytes={WavBytes} rawFrames={RawFrames} audioPages={AudioPages} ffmpegExit={FfmpegExit} whisperExit={WhisperExit}",
                     turn.TurnId,
                     new FileInfo(oggPath).Length,
                     wavBytes,
+                    pageCounts.RawFrameCount,
+                    pageCounts.AudioBearingPageCount,
                     ffmpegResult.ExitCode,
                     whisperResult.ExitCode);
             }
@@ -182,7 +199,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 wavPath,
                 ffmpegResult,
                 whisperResult.StdOut,
-                whisperResult.StdErr);
+                whisperResult.StdErr,
+                pageCounts);
         }
         finally
         {
@@ -296,7 +314,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
         string wavPath,
         ExternalProcessResult ffmpegResult,
         string whisperStdOut,
-        string whisperStdErr)
+        string whisperStdErr,
+        BufferedAudioPageCounts pageCounts)
     {
         return new SttResult
         {
@@ -306,7 +325,10 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
             Metadata = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
                 ["bufferedAudioBytes"] = ReadBufferedAudioBytes(turn),
-                ["bufferedAudioChunks"] = ReadBufferedAudioFrames(turn).Count,
+                ["bufferedAudioChunks"] = pageCounts.RawFrameCount,
+                ["bufferedAudioRawFrames"] = pageCounts.RawFrameCount,
+                ["bufferedAudioMetadataPages"] = pageCounts.MetadataPageCount,
+                ["bufferedAudioAudioBearingPages"] = pageCounts.AudioBearingPageCount,
                 ["ffmpegPath"] = options.FfmpegPath,
                 ["whisperCliPath"] = options.WhisperCliPath,
                 ["wavPath"] = wavPath,

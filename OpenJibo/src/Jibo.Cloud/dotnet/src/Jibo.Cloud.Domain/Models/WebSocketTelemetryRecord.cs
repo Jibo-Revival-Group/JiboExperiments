@@ -18,6 +18,9 @@ public sealed class WebSocketTelemetryRecord
     public IReadOnlyList<string> ReplyTypes { get; init; } = [];
     public int BufferedAudioBytes { get; init; }
     public int BufferedAudioChunks { get; init; }
+    public int BufferedAudioRawFrames { get; init; }
+    public int BufferedAudioMetadataPages { get; init; }
+    public int BufferedAudioAudioBearingPages { get; init; }
     public int FinalizeAttempts { get; init; }
     public bool AwaitingTurnCompletion { get; init; }
 

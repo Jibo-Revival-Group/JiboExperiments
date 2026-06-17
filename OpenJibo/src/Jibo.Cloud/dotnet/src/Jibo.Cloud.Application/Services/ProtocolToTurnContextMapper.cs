@@ -60,8 +60,12 @@ public sealed class ProtocolToTurnContextMapper
 
         if (turnState.BufferedAudioBytes > 0)
         {
+            var audioPageCounts = BufferedAudioPageClassifier.Describe(turnState.BufferedAudioFrames);
             attributes["bufferedAudioBytes"] = turnState.BufferedAudioBytes;
             attributes["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount;
+            attributes["bufferedAudioRawFrames"] = audioPageCounts.RawFrameCount;
+            attributes["bufferedAudioMetadataPages"] = audioPageCounts.MetadataPageCount;
+            attributes["bufferedAudioAudioBearingPages"] = audioPageCounts.AudioBearingPageCount;
             attributes["bufferedAudioFrames"] =
                 turnState.BufferedAudioFrames.Select(frame => frame.ToArray()).ToArray();
         }

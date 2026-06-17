@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -23,7 +24,7 @@ public sealed class WebSocketTurnFinalizationService(
     }
 
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
-    private const int AutoFinalizeMinBufferedAudioChunks = 3;
+    private const int AutoFinalizeMinBufferedAudioPages = 3;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
@@ -243,12 +244,15 @@ public sealed class WebSocketTurnFinalizationService(
         try
         {
             var turnState = session.TurnState;
+            var pageCounts = DescribeBufferedAudioPages(turnState);
             logger.LogDebug(
-                "Turn binary audio entered session={SessionId} transId={TransId} bytes={Bytes} chunks={Chunks} awaiting={Awaiting} sawListen={SawListen} sawContext={SawContext}",
+                "Turn binary audio entered session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} awaiting={Awaiting} sawListen={SawListen} sawContext={SawContext}",
                 session.SessionId,
                 turnState.TransId,
                 envelope.Binary?.Length ?? 0,
                 turnState.BufferedAudioChunkCount,
+                pageCounts.AudioBearingPageCount,
+                pageCounts.MetadataPageCount,
                 turnState.AwaitingTurnCompletion,
                 turnState.SawListen,
                 turnState.SawContext);
@@ -265,6 +269,9 @@ public sealed class WebSocketTurnFinalizationService(
                         ["awaitingTurnCompletion"] = turnState.AwaitingTurnCompletion,
                         ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
                         ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount,
+                        ["bufferedAudioRawFrames"] = pageCounts.RawFrameCount,
+                        ["bufferedAudioMetadataPages"] = pageCounts.MetadataPageCount,
+                        ["bufferedAudioAudioBearingPages"] = pageCounts.AudioBearingPageCount,
                         ["sawListen"] = turnState.SawListen,
                         ["sawContext"] = turnState.SawContext
                     }), cancellationToken);
@@ -284,11 +291,15 @@ public sealed class WebSocketTurnFinalizationService(
             if (envelope.Binary is { Length: > 0 }) turnState.BufferedAudioFrames.Add([.. envelope.Binary]);
             turnState.AwaitingTurnCompletion = true;
             session.Metadata["lastAudioBytes"] = envelope.Binary?.Length ?? 0;
+            pageCounts = DescribeBufferedAudioPages(turnState);
             await sink.RecordTurnDiagnosticAsync("binary_audio_received", BuildTurnDiagnosticSnapshot(session, envelope,
                 new Dictionary<string, object?>
                 {
                     ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
                     ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount,
+                    ["bufferedAudioRawFrames"] = pageCounts.RawFrameCount,
+                    ["bufferedAudioMetadataPages"] = pageCounts.MetadataPageCount,
+                    ["bufferedAudioAudioBearingPages"] = pageCounts.AudioBearingPageCount,
                     ["awaitingTurnCompletion"] = turnState.AwaitingTurnCompletion,
                     ["sawListen"] = turnState.SawListen,
                     ["sawContext"] = turnState.SawContext,
@@ -300,20 +311,22 @@ public sealed class WebSocketTurnFinalizationService(
             LogAutoFinalizeDecision("binary_audio", session, turnState);
             if (ShouldAutoFinalize(session))
             {
-                logger.LogDebug("Turn binary audio auto-finalizing session={SessionId} transId={TransId} bytes={Bytes} chunks={Chunks}",
+                logger.LogDebug("Turn binary audio auto-finalizing session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
                     session.SessionId,
                     turnState.TransId,
                     turnState.BufferedAudioBytes,
-                    turnState.BufferedAudioChunkCount);
+                    turnState.BufferedAudioChunkCount,
+                    pageCounts.AudioBearingPageCount);
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
             }
 
             turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
-            logger.LogDebug("Turn binary audio exit without finalization session={SessionId} transId={TransId} bytes={Bytes} chunks={Chunks}",
+            logger.LogDebug("Turn binary audio exit without finalization session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
                 session.SessionId,
                 turnState.TransId,
                 turnState.BufferedAudioBytes,
-                turnState.BufferedAudioChunkCount);
+                turnState.BufferedAudioChunkCount,
+                pageCounts.AudioBearingPageCount);
             return [];
         }
         finally
@@ -1176,12 +1189,28 @@ public sealed class WebSocketTurnFinalizationService(
         return turnState is
                {
                    AwaitingTurnCompletion: true, SawListen: true,
-                   BufferedAudioChunkCount: >= AutoFinalizeMinBufferedAudioChunks,
+                   BufferedAudioChunkCount: >= 1,
                    BufferedAudioBytes: >= AutoFinalizeMinBufferedAudioBytes
                } &&
+               DescribeBufferedAudioPages(turnState).AudioBearingPageCount >=
+               AutoFinalizeMinBufferedAudioPages &&
                turnState.LastAudioReceivedUtc.HasValue &&
                DateTimeOffset.UtcNow - turnState.LastAudioReceivedUtc.Value >= AutoFinalizeSilenceWindow &&
                turnAge >= AutoFinalizeMinTurnAge;
+    }
+
+    private static BufferedAudioPageCounts DescribeBufferedAudioPages(WebSocketTurnState turnState)
+    {
+        if (turnState.BufferedAudioFrames.Count > 0)
+            return BufferedAudioPageClassifier.Describe(turnState.BufferedAudioFrames);
+
+        if (turnState.BufferedAudioChunkCount <= 0)
+            return new BufferedAudioPageCounts(0, 0, 0);
+
+        return new BufferedAudioPageCounts(
+            turnState.BufferedAudioChunkCount,
+            turnState.BufferedAudioChunkCount,
+            0);
     }
 
     private void LogAutoFinalizeDecision(string phase, CloudSession session, WebSocketTurnState turnState)
@@ -1193,15 +1222,18 @@ public sealed class WebSocketTurnFinalizationService(
         var lastAudioAgeMs = turnState.LastAudioReceivedUtc.HasValue
             ? (now - turnState.LastAudioReceivedUtc.Value).TotalMilliseconds
             : -1;
+        var pageCounts = DescribeBufferedAudioPages(turnState);
 
         logger.LogDebug(
-            "Turn auto-finalize check phase={Phase} session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} chunks={Chunks} bytes={Bytes} firstAudioAgeMs={FirstAudioAgeMs} lastAudioAgeMs={LastAudioAgeMs} minAgeMs={MinAgeMs} silenceMs={SilenceMs}",
+            "Turn auto-finalize check phase={Phase} session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} bytes={Bytes} firstAudioAgeMs={FirstAudioAgeMs} lastAudioAgeMs={LastAudioAgeMs} minAgeMs={MinAgeMs} silenceMs={SilenceMs}",
             phase,
             session.SessionId,
             turnState.TransId,
             turnState.AwaitingTurnCompletion,
             turnState.SawListen,
-            turnState.BufferedAudioChunkCount,
+            pageCounts.RawFrameCount,
+            pageCounts.AudioBearingPageCount,
+            pageCounts.MetadataPageCount,
             turnState.BufferedAudioBytes,
             firstAudioAgeMs,
             lastAudioAgeMs,
@@ -2200,6 +2232,11 @@ public sealed class WebSocketTurnFinalizationService(
         details["awaitingTurnCompletion"] = session.TurnState.AwaitingTurnCompletion;
         details["bufferedAudioBytes"] = session.TurnState.BufferedAudioBytes;
         details["bufferedAudioChunks"] = session.TurnState.BufferedAudioChunkCount;
+        var pageCounts = DescribeBufferedAudioPages(session.TurnState);
+        details["bufferedAudioRawFrames"] = pageCounts.RawFrameCount;
+        details["bufferedAudioRawFrames"] = pageCounts.RawFrameCount;
+        details["bufferedAudioMetadataPages"] = pageCounts.MetadataPageCount;
+        details["bufferedAudioAudioBearingPages"] = pageCounts.AudioBearingPageCount;
         details["sawListen"] = session.TurnState.SawListen;
         details["sawContext"] = session.TurnState.SawContext;
         details["glsmState"] = ResolveGlsmPhase(session);

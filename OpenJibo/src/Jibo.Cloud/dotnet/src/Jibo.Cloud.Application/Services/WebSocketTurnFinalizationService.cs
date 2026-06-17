@@ -31,7 +31,7 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(950);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
@@ -922,6 +922,13 @@ public sealed class WebSocketTurnFinalizationService(
                 var turnAge = turnState.FirstAudioReceivedUtc.HasValue
                     ? DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value
                     : TimeSpan.Zero;
+
+                if (ShouldKeepOpenOggHotphraseBlankBeforeHardTimeout(finalizedTurn, turnState, messageType,
+                        allowFallbackOnMissingTranscript, turnAge))
+                {
+                    turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
+                    return [];
+                }
 
                 if (ShouldCloseEmptyHotphraseAutoFinalize(finalizedTurn, turnState, messageType,
                         allowFallbackOnMissingTranscript, turnAge))
@@ -2261,6 +2268,31 @@ public sealed class WebSocketTurnFinalizationService(
             return false;
 
         if (!ReadBoolAttribute(turn, "listenHotphrase")) return false;
+        if (HasOggOpusFrames(turnState) &&
+            !HasReceivedOggEndOfStream(turnState) &&
+            turnAge < AutoFinalizeHardBufferedAudioAge)
+            return false;
+
+        return ReadRules(turn, "listenRules")
+            .Any(static rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(rule, "globals/global_commands_launch",
+                                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool ShouldKeepOpenOggHotphraseBlankBeforeHardTimeout(
+        TurnContext turn,
+        WebSocketTurnState turnState,
+        string messageType,
+        bool allowFallbackOnMissingTranscript,
+        TimeSpan turnAge)
+    {
+        if (!allowFallbackOnMissingTranscript ||
+            !string.Equals(messageType, "AUTO_FINALIZE", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!ReadBoolAttribute(turn, "listenHotphrase")) return false;
+        if (turnAge >= AutoFinalizeHardBufferedAudioAge) return false;
+        if (!HasOggOpusFrames(turnState) || HasReceivedOggEndOfStream(turnState)) return false;
 
         return ReadRules(turn, "listenRules")
             .Any(static rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||

@@ -406,9 +406,22 @@ public sealed class WebSocketTurnFinalizationService(
     public IReadOnlyList<WebSocketReply> HandleListenSetup(CloudSession session,
         WebSocketMessageEnvelope envelope)
     {
+        var turnState = session.TurnState;
         logger.LogDebug("Listen setup entered session={SessionId} transId={TransId}",
             session.SessionId,
-            session.TurnState.TransId);
+            turnState.TransId);
+        logger.LogDebug(
+            "Listen setup state session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} sawContext={SawContext} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks} firstAudioUtc={FirstAudioUtc} lastAudioUtc={LastAudioUtc} followUpOpen={FollowUpOpen}",
+            session.SessionId,
+            turnState.TransId,
+            turnState.AwaitingTurnCompletion,
+            turnState.SawListen,
+            turnState.SawContext,
+            turnState.BufferedAudioBytes,
+            turnState.BufferedAudioChunkCount,
+            turnState.FirstAudioReceivedUtc,
+            turnState.LastAudioReceivedUtc,
+            session.FollowUpOpen);
         PersistTurnHints(session, envelope.Text);
 
         var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, "LISTEN");
@@ -1111,12 +1124,13 @@ public sealed class WebSocketTurnFinalizationService(
                 }),
                 cancellationToken);
             logger.LogDebug(
-                "Finalize turn replies emitted session={SessionId} messageType={MessageType} intent={Intent} replyCount={ReplyCount} hasEos={HasEos}",
+                "Finalize turn replies emitted session={SessionId} messageType={MessageType} intent={Intent} replyCount={ReplyCount} hasEos={HasEos} replyTypes={ReplyTypes}",
                 session.SessionId,
                 messageType,
                 plan.IntentName,
                 replies.Length,
-                replies.Any(reply => string.Equals(ReadReplyType(reply), "EOS", StringComparison.OrdinalIgnoreCase)));
+                replies.Any(reply => string.Equals(ReadReplyType(reply), "EOS", StringComparison.OrdinalIgnoreCase)),
+                ReadReplyTypes(replies));
 
             if (IsYesNoTurn(finalizedTurn))
                 await sink.RecordTurnDiagnosticAsync("yes_no_turn_resolved", BuildTurnDiagnosticSnapshot(session,

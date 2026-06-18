@@ -240,18 +240,6 @@ public sealed partial class JiboInteractionService
             !string.IsNullOrWhiteSpace(guessValue))
             return guessValue;
 
-        var loweredTranscript = NormalizeGuessToken(transcript);
-        var hintIndex = loweredTranscript switch
-        {
-            "1" or "one" or "first" => 0,
-            "2" or "two" or "second" => 1,
-            "3" or "three" or "third" => 2,
-            _ => -1
-        };
-
-        if (hintIndex >= 0 && hintIndex < listenAsrHints.Count) return listenAsrHints[hintIndex];
-
-        var fuzzyHintMatch = FindClosestHint(loweredTranscript, listenAsrHints);
-        return !string.IsNullOrWhiteSpace(fuzzyHintMatch) ? fuzzyHintMatch : transcript;
+        return WordOfDayGuessResolver.Resolve(transcript, listenAsrHints);
     }
 }

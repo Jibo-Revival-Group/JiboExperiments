@@ -4185,6 +4185,39 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_WordOfDayGuess_PhoneticTokenMatchesClosestHint()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-wod-phonetic-guess-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-phonetic-guess","data":{"rules":["word-of-the-day/puzzle"],"asr":{"hints":["expunge","abscond","corrugate"]}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-wod-phonetic-guess-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-wod-phonetic-guess","data":{"text":"expansion that's come"}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("expunge",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("expunge",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
+                .GetProperty("guess").GetString());
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+    }
+
+    [Fact]
     public async Task ClientAsr_WordOfDayGuess_StripsGlobalRulesFromOutboundGuess()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope

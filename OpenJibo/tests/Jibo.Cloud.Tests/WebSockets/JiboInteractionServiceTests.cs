@@ -5282,6 +5282,27 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("aglet", decision.SkillPayload!["guess"]);
     }
 
+    [Fact]
+    public async Task BuildDecisionAsync_WordOfDayGuess_PhoneticTokenMatchesClosestHint()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "expansion that's come",
+            NormalizedTranscript = "expansion that's come",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenRules"] = (string[])["word-of-the-day/puzzle"],
+                ["listenAsrHints"] = (string[])["expunge", "abscond", "corrugate"]
+            }
+        });
+
+        Assert.Equal("word_of_the_day_guess", decision.IntentName);
+        Assert.Equal("I heard expunge.", decision.ReplyText);
+        Assert.Equal("expunge", decision.SkillPayload!["guess"]);
+    }
+
     private static JiboInteractionService CreateService(
         IPersonalMemoryStore? personalMemoryStore = null,
         ICloudStateStore? cloudStateStore = null,

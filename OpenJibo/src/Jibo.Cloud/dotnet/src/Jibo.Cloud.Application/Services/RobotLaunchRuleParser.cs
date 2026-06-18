@@ -5,7 +5,7 @@ namespace Jibo.Cloud.Application.Services;
 public static partial class RobotLaunchRuleParser
 {
     [GeneratedRegex(
-        @"^\s*(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?<pattern>\(.+\))\s*;\s*$",
+        @"^\s*(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?<pattern>\(.+\))\s*;?\s*$",
         RegexOptions.Multiline | RegexOptions.CultureInvariant)]
     private static partial Regex RuleDefinitionPattern();
 

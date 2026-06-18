@@ -27,9 +27,9 @@ public static class RobotLaunchRuleMatcher
 
             if (rule.LiteralTokens.Count == 0) continue;
 
-            if (!ContainsSubsequence(tokens, rule.LiteralTokens)) continue;
+            if (!ContainsSubsequence(tokens, rule.LiteralTokens, out var matchedTokenCount)) continue;
 
-            var score = rule.LiteralTokens.Count;
+            var score = matchedTokenCount;
             if (score <= bestScore) continue;
 
             bestScore = score;
@@ -52,33 +52,83 @@ public static class RobotLaunchRuleMatcher
 
     private static IReadOnlyList<string> TokenizeTranscript(string transcript)
     {
-        return transcript
-            .ToLowerInvariant()
-            .Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(token => token.Trim().TrimEnd('.', ',', '!', '?', ';'))
+        var normalized = TranscriptTextNormalizer.NormalizeLooseText(transcript);
+        if (string.IsNullOrWhiteSpace(normalized)) return [];
+
+        return normalized
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(token => token.Length > 0)
             .ToArray();
     }
 
-    private static bool ContainsSubsequence(IReadOnlyList<string> haystack, IReadOnlyList<string> needle)
+    private static bool ContainsSubsequence(
+        IReadOnlyList<string> haystack,
+        IReadOnlyList<string> needle,
+        out int matchedTokenCount)
     {
+        matchedTokenCount = 0;
         if (needle.Count == 0) return false;
 
+        var allowedMisses = needle.Count >= 5 ? 1 : 0;
+        var misses = 0;
         var start = 0;
+
         foreach (var token in needle)
         {
             var found = false;
             for (var i = start; i < haystack.Count; i++)
             {
-                if (!string.Equals(haystack[i], token, StringComparison.Ordinal)) continue;
+                if (!TokensEquivalent(haystack[i], token)) continue;
                 start = i + 1;
+                matchedTokenCount += 1;
                 found = true;
                 break;
             }
 
-            if (!found) return false;
+            if (found) continue;
+
+            if (misses >= allowedMisses) return false;
+
+            misses += 1;
         }
 
-        return true;
+        var requiredMatches = needle.Count - allowedMisses;
+        return matchedTokenCount >= requiredMatches;
+    }
+
+    private static bool TokensEquivalent(string haystackToken, string needleToken)
+    {
+        if (string.Equals(haystackToken, needleToken, StringComparison.Ordinal)) return true;
+        if (needleToken.Length < 4 || haystackToken.Length < 4) return false;
+
+        return LevenshteinDistance(haystackToken, needleToken) <= 1;
+    }
+
+    private static int LevenshteinDistance(string left, string right)
+    {
+        if (left.Length == 0) return right.Length;
+        if (right.Length == 0) return left.Length;
+
+        var previous = new int[right.Length + 1];
+        var current = new int[right.Length + 1];
+
+        for (var j = 0; j <= right.Length; j += 1)
+            previous[j] = j;
+
+        for (var i = 1; i <= left.Length; i += 1)
+        {
+            current[0] = i;
+            for (var j = 1; j <= right.Length; j += 1)
+            {
+                var cost = left[i - 1] == right[j - 1] ? 0 : 1;
+                current[j] = Math.Min(
+                    Math.Min(current[j - 1] + 1, previous[j] + 1),
+                    previous[j - 1] + cost);
+            }
+
+            (previous, current) = (current, previous);
+        }
+
+        return previous[right.Length];
     }
 }

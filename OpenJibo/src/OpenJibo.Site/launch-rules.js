@@ -73,7 +73,7 @@ function renderRules(rules) {
 		meta.className = "rule-meta";
 		meta.innerHTML = `
 			<strong>${escapeHtml(rule.fileName)}</strong>
-			<span>${formatBytes(rule.sizeBytes)} · ${formatDate(rule.uploadedUtc)}</span>
+			<span>${formatBytes(rule.sizeBytes)} · ${formatDate(rule.uploadedUtc)}${rule.parsedRuleCount != null ? ` · ${rule.parsedRuleCount} parsed rule${rule.parsedRuleCount === 1 ? "" : "s"}` : ""}</span>
 		`;
 
 		const actions = document.createElement("div");

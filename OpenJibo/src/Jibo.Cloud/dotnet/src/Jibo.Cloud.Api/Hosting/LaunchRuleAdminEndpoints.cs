@@ -25,7 +25,8 @@ internal static class LaunchRuleAdminEndpoints
             {
                 fileName = rule.FileName,
                 sizeBytes = rule.SizeBytes,
-                uploadedUtc = rule.UploadedUtc
+                uploadedUtc = rule.UploadedUtc,
+                parsedRuleCount = RobotLaunchRuleParser.Parse(rule.FileName, rule.Content).Count
             })
         });
     }
@@ -74,6 +75,16 @@ internal static class LaunchRuleAdminEndpoints
 
             if (!LaunchRuleFileValidator.TryValidateContent(content, out var contentError))
                 return Results.BadRequest(new { error = contentError });
+
+            var parsedRules = RobotLaunchRuleParser.Parse(normalizedFileName, content);
+            if (parsedRules.Count == 0)
+            {
+                return Results.BadRequest(new
+                {
+                    error =
+                        "No launch rules could be parsed from this file. Each rule must look like: TopRule = ($* phrase here {skill='@be/gallery'} $*);"
+                });
+            }
 
             try
             {

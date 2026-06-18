@@ -1,20 +1,13 @@
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Runtime.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRuleStore)
+public sealed class RobotLaunchRuleOrchestrator(
+    IRobotLaunchRuleStore launchRuleStore,
+    ILogger<RobotLaunchRuleOrchestrator> logger)
 {
-    private static readonly string[] WakeLeadPhrases =
-    [
-        "hey jibo",
-        "hello jibo",
-        "hi jibo",
-        "ok jibo",
-        "okay jibo",
-        "jibo"
-    ];
-
     public Task<JiboInteractionDecision?> TryBuildDecisionAsync(
         TurnContext turn,
         string transcript,
@@ -23,7 +16,6 @@ public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRule
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!ShouldTryLaunchRules(turn)) return Task.FromResult<JiboInteractionDecision?>(null);
         if (string.IsNullOrWhiteSpace(transcript)) return Task.FromResult<JiboInteractionDecision?>(null);
 
         var files = launchRuleStore.List();
@@ -36,10 +28,40 @@ public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRule
             parsedRules.AddRange(RobotLaunchRuleParser.Parse(file.FileName, file.Content));
         }
 
-        if (parsedRules.Count == 0) return Task.FromResult<JiboInteractionDecision?>(null);
+        if (parsedRules.Count == 0)
+        {
+            logger.LogWarning(
+                "Launch rule files are present but none parsed successfully. fileCount={FileCount}",
+                files.Count);
+            return Task.FromResult<JiboInteractionDecision?>(null);
+        }
+
+        if (!ShouldTryLaunchRules(turn))
+        {
+            logger.LogDebug(
+                "Skipping launch rule matching for turn messageType={MessageType} listenHotphrase={ListenHotphrase}",
+                ReadMessageType(turn),
+                TurnAttributeReader.ReadBool(turn, "listenHotphrase"));
+            return Task.FromResult<JiboInteractionDecision?>(null);
+        }
 
         var match = TryMatchTranscript(transcript, parsedRules);
-        if (match is null) return Task.FromResult<JiboInteractionDecision?>(null);
+        if (match is null)
+        {
+            logger.LogInformation(
+                "Launch rule miss transcript={Transcript} messageType={MessageType} ruleCount={RuleCount}",
+                transcript,
+                ReadMessageType(turn),
+                parsedRules.Count);
+            return Task.FromResult<JiboInteractionDecision?>(null);
+        }
+
+        logger.LogInformation(
+            "Launch rule matched rule={RuleName} file={RuleFile} skill={SkillId} transcript={Transcript}",
+            match.Rule.RuleName,
+            match.Rule.SourceFile,
+            match.SkillId,
+            transcript);
 
         var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -74,41 +96,62 @@ public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRule
 
     private static IEnumerable<string> BuildTranscriptCandidates(string transcript)
     {
-        var trimmed = transcript.Trim();
-        if (trimmed.Length == 0) yield break;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        yield return trimmed;
+        foreach (var candidate in new[]
+                 {
+                     transcript,
+                     TranscriptTextNormalizer.NormalizeLooseText(transcript),
+                     TranscriptTextNormalizer.ExtractWakePhraseCommand(transcript),
+                     StripLegacyWakePhrase(transcript)
+                 })
+        {
+            if (string.IsNullOrWhiteSpace(candidate)) continue;
 
-        var stripped = StripWakePhrase(trimmed);
-        if (!string.Equals(stripped, trimmed, StringComparison.OrdinalIgnoreCase))
-            yield return stripped;
+            var trimmed = candidate.Trim();
+            if (trimmed.Length == 0 || !seen.Add(trimmed)) continue;
+
+            yield return trimmed;
+        }
     }
 
     private static bool ShouldTryLaunchRules(TurnContext turn)
     {
-        var messageType = turn.Attributes.TryGetValue("messageType", out var rawMessageType)
-            ? rawMessageType?.ToString()
-            : null;
+        var messageType = ReadMessageType(turn);
 
         if (string.Equals(messageType, "TRIGGER", StringComparison.OrdinalIgnoreCase)) return false;
         if (string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase)) return false;
 
         if (TurnAttributeReader.ReadBool(turn, "listenHotphrase")) return true;
         if (string.Equals(messageType, "LISTEN", StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(messageType, "AUTO_FINALIZE", StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(messageType, "CLIENT_ASR", StringComparison.OrdinalIgnoreCase)) return true;
 
         return TurnAttributeReader.ReadRules(turn, "listenRules")
             .Concat(TurnAttributeReader.ReadRules(turn, "clientRules"))
-            .Any(rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase)
-                         || rule.Contains("global_commands_launch", StringComparison.OrdinalIgnoreCase));
+            .Any(IsLaunchRule);
     }
 
-    private static string StripWakePhrase(string transcript)
+    private static bool IsLaunchRule(string rule)
+    {
+        return string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||
+               rule.Contains("global_commands_launch", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? ReadMessageType(TurnContext turn)
+    {
+        return turn.Attributes.TryGetValue("messageType", out var rawMessageType)
+            ? rawMessageType?.ToString()
+            : null;
+    }
+
+    private static string StripLegacyWakePhrase(string transcript)
     {
         var normalized = transcript.Trim();
         if (normalized.Length == 0) return normalized;
 
         var lowered = normalized.ToLowerInvariant();
-        foreach (var phrase in WakeLeadPhrases.OrderByDescending(phrase => phrase.Length))
+        foreach (var phrase in LegacyWakeLeadPhrases.OrderByDescending(phrase => phrase.Length))
         {
             if (!lowered.StartsWith(phrase, StringComparison.Ordinal)) continue;
 
@@ -119,4 +162,14 @@ public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRule
 
         return normalized;
     }
+
+    private static readonly string[] LegacyWakeLeadPhrases =
+    [
+        "hey jibo",
+        "hello jibo",
+        "hi jibo",
+        "ok jibo",
+        "okay jibo",
+        "jibo"
+    ];
 }

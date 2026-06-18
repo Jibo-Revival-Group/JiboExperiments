@@ -55,6 +55,14 @@ var app = builder.Build();
 
 app.Logger.LogInformation("Starting Open Jibo Cloud Api version {Version}", OpenJiboCloudBuildInfo.Version);
 
+var launchRuleStore = app.Services.GetRequiredService<IRobotLaunchRuleStore>();
+var launchRuleFiles = launchRuleStore.List();
+var parsedLaunchRuleCount = launchRuleFiles.Sum(file => RobotLaunchRuleParser.Parse(file.FileName, file.Content).Count);
+app.Logger.LogInformation(
+    "Loaded {LaunchRuleFileCount} launch rule file(s) with {ParsedLaunchRuleCount} parsed rule(s)",
+    launchRuleFiles.Count,
+    parsedLaunchRuleCount);
+
 app.UseCors();
 app.UseMiddleware<LaunchRulesAdminAuthMiddleware>();
 

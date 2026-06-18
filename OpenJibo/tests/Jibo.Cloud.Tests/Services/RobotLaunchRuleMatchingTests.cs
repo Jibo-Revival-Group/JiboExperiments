@@ -2,6 +2,7 @@ using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Tests.Services;
 
@@ -40,6 +41,18 @@ public sealed class RobotLaunchRuleParserTests
         var rule = rules[0];
         Assert.Equal(["say", "this", "to", "launch", "your", "skill"], rule.LiteralTokens);
         Assert.Equal("@be/gallery", rule.Entities["skill"]);
+    }
+
+    [Fact]
+    public void Parse_AllowsOptionalTrailingSemicolon()
+    {
+        const string content =
+            "TopRule = ($* say this to launch your skill {skill='@be/gallery'} $*)";
+
+        var rules = RobotLaunchRuleParser.Parse("launch.rule", content);
+
+        Assert.Single(rules);
+        Assert.Equal("@be/gallery", rules[0].Entities["skill"]);
     }
 }
 
@@ -116,6 +129,19 @@ public sealed class RobotLaunchRuleMatcherTests
         Assert.NotNull(match);
         Assert.Equal("@be/gallery", match!.SkillId);
     }
+
+    [Fact]
+    public void TryMatch_AllowsOneMissingTokenForLongPhrases()
+    {
+        const string content =
+            "TopRule = ($* say this to launch your skill {skill='@be/gallery'} $*);";
+        var rules = RobotLaunchRuleParser.Parse("launch.rule", content);
+
+        var match = RobotLaunchRuleMatcher.TryMatch("say this to launch a skill", rules);
+
+        Assert.NotNull(match);
+        Assert.Equal("@be/gallery", match!.SkillId);
+    }
 }
 
 public sealed class RobotLaunchRuleOrchestratorTests
@@ -126,7 +152,7 @@ public sealed class RobotLaunchRuleOrchestratorTests
         const string content = "TopRule = ($* open gallery {%skill='@be/gallery'%} $*);";
         var store = new InMemoryRobotLaunchRuleStore();
         store.Save("launch.rule", content);
-        var orchestrator = new RobotLaunchRuleOrchestrator(store);
+        var orchestrator = CreateOrchestrator(store);
         var turn = new TurnContext
         {
             RawTranscript = "open gallery",
@@ -150,7 +176,7 @@ public sealed class RobotLaunchRuleOrchestratorTests
     {
         var store = new InMemoryRobotLaunchRuleStore();
         store.Save("launch.rule", "GalleryRule = ($* open gallery {%skill='@be/gallery'%} $*);");
-        var orchestrator = new RobotLaunchRuleOrchestrator(store);
+        var orchestrator = CreateOrchestrator(store);
         var turn = new TurnContext
         {
             DeviceId = "my-robot-serial-number",
@@ -174,7 +200,7 @@ public sealed class RobotLaunchRuleOrchestratorTests
         var store = new InMemoryRobotLaunchRuleStore();
         store.Save("launch.rule",
             "TopRule = ($* say this to launch your skill {skill='@be/gallery'} $*);");
-        var orchestrator = new RobotLaunchRuleOrchestrator(store);
+        var orchestrator = CreateOrchestrator(store);
         var turn = new TurnContext
         {
             RawTranscript = "say this to launch your skill",
@@ -197,11 +223,39 @@ public sealed class RobotLaunchRuleOrchestratorTests
     }
 
     [Fact]
+    public async Task TryBuildDecisionAsync_MatchesAutoFinalizedHotphraseTurn()
+    {
+        var store = new InMemoryRobotLaunchRuleStore();
+        store.Save("launch.rule",
+            "TopRule = ($* say this to launch your skill {skill='@be/gallery'} $*);");
+        var orchestrator = CreateOrchestrator(store);
+        var turn = new TurnContext
+        {
+            RawTranscript = "say this to launch your skill",
+            NormalizedTranscript = "say this to launch your skill",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "AUTO_FINALIZE",
+                ["listenRules"] = new[] { "launch", "globals/global_commands_launch" }
+            }
+        };
+
+        var decision = await orchestrator.TryBuildDecisionAsync(
+            turn,
+            "hey jibo say this to launch your skill",
+            null,
+            CancellationToken.None);
+
+        Assert.NotNull(decision);
+        Assert.Equal("@be/gallery", decision!.SkillName);
+    }
+
+    [Fact]
     public async Task TryBuildDecisionAsync_SkipsClientNluTurn()
     {
         var store = new InMemoryRobotLaunchRuleStore();
         store.Save("launch.rule", "TopRule = (open gallery {%skill='@be/gallery'%});");
-        var orchestrator = new RobotLaunchRuleOrchestrator(store);
+        var orchestrator = CreateOrchestrator(store);
         var turn = new TurnContext
         {
             RawTranscript = "open gallery",
@@ -298,6 +352,8 @@ internal static class RobotLaunchRuleTestSupport
 {
     public static RobotLaunchRuleOrchestrator CreateOrchestrator(IRobotLaunchRuleStore? store = null)
     {
-        return new RobotLaunchRuleOrchestrator(store ?? new InMemoryRobotLaunchRuleStore());
+        return new RobotLaunchRuleOrchestrator(
+            store ?? new InMemoryRobotLaunchRuleStore(),
+            NullLogger<RobotLaunchRuleOrchestrator>.Instance);
     }
 }

@@ -57,6 +57,7 @@ public sealed class LaunchRuleAdminApiTests
         Assert.Equal("global", listResponse.Scope);
         Assert.Single(listResponse.Rules);
         Assert.Equal("gallery.launch.rule", listResponse.Rules[0].FileName);
+        Assert.Equal(1, listResponse.Rules[0].ParsedRuleCount);
 
         var getResponse = await client.GetFromJsonAsync<GetResponse>(
             "/api/admin/launch-rules/gallery.launch.rule");
@@ -82,6 +83,23 @@ public sealed class LaunchRuleAdminApiTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.NotNull(payload);
         Assert.False(string.IsNullOrWhiteSpace(payload.Error));
+    }
+
+    [Fact]
+    public async Task Upload_RejectsUnparsableRuleContent()
+    {
+        await using var factory = CreateFactory();
+        var client = CreateAuthorizedClient(factory);
+
+        using var uploadContent = new MultipartFormDataContent();
+        uploadContent.Add(new StringContent("this is not a valid launch rule file"), "files", "broken.rule");
+
+        var response = await client.PostAsync("/api/admin/launch-rules", uploadContent);
+        var payload = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.NotNull(payload);
+        Assert.Contains("No launch rules could be parsed", payload.Error, StringComparison.Ordinal);
     }
 
     private static HttpClient CreateAuthorizedClient(WebApplicationFactory<Program> factory)
@@ -118,7 +136,7 @@ public sealed class LaunchRuleAdminApiTests
 
     private sealed record ListResponse(string Scope, RuleSummary[] Rules);
 
-    private sealed record RuleSummary(string FileName, long SizeBytes, DateTimeOffset UploadedUtc);
+    private sealed record RuleSummary(string FileName, long SizeBytes, DateTimeOffset UploadedUtc, int ParsedRuleCount);
 
     private sealed record GetResponse(string Scope, string FileName, string Content);
 

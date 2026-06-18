@@ -1031,6 +1031,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         TouchState();
     }
+
+    private static bool IsUpdateNewerThanRequest(string candidateVersion, string? fromVersion)
     {
         if (string.IsNullOrWhiteSpace(fromVersion)) return true;
 

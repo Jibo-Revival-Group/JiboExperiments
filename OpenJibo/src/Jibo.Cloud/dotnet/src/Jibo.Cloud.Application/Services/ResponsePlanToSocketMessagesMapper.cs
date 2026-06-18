@@ -31,6 +31,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
             string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase);
         var isRadioLaunch = string.Equals(plan.IntentName, "radio", StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(plan.IntentName, "radio_genre", StringComparison.OrdinalIgnoreCase);
+        var isLaunchRuleLaunch = string.Equals(ReadSkillPayloadString(skill, "launchRuleMatch"), "true",
+            StringComparison.OrdinalIgnoreCase);
+        var launchRuleSkillId = ReadSkillPayloadString(skill, "skillId") ?? skill?.SkillName;
+        var launchRuleIntent = ReadSkillPayloadString(skill, "launchRuleIntent") ?? plan.IntentName;
         var isStopCommand = string.Equals(plan.IntentName, "stop", StringComparison.OrdinalIgnoreCase);
         var isVolumeControl = string.Equals(plan.IntentName, "volume_up", StringComparison.OrdinalIgnoreCase) ||
                               string.Equals(plan.IntentName, "volume_down", StringComparison.OrdinalIgnoreCase) ||
@@ -70,7 +74,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var wordOfDayGuess = ResolveWordOfDayGuess(turn, transcript, nluGuess);
         var outboundIntent = isGlobalCommand && !string.IsNullOrWhiteSpace(globalIntent)
             ? globalIntent
-            : isWordOfDayLaunch
+            : isLaunchRuleLaunch && !string.IsNullOrWhiteSpace(launchRuleIntent)
+                ? launchRuleIntent
+                : isWordOfDayLaunch
                 ? "menu"
                 : isRadioLaunch
                     ? "menu"
@@ -95,7 +101,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 ? string.Empty
                 : isGlobalCommand
                     ? transcript
-                    : isRadioLaunch
+                    : isLaunchRuleLaunch
+                        ? transcript
+                        : isRadioLaunch
                         ? transcript
                         : isSettingsLaunch
                             ? transcript
@@ -119,7 +127,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 ? ["word-of-the-day/menu"]
                 : isGlobalCommand
                     ? BuildGlobalCommandRules(rules)
-                    : isRadioLaunch
+                    : isLaunchRuleLaunch
+                        ? []
+                        : isRadioLaunch
                         ? []
                         : isSettingsLaunch
                             ? string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase)
@@ -140,7 +150,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                             : isYesNoTurn && isYesNoIntent
                                                 ? [yesNoRule!]
                                                 : rules;
-        var entities = ReadEntities(
+        var entities = isLaunchRuleLaunch
+            ? BuildLaunchRuleEntities(skill)
+            : ReadEntities(
             turn,
             messageType,
             isYesNoTurn && isYesNoIntent,
@@ -179,6 +191,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundIntent,
                     outboundRules,
                     entities,
+                    isLaunchRuleLaunch ? launchRuleSkillId :
                     isWordOfDayLaunch ? "@be/word-of-the-day" :
                     isRadioLaunch ? "@be/radio" :
                     isSettingsLaunch ? "@be/settings" :
@@ -241,6 +254,22 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 75));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/radio")),
+                125));
+        }
+
+        if (isLaunchRuleLaunch && !string.IsNullOrWhiteSpace(launchRuleSkillId))
+        {
+            messages.Add(new SocketReplyPlan(
+                JsonSerializer.Serialize(BuildSkillRedirectPayload(
+                    transId,
+                    launchRuleSkillId,
+                    outboundIntent,
+                    outboundAsrText,
+                    outboundRules,
+                    entities)),
+                75));
+            messages.Add(new SocketReplyPlan(
+                JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, launchRuleSkillId)),
                 125));
         }
 
@@ -326,7 +355,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // Don't emit a chitchat SKILL_ACTION for tutorial yes/no turns: the tutorial skill handles
         // the response locally. Sending a competing chitchat-skill action with final:true causes the
         // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
-        if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
+        if (emitSkillActions && speak is not null && !isLaunchRuleLaunch && !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillPayload(plan, turn, transId, speak, skill)),
                 75));
@@ -652,6 +681,23 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (skill?.Payload is null || !skill.Payload.TryGetValue(key, out var value)) return null;
 
         return value?.ToString();
+    }
+
+    private static Dictionary<string, object?> BuildLaunchRuleEntities(InvokeNativeSkillAction? skill)
+    {
+        var entities = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        if (skill?.Payload is null) return entities;
+
+        foreach (var (key, value) in skill.Payload)
+        {
+            if (value is null) continue;
+            if (key.StartsWith("launchRule", StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(key, "skillId", StringComparison.OrdinalIgnoreCase)) continue;
+
+            entities[key] = value;
+        }
+
+        return entities;
     }
 
     private static string ResolveWordOfDayGuess(TurnContext turn, string transcript, string? nluGuess)

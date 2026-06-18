@@ -173,7 +173,18 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
               ?? ReadString(body, "robotId")
               ?? "unknown-device";
 
-        stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        var device = stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        stateStore.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = deviceId,
+            RobotId = device.RobotId,
+            FriendlyName = RobotFriendlyNameValidator.TryNormalize(deviceId, out var normalizedName, out _)
+                ? normalizedName
+                : device.FriendlyName,
+            FirmwareVersion = envelope.FirmwareVersion ?? device.FirmwareVersion,
+            ApplicationVersion = envelope.ApplicationVersion ?? device.ApplicationVersion,
+            HostMappings = device.HostMappings
+        });
 
         return ProtocolDispatchResult.Ok(new
         {

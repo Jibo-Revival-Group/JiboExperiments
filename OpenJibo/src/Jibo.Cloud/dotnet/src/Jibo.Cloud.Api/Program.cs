@@ -2,6 +2,7 @@ using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -46,6 +47,22 @@ var app = builder.Build();
 app.Logger.LogInformation("Starting Open Jibo Cloud Api version {Version}", OpenJiboCloudBuildInfo.Version);
 
 app.UseCors();
+
+var publicSitePath = ResolvePublicSitePath(builder.Configuration);
+if (Directory.Exists(publicSitePath))
+{
+    app.UseDefaultFiles(new DefaultFilesOptions
+    {
+        FileProvider = new PhysicalFileProvider(publicSitePath),
+        RequestPath = string.Empty
+    });
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(publicSitePath),
+        RequestPath = string.Empty
+    });
+}
+
 app.UseWebSockets();
 
 app.Use(async (context, next) =>
@@ -66,6 +83,8 @@ app.MapGet("/health", () => Results.Json(new
     service = "OpenJibo Cloud Api",
     version = OpenJiboCloudBuildInfo.Version
 }));
+
+RobotLaunchRuleEndpoints.Map(app);
 
 app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,
     IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>
@@ -110,6 +129,23 @@ static void ResetDiagnosticsDirectories(IConfiguration configuration)
             // Startup cleanup is best-effort so a stale file never blocks the app.
         }
     }
+}
+
+static string ResolvePublicSitePath(IConfiguration configuration)
+{
+    var configuredPath = configuration["OpenJibo:PublicSite:DirectoryPath"];
+    if (!string.IsNullOrWhiteSpace(configuredPath))
+        return Path.IsPathRooted(configuredPath)
+            ? Path.GetFullPath(configuredPath)
+            : Path.GetFullPath(configuredPath, FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
+                                              FindOpenJiboRepoRoot(AppContext.BaseDirectory) ??
+                                              Directory.GetCurrentDirectory());
+
+    var repoRoot = FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
+                   FindOpenJiboRepoRoot(AppContext.BaseDirectory) ??
+                   Directory.GetCurrentDirectory();
+
+    return Path.GetFullPath(Path.Combine(repoRoot, "src", "OpenJibo.Site"));
 }
 
 static string ResolveConfiguredPath(IConfiguration configuration, string key, string defaultPath)

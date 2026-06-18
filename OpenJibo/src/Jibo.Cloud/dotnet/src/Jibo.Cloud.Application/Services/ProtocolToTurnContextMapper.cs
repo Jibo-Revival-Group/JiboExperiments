@@ -23,6 +23,10 @@ public sealed class ProtocolToTurnContextMapper
 
         if (!string.IsNullOrWhiteSpace(session.DeviceId)) attributes["deviceId"] = session.DeviceId;
 
+        var robotFriendlyName = RobotFriendlyNameResolver.ResolveFromSession(session, null);
+        if (!string.IsNullOrWhiteSpace(robotFriendlyName))
+            attributes["robotFriendlyName"] = robotFriendlyName;
+
         if (session.Metadata.TryGetValue("loopId", out var loopId) &&
             loopId is string loopIdText &&
             !string.IsNullOrWhiteSpace(loopIdText))

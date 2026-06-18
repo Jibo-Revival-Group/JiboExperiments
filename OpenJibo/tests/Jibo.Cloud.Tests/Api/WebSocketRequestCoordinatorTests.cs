@@ -5,6 +5,7 @@ using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
+using Jibo.Cloud.Tests.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 
@@ -79,7 +80,7 @@ public sealed class WebSocketRequestCoordinatorTests
         var contentRepository = new InMemoryJiboExperienceContentRepository();
         var contentCache = new JiboExperienceContentCache(contentRepository);
         var conversationBroker = new DemoConversationBroker(new JiboInteractionService(contentCache,
-            new LastItemRandomizer(), new InMemoryPersonalMemoryStore()));
+            new LastItemRandomizer(), new InMemoryPersonalMemoryStore(), RobotLaunchRuleTestSupport.CreateOrchestrator()));
         var sttSelector = new DefaultSttStrategySelector(
         [
             new SyntheticBufferedAudioSttStrategy()

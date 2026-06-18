@@ -9,7 +9,7 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
     public async Task<ResponsePlan> HandleTurnAsync(TurnContext turn, CancellationToken cancellationToken = default)
     {
         var decision = await interactionService.BuildDecisionAsync(turn, cancellationToken);
-        var keepMicOpen = ShouldKeepMicOpen(decision.IntentName);
+        var keepMicOpen = ShouldKeepMicOpen(decision.IntentName, decision.SkillPayload);
 
         var plan = new ResponsePlan
         {
@@ -67,6 +67,15 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
         return plan;
     }
 
+    private static bool ShouldKeepMicOpen(string? intentName, IDictionary<string, object?>? skillPayload)
+    {
+        if (string.Equals(ReadPayloadString(skillPayload, "launchRuleMatch"), "true",
+                StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return ShouldKeepMicOpen(intentName);
+    }
+
     private static bool ShouldKeepMicOpen(string? intentName)
     {
         return intentName switch
@@ -112,5 +121,12 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
             "proactive_greeting" => false,
             _ => true
         };
+    }
+
+    private static string? ReadPayloadString(IDictionary<string, object?>? payload, string key)
+    {
+        if (payload is null || !payload.TryGetValue(key, out var value)) return null;
+
+        return value?.ToString();
     }
 }

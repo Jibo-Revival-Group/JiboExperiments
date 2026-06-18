@@ -6,6 +6,7 @@ using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Cloud.Tests.Fixtures;
+using Jibo.Cloud.Tests.Services;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Tests.WebSockets;
@@ -21,7 +22,7 @@ public sealed class JiboWebSocketServiceTests
         var contentRepository = new InMemoryJiboExperienceContentRepository();
         var contentCache = new JiboExperienceContentCache(contentRepository);
         var conversationBroker = new DemoConversationBroker(new JiboInteractionService(contentCache,
-            new LastItemRandomizer(), new InMemoryPersonalMemoryStore()));
+            new LastItemRandomizer(), new InMemoryPersonalMemoryStore(), RobotLaunchRuleTestSupport.CreateOrchestrator()));
         var sttSelector = new DefaultSttStrategySelector(
         [
             new SyntheticBufferedAudioSttStrategy()
@@ -7425,6 +7426,7 @@ public sealed class JiboWebSocketServiceTests
             contentCache,
             new DefaultJiboRandomizer(),
             new InMemoryPersonalMemoryStore(),
+            RobotLaunchRuleTestSupport.CreateOrchestrator(),
             weatherReportProvider,
             calendarReportProvider,
             commuteReportProvider,

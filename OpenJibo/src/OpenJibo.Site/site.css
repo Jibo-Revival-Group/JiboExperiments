@@ -77,6 +77,16 @@ h1 {
   font-weight: 600;
 }
 
+button.button {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+button.button.secondary {
+  background: transparent;
+}
+
 .button.primary {
   background: var(--accent);
   color: #fffaf4;
@@ -109,7 +119,8 @@ h3 {
 }
 
 @media (max-width: 700px) {
-  .hero {
+  .hero,
+  .page-header {
     padding: 2rem 1.4rem;
   }
 
@@ -117,4 +128,144 @@ h3 {
   .card {
     border-radius: 18px;
   }
+
+  .rule-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.page-header {
+  padding: 3rem;
+}
+
+.tool-panel {
+  margin-top: 1.5rem;
+}
+
+.stack {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field-label {
+  font-weight: 700;
+}
+
+.field input[type="text"] {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  color: var(--ink);
+}
+
+.field-hint,
+.muted,
+.empty-state {
+  color: rgba(27, 45, 42, 0.72);
+  line-height: 1.5;
+}
+
+.dropzone {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.4rem;
+  border: 2px dashed rgba(27, 45, 42, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  text-align: center;
+}
+
+.dropzone.active {
+  border-color: var(--accent);
+  background: rgba(196, 91, 47, 0.08);
+}
+
+.dropzone input[type="file"] {
+  display: none;
+}
+
+.dropzone-title {
+  font-weight: 700;
+}
+
+.dropzone-subtitle {
+  color: rgba(27, 45, 42, 0.72);
+}
+
+.status {
+  min-height: 1.4rem;
+  margin: 1rem 0 0;
+}
+
+.status[data-kind="error"] {
+  color: #8f1d1d;
+}
+
+.status[data-kind="success"] {
+  color: #1f5a34;
+}
+
+.section-heading {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.rules-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.rule-meta {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.rule-meta span {
+  color: rgba(27, 45, 42, 0.72);
+  font-size: 0.95rem;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.button.compact {
+  padding: 0.55rem 0.85rem;
+  font-size: 0.92rem;
+}
+
+.button.danger {
+  color: #8f1d1d;
+}
+
+code {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.95em;
 }

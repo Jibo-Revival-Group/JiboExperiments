@@ -102,6 +102,8 @@
   </Folder>
   <Folder Name="/src/OpenJibo.Site/">
     <File Path="src/OpenJibo.Site/index.html" />
+    <File Path="src/OpenJibo.Site/launch-rules.html" />
+    <File Path="src/OpenJibo.Site/launch-rules.js" />
     <File Path="src/OpenJibo.Site/site.css" />
   </Folder>
 </Solution>

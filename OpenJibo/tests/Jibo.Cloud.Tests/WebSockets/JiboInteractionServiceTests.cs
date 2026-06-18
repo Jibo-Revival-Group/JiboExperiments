@@ -7,6 +7,7 @@ using Jibo.Cloud.Infrastructure.Calendar;
 using Jibo.Cloud.Infrastructure.Commute;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
+using Jibo.Cloud.Tests.Services;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Tests.WebSockets;
@@ -5282,6 +5283,32 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("aglet", decision.SkillPayload!["guess"]);
     }
 
+    [Fact]
+    public async Task BuildDecisionAsync_UsesUploadedLaunchRuleForMatchingLaunchTurn()
+    {
+        const string robotName = "Royal-Current-Sage-Canvas";
+        var launchRuleStore = new InMemoryRobotLaunchRuleStore();
+        launchRuleStore.Save(robotName, "launch.rule",
+            "GalleryRule = ($* open gallery {%skill='@be/gallery'%} $*);");
+        var service = CreateService(launchRuleStore: launchRuleStore);
+        var turn = new TurnContext
+        {
+            DeviceId = robotName,
+            RawTranscript = "open gallery",
+            NormalizedTranscript = "open gallery",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenRules"] = new[] { "launch", "globals/global_commands_launch" }
+            }
+        };
+
+        var decision = await service.BuildDecisionAsync(turn);
+
+        Assert.Equal("@be/gallery", decision.SkillName);
+        Assert.Equal("GalleryRule", decision.IntentName);
+        Assert.Equal("true", decision.SkillPayload!["launchRuleMatch"]?.ToString());
+    }
+
     private static JiboInteractionService CreateService(
         IPersonalMemoryStore? personalMemoryStore = null,
         ICloudStateStore? cloudStateStore = null,
@@ -5290,12 +5317,14 @@ public sealed class JiboInteractionServiceTests
         ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null,
         IJiboExperienceContentRepository? contentRepository = null,
-        IJiboRandomizer? randomizer = null)
+        IJiboRandomizer? randomizer = null,
+        IRobotLaunchRuleStore? launchRuleStore = null)
     {
         return new JiboInteractionService(
             new JiboExperienceContentCache(contentRepository ?? new InMemoryJiboExperienceContentRepository()),
             randomizer ?? new FirstItemRandomizer(),
             personalMemoryStore ?? new InMemoryPersonalMemoryStore(),
+            RobotLaunchRuleTestSupport.CreateOrchestrator(launchRuleStore),
             weatherReportProvider,
             calendarReportProvider,
             commuteReportProvider,

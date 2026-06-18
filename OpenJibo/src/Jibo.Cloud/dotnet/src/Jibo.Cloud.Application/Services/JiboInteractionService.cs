@@ -8,6 +8,7 @@ public sealed partial class JiboInteractionService(
     JiboExperienceContentCache contentCache,
     IJiboRandomizer randomizer,
     IPersonalMemoryStore personalMemoryStore,
+    RobotLaunchRuleOrchestrator launchRuleOrchestrator,
     IWeatherReportProvider? weatherReportProvider = null,
     ICalendarReportProvider? calendarReportProvider = null,
     ICommuteReportProvider? commuteReportProvider = null,

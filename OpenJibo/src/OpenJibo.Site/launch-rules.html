@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Robot Launch Rules · OpenJibo</title>
+	<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<main class="shell">
+	<header class="page-header">
+		<p class="eyebrow">OpenJibo Public Tools</p>
+		<h1>Launch rules for your robot</h1>
+		<p class="lede">
+			Enter your robot's friendly name, then upload <code>.rule</code> files that should apply
+			when your Jibo talks to this OpenJibo cloud.
+		</p>
+		<div class="actions">
+			<a href="/" class="button secondary">Back to OpenJibo</a>
+		</div>
+	</header>
+
+	<section class="panel tool-panel">
+		<form id="robot-form" class="stack">
+			<label class="field">
+				<span class="field-label">Friendly robot name</span>
+				<input
+					id="robot-name"
+					name="robotName"
+					type="text"
+					autocomplete="off"
+					spellcheck="false"
+					placeholder="Royal-Current-Sage-Canvas"
+					required
+				>
+				<span class="field-hint">
+					Use the same name your robot reports to the cloud, such as the token prefix
+					<code>token-Royal-Current-Sage-Canvas-…</code>.
+				</span>
+			</label>
+
+			<div class="field">
+				<span class="field-label">Launch rule files</span>
+				<label class="dropzone" id="dropzone">
+					<input id="rule-files" type="file" accept=".rule,text/plain" multiple>
+					<span class="dropzone-title">Drop <code>.rule</code> files here or click to browse</span>
+					<span class="dropzone-subtitle">Each file must use the <code>.rule</code> extension.</span>
+				</label>
+			</div>
+
+			<div class="actions">
+				<button type="submit" class="button primary" id="upload-button">Upload launch rules</button>
+				<button type="button" class="button secondary" id="refresh-button">Refresh list</button>
+			</div>
+		</form>
+
+		<p id="status" class="status" role="status" aria-live="polite"></p>
+	</section>
+
+	<section class="panel">
+		<div class="section-heading">
+			<h2>Saved launch rules</h2>
+			<p id="rules-summary" class="muted">Enter a robot name to load its launch rules.</p>
+		</div>
+		<ul id="rules-list" class="rules-list"></ul>
+		<p id="empty-state" class="empty-state">No launch rules uploaded yet for this robot.</p>
+	</section>
+
+	<section class="panel">
+		<h2>How launch rules work</h2>
+		<p>
+			Uploaded rules are stored on your OpenJibo cloud under the robot's friendly name.
+			When your robot sends a hotphrase launch turn, OpenJibo matches the spoken phrase
+			against those rules and redirects to the skill named in each rule's
+			<code>{%skill='…'%}</code> entity.
+		</p>
+		<p class="muted">
+			Rules apply only to global launch listens (not in-skill CLIENT_NLU turns).
+			Your robot must register with the same friendly name you enter above.
+		</p>
+	</section>
+</main>
+<script src="/launch-rules.js" defer></script>
+</body>
+</html>

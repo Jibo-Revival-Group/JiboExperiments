@@ -43,6 +43,13 @@ public sealed partial class JiboInteractionService
                 ? BuildProactiveGreetingDecision(turn, greetingPresence, referenceLocalTime)
                 : BuildTriggerIgnoredDecision();
 
+        var launchRuleDecision = await launchRuleOrchestrator.TryBuildDecisionAsync(
+            turn,
+            transcript,
+            cloudStateStore,
+            cancellationToken);
+        if (launchRuleDecision is not null) return launchRuleDecision;
+
         var isTimerValueTurn = IsClockTimerValueTurn(clientRules, listenRules);
         var isAlarmValueTurn = IsClockAlarmValueTurn(clientRules, listenRules);
         var semanticIntent = ResolveSemanticIntent(

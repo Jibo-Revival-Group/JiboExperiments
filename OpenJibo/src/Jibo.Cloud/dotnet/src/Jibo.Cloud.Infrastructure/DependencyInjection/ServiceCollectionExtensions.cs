@@ -5,6 +5,7 @@ using Jibo.Cloud.Infrastructure.Calendar;
 using Jibo.Cloud.Infrastructure.Commute;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Holidays;
+using Jibo.Cloud.Infrastructure.LaunchRules;
 using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.News;
 using Jibo.Cloud.Infrastructure.Persistence;
@@ -96,6 +97,12 @@ public static class ServiceCollectionExtensions
             personalMemoryConnectionString = BuildPostgreSqlConnectionString("openjibo_memory");
         var mediaOptions = new MediaContentStoreOptions();
         configuration?.GetSection("OpenJibo:Media").Bind(mediaOptions);
+
+        var launchRuleOptions = new RobotLaunchRuleOptions();
+        configuration?.GetSection("OpenJibo:LaunchRules").Bind(launchRuleOptions);
+        services.AddSingleton(launchRuleOptions);
+        services.AddSingleton<IRobotLaunchRuleStore, FileRobotLaunchRuleStore>();
+        services.AddSingleton<RobotLaunchRuleOrchestrator>();
 
         if (string.IsNullOrWhiteSpace(mediaOptions.ConnectionString))
             mediaOptions.ConnectionString =

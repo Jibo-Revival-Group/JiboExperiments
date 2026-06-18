@@ -34,7 +34,8 @@ public sealed class JiboWebSocketServiceTests
             new NullWebSocketTelemetrySink(),
             new WebSocketTurnFinalizationService(conversationBroker,
                 sttSelector,
-                sink));
+                sink,
+                new ProtocolToTurnContextMapper(_store)));
     }
 
     [Fact]
@@ -7438,7 +7439,8 @@ public sealed class JiboWebSocketServiceTests
         return new JiboWebSocketService(
             stateStore,
             new NullWebSocketTelemetrySink(),
-            new WebSocketTurnFinalizationService(conversationBroker, sttSelector, sink));
+            new WebSocketTurnFinalizationService(conversationBroker, sttSelector, sink,
+                new ProtocolToTurnContextMapper(stateStore)));
     }
 
     private static string ReadReplyType(WebSocketReply reply)

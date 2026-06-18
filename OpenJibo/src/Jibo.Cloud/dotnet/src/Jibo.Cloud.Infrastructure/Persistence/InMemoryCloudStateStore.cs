@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Holidays;
 
@@ -1019,10 +1020,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 };
         }
 
+        if (RobotFriendlyNameValidator.TryNormalize(registration.DeviceId, out var normalizedDeviceId, out _))
+        {
+            foreach (var session in _sessionsByToken.Values)
+            {
+                if (!string.Equals(session.Kind, "hub", StringComparison.OrdinalIgnoreCase)) continue;
+                session.Metadata["robotFriendlyName"] = normalizedDeviceId;
+            }
+        }
+
         TouchState();
     }
-
-    private static bool IsUpdateNewerThanRequest(string candidateVersion, string? fromVersion)
     {
         if (string.IsNullOrWhiteSpace(fromVersion)) return true;
 

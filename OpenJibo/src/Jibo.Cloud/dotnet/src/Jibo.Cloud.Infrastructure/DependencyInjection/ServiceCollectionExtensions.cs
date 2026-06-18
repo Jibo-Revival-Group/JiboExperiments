@@ -100,7 +100,13 @@ public static class ServiceCollectionExtensions
 
         var launchRuleOptions = new RobotLaunchRuleOptions();
         configuration?.GetSection("OpenJibo:LaunchRules").Bind(launchRuleOptions);
+        if (!Path.IsPathRooted(launchRuleOptions.DirectoryPath))
+            launchRuleOptions.DirectoryPath = Path.GetFullPath(launchRuleOptions.DirectoryPath, AppContext.BaseDirectory);
         services.AddSingleton(launchRuleOptions);
+        services.AddSingleton(new RobotLaunchRuleHostSettings
+        {
+            DefaultRobotFriendlyName = configuration?["OpenJibo:LaunchRules:DefaultRobotFriendlyName"]
+        });
         services.AddSingleton<IRobotLaunchRuleStore, FileRobotLaunchRuleStore>();
         services.AddSingleton<RobotLaunchRuleOrchestrator>();
 

@@ -36,7 +36,7 @@ public static class RobotLaunchRuleMatcher
             var entities = new Dictionary<string, string>(rule.Entities, StringComparer.OrdinalIgnoreCase);
             var intent = entities.TryGetValue("intent", out var intentValue) && !string.IsNullOrWhiteSpace(intentValue)
                 ? intentValue
-                : rule.RuleName;
+                : "menu";
 
             best = new LaunchRuleMatchResult
             {

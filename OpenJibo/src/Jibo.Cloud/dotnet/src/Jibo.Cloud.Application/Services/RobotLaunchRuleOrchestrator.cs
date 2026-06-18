@@ -3,8 +3,20 @@ using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRuleStore)
+public sealed class RobotLaunchRuleOrchestrator(
+    IRobotLaunchRuleStore launchRuleStore,
+    RobotLaunchRuleHostSettings hostSettings)
 {
+    private static readonly string[] WakeLeadPhrases =
+    [
+        "hey jibo",
+        "hello jibo",
+        "hi jibo",
+        "ok jibo",
+        "okay jibo",
+        "jibo"
+    ];
+
     public Task<JiboInteractionDecision?> TryBuildDecisionAsync(
         TurnContext turn,
         string transcript,
@@ -15,7 +27,7 @@ public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRule
 
         if (!IsLaunchTurn(turn)) return Task.FromResult<JiboInteractionDecision?>(null);
 
-        var robotName = RobotFriendlyNameResolver.Resolve(turn, cloudStateStore);
+        var robotName = ResolveRobotName(turn, cloudStateStore);
         if (string.IsNullOrWhiteSpace(robotName)) return Task.FromResult<JiboInteractionDecision?>(null);
 
         var files = launchRuleStore.List(robotName);
@@ -28,7 +40,8 @@ public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRule
             parsedRules.AddRange(RobotLaunchRuleParser.Parse(file.FileName, file.Content));
         }
 
-        var match = RobotLaunchRuleMatcher.TryMatch(transcript, parsedRules);
+        var normalizedTranscript = StripWakePhrase(transcript);
+        var match = RobotLaunchRuleMatcher.TryMatch(normalizedTranscript, parsedRules);
         if (match is null) return Task.FromResult<JiboInteractionDecision?>(null);
 
         var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -37,7 +50,9 @@ public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRule
             ["launchRuleIntent"] = match.Intent,
             ["launchRuleFile"] = match.Rule.SourceFile,
             ["launchRuleName"] = match.Rule.RuleName,
-            ["skillId"] = match.SkillId
+            ["skillId"] = match.SkillId,
+            ["localIntent"] = match.Intent,
+            ["robotFriendlyName"] = robotName
         };
 
         foreach (var (key, value) in match.Entities)
@@ -50,26 +65,52 @@ public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRule
             payload));
     }
 
+    private string? ResolveRobotName(TurnContext turn, ICloudStateStore? cloudStateStore)
+    {
+        var resolved = RobotFriendlyNameResolver.Resolve(turn, cloudStateStore);
+        if (!string.IsNullOrWhiteSpace(resolved)) return resolved;
+
+        if (RobotFriendlyNameValidator.TryNormalize(hostSettings.DefaultRobotFriendlyName, out var configured, out _))
+            return configured;
+
+        var knownRobots = launchRuleStore.ListRobotFriendlyNames();
+        if (knownRobots.Count == 1)
+            return knownRobots[0];
+
+        return knownRobots
+            .Select(name => new { Name = name, RuleCount = launchRuleStore.List(name).Count })
+            .Where(entry => entry.RuleCount > 0)
+            .OrderByDescending(entry => entry.RuleCount)
+            .ThenBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(entry => entry.Name)
+            .FirstOrDefault();
+    }
+
     private static bool IsLaunchTurn(TurnContext turn)
     {
-        return ReadRules(turn, "listenRules")
-            .Concat(ReadRules(turn, "clientRules"))
+        if (TurnAttributeReader.ReadBool(turn, "listenHotphrase")) return true;
+
+        return TurnAttributeReader.ReadRules(turn, "listenRules")
+            .Concat(TurnAttributeReader.ReadRules(turn, "clientRules"))
             .Any(rule => string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase)
                          || rule.Contains("global_commands_launch", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static IEnumerable<string> ReadRules(TurnContext turn, string key)
+    private static string StripWakePhrase(string transcript)
     {
-        if (!turn.Attributes.TryGetValue(key, out var value) || value is null) yield break;
+        var normalized = transcript.Trim();
+        if (normalized.Length == 0) return normalized;
 
-        switch (value)
+        var lowered = normalized.ToLowerInvariant();
+        foreach (var phrase in WakeLeadPhrases.OrderByDescending(phrase => phrase.Length))
         {
-            case IReadOnlyList<string> typed:
-                foreach (var rule in typed) yield return rule;
-                break;
-            case IEnumerable<string> strings:
-                foreach (var rule in strings) yield return rule;
-                break;
+            if (!lowered.StartsWith(phrase, StringComparison.Ordinal)) continue;
+
+            var remainder = normalized[phrase.Length..].TrimStart(',', ' ', '.', '!', '?');
+            if (remainder.Length > 0)
+                return remainder;
         }
+
+        return normalized;
     }
 }

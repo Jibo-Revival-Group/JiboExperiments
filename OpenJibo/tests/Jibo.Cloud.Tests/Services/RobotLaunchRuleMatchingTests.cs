@@ -100,7 +100,7 @@ public sealed class RobotLaunchRuleOrchestratorTests
         const string content = "TopRule = ($* open gallery {%skill='@be/gallery'%} $*);";
         var store = new InMemoryRobotLaunchRuleStore();
         store.Save(robotName, "launch.rule", content);
-        var orchestrator = new RobotLaunchRuleOrchestrator(store);
+        var orchestrator = new RobotLaunchRuleOrchestrator(store, new RobotLaunchRuleHostSettings());
         var turn = new TurnContext
         {
             DeviceId = robotName,
@@ -116,8 +116,33 @@ public sealed class RobotLaunchRuleOrchestratorTests
 
         Assert.NotNull(decision);
         Assert.Equal("@be/gallery", decision!.SkillName);
-        Assert.Equal("TopRule", decision.IntentName);
+        Assert.Equal("menu", decision.IntentName);
         Assert.Equal("true", decision.SkillPayload!["launchRuleMatch"]?.ToString());
+    }
+
+    [Fact]
+    public async Task TryBuildDecisionAsync_UsesSingleRobotFallbackWhenIdentityMissing()
+    {
+        const string robotName = "Royal-Current-Sage-Canvas";
+        var store = new InMemoryRobotLaunchRuleStore();
+        store.Save(robotName, "launch.rule",
+            "GalleryRule = ($* open gallery {%skill='@be/gallery'%} $*);");
+        var orchestrator = new RobotLaunchRuleOrchestrator(store, new RobotLaunchRuleHostSettings());
+        var turn = new TurnContext
+        {
+            DeviceId = "my-robot-serial-number",
+            RawTranscript = "open gallery",
+            NormalizedTranscript = "open gallery",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = true
+            }
+        };
+
+        var decision = await orchestrator.TryBuildDecisionAsync(turn, "hey jibo open gallery", null, CancellationToken.None);
+
+        Assert.NotNull(decision);
+        Assert.Equal("@be/gallery", decision!.SkillName);
     }
 
     [Fact]
@@ -126,7 +151,7 @@ public sealed class RobotLaunchRuleOrchestratorTests
         const string robotName = "Royal-Current-Sage-Canvas";
         var store = new InMemoryRobotLaunchRuleStore();
         store.Save(robotName, "launch.rule", "TopRule = (open gallery {%skill='@be/gallery'%});");
-        var orchestrator = new RobotLaunchRuleOrchestrator(store);
+        var orchestrator = new RobotLaunchRuleOrchestrator(store, new RobotLaunchRuleHostSettings());
         var turn = new TurnContext
         {
             DeviceId = robotName,
@@ -161,7 +186,7 @@ public sealed class RobotLaunchRuleResponseMapperTests
         var session = new CloudSession { LastTransId = "trans-123" };
         var plan = new ResponsePlan
         {
-            IntentName = "TopRule",
+            IntentName = "menu",
             Actions =
             {
                 new SpeakAction { Text = string.Empty },
@@ -171,7 +196,7 @@ public sealed class RobotLaunchRuleResponseMapperTests
                     Payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["launchRuleMatch"] = "true",
-                        ["launchRuleIntent"] = "TopRule",
+                        ["launchRuleIntent"] = "menu",
                         ["skillId"] = "@be/gallery",
                         ["skill"] = "@be/gallery"
                     }
@@ -195,6 +220,11 @@ internal sealed class InMemoryRobotLaunchRuleStore : IRobotLaunchRuleStore
         return _files.TryGetValue(robotFriendlyName, out var robotFiles)
             ? robotFiles.Values.OrderBy(file => file.FileName).ToArray()
             : [];
+    }
+
+    public IReadOnlyList<string> ListRobotFriendlyNames()
+    {
+        return _files.Keys.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
     public RobotLaunchRuleFile? Get(string robotFriendlyName, string fileName)
@@ -233,8 +263,12 @@ internal sealed class InMemoryRobotLaunchRuleStore : IRobotLaunchRuleStore
 
 internal static class RobotLaunchRuleTestSupport
 {
-    public static RobotLaunchRuleOrchestrator CreateOrchestrator(IRobotLaunchRuleStore? store = null)
+    public static RobotLaunchRuleOrchestrator CreateOrchestrator(
+        IRobotLaunchRuleStore? store = null,
+        RobotLaunchRuleHostSettings? hostSettings = null)
     {
-        return new RobotLaunchRuleOrchestrator(store ?? new InMemoryRobotLaunchRuleStore());
+        return new RobotLaunchRuleOrchestrator(
+            store ?? new InMemoryRobotLaunchRuleStore(),
+            hostSettings ?? new RobotLaunchRuleHostSettings());
     }
 }

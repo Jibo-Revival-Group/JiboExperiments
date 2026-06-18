@@ -1,13 +1,13 @@
 using System.Text.Json;
+using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class ProtocolToTurnContextMapper
+public sealed class ProtocolToTurnContextMapper(ICloudStateStore cloudStateStore)
 {
-    public static TurnContext MapListenMessage(WebSocketMessageEnvelope envelope, CloudSession session,
-        string messageType)
+    public TurnContext MapListenMessage(WebSocketMessageEnvelope envelope, CloudSession session, string messageType)
     {
         var turnState = session.TurnState;
         var protocolOperation = messageType.ToLowerInvariant();
@@ -23,7 +23,7 @@ public sealed class ProtocolToTurnContextMapper
 
         if (!string.IsNullOrWhiteSpace(session.DeviceId)) attributes["deviceId"] = session.DeviceId;
 
-        var robotFriendlyName = RobotFriendlyNameResolver.ResolveFromSession(session, null);
+        var robotFriendlyName = RobotFriendlyNameResolver.ResolveFromSession(session, cloudStateStore);
         if (!string.IsNullOrWhiteSpace(robotFriendlyName))
             attributes["robotFriendlyName"] = robotFriendlyName;
 

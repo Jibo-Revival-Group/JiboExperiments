@@ -5305,7 +5305,7 @@ public sealed class JiboInteractionServiceTests
         var decision = await service.BuildDecisionAsync(turn);
 
         Assert.Equal("@be/gallery", decision.SkillName);
-        Assert.Equal("GalleryRule", decision.IntentName);
+        Assert.Equal("menu", decision.IntentName);
         Assert.Equal("true", decision.SkillPayload!["launchRuleMatch"]?.ToString());
     }
 

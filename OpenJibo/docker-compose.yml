@@ -38,6 +38,7 @@ services:
       OpenJibo__State__PersistencePath: /data/state/cloud-state.json
       OpenJibo__PersonalMemory__PersistencePath: /data/personal-memory/personal-memory.json
       OpenJibo__Media__DirectoryPath: /data/media
+      OpenJibo__LaunchRules__DirectoryPath: /data/launch-rules
       OpenJibo__OwnerFirstName: Jibo
       OpenJibo__OwnerLastName: Owner
       OpenJibo__AcceptedHosts__0: localhost

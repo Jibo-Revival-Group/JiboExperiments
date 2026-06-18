@@ -92,7 +92,8 @@ public sealed class WebSocketRequestCoordinatorTests
             new NullWebSocketTelemetrySink(),
             new WebSocketTurnFinalizationService(conversationBroker,
                 sttSelector,
-                sink));
+                sink,
+                new ProtocolToTurnContextMapper(store)));
     }
 
     private static DefaultHttpContext CreateContext(FakeWebSocket socket)

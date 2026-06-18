@@ -12,14 +12,17 @@ public sealed class WebSocketTurnFinalizationService(
     IConversationBroker conversationBroker,
     ISttStrategySelector sttStrategySelector,
     ITurnTelemetrySink sink,
+    ProtocolToTurnContextMapper turnContextMapper,
     ILogger<WebSocketTurnFinalizationService> logger
 )
 {
     public WebSocketTurnFinalizationService(
         IConversationBroker conversationBroker,
         ISttStrategySelector sttStrategySelector,
-        ITurnTelemetrySink sink)
-        : this(conversationBroker, sttStrategySelector, sink, NullLogger<WebSocketTurnFinalizationService>.Instance)
+        ITurnTelemetrySink sink,
+        ProtocolToTurnContextMapper turnContextMapper)
+        : this(conversationBroker, sttStrategySelector, sink, turnContextMapper,
+            NullLogger<WebSocketTurnFinalizationService>.Instance)
     {
     }
 
@@ -460,7 +463,7 @@ public sealed class WebSocketTurnFinalizationService(
             session.FollowUpOpen);
         PersistTurnHints(session, envelope.Text);
 
-        var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, "LISTEN");
+        var turn = turnContextMapper.MapListenMessage(envelope, session, "LISTEN");
         if (ShouldIgnoreCompletedWordOfDayTurn(turn))
         {
             logger.LogDebug("Listen setup ignored completed word-of-day turn session={SessionId} transId={TransId}",
@@ -744,7 +747,7 @@ public sealed class WebSocketTurnFinalizationService(
             session.TurnState.AwaitingTurnCompletion);
         try
         {
-            var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, messageType);
+            var turn = turnContextMapper.MapListenMessage(envelope, session, messageType);
             var turnState = session.TurnState;
             if (IsYesNoTurn(turn) || ReadPrimaryYesNoRule(turn) is not null)
                 await sink.RecordTurnDiagnosticAsync("yes_no_turn_received", BuildTurnDiagnosticSnapshot(session,

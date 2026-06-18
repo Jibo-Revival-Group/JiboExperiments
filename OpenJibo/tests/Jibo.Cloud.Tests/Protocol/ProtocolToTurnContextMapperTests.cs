@@ -1,5 +1,6 @@
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.Persistence;
 
 namespace Jibo.Cloud.Tests.Protocol;
 
@@ -8,6 +9,7 @@ public sealed class ProtocolToTurnContextMapperTests
     [Fact]
     public void MapListenMessage_PreservesHouseholdListMetadata()
     {
+        var mapper = new ProtocolToTurnContextMapper(new InMemoryCloudStateStore());
         var session = new CloudSession
         {
             AccountId = "acct-123",
@@ -26,7 +28,7 @@ public sealed class ProtocolToTurnContextMapperTests
             Text = """{"data":{"text":"add milk"}}"""
         };
 
-        var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, "LISTEN");
+        var turn = mapper.MapListenMessage(envelope, session, "LISTEN");
 
         Assert.Equal("add milk", turn.NormalizedTranscript);
         Assert.Equal("awaiting_item", turn.Attributes["householdListState"]);

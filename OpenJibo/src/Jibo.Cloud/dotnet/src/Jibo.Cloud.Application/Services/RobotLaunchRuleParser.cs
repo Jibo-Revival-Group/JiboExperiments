@@ -17,6 +17,10 @@ public static partial class RobotLaunchRuleParser
         RegexOptions.CultureInvariant)]
     private static partial Regex DoubleQuotedEntityPattern();
 
+    [GeneratedRegex(@"\{%\s*(?<key>skill|intent|domain)\s*:\s*'(?<value>[^']*)'\s*%\}",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex ColonQuotedEntityPattern();
+
     public static IReadOnlyList<ParsedLaunchRule> Parse(string fileName, string content)
     {
         if (string.IsNullOrWhiteSpace(content)) return [];
@@ -53,6 +57,9 @@ public static partial class RobotLaunchRuleParser
         foreach (Match match in DoubleQuotedEntityPattern().Matches(pattern))
             entities[match.Groups["key"].Value] = match.Groups["value"].Value;
 
+        foreach (Match match in ColonQuotedEntityPattern().Matches(pattern))
+            entities[match.Groups["key"].Value] = match.Groups["value"].Value;
+
         return entities;
     }
 
@@ -60,6 +67,7 @@ public static partial class RobotLaunchRuleParser
     {
         var withoutEntities = SingleQuotedEntityPattern().Replace(pattern, " ");
         withoutEntities = DoubleQuotedEntityPattern().Replace(withoutEntities, " ");
+        withoutEntities = ColonQuotedEntityPattern().Replace(withoutEntities, " ");
         withoutEntities = withoutEntities
             .Replace("$*", " ", StringComparison.Ordinal)
             .Replace("$+", " ", StringComparison.Ordinal)

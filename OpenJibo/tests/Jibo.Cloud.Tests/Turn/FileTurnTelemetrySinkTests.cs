@@ -2,6 +2,7 @@ using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Cloud.Infrastructure.Telemetry;
 using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -83,7 +84,8 @@ public sealed class FileTurnTelemetrySinkTests
 
         var turnService = new WebSocketTurnFinalizationService(Mock.Of<IConversationBroker>(),
             sttStrategySelector.Object,
-            sink.Object
+            sink.Object,
+            new ProtocolToTurnContextMapper(new InMemoryCloudStateStore())
         );
 
         await turnService.HandleTurnAsync(new CloudSession { TurnState = { BufferedAudioBytes = 100 } },
@@ -114,7 +116,8 @@ public sealed class FileTurnTelemetrySinkTests
 
         var turnService = new WebSocketTurnFinalizationService(Mock.Of<IConversationBroker>(),
             sttStrategySelector.Object,
-            sink.Object
+            sink.Object,
+            new ProtocolToTurnContextMapper(new InMemoryCloudStateStore())
         );
 
         var session = new CloudSession
@@ -166,7 +169,8 @@ public sealed class FileTurnTelemetrySinkTests
         var turnService = new WebSocketTurnFinalizationService(
             Mock.Of<IConversationBroker>(),
             Mock.Of<ISttStrategySelector>(),
-            sink.Object);
+            sink.Object,
+            new ProtocolToTurnContextMapper(new InMemoryCloudStateStore()));
 
         var session = new CloudSession
         {

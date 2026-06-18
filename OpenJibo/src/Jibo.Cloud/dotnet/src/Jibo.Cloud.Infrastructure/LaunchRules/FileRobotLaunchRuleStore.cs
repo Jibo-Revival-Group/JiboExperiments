@@ -27,6 +27,19 @@ public sealed class FileRobotLaunchRuleStore(RobotLaunchRuleOptions options) : I
             .ToArray();
     }
 
+    public IReadOnlyList<string> ListRobotFriendlyNames()
+    {
+        var root = Path.GetFullPath(options.DirectoryPath);
+        if (!Directory.Exists(root)) return [];
+
+        return Directory.EnumerateDirectories(root)
+            .Select(path => Path.GetFileName(path))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Cast<string>()
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
     public RobotLaunchRuleFile? Get(string robotFriendlyName, string fileName)
     {
         if (!LaunchRuleFileValidator.TryNormalizeFileName(fileName, out var normalized, out _))

@@ -172,24 +172,39 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
             transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(transcript);
             if (TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(transcript))
             {
-                logger.LogDebug(
-                    "STT rejected likely robot self-audio transcript turnId={TurnId} transcript={Transcript}",
-                    turn.TurnId,
-                    transcript);
-
-                var transcriptHint = AudioTranscriptNormalizer.NormalizeLooseTranscript(ReadTranscriptHint(turn));
-                if (!string.IsNullOrWhiteSpace(transcriptHint) &&
-                    !TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(transcriptHint))
+                var embeddedWakePhraseCommand = TranscriptHeuristics.ExtractWakePhraseCommand(transcript);
+                if (!string.IsNullOrWhiteSpace(embeddedWakePhraseCommand) &&
+                    !string.Equals(embeddedWakePhraseCommand, transcript, StringComparison.Ordinal) &&
+                    !TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(embeddedWakePhraseCommand))
                 {
                     logger.LogDebug(
-                        "STT using transcript hint after self-audio rejection turnId={TurnId} transcriptHint={TranscriptHint}",
+                        "STT preserved embedded wake-phrase command after robot self-audio turnId={TurnId} transcript={Transcript} command={Command}",
                         turn.TurnId,
-                        transcriptHint);
-                    transcript = transcriptHint;
+                        transcript,
+                        embeddedWakePhraseCommand);
+                    transcript = embeddedWakePhraseCommand;
                 }
                 else
                 {
-                    transcript = string.Empty;
+                    logger.LogDebug(
+                        "STT rejected likely robot self-audio transcript turnId={TurnId} transcript={Transcript}",
+                        turn.TurnId,
+                        transcript);
+
+                    var transcriptHint = AudioTranscriptNormalizer.NormalizeLooseTranscript(ReadTranscriptHint(turn));
+                    if (!string.IsNullOrWhiteSpace(transcriptHint) &&
+                        !TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(transcriptHint))
+                    {
+                        logger.LogDebug(
+                            "STT using transcript hint after self-audio rejection turnId={TurnId} transcriptHint={TranscriptHint}",
+                            turn.TurnId,
+                            transcriptHint);
+                        transcript = transcriptHint;
+                    }
+                    else
+                    {
+                        transcript = string.Empty;
+                    }
                 }
             }
 

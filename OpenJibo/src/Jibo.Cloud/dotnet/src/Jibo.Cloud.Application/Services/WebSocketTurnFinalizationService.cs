@@ -862,7 +862,6 @@ public sealed class WebSocketTurnFinalizationService(
                 {
                     turnState.AwaitingTurnCompletion = true;
                     if (turnState.BufferedAudioBytes > 0) turnState.FinalizeAttemptCount += 1;
-                    turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
                     await sink.RecordTurnDiagnosticAsync("auto_finalize_deferred_for_yes_no_blank_ogg",
                         BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
                         {
@@ -951,14 +950,12 @@ public sealed class WebSocketTurnFinalizationService(
                 if (ShouldKeepOpenOggHotphraseBlankBeforeHardTimeout(finalizedTurn, turnState, messageType,
                         allowFallbackOnMissingTranscript, turnAge))
                 {
-                    turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
                     return [];
                 }
 
                 if (ShouldKeepOpenOggYesNoBlankBeforeHardTimeout(finalizedTurn, turnState, messageType,
                         allowFallbackOnMissingTranscript, turnAge))
                 {
-                    turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
                     await sink.RecordTurnDiagnosticAsync("auto_finalize_deferred_for_yes_no_blank_ogg",
                         BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
                         {
@@ -2584,7 +2581,8 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static bool IsHotphraseOnlyTranscript(string normalized)
     {
-        return TranscriptTextNormalizer.IsWakePhraseOnly(normalized);
+        return TranscriptTextNormalizer.IsWakePhraseOnly(normalized) ||
+               TranscriptTextNormalizer.HasTerminalWakePhraseWithoutCommand(normalized);
     }
 
     private static string NormalizeBufferedAudioTranscript(TurnContext turn, string transcript)

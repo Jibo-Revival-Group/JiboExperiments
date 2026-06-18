@@ -5443,6 +5443,100 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task BufferedHotphraseOggAudio_BlankEarlyProbeRetriesNextAudioBeforeHardTimeout()
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies:
+        [
+            new QueuedBufferedAudioSttStrategy("", "Hey Jibo, what's your cloud version?")
+        ]);
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-blank-early-probe-retry-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-ogg-blank-early-probe-retry","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-blank-early-probe-retry-token",
+            Binary = BuildOggFrame(0x02, "OpusHead")
+        });
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-blank-early-probe-retry-token",
+            Binary = BuildOggFrame(0x00, "OpusTags")
+        });
+
+        for (var index = 0; index < 8; index += 1)
+        {
+            var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-ogg-blank-early-probe-retry-token",
+                Binary = BuildOggFrame(0x00)
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-blank-early-probe-retry-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
+
+        var blankProbeReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-blank-early-probe-retry-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Empty(blankProbeReplies);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(1, session.TurnState.FinalizeAttemptCount);
+        Assert.Null(session.LastIntent);
+        Assert.Null(session.LastTranscript);
+
+        var commandReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-blank-early-probe-retry-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Equal(3, commandReplies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(commandReplies[0]));
+        Assert.Equal("EOS", ReadReplyType(commandReplies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(commandReplies[2]));
+
+        using var listenPayload = JsonDocument.Parse(commandReplies[0].Text!);
+        Assert.Equal("what's your cloud version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("cloud_version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("cloud_version", session.LastIntent);
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+    }
+
+    [Fact]
     public async Task BufferedHotphraseOggAudio_HotphraseOnlyEarlyProbeRetriesNextAudioBeforeHardTimeout()
     {
         var stateStore = new InMemoryCloudStateStore();
@@ -5518,6 +5612,102 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-hotphrase-ogg-early-probe-retry-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Equal(3, commandReplies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(commandReplies[0]));
+        Assert.Equal("EOS", ReadReplyType(commandReplies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(commandReplies[2]));
+
+        using var listenPayload = JsonDocument.Parse(commandReplies[0].Text!);
+        Assert.Equal("what's your cloud version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("cloud_version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("cloud_version", session.LastIntent);
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+    }
+
+    [Fact]
+    public async Task BufferedHotphraseOggAudio_TerminalWakePhraseBleedRetriesNextAudioBeforeHardTimeout()
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies:
+        [
+            new QueuedBufferedAudioSttStrategy(
+                "the snail said when he was riding on the turtle's back whee hey jibo",
+                "Hey Jibo, what's your cloud version?")
+        ]);
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-terminal-wake-retry-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-ogg-terminal-wake-retry","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-terminal-wake-retry-token",
+            Binary = BuildOggFrame(0x02, "OpusHead")
+        });
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-terminal-wake-retry-token",
+            Binary = BuildOggFrame(0x00, "OpusTags")
+        });
+
+        for (var index = 0; index < 8; index += 1)
+        {
+            var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-ogg-terminal-wake-retry-token",
+                Binary = BuildOggFrame(0x00)
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-terminal-wake-retry-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
+
+        var terminalWakeReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-terminal-wake-retry-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Empty(terminalWakeReplies);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(1, session.TurnState.FinalizeAttemptCount);
+        Assert.Null(session.LastIntent);
+        Assert.Null(session.LastTranscript);
+
+        var commandReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-terminal-wake-retry-token",
             Binary = BuildOggFrame(0x00)
         });
 

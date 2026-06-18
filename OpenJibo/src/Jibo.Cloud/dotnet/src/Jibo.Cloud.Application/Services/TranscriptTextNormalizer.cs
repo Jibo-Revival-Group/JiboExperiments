@@ -98,6 +98,15 @@ internal static class TranscriptTextNormalizer
                string.IsNullOrWhiteSpace(StripLeadingWakePhrase(normalized));
     }
 
+    internal static bool HasTerminalWakePhraseWithoutCommand(string? value)
+    {
+        var normalized = NormalizeLooseText(value);
+        if (string.IsNullOrWhiteSpace(normalized) || IsWakePhraseOnly(normalized)) return false;
+
+        return TryStripTerminalWakePhrase(normalized, out var beforeWakePhrase) &&
+               !string.IsNullOrWhiteSpace(beforeWakePhrase);
+    }
+
     private static bool TryStripLeadingPhrase(string normalizedValue, IReadOnlyList<string> phrases, out string trimmed)
     {
         foreach (var phrase in phrases)
@@ -147,6 +156,22 @@ internal static class TranscriptTextNormalizer
 
         command = bestCommandStart < 0 ? string.Empty : string.Join(' ', tokens.Skip(bestCommandStart));
         return !string.IsNullOrWhiteSpace(command);
+    }
+
+    private static bool TryStripTerminalWakePhrase(string normalizedValue, out string beforeWakePhrase)
+    {
+        foreach (var phrase in WakePhraseLeadPhrases)
+        {
+            if (string.IsNullOrWhiteSpace(phrase)) continue;
+
+            if (!normalizedValue.EndsWith($" {phrase}", StringComparison.Ordinal)) continue;
+
+            beforeWakePhrase = normalizedValue[..^(phrase.Length + 1)].TrimEnd();
+            return true;
+        }
+
+        beforeWakePhrase = normalizedValue;
+        return false;
     }
 
     private static bool TokensMatch(IReadOnlyList<string> tokens, int startIndex, IReadOnlyList<string> phraseTokens)

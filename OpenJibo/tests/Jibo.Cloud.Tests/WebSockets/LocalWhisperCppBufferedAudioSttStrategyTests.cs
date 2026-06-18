@@ -400,6 +400,49 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
     }
 
     [Fact]
+    public async Task TranscribeAsync_PreservesEmbeddedWakePhraseCommand_WhenRobotSelfAudioPrecedesCommand()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var runner = new FakeExternalProcessRunner(
+                "[00:00:00.000 --> 00:00:03.000] Okay, you said, feeling thankful. Hey, Jibo, what's your cloud version?");
+            var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+                new BufferedAudioSttOptions
+                {
+                    EnableLocalWhisperCpp = true,
+                    FfmpegPath = "ffmpeg",
+                    WhisperCliPath = "whisper-cli",
+                    WhisperModelPath = "model.bin",
+                    TempDirectory = tempDirectory
+                },
+                runner);
+
+            var turn = new TurnContext
+            {
+                TurnId = "turn-local-stt-self-audio-embedded-command",
+                Locale = "en-US",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["bufferedAudioBytes"] = 147,
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                }
+            };
+
+            var result = await strategy.TranscribeAsync(turn);
+
+            Assert.Equal("what's your cloud version", result.Text);
+            Assert.Equal("local-whispercpp-buffered-audio", result.Provider);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
+        }
+    }
+
+    [Fact]
     public async Task TranscribeAsync_WritesTheRawBufferedPagesToFfmpeg()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");

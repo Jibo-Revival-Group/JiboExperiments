@@ -37,6 +37,24 @@ public sealed class AudioTranscriptNormalizerTests
     }
 
     [Theory]
+    [InlineData("version 1 dot 0 dot 20 hey gebo")]
+    [InlineData("the snail said whee hey jibo")]
+    [InlineData("at all hey gibo")]
+    public void HasTerminalWakePhraseWithoutCommand_ReturnsTrue_WhenPriorAudioEndsWithWakePhrase(string value)
+    {
+        Assert.True(TranscriptTextNormalizer.HasTerminalWakePhraseWithoutCommand(value));
+    }
+
+    [Theory]
+    [InlineData("hey jibo")]
+    [InlineData("hey jibo what's your cloud version")]
+    [InlineData("okay you said feeling thankful hey jibo what's your cloud version")]
+    public void HasTerminalWakePhraseWithoutCommand_ReturnsFalse_WhenWakePhraseHasNoPriorAudioOrHasCommand(string value)
+    {
+        Assert.False(TranscriptTextNormalizer.HasTerminalWakePhraseWithoutCommand(value));
+    }
+
+    [Theory]
     [InlineData("I heard you.")]
     [InlineData("Okay, you said.")]
     [InlineData("I can hear you")]

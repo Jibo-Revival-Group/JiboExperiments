@@ -40,6 +40,11 @@ public static class TranscriptHeuristics
                    normalized.StartsWith($"{phrase}.", StringComparison.Ordinal));
     }
 
+    public static string ExtractWakePhraseCommand(string? value)
+    {
+        return TranscriptTextNormalizer.ExtractWakePhraseCommand(value);
+    }
+
     private static string NormalizeLooseTranscript(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return string.Empty;

@@ -4,13 +4,11 @@ namespace Jibo.Cloud.Application.Abstractions;
 
 public interface IRobotLaunchRuleStore
 {
-    IReadOnlyList<RobotLaunchRuleFile> List(string robotFriendlyName);
+    IReadOnlyList<RobotLaunchRuleFile> List();
 
-    IReadOnlyList<string> ListRobotFriendlyNames();
+    RobotLaunchRuleFile? Get(string fileName);
 
-    RobotLaunchRuleFile? Get(string robotFriendlyName, string fileName);
+    RobotLaunchRuleFile Save(string fileName, string content);
 
-    RobotLaunchRuleFile Save(string robotFriendlyName, string fileName, string content);
-
-    bool Delete(string robotFriendlyName, string fileName);
+    bool Delete(string fileName);
 }

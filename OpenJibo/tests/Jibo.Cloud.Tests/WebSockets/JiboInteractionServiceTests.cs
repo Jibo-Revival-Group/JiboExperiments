@@ -5286,14 +5286,13 @@ public sealed class JiboInteractionServiceTests
     [Fact]
     public async Task BuildDecisionAsync_UsesUploadedLaunchRuleForMatchingLaunchTurn()
     {
-        const string robotName = "Royal-Current-Sage-Canvas";
         var launchRuleStore = new InMemoryRobotLaunchRuleStore();
-        launchRuleStore.Save(robotName, "launch.rule",
+        launchRuleStore.Save("launch.rule",
             "GalleryRule = ($* open gallery {%skill='@be/gallery'%} $*);");
         var service = CreateService(launchRuleStore: launchRuleStore);
         var turn = new TurnContext
         {
-            DeviceId = robotName,
+            DeviceId = "my-robot-serial-number",
             RawTranscript = "open gallery",
             NormalizedTranscript = "open gallery",
             Attributes = new Dictionary<string, object?>

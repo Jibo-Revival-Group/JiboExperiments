@@ -87,7 +87,7 @@ public sealed class RobotLaunchRuleMatcherTests
 
         Assert.NotNull(match);
         Assert.Equal("@be/gallery", match!.SkillId);
-        Assert.Equal("LongRule", match.Rule.RuleName);
+        Assert.Equal("menu", match.Intent);
     }
 }
 
@@ -96,14 +96,12 @@ public sealed class RobotLaunchRuleOrchestratorTests
     [Fact]
     public async Task TryBuildDecisionAsync_ReturnsSkillRedirectDecisionForLaunchTurn()
     {
-        const string robotName = "Royal-Current-Sage-Canvas";
         const string content = "TopRule = ($* open gallery {%skill='@be/gallery'%} $*);";
         var store = new InMemoryRobotLaunchRuleStore();
-        store.Save(robotName, "launch.rule", content);
-        var orchestrator = new RobotLaunchRuleOrchestrator(store, new RobotLaunchRuleHostSettings());
+        store.Save("launch.rule", content);
+        var orchestrator = new RobotLaunchRuleOrchestrator(store);
         var turn = new TurnContext
         {
-            DeviceId = robotName,
             RawTranscript = "open gallery",
             NormalizedTranscript = "open gallery",
             Attributes = new Dictionary<string, object?>
@@ -121,13 +119,11 @@ public sealed class RobotLaunchRuleOrchestratorTests
     }
 
     [Fact]
-    public async Task TryBuildDecisionAsync_UsesSingleRobotFallbackWhenIdentityMissing()
+    public async Task TryBuildDecisionAsync_MatchesWithoutRobotIdentity()
     {
-        const string robotName = "Royal-Current-Sage-Canvas";
         var store = new InMemoryRobotLaunchRuleStore();
-        store.Save(robotName, "launch.rule",
-            "GalleryRule = ($* open gallery {%skill='@be/gallery'%} $*);");
-        var orchestrator = new RobotLaunchRuleOrchestrator(store, new RobotLaunchRuleHostSettings());
+        store.Save("launch.rule", "GalleryRule = ($* open gallery {%skill='@be/gallery'%} $*);");
+        var orchestrator = new RobotLaunchRuleOrchestrator(store);
         var turn = new TurnContext
         {
             DeviceId = "my-robot-serial-number",
@@ -146,19 +142,17 @@ public sealed class RobotLaunchRuleOrchestratorTests
     }
 
     [Fact]
-    public async Task TryBuildDecisionAsync_SkipsNonLaunchTurn()
+    public async Task TryBuildDecisionAsync_SkipsClientNluTurn()
     {
-        const string robotName = "Royal-Current-Sage-Canvas";
         var store = new InMemoryRobotLaunchRuleStore();
-        store.Save(robotName, "launch.rule", "TopRule = (open gallery {%skill='@be/gallery'%});");
-        var orchestrator = new RobotLaunchRuleOrchestrator(store, new RobotLaunchRuleHostSettings());
+        store.Save("launch.rule", "TopRule = (open gallery {%skill='@be/gallery'%});");
+        var orchestrator = new RobotLaunchRuleOrchestrator(store);
         var turn = new TurnContext
         {
-            DeviceId = robotName,
             RawTranscript = "open gallery",
             Attributes = new Dictionary<string, object?>
             {
-                ["listenRules"] = new[] { "chitchat" }
+                ["messageType"] = "CLIENT_NLU"
             }
         };
 
@@ -213,62 +207,42 @@ public sealed class RobotLaunchRuleResponseMapperTests
 
 internal sealed class InMemoryRobotLaunchRuleStore : IRobotLaunchRuleStore
 {
-    private readonly Dictionary<string, Dictionary<string, RobotLaunchRuleFile>> _files = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, RobotLaunchRuleFile> _files = new(StringComparer.OrdinalIgnoreCase);
 
-    public IReadOnlyList<RobotLaunchRuleFile> List(string robotFriendlyName)
+    public IReadOnlyList<RobotLaunchRuleFile> List()
     {
-        return _files.TryGetValue(robotFriendlyName, out var robotFiles)
-            ? robotFiles.Values.OrderBy(file => file.FileName).ToArray()
-            : [];
+        return _files.Values.OrderBy(file => file.FileName).ToArray();
     }
 
-    public IReadOnlyList<string> ListRobotFriendlyNames()
+    public RobotLaunchRuleFile? Get(string fileName)
     {
-        return _files.Keys.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+        return _files.TryGetValue(fileName, out var file) ? file : null;
     }
 
-    public RobotLaunchRuleFile? Get(string robotFriendlyName, string fileName)
+    public RobotLaunchRuleFile Save(string fileName, string content)
     {
-        return _files.TryGetValue(robotFriendlyName, out var robotFiles) &&
-               robotFiles.TryGetValue(fileName, out var file)
-            ? file
-            : null;
-    }
-
-    public RobotLaunchRuleFile Save(string robotFriendlyName, string fileName, string content)
-    {
-        if (!_files.TryGetValue(robotFriendlyName, out var robotFiles))
-        {
-            robotFiles = new Dictionary<string, RobotLaunchRuleFile>(StringComparer.OrdinalIgnoreCase);
-            _files[robotFriendlyName] = robotFiles;
-        }
-
         var record = new RobotLaunchRuleFile
         {
-            RobotFriendlyName = robotFriendlyName,
+            RobotFriendlyName = "global",
             FileName = fileName,
             Content = content,
             SizeBytes = content.Length,
             UploadedUtc = DateTimeOffset.UtcNow
         };
-        robotFiles[fileName] = record;
+        _files[fileName] = record;
         return record;
     }
 
-    public bool Delete(string robotFriendlyName, string fileName)
+    public bool Delete(string fileName)
     {
-        return _files.TryGetValue(robotFriendlyName, out var robotFiles) && robotFiles.Remove(fileName);
+        return _files.Remove(fileName);
     }
 }
 
 internal static class RobotLaunchRuleTestSupport
 {
-    public static RobotLaunchRuleOrchestrator CreateOrchestrator(
-        IRobotLaunchRuleStore? store = null,
-        RobotLaunchRuleHostSettings? hostSettings = null)
+    public static RobotLaunchRuleOrchestrator CreateOrchestrator(IRobotLaunchRuleStore? store = null)
     {
-        return new RobotLaunchRuleOrchestrator(
-            store ?? new InMemoryRobotLaunchRuleStore(),
-            hostSettings ?? new RobotLaunchRuleHostSettings());
+        return new RobotLaunchRuleOrchestrator(store ?? new InMemoryRobotLaunchRuleStore());
     }
 }

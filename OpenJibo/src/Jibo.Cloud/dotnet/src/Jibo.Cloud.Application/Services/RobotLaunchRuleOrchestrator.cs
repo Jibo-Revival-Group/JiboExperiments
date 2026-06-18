@@ -3,9 +3,7 @@ using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class RobotLaunchRuleOrchestrator(
-    IRobotLaunchRuleStore launchRuleStore,
-    RobotLaunchRuleHostSettings hostSettings)
+public sealed class RobotLaunchRuleOrchestrator(IRobotLaunchRuleStore launchRuleStore)
 {
     private static readonly string[] WakeLeadPhrases =
     [
@@ -25,12 +23,10 @@ public sealed class RobotLaunchRuleOrchestrator(
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!IsLaunchTurn(turn)) return Task.FromResult<JiboInteractionDecision?>(null);
+        if (!ShouldTryLaunchRules(turn)) return Task.FromResult<JiboInteractionDecision?>(null);
+        if (string.IsNullOrWhiteSpace(transcript)) return Task.FromResult<JiboInteractionDecision?>(null);
 
-        var robotName = ResolveRobotName(turn, cloudStateStore);
-        if (string.IsNullOrWhiteSpace(robotName)) return Task.FromResult<JiboInteractionDecision?>(null);
-
-        var files = launchRuleStore.List(robotName);
+        var files = launchRuleStore.List();
         if (files.Count == 0) return Task.FromResult<JiboInteractionDecision?>(null);
 
         var parsedRules = new List<ParsedLaunchRule>();
@@ -40,8 +36,9 @@ public sealed class RobotLaunchRuleOrchestrator(
             parsedRules.AddRange(RobotLaunchRuleParser.Parse(file.FileName, file.Content));
         }
 
-        var normalizedTranscript = StripWakePhrase(transcript);
-        var match = RobotLaunchRuleMatcher.TryMatch(normalizedTranscript, parsedRules);
+        if (parsedRules.Count == 0) return Task.FromResult<JiboInteractionDecision?>(null);
+
+        var match = TryMatchTranscript(transcript, parsedRules);
         if (match is null) return Task.FromResult<JiboInteractionDecision?>(null);
 
         var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -51,8 +48,7 @@ public sealed class RobotLaunchRuleOrchestrator(
             ["launchRuleFile"] = match.Rule.SourceFile,
             ["launchRuleName"] = match.Rule.RuleName,
             ["skillId"] = match.SkillId,
-            ["localIntent"] = match.Intent,
-            ["robotFriendlyName"] = robotName
+            ["localIntent"] = match.Intent
         };
 
         foreach (var (key, value) in match.Entities)
@@ -65,30 +61,40 @@ public sealed class RobotLaunchRuleOrchestrator(
             payload));
     }
 
-    private string? ResolveRobotName(TurnContext turn, ICloudStateStore? cloudStateStore)
+    private static LaunchRuleMatchResult? TryMatchTranscript(string transcript, IReadOnlyList<ParsedLaunchRule> rules)
     {
-        var resolved = RobotFriendlyNameResolver.Resolve(turn, cloudStateStore);
-        if (!string.IsNullOrWhiteSpace(resolved)) return resolved;
+        foreach (var candidate in BuildTranscriptCandidates(transcript))
+        {
+            var match = RobotLaunchRuleMatcher.TryMatch(candidate, rules);
+            if (match is not null) return match;
+        }
 
-        if (RobotFriendlyNameValidator.TryNormalize(hostSettings.DefaultRobotFriendlyName, out var configured, out _))
-            return configured;
-
-        var knownRobots = launchRuleStore.ListRobotFriendlyNames();
-        if (knownRobots.Count == 1)
-            return knownRobots[0];
-
-        return knownRobots
-            .Select(name => new { Name = name, RuleCount = launchRuleStore.List(name).Count })
-            .Where(entry => entry.RuleCount > 0)
-            .OrderByDescending(entry => entry.RuleCount)
-            .ThenBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(entry => entry.Name)
-            .FirstOrDefault();
+        return null;
     }
 
-    private static bool IsLaunchTurn(TurnContext turn)
+    private static IEnumerable<string> BuildTranscriptCandidates(string transcript)
     {
+        var trimmed = transcript.Trim();
+        if (trimmed.Length == 0) yield break;
+
+        yield return trimmed;
+
+        var stripped = StripWakePhrase(trimmed);
+        if (!string.Equals(stripped, trimmed, StringComparison.OrdinalIgnoreCase))
+            yield return stripped;
+    }
+
+    private static bool ShouldTryLaunchRules(TurnContext turn)
+    {
+        var messageType = turn.Attributes.TryGetValue("messageType", out var rawMessageType)
+            ? rawMessageType?.ToString()
+            : null;
+
+        if (string.Equals(messageType, "TRIGGER", StringComparison.OrdinalIgnoreCase)) return false;
+        if (string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase)) return false;
+
         if (TurnAttributeReader.ReadBool(turn, "listenHotphrase")) return true;
+        if (string.Equals(messageType, "LISTEN", StringComparison.OrdinalIgnoreCase)) return true;
 
         return TurnAttributeReader.ReadRules(turn, "listenRules")
             .Concat(TurnAttributeReader.ReadRules(turn, "clientRules"))

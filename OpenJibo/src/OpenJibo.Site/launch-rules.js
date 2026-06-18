@@ -1,6 +1,5 @@
-const robotNameInput = document.getElementById("robot-name");
 const ruleFilesInput = document.getElementById("rule-files");
-const robotForm = document.getElementById("robot-form");
+const rulesForm = document.getElementById("rules-form");
 const uploadButton = document.getElementById("upload-button");
 const refreshButton = document.getElementById("refresh-button");
 const statusEl = document.getElementById("status");
@@ -9,23 +8,36 @@ const rulesSummary = document.getElementById("rules-summary");
 const emptyState = document.getElementById("empty-state");
 const dropzone = document.getElementById("dropzone");
 
-const storageKey = "openjibo.robotFriendlyName";
-
-function getRobotName() {
-	return robotNameInput.value.trim();
-}
+const passwordStorageKey = "openjibo.launchRulesPassword";
+const apiBase = "/api/admin/launch-rules";
 
 function setStatus(message, kind = "info") {
 	statusEl.textContent = message;
 	statusEl.dataset.kind = kind;
 }
 
-function encodeRobotName(name) {
-	return encodeURIComponent(name);
+function getPassword() {
+	const saved = sessionStorage.getItem(passwordStorageKey);
+	if (saved) return saved;
+
+	const entered = window.prompt("Enter the launch rules admin password:");
+	if (!entered) return null;
+
+	sessionStorage.setItem(passwordStorageKey, entered);
+	return entered;
 }
 
-function apiUrl(name, suffix = "") {
-	return `/api/public/robots/${encodeRobotName(name)}/launch-rules${suffix}`;
+function authHeaders() {
+	const password = getPassword();
+	if (!password) return null;
+
+	return {
+		Authorization: `Basic ${btoa(`admin:${password}`)}`
+	};
+}
+
+function apiUrl(suffix = "") {
+	return `${apiBase}${suffix}`;
 }
 
 function formatBytes(size) {
@@ -38,11 +50,19 @@ function formatDate(value) {
 	return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
-function renderRules(robotName, rules) {
+function escapeHtml(value) {
+	return value
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;");
+}
+
+function renderRules(rules) {
 	rulesList.replaceChildren();
 	rulesSummary.textContent = rules.length === 0
-		? `No launch rules saved for ${robotName}.`
-		: `${rules.length} launch rule${rules.length === 1 ? "" : "s"} saved for ${robotName}.`;
+		? "No global launch rules saved yet."
+		: `${rules.length} global launch rule${rules.length === 1 ? "" : "s"} active for all robots.`;
 	emptyState.hidden = rules.length > 0;
 
 	for (const rule of rules) {
@@ -63,13 +83,13 @@ function renderRules(robotName, rules) {
 		viewButton.type = "button";
 		viewButton.className = "button secondary compact";
 		viewButton.textContent = "View";
-		viewButton.addEventListener("click", () => viewRule(robotName, rule.fileName));
+		viewButton.addEventListener("click", () => viewRule(rule.fileName));
 
 		const deleteButton = document.createElement("button");
 		deleteButton.type = "button";
 		deleteButton.className = "button secondary compact danger";
 		deleteButton.textContent = "Delete";
-		deleteButton.addEventListener("click", () => deleteRule(robotName, rule.fileName));
+		deleteButton.addEventListener("click", () => deleteRule(rule.fileName));
 
 		actions.append(viewButton, deleteButton);
 		item.append(meta, actions);
@@ -77,34 +97,39 @@ function renderRules(robotName, rules) {
 	}
 }
 
-function escapeHtml(value) {
-	return value
-		.replaceAll("&", "&amp;")
-		.replaceAll("<", "&lt;")
-		.replaceAll(">", "&gt;")
-		.replaceAll('"', "&quot;");
+async function authorizedFetch(url, options = {}) {
+	const headers = authHeaders();
+	if (!headers) {
+		throw new Error("Admin password is required.");
+	}
+
+	const response = await fetch(url, {
+		...options,
+		headers: {
+			...options.headers,
+			...headers
+		}
+	});
+
+	if (response.status === 401) {
+		sessionStorage.removeItem(passwordStorageKey);
+		throw new Error("Invalid admin password.");
+	}
+
+	return response;
 }
 
 async function loadRules(showMessage = false) {
-	const robotName = getRobotName();
-	if (!robotName) {
-		renderRules("", []);
-		setStatus("Enter your robot's friendly name first.", "error");
-		return;
-	}
-
-	localStorage.setItem(storageKey, robotName);
-
 	try {
-		const response = await fetch(apiUrl(robotName));
+		const response = await authorizedFetch(apiUrl());
 		const payload = await response.json();
 		if (!response.ok) throw new Error(payload.error || "Could not load launch rules.");
 
-		renderRules(payload.robotFriendlyName, payload.rules || []);
-		if (showMessage) setStatus(`Loaded launch rules for ${payload.robotFriendlyName}.`, "success");
+		renderRules(payload.rules || []);
+		if (showMessage) setStatus("Loaded global launch rules.", "success");
 		else setStatus("");
 	} catch (error) {
-		renderRules(robotName, []);
+		renderRules([]);
 		setStatus(error.message, "error");
 	}
 }
@@ -112,13 +137,7 @@ async function loadRules(showMessage = false) {
 async function uploadRules(event) {
 	event.preventDefault();
 
-	const robotName = getRobotName();
 	const files = [...ruleFilesInput.files];
-	if (!robotName) {
-		setStatus("Enter your robot's friendly name first.", "error");
-		return;
-	}
-
 	if (files.length === 0) {
 		setStatus("Choose at least one .rule file to upload.", "error");
 		return;
@@ -131,7 +150,7 @@ async function uploadRules(event) {
 	setStatus("Uploading launch rules…");
 
 	try {
-		const response = await fetch(apiUrl(robotName), {
+		const response = await authorizedFetch(apiUrl(), {
 			method: "POST",
 			body: formData
 		});
@@ -140,7 +159,7 @@ async function uploadRules(event) {
 
 		ruleFilesInput.value = "";
 		await loadRules(false);
-		setStatus(`Uploaded ${payload.uploaded.length} launch rule file(s) for ${payload.robotFriendlyName}.`, "success");
+		setStatus(`Uploaded ${payload.uploaded.length} launch rule file(s). They apply to all robots.`, "success");
 	} catch (error) {
 		setStatus(error.message, "error");
 	} finally {
@@ -148,11 +167,11 @@ async function uploadRules(event) {
 	}
 }
 
-async function deleteRule(robotName, fileName) {
-	if (!window.confirm(`Delete ${fileName} for ${robotName}?`)) return;
+async function deleteRule(fileName) {
+	if (!window.confirm(`Delete ${fileName}?`)) return;
 
 	try {
-		const response = await fetch(apiUrl(robotName, `/${encodeURIComponent(fileName)}`), {
+		const response = await authorizedFetch(apiUrl(`/${encodeURIComponent(fileName)}`), {
 			method: "DELETE"
 		});
 		const payload = await response.json();
@@ -165,9 +184,9 @@ async function deleteRule(robotName, fileName) {
 	}
 }
 
-async function viewRule(robotName, fileName) {
+async function viewRule(fileName) {
 	try {
-		const response = await fetch(apiUrl(robotName, `/${encodeURIComponent(fileName)}`));
+		const response = await authorizedFetch(apiUrl(`/${encodeURIComponent(fileName)}`));
 		const payload = await response.json();
 		if (!response.ok) throw new Error(payload.error || "Could not load file contents.");
 
@@ -199,14 +218,7 @@ function wireDropzone() {
 	});
 }
 
-robotForm.addEventListener("submit", uploadRules);
+rulesForm.addEventListener("submit", uploadRules);
 refreshButton.addEventListener("click", () => loadRules(true));
-robotNameInput.addEventListener("change", () => loadRules(false));
-
-const savedName = localStorage.getItem(storageKey);
-if (savedName) {
-	robotNameInput.value = savedName;
-	loadRules(false);
-}
-
 wireDropzone();
+loadRules(false);

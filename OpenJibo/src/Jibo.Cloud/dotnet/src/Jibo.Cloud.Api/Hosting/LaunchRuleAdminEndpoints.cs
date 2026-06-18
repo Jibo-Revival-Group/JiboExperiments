@@ -1,12 +1,13 @@
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
+
 namespace Jibo.Cloud.Api.Hosting;
 
-internal static class RobotLaunchRuleEndpoints
+internal static class LaunchRuleAdminEndpoints
 {
     internal static void Map(WebApplication app)
     {
-        var group = app.MapGroup("/api/public/robots/{robotName}/launch-rules");
+        var group = app.MapGroup("/api/admin/launch-rules");
 
         group.MapGet("/", ListLaunchRules);
         group.MapGet("/{fileName}", GetLaunchRule);
@@ -14,15 +15,12 @@ internal static class RobotLaunchRuleEndpoints
         group.MapDelete("/{fileName}", DeleteLaunchRule);
     }
 
-    private static IResult ListLaunchRules(string robotName, IRobotLaunchRuleStore store)
+    private static IResult ListLaunchRules(IRobotLaunchRuleStore store)
     {
-        if (!TryValidateRobotName(robotName, out var normalized, out var error))
-            return Results.BadRequest(new { error });
-
-        var rules = store.List(normalized);
+        var rules = store.List();
         return Results.Ok(new
         {
-            robotFriendlyName = normalized,
+            scope = "global",
             rules = rules.Select(rule => new
             {
                 fileName = rule.FileName,
@@ -32,20 +30,17 @@ internal static class RobotLaunchRuleEndpoints
         });
     }
 
-    private static IResult GetLaunchRule(string robotName, string fileName, IRobotLaunchRuleStore store)
+    private static IResult GetLaunchRule(string fileName, IRobotLaunchRuleStore store)
     {
-        if (!TryValidateRobotName(robotName, out var normalized, out var robotError))
-            return Results.BadRequest(new { error = robotError });
-
         if (!LaunchRuleFileValidator.TryNormalizeFileName(fileName, out var normalizedFileName, out var fileError))
             return Results.BadRequest(new { error = fileError });
 
-        var rule = store.Get(normalized, normalizedFileName);
+        var rule = store.Get(normalizedFileName);
         return rule is null
             ? Results.NotFound(new { error = "Launch rule file was not found." })
             : Results.Ok(new
             {
-                robotFriendlyName = normalized,
+                scope = "global",
                 fileName = rule.FileName,
                 sizeBytes = rule.SizeBytes,
                 uploadedUtc = rule.UploadedUtc,
@@ -54,14 +49,10 @@ internal static class RobotLaunchRuleEndpoints
     }
 
     private static async Task<IResult> UploadLaunchRules(
-        string robotName,
         HttpRequest request,
         IRobotLaunchRuleStore store,
         CancellationToken cancellationToken)
     {
-        if (!TryValidateRobotName(robotName, out var normalized, out var robotError))
-            return Results.BadRequest(new { error = robotError });
-
         if (!request.HasFormContentType)
             return Results.BadRequest(new { error = "Upload launch rule files using multipart form data." });
 
@@ -86,7 +77,7 @@ internal static class RobotLaunchRuleEndpoints
 
             try
             {
-                var record = store.Save(normalized, normalizedFileName, content);
+                var record = store.Save(normalizedFileName, content);
                 saved.Add(new
                 {
                     fileName = record.FileName,
@@ -102,34 +93,18 @@ internal static class RobotLaunchRuleEndpoints
 
         return Results.Ok(new
         {
-            robotFriendlyName = normalized,
+            scope = "global",
             uploaded = saved
         });
     }
 
-    private static IResult DeleteLaunchRule(string robotName, string fileName, IRobotLaunchRuleStore store)
+    private static IResult DeleteLaunchRule(string fileName, IRobotLaunchRuleStore store)
     {
-        if (!TryValidateRobotName(robotName, out var normalized, out var robotError))
-            return Results.BadRequest(new { error = robotError });
-
         if (!LaunchRuleFileValidator.TryNormalizeFileName(fileName, out var normalizedFileName, out var fileError))
             return Results.BadRequest(new { error = fileError });
 
-        return store.Delete(normalized, normalizedFileName)
-            ? Results.Ok(new { robotFriendlyName = normalized, deleted = normalizedFileName })
+        return store.Delete(normalizedFileName)
+            ? Results.Ok(new { scope = "global", deleted = normalizedFileName })
             : Results.NotFound(new { error = "Launch rule file was not found." });
-    }
-
-    private static bool TryValidateRobotName(string robotName, out string normalized, out string error)
-    {
-        if (RobotFriendlyNameValidator.TryNormalize(robotName, out normalized, out var validationError))
-        {
-            error = string.Empty;
-            return true;
-        }
-
-        error = validationError ?? "Robot friendly name is invalid.";
-        normalized = string.Empty;
-        return false;
     }
 }

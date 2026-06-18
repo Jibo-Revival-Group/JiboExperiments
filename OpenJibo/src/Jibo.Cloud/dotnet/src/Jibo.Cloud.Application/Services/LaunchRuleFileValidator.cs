@@ -3,7 +3,7 @@ namespace Jibo.Cloud.Application.Services;
 public static class LaunchRuleFileValidator
 {
     public const int MaxFileBytes = 64 * 1024;
-    public const int MaxFilesPerRobot = 32;
+    public const int MaxFiles = 32;
 
     public static bool TryNormalizeFileName(string? value, out string normalized, out string? error)
     {

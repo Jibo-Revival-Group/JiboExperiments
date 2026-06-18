@@ -7,6 +7,10 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 
+var repoRoot = FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
+               FindOpenJiboRepoRoot(AppContext.BaseDirectory);
+DotEnvLoader.LoadIntoEnvironment(repoRoot is null ? null : Path.Combine(repoRoot, ".env"));
+
 var builder = WebApplication.CreateBuilder(args);
 
 if (ShouldResetDiagnosticsOnStartup(builder.Configuration))
@@ -39,6 +43,11 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
 
 builder.Services.AddOpenJiboCloud(builder.Configuration);
 builder.Services.AddSingleton<WebSocketRequestCoordinator>();
+builder.Services.Configure<LaunchRulesAdminOptions>(options =>
+{
+    options.AdminPassword = builder.Configuration["OPENJIBO_LAUNCH_RULES_PASSWORD"]
+                            ?? builder.Configuration["OpenJibo:LaunchRules:AdminPassword"];
+});
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
@@ -47,6 +56,7 @@ var app = builder.Build();
 app.Logger.LogInformation("Starting Open Jibo Cloud Api version {Version}", OpenJiboCloudBuildInfo.Version);
 
 app.UseCors();
+app.UseMiddleware<LaunchRulesAdminAuthMiddleware>();
 
 var publicSitePath = ResolvePublicSitePath(builder.Configuration);
 if (Directory.Exists(publicSitePath))
@@ -95,7 +105,7 @@ app.MapGet("/health", () => Results.Json(new
     version = OpenJiboCloudBuildInfo.Version
 }));
 
-RobotLaunchRuleEndpoints.Map(app);
+LaunchRuleAdminEndpoints.Map(app);
 PublicSiteEndpoints.Map(app, publicSitePath);
 
 app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,

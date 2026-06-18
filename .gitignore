@@ -420,6 +420,9 @@ FodyWeavers.xsd
 .dotnet/
 **/.dotnet/
 
+# Enviroment Variables
+.env
+
 # OpenJibo live-run capture output
 OpenJibo/captures/
 OpenJibo/.tmp/

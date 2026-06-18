@@ -51,7 +51,11 @@ app.UseCors();
 var publicSitePath = ResolvePublicSitePath(builder.Configuration);
 if (Directory.Exists(publicSitePath))
 {
-    app.Logger.LogInformation("Serving public site from {PublicSitePath}", publicSitePath);
+    var publicFileCount = Directory.EnumerateFiles(publicSitePath).Count();
+    app.Logger.LogInformation(
+        "Serving public site from {PublicSitePath} ({PublicFileCount} files)",
+        publicSitePath,
+        publicFileCount);
     app.UseDefaultFiles(new DefaultFilesOptions
     {
         FileProvider = new PhysicalFileProvider(publicSitePath),
@@ -92,6 +96,7 @@ app.MapGet("/health", () => Results.Json(new
 }));
 
 RobotLaunchRuleEndpoints.Map(app);
+PublicSiteEndpoints.Map(app, publicSitePath);
 
 app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,
     IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>
@@ -146,36 +151,34 @@ static void ResetDiagnosticsDirectories(IConfiguration configuration)
 
 static string ResolvePublicSitePath(IConfiguration configuration)
 {
-    var candidates = new List<string>();
-    var configuredPath = configuration["OpenJibo:PublicSite:DirectoryPath"];
-    if (!string.IsNullOrWhiteSpace(configuredPath))
+    var candidates = new List<string>
     {
-        candidates.Add(Path.IsPathRooted(configuredPath)
-            ? Path.GetFullPath(configuredPath)
-            : Path.GetFullPath(configuredPath, ResolveRepoRoot()));
-    }
-
-    candidates.Add(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "wwwroot")));
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "wwwroot"))
+    };
 
     var repoRoot = FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
                    FindOpenJiboRepoRoot(AppContext.BaseDirectory);
     if (repoRoot is not null)
+    {
         candidates.Add(Path.GetFullPath(Path.Combine(repoRoot, "src", "OpenJibo.Site")));
+
+        var configuredPath = configuration["OpenJibo:PublicSite:DirectoryPath"];
+        if (!string.IsNullOrWhiteSpace(configuredPath) &&
+            !string.Equals(configuredPath, "wwwroot", StringComparison.OrdinalIgnoreCase))
+        {
+            candidates.Add(Path.IsPathRooted(configuredPath)
+                ? Path.GetFullPath(configuredPath)
+                : Path.GetFullPath(configuredPath, repoRoot));
+        }
+    }
 
     foreach (var candidate in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
     {
-        if (Directory.Exists(candidate))
+        if (Directory.Exists(candidate) && Directory.EnumerateFileSystemEntries(candidate).Any())
             return candidate;
     }
 
     return candidates[0];
-}
-
-static string ResolveRepoRoot()
-{
-    return FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
-           FindOpenJiboRepoRoot(AppContext.BaseDirectory) ??
-           Directory.GetCurrentDirectory();
 }
 
 static bool ShouldBypassProtocolDispatch(PathString path)

@@ -29,5 +29,6 @@ EXPOSE 8080
 
 COPY --from=build /app/publish/api ./api
 COPY --from=build /app/publish/migrations ./migrations
+COPY src/OpenJibo.Site/ ./api/wwwroot/
 ENTRYPOINT ["dotnet"]
 CMD ["/app/api/Jibo.Cloud.Api.dll"]

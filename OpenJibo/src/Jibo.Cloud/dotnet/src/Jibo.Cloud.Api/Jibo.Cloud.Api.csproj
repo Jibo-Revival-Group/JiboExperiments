@@ -13,8 +13,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="..\..\..\..\OpenJibo.Site\**\*"
-		         Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)"
+		<Content Include="../../../../OpenJibo.Site/**/*"
+		         Link="wwwroot/%(RecursiveDir)%(Filename)%(Extension)"
 		         CopyToOutputDirectory="PreserveNewest"
 		         CopyToPublishDirectory="PreserveNewest" />
 	</ItemGroup>

@@ -4250,6 +4250,92 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task BufferedWordOfDayPuzzleOggAudio_BlankAutoFinalizeStaysLocalAndClearsTurn()
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies:
+        [
+            new QueuedBufferedAudioSttStrategy("")
+        ]);
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-wod-puzzle-blank-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-wod-puzzle-blank","data":{"rules":["word-of-the-day/puzzle","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["expunge","abscond","corrugate"],"encoding":"OGG_OPUS","sampleRate":16000}}}"""
+        });
+
+        foreach (var frame in new[]
+                 {
+                     BuildOggFrame(0x02, "OpusHead"),
+                     BuildOggFrame(0x00, "OpusTags"),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00)
+                 })
+        {
+            var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-wod-puzzle-blank-token",
+                Binary = frame
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = stateStore.FindSessionByToken("hub-wod-puzzle-blank-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+
+        var blankReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-wod-puzzle-blank-token",
+            Binary = BuildOggFrame(0x04)
+        });
+
+        Assert.Equal(2, blankReplies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(blankReplies[0]));
+        Assert.Equal("EOS", ReadReplyType(blankReplies[1]));
+
+        using var listenPayload = JsonDocument.Parse(blankReplies[0].Text!);
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
+        Assert.Single(rules.EnumerateArray());
+        Assert.Equal("word-of-the-day/puzzle", rules[0].GetString());
+
+        Assert.Null(session.LastIntent);
+        Assert.Equal("no-input", session.LastListenType);
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.False(session.TurnState.SawListen);
+        Assert.False(session.TurnState.SawContext);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+        Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
+
+        var lateAudioReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-wod-puzzle-blank-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Empty(lateAudioReplies);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+        Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
+    }
+
+    [Fact]
     public async Task ClientAsr_SettingsDownloadNo_StripsGlobalRulesFromOutboundNo()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope

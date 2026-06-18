@@ -852,6 +852,14 @@ public sealed class WebSocketTurnFinalizationService(
                 ];
             }
 
+            if (ShouldIgnoreLateEmptyTurn(finalizedTurn, session, messageType))
+            {
+                turnState.AwaitingTurnCompletion = false;
+                ResetBufferedAudio(session);
+                ClearListenTracking(turnState);
+                return [];
+            }
+
             if (ShouldHandleAsLocalNoInput(finalizedTurn))
             {
                 var turnAge = turnState.FirstAudioReceivedUtc.HasValue
@@ -929,6 +937,7 @@ public sealed class WebSocketTurnFinalizationService(
             {
                 turnState.AwaitingTurnCompletion = false;
                 ResetBufferedAudio(session);
+                ClearListenTracking(turnState);
                 return [];
             }
 
@@ -1034,6 +1043,7 @@ public sealed class WebSocketTurnFinalizationService(
                         var localRule = ReadPrimaryYesNoRule(finalizedTurn);
                         var noInputReplies = BuildLocalNoInputReplies(session, turnState, localRule);
                         ResetBufferedAudio(session);
+                        ClearListenTracking(turnState);
                         return noInputReplies;
                     }
                     case true when
@@ -1051,6 +1061,7 @@ public sealed class WebSocketTurnFinalizationService(
                             .Select(map => new WebSocketReply { Text = map.Text, DelayMs = map.DelayMs })
                             .ToArray();
                         ResetBufferedAudio(session);
+                        ClearListenTracking(turnState);
                         return fallbackReplies;
                     }
                     default:
@@ -1969,6 +1980,7 @@ public sealed class WebSocketTurnFinalizationService(
     {
         return string.Equals(rule, "clock/alarm_timer_okay", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "settings/volume_control", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase) ||
                IsClockValueRule(rule) ||
                IsGalleryPreviewRule(rule) ||
                IsConstrainedYesNoRule(rule);

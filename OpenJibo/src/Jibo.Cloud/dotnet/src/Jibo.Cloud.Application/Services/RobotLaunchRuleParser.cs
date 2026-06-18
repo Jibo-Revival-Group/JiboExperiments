@@ -42,6 +42,7 @@ public static partial class RobotLaunchRuleParser
             var literalTokens = ExtractLiteralTokens(pattern);
 
             if (literalTokens.Count == 0 && !entities.ContainsKey("skill")) continue;
+            if (literalTokens.Count > 0 && literalTokens.All(token => token.IsOptional)) continue;
 
             rules.Add(new ParsedLaunchRule
             {
@@ -91,7 +92,7 @@ public static partial class RobotLaunchRuleParser
         return BraceDoubleQuotedEntityPattern().Replace(withoutEntities, " ");
     }
 
-    private static IReadOnlyList<string> ExtractLiteralTokens(string pattern)
+    private static IReadOnlyList<LaunchRuleToken> ExtractLiteralTokens(string pattern)
     {
         var withoutEntities = StripEntityMarkers(pattern);
         withoutEntities = withoutEntities
@@ -106,13 +107,21 @@ public static partial class RobotLaunchRuleParser
 
         return withoutEntities
             .Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(NormalizeToken)
-            .Where(token => token.Length > 0)
+            .Select(ParseLiteralToken)
+            .Where(token => token.Text.Length > 0)
             .ToArray();
     }
 
-    private static string NormalizeToken(string token)
+    private static LaunchRuleToken ParseLiteralToken(string token)
     {
-        return token.Trim().TrimEnd('.', ',', '!', '?', ';').ToLowerInvariant();
+        var trimmed = token.Trim();
+        var isOptional = trimmed.StartsWith('?', StringComparison.Ordinal);
+        var normalized = isOptional ? trimmed[1..] : trimmed;
+
+        return new LaunchRuleToken
+        {
+            Text = normalized.Trim().TrimEnd('.', ',', '!', '?', ';').ToLowerInvariant(),
+            IsOptional = isOptional
+        };
     }
 }

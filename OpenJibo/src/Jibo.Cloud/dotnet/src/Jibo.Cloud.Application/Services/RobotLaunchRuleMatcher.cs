@@ -29,7 +29,8 @@ public static class RobotLaunchRuleMatcher
 
             if (!ContainsSubsequence(tokens, rule.LiteralTokens, out var matchedTokenCount)) continue;
 
-            var score = matchedTokenCount;
+            var requiredTokenCount = rule.LiteralTokens.Count(token => !token.IsOptional);
+            var score = matchedTokenCount * 100 + requiredTokenCount;
             if (score <= bestScore) continue;
 
             bestScore = score;
@@ -63,14 +64,17 @@ public static class RobotLaunchRuleMatcher
 
     private static bool ContainsSubsequence(
         IReadOnlyList<string> haystack,
-        IReadOnlyList<string> needle,
+        IReadOnlyList<LaunchRuleToken> needle,
         out int matchedTokenCount)
     {
         matchedTokenCount = 0;
         if (needle.Count == 0) return false;
 
-        var allowedMisses = needle.Count >= 5 ? 1 : 0;
-        var misses = 0;
+        var requiredTokens = needle.Where(token => !token.IsOptional).ToArray();
+        if (requiredTokens.Length == 0) return false;
+
+        var allowedRequiredMisses = requiredTokens.Length >= 5 ? 1 : 0;
+        var requiredMisses = 0;
         var start = 0;
 
         foreach (var token in needle)
@@ -78,7 +82,7 @@ public static class RobotLaunchRuleMatcher
             var found = false;
             for (var i = start; i < haystack.Count; i++)
             {
-                if (!TokensEquivalent(haystack[i], token)) continue;
+                if (!TokensEquivalent(haystack[i], token.Text)) continue;
                 start = i + 1;
                 matchedTokenCount += 1;
                 found = true;
@@ -86,14 +90,14 @@ public static class RobotLaunchRuleMatcher
             }
 
             if (found) continue;
+            if (token.IsOptional) continue;
 
-            if (misses >= allowedMisses) return false;
+            if (requiredMisses >= allowedRequiredMisses) return false;
 
-            misses += 1;
+            requiredMisses += 1;
         }
 
-        var requiredMatches = needle.Count - allowedMisses;
-        return matchedTokenCount >= requiredMatches;
+        return requiredMisses <= allowedRequiredMisses;
     }
 
     private static bool TokensEquivalent(string haystackToken, string needleToken)

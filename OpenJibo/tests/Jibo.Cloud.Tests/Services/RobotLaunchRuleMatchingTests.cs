@@ -4,6 +4,8 @@ using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using static Jibo.Cloud.Tests.Services.RobotLaunchRuleTestSupport;
+
 namespace Jibo.Cloud.Tests.Services;
 
 public sealed class RobotLaunchRuleParserTests
@@ -21,11 +23,11 @@ public sealed class RobotLaunchRuleParserTests
         Assert.Equal(2, rules.Count);
 
         var radio = rules.Single(rule => rule.RuleName == "TopRule");
-        Assert.Equal(["open", "the", "radio"], radio.LiteralTokens);
+        Assert.Equal(["open", "the", "radio"], TokenTexts(radio.LiteralTokens));
         Assert.Equal("@be/radio", radio.Entities["skill"]);
 
         var gallery = rules.Single(rule => rule.RuleName == "GalleryRule");
-        Assert.Equal(["open", "gallery"], gallery.LiteralTokens);
+        Assert.Equal(["open", "gallery"], TokenTexts(gallery.LiteralTokens));
         Assert.Equal("@be/gallery", gallery.Entities["skill"]);
     }
 
@@ -39,7 +41,7 @@ public sealed class RobotLaunchRuleParserTests
 
         Assert.Single(rules);
         var rule = rules[0];
-        Assert.Equal(["say", "this", "to", "launch", "your", "skill"], rule.LiteralTokens);
+        Assert.Equal(["say", "this", "to", "launch", "your", "skill"], TokenTexts(rule.LiteralTokens));
         Assert.Equal("@be/gallery", rule.Entities["skill"]);
     }
 
@@ -54,6 +56,24 @@ public sealed class RobotLaunchRuleParserTests
         Assert.Single(rules);
         Assert.Equal("@be/gallery", rules[0].Entities["skill"]);
     }
+
+    [Fact]
+    public void Parse_MarksQuestionPrefixedWordsAsOptional()
+    {
+        const string content =
+            "TopRule = ($* ?open ?the toy box {skill='@be/toy-box'} $*);";
+
+        var rules = RobotLaunchRuleParser.Parse("launch.rule", content);
+
+        Assert.Single(rules);
+        var tokens = rules[0].LiteralTokens;
+        Assert.Equal(["open", "the", "toy", "box"], TokenTexts(tokens));
+        Assert.True(tokens[0].IsOptional);
+        Assert.True(tokens[1].IsOptional);
+        Assert.False(tokens[2].IsOptional);
+        Assert.False(tokens[3].IsOptional);
+        Assert.Equal("@be/toy-box", rules[0].Entities["skill"]);
+    }
 }
 
 public sealed class RobotLaunchRuleMatcherTests
@@ -67,7 +87,7 @@ public sealed class RobotLaunchRuleMatcherTests
             {
                 RuleName = "TopRule",
                 SourceFile = "launch.rule",
-                LiteralTokens = ["open", "the", "radio"],
+                LiteralTokens = RequiredTokens("open", "the", "radio"),
                 Entities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["skill"] = "@be/radio",
@@ -92,7 +112,7 @@ public sealed class RobotLaunchRuleMatcherTests
             {
                 RuleName = "ShortRule",
                 SourceFile = "launch.rule",
-                LiteralTokens = ["open"],
+                LiteralTokens = RequiredTokens("open"),
                 Entities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["skill"] = "@be/settings"
@@ -102,7 +122,7 @@ public sealed class RobotLaunchRuleMatcherTests
             {
                 RuleName = "LongRule",
                 SourceFile = "launch.rule",
-                LiteralTokens = ["open", "gallery"],
+                LiteralTokens = RequiredTokens("open", "gallery"),
                 Entities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["skill"] = "@be/gallery"
@@ -141,6 +161,22 @@ public sealed class RobotLaunchRuleMatcherTests
 
         Assert.NotNull(match);
         Assert.Equal("@be/gallery", match!.SkillId);
+    }
+
+    [Fact]
+    public void TryMatch_OptionalOpenTheToyBoxRule()
+    {
+        const string content =
+            "TopRule = ($* ?open ?the toy box {skill='@be/toy-box'} $*);";
+        var rules = RobotLaunchRuleParser.Parse("launch.rule", content);
+
+        Assert.NotNull(RobotLaunchRuleMatcher.TryMatch("toy box", rules));
+        Assert.NotNull(RobotLaunchRuleMatcher.TryMatch("open toy box", rules));
+        Assert.NotNull(RobotLaunchRuleMatcher.TryMatch("open the toy box", rules));
+        Assert.NotNull(RobotLaunchRuleMatcher.TryMatch("hey jibo open the toy box please", rules));
+
+        var match = RobotLaunchRuleMatcher.TryMatch("open the toy box", rules);
+        Assert.Equal("@be/toy-box", match!.SkillId);
     }
 }
 
@@ -251,6 +287,29 @@ public sealed class RobotLaunchRuleOrchestratorTests
     }
 
     [Fact]
+    public async Task TryBuildDecisionAsync_MatchesOptionalOpenTheToyBoxPhrase()
+    {
+        var store = new InMemoryRobotLaunchRuleStore();
+        store.Save("launch.rule",
+            "TopRule = ($* ?open ?the toy box {skill='@be/toy-box'} $*);");
+        var orchestrator = CreateOrchestrator(store);
+        var turn = new TurnContext
+        {
+            RawTranscript = "toy box",
+            NormalizedTranscript = "toy box",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = true
+            }
+        };
+
+        var decision = await orchestrator.TryBuildDecisionAsync(turn, "hey jibo toy box", null, CancellationToken.None);
+
+        Assert.NotNull(decision);
+        Assert.Equal("@be/toy-box", decision!.SkillName);
+    }
+
+    [Fact]
     public async Task TryBuildDecisionAsync_SkipsClientNluTurn()
     {
         var store = new InMemoryRobotLaunchRuleStore();
@@ -355,5 +414,15 @@ internal static class RobotLaunchRuleTestSupport
         return new RobotLaunchRuleOrchestrator(
             store ?? new InMemoryRobotLaunchRuleStore(),
             NullLogger<RobotLaunchRuleOrchestrator>.Instance);
+    }
+
+    public static string[] TokenTexts(IReadOnlyList<LaunchRuleToken> tokens)
+    {
+        return tokens.Select(token => token.Text).ToArray();
+    }
+
+    public static LaunchRuleToken[] RequiredTokens(params string[] texts)
+    {
+        return texts.Select(text => new LaunchRuleToken { Text = text, IsOptional = false }).ToArray();
     }
 }

@@ -21,6 +21,14 @@ public static partial class RobotLaunchRuleParser
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex ColonQuotedEntityPattern();
 
+    [GeneratedRegex(@"\{\s*(?<key>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*'(?<value>[^']*)'\s*\}",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex BraceSingleQuotedEntityPattern();
+
+    [GeneratedRegex(@"\{\s*(?<key>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*""(?<value>[^""]*)""\s*\}",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex BraceDoubleQuotedEntityPattern();
+
     public static IReadOnlyList<ParsedLaunchRule> Parse(string fileName, string content)
     {
         if (string.IsNullOrWhiteSpace(content)) return [];
@@ -52,22 +60,40 @@ public static partial class RobotLaunchRuleParser
         var entities = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (Match match in SingleQuotedEntityPattern().Matches(pattern))
-            entities[match.Groups["key"].Value] = match.Groups["value"].Value;
+            entities[match.Groups["key"].Value] = NormalizeEntityValue(match.Groups["value"].Value);
 
         foreach (Match match in DoubleQuotedEntityPattern().Matches(pattern))
-            entities[match.Groups["key"].Value] = match.Groups["value"].Value;
+            entities[match.Groups["key"].Value] = NormalizeEntityValue(match.Groups["value"].Value);
 
         foreach (Match match in ColonQuotedEntityPattern().Matches(pattern))
-            entities[match.Groups["key"].Value] = match.Groups["value"].Value;
+            entities[match.Groups["key"].Value] = NormalizeEntityValue(match.Groups["value"].Value);
+
+        foreach (Match match in BraceSingleQuotedEntityPattern().Matches(pattern))
+            entities[match.Groups["key"].Value] = NormalizeEntityValue(match.Groups["value"].Value);
+
+        foreach (Match match in BraceDoubleQuotedEntityPattern().Matches(pattern))
+            entities[match.Groups["key"].Value] = NormalizeEntityValue(match.Groups["value"].Value);
 
         return entities;
     }
 
-    private static IReadOnlyList<string> ExtractLiteralTokens(string pattern)
+    private static string NormalizeEntityValue(string value)
+    {
+        return value.Trim().TrimStart('\\');
+    }
+
+    private static string StripEntityMarkers(string pattern)
     {
         var withoutEntities = SingleQuotedEntityPattern().Replace(pattern, " ");
         withoutEntities = DoubleQuotedEntityPattern().Replace(withoutEntities, " ");
         withoutEntities = ColonQuotedEntityPattern().Replace(withoutEntities, " ");
+        withoutEntities = BraceSingleQuotedEntityPattern().Replace(withoutEntities, " ");
+        return BraceDoubleQuotedEntityPattern().Replace(withoutEntities, " ");
+    }
+
+    private static IReadOnlyList<string> ExtractLiteralTokens(string pattern)
+    {
+        var withoutEntities = StripEntityMarkers(pattern);
         withoutEntities = withoutEntities
             .Replace("$*", " ", StringComparison.Ordinal)
             .Replace("$+", " ", StringComparison.Ordinal)

@@ -27,6 +27,20 @@ public sealed class RobotLaunchRuleParserTests
         Assert.Equal(["open", "gallery"], gallery.LiteralTokens);
         Assert.Equal("@be/gallery", gallery.Entities["skill"]);
     }
+
+    [Fact]
+    public void Parse_SupportsBraceEntitySyntaxWithoutPercentDelimiters()
+    {
+        const string content =
+            "TopRule = ($* say this to launch your skill {skill='@be/gallery'} $*);";
+
+        var rules = RobotLaunchRuleParser.Parse("launch.rule", content);
+
+        Assert.Single(rules);
+        var rule = rules[0];
+        Assert.Equal(["say", "this", "to", "launch", "your", "skill"], rule.LiteralTokens);
+        Assert.Equal("@be/gallery", rule.Entities["skill"]);
+    }
 }
 
 public sealed class RobotLaunchRuleMatcherTests
@@ -89,6 +103,19 @@ public sealed class RobotLaunchRuleMatcherTests
         Assert.Equal("@be/gallery", match!.SkillId);
         Assert.Equal("menu", match.Intent);
     }
+
+    [Fact]
+    public void TryMatch_UserGalleryLaunchPhrase()
+    {
+        const string content =
+            "TopRule = ($* say this to launch your skill {skill='@be/gallery'} $*);";
+        var rules = RobotLaunchRuleParser.Parse("launch.rule", content);
+
+        var match = RobotLaunchRuleMatcher.TryMatch("say this to launch your skill", rules);
+
+        Assert.NotNull(match);
+        Assert.Equal("@be/gallery", match!.SkillId);
+    }
 }
 
 public sealed class RobotLaunchRuleOrchestratorTests
@@ -139,6 +166,34 @@ public sealed class RobotLaunchRuleOrchestratorTests
 
         Assert.NotNull(decision);
         Assert.Equal("@be/gallery", decision!.SkillName);
+    }
+
+    [Fact]
+    public async Task TryBuildDecisionAsync_MatchesBraceEntityLaunchPhrase()
+    {
+        var store = new InMemoryRobotLaunchRuleStore();
+        store.Save("launch.rule",
+            "TopRule = ($* say this to launch your skill {skill='@be/gallery'} $*);");
+        var orchestrator = new RobotLaunchRuleOrchestrator(store);
+        var turn = new TurnContext
+        {
+            RawTranscript = "say this to launch your skill",
+            NormalizedTranscript = "say this to launch your skill",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = true
+            }
+        };
+
+        var decision = await orchestrator.TryBuildDecisionAsync(
+            turn,
+            "Hey Jibo, say this to launch your skill",
+            null,
+            CancellationToken.None);
+
+        Assert.NotNull(decision);
+        Assert.Equal("@be/gallery", decision!.SkillName);
+        Assert.Equal("menu", decision.IntentName);
     }
 
     [Fact]

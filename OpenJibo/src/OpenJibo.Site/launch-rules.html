@@ -54,11 +54,11 @@
 		<p>
 			When any robot sends a hotphrase launch turn, OpenJibo matches the spoken phrase against
 			these rules and redirects to the skill in each rule's
-			<code>{%skill='…'%}</code> entity.
+			<code>{skill='…'}</code> or <code>{%skill='…'%}</code> entity.
 		</p>
 		<p class="muted">
 			Example:
-			<code>GalleryRule = ($* open gallery {%skill='@be/gallery'%} $*);</code>
+			<code>TopRule = ($* say this to launch your skill {skill='@be/gallery'} $*);</code>
 		</p>
 	</section>
 </main>

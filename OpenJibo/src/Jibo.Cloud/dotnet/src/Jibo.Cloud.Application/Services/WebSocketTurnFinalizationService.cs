@@ -35,7 +35,7 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(3500);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(850);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(1200);
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
@@ -2503,10 +2503,19 @@ public sealed class WebSocketTurnFinalizationService(
 
         var normalized = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
         if (string.IsNullOrWhiteSpace(normalized)) return false;
+        var commandTranscript = TranscriptTextNormalizer.ExtractWakePhraseCommand(normalized);
+        if (!string.IsNullOrWhiteSpace(commandTranscript))
+            normalized = NormalizeUsableTranscript(commandTranscript);
 
         if (LooksLikeCloudVersionSelfAudioOnly(normalized))
         {
             reason = "cloud_version_self_audio";
+            return true;
+        }
+
+        if (LooksLikeIncompleteLaunchQuestion(normalized))
+        {
+            reason = "launch_question_incomplete";
             return true;
         }
 
@@ -2577,6 +2586,18 @@ public sealed class WebSocketTurnFinalizationService(
                normalized.StartsWith("version one ", StringComparison.Ordinal) ||
                normalized.StartsWith("first 1 0 ", StringComparison.Ordinal) ||
                normalized.StartsWith("one dot zero dot twenty", StringComparison.Ordinal);
+    }
+
+    private static bool LooksLikeIncompleteLaunchQuestion(string normalized)
+    {
+        return normalized is "what's your" or "whats your" or "what s your" or "what is your" or
+                          "what's the" or "whats the" or "what s the" or "what is the" or
+                          "what's your cloud" or "whats your cloud" or "what s your cloud" or
+                          "what is your cloud" or "what's the cloud" or "whats the cloud" or
+                          "what s the cloud" or "what is the cloud" or
+                          "what's your favorite" or "whats your favorite" or "what s your favorite" or
+                          "what is your favorite" or "what's your favourite" or "whats your favourite" or
+                          "what s your favourite" or "what is your favourite";
     }
 
     private static bool IsHotphraseOnlyTranscript(string normalized)

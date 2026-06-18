@@ -5345,7 +5345,7 @@ public sealed class JiboWebSocketServiceTests
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-early-probe-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
-        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -5424,7 +5424,7 @@ public sealed class JiboWebSocketServiceTests
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-blank-early-probe-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
-        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -5495,7 +5495,7 @@ public sealed class JiboWebSocketServiceTests
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-blank-early-probe-retry-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
-        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
 
         var blankProbeReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -5589,7 +5589,7 @@ public sealed class JiboWebSocketServiceTests
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-early-probe-retry-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(4000);
-        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(900);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
 
         var hotphraseOnlyReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -5685,7 +5685,7 @@ public sealed class JiboWebSocketServiceTests
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-terminal-wake-retry-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
-        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
 
         var terminalWakeReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -5779,7 +5779,7 @@ public sealed class JiboWebSocketServiceTests
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-version-self-audio-early-probe-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
-        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -5850,7 +5850,7 @@ public sealed class JiboWebSocketServiceTests
         var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-incomplete-clock-early-probe-token");
         Assert.NotNull(session);
         session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
-        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1050);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -5866,6 +5866,100 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(1, session.TurnState.FinalizeAttemptCount);
         Assert.Null(session.LastIntent);
         Assert.Null(session.LastTranscript);
+    }
+
+    [Fact]
+    public async Task BufferedHotphraseOggAudio_IncompleteCloudVersionQuestionEarlyProbeRetriesNextAudio()
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies:
+        [
+            new QueuedBufferedAudioSttStrategy("Jubo, what's your", "Jubo, what's your cloud version?")
+        ]);
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-incomplete-cloud-version-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-ogg-incomplete-cloud-version","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-incomplete-cloud-version-token",
+            Binary = BuildOggFrame(0x02, "OpusHead")
+        });
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-incomplete-cloud-version-token",
+            Binary = BuildOggFrame(0x00, "OpusTags")
+        });
+
+        for (var index = 0; index < 8; index += 1)
+        {
+            var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-ogg-incomplete-cloud-version-token",
+                Binary = BuildOggFrame(0x00)
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = stateStore.FindSessionByToken("hub-hotphrase-ogg-incomplete-cloud-version-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(5000);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
+
+        var partialReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-incomplete-cloud-version-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Empty(partialReplies);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(1, session.TurnState.FinalizeAttemptCount);
+        Assert.Null(session.LastIntent);
+        Assert.Null(session.LastTranscript);
+
+        var commandReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-incomplete-cloud-version-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Equal(3, commandReplies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(commandReplies[0]));
+        Assert.Equal("EOS", ReadReplyType(commandReplies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(commandReplies[2]));
+
+        using var listenPayload = JsonDocument.Parse(commandReplies[0].Text!);
+        Assert.Equal("what's your cloud version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("cloud_version",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("cloud_version", session.LastIntent);
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
     }
 
     [Fact]

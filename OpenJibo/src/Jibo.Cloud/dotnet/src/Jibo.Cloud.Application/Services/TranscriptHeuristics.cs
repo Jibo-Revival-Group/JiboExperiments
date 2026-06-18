@@ -17,7 +17,9 @@ public static class TranscriptHeuristics
         "you said",
         "i heard",
         "i can hear you",
-        "i hear you"
+        "i hear you",
+        "i hope you try again",
+        "i hope you try again in a little while"
     };
 
     private static readonly Regex PunctuationToSpaceRegex = new(

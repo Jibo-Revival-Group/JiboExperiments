@@ -115,7 +115,7 @@ public static partial class RobotLaunchRuleParser
     private static LaunchRuleToken ParseLiteralToken(string token)
     {
         var trimmed = token.Trim();
-        var isOptional = trimmed.StartsWith('?', StringComparison.Ordinal);
+        var isOptional = trimmed.StartsWith('?');
         var normalized = isOptional ? trimmed[1..] : trimmed;
 
         return new LaunchRuleToken

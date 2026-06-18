@@ -27,8 +27,8 @@ public sealed class WebSocketTurnFinalizationService(
     private const int AutoFinalizeMinBufferedAudioPages = 3;
     private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 30_000;
     private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 7;
-    private const int AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes = 34_000;
-    private const int AutoFinalizeHotphraseOggContinuousProbeMinAudioPages = 7;
+    private const int AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes = 29_000;
+    private const int AutoFinalizeHotphraseOggContinuousProbeMinAudioPages = 6;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
     private const int AutoFinalizeHotphraseOnlyNoInputAttempts = 4;
@@ -38,7 +38,7 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(3500);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(1200);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggContinuousProbeMinTurnAge = TimeSpan.FromMilliseconds(3800);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggContinuousProbeMinTurnAge = TimeSpan.FromMilliseconds(3000);
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
@@ -164,6 +164,24 @@ public sealed class WebSocketTurnFinalizationService(
         "no",
         "nope",
         "nah"
+    };
+
+    private static readonly HashSet<string> HotphraseNonCommandTranscripts = new(StringComparer.Ordinal)
+    {
+        "thank you",
+        "thanks",
+        "thank you jibo",
+        "thanks jibo"
+    };
+
+    private static readonly HashSet<string> HotphraseRobotFallbackTranscripts = new(StringComparer.Ordinal)
+    {
+        "to my sources maybe ask me again in a little while",
+        "maybe ask me again in a little while",
+        "i don't know where it's did you check under the bed",
+        "i dont know where its did you check under the bed",
+        "i don't know where it is did you check under the bed",
+        "i dont know where it is did you check under the bed"
     };
 
     private static readonly HashSet<string> YesNoAffirmativeLeadTokens = new(StringComparer.Ordinal)
@@ -777,6 +795,34 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             var finalizedTurn = await ResolveTranscriptAsync(turn, session, envelope, cancellationToken);
+            if (ShouldCloseHotphraseNonCommandAsNoInput(finalizedTurn, turnState, messageType,
+                    allowFallbackOnMissingTranscript, out var hotphraseNonCommandReason))
+            {
+                turnState.AwaitingTurnCompletion = false;
+                session.LastTranscript = string.Empty;
+                session.LastIntent = null;
+                session.LastListenType = "no-input";
+                await sink.RecordTurnDiagnosticAsync("auto_finalize_hotphrase_non_command_no_input",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["messageType"] = messageType,
+                        ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                        ["reason"] = hotphraseNonCommandReason,
+                        ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                        ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
+                    }), cancellationToken);
+                var noInputReplies = ResponsePlanToSocketMessagesMapper.MapNoInput(
+                        turnState.TransId ?? session.LastTransId ?? string.Empty,
+                        turnState.ListenRules)
+                    .Select(map => new WebSocketReply { Text = map.Text, DelayMs = map.DelayMs })
+                    .ToArray();
+                ResetBufferedAudio(session);
+                ClearListenTracking(turnState);
+                turnState.IgnoreAdditionalAudioUntilUtc =
+                    DateTimeOffset.UtcNow.Add(WebSocketTurnState.DefaultLateAudioIgnoreWindow);
+                return noInputReplies;
+            }
+
             if (!TryGetUsableTranscript(finalizedTurn, out var usableTranscript))
                 finalizedTurn = new TurnContext
                 {
@@ -2471,6 +2517,69 @@ public sealed class WebSocketTurnFinalizationService(
         if (!HasOggOpusFrames(turnState) || HasReceivedOggEndOfStream(turnState)) return false;
 
         return turnState.BufferedAudioBytes >= AutoFinalizeMinBufferedAudioBytes;
+    }
+
+    private static bool ShouldCloseHotphraseNonCommandAsNoInput(
+        TurnContext turn,
+        WebSocketTurnState turnState,
+        string messageType,
+        bool allowFallbackOnMissingTranscript,
+        out string reason)
+    {
+        reason = string.Empty;
+        if (!allowFallbackOnMissingTranscript ||
+            !string.Equals(messageType, "AUTO_FINALIZE", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!IsHotphraseLaunchTurn(turn)) return false;
+        if (turnState.BufferedAudioBytes < AutoFinalizeMinBufferedAudioBytes) return false;
+
+        var normalized = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
+        if (string.IsNullOrWhiteSpace(normalized)) return false;
+
+        var rawNormalized = NormalizeUsableTranscript(turn.RawTranscript);
+        var embeddedCommand = TranscriptTextNormalizer.ExtractWakePhraseCommand(rawNormalized);
+        if (!string.IsNullOrWhiteSpace(embeddedCommand) &&
+            !string.Equals(embeddedCommand, rawNormalized, StringComparison.Ordinal))
+        {
+            var normalizedCommand = NormalizeUsableTranscript(embeddedCommand);
+            if (!IsHotphraseNonCommandTranscript(normalizedCommand) &&
+                !IsHotphraseRobotFallbackTranscript(normalizedCommand) &&
+                !TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(normalizedCommand))
+                return false;
+        }
+
+        if (IsHotphraseNonCommandTranscript(normalized))
+        {
+            reason = "hotphrase_non_command";
+            return true;
+        }
+
+        if (IsHotphraseRobotFallbackTranscript(normalized))
+        {
+            reason = "robot_fallback_audio";
+            return true;
+        }
+
+        if (TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(normalized))
+        {
+            reason = "robot_self_audio";
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsHotphraseNonCommandTranscript(string normalized)
+    {
+        return HotphraseNonCommandTranscripts.Contains(normalized);
+    }
+
+    private static bool IsHotphraseRobotFallbackTranscript(string normalized)
+    {
+        return HotphraseRobotFallbackTranscripts.Contains(normalized) ||
+               HotphraseRobotFallbackTranscripts.Any(phrase =>
+                   normalized.StartsWith($"{phrase} ", StringComparison.Ordinal));
     }
 
     private static bool ShouldWaitForBufferedHotphraseOnlyTranscript(

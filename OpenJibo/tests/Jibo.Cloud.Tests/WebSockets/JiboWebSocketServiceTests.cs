@@ -6354,7 +6354,7 @@ public sealed class JiboWebSocketServiceTests
 
         var session = stateStore.FindSessionByToken("hub-hotphrase-continuous-probe-token");
         Assert.NotNull(session);
-        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(3900);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(3100);
         session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -6372,6 +6372,71 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
         Assert.Equal("cloud_version", session.LastIntent);
         Assert.False(session.TurnState.AwaitingTurnCompletion);
+    }
+
+    [Theory]
+    [InlineData("Thank you.")]
+    [InlineData("to my sources, maybe ask me again in a little while.")]
+    [InlineData("I don't know where it's, did you check under the bed?")]
+    public async Task BufferedHotphraseAudio_NonCommandRobotAudioClosesAsNoInput(string transcript)
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies:
+        [
+            new QueuedBufferedAudioSttStrategy(transcript)
+        ]);
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-non-command-audio-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-non-command-audio","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        for (var index = 0; index < 4; index += 1)
+        {
+            var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-non-command-audio-token",
+                Binary = new byte[3000]
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = stateStore.FindSessionByToken("hub-hotphrase-non-command-audio-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(2);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
+
+        var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-non-command-audio-token",
+            Binary = new byte[3000]
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.DoesNotContain(replies, reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION",
+            StringComparison.Ordinal));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal(string.Empty,
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Null(session.LastIntent);
+        Assert.Equal("no-input", session.LastListenType);
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
     }
 
     [Fact]

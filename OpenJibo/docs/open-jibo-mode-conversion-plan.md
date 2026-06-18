@@ -24,7 +24,7 @@ Open Jibo should use explicit modes instead of overwriting stock configuration i
 
 | Mode | Purpose | Expected server target |
 | --- | --- | --- |
-| `stock` | Original Jibo behavior and rollback target | original region/config where available |
+| `normal`, `oobe` or `int-developer` | Original Jibo behavior and rollback target (reference as `stock`) | original region/config where available |
 | `open-jibo` | Default managed Open Jibo experience | `openjibo.com` hosted cloud |
 | `open-jibo-ai` | Open Jibo with higher-level AI/orchestration features | `openjibo.ai` or managed AI-capable cloud |
 | `open-jibo-self-hosted` | Owner-managed local or private server | owner supplied host/region |

@@ -170,6 +170,40 @@ public sealed class JiboWebSocketServiceTests
 
         session.TurnState.IgnoreLateListenSetupUntilUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1);
 
+        var audioGuardListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-cloud-version-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-cloud-version-audio-guard","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        Assert.Equal(3, audioGuardListenReplies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(audioGuardListenReplies[0]));
+        Assert.Equal("EOS", ReadReplyType(audioGuardListenReplies[1]));
+        Assert.Equal("SKILL_REDIRECT", ReadReplyType(audioGuardListenReplies[2]));
+        Assert.Equal("trans-cloud-version", session.TurnState.TransId);
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.False(session.TurnState.SawListen);
+        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc > DateTimeOffset.UtcNow);
+
+        var audioGuardAudioReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-cloud-version-token",
+            Binary = new byte[4096]
+        });
+
+        Assert.Empty(audioGuardAudioReplies);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+        Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
+
+        session.TurnState.IgnoreAdditionalAudioUntilUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1);
+
         var freshListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
             HostName = "neo-hub.jibo.com",

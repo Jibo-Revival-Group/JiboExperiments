@@ -1697,10 +1697,20 @@ public sealed class WebSocketTurnFinalizationService(
         if (string.Equals(session.LastIntent, "stop", StringComparison.OrdinalIgnoreCase))
             return false;
 
-        var ignoreUntilUtc = session.TurnState.IgnoreLateListenSetupUntilUtc;
+        var ignoreUntilUtc = MaxFuture(
+            session.TurnState.IgnoreLateListenSetupUntilUtc,
+            session.TurnState.IgnoreAdditionalAudioUntilUtc);
         return ignoreUntilUtc.HasValue &&
                ignoreUntilUtc.Value > DateTimeOffset.UtcNow &&
                IsHotphraseLaunchListenSetup(text);
+    }
+
+    private static DateTimeOffset? MaxFuture(DateTimeOffset? first, DateTimeOffset? second)
+    {
+        if (!first.HasValue) return second;
+        if (!second.HasValue) return first;
+
+        return first.Value >= second.Value ? first : second;
     }
 
     public static bool TryRecoverStalePendingListen(CloudSession session, out int staleAgeMs)

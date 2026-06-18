@@ -74,7 +74,46 @@ internal static class WordOfDayGuessResolver
 
         if (bestDistance <= 2 && bestMatchCount == 1) return bestHint;
 
+        var prefixHintMatch = FindSinglePrefixHintMatch(candidates, normalizedHints);
+        if (!string.IsNullOrWhiteSpace(prefixHintMatch)) return prefixHintMatch;
+
         return FindSinglePhoneticHintMatch(candidates, normalizedHints);
+    }
+
+    private static string? FindSinglePrefixHintMatch(
+        IReadOnlyList<string> candidates,
+        IReadOnlyList<HintCandidate> hints)
+    {
+        string? bestHint = null;
+        var bestPrefixLength = 0;
+        var matchCount = 0;
+
+        foreach (var candidate in candidates.Where(static candidate => candidate.Length >= 4))
+        {
+            foreach (var hint in hints.Where(static hint => hint.Normalized.Length >= 5))
+            {
+                var comparedLength = Math.Min(candidate.Length, hint.Normalized.Length);
+                var hintPrefix = hint.Normalized[..comparedLength];
+                if (ComputeEditDistance(candidate, hintPrefix) > 1) continue;
+
+                var prefixLength = CommonPrefixLength(candidate, hint.Normalized);
+                if (prefixLength < 3) continue;
+
+                if (prefixLength > bestPrefixLength)
+                {
+                    bestHint = hint.Original;
+                    bestPrefixLength = prefixLength;
+                    matchCount = 1;
+                }
+                else if (prefixLength == bestPrefixLength &&
+                         !string.Equals(bestHint, hint.Original, StringComparison.Ordinal))
+                {
+                    matchCount += 1;
+                }
+            }
+        }
+
+        return matchCount == 1 ? bestHint : null;
     }
 
     private static string? FindSinglePhoneticHintMatch(
@@ -164,6 +203,14 @@ internal static class WordOfDayGuessResolver
             'R' => '6',
             _ => '0'
         };
+    }
+
+    private static int CommonPrefixLength(string left, string right)
+    {
+        var length = Math.Min(left.Length, right.Length);
+        var index = 0;
+        while (index < length && left[index] == right[index]) index += 1;
+        return index;
     }
 
     private static int ComputeEditDistance(string left, string right)

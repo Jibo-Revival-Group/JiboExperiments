@@ -18,6 +18,11 @@ public static class TranscriptHeuristics
         "i heard",
         "i can hear you",
         "i hear you",
+        "i didn't catch that",
+        "say that again",
+        "please say that again",
+        "thanks for watching",
+        "thank you for watching",
         "i hope you try again",
         "i hope you try again in a little while"
     };

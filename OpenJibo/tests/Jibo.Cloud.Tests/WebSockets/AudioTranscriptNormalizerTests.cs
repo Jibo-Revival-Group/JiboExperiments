@@ -9,6 +9,7 @@ public sealed class AudioTranscriptNormalizerTests
     [InlineData("Jupo. What's your cloud version?", "what's your cloud version")]
     [InlineData("Jubo. What's your cloud version?", "what's your cloud version")]
     [InlineData("Hey GBO, what's the word of the day?", "what's the word of the day")]
+    [InlineData("Hey G Bong stop", "stop")]
     [InlineData("Hey Jibo stop", "stop")]
     [InlineData("Hey j bowl, what's your cloud version?", "what's your cloud version")]
     [InlineData("jibo what time is it", "what time is it")]
@@ -23,6 +24,7 @@ public sealed class AudioTranscriptNormalizerTests
     [InlineData("first 1.0.20. Hey Geebo, what time is", "what time is")]
     [InlineData("story. Hey GBO, what's the word of the day?", "what's the word of the day")]
     [InlineData("that fixed foot. Hey j bowl, does James have a floopy diaper?", "does james have a floopy diaper")]
+    [InlineData("it's the definition again long out order is complete hey g bong stop", "stop")]
     [InlineData("Jibo. What's your cloud version?", "what's your cloud version")]
     public void ExtractWakePhraseCommand_RemovesLeadingOrEmbeddedWakePhrase(string value, string expected)
     {
@@ -61,6 +63,9 @@ public sealed class AudioTranscriptNormalizerTests
     [InlineData("I heard you.")]
     [InlineData("Okay, you said.")]
     [InlineData("I can hear you")]
+    [InlineData("I didn't catch that")]
+    [InlineData("Say that again")]
+    [InlineData("Thanks for watching")]
     [InlineData("you said")]
     [InlineData("I hope you try again in a little while.")]
     public void IsLikelyRobotSelfAudioTranscript_ReturnsTrue_ForRobotAcknowledgements(string value)

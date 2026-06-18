@@ -27,6 +27,8 @@ public sealed class WebSocketTurnFinalizationService(
     private const int AutoFinalizeMinBufferedAudioPages = 3;
     private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 30_000;
     private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 7;
+    private const int AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes = 34_000;
+    private const int AutoFinalizeHotphraseOggContinuousProbeMinAudioPages = 7;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
     private const int AutoFinalizeHotphraseOnlyNoInputAttempts = 4;
@@ -36,6 +38,7 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(3500);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(1200);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggContinuousProbeMinTurnAge = TimeSpan.FromMilliseconds(3800);
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
@@ -1452,10 +1455,13 @@ public sealed class WebSocketTurnFinalizationService(
         return turnState.ListenHotphrase &&
                HasOggOpusFrames(turnState) &&
                !HasReceivedOggEndOfStream(turnState) &&
-               turnAge >= AutoFinalizeHotphraseOggEarlyProbeMinTurnAge &&
-               elapsedSinceLastAudio >= AutoFinalizeHotphraseOggEarlyProbeGap &&
-               turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes &&
-               pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggEarlyProbeMinAudioPages;
+               ((turnAge >= AutoFinalizeHotphraseOggEarlyProbeMinTurnAge &&
+                 elapsedSinceLastAudio >= AutoFinalizeHotphraseOggEarlyProbeGap &&
+                 turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes &&
+                 pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggEarlyProbeMinAudioPages) ||
+                (turnAge >= AutoFinalizeHotphraseOggContinuousProbeMinTurnAge &&
+                 turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes &&
+                 pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggContinuousProbeMinAudioPages));
     }
 
     private async Task<IReadOnlyList<WebSocketReply>?> TryCloseStalledListenAsNoInputAsync(

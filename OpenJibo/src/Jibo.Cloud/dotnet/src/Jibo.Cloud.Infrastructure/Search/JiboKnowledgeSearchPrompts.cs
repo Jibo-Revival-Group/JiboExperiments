@@ -16,6 +16,8 @@ internal static class JiboKnowledgeSearchPrompts
 
             Your response should only be the answer to the user's request, and should not include any other text or commentary.
 
+            The request is from Speech-To-Text, so it may contain errors. If the request doesn't make sense, assume the closest logical interpretation.
+
             Crucial: Use only plain text. Do not include emojis, emoticons, or any non-ASCII characters.
         """;
 

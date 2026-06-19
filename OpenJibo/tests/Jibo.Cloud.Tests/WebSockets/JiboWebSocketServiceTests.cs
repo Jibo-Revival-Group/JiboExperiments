@@ -428,7 +428,7 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
-    public async Task BufferedHotphraseOggAudio_DoesNotFinalizeOnOneSecondMidStreamGap()
+    public async Task BufferedHotphraseOggAudio_EarlyProbeCanFinalizeBeforeSilenceWindow()
     {
         var stateStore = new InMemoryCloudStateStore();
         var service = CreateService(stateStore, sttStrategies:
@@ -492,9 +492,12 @@ public sealed class JiboWebSocketServiceTests
             Binary = BuildOggFrame(0x00)
         });
 
-        Assert.Empty(replies);
-        Assert.True(session.TurnState.AwaitingTurnCompletion);
-        Assert.True(session.TurnState.BufferedAudioBytes > 0);
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
     }
 
     [Fact]
@@ -5166,7 +5169,7 @@ public sealed class JiboWebSocketServiceTests
             Kind = "neo-hub-listen",
             Token = "hub-early-probe-cloud-version-token",
             Text =
-                """{"type":"CONTEXT","transID":"trans-early-probe-cloud-version","data":{"audioTranscriptHint":"what's your cloud version"}}"""
+                """{"type":"CONTEXT","transID":"trans-early-probe-cloud-version","data":{"topic":"conversation"}}"""
         });
 
         foreach (var frame in new[]
@@ -5194,8 +5197,8 @@ public sealed class JiboWebSocketServiceTests
 
         var session = stateStore.FindSessionByToken("hub-early-probe-cloud-version-token");
         Assert.NotNull(session);
-        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(4);
-        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1200);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
 
         var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {

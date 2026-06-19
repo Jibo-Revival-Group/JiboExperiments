@@ -16,22 +16,23 @@ public sealed class WebSocketTurnFinalizationService(
 {
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
     private const int AutoFinalizeMinBufferedAudioPages = 3;
-    private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 30_000;
-    private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 7;
-    private const int AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes = 29_000;
-    private const int AutoFinalizeHotphraseOggContinuousProbeMinAudioPages = 6;
+    private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 14_000;
+    private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 4;
+    private const int AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes = 12_000;
+    private const int AutoFinalizeHotphraseOggContinuousProbeMinAudioPages = 5;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
-    private const int AutoFinalizeContinuationDeferralMaxAttempts = 2;
+    private const int AutoFinalizeContinuationDeferralMaxAttempts = 4;
     private const int AutoFinalizeHotphraseOnlyNoInputAttempts = 4;
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(3500);
+    private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(900);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(1200);
+    private static readonly TimeSpan AutoFinalizeEarlyProbeRetryInterval = TimeSpan.FromMilliseconds(250);
 
     private static readonly TimeSpan
-        AutoFinalizeHotphraseOggContinuousProbeMinTurnAge = TimeSpan.FromMilliseconds(3000);
+        AutoFinalizeHotphraseOggContinuousProbeMinTurnAge = TimeSpan.FromMilliseconds(1800);
 
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
@@ -374,7 +375,7 @@ public sealed class WebSocketTurnFinalizationService(
                     turnState.BufferedAudioBytes,
                     turnState.BufferedAudioChunkCount,
                     pageCounts.AudioBearingPageCount);
-                turnState.FinalizeAttemptCount += 1;
+                turnState.LastAutoFinalizeAttemptUtc = DateTimeOffset.UtcNow;
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
             }
 
@@ -458,7 +459,7 @@ public sealed class WebSocketTurnFinalizationService(
                     turnState.TransId,
                     turnState.BufferedAudioBytes,
                     turnState.BufferedAudioChunkCount);
-                turnState.FinalizeAttemptCount += 1;
+                turnState.LastAutoFinalizeAttemptUtc = DateTimeOffset.UtcNow;
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
             }
 
@@ -749,6 +750,7 @@ public sealed class WebSocketTurnFinalizationService(
         session.TurnState.LastSttErrorUtc = null;
         session.TurnState.FirstAudioReceivedUtc = null;
         session.TurnState.LastAudioReceivedUtc = null;
+        session.TurnState.LastAutoFinalizeAttemptUtc = null;
         session.TurnState.BufferedAudioFrames.Clear();
         session.TurnState.FinalizeAttemptCount = 0;
         session.TurnState.AutoFinalizeBlockedUntilUtc = null;
@@ -765,6 +767,7 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.LastSttErrorUtc = null;
         turnState.FirstAudioReceivedUtc = null;
         turnState.LastAudioReceivedUtc = null;
+        turnState.LastAutoFinalizeAttemptUtc = null;
         turnState.BufferedAudioChunkCount = 0;
         turnState.BufferedAudioBytes = 0;
         turnState.BufferedAudioFrames.Clear();
@@ -1506,11 +1509,6 @@ public sealed class WebSocketTurnFinalizationService(
             : TimeSpan.Zero;
         var reachedSilenceWindow = turnState.LastAudioReceivedUtc.HasValue &&
                                    elapsedSinceLastAudio >= silenceWindow;
-        var earlyProbeReady = ShouldEarlyProbeHotphraseOggAudio(
-            turnState,
-            pageCounts,
-            turnAge,
-            elapsedSinceLastAudio);
         var transcriptHintEarlyFinalize = ShouldEarlyFinalizeFromTranscriptHint(turnState);
 
         return turnState is
@@ -1523,7 +1521,7 @@ public sealed class WebSocketTurnFinalizationService(
                turnState.LastAudioReceivedUtc.HasValue &&
                 (receivedEndOfStream || reachedHardTimeout ||
                  transcriptHintEarlyFinalize ||
-                 reachedSilenceWindow || earlyProbeReady) &&
+                 reachedSilenceWindow) &&
                 turnAge >= AutoFinalizeMinTurnAge;
     }
 
@@ -1554,37 +1552,62 @@ public sealed class WebSocketTurnFinalizationService(
         if (pageCounts.AudioBearingPageCount < AutoFinalizeMinBufferedAudioPages)
             return false;
 
-        if (!turnState.LastAudioReceivedUtc.HasValue)
+        var elapsedSinceLastAudio = turnState.LastAudioReceivedUtc.HasValue
+            ? DateTimeOffset.UtcNow - turnState.LastAudioReceivedUtc.Value
+            : TimeSpan.Zero;
+        var transcriptHintEarlyFinalize = ShouldEarlyFinalizeFromTranscriptHint(turnState);
+        var hotphraseOggProbeReady = ShouldEarlyProbeHotphraseOggAudio(
+            turnState,
+            pageCounts,
+            turnAge);
+
+        if (!CanRetryEarlyAutoFinalizeProbe(turnState))
             return false;
 
-        var elapsedSinceLastAudio = DateTimeOffset.UtcNow - turnState.LastAudioReceivedUtc.Value;
-        var transcriptHintEarlyFinalize = ShouldEarlyFinalizeFromTranscriptHint(turnState);
         if (!transcriptHintEarlyFinalize && elapsedSinceLastAudio < AutoFinalizeHotphraseOggEarlyProbeGap)
-            return false;
+            return hotphraseOggProbeReady;
 
         return transcriptHintEarlyFinalize ||
-               turnState.ListenHotphrase ||
+               hotphraseOggProbeReady ||
                turnState.ListenRules.Any(IsConstrainedYesNoRule);
     }
 
     private static bool ShouldEarlyProbeHotphraseOggAudio(
         WebSocketTurnState turnState,
         BufferedAudioPageCounts pageCounts,
-        TimeSpan turnAge,
-        TimeSpan elapsedSinceLastAudio)
+        TimeSpan turnAge)
     {
-        if (!HasReceivedOggEndOfStream(turnState))
+        if (!turnState.ListenHotphrase ||
+            !turnState.SawContext ||
+            !HasOggOpusFrames(turnState) ||
+            !IsHotphraseLaunchListen(turnState))
             return false;
 
-        return turnState.ListenHotphrase &&
-               HasOggOpusFrames(turnState) &&
-               ((turnAge >= AutoFinalizeHotphraseOggEarlyProbeMinTurnAge &&
-                 elapsedSinceLastAudio >= AutoFinalizeHotphraseOggEarlyProbeGap &&
-                 turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes &&
-                 pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggEarlyProbeMinAudioPages) ||
-                (turnAge >= AutoFinalizeHotphraseOggContinuousProbeMinTurnAge &&
-                 turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes &&
-                 pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggContinuousProbeMinAudioPages));
+        if (HasReceivedOggEndOfStream(turnState))
+            return turnAge >= AutoFinalizeMinTurnAge &&
+                   turnState.BufferedAudioBytes >= AutoFinalizeMinBufferedAudioBytes &&
+                   pageCounts.AudioBearingPageCount >= AutoFinalizeMinBufferedAudioPages;
+
+        return (turnAge >= AutoFinalizeHotphraseOggEarlyProbeMinTurnAge &&
+                turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes &&
+                pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggEarlyProbeMinAudioPages) ||
+               (turnAge >= AutoFinalizeHotphraseOggContinuousProbeMinTurnAge &&
+                turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes &&
+                pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggContinuousProbeMinAudioPages);
+    }
+
+    private static bool CanRetryEarlyAutoFinalizeProbe(WebSocketTurnState turnState)
+    {
+        return !turnState.LastAutoFinalizeAttemptUtc.HasValue ||
+               DateTimeOffset.UtcNow - turnState.LastAutoFinalizeAttemptUtc.Value >=
+               AutoFinalizeEarlyProbeRetryInterval;
+    }
+
+    private static bool IsHotphraseLaunchListen(WebSocketTurnState turnState)
+    {
+        return turnState.ListenRules.Any(static rule =>
+            string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(rule, "globals/global_commands_launch", StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task<IReadOnlyList<WebSocketReply>?> TryCloseStalledListenAsNoInputAsync(
@@ -1726,7 +1749,7 @@ public sealed class WebSocketTurnFinalizationService(
         var elapsedSinceLastAudio = turnState.LastAudioReceivedUtc.HasValue
             ? now - turnState.LastAudioReceivedUtc.Value
             : TimeSpan.Zero;
-        var earlyProbeReady = ShouldEarlyProbeHotphraseOggAudio(turnState, pageCounts, turnAge, elapsedSinceLastAudio);
+        var earlyProbeReady = ShouldEarlyProbeHotphraseOggAudio(turnState, pageCounts, turnAge);
         var transcriptHintEarlyFinalize = ShouldEarlyFinalizeFromTranscriptHint(turnState);
 
         logger.LogDebug(

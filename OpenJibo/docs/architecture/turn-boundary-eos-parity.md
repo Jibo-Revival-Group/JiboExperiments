@@ -67,11 +67,19 @@ Those fields should decide whether we are:
 
 We are keeping the buffered turn finalizer, but we are no longer treating prompt echo as a valid answer.
 
+For decisive command turns, the `audioTranscriptHint` from the listen context is now allowed to close the turn earlier than the hard timeout when the buffered audio is already substantial enough to be meaningful.
+
 For constrained yes/no prompts, Open Jibo now distinguishes three cases:
 
 - clean yes/no replies, which can resolve immediately
 - mixed replies such as `no yes`, which should clarify instead of forcing a `no`
 - prompt echo or robot self-audio, which should stay open until a real answer arrives or the hard timeout is reached
+
+The important practical consequence is that `audioTranscriptHint` is a routing hint, not a transcript substitute:
+
+- if the hint already identifies a command like cloud version, stop, or word of the day, the turn can close early once the buffered audio is large enough
+- if the hint is generic or incomplete, the normal buffered-audio and timeout guards still apply
+- if the turn is still too small or too early, the hint should not force a close
 
 That matches the Pegasus shape more closely:
 
@@ -89,19 +97,20 @@ One additional boundary rule matters for the cloud-version path:
 
 1. Make decisive intent/action matches close the turn earlier instead of waiting for the hard timeout.
 2. Keep the hard timeout as a safety net for error states and stalled turns.
-3. Preserve explicit follow-up behavior only where the response plan says `KeepMicOpen` or equivalent ownership should continue.
-4. Treat yes/no and other constrained replies as prompt-owned turns, not generic open-ended speech.
-5. Add focused tests around:
+3. Use `audioTranscriptHint` as a turn-boundary accelerator only when the hint is already decisive and the buffered audio is substantial enough to be meaningful.
+4. Preserve explicit follow-up behavior only where the response plan says `KeepMicOpen` or equivalent ownership should continue.
+5. Treat yes/no and other constrained replies as prompt-owned turns, not generic open-ended speech.
+6. Add focused tests around:
    - decisive command turns
    - explicit follow-up turns
    - yes/no follow-up turns
    - timeout-only fallback turns
-6. Re-run the live robot capture after the change and verify:
+7. Re-run the live robot capture after the change and verify:
    - the command turn closes sooner
    - the next turn is not polluted by audio bleed
    - a fresh listen setup after cloud-version is not discarded just because the prior audio suppression window is still active
    - stop and follow-up paths still behave intentionally
-7. Keep prompt echo and robot self-audio from counting as a yes/no answer until the user actually gives one.
+8. Keep prompt echo and robot self-audio from counting as a yes/no answer until the user actually gives one.
 
 ## Why This Matters
 

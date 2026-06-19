@@ -1511,6 +1511,7 @@ public sealed class WebSocketTurnFinalizationService(
             pageCounts,
             turnAge,
             elapsedSinceLastAudio);
+        var transcriptHintEarlyFinalize = ShouldEarlyFinalizeFromTranscriptHint(turnState);
 
         return turnState is
                {
@@ -1521,6 +1522,7 @@ public sealed class WebSocketTurnFinalizationService(
                pageCounts.AudioBearingPageCount >= AutoFinalizeMinBufferedAudioPages &&
                turnState.LastAudioReceivedUtc.HasValue &&
                 (receivedEndOfStream || reachedHardTimeout ||
+                 transcriptHintEarlyFinalize ||
                  reachedSilenceWindow || earlyProbeReady) &&
                 turnAge >= AutoFinalizeMinTurnAge;
     }
@@ -1556,10 +1558,13 @@ public sealed class WebSocketTurnFinalizationService(
             return false;
 
         var elapsedSinceLastAudio = DateTimeOffset.UtcNow - turnState.LastAudioReceivedUtc.Value;
-        if (elapsedSinceLastAudio < AutoFinalizeHotphraseOggEarlyProbeGap)
+        var transcriptHintEarlyFinalize = ShouldEarlyFinalizeFromTranscriptHint(turnState);
+        if (!transcriptHintEarlyFinalize && elapsedSinceLastAudio < AutoFinalizeHotphraseOggEarlyProbeGap)
             return false;
 
-        return turnState.ListenHotphrase || turnState.ListenRules.Any(IsConstrainedYesNoRule);
+        return transcriptHintEarlyFinalize ||
+               turnState.ListenHotphrase ||
+               turnState.ListenRules.Any(IsConstrainedYesNoRule);
     }
 
     private static bool ShouldEarlyProbeHotphraseOggAudio(
@@ -1658,6 +1663,36 @@ public sealed class WebSocketTurnFinalizationService(
         return pageCounts.AudioBearingPageCount < AutoFinalizeMinBufferedAudioPages;
     }
 
+    private static bool ShouldEarlyFinalizeFromTranscriptHint(WebSocketTurnState turnState)
+    {
+        if (string.IsNullOrWhiteSpace(turnState.AudioTranscriptHint)) return false;
+
+        var normalized = NormalizeUsableTranscript(turnState.AudioTranscriptHint);
+        if (string.IsNullOrWhiteSpace(normalized)) return false;
+
+        var command = TranscriptTextNormalizer.ExtractWakePhraseCommand(normalized);
+        if (!string.IsNullOrWhiteSpace(command))
+            normalized = NormalizeUsableTranscript(command);
+
+        if (string.IsNullOrWhiteSpace(normalized)) return false;
+        if (LooksLikeIncompleteLaunchQuestion(normalized)) return false;
+        if (IsHotphraseOnlyTranscript(normalized)) return false;
+        if (TryClassifyYesNoReply(normalized) is not YesNoReply.None) return true;
+
+        return new[]
+            {
+                "cloud version",
+                "what time is it",
+                "play word of the day",
+                "word of the day",
+                "stop",
+                "cancel",
+                "never mind",
+                "nevermind"
+            }
+            .Any(candidate => normalized.Contains(candidate, StringComparison.Ordinal));
+    }
+
     private static BufferedAudioPageCounts DescribeBufferedAudioPages(WebSocketTurnState turnState)
     {
         if (turnState.BufferedAudioFrames.Count > 0)
@@ -1692,9 +1727,10 @@ public sealed class WebSocketTurnFinalizationService(
             ? now - turnState.LastAudioReceivedUtc.Value
             : TimeSpan.Zero;
         var earlyProbeReady = ShouldEarlyProbeHotphraseOggAudio(turnState, pageCounts, turnAge, elapsedSinceLastAudio);
+        var transcriptHintEarlyFinalize = ShouldEarlyFinalizeFromTranscriptHint(turnState);
 
         logger.LogDebug(
-            "Turn auto-finalize check phase={Phase} session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} bytes={Bytes} firstAudioAgeMs={FirstAudioAgeMs} lastAudioAgeMs={LastAudioAgeMs} minAgeMs={MinAgeMs} silenceMs={SilenceMs} hardTimeoutMs={HardTimeoutMs} reachedHardTimeout={ReachedHardTimeout} receivedEndOfStream={ReceivedEndOfStream} earlyProbeReady={EarlyProbeReady}",
+            "Turn auto-finalize check phase={Phase} session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} bytes={Bytes} firstAudioAgeMs={FirstAudioAgeMs} lastAudioAgeMs={LastAudioAgeMs} minAgeMs={MinAgeMs} silenceMs={SilenceMs} hardTimeoutMs={HardTimeoutMs} reachedHardTimeout={ReachedHardTimeout} receivedEndOfStream={ReceivedEndOfStream} earlyProbeReady={EarlyProbeReady} transcriptHintEarlyFinalize={TranscriptHintEarlyFinalize}",
             phase,
             session.SessionId,
             turnState.TransId,
@@ -1711,7 +1747,8 @@ public sealed class WebSocketTurnFinalizationService(
             AutoFinalizeHardBufferedAudioAge.TotalMilliseconds,
             reachedHardTimeout,
             receivedEndOfStream,
-            earlyProbeReady);
+            earlyProbeReady,
+            transcriptHintEarlyFinalize);
     }
 
     private static TimeSpan ResolveAutoFinalizeSilenceWindow(WebSocketTurnState turnState)

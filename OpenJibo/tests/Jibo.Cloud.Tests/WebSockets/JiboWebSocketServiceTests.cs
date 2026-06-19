@@ -129,23 +129,26 @@ public sealed class JiboWebSocketServiceTests
         Assert.True(session.TurnState.IgnoreLateListenSetupUntilUtc > DateTimeOffset.UtcNow);
         Assert.True(session.TurnState.IgnoreLateListenSetupUntilUtc < DateTimeOffset.UtcNow.AddSeconds(3));
 
-        var tailListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        session.TurnState.IgnoreLateListenSetupUntilUtc = DateTimeOffset.UtcNow.AddSeconds(1);
+        session.TurnState.IgnoreAdditionalAudioUntilUtc = DateTimeOffset.UtcNow.AddSeconds(5);
+
+        var guardedListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
             HostName = "neo-hub.jibo.com",
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-cloud-version-token",
             Text =
-                """{"type":"LISTEN","transID":"trans-cloud-version-tail","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+                """{"type":"LISTEN","transID":"trans-cloud-version-guarded","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
-        Assert.Equal(3, tailListenReplies.Count);
-        Assert.Equal("LISTEN", ReadReplyType(tailListenReplies[0]));
-        Assert.Equal("EOS", ReadReplyType(tailListenReplies[1]));
-        Assert.Equal("SKILL_REDIRECT", ReadReplyType(tailListenReplies[2]));
-        using (var lateListenPayload = JsonDocument.Parse(tailListenReplies[0].Text!))
+        Assert.Equal(3, guardedListenReplies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(guardedListenReplies[0]));
+        Assert.Equal("EOS", ReadReplyType(guardedListenReplies[1]));
+        Assert.Equal("SKILL_REDIRECT", ReadReplyType(guardedListenReplies[2]));
+        using (var lateListenPayload = JsonDocument.Parse(guardedListenReplies[0].Text!))
         {
-            Assert.Equal("trans-cloud-version-tail", lateListenPayload.RootElement.GetProperty("transID").GetString());
+            Assert.Equal("trans-cloud-version-guarded", lateListenPayload.RootElement.GetProperty("transID").GetString());
             Assert.Equal("launch",
                 lateListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0]
                     .GetString());
@@ -169,40 +172,6 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
 
         session.TurnState.IgnoreLateListenSetupUntilUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1);
-
-        var audioGuardListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
-        {
-            HostName = "neo-hub.jibo.com",
-            Path = "/listen",
-            Kind = "neo-hub-listen",
-            Token = "hub-cloud-version-token",
-            Text =
-                """{"type":"LISTEN","transID":"trans-cloud-version-audio-guard","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
-        });
-
-        Assert.Equal(3, audioGuardListenReplies.Count);
-        Assert.Equal("LISTEN", ReadReplyType(audioGuardListenReplies[0]));
-        Assert.Equal("EOS", ReadReplyType(audioGuardListenReplies[1]));
-        Assert.Equal("SKILL_REDIRECT", ReadReplyType(audioGuardListenReplies[2]));
-        Assert.Equal("trans-cloud-version", session.TurnState.TransId);
-        Assert.False(session.TurnState.AwaitingTurnCompletion);
-        Assert.False(session.TurnState.SawListen);
-        Assert.True(session.TurnState.IgnoreAdditionalAudioUntilUtc > DateTimeOffset.UtcNow);
-
-        var audioGuardAudioReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
-        {
-            HostName = "neo-hub.jibo.com",
-            Path = "/listen",
-            Kind = "neo-hub-listen",
-            Token = "hub-cloud-version-token",
-            Binary = new byte[4096]
-        });
-
-        Assert.Empty(audioGuardAudioReplies);
-        Assert.Equal(0, session.TurnState.BufferedAudioBytes);
-        Assert.Equal(0, session.TurnState.BufferedAudioChunkCount);
-
-        session.TurnState.IgnoreAdditionalAudioUntilUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1);
 
         var freshListenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {

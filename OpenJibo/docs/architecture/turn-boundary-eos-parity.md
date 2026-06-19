@@ -79,6 +79,12 @@ That matches the Pegasus shape more closely:
 - Open Jibo does not yet have the same streaming ASR boundary, so we have to approximate it from buffered turns and transcript heuristics
 - the prompt-echo guard is the missing piece that keeps the robot from finalizing on its own question or self-audio
 
+One additional boundary rule matters for the cloud-version path:
+
+- `IgnoreAdditionalAudioUntilUtc` is for trailing binary audio only
+- `IgnoreLateListenSetupUntilUtc` is for a brand-new hotphrase/listen setup arriving too soon
+- the audio suppression window must not veto a legitimate next listen setup after a spoken diagnostic reply
+
 ## Fix Plan
 
 1. Make decisive intent/action matches close the turn earlier instead of waiting for the hard timeout.
@@ -93,6 +99,7 @@ That matches the Pegasus shape more closely:
 6. Re-run the live robot capture after the change and verify:
    - the command turn closes sooner
    - the next turn is not polluted by audio bleed
+   - a fresh listen setup after cloud-version is not discarded just because the prior audio suppression window is still active
    - stop and follow-up paths still behave intentionally
 7. Keep prompt echo and robot self-audio from counting as a yes/no answer until the user actually gives one.
 

@@ -11,6 +11,7 @@ We are rebuilding the hosted cloud first, then using that foundation for OTA, Op
 - port the production path to .NET
 - support real devices through repeatable bootstrap steps first
 - use OTA later to reduce recovery friction once the cloud is trustworthy
+- keep durable architecture decisions in `docs/architecture/` so turn/state, storage, and trust choices do not drift out of the active docs
 
 Current release truth lives in [docs/development-plan.md](docs/development-plan.md). The current cloud release constant is `1.0.20`.
 
@@ -80,6 +81,7 @@ That path is documented in [docs/device-bootstrap.md](docs/device-bootstrap.md).
 ```text
 OpenJibo/
   docs/
+    architecture/
     cloud-deployment-topology-plan.md
     roadmap.md
     development-plan.md
@@ -115,6 +117,7 @@ Use these when you want the active technical truth:
 - [Development plan](docs/development-plan.md)
 - [Cloud deployment and topology plan](docs/cloud-deployment-topology-plan.md)
 - [Storage trust and consensus plan](docs/storage-trust-consensus-plan.md)
+- [Architecture decisions](docs/architecture/README.md)
 - [Local cloud quickstart](docs/local-cloud-quickstart.md)
 - [Device bootstrap](docs/device-bootstrap.md)
 - [WiFi QR OOBE flow](docs/wifi-qr-oobe.md)

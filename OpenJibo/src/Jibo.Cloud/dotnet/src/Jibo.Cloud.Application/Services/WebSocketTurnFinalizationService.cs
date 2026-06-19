@@ -365,6 +365,19 @@ public sealed class WebSocketTurnFinalizationService(
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
             }
 
+            if (ShouldEarlyFinalizeBufferedAudio(session))
+            {
+                logger.LogDebug(
+                    "Turn binary audio early-probe auto-finalizing session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
+                    session.SessionId,
+                    turnState.TransId,
+                    turnState.BufferedAudioBytes,
+                    turnState.BufferedAudioChunkCount,
+                    pageCounts.AudioBearingPageCount);
+                turnState.FinalizeAttemptCount += 1;
+                return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
+            }
+
             turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
             logger.LogDebug(
                 "Turn binary audio exit without finalization session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
@@ -434,6 +447,18 @@ public sealed class WebSocketTurnFinalizationService(
                     turnState.TransId,
                     turnState.BufferedAudioBytes,
                     turnState.BufferedAudioChunkCount);
+                return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
+            }
+
+            if (ShouldEarlyFinalizeBufferedAudio(session))
+            {
+                logger.LogDebug(
+                    "Turn context early-probe auto-finalizing session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks}",
+                    session.SessionId,
+                    turnState.TransId,
+                    turnState.BufferedAudioBytes,
+                    turnState.BufferedAudioChunkCount);
+                turnState.FinalizeAttemptCount += 1;
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
             }
 
@@ -1495,9 +1520,46 @@ public sealed class WebSocketTurnFinalizationService(
                } &&
                pageCounts.AudioBearingPageCount >= AutoFinalizeMinBufferedAudioPages &&
                turnState.LastAudioReceivedUtc.HasValue &&
-               (receivedEndOfStream || reachedHardTimeout ||
-                reachedSilenceWindow || earlyProbeReady) &&
-               turnAge >= AutoFinalizeMinTurnAge;
+                (receivedEndOfStream || reachedHardTimeout ||
+                 reachedSilenceWindow || earlyProbeReady) &&
+                turnAge >= AutoFinalizeMinTurnAge;
+    }
+
+    private static bool ShouldEarlyFinalizeBufferedAudio(CloudSession session)
+    {
+        var turnState = session.TurnState;
+        if (turnState.AutoFinalizeBlockedUntilUtc.HasValue &&
+            turnState.AutoFinalizeBlockedUntilUtc.Value > DateTimeOffset.UtcNow)
+            return false;
+
+        if (!turnState.AwaitingTurnCompletion || !turnState.SawListen)
+            return false;
+
+        if (!turnState.FirstAudioReceivedUtc.HasValue)
+            return false;
+
+        if (turnState.FinalizeAttemptCount >= AutoFinalizeContinuationDeferralMaxAttempts)
+            return false;
+
+        var turnAge = DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value;
+        if (turnAge < AutoFinalizeHotphraseOggEarlyProbeMinTurnAge)
+            return false;
+
+        var pageCounts = DescribeBufferedAudioPages(turnState);
+        if (turnState.BufferedAudioBytes < AutoFinalizeMinBufferedAudioBytes)
+            return false;
+
+        if (pageCounts.AudioBearingPageCount < AutoFinalizeMinBufferedAudioPages)
+            return false;
+
+        if (!turnState.LastAudioReceivedUtc.HasValue)
+            return false;
+
+        var elapsedSinceLastAudio = DateTimeOffset.UtcNow - turnState.LastAudioReceivedUtc.Value;
+        if (elapsedSinceLastAudio < AutoFinalizeHotphraseOggEarlyProbeGap)
+            return false;
+
+        return turnState.ListenHotphrase || turnState.ListenRules.Any(IsConstrainedYesNoRule);
     }
 
     private static bool ShouldEarlyProbeHotphraseOggAudio(

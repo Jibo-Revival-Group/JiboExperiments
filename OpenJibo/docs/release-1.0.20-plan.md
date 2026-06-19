@@ -46,6 +46,8 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 
 ### 4. STT And Turn Reliability
 
+- record the turn-boundary and EOS parity decision in [architecture/turn-boundary-eos-parity.md](architecture/turn-boundary-eos-parity.md) so the hard timeout remains a safety net rather than the normal close path
+- make the decisive-turn branch match Pegasus more closely: if the current transcript already matches an intent or action, finalize the turn immediately and only keep listening when the response plan explicitly owns the follow-up
 - keep the low-signal screen and short-utterance handling tuned against the latest regression evidence
 - treat the bare `twerk` miss as an STT/parsing proof item until the capture says otherwise
 - `turn around` is no longer part of the open STT cleanup because it passed on the robot

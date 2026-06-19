@@ -12,7 +12,15 @@ internal static class SearchInstructionsResolver
         foreach (var path in ResolveFileCandidates(filePath))
         {
             if (!File.Exists(path)) continue;
-            return File.ReadAllText(path).Trim();
+
+            try
+            {
+                return File.ReadAllText(path).Trim();
+            }
+            catch
+            {
+                // Ignore unreadable instruction files and keep searching other candidates.
+            }
         }
 
         return null;

@@ -17,7 +17,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
     private const int MinimumTranscribableWavBytes = 1024;
 
     private const string FfmpegAudioPreprocessFilter =
-        "silenceremove=start_periods=1:start_duration=0.12:start_threshold=-45dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-45dB,volume=8dB";
+        "silenceremove=start_periods=1:start_duration=0.03:start_threshold=-45dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-45dB,volume=8dB";
 
     private readonly BufferedAudioSttOptions _options = BufferedAudioSttPathResolver.Resolve(options);
 

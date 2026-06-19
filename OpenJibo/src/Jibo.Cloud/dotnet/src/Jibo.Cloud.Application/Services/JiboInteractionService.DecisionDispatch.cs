@@ -61,10 +61,8 @@ public sealed partial class JiboInteractionService
         var personalReportDecision = await PersonalReportOrchestrator.TryBuildDecisionAsync(
             turn,
             semanticIntent,
-            transcript,
             lowered,
             catalog,
-            randomizer,
             personalMemoryStore,
             BuildWeatherReportDecisionAsync,
             BuildCalendarReportDecisionAsync,

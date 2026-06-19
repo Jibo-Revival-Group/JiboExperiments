@@ -133,7 +133,7 @@ public sealed partial class JiboInteractionService
                string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string ResolveAffirmativeYesNoIntent(string? yesNoRule, IReadOnlyList<string> listenRules)
+    private static string ResolveAffirmativeYesNoIntent(string? yesNoRule)
     {
         if (string.Equals(yesNoRule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase))
             return "word_of_the_day";
@@ -176,9 +176,7 @@ public sealed partial class JiboInteractionService
         if (string.IsNullOrWhiteSpace(normalized)) return YesNoReply.None;
 
         var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (tokens.Length == 0) return YesNoReply.None;
-
-        return TryClassifyTrailingYesNoReply(tokens);
+        return tokens.Length == 0 ? YesNoReply.None : TryClassifyTrailingYesNoReply(tokens);
     }
 
     private static bool TryTrimLeadingAcknowledgement(string normalizedTranscript, out string trimmedTranscript)
@@ -259,8 +257,15 @@ public sealed partial class JiboInteractionService
 
             selectedReply = candidateReply;
             selectedIndex = candidateIndex;
-            if (candidateReply == YesNoReply.Affirmative) sawAffirmative = true;
-            else if (candidateReply == YesNoReply.Negative) sawNegative = true;
+            switch (candidateReply)
+            {
+                case YesNoReply.Affirmative:
+                    sawAffirmative = true;
+                    break;
+                case YesNoReply.Negative:
+                    sawNegative = true;
+                    break;
+            }
         }
     }
 
@@ -979,15 +984,11 @@ public sealed partial class JiboInteractionService
             "call me "
         };
 
-        foreach (var prefix in prefixes)
-        {
-            if (!normalized.StartsWith(prefix, StringComparison.Ordinal)) continue;
-
-            var name = normalized[prefix.Length..].Trim();
-            return string.IsNullOrWhiteSpace(name) ? null : name;
-        }
-
-        return null;
+        return (from prefix in prefixes
+            where normalized.StartsWith(prefix, StringComparison.Ordinal)
+            select normalized[prefix.Length..].Trim()
+            into name
+            select string.IsNullOrWhiteSpace(name) ? null : name).FirstOrDefault();
     }
 
     private static bool IsUserBirthdayRecallQuestion(string loweredTranscript)
@@ -1094,15 +1095,11 @@ public sealed partial class JiboInteractionService
             "do you remember my favourite "
         };
 
-        foreach (var prefix in prefixes)
-        {
-            if (!normalized.StartsWith(prefix, StringComparison.Ordinal)) continue;
-
-            var category = normalized[prefix.Length..].Trim();
-            return string.IsNullOrWhiteSpace(category) ? null : category;
-        }
-
-        return null;
+        return (from prefix in prefixes
+            where normalized.StartsWith(prefix, StringComparison.Ordinal)
+            select normalized[prefix.Length..].Trim()
+            into category
+            select string.IsNullOrWhiteSpace(category) ? null : category).FirstOrDefault();
     }
 
     private static (string Category, string Value)? TryExtractPreferenceSet(string transcript)

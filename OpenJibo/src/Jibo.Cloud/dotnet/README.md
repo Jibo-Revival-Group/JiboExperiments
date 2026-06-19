@@ -155,9 +155,9 @@ The local tool path is intentionally off by default. It exists to help map real 
 The checked-in API host config enables that path by default, but it no longer
 pins Linux-only tool locations. At startup OpenJibo resolves `ffmpeg`,
 `whisper-cli`, and the model from explicit config, environment variables,
-common Linux/macOS locations, and finally command names on `PATH`.
+common Windows/Linux/macOS locations, and finally command names on `PATH`.
 
-Useful macOS overrides:
+Useful platform overrides:
 
 - `OPENJIBO_STT_FFMPEG_PATH`
 - `OPENJIBO_STT_WHISPER_CLI_PATH`
@@ -167,8 +167,13 @@ Common macOS candidates include Homebrew paths such as
 `/opt/homebrew/bin/ffmpeg`, `/opt/homebrew/bin/whisper-cli`, and
 `~/whisper.cpp/models/ggml-base.en.bin`, plus
 `~/Library/Application Support/openjibo/whisper/ggml-base.en.bin` for a
-user-local model install. Temp audio still defaults to `/tmp/openjibo-stt` in
-the local API config.
+user-local model install.
+
+Common Windows candidates include `C:\Program Files\ffmpeg\bin\ffmpeg.exe`,
+`C:\Program Files\whisper.cpp\build\bin\Release\whisper-cli.exe`, and
+`C:\Program Files\whisper.cpp\models\ggml-base.en.bin`.
+
+Temp audio still defaults to `/tmp/openjibo-stt` in the local API config.
 
 This keeps the discovery seam useful on macOS while we continue to treat real
 robot turns as the parity source.

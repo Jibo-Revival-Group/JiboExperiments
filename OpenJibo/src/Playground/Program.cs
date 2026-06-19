@@ -50,7 +50,15 @@ try
     Console.CancelKeyPress += (_, e) =>
     {
         e.Cancel = true;
-        cts.Cancel();
+        try
+        {
+            // ReSharper disable once AccessToDisposedClosure
+            cts.Cancel();
+        }
+        catch
+        {
+            // ignore
+        }
     };
 
     while (!cts.IsCancellationRequested)
@@ -66,7 +74,7 @@ try
 
             var utteranceTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            var wsReaderTask = Task.Run(async () =>
+            await Task.Run(async () =>
             {
                 var buffer = new byte[8192];
 

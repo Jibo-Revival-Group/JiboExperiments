@@ -234,8 +234,7 @@ public sealed class PersistenceStoreTests
         Assert.Equal("Dubin", cloudStateStore.GetAccount().LastName);
         Assert.Contains(cloudStateStore.GetPeople(), person =>
             person.IsPrimary &&
-            person.DisplayName == "Jacob Dubin" &&
-            person.Alias == "Jacob");
+            person is { DisplayName: "Jacob Dubin", Alias: "Jacob" });
     }
 
     [Fact]

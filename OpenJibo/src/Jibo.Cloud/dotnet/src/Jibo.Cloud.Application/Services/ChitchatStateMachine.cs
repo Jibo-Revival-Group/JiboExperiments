@@ -439,11 +439,7 @@ internal static class ChitchatStateMachine
 
         var clauses = normalizedCondition.Split(["||"],
             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        foreach (var clause in clauses)
-            if (MatchesConditionClause(clause, emotionVariants))
-                return true;
-
-        return false;
+        return clauses.Any(clause => MatchesConditionClause(clause, emotionVariants));
     }
 
     private static bool MatchesConditionClause(string clause, IReadOnlyList<string> emotionVariants)
@@ -472,6 +468,7 @@ internal static class ChitchatStateMachine
             "SAD" => ["INSECURE", "SAD"],
             "CALM" => ["NEUTRAL", "INSECURE", "CALM"],
             "NEUTRAL" => ["NEUTRAL"],
+            // ReSharper disable once RedundantSwitchExpressionArms
             "JOYFUL" or "PLEASED" or "CONFIDENT" or "DETERMINED" or "INSECURE" => [normalizedEmotion],
             _ => [normalizedEmotion]
         };
@@ -499,16 +496,13 @@ internal static class ChitchatStateMachine
         IJiboRandomizer randomizer,
         params string[] preferredSnippets)
     {
-        var matches = new List<string>();
-
-        foreach (var snippet in preferredSnippets)
-        {
-            if (string.IsNullOrWhiteSpace(snippet)) continue;
-
-            var match = catalog.PersonalityReplies.FirstOrDefault(reply =>
-                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match)) matches.Add(match);
-        }
+        var matches = (from snippet in preferredSnippets
+            where !string.IsNullOrWhiteSpace(snippet)
+            select catalog.PersonalityReplies.FirstOrDefault(reply =>
+                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase))
+            into match
+            where !string.IsNullOrWhiteSpace(match)
+            select match).ToList();
 
         return matches.Count > 0
             ? randomizer.Choose(matches)
@@ -565,6 +559,7 @@ internal static class ChitchatStateMachine
         {
             "happy" or "amused" or "excited" or "confident" or "proud" => "happy",
             "sad" or "lonely" or "afraid" or "anxious" or "embarrassed" or "confused" => "sad",
+            // ReSharper disable once RedundantSwitchExpressionArms
             "angry" or "annoyed" or "jealous" => "calm",
             _ => "calm"
         };
@@ -586,26 +581,15 @@ internal static class ChitchatStateMachine
 
     private static bool ContainsAnyPhrase(string loweredTranscript, IEnumerable<string> phrases)
     {
-        foreach (var phrase in phrases)
-            if (ContainsPhrase(loweredTranscript, phrase))
-                return true;
-
-        return false;
+        return phrases.Any(phrase => ContainsPhrase(loweredTranscript, phrase));
     }
 
     private static bool StartsWithAnyPhrase(string loweredTranscript, IEnumerable<string> phrases)
     {
-        foreach (var phrase in phrases)
-        {
-            var normalizedPhrase = NormalizeForPhraseMatching(phrase);
-            if (string.IsNullOrWhiteSpace(normalizedPhrase)) continue;
-
-            if (string.Equals(loweredTranscript, normalizedPhrase, StringComparison.Ordinal) ||
-                loweredTranscript.StartsWith($"{normalizedPhrase} ", StringComparison.Ordinal))
-                return true;
-        }
-
-        return false;
+        return phrases.Select(NormalizeForPhraseMatching)
+            .Where(normalizedPhrase => !string.IsNullOrWhiteSpace(normalizedPhrase)).Any(normalizedPhrase =>
+                string.Equals(loweredTranscript, normalizedPhrase, StringComparison.Ordinal) ||
+                loweredTranscript.StartsWith($"{normalizedPhrase} ", StringComparison.Ordinal));
     }
 
     private static bool ContainsPhrase(string loweredTranscript, string phrase)
@@ -636,15 +620,11 @@ internal static class ChitchatStateMachine
         var mappings = new List<(string Phrase, string Emotion)>();
 
         foreach (var emotionMapping in PegasusEmotionSynonyms)
-        foreach (var synonym in emotionMapping.Synonyms)
-        {
-            var normalizedSynonym = NormalizeForPhraseMatching(synonym);
-            if (string.IsNullOrWhiteSpace(normalizedSynonym) ||
-                !seen.Add(normalizedSynonym))
-                continue;
-
-            mappings.Add((normalizedSynonym, emotionMapping.Emotion));
-        }
+            mappings.AddRange(from synonym in emotionMapping.Synonyms
+                select NormalizeForPhraseMatching(synonym)
+                into normalizedSynonym
+                where !string.IsNullOrWhiteSpace(normalizedSynonym) && seen.Add(normalizedSynonym)
+                select (normalizedSynonym, emotionMapping.Emotion));
 
         mappings.Sort(static (left, right) => right.Phrase.Length.CompareTo(left.Phrase.Length));
         return [.. mappings];

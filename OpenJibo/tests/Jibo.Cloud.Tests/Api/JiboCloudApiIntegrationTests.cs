@@ -29,10 +29,8 @@ public sealed class JiboCloudApiIntegrationTests
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/")
-        {
-            Content = JsonContent.Create(new { })
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/");
+        request.Content = JsonContent.Create(new { });
         request.Headers.TryAddWithoutValidation("X-Amz-Target", "Account_20160715.CreateHubToken");
         request.Headers.Host = "api.jibo.com";
 

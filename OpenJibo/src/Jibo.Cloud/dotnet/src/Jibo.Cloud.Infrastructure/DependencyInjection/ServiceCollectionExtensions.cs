@@ -14,6 +14,7 @@ using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+// ReSharper disable UnusedMethodReturnValue.Global
 
 namespace Jibo.Cloud.Infrastructure.DependencyInjection;
 
@@ -75,25 +76,34 @@ public static class ServiceCollectionExtensions
                                                  "OPENJIBO_PERSONAL_MEMORY_SQL_CONNECTION_STRING");
         var ownerFirstName = configuration?["OpenJibo:OwnerFirstName"];
         var ownerLastName = configuration?["OpenJibo:OwnerLastName"];
-        if (stateBackendKind == PersistenceBackendKind.Sqlite && string.IsNullOrWhiteSpace(stateConnectionString))
+        switch (stateBackendKind)
         {
-            var dbPath = Path.ChangeExtension(statePersistencePath, ".db");
-            stateConnectionString = $"Data Source={dbPath}";
+            case PersistenceBackendKind.Sqlite when string.IsNullOrWhiteSpace(stateConnectionString):
+            {
+                var dbPath = Path.ChangeExtension(statePersistencePath, ".db");
+                stateConnectionString = $"Data Source={dbPath}";
+                break;
+            }
+            case PersistenceBackendKind.PostgreSql when string.IsNullOrWhiteSpace(stateConnectionString):
+                stateConnectionString = BuildPostgreSqlConnectionString("openjibo_state");
+                break;
         }
 
-        if (stateBackendKind == PersistenceBackendKind.PostgreSql && string.IsNullOrWhiteSpace(stateConnectionString))
-            stateConnectionString = BuildPostgreSqlConnectionString("openjibo_state");
-
-        if (personalMemoryBackendKind == PersistenceBackendKind.Sqlite &&
-            string.IsNullOrWhiteSpace(personalMemoryConnectionString))
+        switch (personalMemoryBackendKind)
         {
-            var dbPath = Path.ChangeExtension(personalMemoryPersistencePath, ".db");
-            personalMemoryConnectionString = $"Data Source={dbPath}";
+            case PersistenceBackendKind.Sqlite when
+                string.IsNullOrWhiteSpace(personalMemoryConnectionString):
+            {
+                var dbPath = Path.ChangeExtension(personalMemoryPersistencePath, ".db");
+                personalMemoryConnectionString = $"Data Source={dbPath}";
+                break;
+            }
+            case PersistenceBackendKind.PostgreSql when
+                string.IsNullOrWhiteSpace(personalMemoryConnectionString):
+                personalMemoryConnectionString = BuildPostgreSqlConnectionString("openjibo_memory");
+                break;
         }
 
-        if (personalMemoryBackendKind == PersistenceBackendKind.PostgreSql &&
-            string.IsNullOrWhiteSpace(personalMemoryConnectionString))
-            personalMemoryConnectionString = BuildPostgreSqlConnectionString("openjibo_memory");
         var mediaOptions = new MediaContentStoreOptions();
         configuration?.GetSection("OpenJibo:Media").Bind(mediaOptions);
 

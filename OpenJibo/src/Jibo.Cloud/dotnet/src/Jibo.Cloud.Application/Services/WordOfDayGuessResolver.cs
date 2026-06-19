@@ -75,9 +75,9 @@ internal static class WordOfDayGuessResolver
         if (bestDistance <= 2 && bestMatchCount == 1) return bestHint;
 
         var prefixHintMatch = FindSinglePrefixHintMatch(candidates, normalizedHints);
-        if (!string.IsNullOrWhiteSpace(prefixHintMatch)) return prefixHintMatch;
-
-        return FindSinglePhoneticHintMatch(candidates, normalizedHints);
+        return !string.IsNullOrWhiteSpace(prefixHintMatch)
+            ? prefixHintMatch
+            : FindSinglePhoneticHintMatch(candidates, normalizedHints);
     }
 
     private static string? FindSinglePrefixHintMatch(

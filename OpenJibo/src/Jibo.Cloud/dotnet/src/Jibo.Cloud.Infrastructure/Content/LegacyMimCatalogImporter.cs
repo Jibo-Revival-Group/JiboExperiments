@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
+// ReSharper disable UnusedMember.Local
 
 namespace Jibo.Cloud.Infrastructure.Content;
 
@@ -15,7 +16,7 @@ public static class LegacyMimCatalogImporter
     };
 
     private static readonly Regex LegacyMarkupPattern = new(
-        @"<[^>]+>",
+        "<[^>]+>",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly Regex PlaceholderPattern = new(
@@ -545,48 +546,31 @@ public static class LegacyMimCatalogImporter
         };
     }
 
-    private static IReadOnlyList<string> Merge(IReadOnlyList<string> baseList, IReadOnlyList<string> importedList)
+    private static string[] Merge(IReadOnlyList<string> baseList, IReadOnlyList<string> importedList)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var merged = new List<string>();
 
-        foreach (var value in baseList.Concat(importedList))
-        {
-            if (string.IsNullOrWhiteSpace(value)) continue;
-
-            var normalized = value.Trim();
-            if (!seen.Add(normalized)) continue;
-
-            merged.Add(normalized);
-        }
-
-        return merged;
+        return (from value in baseList.Concat(importedList)
+            where !string.IsNullOrWhiteSpace(value)
+            select value.Trim()
+            into normalized
+            where seen.Add(normalized)
+            select normalized).ToArray();
     }
 
-    private static IReadOnlyList<JiboConditionedReply> Merge(
+    private static JiboConditionedReply[] Merge(
         IReadOnlyList<JiboConditionedReply> baseList,
         IReadOnlyList<JiboConditionedReply> importedList)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var merged = new List<JiboConditionedReply>();
 
-        foreach (var value in baseList.Concat(importedList))
-        {
-            if (string.IsNullOrWhiteSpace(value.Reply)) continue;
-
-            var normalizedCondition = NormalizeCondition(value.Condition);
-            var normalizedReply = value.Reply.Trim();
-            var key = $"{normalizedCondition}::{normalizedReply}";
-            if (!seen.Add(key)) continue;
-
-            merged.Add(new JiboConditionedReply
-            {
-                Condition = normalizedCondition,
-                Reply = normalizedReply
-            });
-        }
-
-        return merged;
+        return (from value in baseList.Concat(importedList)
+            where !string.IsNullOrWhiteSpace(value.Reply)
+            let normalizedCondition = NormalizeCondition(value.Condition)
+            let normalizedReply = value.Reply.Trim()
+            let key = $"{normalizedCondition}::{normalizedReply}"
+            where seen.Add(key)
+            select new JiboConditionedReply { Condition = normalizedCondition, Reply = normalizedReply }).ToArray();
     }
 
     private static string NormalizeCondition(string? condition)

@@ -49,7 +49,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                   string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase);
         var isClockSkillLaunch = string.Equals(skill?.SkillName, "@be/clock", StringComparison.OrdinalIgnoreCase);
         var isReportSkillLaunch = string.Equals(skill?.SkillName, "report-skill", StringComparison.OrdinalIgnoreCase);
-        var idleRedirectDelayMs = isSleepCommand ? 150 : isTurnAroundCommand ? 75 : 75;
+        var idleRedirectDelayMs = isSleepCommand ? 150 : 75;
         var idleCompletionDelayMs = isSleepCommand ? 1000 : isTurnAroundCommand ? 750 : 125;
         var localIntent = ReadSkillPayloadString(skill, "localIntent");
         var clockIntent = ReadSkillPayloadString(skill, "clockIntent");
@@ -154,7 +154,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
             radioStation,
             isClockSkillLaunch,
             clockDomain,
-            clockIntent,
             timerHours,
             timerMinutes,
             timerSeconds,
@@ -326,13 +325,13 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
         if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
-                JsonSerializer.Serialize(BuildSkillPayload(plan, turn, transId, speak, skill)),
+                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill)),
                 75));
 
         return messages;
     }
 
-    public static IReadOnlyList<SocketReplyPlan> MapFallback(CloudSession session, string transId,
+    public static IReadOnlyList<SocketReplyPlan> MapFallback(string transId,
         IReadOnlyList<string> rules)
     {
         return
@@ -374,14 +373,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 data = new { }
             })),
             new SocketReplyPlan(JsonSerializer.Serialize(BuildGenericFallbackSkillPayload(transId)), 75)
-        ];
-    }
-
-    public static IReadOnlyList<SocketReplyPlan> MapCompletionOnly(string transId, string skillId, int delayMs = 0)
-    {
-        return
-        [
-            new SocketReplyPlan(JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, skillId)), delayMs)
         ];
     }
 
@@ -472,7 +463,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
         string? radioStation,
         bool clockSkillLaunch,
         string? clockDomain,
-        string? clockIntent,
         string? timerHours,
         string? timerMinutes,
         string? timerSeconds,
@@ -658,7 +648,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         return WordOfDayGuessResolver.Resolve(transcript, hints, nluGuess);
     }
 
-    private static object BuildSkillPayload(ResponsePlan plan, TurnContext turn, string transId, SpeakAction speak,
+    private static object BuildSkillPayload(ResponsePlan plan, string transId, SpeakAction speak,
         InvokeNativeSkillAction? skill)
     {
         var skillPayload = skill?.Payload;
@@ -1068,7 +1058,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ],
             string[] contexts => [.. contexts.Where(static context => !string.IsNullOrWhiteSpace(context))],
             IEnumerable<string> contexts => [.. contexts.Where(static context => !string.IsNullOrWhiteSpace(context))],
-            JsonElement jsonElement when jsonElement.ValueKind == JsonValueKind.Array =>
+            JsonElement { ValueKind: JsonValueKind.Array } jsonElement =>
             [
                 .. jsonElement
                     .EnumerateArray()
@@ -1099,24 +1089,40 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (cards.Length == 0) return [];
 
         var sequenceCards = new List<WeatherHiLoSequenceCard>(cards.Length);
+        
+        // ReSharper disable once LoopCanBeConvertedToQuery
         foreach (var card in cards)
         {
-            var weatherCardPayload = new Dictionary<string, object?>(card, StringComparer.OrdinalIgnoreCase)
-            {
-                ["weather_view_enabled"] = true,
-                ["weather_view_kind"] = "weatherHiLo"
-            };
+            var weatherCardPayload = BuildWeatherCardPayload(card);
+            
             var view = BuildWeatherHiLoView(weatherCardPayload);
+            
             if (view is null) continue;
 
-            sequenceCards.Add(new WeatherHiLoSequenceCard(
-                view,
-                ReadPayloadString(weatherCardPayload, "weather_day"),
-                ReadPayloadString(weatherCardPayload, "weather_icon"),
-                ReadPayloadString(weatherCardPayload, "weather_spoken_line")));
+            var sequenceCard = BuildSequenceCard(view, weatherCardPayload);
+
+            sequenceCards.Add(sequenceCard);
         }
 
         return sequenceCards;
+    }
+
+    private static WeatherHiLoSequenceCard BuildSequenceCard(object view, Dictionary<string, object?> weatherCardPayload)
+    {
+        return new WeatherHiLoSequenceCard(
+            view,
+            ReadPayloadString(weatherCardPayload, "weather_day"),
+            ReadPayloadString(weatherCardPayload, "weather_icon"),
+            ReadPayloadString(weatherCardPayload, "weather_spoken_line"));
+    }
+
+    private static Dictionary<string, object?> BuildWeatherCardPayload(IDictionary<string, object?> card)
+    {
+        return new Dictionary<string, object?>(card, StringComparer.OrdinalIgnoreCase)
+        {
+            ["weather_view_enabled"] = true,
+            ["weather_view_kind"] = "weatherHiLo"
+        };
     }
 
     private static IReadOnlyList<object> BuildWeatherHiLoSequenceChildren(
@@ -1429,14 +1435,14 @@ public sealed class ResponsePlanToSocketMessagesMapper
         return value switch
         {
             int number => number,
-            long number when number <= int.MaxValue && number >= int.MinValue => (int)number,
+            long number and <= int.MaxValue and >= int.MinValue => (int)number,
             double number => (int)Math.Round(number, MidpointRounding.AwayFromZero),
             float number => (int)Math.Round(number, MidpointRounding.AwayFromZero),
             string text when int.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.Number } jsonNumber when jsonNumber.TryGetInt32(out var parsed) =>
                 parsed,
-            JsonElement jsonText when jsonText.ValueKind == JsonValueKind.String &&
-                                      int.TryParse(jsonText.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.String } jsonText when int.TryParse(jsonText.GetString(),
+                out var parsed) => parsed,
             _ => null
         };
     }
@@ -1451,8 +1457,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
             string text when bool.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.True } => true,
             JsonElement { ValueKind: JsonValueKind.False } => false,
-            JsonElement jsonText when jsonText.ValueKind == JsonValueKind.String &&
-                                      bool.TryParse(jsonText.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.String } jsonText when bool.TryParse(jsonText.GetString(),
+                out var parsed) => parsed,
             _ => false
         };
     }

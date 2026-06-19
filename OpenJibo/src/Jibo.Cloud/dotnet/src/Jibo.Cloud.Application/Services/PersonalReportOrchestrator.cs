@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Runtime.Abstractions;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -103,10 +104,8 @@ internal static partial class PersonalReportOrchestrator
     public static async Task<JiboInteractionDecision?> TryBuildDecisionAsync(
         TurnContext turn,
         string semanticIntent,
-        string transcript,
         string loweredTranscript,
         JiboExperienceCatalog catalog,
-        IJiboRandomizer randomizer,
         IPersonalMemoryStore personalMemoryStore,
         Func<TurnContext, string, CancellationToken, Task<JiboInteractionDecision>> buildWeatherDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCalendarDecisionAsync,
@@ -154,46 +153,49 @@ internal static partial class PersonalReportOrchestrator
         switch (state)
         {
             case AwaitingOptInState:
-                if (yesNoReply == YesNoReply.Affirmative)
+                switch (yesNoReply)
                 {
-                    var scope = tenantScopeResolver(turn);
-                    var knownName = ReadString(turn, UserNameMetadataKey) ?? personalMemoryStore.GetName(scope);
-                    if (!string.IsNullOrWhiteSpace(knownName))
+                    case YesNoReply.Affirmative:
+                    {
+                        var scope = tenantScopeResolver(turn);
+                        var knownName = ReadString(turn, UserNameMetadataKey) ?? personalMemoryStore.GetName(scope);
+                        if (!string.IsNullOrWhiteSpace(knownName))
+                            return new JiboInteractionDecision(
+                                "personal_report_verify_user",
+                                $"I think this is {knownName}. Is that right?",
+                                SkillPayload: BuildYesNoPromptPayload(),
+                                ContextUpdates: BuildContextUpdates(
+                                    AwaitingIdentityConfirmationState,
+                                    0,
+                                    0,
+                                    toggles,
+                                    knownName,
+                                    false,
+                                    string.Empty));
+
                         return new JiboInteractionDecision(
-                            "personal_report_verify_user",
-                            $"I think this is {knownName}. Is that right?",
-                            SkillPayload: BuildYesNoPromptPayload(),
+                            "personal_report_request_name",
+                            "Who is this?",
                             ContextUpdates: BuildContextUpdates(
-                                AwaitingIdentityConfirmationState,
+                                AwaitingIdentityNameState,
                                 0,
                                 0,
                                 toggles,
-                                knownName,
+                                null,
                                 false,
                                 string.Empty));
-
-                    return new JiboInteractionDecision(
-                        "personal_report_request_name",
-                        "Who is this?",
-                        ContextUpdates: BuildContextUpdates(
-                            AwaitingIdentityNameState,
-                            0,
-                            0,
+                    }
+                    case YesNoReply.Negative:
+                        return BuildDeclinedDecision(toggles);
+                    case YesNoReply.Ambiguous:
+                        return BuildNoMatchDecision(
+                            turn,
+                            state,
+                            "I heard both yes and no. Could you say that again?",
                             toggles,
-                            null,
-                            false,
-                            string.Empty));
+                            ReadString(turn, UserNameMetadataKey),
+                            false);
                 }
-
-                if (yesNoReply == YesNoReply.Negative) return BuildDeclinedDecision(toggles);
-                if (yesNoReply == YesNoReply.Ambiguous)
-                    return BuildNoMatchDecision(
-                        turn,
-                        state,
-                        "I heard both yes and no. Could you say that again?",
-                        toggles,
-                        ReadString(turn, UserNameMetadataKey),
-                        false);
 
                 if (!string.IsNullOrWhiteSpace(inlineToggleSummary))
                     return new JiboInteractionDecision(
@@ -233,47 +235,20 @@ internal static partial class PersonalReportOrchestrator
                             false,
                             string.Empty));
 
-                if (yesNoReply == YesNoReply.Affirmative)
-                    return await BuildDeliveredReportDecisionAsync(
-                        turn,
-                        catalog,
-                        randomizer,
-                        toggles,
-                        currentName,
-                        buildWeatherDecisionAsync,
-                        buildCalendarDecisionAsync,
-                        buildCommuteDecisionAsync,
-                        cancellationToken);
-
-                if (yesNoReply == YesNoReply.Negative)
-                    return new JiboInteractionDecision(
-                        "personal_report_request_name",
+                return yesNoReply switch
+                {
+                    YesNoReply.Affirmative => await BuildDeliveredReportDecisionAsync(turn, catalog,
+                        toggles, currentName, buildWeatherDecisionAsync, buildCalendarDecisionAsync,
+                        buildCommuteDecisionAsync, cancellationToken),
+                    YesNoReply.Negative => new JiboInteractionDecision("personal_report_request_name",
                         "Okay, who is this?",
-                        ContextUpdates: BuildContextUpdates(
-                            AwaitingIdentityNameState,
-                            0,
-                            0,
-                            toggles,
-                            null,
-                            false,
-                            string.Empty));
-
-                if (yesNoReply == YesNoReply.Ambiguous)
-                    return BuildNoMatchDecision(
-                        turn,
-                        state,
-                        $"I heard both yes and no. Is this {currentName}?",
-                        toggles,
-                        currentName,
-                        false);
-
-                return BuildNoMatchDecision(
-                    turn,
-                    state,
-                    $"Please answer yes or no. Is this {currentName}?",
-                    toggles,
-                    currentName,
-                    false);
+                        ContextUpdates: BuildContextUpdates(AwaitingIdentityNameState, 0, 0, toggles, null, false,
+                            string.Empty)),
+                    _ => BuildNoMatchDecision(turn, state,
+                        yesNoReply == YesNoReply.Ambiguous
+                            ? $"I heard both yes and no. Is this {currentName}?"
+                            : $"Please answer yes or no. Is this {currentName}?", toggles, currentName, false)
+                };
             }
 
             case AwaitingIdentityNameState:
@@ -292,7 +267,6 @@ internal static partial class PersonalReportOrchestrator
                 return await BuildDeliveredReportDecisionAsync(
                     turn,
                     catalog,
-                    randomizer,
                     toggles,
                     parsedName,
                     buildWeatherDecisionAsync,
@@ -309,7 +283,6 @@ internal static partial class PersonalReportOrchestrator
     private static async Task<JiboInteractionDecision> BuildDeliveredReportDecisionAsync(
         TurnContext turn,
         JiboExperienceCatalog catalog,
-        IJiboRandomizer randomizer,
         PersonalReportServiceToggles toggles,
         string userName,
         Func<TurnContext, string, CancellationToken, Task<JiboInteractionDecision>> buildWeatherDecisionAsync,
@@ -346,7 +319,7 @@ internal static partial class PersonalReportOrchestrator
 
                 var calendarOutro = ChooseShortestTemplate(catalog.CalendarOutroReplies);
                 if (!string.IsNullOrWhiteSpace(calendarOutro))
-                    reportSections.Add(RenderPersonalReportTemplate(calendarOutro!, userName));
+                    reportSections.Add(RenderPersonalReportTemplate(calendarOutro, userName));
             }
         }
 
@@ -602,8 +575,15 @@ internal static partial class PersonalReportOrchestrator
 
             selectedReply = candidateReply;
             selectedIndex = candidateIndex;
-            if (candidateReply == YesNoReply.Affirmative) sawAffirmative = true;
-            else if (candidateReply == YesNoReply.Negative) sawNegative = true;
+            switch (candidateReply)
+            {
+                case YesNoReply.Affirmative:
+                    sawAffirmative = true;
+                    break;
+                case YesNoReply.Negative:
+                    sawNegative = true;
+                    break;
+            }
         }
     }
 
@@ -642,13 +622,10 @@ internal static partial class PersonalReportOrchestrator
 
     private static bool ContainsAnyPhrase(string loweredTranscript, IEnumerable<string> phrases)
     {
-        foreach (var phrase in phrases)
-            if (string.Equals(loweredTranscript, phrase, StringComparison.Ordinal) ||
-                loweredTranscript.StartsWith($"{phrase} ", StringComparison.Ordinal) ||
-                loweredTranscript.Contains($" {phrase}", StringComparison.Ordinal))
-                return true;
-
-        return false;
+        return phrases.Any(phrase =>
+            string.Equals(loweredTranscript, phrase, StringComparison.Ordinal) ||
+            loweredTranscript.StartsWith($"{phrase} ", StringComparison.Ordinal) ||
+            loweredTranscript.Contains($" {phrase}", StringComparison.Ordinal));
     }
 
     private static bool IsWeatherErrorReply(string replyText)
@@ -850,10 +827,10 @@ internal static partial class PersonalReportOrchestrator
         string fallback)
     {
         var primary = ChooseShortestTemplate(primaryTemplates);
-        if (!string.IsNullOrWhiteSpace(primary)) return primary!;
+        if (!string.IsNullOrWhiteSpace(primary)) return primary;
 
         var secondary = ChooseShortestTemplate(secondaryTemplates);
-        return !string.IsNullOrWhiteSpace(secondary) ? secondary! : fallback;
+        return !string.IsNullOrWhiteSpace(secondary) ? secondary : fallback;
     }
 
     private static string ChooseShortestBriefing(IReadOnlyList<string> briefings)
@@ -875,25 +852,6 @@ internal static partial class PersonalReportOrchestrator
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .FirstOrDefault();
         return string.IsNullOrWhiteSpace(firstSentence) ? value.Trim() : firstSentence;
-    }
-
-    private static string ChooseFirstTwoSentences(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
-
-        var segments = value
-            .Split(['.', '!', '?'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Take(2)
-            .ToArray();
-
-        if (segments.Length == 0) return string.Empty;
-
-        var joined = string.Join(". ", segments);
-        return value.TrimEnd().EndsWith(".", StringComparison.Ordinal) ||
-               value.TrimEnd().EndsWith("!", StringComparison.Ordinal) ||
-               value.TrimEnd().EndsWith("?", StringComparison.Ordinal)
-            ? $"{joined}."
-            : joined;
     }
 
     private static string? ChooseShortestTemplate(IEnumerable<string> templates)

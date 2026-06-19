@@ -181,7 +181,7 @@ public sealed partial class JiboInteractionService
         var selected = ChooseShortestTemplate(candidates);
         return string.IsNullOrWhiteSpace(selected)
             ? "For your commute, it should take about ${skill.commute.durationMins} minutes."
-            : selected!;
+            : selected;
     }
 
     private static string ChooseCommuteDepartTimeTemplate(
@@ -197,7 +197,7 @@ public sealed partial class JiboInteractionService
         if (templates.Count == 0) return string.Empty;
 
         var selected = ChooseShortestTemplate(templates);
-        if (!string.IsNullOrWhiteSpace(selected)) return selected!;
+        if (!string.IsNullOrWhiteSpace(selected)) return selected;
 
         return loweredMode switch
         {

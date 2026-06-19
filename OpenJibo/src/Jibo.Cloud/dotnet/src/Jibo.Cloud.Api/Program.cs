@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 if (ShouldResetDiagnosticsOnStartup(builder.Configuration))
     ResetDiagnosticsDirectories(builder.Configuration);
 
-builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 {
     var minimumLevel = ParseLogEventLevel(context.Configuration["OpenJibo:Logging:MinimumLevel"]);
     var logDirectory = ResolveConfiguredPath(context.Configuration,
@@ -72,7 +72,7 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
     IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>
 {
     var envelope = await ApiRequestEnvelopeFactory.CreateAsync(context, cancellationToken);
-    var result = await service.DispatchAsync(envelope, cancellationToken);
+    var result = await service.DispatchAsync(envelope);
     await telemetrySink.RecordAsync(envelope, result, cancellationToken);
 
     context.Response.StatusCode = result.StatusCode;

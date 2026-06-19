@@ -323,7 +323,7 @@ public sealed partial class JiboInteractionService
         GreetingPresenceRecord? greetingHistory)
     {
         var hour = (referenceLocalTime ?? DateTimeOffset.UtcNow).Hour;
-        var isMorning = hour >= 5 && hour < 12;
+        var isMorning = hour is >= 5 and < 12;
         var recentGreeting = greetingHistory?.LastGreetedUtc is not null &&
                              DateTimeOffset.UtcNow - greetingHistory.LastGreetedUtc.Value < TimeSpan.FromHours(8);
 

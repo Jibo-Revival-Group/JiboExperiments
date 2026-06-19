@@ -25,9 +25,6 @@ public sealed class JiboCloudProtocolService(
 
     private readonly string? _configuredRobotId = ReadConfiguredRobotId(configuration);
 
-    private readonly bool _enableBackupRestore =
-        configuration?["OpenJibo:EnableBackupRestore"]?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? true;
-
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private readonly ConcurrentDictionary<string, OobeTokenState> _oobeTokens = new(StringComparer.Ordinal);
     private readonly Lock _schedulerLock = new();
@@ -52,8 +49,7 @@ public sealed class JiboCloudProtocolService(
         return string.IsNullOrWhiteSpace(robotId) ? null : robotId.Trim();
     }
 
-    public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope,
-        CancellationToken cancellationToken = default)
+    public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope)
     {
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
             envelope.Path == "/" &&
@@ -95,7 +91,7 @@ public sealed class JiboCloudProtocolService(
         var operation = envelope.Operation ?? string.Empty;
 
         if (servicePrefix.StartsWith("Log_", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(HandleLog(operation, envelope));
+            return Task.FromResult(HandleLog(operation));
 
         if (servicePrefix.StartsWith("Backup_", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleBackup(operation, envelope));
@@ -190,36 +186,35 @@ public sealed class JiboCloudProtocolService(
                            current.Complete
             });
 
-        if (operation.Equals("SetupRobot", StringComparison.OrdinalIgnoreCase) ||
-            operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
+        if (!operation.Equals("SetupRobot", StringComparison.OrdinalIgnoreCase) &&
+            !operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
+            return ProtocolDispatchResult.Ok(new { ok = true, operation });
+
+        var robotId = ReadString(body, "id") ??
+                      ReadString(body, "robotId") ??
+                      (string.IsNullOrWhiteSpace(envelope.DeviceId) ? "unknown-robot" : envelope.DeviceId!);
+
+        var state = _oobeTokens.GetOrAdd(token ?? "oobe-implicit", _ => new OobeTokenState
         {
-            var robotId = ReadString(body, "id") ??
-                          ReadString(body, "robotId") ??
-                          (string.IsNullOrWhiteSpace(envelope.DeviceId) ? "unknown-robot" : envelope.DeviceId!);
+            DeviceId = robotId,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
+        });
+        state.Complete = true;
+        state.DeviceId = robotId;
 
-            var state = _oobeTokens.GetOrAdd(token ?? "oobe-implicit", _ => new OobeTokenState
-            {
-                DeviceId = robotId,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
-            });
-            state.Complete = true;
-            state.DeviceId = robotId;
+        stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
 
-            stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        if (operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
+            return ProtocolDispatchResult.Ok(new { result = "ok" });
 
-            if (operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
-                return ProtocolDispatchResult.Ok(new { result = "ok" });
+        var account = stateStore.GetAccount();
+        return ProtocolDispatchResult.Ok(new
+        {
+            accessKeyId = account.AccessKeyId,
+            secretAccessKey = account.SecretAccessKey,
+            serviceMode = false
+        });
 
-            var account = stateStore.GetAccount();
-            return ProtocolDispatchResult.Ok(new
-            {
-                accessKeyId = account.AccessKeyId,
-                secretAccessKey = account.SecretAccessKey,
-                serviceMode = false
-            });
-        }
-
-        return ProtocolDispatchResult.Ok(new { ok = true, operation });
     }
 
     private ProtocolDispatchResult HandleLoop(string operation, ProtocolEnvelope envelope)
@@ -245,105 +240,107 @@ public sealed class JiboCloudProtocolService(
                                 stateStore.GetLoops().FirstOrDefault()?.LoopId ??
                                 "openjibo-default-loop";
 
-        if (operation is "InviteMember" or "InviteLoopMember")
+        switch (operation)
         {
-            stateStore.AddLoopMember(
-                loopIdForMutation,
-                null,
-                ReadString(body, "email"),
-                ReadString(body, "firstName"),
-                ReadString(body, "lastName"),
-                ReadString(body, "gender"),
-                ReadLong(body, "birthday"),
-                ReadBool(body, "isChild"),
-                "member");
-
-            var loop = stateStore.GetLoops().FirstOrDefault(l =>
-                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
-            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
-            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
-        }
-
-        if (operation is "UpdateMember" or "UpdateLoopMember")
-        {
-            var memberId = ReadString(body, "id") ?? string.Empty;
-            try
+            case "InviteMember" or "InviteLoopMember":
             {
-                stateStore.UpdateLoopMember(loopIdForMutation, memberId,
-                    ReadString(body, "firstName"), ReadString(body, "lastName"),
-                    ReadString(body, "gender"), ReadLong(body, "birthday"),
-                    ReadBool(body, "isChild"), ReadString(body, "nickname"), ReadString(body, "phoneticName"));
+                stateStore.AddLoopMember(
+                    loopIdForMutation,
+                    null,
+                    ReadString(body, "email"),
+                    ReadString(body, "firstName"),
+                    ReadString(body, "lastName"),
+                    ReadString(body, "gender"),
+                    ReadLong(body, "birthday"),
+                    ReadBool(body, "isChild"),
+                    "member");
+
+                var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                    l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+                return ProtocolDispatchResult.Ok(loop is null
+                    ? new { result = "ok" }
+                    : MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
             }
-            catch (InvalidOperationException)
+            case "UpdateMember" or "UpdateLoopMember":
             {
-                // Member not found - keep protocol flow moving.
+                var memberId = ReadString(body, "id") ?? string.Empty;
+                try
+                {
+                    stateStore.UpdateLoopMember(loopIdForMutation, memberId,
+                        ReadString(body, "firstName"), ReadString(body, "lastName"),
+                        ReadString(body, "gender"), ReadLong(body, "birthday"),
+                        ReadBool(body, "isChild"), ReadString(body, "nickname"), ReadString(body, "phoneticName"));
+                }
+                catch (InvalidOperationException)
+                {
+                    // Member not found - keep protocol flow moving.
+                }
+
+                var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                    l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+                return ProtocolDispatchResult.Ok(loop is null
+                    ? new { result = "ok" }
+                    : MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
             }
-
-            var loop = stateStore.GetLoops().FirstOrDefault(l =>
-                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
-            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
-            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
-        }
-
-        if (operation is "RemoveMember" or "RemoveLoopMember")
-        {
-            stateStore.RemoveLoopMember(loopIdForMutation, ReadString(body, "id") ?? string.Empty);
-            var loop = stateStore.GetLoops().FirstOrDefault(l =>
-                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
-            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
-            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
-        }
-
-        if (operation is "AcceptInvitation" or "AcceptLoopInvitation" or
-            "DeclineInvitation" or "DeclineLoopInvitation")
-        {
-            var loop = stateStore.GetLoops().FirstOrDefault(l =>
-                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
-            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
-            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
-        }
-
-        if (operation is "SetEnrollment")
-        {
-            var memberId = ReadString(body, "id") ?? string.Empty;
-            bool? face = body?.TryGetProperty("face", out var faceEl) == true ? faceEl.GetBoolean() : null;
-            bool? voice = body?.TryGetProperty("voice", out var voiceEl) == true ? voiceEl.GetBoolean() : null;
-            try
+            case "RemoveMember" or "RemoveLoopMember":
             {
-                stateStore.SetMemberEnrollment(loopIdForMutation, memberId, face, voice);
+                stateStore.RemoveLoopMember(loopIdForMutation, ReadString(body, "id") ?? string.Empty);
+                var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                    l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+                return ProtocolDispatchResult.Ok(loop is null
+                    ? new { result = "ok" }
+                    : MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
             }
-            catch (InvalidOperationException)
+            case "AcceptInvitation" or "AcceptLoopInvitation" or
+                "DeclineInvitation" or "DeclineLoopInvitation":
             {
-                // Member not found - keep protocol flow moving.
+                var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                    l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+                return ProtocolDispatchResult.Ok(loop is null
+                    ? new { result = "ok" }
+                    : MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
             }
+            case "SetEnrollment":
+            {
+                var memberId = ReadString(body, "id") ?? string.Empty;
+                bool? face = body?.TryGetProperty("face", out var faceEl) == true ? faceEl.GetBoolean() : null;
+                bool? voice = body?.TryGetProperty("voice", out var voiceEl) == true ? voiceEl.GetBoolean() : null;
+                try
+                {
+                    stateStore.SetMemberEnrollment(loopIdForMutation, memberId, face, voice);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Member not found - keep protocol flow moving.
+                }
 
-            var loop = stateStore.GetLoops().FirstOrDefault(l =>
-                l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
-            if (loop is null) return ProtocolDispatchResult.Ok(new { result = "ok" });
-            return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
+                var loop = stateStore.GetLoops().FirstOrDefault(l =>
+                    l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));
+                return ProtocolDispatchResult.Ok(loop is null
+                    ? new { result = "ok" }
+                    : MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
+            }
+            case "UpdateNickname" or "UpdatePhoneticName":
+            {
+                var memberId = ReadString(body, "id") ?? string.Empty;
+                var nickname = operation is "UpdateNickname" ? ReadString(body, "nickname") : null;
+                var phoneticName = operation is "UpdatePhoneticName" ? ReadString(body, "phoneticName") : null;
+                try
+                {
+                    stateStore.UpdateLoopMember(loopIdForMutation, memberId,
+                        null, null, null, null, false, nickname, phoneticName);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Member not found - keep protocol flow moving.
+                }
+
+                return ProtocolDispatchResult.Ok(new { result = "ok" });
+            }
+            case "SuspendLoop" or "Remove" or "RemoveLoop" or
+                "SetLegalGuardian" or "UpdateAgreementStatus" or "Update" or "UpdateLoop":
+                return ProtocolDispatchResult.Ok(new { result = "ok" });
         }
-
-        if (operation is "UpdateNickname" or "UpdatePhoneticName")
-        {
-            var memberId = ReadString(body, "id") ?? string.Empty;
-            var nickname = operation is "UpdateNickname" ? ReadString(body, "nickname") : null;
-            var phoneticName = operation is "UpdatePhoneticName" ? ReadString(body, "phoneticName") : null;
-            try
-            {
-                stateStore.UpdateLoopMember(loopIdForMutation, memberId,
-                    null, null, null, null, false, nickname, phoneticName);
-            }
-            catch (InvalidOperationException)
-            {
-                // Member not found - keep protocol flow moving.
-            }
-
-            return ProtocolDispatchResult.Ok(new { result = "ok" });
-        }
-
-        if (operation is "SuspendLoop" or "Remove" or "RemoveLoop" or
-            "SetLegalGuardian" or "UpdateAgreementStatus" or "Update" or "UpdateLoop")
-            return ProtocolDispatchResult.Ok(new { result = "ok" });
 
         if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
@@ -399,7 +396,7 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
-    private static ProtocolDispatchResult HandleLog(string operation, ProtocolEnvelope envelope)
+    private static ProtocolDispatchResult HandleLog(string operation)
     {
         return operation switch
         {
@@ -800,22 +797,24 @@ public sealed class JiboCloudProtocolService(
             return true;
         }
 
-        if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase) ||
-            envelope.Path.Equals("/ota-update", StringComparison.OrdinalIgnoreCase))
-        {
-            if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase))
-                StartSchedulerBackupCycle();
-            else
-                StartSchedulerUpdateCycle(ReadSchedulerFilterFromPath(envelope.Path));
+        if (!envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase) &&
+            !envelope.Path.Equals("/ota-update", StringComparison.OrdinalIgnoreCase)) return false;
 
-            result = ProtocolDispatchResult.Ok(new
-            {
-                status = "OK"
-            });
-            return true;
+        if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase))
+        {
+            StartSchedulerBackupCycle();
+        }
+        else
+        {
+            StartSchedulerUpdateCycle(ReadSchedulerFilterFromPath(envelope.Path));
         }
 
-        return false;
+        result = ProtocolDispatchResult.Ok(new
+        {
+            status = "OK"
+        });
+        return true;
+
     }
 
     private object[] ListSchedulerUpdates(string? filter)
@@ -941,32 +940,31 @@ public sealed class JiboCloudProtocolService(
                         received = Math.Min(updateLength, received + Math.Max(100L, updateLength / 4));
                         lock (_schedulerLock)
                         {
-                            if (_schedulerState.DownloadStatus is not null)
-                                _schedulerState.DownloadStatus.Status = new SchedulerDownloadProgress
-                                {
-                                    Id = update.UpdateId,
-                                    Length = updateLength,
-                                    Received = received,
-                                    Status = "downloading"
-                                };
+                            _schedulerState.DownloadStatus?.Status = new SchedulerDownloadProgress
+                            {
+                                Id = update.UpdateId,
+                                Length = updateLength,
+                                Received = received,
+                                Status = "downloading"
+                            };
                         }
                     }
 
                     lock (_schedulerLock)
                     {
                         _schedulerState.DownloadedUpdateIds.Add(update.UpdateId);
-                        if (_schedulerState.DownloadStatus is not null)
+
+                        if (_schedulerState.DownloadStatus is null) continue;
+
+                        _schedulerState.DownloadStatus.Updates[i] =
+                            _schedulerState.DownloadStatus.Updates[i] with { Downloaded = true };
+                        _schedulerState.DownloadStatus.Status = new SchedulerDownloadProgress
                         {
-                            _schedulerState.DownloadStatus.Updates[i] =
-                                _schedulerState.DownloadStatus.Updates[i] with { Downloaded = true };
-                            _schedulerState.DownloadStatus.Status = new SchedulerDownloadProgress
-                            {
-                                Id = update.UpdateId,
-                                Length = updateLength,
-                                Received = updateLength,
-                                Status = "finished"
-                            };
-                        }
+                            Id = update.UpdateId,
+                            Length = updateLength,
+                            Received = updateLength,
+                            Status = "finished"
+                        };
                     }
                 }
 
@@ -1081,22 +1079,6 @@ public sealed class JiboCloudProtocolService(
             return candidate > requested;
 
         return string.Compare(candidateVersion, fromVersion, StringComparison.OrdinalIgnoreCase) > 0;
-    }
-
-    private static UpdateManifest BuildNoopUpdate(string? subsystem, string? fromVersion, string? filter)
-    {
-        return new UpdateManifest
-        {
-            UpdateId = $"noop-update-{subsystem ?? "unknown"}-{fromVersion ?? "unknown"}",
-            FromVersion = fromVersion ?? "unknown",
-            ToVersion = fromVersion ?? "unknown",
-            Changes = "No update available",
-            Url = "https://api.jibo.com/update/noop",
-            ShaHash = "noop",
-            Length = 0,
-            Subsystem = subsystem ?? "unknown",
-            Filter = filter
-        };
     }
 
     private static object MapBackup(BackupRecord backup)

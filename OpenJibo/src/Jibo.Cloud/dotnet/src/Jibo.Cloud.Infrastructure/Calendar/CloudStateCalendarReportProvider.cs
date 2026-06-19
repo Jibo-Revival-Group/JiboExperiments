@@ -63,10 +63,9 @@ public sealed class CloudStateCalendarReportProvider(ICloudStateStore cloudState
     private static IEnumerable<(string Summary, string TimeLabel, DateOnly Date)> ToCalendarEntries(
         IEnumerable<HolidayRecord> holidays)
     {
-        foreach (var holiday in holidays)
-            yield return (
-                holiday.Name,
-                "all day",
-                holiday.Date);
+        return holidays.Select(holiday => (
+            holiday.Name,
+            "all day",
+            holiday.Date));
     }
 }

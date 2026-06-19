@@ -178,10 +178,9 @@ internal static class ScriptedResponseDecisionBuilder
             selectedReply.Contains("he must be at home", StringComparison.OrdinalIgnoreCase))
             return "RA_JBO_ShowSantaTracker_AN_05";
 
-        if (selectedReply.Contains("spot him", StringComparison.OrdinalIgnoreCase))
-            return "RA_JBO_ShowSantaTracker_AN_01";
-
-        return "RA_JBO_ShowSantaTracker_AN_06";
+        return selectedReply.Contains("spot him", StringComparison.OrdinalIgnoreCase)
+            ? "RA_JBO_ShowSantaTracker_AN_01"
+            : "RA_JBO_ShowSantaTracker_AN_06";
     }
 
     private static string ResolveSantaTrackerAnimation(string selectedReply, DateTimeOffset? referenceLocalTime)
@@ -199,13 +198,13 @@ internal static class ScriptedResponseDecisionBuilder
             selectedReply.Contains("he must be at home", StringComparison.OrdinalIgnoreCase))
             return "santa-scanner, without-santa";
 
-        if (referenceLocalTime is not null)
-        {
-            var localDate = DateOnly.FromDateTime(referenceLocalTime.Value.DateTime);
-            if (localDate.Month == 12 && localDate.Day == 24 && referenceLocalTime.Value.Hour <= 15)
-                return "santa-scanner, without-santa";
+        if (referenceLocalTime is null) return "santa-scanner, with-santa";
 
-            if (localDate.Month == 12 && localDate.Day == 25 && referenceLocalTime.Value.Hour > 4)
+        var localDate = DateOnly.FromDateTime(referenceLocalTime.Value.DateTime);
+        switch (localDate.Month)
+        {
+            case 12 when localDate.Day == 24 && referenceLocalTime.Value.Hour <= 15:
+            case 12 when localDate.Day == 25 && referenceLocalTime.Value.Hour > 4:
                 return "santa-scanner, without-santa";
         }
 

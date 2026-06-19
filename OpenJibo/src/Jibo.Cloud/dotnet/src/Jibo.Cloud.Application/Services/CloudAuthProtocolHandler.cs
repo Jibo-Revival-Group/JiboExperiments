@@ -77,10 +77,10 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
                 .Select(id =>
                 {
                     var user = stateStore.GetUserById(id);
-                    if (user is not null) return (object)BuildAccountResponse(user);
-                    if (id.Equals(account.AccountId, StringComparison.OrdinalIgnoreCase))
-                        return (object)BuildAccountResponse(account);
-                    return null;
+                    if (user is not null) return BuildAccountResponse(user);
+                    return id.Equals(account.AccountId, StringComparison.OrdinalIgnoreCase)
+                        ? BuildAccountResponse(account)
+                        : null;
                 })
                 .Where(result => result is not null)
                 .ToArray();
@@ -183,8 +183,7 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
 
     private static string? ReadString(JsonElement? body, string propertyName)
     {
-        return body is { } element &&
-               element.ValueKind == JsonValueKind.Object &&
+        return body is { ValueKind: JsonValueKind.Object } element &&
                element.TryGetProperty(propertyName, out var property) &&
                property.ValueKind == JsonValueKind.String
             ? property.GetString()
@@ -193,8 +192,7 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
 
     private static IReadOnlyList<string> ReadStringArray(JsonElement? body, string propertyName)
     {
-        if (body is not { } element ||
-            element.ValueKind != JsonValueKind.Object ||
+        if (body is not { ValueKind: JsonValueKind.Object } element ||
             !element.TryGetProperty(propertyName, out var property) ||
             property.ValueKind != JsonValueKind.Array)
             return [];
@@ -208,8 +206,7 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
 
     private static JsonElement? ReadObject(JsonElement? body, string propertyName)
     {
-        return body is { } element &&
-               element.ValueKind == JsonValueKind.Object &&
+        return body is { ValueKind: JsonValueKind.Object } element &&
                element.TryGetProperty(propertyName, out var property) &&
                property.ValueKind == JsonValueKind.Object
             ? property

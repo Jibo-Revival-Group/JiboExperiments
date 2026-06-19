@@ -89,7 +89,7 @@ public static class BufferedAudioSttPathResolver
 
         if (!ShouldDiscover(configured, legacyLinuxDefault)) return configured;
 
-        return discoveryCandidates.FirstOrDefault(candidate => fileExists(candidate)) ?? configured;
+        return discoveryCandidates.FirstOrDefault(fileExists) ?? configured;
     }
 
     private static string? ResolveEnvironmentPath(
@@ -97,13 +97,8 @@ public static class BufferedAudioSttPathResolver
         Func<string, string?> getEnvironmentVariable,
         Func<string, bool> fileExists)
     {
-        foreach (var name in environmentVariableNames)
-        {
-            var value = getEnvironmentVariable(name);
-            if (IsRelativeOrExistingAbsolute(value, fileExists)) return value;
-        }
-
-        return null;
+        return environmentVariableNames.Select(getEnvironmentVariable)
+            .FirstOrDefault(value => IsRelativeOrExistingAbsolute(value, fileExists));
     }
 
     private static bool IsRelativeOrExistingAbsolute(string? path, Func<string, bool> fileExists)
@@ -121,42 +116,68 @@ public static class BufferedAudioSttPathResolver
     private static IReadOnlyList<string> BuildFfmpegCandidates(OperatingSystemPlatform platform)
     {
         var candidates = new List<string>();
-        if (platform == OperatingSystemPlatform.MacOS)
-            candidates.AddRange([
-                "/opt/homebrew/bin/ffmpeg",
-                "/usr/local/bin/ffmpeg"
-            ]);
-
-        if (platform == OperatingSystemPlatform.Linux)
-            candidates.AddRange([
-                LegacyLinuxFfmpegPath,
-                "/usr/local/bin/ffmpeg"
-            ]);
+        switch (platform)
+        {
+            case OperatingSystemPlatform.Windows:
+                candidates.AddRange([
+                    @"C:\Program Files\ffmpeg\bin\ffmpeg.exe",
+                    @"C:\Program Files\ffmpeg\ffmpeg.exe",
+                    @"C:\Program Files (x86)\ffmpeg\bin\ffmpeg.exe",
+                    @"C:\Program Files\Gyan\ffmpeg\bin\ffmpeg.exe"
+                ]);
+                break;
+            case OperatingSystemPlatform.MacOS:
+                candidates.AddRange([
+                    "/opt/homebrew/bin/ffmpeg",
+                    "/usr/local/bin/ffmpeg"
+                ]);
+                break;
+            case OperatingSystemPlatform.Linux:
+                candidates.AddRange([
+                    LegacyLinuxFfmpegPath,
+                    "/usr/local/bin/ffmpeg"
+                ]);
+                break;
+        }
 
         candidates.Add("ffmpeg");
         return candidates;
     }
 
-    private static IReadOnlyList<string> BuildWhisperCliCandidates(OperatingSystemPlatform platform, string? homeDirectory)
+    private static IReadOnlyList<string> BuildWhisperCliCandidates(OperatingSystemPlatform platform,
+        string? homeDirectory)
     {
         var candidates = new List<string>();
-        if (platform == OperatingSystemPlatform.MacOS)
-            candidates.AddRange([
-                "/opt/homebrew/bin/whisper-cli",
-                "/usr/local/bin/whisper-cli",
-                "/opt/homebrew/opt/whisper-cpp/bin/whisper-cli",
-                "/usr/local/opt/whisper-cpp/bin/whisper-cli"
-            ]);
-
-        if (platform == OperatingSystemPlatform.Linux)
-            candidates.AddRange([
-                LegacyLinuxWhisperCliPath,
-                "/usr/local/bin/whisper-cli"
-            ]);
+        switch (platform)
+        {
+            case OperatingSystemPlatform.Windows:
+                candidates.AddRange([
+                    @"C:\Program Files\whisper.cpp\build\bin\Release\whisper-cli.exe",
+                    @"C:\Program Files\whisper.cpp\build\bin\whisper-cli.exe",
+                    @"C:\Program Files\whisper-cpp\build\bin\Release\whisper-cli.exe",
+                    @"C:\Program Files\whisper-cpp\build\bin\whisper-cli.exe"
+                ]);
+                break;
+            case OperatingSystemPlatform.MacOS:
+                candidates.AddRange([
+                    "/opt/homebrew/bin/whisper-cli",
+                    "/usr/local/bin/whisper-cli",
+                    "/opt/homebrew/opt/whisper-cpp/bin/whisper-cli",
+                    "/usr/local/opt/whisper-cpp/bin/whisper-cli"
+                ]);
+                break;
+            case OperatingSystemPlatform.Linux:
+                candidates.AddRange([
+                    LegacyLinuxWhisperCliPath,
+                    "/usr/local/bin/whisper-cli"
+                ]);
+                break;
+        }
 
         if (!string.IsNullOrWhiteSpace(homeDirectory))
             candidates.AddRange([
                 Path.Combine(homeDirectory, "whisper.cpp", "build", "bin", "whisper-cli"),
+                Path.Combine(homeDirectory, "whisper.cpp", "build", "bin", "Release", "whisper-cli.exe"),
                 Path.Combine(homeDirectory, "src", "whisper.cpp", "build", "bin", "whisper-cli"),
                 Path.Combine(homeDirectory, "Code", "whisper.cpp", "build", "bin", "whisper-cli")
             ]);
@@ -165,25 +186,38 @@ public static class BufferedAudioSttPathResolver
         return candidates;
     }
 
-    private static IReadOnlyList<string> BuildWhisperModelCandidates(OperatingSystemPlatform platform, string? homeDirectory)
+    private static IReadOnlyList<string> BuildWhisperModelCandidates(OperatingSystemPlatform platform,
+        string? homeDirectory)
     {
         var candidates = new List<string>();
-        if (platform == OperatingSystemPlatform.MacOS)
-            candidates.AddRange([
-                "/opt/homebrew/share/whisper-cpp/models/ggml-base.en.bin",
-                "/opt/homebrew/share/whisper.cpp/models/ggml-base.en.bin",
-                "/opt/homebrew/opt/whisper-cpp/share/whisper-cpp/models/ggml-base.en.bin",
-                "/opt/homebrew/opt/whisper.cpp/share/whisper.cpp/models/ggml-base.en.bin",
-                "/usr/local/share/whisper-cpp/models/ggml-base.en.bin",
-                "/usr/local/share/whisper.cpp/models/ggml-base.en.bin"
-            ]);
-
-        if (platform == OperatingSystemPlatform.Linux)
-            candidates.AddRange([
-                LegacyLinuxWhisperModelPath,
-                "/usr/local/share/whisper-cpp/models/ggml-base.en.bin",
-                "/usr/local/share/whisper.cpp/models/ggml-base.en.bin"
-            ]);
+        switch (platform)
+        {
+            case OperatingSystemPlatform.Windows:
+                candidates.AddRange([
+                    @"C:\Program Files\whisper.cpp\models\ggml-base.en.bin",
+                    @"C:\Program Files\whisper-cpp\models\ggml-base.en.bin",
+                    @"C:\Program Files\whisper.cpp\share\whisper-cpp\models\ggml-base.en.bin",
+                    @"C:\Program Files\whisper-cpp\share\whisper-cpp\models\ggml-base.en.bin"
+                ]);
+                break;
+            case OperatingSystemPlatform.MacOS:
+                candidates.AddRange([
+                    "/opt/homebrew/share/whisper-cpp/models/ggml-base.en.bin",
+                    "/opt/homebrew/share/whisper.cpp/models/ggml-base.en.bin",
+                    "/opt/homebrew/opt/whisper-cpp/share/whisper-cpp/models/ggml-base.en.bin",
+                    "/opt/homebrew/opt/whisper.cpp/share/whisper.cpp/models/ggml-base.en.bin",
+                    "/usr/local/share/whisper-cpp/models/ggml-base.en.bin",
+                    "/usr/local/share/whisper.cpp/models/ggml-base.en.bin"
+                ]);
+                break;
+            case OperatingSystemPlatform.Linux:
+                candidates.AddRange([
+                    LegacyLinuxWhisperModelPath,
+                    "/usr/local/share/whisper-cpp/models/ggml-base.en.bin",
+                    "/usr/local/share/whisper.cpp/models/ggml-base.en.bin"
+                ]);
+                break;
+        }
 
         if (!string.IsNullOrWhiteSpace(homeDirectory))
             candidates.AddRange([

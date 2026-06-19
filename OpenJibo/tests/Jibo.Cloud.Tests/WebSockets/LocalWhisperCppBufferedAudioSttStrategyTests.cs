@@ -134,7 +134,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
     [Fact]
     public void Resolve_UsesMacDiscovery_WhenLegacyLinuxDefaultsAreConfigured()
     {
-        const string homeDirectory = @"C:\Users\test";
+        const string homeDirectory = "/Users/test";
         var existingPaths = new HashSet<string>(StringComparer.Ordinal)
         {
             "/opt/homebrew/bin/ffmpeg",
@@ -153,8 +153,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             _ => null,
             existingPaths.Contains,
             homeDirectory,
-            OperatingSystemPlatform.MacOS
-        );
+            OperatingSystemPlatform.MacOS);
 
         Assert.Equal("/opt/homebrew/bin/ffmpeg", resolved.FfmpegPath);
         Assert.Equal("/opt/homebrew/bin/whisper-cli", resolved.WhisperCliPath);
@@ -675,17 +674,74 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             IReadOnlyList<string> arguments,
             CancellationToken cancellationToken = default)
         {
-            if (string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
-            {
-                WrittenFfmpegInputBytes = File.ReadAllBytes(arguments[2]);
-                File.WriteAllBytes(arguments[^1],
-                    Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
-                return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
-            }
+            if (!string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
+                return Task.FromResult(new ExternalProcessResult(0,
+                    "[00:00:00.000 --> 00:00:01.000] tell me a joke",
+                    string.Empty));
 
-            return Task.FromResult(new ExternalProcessResult(0,
-                "[00:00:00.000 --> 00:00:01.000] tell me a joke",
-                string.Empty));
+            WrittenFfmpegInputBytes = File.ReadAllBytes(arguments[2]);
+
+            File.WriteAllBytes(arguments[^1],
+                Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
+
+            return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
         }
+    }
+
+    [Fact]
+    public void Resolve_UsesWindowsEnvironmentOverrides_WhenConfiguredPathsAreEmpty()
+    {
+        var resolved = BufferedAudioSttPathResolver.Resolve(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "",
+                WhisperCliPath = "",
+                WhisperModelPath = ""
+            },
+            name => name switch
+            {
+                "OPENJIBO_STT_FFMPEG_PATH" => @"C:\Tools\ffmpeg\bin\ffmpeg.exe",
+                "OPENJIBO_STT_WHISPER_CLI_PATH" => @"C:\Tools\whisper-cli\whisper-cli.exe",
+                "OPENJIBO_STT_WHISPER_MODEL_PATH" => @"C:\Models\ggml-base.en.bin",
+                _ => null
+            },
+            path => path.StartsWith(@"C:\Tools\", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith(@"C:\Models\", StringComparison.OrdinalIgnoreCase),
+            null,
+            OperatingSystemPlatform.Windows);
+
+        Assert.Equal(@"C:\Tools\ffmpeg\bin\ffmpeg.exe", resolved.FfmpegPath);
+        Assert.Equal(@"C:\Tools\whisper-cli\whisper-cli.exe", resolved.WhisperCliPath);
+        Assert.Equal(@"C:\Models\ggml-base.en.bin", resolved.WhisperModelPath);
+    }
+
+    [Fact]
+    public void Resolve_UsesWindowsDiscovery_WhenLegacyLinuxDefaultsAreConfigured()
+    {
+        const string homeDirectory = @"C:\Users\test";
+        var existingPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            @"C:\Program Files\ffmpeg\bin\ffmpeg.exe",
+            @"C:\Program Files\whisper.cpp\build\bin\Release\whisper-cli.exe",
+            Path.Combine(homeDirectory, "whisper.cpp", "models", "ggml-base.en.bin")
+        };
+
+        var resolved = BufferedAudioSttPathResolver.Resolve(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "/usr/bin/ffmpeg",
+                WhisperCliPath = "/usr/bin/whisper.cpp/build/bin/whisper-cli",
+                WhisperModelPath = "/usr/bin/whisper.cpp/models/ggml-base.en.bin"
+            },
+            _ => null,
+            existingPaths.Contains,
+            homeDirectory,
+            OperatingSystemPlatform.Windows);
+
+        Assert.Equal(@"C:\Program Files\ffmpeg\bin\ffmpeg.exe", resolved.FfmpegPath);
+        Assert.Equal(@"C:\Program Files\whisper.cpp\build\bin\Release\whisper-cli.exe", resolved.WhisperCliPath);
+        Assert.Equal(Path.Combine(homeDirectory, "whisper.cpp", "models", "ggml-base.en.bin"), resolved.WhisperModelPath);
     }
 }

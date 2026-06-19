@@ -1081,8 +1081,9 @@ public sealed class WebSocketTurnFinalizationService(
                                 ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount,
                                 ["lastSttError"] = turnState.LastSttError
                             }), cancellationToken);
-                        var fallbackReplies = ResponsePlanToSocketMessagesMapper.MapFallback(session,
-                                turnState.TransId ?? session.LastTransId ?? string.Empty, turnState.ListenRules)
+                        var fallbackReplies = ResponsePlanToSocketMessagesMapper
+                            .MapFallback(turnState.TransId ?? session.LastTransId ?? string.Empty,
+                                turnState.ListenRules)
                             .Select(map => new WebSocketReply { Text = map.Text, DelayMs = map.DelayMs })
                             .ToArray();
                         ResetBufferedAudio(session);
@@ -1113,8 +1114,9 @@ public sealed class WebSocketTurnFinalizationService(
                         session.LastTranscript = string.Empty;
                         session.LastIntent = "heyJibo";
                         session.LastListenType = "fallback";
-                        var fallbackReplies = ResponsePlanToSocketMessagesMapper.MapFallback(session,
-                                turnState.TransId ?? session.LastTransId ?? string.Empty, turnState.ListenRules)
+                        var fallbackReplies = ResponsePlanToSocketMessagesMapper
+                            .MapFallback(turnState.TransId ?? session.LastTransId ?? string.Empty,
+                                turnState.ListenRules)
                             .Select(map => new WebSocketReply { Text = map.Text, DelayMs = map.DelayMs })
                             .ToArray();
                         ResetBufferedAudio(session);
@@ -1148,35 +1150,33 @@ public sealed class WebSocketTurnFinalizationService(
                         ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
                     }), cancellationToken);
 
-                if (turnAge >= AutoFinalizeHotphraseOnlyNoInputAge ||
-                    turnState.FinalizeAttemptCount >= AutoFinalizeHotphraseOnlyNoInputAttempts)
-                {
-                    turnState.AwaitingTurnCompletion = false;
-                    session.LastTranscript = string.Empty;
-                    session.LastIntent = null;
-                    session.LastListenType = "no-input";
-                    await sink.RecordTurnDiagnosticAsync("auto_finalize_hotphrase_only_no_input",
-                        BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
-                        {
-                            ["messageType"] = messageType,
-                            ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
-                            ["reason"] = hotphraseOnlyReason,
-                            ["finalizeAttemptCount"] = turnState.FinalizeAttemptCount,
-                            ["turnAgeMs"] = (int)turnAge.TotalMilliseconds,
-                            ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
-                            ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
-                        }), cancellationToken);
-                    var noInputReplies = ResponsePlanToSocketMessagesMapper.MapNoInput(
-                            turnState.TransId ?? session.LastTransId ?? string.Empty,
-                            turnState.ListenRules)
-                        .Select(map => new WebSocketReply { Text = map.Text, DelayMs = map.DelayMs })
-                        .ToArray();
-                    ResetBufferedAudio(session);
-                    ClearListenTracking(turnState);
-                    return noInputReplies;
-                }
+                if (turnAge < AutoFinalizeHotphraseOnlyNoInputAge &&
+                    turnState.FinalizeAttemptCount < AutoFinalizeHotphraseOnlyNoInputAttempts) return [];
 
-                return [];
+                turnState.AwaitingTurnCompletion = false;
+                session.LastTranscript = string.Empty;
+                session.LastIntent = null;
+                session.LastListenType = "no-input";
+                await sink.RecordTurnDiagnosticAsync("auto_finalize_hotphrase_only_no_input",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["messageType"] = messageType,
+                        ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                        ["reason"] = hotphraseOnlyReason,
+                        ["finalizeAttemptCount"] = turnState.FinalizeAttemptCount,
+                        ["turnAgeMs"] = (int)turnAge.TotalMilliseconds,
+                        ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                        ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
+                    }), cancellationToken);
+                var noInputReplies = ResponsePlanToSocketMessagesMapper.MapNoInput(
+                        turnState.TransId ?? session.LastTransId ?? string.Empty,
+                        turnState.ListenRules)
+                    .Select(map => new WebSocketReply { Text = map.Text, DelayMs = map.DelayMs })
+                    .ToArray();
+                ResetBufferedAudio(session);
+                ClearListenTracking(turnState);
+                return noInputReplies;
+
             }
 
             if (ShouldDeferForIncompleteHotphraseLaunchCommand(finalizedTurn, turnState, messageType,
@@ -1652,9 +1652,7 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static TimeSpan ResolveAutoFinalizeSilenceWindow(WebSocketTurnState turnState)
     {
-        if (!turnState.ListenHotphrase) return AutoFinalizeSilenceWindow;
-
-        if (!turnState.ListenRules.Any(static rule =>
+        if (!turnState.ListenHotphrase || !turnState.ListenRules.Any(static rule =>
                 string.Equals(rule, "launch", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "globals/global_commands_launch", StringComparison.OrdinalIgnoreCase)))
             return AutoFinalizeSilenceWindow;
@@ -1669,8 +1667,7 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static bool HasReceivedOggEndOfStream(WebSocketTurnState turnState)
     {
-        return turnState.BufferedAudioFrames.LastOrDefault() is { } frame &&
-               frame.Length > 5 &&
+        return turnState.BufferedAudioFrames.LastOrDefault() is { Length: > 5 } frame &&
                frame.AsSpan(0, 4).SequenceEqual("OggS"u8) &&
                (frame[5] & 0x04) == 0x04;
     }
@@ -1909,11 +1906,6 @@ public sealed class WebSocketTurnFinalizationService(
         }
     }
 
-    private static bool IsTranscriptUsable(TurnContext turn)
-    {
-        return TryGetUsableTranscript(turn, out _);
-    }
-
     private static bool TryGetUsableTranscript(TurnContext turn, out string transcript)
     {
         var messageType = ReadMessageType(turn);
@@ -2094,9 +2086,7 @@ public sealed class WebSocketTurnFinalizationService(
         if (string.IsNullOrWhiteSpace(normalized)) return YesNoReply.None;
 
         var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (tokens.Length == 0) return YesNoReply.None;
-
-        return TryClassifyTrailingYesNoReply(tokens);
+        return tokens.Length == 0 ? YesNoReply.None : TryClassifyTrailingYesNoReply(tokens);
     }
 
     private static bool TryTrimLeadingAcknowledgement(string normalizedTranscript, out string trimmedTranscript)
@@ -2211,8 +2201,15 @@ public sealed class WebSocketTurnFinalizationService(
 
             selectedReply = candidateReply;
             selectedIndex = candidateIndex;
-            if (candidateReply == YesNoReply.Affirmative) sawAffirmative = true;
-            else if (candidateReply == YesNoReply.Negative) sawNegative = true;
+            switch (candidateReply)
+            {
+                case YesNoReply.Affirmative:
+                    sawAffirmative = true;
+                    break;
+                case YesNoReply.Negative:
+                    sawNegative = true;
+                    break;
+            }
         }
     }
 
@@ -2439,8 +2436,8 @@ public sealed class WebSocketTurnFinalizationService(
             string text when bool.TryParse(text, out var parsed) => parsed,
             JsonElement { ValueKind: JsonValueKind.True } => true,
             JsonElement { ValueKind: JsonValueKind.False } => false,
-            JsonElement json when json.ValueKind == JsonValueKind.String &&
-                                  bool.TryParse(json.GetString(), out var parsed) => parsed,
+            JsonElement { ValueKind: JsonValueKind.String } json when bool.TryParse(json.GetString(), out var parsed) =>
+                parsed,
             _ => null
         };
     }
@@ -2579,13 +2576,11 @@ public sealed class WebSocketTurnFinalizationService(
             return true;
         }
 
-        if (TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(normalized))
-        {
-            reason = "robot_self_audio";
-            return true;
-        }
+        if (!TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(normalized)) return false;
 
-        return false;
+        reason = "robot_self_audio";
+        return true;
+
     }
 
     private static bool IsHotphraseNonCommandTranscript(string normalized)
@@ -2664,13 +2659,12 @@ public sealed class WebSocketTurnFinalizationService(
             return true;
         }
 
-        if (normalized is "what time" or "what time is" or "what time is it in" or "what time is it at")
-        {
-            reason = "clock_command_incomplete";
-            return true;
-        }
+        if (normalized is not ("what time" or "what time is" or "what time is it in" or "what time is it at"))
+            return false;
 
-        return false;
+        reason = "clock_command_incomplete";
+        return true;
+
     }
 
     private static bool ShouldHandleUnexpectedYesNoAutoFinalizeTranscript(
@@ -2814,9 +2808,11 @@ public sealed class WebSocketTurnFinalizationService(
         if (!string.IsNullOrWhiteSpace(turn.NormalizedTranscript) ||
             !string.IsNullOrWhiteSpace(turn.RawTranscript)) return false;
 
-        return turnState.BufferedAudioBytes >= AutoFinalizeMinBufferedAudioBytes &&
-               turnState.FinalizeAttemptCount > 0 &&
-               turnState.HotphraseEmptyTurnCount > 0;
+        return turnState is
+        {
+            BufferedAudioBytes: >= AutoFinalizeMinBufferedAudioBytes, FinalizeAttemptCount: > 0,
+            HotphraseEmptyTurnCount: > 0
+        };
     }
 
     private static bool ShouldTreatEmptyHotphraseTurnAsGreeting(TurnContext turn, WebSocketTurnState turnState)

@@ -210,27 +210,42 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
                 transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(ReadTranscriptHint(turn));
             }
 
-            if (string.IsNullOrWhiteSpace(transcript))
-            {
-                logger.LogDebug(
-                    "STT returning blank transcript turnId={TurnId} oggBytes={OggBytes} wavBytes={WavBytes} rawFrames={RawFrames} audioPages={AudioPages} ffmpegExit={FfmpegExit} whisperExit={WhisperExit}",
-                    turn.TurnId,
-                    new FileInfo(oggPath).Length,
-                    wavBytes,
-                    pageCounts.RawFrameCount,
-                    pageCounts.AudioBearingPageCount,
-                    ffmpegResult.ExitCode,
-                    whisperResult.ExitCode);
+            if (!string.IsNullOrWhiteSpace(transcript))
+                return BuildResult(
+                    transcript,
+                    turn,
+                    wavPath,
+                    ffmpegResult,
+                    whisperResult.StdOut,
+                    whisperResult.StdErr,
+                    pageCounts);
 
-                if (!_options.CleanupTempFiles)
-                {
-                    TryDelete(wavPath);
-                    logger.LogDebug(
-                        "STT deleted blank WAV artifact turnId={TurnId} wavPath={WavPath}",
-                        turn.TurnId,
-                        wavPath);
-                }
-            }
+            logger.LogDebug(
+                "STT returning blank transcript turnId={TurnId} oggBytes={OggBytes} wavBytes={WavBytes} rawFrames={RawFrames} audioPages={AudioPages} ffmpegExit={FfmpegExit} whisperExit={WhisperExit}",
+                turn.TurnId,
+                new FileInfo(oggPath).Length,
+                wavBytes,
+                pageCounts.RawFrameCount,
+                pageCounts.AudioBearingPageCount,
+                ffmpegResult.ExitCode,
+                whisperResult.ExitCode);
+
+            if (_options.CleanupTempFiles)
+                return BuildResult(
+                    transcript,
+                    turn,
+                    wavPath,
+                    ffmpegResult,
+                    whisperResult.StdOut,
+                    whisperResult.StdErr,
+                    pageCounts);
+
+            TryDelete(wavPath);
+
+            logger.LogDebug(
+                "STT deleted blank WAV artifact turnId={TurnId} wavPath={WavPath}",
+                turn.TurnId,
+                wavPath);
 
             return BuildResult(
                 transcript,

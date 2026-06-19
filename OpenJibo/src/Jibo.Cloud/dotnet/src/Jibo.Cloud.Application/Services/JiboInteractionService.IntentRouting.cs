@@ -54,7 +54,7 @@ public sealed partial class JiboInteractionService
             switch (yesNoReply)
             {
                 case YesNoReply.Affirmative:
-                    return ResolveAffirmativeYesNoIntent(yesNoRule, listenRules);
+                    return ResolveAffirmativeYesNoIntent(yesNoRule);
                 case YesNoReply.Negative:
                     return ResolveNegativeYesNoIntent(yesNoRule);
                 case YesNoReply.Ambiguous:
@@ -1365,9 +1365,7 @@ public sealed partial class JiboInteractionService
 
         if (IsDateRequest(loweredTranscript)) return "date";
 
-        if (MatchesAny(loweredTranscript, "hello", "hi", "hey")) return "hello";
-
-        return "chat";
+        return MatchesAny(loweredTranscript, "hello", "hi", "hey") ? "hello" : "chat";
     }
 
     private static bool IsFriendQuestion(string loweredTranscript)

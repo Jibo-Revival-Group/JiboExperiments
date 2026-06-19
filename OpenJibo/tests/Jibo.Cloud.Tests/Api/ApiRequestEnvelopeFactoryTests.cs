@@ -1,4 +1,3 @@
-using System.Text;
 using Jibo.Cloud.Api.Hosting;
 using Microsoft.AspNetCore.Http;
 
@@ -23,7 +22,7 @@ public sealed class ApiRequestEnvelopeFactoryTests
                     ["X-OpenJibo-Firmware"] = "1.2.3",
                     ["X-OpenJibo-AppVersion"] = "4.5.6"
                 },
-                Body = new MemoryStream(Encoding.UTF8.GetBytes("""{"hello":"world"}"""))
+                Body = new MemoryStream("""{"hello":"world"}"""u8.ToArray())
             },
             TraceIdentifier = "trace-abc"
         };

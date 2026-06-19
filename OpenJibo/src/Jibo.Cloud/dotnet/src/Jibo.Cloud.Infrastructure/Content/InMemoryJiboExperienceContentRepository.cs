@@ -640,13 +640,10 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             ]
         };
 
-        foreach (var seedDirectory in ResolveSeedDirectories())
-            catalog = LegacyMimCatalogImporter.MergeInto(catalog, seedDirectory);
-
-        return catalog;
+        return ResolveSeedDirectories().Aggregate(catalog, LegacyMimCatalogImporter.MergeInto);
     }
 
-    private static IReadOnlyList<string> ResolveSeedDirectories()
+    private static string[] ResolveSeedDirectories()
     {
         var candidates = new[]
         {

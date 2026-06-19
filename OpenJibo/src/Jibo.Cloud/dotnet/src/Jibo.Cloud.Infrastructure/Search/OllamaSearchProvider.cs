@@ -39,7 +39,11 @@ public sealed class OllamaSearchProvider(
         if (TryGetCachedValue(cacheKey, out var cachedResult))
             return cachedResult;
 
-        var result = await TryGenerateAsync(endpoint, model, request.Query.Trim(), cancellationToken);
+        var result = await TryGenerateAsync(
+            endpoint,
+            model,
+            JiboKnowledgeSearchPrompts.BuildOllamaPrompt(request.Query.Trim(), options.LlmInstructions),
+            cancellationToken);
         SetCachedValue(cacheKey, result, result is null ? options.FailureCacheTtlSeconds : options.CacheTtlSeconds);
         return result;
     }

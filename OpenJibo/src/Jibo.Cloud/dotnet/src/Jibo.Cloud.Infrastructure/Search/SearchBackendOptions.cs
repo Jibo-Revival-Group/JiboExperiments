@@ -12,11 +12,14 @@ public sealed class SearchBackendOptions
 
     public int FailureCacheTtlSeconds { get; init; } = 45;
 
+    public string? LlmInstructions { get; init; }
+
     public static SearchBackendOptions Create(
         string? primary,
         string? fallback,
         int cacheTtlSeconds,
-        int failureCacheTtlSeconds)
+        int failureCacheTtlSeconds,
+        string? llmInstructions = null)
     {
         var primarySpec = SearchBackendSpecParser.Parse(primary);
         SearchBackendSpec? fallbackSpec = null;
@@ -29,7 +32,8 @@ public sealed class SearchBackendOptions
             Primary = primarySpec,
             Fallback = fallbackSpec,
             CacheTtlSeconds = cacheTtlSeconds,
-            FailureCacheTtlSeconds = failureCacheTtlSeconds
+            FailureCacheTtlSeconds = failureCacheTtlSeconds,
+            LlmInstructions = SearchInstructionsResolver.Normalize(llmInstructions)
         };
     }
 

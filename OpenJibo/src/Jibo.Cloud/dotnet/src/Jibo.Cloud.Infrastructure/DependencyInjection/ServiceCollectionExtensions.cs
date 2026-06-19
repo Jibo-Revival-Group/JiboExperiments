@@ -49,6 +49,11 @@ public static class ServiceCollectionExtensions
         configuration?.GetSection("OpenJibo:Holiday").Bind(holidayOptions);
 
         var searchSection = configuration?.GetSection("OpenJibo:Search");
+        var llmInstructions = SearchInstructionsResolver.Resolve(
+            Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_INSTRUCTIONS")
+            ?? searchSection?["Instructions"],
+            Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_INSTRUCTIONS_FILE")
+            ?? searchSection?["InstructionsFile"]);
         var searchBackendOptions = SearchBackendOptions.Create(
             Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_BACKEND")
             ?? searchSection?["Primary"]
@@ -57,7 +62,8 @@ public static class ServiceCollectionExtensions
             ?? searchSection?["Fallback"]
             ?? searchSection?["FallbackBackend"],
             searchSection?.GetValue("CacheTtlSeconds", 300) ?? 300,
-            searchSection?.GetValue("FailureCacheTtlSeconds", 45) ?? 45);
+            searchSection?.GetValue("FailureCacheTtlSeconds", 45) ?? 45,
+            llmInstructions);
 
         services.AddSingleton(sttOptions);
         services.AddSingleton(openWeatherOptions);

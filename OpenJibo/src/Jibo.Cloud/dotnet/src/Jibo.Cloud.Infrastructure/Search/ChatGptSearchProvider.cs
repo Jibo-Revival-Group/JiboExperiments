@@ -61,12 +61,18 @@ public sealed class ChatGptSearchProvider(
     {
         try
         {
+            var (systemMessage, userMessage) = JiboKnowledgeSearchPrompts.BuildChatGptMessages(
+                prompt,
+                options.LlmInstructions);
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
             httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             httpRequest.Content = JsonContent.Create(
                 new ChatCompletionRequest(
                     model,
-                    [new ChatCompletionMessage("user", prompt)]));
+                    [
+                        new ChatCompletionMessage("system", systemMessage),
+                        new ChatCompletionMessage("user", userMessage)
+                    ]));
 
             using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
             if (!response.IsSuccessStatusCode)

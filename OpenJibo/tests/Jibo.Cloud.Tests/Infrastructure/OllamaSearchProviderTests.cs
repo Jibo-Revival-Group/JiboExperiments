@@ -46,7 +46,10 @@ public sealed class OllamaSearchProviderTests
         var body = await capturedRequest.Content!.ReadAsStringAsync();
         using var json = JsonDocument.Parse(body);
         Assert.Equal("llava:7b", json.RootElement.GetProperty("model").GetString());
-        Assert.Equal("How old is Donald Trump", json.RootElement.GetProperty("prompt").GetString());
+        var prompt = json.RootElement.GetProperty("prompt").GetString();
+        Assert.Contains("Act as Jibo", prompt, StringComparison.Ordinal);
+        Assert.Contains("User Request:", prompt, StringComparison.Ordinal);
+        Assert.Contains("How old is Donald Trump", prompt, StringComparison.Ordinal);
         Assert.False(json.RootElement.GetProperty("stream").GetBoolean());
     }
 
@@ -70,10 +73,38 @@ public sealed class OllamaSearchProviderTests
         Assert.Equal(SearchBackendSettingsResolver.DefaultOllamaModel, json.RootElement.GetProperty("model").GetString());
     }
 
+    [Fact]
+    public async Task SearchAsync_UsesCustomInstructions_WhenConfigured()
+    {
+        HttpRequestMessage? capturedRequest = null;
+        var handler = new RecordingHttpMessageHandler(request =>
+        {
+            capturedRequest = request;
+            return JsonResponse("""{"response":"42","done":true}""");
+        });
+        var provider = CreateProvider(
+            handler,
+            "http://127.0.0.1:11434",
+            "llava:7b",
+            llmInstructions: "Custom robot persona.\nBe brief.");
+
+        await provider.SearchAsync(new KnowledgeSearchRequest(
+            "What is six times seven",
+            new SearchBackendSpec(SearchBackendKind.Ollama, "http://127.0.0.1:11434", "llava:7b")));
+
+        var body = await capturedRequest!.Content!.ReadAsStringAsync();
+        using var json = JsonDocument.Parse(body);
+        var prompt = json.RootElement.GetProperty("prompt").GetString();
+        Assert.Contains("Custom robot persona.", prompt, StringComparison.Ordinal);
+        Assert.DoesNotContain("Act as Jibo", prompt, StringComparison.Ordinal);
+        Assert.Contains("What is six times seven", prompt, StringComparison.Ordinal);
+    }
+
     private static OllamaSearchProvider CreateProvider(
         HttpMessageHandler handler,
         string endpoint,
-        string? model)
+        string? model,
+        string? llmInstructions = null)
     {
         var primary = model is null
             ? $"Ollama!{endpoint}"
@@ -81,7 +112,7 @@ public sealed class OllamaSearchProviderTests
 
         return new OllamaSearchProvider(
             new HttpClient(handler),
-            SearchBackendOptions.Create(primary, null, 300, 45),
+            SearchBackendOptions.Create(primary, null, 300, 45, llmInstructions),
             NullLogger<OllamaSearchProvider>.Instance);
     }
 

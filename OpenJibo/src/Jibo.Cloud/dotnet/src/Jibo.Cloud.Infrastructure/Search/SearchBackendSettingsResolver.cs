@@ -4,7 +4,7 @@ namespace Jibo.Cloud.Infrastructure.Search;
 
 public static class SearchBackendSettingsResolver
 {
-    public const string DefaultWolframEndpoint = "http://api.wolframalpha.com/v1/spoken";
+    public const string DefaultWolframEndpoint = "https://api.wolframalpha.com/v1/spoken";
     public const string DefaultOllamaBaseUrl = "http://127.0.0.1:11434";
     public const string DefaultChatGptEndpoint = "https://api.openai.com/v1/chat/completions";
     public const string DefaultOllamaModel = "llama3.1:8b";

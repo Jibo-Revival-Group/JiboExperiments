@@ -18,6 +18,8 @@ internal static class JiboKnowledgeSearchPrompts
 
             The request is from Speech-To-Text, so it may contain errors. If the request doesn't make sense, assume the closest logical interpretation.
 
+            Please do not ask a question in your response. The user cannot reply to you in a conversation.
+
             Crucial: Use only plain text. Do not include emojis, emoticons, or any non-ASCII characters.
         """;
 

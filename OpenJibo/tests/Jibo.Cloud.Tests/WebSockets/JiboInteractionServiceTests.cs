@@ -1497,6 +1497,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("knowledge_search", decision.IntentName);
+        Assert.StartsWith("According to wolf ram alpha.", decision.ReplyText, StringComparison.Ordinal);
         Assert.Contains("James Garfield", decision.ReplyText);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("KnowledgeSearch", decision.ContextUpdates![ChitchatRouteKey]);

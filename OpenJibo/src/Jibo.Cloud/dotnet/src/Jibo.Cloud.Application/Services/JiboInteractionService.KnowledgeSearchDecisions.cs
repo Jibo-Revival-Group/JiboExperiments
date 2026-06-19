@@ -54,6 +54,7 @@ public sealed partial class JiboInteractionService
 
         if (result is null || string.IsNullOrWhiteSpace(result.AnswerText)) return null;
 
-        return ChitchatStateMachine.BuildKnowledgeSearchResponseDecision(result.AnswerText);
+        return ChitchatStateMachine.BuildKnowledgeSearchResponseDecision(
+            KnowledgeSearchSpokenReplyFormatter.FormatReply(result.AnswerText, result.BackendKind));
     }
 }

@@ -21,6 +21,8 @@ public sealed class WebSocketTurnState
     public DateTimeOffset? FirstAudioReceivedUtc { get; set; }
     public DateTimeOffset? LastAudioReceivedUtc { get; set; }
     public DateTimeOffset? LastAutoFinalizeAttemptUtc { get; set; }
+    public TimeSpan? ListenSosTimeout { get; set; }
+    public TimeSpan? ListenMaxSpeechTimeout { get; set; }
     public int BufferedAudioChunkCount { get; set; }
     public int BufferedAudioBytes { get; set; }
     public List<byte[]> BufferedAudioFrames { get; } = [];

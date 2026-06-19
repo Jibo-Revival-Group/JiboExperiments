@@ -22,7 +22,6 @@ public sealed class WebSocketTurnFinalizationService(
     private const int AutoFinalizeHotphraseOggContinuousProbeMinAudioPages = 5;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 4;
-    private const int AutoFinalizeHotphraseOnlyNoInputAttempts = 4;
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);
     private static readonly TimeSpan AutoFinalizeMinTurnAge = TimeSpan.FromMilliseconds(750);
     private static readonly TimeSpan AutoFinalizeSilenceWindow = TimeSpan.FromMilliseconds(450);
@@ -708,16 +707,24 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             if (data.TryGetProperty("asr", out var asr) &&
-                asr.ValueKind == JsonValueKind.Object &&
-                asr.TryGetProperty("hints", out var hints) &&
-                hints.ValueKind == JsonValueKind.Array)
-                turnState.ListenAsrHints =
-                [
-                    .. hints.EnumerateArray()
-                        .Where(static item => item.ValueKind == JsonValueKind.String)
-                        .Select(static item => item.GetString() ?? string.Empty)
-                        .Where(static hint => !string.IsNullOrWhiteSpace(hint))
-                ];
+                asr.ValueKind == JsonValueKind.Object)
+            {
+                if (asr.TryGetProperty("hints", out var hints) &&
+                    hints.ValueKind == JsonValueKind.Array)
+                    turnState.ListenAsrHints =
+                    [
+                        .. hints.EnumerateArray()
+                            .Where(static item => item.ValueKind == JsonValueKind.String)
+                            .Select(static item => item.GetString() ?? string.Empty)
+                            .Where(static hint => !string.IsNullOrWhiteSpace(hint))
+                    ];
+
+                if (TryReadMilliseconds(asr, "sosTimeout", out var sosTimeout))
+                    turnState.ListenSosTimeout = sosTimeout;
+
+                if (TryReadMilliseconds(asr, "maxSpeechTimeout", out var maxSpeechTimeout))
+                    turnState.ListenMaxSpeechTimeout = maxSpeechTimeout;
+            }
 
             if (data.TryGetProperty("hotphrase", out var hotphrase) &&
                 hotphrase.ValueKind is JsonValueKind.True or JsonValueKind.False)
@@ -768,6 +775,8 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.FirstAudioReceivedUtc = null;
         turnState.LastAudioReceivedUtc = null;
         turnState.LastAutoFinalizeAttemptUtc = null;
+        turnState.ListenSosTimeout = null;
+        turnState.ListenMaxSpeechTimeout = null;
         turnState.BufferedAudioChunkCount = 0;
         turnState.BufferedAudioBytes = 0;
         turnState.BufferedAudioFrames.Clear();
@@ -782,6 +791,27 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.ListenRules = [];
         turnState.ListenAsrHints = [];
         turnState.AutoFinalizeBlockedUntilUtc = null;
+    }
+
+    private static bool TryReadMilliseconds(JsonElement source, string propertyName, out TimeSpan timeout)
+    {
+        timeout = TimeSpan.Zero;
+        if (!source.TryGetProperty(propertyName, out var value)) return false;
+
+        double milliseconds;
+        switch (value.ValueKind)
+        {
+            case JsonValueKind.Number when value.TryGetDouble(out milliseconds):
+                break;
+            case JsonValueKind.String when double.TryParse(value.GetString(), out milliseconds):
+                break;
+            default:
+                return false;
+        }
+
+        if (milliseconds <= 0) return false;
+        timeout = TimeSpan.FromMilliseconds(milliseconds);
+        return true;
     }
 
     private async Task<IReadOnlyList<WebSocketReply>> FinalizeTurnAsync(
@@ -1178,8 +1208,8 @@ public sealed class WebSocketTurnFinalizationService(
                         ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
                     }), cancellationToken);
 
-                if (turnAge < AutoFinalizeHotphraseOnlyNoInputAge &&
-                    turnState.FinalizeAttemptCount < AutoFinalizeHotphraseOnlyNoInputAttempts) return [];
+                var noInputAge = ResolveHotphraseOnlyNoInputAge(turnState);
+                if (turnAge < noInputAge) return [];
 
                 turnState.AwaitingTurnCompletion = false;
                 session.LastTranscript = string.Empty;
@@ -1193,6 +1223,7 @@ public sealed class WebSocketTurnFinalizationService(
                         ["reason"] = hotphraseOnlyReason,
                         ["finalizeAttemptCount"] = turnState.FinalizeAttemptCount,
                         ["turnAgeMs"] = (int)turnAge.TotalMilliseconds,
+                        ["maxSpeechTimeoutMs"] = (int)noInputAge.TotalMilliseconds,
                         ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
                         ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
                     }), cancellationToken);
@@ -1503,7 +1534,8 @@ public sealed class WebSocketTurnFinalizationService(
         var pageCounts = DescribeBufferedAudioPages(turnState);
         var silenceWindow = ResolveAutoFinalizeSilenceWindow(turnState);
         var receivedEndOfStream = HasReceivedOggEndOfStream(turnState);
-        var reachedHardTimeout = turnAge >= AutoFinalizeHardBufferedAudioAge;
+        var hardTimeout = ResolveHardBufferedAudioAge(turnState);
+        var reachedHardTimeout = turnAge >= hardTimeout;
         var elapsedSinceLastAudio = turnState.LastAudioReceivedUtc.HasValue
             ? now - turnState.LastAudioReceivedUtc.Value
             : TimeSpan.Zero;
@@ -1536,9 +1568,6 @@ public sealed class WebSocketTurnFinalizationService(
             return false;
 
         if (!turnState.FirstAudioReceivedUtc.HasValue)
-            return false;
-
-        if (turnState.FinalizeAttemptCount >= AutoFinalizeContinuationDeferralMaxAttempts)
             return false;
 
         var turnAge = DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value;
@@ -1742,7 +1771,8 @@ public sealed class WebSocketTurnFinalizationService(
         var pageCounts = DescribeBufferedAudioPages(turnState);
         var silenceWindow = ResolveAutoFinalizeSilenceWindow(turnState);
         var receivedEndOfStream = HasReceivedOggEndOfStream(turnState);
-        var reachedHardTimeout = firstAudioAgeMs >= AutoFinalizeHardBufferedAudioAge.TotalMilliseconds;
+        var hardTimeout = ResolveHardBufferedAudioAge(turnState);
+        var reachedHardTimeout = firstAudioAgeMs >= hardTimeout.TotalMilliseconds;
         var turnAge = turnState.FirstAudioReceivedUtc.HasValue
             ? now - turnState.FirstAudioReceivedUtc.Value
             : TimeSpan.Zero;
@@ -1767,7 +1797,7 @@ public sealed class WebSocketTurnFinalizationService(
             lastAudioAgeMs,
             AutoFinalizeMinTurnAge.TotalMilliseconds,
             silenceWindow.TotalMilliseconds,
-            AutoFinalizeHardBufferedAudioAge.TotalMilliseconds,
+            hardTimeout.TotalMilliseconds,
             reachedHardTimeout,
             receivedEndOfStream,
             earlyProbeReady,
@@ -2599,7 +2629,7 @@ public sealed class WebSocketTurnFinalizationService(
         if (!ReadBoolAttribute(turn, "listenHotphrase")) return false;
         if (HasOggOpusFrames(turnState) &&
             !HasReceivedOggEndOfStream(turnState) &&
-            turnAge < AutoFinalizeHardBufferedAudioAge)
+            turnAge < ResolveHardBufferedAudioAge(turnState))
             return false;
 
         return ReadRules(turn, "listenRules")
@@ -2620,7 +2650,7 @@ public sealed class WebSocketTurnFinalizationService(
             return false;
 
         if (!ReadBoolAttribute(turn, "listenHotphrase")) return false;
-        if (turnAge >= AutoFinalizeHardBufferedAudioAge) return false;
+        if (turnAge >= ResolveHardBufferedAudioAge(turnState)) return false;
         if (!HasOggOpusFrames(turnState) || HasReceivedOggEndOfStream(turnState)) return false;
 
         return ReadRules(turn, "listenRules")
@@ -2642,7 +2672,7 @@ public sealed class WebSocketTurnFinalizationService(
 
         if (!IsYesNoTurn(turn)) return false;
         if (!string.IsNullOrWhiteSpace(turnState.LastSttError)) return false;
-        if (turnAge >= AutoFinalizeHardBufferedAudioAge) return false;
+        if (turnAge >= ResolveHardBufferedAudioAge(turnState)) return false;
         if (!HasOggOpusFrames(turnState) || HasReceivedOggEndOfStream(turnState)) return false;
 
         return turnState.BufferedAudioBytes >= AutoFinalizeMinBufferedAudioBytes;
@@ -2753,7 +2783,7 @@ public sealed class WebSocketTurnFinalizationService(
         if (!IsHotphraseLaunchTurn(turn) || !turnState.FirstAudioReceivedUtc.HasValue) return false;
 
         var turnAge = DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value;
-        if (turnAge >= AutoFinalizeHardBufferedAudioAge) return false;
+        if (turnAge >= ResolveHardBufferedAudioAge(turnState)) return false;
 
         var normalized = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
         if (string.IsNullOrWhiteSpace(normalized)) return false;
@@ -2814,9 +2844,23 @@ public sealed class WebSocketTurnFinalizationService(
         }
 
         turnAge = DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value;
-        closeAsNoInput = turnAge >= AutoFinalizeHardBufferedAudioAge || HasReceivedOggEndOfStream(turnState);
+        closeAsNoInput = turnAge >= ResolveHardBufferedAudioAge(turnState) || HasReceivedOggEndOfStream(turnState);
         reason = closeAsNoInput ? "unexpected_yes_no_transcript_timeout" : "unexpected_yes_no_transcript";
         return true;
+    }
+
+    private static TimeSpan ResolveHardBufferedAudioAge(WebSocketTurnState turnState)
+    {
+        return turnState.ListenMaxSpeechTimeout is { } maxSpeechTimeout && maxSpeechTimeout > TimeSpan.Zero
+            ? maxSpeechTimeout
+            : AutoFinalizeHardBufferedAudioAge;
+    }
+
+    private static TimeSpan ResolveHotphraseOnlyNoInputAge(WebSocketTurnState turnState)
+    {
+        return turnState.ListenMaxSpeechTimeout is { } maxSpeechTimeout && maxSpeechTimeout > TimeSpan.Zero
+            ? maxSpeechTimeout
+            : AutoFinalizeHotphraseOnlyNoInputAge;
     }
 
     private static bool IsAllowedYesNoAutoFinalizeTranscript(TurnContext turn, string normalizedTranscript)
@@ -3046,6 +3090,8 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.SawListen = false;
         turnState.SawContext = false;
         turnState.ListenOpenedUtc = null;
+        turnState.ListenSosTimeout = null;
+        turnState.ListenMaxSpeechTimeout = null;
     }
 
     private static void UpdateGlsmPhaseMarker(CloudSession session)

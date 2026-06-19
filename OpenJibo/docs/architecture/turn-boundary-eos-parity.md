@@ -28,6 +28,8 @@ The turn context then decides what happens next:
 Pegasus provides the behavioral reference:
 
 - `GoogleASRSession` emits `SOS` and `EOS` as speech boundaries, and can also force an early `EOS` from incremental ASR when `FastEOS` matches a decisive phrase
+- an incremental ASR result such as a wake phrase is treated as speech-start evidence, not as a final no-match by itself
+- `maxSpeechTimeout` resolves ASR only after the listen request's configured speech window, using the last incremental ASR result with a timeout annotation
 - after `EOS`, `ListenTransactionHandler` immediately performs NLU and routing
 - the routing result decides whether the listen result is final or whether the robot is entering a skill continuation
 - yes/no handling is not a generic timeout branch; it is a constrained ASR vocabulary plus prompt-specific turn ownership
@@ -84,6 +86,7 @@ The important practical consequence is that `audioTranscriptHint` is a routing h
 - if the hint is generic or incomplete, the normal buffered-audio and timeout guards still apply
 - if the turn is still too small or too early, the hint should not force a close
 - if there is no hint, hotphrase OGG launch turns should still probe ASR once enough audio pages and bytes are present
+- if the probe only hears a wake phrase such as `hey jibo` or `hey jubo`, the turn stays open until decisive command audio arrives or the listen request's `maxSpeechTimeout` is reached
 
 That matches the Pegasus shape more closely:
 
@@ -92,6 +95,8 @@ That matches the Pegasus shape more closely:
 - the prompt-echo guard is the missing piece that keeps the robot from finalizing on its own question or self-audio
 
 The live robot capture that drove this decision did not include `audioTranscriptHint` in the `CONTEXT` payload. Waiting for OGG EOS or the hard timeout caused the cloud-version reply to arrive several seconds late, then Jibo's spoken reply bled into the next captured WAV. The parity behavior is to probe buffered ASR around the first meaningful speech window and emit `LISTEN` plus `EOS` plus the action as soon as the transcript maps to a usable command.
+
+The follow-up capture showed another Pegasus mismatch: the server heard only `hey jubo`, retried that same wake-only transcript four times, and closed as no-input around 7.4 seconds even though the robot's `LISTEN.data.asr.maxSpeechTimeout` was `20000`. Pegasus would keep ASR open in that state; it would not convert wake-only incremental ASR into EOS/no-input before the configured max speech timeout.
 
 One additional boundary rule matters for the cloud-version path:
 
@@ -105,20 +110,22 @@ One additional boundary rule matters for the cloud-version path:
 2. Keep the hard timeout as a safety net for error states and stalled turns.
 3. Use `audioTranscriptHint` as a turn-boundary accelerator only when the hint is already decisive and the buffered audio is substantial enough to be meaningful.
 4. When no hint exists, let hotphrase OGG launch turns early-probe ASR after context once buffered audio reaches the Node-oracle-sized speech window.
-5. Preserve explicit follow-up behavior only where the response plan says `KeepMicOpen` or equivalent ownership should continue.
-6. Treat yes/no and other constrained replies as prompt-owned turns, not generic open-ended speech.
-7. Add focused tests around:
+5. Keep wake-only/hotphrase-only ASR open until decisive command audio arrives, OGG EOS arrives, or the robot's `maxSpeechTimeout` is reached.
+6. Preserve explicit follow-up behavior only where the response plan says `KeepMicOpen` or equivalent ownership should continue.
+7. Treat yes/no and other constrained replies as prompt-owned turns, not generic open-ended speech.
+8. Add focused tests around:
    - decisive command turns
    - no-hint live OGG hotphrase turns
+   - wake-only transcripts before `maxSpeechTimeout`
    - explicit follow-up turns
    - yes/no follow-up turns
    - timeout-only fallback turns
-8. Re-run the live robot capture after the change and verify:
+9. Re-run the live robot capture after the change and verify:
    - the command turn closes sooner
    - the next turn is not polluted by audio bleed
    - a fresh listen setup after cloud-version is not discarded just because the prior audio suppression window is still active
    - stop and follow-up paths still behave intentionally
-9. Keep prompt echo and robot self-audio from counting as a yes/no answer until the user actually gives one.
+10. Keep prompt echo and robot self-audio from counting as a yes/no answer until the user actually gives one.
 
 ## Why This Matters
 
@@ -128,7 +135,7 @@ That means the fix is not just audio trimming.
 
 We also need the turn boundary to be correct.
 
-This implementation now adds early no-hint OGG probing for live hotphrase launch turns and keeps the prompt-echo guard on top of the existing yes/no clarification logic so we do not turn the robot's own prompt back into a false close.
+This implementation now adds early no-hint OGG probing for live hotphrase launch turns, honors `maxSpeechTimeout` for wake-only ASR, and keeps the prompt-echo guard on top of the existing yes/no clarification logic so we do not turn the robot's own prompt back into a false close.
 
 ## Follow-Up
 

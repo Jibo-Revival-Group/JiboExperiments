@@ -30,7 +30,7 @@ public sealed class JiboCloudProtocolService(
 
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private readonly ConcurrentDictionary<string, OobeTokenState> _oobeTokens = new(StringComparer.Ordinal);
-    private readonly object _schedulerLock = new();
+    private readonly Lock _schedulerLock = new();
     private readonly SchedulerRuntimeState _schedulerState = new();
 
     private static HashSet<string> BuildAcceptedHosts(IConfiguration? configuration)

@@ -1,3 +1,5 @@
+using Jibo.Cloud.Infrastructure.Platform;
+
 namespace Jibo.Cloud.Infrastructure.Audio;
 
 public static class BufferedAudioSttPathResolver
@@ -13,8 +15,7 @@ public static class BufferedAudioSttPathResolver
             Environment.GetEnvironmentVariable,
             File.Exists,
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            OperatingSystem.IsMacOS(),
-            OperatingSystem.IsLinux());
+            OperatingSystemPlatformResolver.Resolve());
     }
 
     public static BufferedAudioSttOptions Resolve(
@@ -22,8 +23,7 @@ public static class BufferedAudioSttPathResolver
         Func<string, string?> getEnvironmentVariable,
         Func<string, bool> fileExists,
         string? homeDirectory,
-        bool isMacOS,
-        bool isLinux)
+        OperatingSystemPlatform platform)
     {
         return new BufferedAudioSttOptions
         {
@@ -32,21 +32,21 @@ public static class BufferedAudioSttPathResolver
                 source.FfmpegPath,
                 ["OPENJIBO_STT_FFMPEG_PATH", "FFMPEG_PATH"],
                 LegacyLinuxFfmpegPath,
-                BuildFfmpegCandidates(isMacOS, isLinux),
+                BuildFfmpegCandidates(platform),
                 getEnvironmentVariable,
                 fileExists),
             WhisperCliPath = ResolveExecutable(
                 source.WhisperCliPath,
                 ["OPENJIBO_STT_WHISPER_CLI_PATH", "WHISPER_CLI_PATH"],
                 LegacyLinuxWhisperCliPath,
-                BuildWhisperCliCandidates(isMacOS, isLinux, homeDirectory),
+                BuildWhisperCliCandidates(platform, homeDirectory),
                 getEnvironmentVariable,
                 fileExists),
             WhisperModelPath = ResolveRequiredFile(
                 source.WhisperModelPath,
                 ["OPENJIBO_STT_WHISPER_MODEL_PATH", "WHISPER_MODEL_PATH"],
                 LegacyLinuxWhisperModelPath,
-                BuildWhisperModelCandidates(isMacOS, isLinux, homeDirectory),
+                BuildWhisperModelCandidates(platform, homeDirectory),
                 getEnvironmentVariable,
                 fileExists),
             WhisperLanguage = source.WhisperLanguage,
@@ -118,16 +118,16 @@ public static class BufferedAudioSttPathResolver
                string.Equals(configured, legacyLinuxDefault, StringComparison.Ordinal);
     }
 
-    private static IReadOnlyList<string> BuildFfmpegCandidates(bool isMacOS, bool isLinux)
+    private static IReadOnlyList<string> BuildFfmpegCandidates(OperatingSystemPlatform platform)
     {
         var candidates = new List<string>();
-        if (isMacOS)
+        if (platform == OperatingSystemPlatform.MacOS)
             candidates.AddRange([
                 "/opt/homebrew/bin/ffmpeg",
                 "/usr/local/bin/ffmpeg"
             ]);
 
-        if (isLinux)
+        if (platform == OperatingSystemPlatform.Linux)
             candidates.AddRange([
                 LegacyLinuxFfmpegPath,
                 "/usr/local/bin/ffmpeg"
@@ -137,10 +137,10 @@ public static class BufferedAudioSttPathResolver
         return candidates;
     }
 
-    private static IReadOnlyList<string> BuildWhisperCliCandidates(bool isMacOS, bool isLinux, string? homeDirectory)
+    private static IReadOnlyList<string> BuildWhisperCliCandidates(OperatingSystemPlatform platform, string? homeDirectory)
     {
         var candidates = new List<string>();
-        if (isMacOS)
+        if (platform == OperatingSystemPlatform.MacOS)
             candidates.AddRange([
                 "/opt/homebrew/bin/whisper-cli",
                 "/usr/local/bin/whisper-cli",
@@ -148,7 +148,7 @@ public static class BufferedAudioSttPathResolver
                 "/usr/local/opt/whisper-cpp/bin/whisper-cli"
             ]);
 
-        if (isLinux)
+        if (platform == OperatingSystemPlatform.Linux)
             candidates.AddRange([
                 LegacyLinuxWhisperCliPath,
                 "/usr/local/bin/whisper-cli"
@@ -165,10 +165,10 @@ public static class BufferedAudioSttPathResolver
         return candidates;
     }
 
-    private static IReadOnlyList<string> BuildWhisperModelCandidates(bool isMacOS, bool isLinux, string? homeDirectory)
+    private static IReadOnlyList<string> BuildWhisperModelCandidates(OperatingSystemPlatform platform, string? homeDirectory)
     {
         var candidates = new List<string>();
-        if (isMacOS)
+        if (platform == OperatingSystemPlatform.MacOS)
             candidates.AddRange([
                 "/opt/homebrew/share/whisper-cpp/models/ggml-base.en.bin",
                 "/opt/homebrew/share/whisper.cpp/models/ggml-base.en.bin",
@@ -178,7 +178,7 @@ public static class BufferedAudioSttPathResolver
                 "/usr/local/share/whisper.cpp/models/ggml-base.en.bin"
             ]);
 
-        if (isLinux)
+        if (platform == OperatingSystemPlatform.Linux)
             candidates.AddRange([
                 LegacyLinuxWhisperModelPath,
                 "/usr/local/share/whisper-cpp/models/ggml-base.en.bin",

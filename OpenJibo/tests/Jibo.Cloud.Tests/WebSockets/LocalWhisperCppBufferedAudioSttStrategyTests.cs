@@ -1,4 +1,5 @@
 using Jibo.Cloud.Infrastructure.Audio;
+using Jibo.Cloud.Infrastructure.Platform;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Tests.WebSockets;
@@ -122,8 +123,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             },
             path => path.StartsWith("/custom/", StringComparison.Ordinal),
             null,
-            true,
-            false);
+            OperatingSystemPlatform.MacOS
+        );
 
         Assert.Equal("/custom/bin/ffmpeg", resolved.FfmpegPath);
         Assert.Equal("/custom/bin/whisper-cli", resolved.WhisperCliPath);
@@ -133,7 +134,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
     [Fact]
     public void Resolve_UsesMacDiscovery_WhenLegacyLinuxDefaultsAreConfigured()
     {
-        var homeDirectory = @"C:\Users\test";
+        const string homeDirectory = @"C:\Users\test";
         var existingPaths = new HashSet<string>(StringComparer.Ordinal)
         {
             "/opt/homebrew/bin/ffmpeg",
@@ -152,8 +153,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             _ => null,
             existingPaths.Contains,
             homeDirectory,
-            true,
-            false);
+            OperatingSystemPlatform.MacOS
+        );
 
         Assert.Equal("/opt/homebrew/bin/ffmpeg", resolved.FfmpegPath);
         Assert.Equal("/opt/homebrew/bin/whisper-cli", resolved.WhisperCliPath);
@@ -181,8 +182,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             },
             _ => true,
             "/Users/test",
-            true,
-            false);
+            OperatingSystemPlatform.MacOS
+        );
 
         Assert.Equal("ffmpeg", resolved.FfmpegPath);
         Assert.Equal("whisper-cli", resolved.WhisperCliPath);

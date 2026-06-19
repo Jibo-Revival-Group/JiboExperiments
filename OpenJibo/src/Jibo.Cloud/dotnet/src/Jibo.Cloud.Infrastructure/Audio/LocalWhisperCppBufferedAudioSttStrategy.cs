@@ -6,7 +6,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Infrastructure.Audio;
 
-public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
+public sealed class LocalWhisperCppBufferedAudioSttStrategy(
+    BufferedAudioSttOptions options,
+    IExternalProcessRunner processRunner,
+    ILogger<LocalWhisperCppBufferedAudioSttStrategy> logger)
+    : ISttStrategy
 {
     private const int MinimumBufferedAudioBytes = 64;
     private const int ShortAnswerBufferedAudioBytes = 16;
@@ -15,19 +19,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
     private const string FfmpegAudioPreprocessFilter =
         "silenceremove=start_periods=1:start_duration=0.12:start_threshold=-45dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-45dB,volume=8dB";
 
-    private readonly ILogger<LocalWhisperCppBufferedAudioSttStrategy> logger;
-    private readonly BufferedAudioSttOptions options;
-    private readonly IExternalProcessRunner processRunner;
-
-    public LocalWhisperCppBufferedAudioSttStrategy(
-        BufferedAudioSttOptions options,
-        IExternalProcessRunner processRunner,
-        ILogger<LocalWhisperCppBufferedAudioSttStrategy> logger)
-    {
-        this.options = BufferedAudioSttPathResolver.Resolve(options);
-        this.processRunner = processRunner;
-        this.logger = logger;
-    }
+    private readonly BufferedAudioSttOptions _options = BufferedAudioSttPathResolver.Resolve(options);
 
     public LocalWhisperCppBufferedAudioSttStrategy(
         BufferedAudioSttOptions options,
@@ -51,12 +43,12 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
             frames.Count,
             audioBearingPageCount,
             metadataPageCount,
-            options.EnableLocalWhisperCpp);
+            _options.EnableLocalWhisperCpp);
 
-        return options.EnableLocalWhisperCpp &&
-               IsConfiguredPathAvailable(options.FfmpegPath, false) &&
-               IsConfiguredPathAvailable(options.WhisperCliPath, true) &&
-               IsConfiguredPathAvailable(options.WhisperModelPath, true) &&
+        return _options.EnableLocalWhisperCpp &&
+               IsConfiguredPathAvailable(_options.FfmpegPath, false) &&
+               IsConfiguredPathAvailable(_options.WhisperCliPath, true) &&
+               IsConfiguredPathAvailable(_options.WhisperModelPath, true) &&
                frames.Any(ContainsOpusIdentificationHeader) &&
                !IsBelowNoiseFloor(turn, ReadBufferedAudioBytes(turn));
     }
@@ -86,7 +78,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
             throw new InvalidOperationException(
                 "Local whisper.cpp STT rejected buffered audio as too short or noisy for transcription.");
 
-        var tempDirectory = options.TempDirectory;
+        var tempDirectory = _options.TempDirectory;
         if (string.IsNullOrWhiteSpace(tempDirectory)) tempDirectory = Path.Combine(Path.GetTempPath(), "openjibo-stt");
 
         Directory.CreateDirectory(tempDirectory);
@@ -116,10 +108,10 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
             logger.LogDebug(
                 "STT ffmpeg launch turnId={TurnId} ffmpegPath={FfmpegPath} audioFilter={AudioFilter}",
                 turn.TurnId,
-                options.FfmpegPath,
+                _options.FfmpegPath,
                 FfmpegAudioPreprocessFilter);
             var ffmpegResult = await processRunner.RunAsync(
-                options.FfmpegPath!,
+                _options.FfmpegPath!,
                 [
                     "-y", "-i", oggPath,
                     "-af", FfmpegAudioPreprocessFilter,
@@ -157,11 +149,11 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
 
             logger.LogDebug("STT whisper launch turnId={TurnId} whisperCliPath={WhisperCliPath} modelPath={ModelPath}",
                 turn.TurnId,
-                options.WhisperCliPath,
-                options.WhisperModelPath);
+                _options.WhisperCliPath,
+                _options.WhisperModelPath);
             var whisperResult = await processRunner.RunAsync(
-                options.WhisperCliPath!,
-                ["-m", options.WhisperModelPath!, "-f", wavPath, "-l", options.WhisperLanguage],
+                _options.WhisperCliPath!,
+                ["-m", _options.WhisperModelPath!, "-f", wavPath, "-l", _options.WhisperLanguage],
                 cancellationToken);
             logger.LogDebug(
                 "STT whisper finished turnId={TurnId} exitCode={ExitCode} stdoutBytes={StdOutBytes} stderrBytes={StdErrBytes}",
@@ -230,7 +222,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                     ffmpegResult.ExitCode,
                     whisperResult.ExitCode);
 
-                if (!options.CleanupTempFiles)
+                if (!_options.CleanupTempFiles)
                 {
                     TryDelete(wavPath);
                     logger.LogDebug(
@@ -251,14 +243,14 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
         }
         finally
         {
-            if (options.CleanupTempFiles)
+            if (_options.CleanupTempFiles)
             {
                 TryDelete(oggPath);
                 TryDelete(wavPath);
             }
 
             logger.LogDebug("STT transcription end turnId={TurnId} cleanupTempFiles={CleanupTempFiles}", turn.TurnId,
-                options.CleanupTempFiles);
+                _options.CleanupTempFiles);
         }
     }
 
@@ -376,8 +368,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 ["bufferedAudioRawFrames"] = pageCounts.RawFrameCount,
                 ["bufferedAudioMetadataPages"] = pageCounts.MetadataPageCount,
                 ["bufferedAudioAudioBearingPages"] = pageCounts.AudioBearingPageCount,
-                ["ffmpegPath"] = options.FfmpegPath,
-                ["whisperCliPath"] = options.WhisperCliPath,
+                ["ffmpegPath"] = _options.FfmpegPath,
+                ["whisperCliPath"] = _options.WhisperCliPath,
                 ["wavPath"] = wavPath,
                 ["ffmpegAudioFilter"] = FfmpegAudioPreprocessFilter,
                 ["ffmpegStdOut"] = ffmpegResult.StdOut,

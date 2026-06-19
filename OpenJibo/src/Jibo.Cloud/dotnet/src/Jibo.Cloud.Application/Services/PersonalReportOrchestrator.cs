@@ -556,16 +556,6 @@ internal static partial class PersonalReportOrchestrator
         var sawAffirmative = false;
         var sawNegative = false;
 
-        void Consider(YesNoReply candidateReply, int candidateIndex)
-        {
-            if (candidateIndex < 0 || candidateIndex < selectedIndex) return;
-
-            selectedReply = candidateReply;
-            selectedIndex = candidateIndex;
-            if (candidateReply == YesNoReply.Affirmative) sawAffirmative = true;
-            else if (candidateReply == YesNoReply.Negative) sawNegative = true;
-        }
-
         for (var index = 0; index < tokens.Length; index += 1)
         {
             var token = tokens[index];
@@ -605,6 +595,16 @@ internal static partial class PersonalReportOrchestrator
         return sawAffirmative && sawNegative
             ? YesNoReply.Ambiguous
             : selectedReply;
+
+        void Consider(YesNoReply candidateReply, int candidateIndex)
+        {
+            if (candidateIndex < 0 || candidateIndex < selectedIndex) return;
+
+            selectedReply = candidateReply;
+            selectedIndex = candidateIndex;
+            if (candidateReply == YesNoReply.Affirmative) sawAffirmative = true;
+            else if (candidateReply == YesNoReply.Negative) sawNegative = true;
+        }
     }
 
     private static string NormalizeYesNoTranscript(string transcript)

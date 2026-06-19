@@ -85,6 +85,8 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
 
 app.Run();
 
+return;
+
 static bool ShouldResetDiagnosticsOnStartup(IConfiguration configuration)
 {
     return bool.TryParse(configuration["OpenJibo:Logging:ResetOnStartup"], out var reset) && reset;

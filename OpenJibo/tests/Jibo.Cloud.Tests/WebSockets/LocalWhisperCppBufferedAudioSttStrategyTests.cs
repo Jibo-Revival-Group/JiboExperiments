@@ -260,7 +260,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
                             argument.Contains("volume=8dB", StringComparison.OrdinalIgnoreCase));
             Assert.Equal("whisper-cli", runner.Calls[1].FileName);
             Assert.Equal(147, result.Metadata["bufferedAudioBytes"]);
-            Assert.Equal("silenceremove=start_periods=1:start_duration=0.12:start_threshold=-45dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-45dB,volume=8dB",
+            Assert.Equal(
+                "silenceremove=start_periods=1:start_duration=0.12:start_threshold=-45dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-45dB,volume=8dB",
                 result.Metadata["ffmpegAudioFilter"]);
         }
         finally
@@ -676,7 +677,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             if (string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
             {
                 WrittenFfmpegInputBytes = File.ReadAllBytes(arguments[2]);
-                File.WriteAllBytes(arguments[^1], Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
+                File.WriteAllBytes(arguments[^1],
+                    Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
                 return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
             }
 

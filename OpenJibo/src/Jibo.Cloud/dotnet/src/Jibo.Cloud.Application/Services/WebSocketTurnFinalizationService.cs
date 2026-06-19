@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
-using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -15,14 +14,6 @@ public sealed class WebSocketTurnFinalizationService(
     ILogger<WebSocketTurnFinalizationService> logger
 )
 {
-    public WebSocketTurnFinalizationService(
-        IConversationBroker conversationBroker,
-        ISttStrategySelector sttStrategySelector,
-        ITurnTelemetrySink sink)
-        : this(conversationBroker, sttStrategySelector, sink, NullLogger<WebSocketTurnFinalizationService>.Instance)
-    {
-    }
-
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
     private const int AutoFinalizeMinBufferedAudioPages = 3;
     private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 30_000;
@@ -38,7 +29,10 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly TimeSpan AutoFinalizeHotphraseOggSilenceWindow = TimeSpan.FromMilliseconds(1200);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeMinTurnAge = TimeSpan.FromMilliseconds(3500);
     private static readonly TimeSpan AutoFinalizeHotphraseOggEarlyProbeGap = TimeSpan.FromMilliseconds(1200);
-    private static readonly TimeSpan AutoFinalizeHotphraseOggContinuousProbeMinTurnAge = TimeSpan.FromMilliseconds(3000);
+
+    private static readonly TimeSpan
+        AutoFinalizeHotphraseOggContinuousProbeMinTurnAge = TimeSpan.FromMilliseconds(3000);
+
     private static readonly TimeSpan AutoFinalizeHardBufferedAudioAge = TimeSpan.FromSeconds(8);
     private static readonly TimeSpan AutoFinalizeNoAudioListenAge = TimeSpan.FromSeconds(9);
     private static readonly TimeSpan AutoFinalizeMissingTranscriptFallbackAge = TimeSpan.FromMilliseconds(4200);
@@ -239,6 +233,14 @@ public sealed class WebSocketTurnFinalizationService(
         "i don t"
     };
 
+    public WebSocketTurnFinalizationService(
+        IConversationBroker conversationBroker,
+        ISttStrategySelector sttStrategySelector,
+        ITurnTelemetrySink sink)
+        : this(conversationBroker, sttStrategySelector, sink, NullLogger<WebSocketTurnFinalizationService>.Instance)
+    {
+    }
+
     public static void ObserveIncomingMessage(CloudSession session, string? text)
     {
         if (!TryReadTransId(text, out var nextTransId) || string.IsNullOrWhiteSpace(nextTransId)) return;
@@ -353,7 +355,8 @@ public sealed class WebSocketTurnFinalizationService(
 
             if (ShouldAutoFinalize(session))
             {
-                logger.LogDebug("Turn binary audio auto-finalizing session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
+                logger.LogDebug(
+                    "Turn binary audio auto-finalizing session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
                     session.SessionId,
                     turnState.TransId,
                     turnState.BufferedAudioBytes,
@@ -363,7 +366,8 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
-            logger.LogDebug("Turn binary audio exit without finalization session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
+            logger.LogDebug(
+                "Turn binary audio exit without finalization session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
                 session.SessionId,
                 turnState.TransId,
                 turnState.BufferedAudioBytes,
@@ -424,7 +428,8 @@ public sealed class WebSocketTurnFinalizationService(
 
             if (ShouldAutoFinalize(session))
             {
-                logger.LogDebug("Turn context auto-finalizing session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks}",
+                logger.LogDebug(
+                    "Turn context auto-finalizing session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks}",
                     session.SessionId,
                     turnState.TransId,
                     turnState.BufferedAudioBytes,
@@ -455,7 +460,8 @@ public sealed class WebSocketTurnFinalizationService(
             session.TurnState.TransId);
         PersistTurnHints(session, envelope.Text);
         var replies = await FinalizeTurnAsync(session, envelope, messageType, false, cancellationToken);
-        logger.LogDebug("Turn direct message exit session={SessionId} messageType={MessageType} replyCount={ReplyCount}",
+        logger.LogDebug(
+            "Turn direct message exit session={SessionId} messageType={MessageType} replyCount={ReplyCount}",
             session.SessionId,
             messageType,
             replies.Count);
@@ -544,7 +550,8 @@ public sealed class WebSocketTurnFinalizationService(
         try
         {
             strategy = await sttStrategySelector.SelectAsync(turn, cancellationToken);
-            logger.LogDebug("Resolve transcript selected strategy session={SessionId} turnId={TurnId} strategy={Strategy}",
+            logger.LogDebug(
+                "Resolve transcript selected strategy session={SessionId} turnId={TurnId} strategy={Strategy}",
                 session.SessionId,
                 turn.TurnId,
                 strategy?.Name);
@@ -1010,9 +1017,7 @@ public sealed class WebSocketTurnFinalizationService(
 
                 if (ShouldKeepOpenOggHotphraseBlankBeforeHardTimeout(finalizedTurn, turnState, messageType,
                         allowFallbackOnMissingTranscript, turnAge))
-                {
                     return [];
-                }
 
                 if (ShouldKeepOpenOggYesNoBlankBeforeHardTimeout(finalizedTurn, turnState, messageType,
                         allowFallbackOnMissingTranscript, turnAge))
@@ -2731,13 +2736,13 @@ public sealed class WebSocketTurnFinalizationService(
     private static bool LooksLikeIncompleteLaunchQuestion(string normalized)
     {
         return normalized is "what's your" or "whats your" or "what s your" or "what is your" or
-                          "what's the" or "whats the" or "what s the" or "what is the" or
-                          "what's your cloud" or "whats your cloud" or "what s your cloud" or
-                          "what is your cloud" or "what's the cloud" or "whats the cloud" or
-                          "what s the cloud" or "what is the cloud" or
-                          "what's your favorite" or "whats your favorite" or "what s your favorite" or
-                          "what is your favorite" or "what's your favourite" or "whats your favourite" or
-                          "what s your favourite" or "what is your favourite";
+            "what's the" or "whats the" or "what s the" or "what is the" or
+            "what's your cloud" or "whats your cloud" or "what s your cloud" or
+            "what is your cloud" or "what's the cloud" or "whats the cloud" or
+            "what s the cloud" or "what is the cloud" or
+            "what's your favorite" or "whats your favorite" or "what s your favorite" or
+            "what is your favorite" or "what's your favourite" or "whats your favourite" or
+            "what s your favourite" or "what is your favourite";
     }
 
     private static bool IsHotphraseOnlyTranscript(string normalized)

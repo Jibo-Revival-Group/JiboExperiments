@@ -89,27 +89,25 @@ internal static class WordOfDayGuessResolver
         var matchCount = 0;
 
         foreach (var candidate in candidates.Where(static candidate => candidate.Length >= 4))
+        foreach (var hint in hints.Where(static hint => hint.Normalized.Length >= 5))
         {
-            foreach (var hint in hints.Where(static hint => hint.Normalized.Length >= 5))
+            var comparedLength = Math.Min(candidate.Length, hint.Normalized.Length);
+            var hintPrefix = hint.Normalized[..comparedLength];
+            if (ComputeEditDistance(candidate, hintPrefix) > 1) continue;
+
+            var prefixLength = CommonPrefixLength(candidate, hint.Normalized);
+            if (prefixLength < 3) continue;
+
+            if (prefixLength > bestPrefixLength)
             {
-                var comparedLength = Math.Min(candidate.Length, hint.Normalized.Length);
-                var hintPrefix = hint.Normalized[..comparedLength];
-                if (ComputeEditDistance(candidate, hintPrefix) > 1) continue;
-
-                var prefixLength = CommonPrefixLength(candidate, hint.Normalized);
-                if (prefixLength < 3) continue;
-
-                if (prefixLength > bestPrefixLength)
-                {
-                    bestHint = hint.Original;
-                    bestPrefixLength = prefixLength;
-                    matchCount = 1;
-                }
-                else if (prefixLength == bestPrefixLength &&
-                         !string.Equals(bestHint, hint.Original, StringComparison.Ordinal))
-                {
-                    matchCount += 1;
-                }
+                bestHint = hint.Original;
+                bestPrefixLength = prefixLength;
+                matchCount = 1;
+            }
+            else if (prefixLength == bestPrefixLength &&
+                     !string.Equals(bestHint, hint.Original, StringComparison.Ordinal))
+            {
+                matchCount += 1;
             }
         }
 
@@ -155,7 +153,8 @@ internal static class WordOfDayGuessResolver
     {
         yield return normalizedTranscript;
 
-        foreach (var token in normalizedTranscript.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        foreach (var token in normalizedTranscript.Split(' ',
+                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             yield return token.Trim('\'');
     }
 

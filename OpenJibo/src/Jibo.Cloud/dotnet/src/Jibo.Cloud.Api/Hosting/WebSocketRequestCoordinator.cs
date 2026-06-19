@@ -3,7 +3,6 @@ using System.Text;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Api.Hosting;
@@ -57,7 +56,8 @@ internal sealed class WebSocketRequestCoordinator(
             try
             {
                 received = await ReceiveAsync(socket, context.RequestAborted);
-                logger.LogDebug("WebSocket frame received kind={Kind} token={Token} messageType={MessageType} bytes={Bytes}",
+                logger.LogDebug(
+                    "WebSocket frame received kind={Kind} token={Token} messageType={MessageType} bytes={Bytes}",
                     kind,
                     token,
                     received.MessageType,

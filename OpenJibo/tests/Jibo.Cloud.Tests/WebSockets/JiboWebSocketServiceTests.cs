@@ -4237,7 +4237,8 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-wod-phonetic-guess-token",
-            Text = """{"type":"CLIENT_ASR","transID":"trans-wod-phonetic-guess","data":{"text":"expansion that's come"}}"""
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-wod-phonetic-guess","data":{"text":"expansion that's come"}}"""
         });
 
         Assert.Equal(3, replies.Count);

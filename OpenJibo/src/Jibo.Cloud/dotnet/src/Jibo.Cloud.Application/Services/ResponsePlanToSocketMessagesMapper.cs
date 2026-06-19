@@ -264,11 +264,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         }
 
         if (isVolumeControl)
-        {
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/nimbus")),
                 75));
-        }
 
         if (isSettingsLaunch &&
             !string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase))

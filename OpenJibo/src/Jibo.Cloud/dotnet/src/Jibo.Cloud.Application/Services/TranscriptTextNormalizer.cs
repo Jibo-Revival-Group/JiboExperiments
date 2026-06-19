@@ -150,7 +150,6 @@ internal static class TranscriptTextNormalizer
         var bestPhraseLength = 0;
 
         for (var index = 1; index < tokens.Length; index += 1)
-        {
             foreach (var phrase in WakePhraseLeadPhrases)
             {
                 var phraseTokens = phrase.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -161,13 +160,12 @@ internal static class TranscriptTextNormalizer
 
                 var commandStart = index + phraseTokens.Length;
                 if (commandStart < bestCommandStart ||
-                    commandStart == bestCommandStart && phraseTokens.Length <= bestPhraseLength)
+                    (commandStart == bestCommandStart && phraseTokens.Length <= bestPhraseLength))
                     continue;
 
                 bestCommandStart = commandStart;
                 bestPhraseLength = phraseTokens.Length;
             }
-        }
 
         command = bestCommandStart < 0 ? string.Empty : string.Join(' ', tokens.Skip(bestCommandStart));
         return !string.IsNullOrWhiteSpace(command);
@@ -194,10 +192,8 @@ internal static class TranscriptTextNormalizer
         if (startIndex + phraseTokens.Count > tokens.Count) return false;
 
         for (var offset = 0; offset < phraseTokens.Count; offset += 1)
-        {
             if (!string.Equals(tokens[startIndex + offset], phraseTokens[offset], StringComparison.Ordinal))
                 return false;
-        }
 
         return true;
     }

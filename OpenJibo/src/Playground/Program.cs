@@ -130,7 +130,8 @@ try
             var startResp = await http.PostAsJsonAsync($"{baseHttp}/asr_simple_interface", startPayload, cts.Token);
             var startBody = await startResp.Content.ReadAsStringAsync(cts.Token);
 
-            Log.Information("ASR start: {StatusCode} {ReasonPhrase}", (int)startResp.StatusCode, startResp.ReasonPhrase);
+            Log.Information("ASR start: {StatusCode} {ReasonPhrase}", (int)startResp.StatusCode,
+                startResp.ReasonPhrase);
             if (!string.IsNullOrWhiteSpace(startBody))
                 Log.Information("{Body}", startBody);
 

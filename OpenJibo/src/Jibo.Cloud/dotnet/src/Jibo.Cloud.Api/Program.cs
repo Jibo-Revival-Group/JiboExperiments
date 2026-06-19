@@ -33,7 +33,8 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
             retainedFileCountLimit: 14,
             shared: true,
             restrictedToMinimumLevel: minimumLevel,
-            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
+            outputTemplate:
+            "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
 });
 
 builder.Services.AddOpenJiboCloud(builder.Configuration);
@@ -100,7 +101,6 @@ static void ResetDiagnosticsDirectories(IConfiguration configuration)
     };
 
     foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
-    {
         try
         {
             if (Directory.Exists(path)) Directory.Delete(path, true);
@@ -109,7 +109,6 @@ static void ResetDiagnosticsDirectories(IConfiguration configuration)
         {
             // Startup cleanup is best-effort so a stale file never blocks the app.
         }
-    }
 }
 
 static string ResolveConfiguredPath(IConfiguration configuration, string key, string defaultPath)

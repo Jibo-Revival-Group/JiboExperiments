@@ -1,5 +1,4 @@
 using Jibo.Cloud.Application.Services;
-using Jibo.Cloud.Infrastructure.Audio;
 
 namespace Jibo.Cloud.Tests.WebSockets;
 

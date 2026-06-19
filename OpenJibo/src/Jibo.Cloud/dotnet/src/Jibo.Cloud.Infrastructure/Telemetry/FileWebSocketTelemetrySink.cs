@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
-using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

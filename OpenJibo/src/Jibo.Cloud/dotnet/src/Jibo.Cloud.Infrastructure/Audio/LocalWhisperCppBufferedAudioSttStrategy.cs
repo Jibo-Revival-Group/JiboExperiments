@@ -11,11 +11,13 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
     private const int MinimumBufferedAudioBytes = 64;
     private const int ShortAnswerBufferedAudioBytes = 16;
     private const int MinimumTranscribableWavBytes = 1024;
+
     private const string FfmpegAudioPreprocessFilter =
         "silenceremove=start_periods=1:start_duration=0.12:start_threshold=-45dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-45dB,volume=8dB";
+
+    private readonly ILogger<LocalWhisperCppBufferedAudioSttStrategy> logger;
     private readonly BufferedAudioSttOptions options;
     private readonly IExternalProcessRunner processRunner;
-    private readonly ILogger<LocalWhisperCppBufferedAudioSttStrategy> logger;
 
     public LocalWhisperCppBufferedAudioSttStrategy(
         BufferedAudioSttOptions options,
@@ -92,7 +94,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
         var baseName = $"turn-{turn.TurnId}";
         var oggPath = Path.Combine(tempDirectory, $"{baseName}.ogg");
         var wavPath = Path.Combine(tempDirectory, $"{baseName}.wav");
-        logger.LogDebug("STT transcription files prepared tempDirectory={TempDirectory} oggPath={OggPath} wavPath={WavPath}",
+        logger.LogDebug(
+            "STT transcription files prepared tempDirectory={TempDirectory} oggPath={OggPath} wavPath={WavPath}",
             tempDirectory,
             oggPath,
             wavPath);
@@ -168,7 +171,8 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy : ISttStrategy
                 whisperResult.StdErr.Length);
 
             var transcript = ExtractTranscript(whisperResult.StdOut);
-            logger.LogDebug("STT extracted transcript turnId={TurnId} rawTranscript={Transcript}", turn.TurnId, transcript);
+            logger.LogDebug("STT extracted transcript turnId={TurnId} rawTranscript={Transcript}", turn.TurnId,
+                transcript);
             transcript = AudioTranscriptNormalizer.NormalizeLooseTranscript(transcript);
             if (TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(transcript))
             {

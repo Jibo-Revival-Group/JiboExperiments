@@ -8,8 +8,15 @@ internal static class OpenJiboEnvLoader
         {
             if (!File.Exists(envPath)) continue;
 
-            LoadFile(envPath);
-            return;
+            try
+            {
+                LoadFile(envPath);
+                return;
+            }
+            catch
+            {
+                // Ignore unreadable .env files and keep searching other candidates.
+            }
         }
     }
 

@@ -181,7 +181,10 @@ public sealed class WebSocketTurnFinalizationService(
         "i don't know where it's did you check under the bed",
         "i dont know where its did you check under the bed",
         "i don't know where it is did you check under the bed",
-        "i dont know where it is did you check under the bed"
+        "i dont know where it is did you check under the bed",
+        "oh i was just about to make a pizza",
+        "i was just about to make a pizza",
+        "if i was just about to make a pizza"
     };
 
     private static readonly HashSet<string> YesNoAffirmativeLeadTokens = new(StringComparer.Ordinal)

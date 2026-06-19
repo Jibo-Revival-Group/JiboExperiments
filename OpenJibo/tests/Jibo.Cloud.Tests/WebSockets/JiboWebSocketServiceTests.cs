@@ -6412,6 +6412,7 @@ public sealed class JiboWebSocketServiceTests
     [InlineData("Thank you.")]
     [InlineData("to my sources, maybe ask me again in a little while.")]
     [InlineData("I don't know where it's, did you check under the bed?")]
+    [InlineData("if I was just about to make a pizza.")]
     public async Task BufferedHotphraseAudio_NonCommandRobotAudioClosesAsNoInput(string transcript)
     {
         var stateStore = new InMemoryCloudStateStore();
@@ -6471,6 +6472,62 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("no-input", session.LastListenType);
         Assert.False(session.TurnState.AwaitingTurnCompletion);
         Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+    }
+
+    [Theory]
+    [InlineData("Hey, G-Bell.")]
+    [InlineData("Hey, Jim.")]
+    public async Task BufferedHotphraseAudio_MisheardWakeOnlyDoesNotRouteAsHello(string transcript)
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies:
+        [
+            new QueuedBufferedAudioSttStrategy(transcript)
+        ]);
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-misheard-wake-only-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-misheard-wake-only","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        for (var index = 0; index < 4; index += 1)
+        {
+            var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-hotphrase-misheard-wake-only-token",
+                Binary = new byte[3000]
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = stateStore.FindSessionByToken("hub-hotphrase-misheard-wake-only-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(4);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(600);
+
+        var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-misheard-wake-only-token",
+            Binary = new byte[3000]
+        });
+
+        Assert.Empty(replies);
+        Assert.True(session.TurnState.AwaitingTurnCompletion);
+        Assert.Equal(1, session.TurnState.FinalizeAttemptCount);
+        Assert.Null(session.LastIntent);
+        Assert.Null(session.LastTranscript);
     }
 
     [Fact]

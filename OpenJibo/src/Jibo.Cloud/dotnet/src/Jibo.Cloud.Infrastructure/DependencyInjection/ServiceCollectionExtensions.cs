@@ -8,6 +8,7 @@ using Jibo.Cloud.Infrastructure.Holidays;
 using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.News;
 using Jibo.Cloud.Infrastructure.Persistence;
+using Jibo.Cloud.Infrastructure.Search;
 using Jibo.Cloud.Infrastructure.Telemetry;
 using Jibo.Cloud.Infrastructure.Weather;
 using Jibo.Runtime.Abstractions;
@@ -47,12 +48,37 @@ public static class ServiceCollectionExtensions
         var holidayOptions = new HolidayCalendarOptions();
         configuration?.GetSection("OpenJibo:Holiday").Bind(holidayOptions);
 
+        var searchSection = configuration?.GetSection("OpenJibo:Search");
+        var llmInstructions = SearchInstructionsResolver.Resolve(
+            Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_INSTRUCTIONS")
+            ?? searchSection?["Instructions"],
+            Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_INSTRUCTIONS_FILE")
+            ?? searchSection?["InstructionsFile"]);
+        var searchBackendOptions = SearchBackendOptions.Create(
+            Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_BACKEND")
+            ?? searchSection?["Primary"]
+            ?? searchSection?["Backend"],
+            Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_FALLBACK")
+            ?? searchSection?["Fallback"]
+            ?? searchSection?["FallbackBackend"],
+            searchSection?.GetValue("CacheTtlSeconds", 300) ?? 300,
+            searchSection?.GetValue("FailureCacheTtlSeconds", 45) ?? 45,
+            llmInstructions);
+
         services.AddSingleton(sttOptions);
         services.AddSingleton(openWeatherOptions);
         services.AddSingleton(newsApiOptions);
         services.AddSingleton(holidayOptions);
+        services.AddSingleton(searchBackendOptions);
         services.AddHttpClient<IWeatherReportProvider, OpenWeatherReportProvider>();
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
+        services.AddHttpClient<WolframAlphaSearchProvider>();
+        services.AddHttpClient<OllamaSearchProvider>();
+        services.AddHttpClient<ChatGptSearchProvider>();
+        services.AddSingleton<IKnowledgeSearchProvider, WolframAlphaSearchProvider>();
+        services.AddSingleton<IKnowledgeSearchProvider, OllamaSearchProvider>();
+        services.AddSingleton<IKnowledgeSearchProvider, ChatGptSearchProvider>();
+        services.AddSingleton<IKnowledgeSearchService, KnowledgeSearchService>();
         services.AddSingleton<IHolidayCalendarProvider>(provider =>
             new NagerDateHolidayCalendarProvider(provider.GetRequiredService<HolidayCalendarOptions>()));
         services.AddSingleton<ICalendarReportProvider>(provider =>

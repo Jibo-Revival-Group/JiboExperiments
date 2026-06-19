@@ -12,6 +12,7 @@ public sealed partial class JiboInteractionService(
     ICalendarReportProvider? calendarReportProvider = null,
     ICommuteReportProvider? commuteReportProvider = null,
     INewsBriefingProvider? newsBriefingProvider = null,
+    IKnowledgeSearchService? knowledgeSearchService = null,
     ICloudStateStore? cloudStateStore = null)
 {
     private const string GreetingRouteMetadataKey = "greetingsRoute";

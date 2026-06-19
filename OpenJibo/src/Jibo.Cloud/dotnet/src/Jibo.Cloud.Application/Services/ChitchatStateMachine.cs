@@ -18,6 +18,7 @@ internal static class ChitchatStateMachine
     private const string EmotionQueryRoute = "EmotionQuery";
     private const string EmotionCommandRoute = "EmotionCommand";
     private const string ErrorResponseRoute = "ErrorResponse";
+    internal const string KnowledgeSearchRoute = "KnowledgeSearch";
 
     private static readonly string[] EmotionQueryPhrases =
     [
@@ -162,15 +163,12 @@ internal static class ChitchatStateMachine
 
     public static JiboInteractionDecision? TryBuildDecision(
         string semanticIntent,
-        string transcript,
         string loweredTranscript,
         JiboExperienceCatalog catalog,
         IJiboRandomizer randomizer,
         string? currentEmotion,
-        string? preferredName,
-        Func<string> buildErrorResponse)
+        string? preferredName)
     {
-        var normalizedLoweredTranscript = NormalizeForPhraseMatching(loweredTranscript);
         switch (semanticIntent)
         {
             case "hello":
@@ -288,22 +286,43 @@ internal static class ChitchatStateMachine
                 return BuildScriptedResponseDecision(
                     "robot_knowledge",
                     SelectLegacyPersonalityReply(catalog, randomizer, "know a lot", "not as much as i will someday"));
-            case "chat":
-                if (IsEmotionQuery(normalizedLoweredTranscript))
-                    return BuildEmotionQueryDecision(
-                        "emotion_query",
-                        SelectEmotionQueryReply(catalog, randomizer, currentEmotion, preferredName));
-
-                if (TryResolveEmotionCommand(normalizedLoweredTranscript, out var emotion))
-                    return BuildEmotionCommandDecision(randomizer, emotion!);
-
-                return BuildErrorResponseDecision(
-                    "chat",
-                    buildErrorResponse(),
-                    transcript);
             default:
                 return null;
         }
+    }
+
+    public static JiboInteractionDecision? TryBuildChatEmotionDecision(
+        string loweredTranscript,
+        JiboExperienceCatalog catalog,
+        IJiboRandomizer randomizer,
+        string? currentEmotion,
+        string? preferredName)
+    {
+        var normalizedLoweredTranscript = NormalizeForPhraseMatching(loweredTranscript);
+        if (IsEmotionQuery(normalizedLoweredTranscript))
+            return BuildEmotionQueryDecision(
+                "emotion_query",
+                SelectEmotionQueryReply(catalog, randomizer, currentEmotion, preferredName));
+
+        if (TryResolveEmotionCommand(normalizedLoweredTranscript, out var emotion))
+            return BuildEmotionCommandDecision(randomizer, emotion!);
+
+        return null;
+    }
+
+    public static JiboInteractionDecision BuildChatErrorResponseDecision(string replyText, string transcript)
+    {
+        return BuildErrorResponseDecision("chat", replyText, transcript);
+    }
+
+    public static JiboInteractionDecision BuildKnowledgeSearchResponseDecision(string replyText)
+    {
+        return new JiboInteractionDecision(
+            "knowledge_search",
+            replyText,
+            ContextUpdates: BuildContextUpdates(
+                KnowledgeSearchRoute,
+                null));
     }
 
     public static bool IsLikelyEmotionUtterance(string transcript)

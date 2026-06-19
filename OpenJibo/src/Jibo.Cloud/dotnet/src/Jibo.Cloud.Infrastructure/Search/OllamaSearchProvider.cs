@@ -28,47 +28,20 @@ public sealed class OllamaSearchProvider(
         KnowledgeSearchRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.Backend != SearchBackendKind.Ollama || string.IsNullOrWhiteSpace(request.Query))
+        if (request.BackendSpec.Kind != SearchBackendKind.Ollama || string.IsNullOrWhiteSpace(request.Query))
             return null;
 
-        var endpoint = SearchBackendSettingsResolver.ResolveEndpoint(
-            options,
-            SearchBackendKind.Ollama,
-            request.UseFallbackSettings);
+        var endpoint = SearchBackendSettingsResolver.ResolveEndpoint(request.BackendSpec);
         if (string.IsNullOrWhiteSpace(endpoint)) return null;
 
-        var primaryModel = SearchBackendSettingsResolver.ResolveModel(
-            options,
-            SearchBackendKind.Ollama,
-            request.UseFallbackSettings);
-        var cacheKey = BuildCacheKey(request, primaryModel);
+        var model = SearchBackendSettingsResolver.ResolveModel(request.BackendSpec);
+        var cacheKey = BuildCacheKey(request.BackendSpec, model, request.Query.Trim());
         if (TryGetCachedValue(cacheKey, out var cachedResult))
             return cachedResult;
 
-        var alternateModel = SearchBackendSettingsResolver.ResolveAlternateModel(
-            options,
-            SearchBackendKind.Ollama,
-            primaryModel);
-        var modelsToTry = alternateModel is null
-            ? [primaryModel]
-            : new[] { primaryModel, alternateModel };
-
-        foreach (var model in modelsToTry)
-        {
-            var result = await TryGenerateAsync(
-                endpoint,
-                model,
-                request.Query.Trim(),
-                cancellationToken);
-            if (result is not null)
-            {
-                SetCachedValue(cacheKey, result, options.CacheTtlSeconds);
-                return result;
-            }
-        }
-
-        SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
-        return null;
+        var result = await TryGenerateAsync(endpoint, model, request.Query.Trim(), cancellationToken);
+        SetCachedValue(cacheKey, result, result is null ? options.FailureCacheTtlSeconds : options.CacheTtlSeconds);
+        return result;
     }
 
     private async Task<KnowledgeSearchResult?> TryGenerateAsync(
@@ -86,11 +59,7 @@ public sealed class OllamaSearchProvider(
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                if (IsModelUnavailable(response.StatusCode, body))
-                    logger.LogDebug("Ollama model {Model} is unavailable.", model);
-                else
-                    logger.LogWarning("Ollama lookup failed with status {StatusCode}.", response.StatusCode);
-
+                logger.LogWarning("Ollama lookup failed with status {StatusCode}.", response.StatusCode);
                 return null;
             }
 
@@ -107,18 +76,9 @@ public sealed class OllamaSearchProvider(
         }
     }
 
-    private static bool IsModelUnavailable(HttpStatusCode statusCode, string body)
+    private static string BuildCacheKey(SearchBackendSpec spec, string model, string query)
     {
-        if (statusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest)
-            return body.Contains("model", StringComparison.OrdinalIgnoreCase) &&
-                   body.Contains("not found", StringComparison.OrdinalIgnoreCase);
-
-        return false;
-    }
-
-    private static string BuildCacheKey(KnowledgeSearchRequest request, string model)
-    {
-        return $"ollama|{request.UseFallbackSettings}|{model}|{request.Query.Trim()}";
+        return $"ollama|{spec.Credential}|{model}|{query}";
     }
 
     private bool TryGetCachedValue(string cacheKey, out KnowledgeSearchResult? result)

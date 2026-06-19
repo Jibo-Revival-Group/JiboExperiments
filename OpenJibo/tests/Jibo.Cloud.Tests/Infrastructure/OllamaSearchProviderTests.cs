@@ -24,12 +24,17 @@ public sealed class OllamaSearchProviderTests
                 }
                 """);
         });
-        var provider = CreateProvider(handler, model: "llava:7b");
+        var provider = CreateProvider(
+            handler,
+            "http://192.168.7.108:11434",
+            "llava:7b");
 
         var result = await provider.SearchAsync(new KnowledgeSearchRequest(
             "How old is Donald Trump",
-            SearchBackendKind.Ollama,
-            UseFallbackSettings: false));
+            new SearchBackendSpec(
+                SearchBackendKind.Ollama,
+                "http://192.168.7.108:11434",
+                "llava:7b")));
 
         Assert.NotNull(result);
         Assert.Equal(SearchBackendKind.Ollama, result!.BackendKind);
@@ -54,94 +59,29 @@ public sealed class OllamaSearchProviderTests
             capturedRequest = request;
             return JsonResponse("""{"response":"42","done":true}""");
         });
-        var provider = CreateProvider(handler);
+        var provider = CreateProvider(handler, "http://127.0.0.1:11434", model: null);
 
         await provider.SearchAsync(new KnowledgeSearchRequest(
             "What is six times seven",
-            SearchBackendKind.Ollama,
-            UseFallbackSettings: false));
+            new SearchBackendSpec(SearchBackendKind.Ollama, "http://127.0.0.1:11434", null)));
 
         var body = await capturedRequest!.Content!.ReadAsStringAsync();
         using var json = JsonDocument.Parse(body);
         Assert.Equal(SearchBackendSettingsResolver.DefaultOllamaModel, json.RootElement.GetProperty("model").GetString());
     }
 
-    [Fact]
-    public async Task SearchAsync_RetriesWithFallbackModel_WhenPrimaryModelUnavailable()
-    {
-        var attempts = 0;
-        var handler = new RecordingHttpMessageHandler(request =>
-        {
-            attempts += 1;
-            var body = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
-            using var json = JsonDocument.Parse(body);
-            var model = json.RootElement.GetProperty("model").GetString();
-            if (model == "missing-model")
-            {
-                return new HttpResponseMessage(HttpStatusCode.NotFound)
-                {
-                    Content = new StringContent("""{"error":"model 'missing-model' not found"}""", Encoding.UTF8,
-                        "application/json")
-                };
-            }
-
-            return JsonResponse("""{"response":"Recovered with fallback model.","done":true}""");
-        });
-        var provider = CreateProvider(
-            handler,
-            model: "missing-model",
-            fallbackModel: "llava:7b");
-
-        var result = await provider.SearchAsync(new KnowledgeSearchRequest(
-            "How old is Donald Trump",
-            SearchBackendKind.Ollama,
-            UseFallbackSettings: false));
-
-        Assert.NotNull(result);
-        Assert.Equal("Recovered with fallback model.", result!.AnswerText);
-        Assert.Equal(2, attempts);
-    }
-
-    [Fact]
-    public async Task SearchAsync_UsesFallbackModel_WhenFallbackSettingsRequested()
-    {
-        HttpRequestMessage? capturedRequest = null;
-        var handler = new RecordingHttpMessageHandler(request =>
-        {
-            capturedRequest = request;
-            return JsonResponse("""{"response":"Fallback settings model.","done":true}""");
-        });
-        var provider = CreateProvider(
-            handler,
-            model: "llava:7b",
-            fallbackModel: "llama3.1:8b");
-
-        await provider.SearchAsync(new KnowledgeSearchRequest(
-            "How old is Donald Trump",
-            SearchBackendKind.Ollama,
-            UseFallbackSettings: true));
-
-        var body = await capturedRequest!.Content!.ReadAsStringAsync();
-        using var json = JsonDocument.Parse(body);
-        Assert.Equal("llama3.1:8b", json.RootElement.GetProperty("model").GetString());
-    }
-
     private static OllamaSearchProvider CreateProvider(
         HttpMessageHandler handler,
-        string? model = null,
-        string? fallbackModel = null,
-        string endpoint = "http://192.168.7.108:11434")
+        string endpoint,
+        string? model)
     {
+        var primary = model is null
+            ? $"Ollama!{endpoint}"
+            : $"Ollama!{endpoint}!{model}";
+
         return new OllamaSearchProvider(
             new HttpClient(handler),
-            new SearchBackendOptions
-            {
-                ApiEndpoint = endpoint,
-                Model = model,
-                FallbackModel = fallbackModel,
-                CacheTtlSeconds = 300,
-                FailureCacheTtlSeconds = 45
-            },
+            SearchBackendOptions.Create(primary, null, 300, 45),
             NullLogger<OllamaSearchProvider>.Instance);
     }
 

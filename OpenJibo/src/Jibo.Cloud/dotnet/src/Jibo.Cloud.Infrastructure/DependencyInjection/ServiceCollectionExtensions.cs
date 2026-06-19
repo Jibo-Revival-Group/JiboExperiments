@@ -48,9 +48,16 @@ public static class ServiceCollectionExtensions
         var holidayOptions = new HolidayCalendarOptions();
         configuration?.GetSection("OpenJibo:Holiday").Bind(holidayOptions);
 
-        var searchBackendOptions = new SearchBackendOptions();
-        configuration?.GetSection("OpenJibo:Search").Bind(searchBackendOptions);
-        ApplySearchBackendEnvironmentFallbacks(searchBackendOptions);
+        var searchSection = configuration?.GetSection("OpenJibo:Search");
+        var searchBackendOptions = SearchBackendOptions.Create(
+            Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_BACKEND")
+            ?? searchSection?["Primary"]
+            ?? searchSection?["Backend"],
+            Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_FALLBACK")
+            ?? searchSection?["Fallback"]
+            ?? searchSection?["FallbackBackend"],
+            searchSection?.GetValue("CacheTtlSeconds", 300) ?? 300,
+            searchSection?.GetValue("FailureCacheTtlSeconds", 45) ?? 45);
 
         services.AddSingleton(sttOptions);
         services.AddSingleton(openWeatherOptions);
@@ -175,43 +182,6 @@ public static class ServiceCollectionExtensions
         return Enum.TryParse<PersistenceBackendKind>(value, true, out var backendKind)
             ? backendKind
             : PersistenceBackendKind.Sqlite;
-    }
-
-    private static void ApplySearchBackendEnvironmentFallbacks(SearchBackendOptions options)
-    {
-        if (TryParseSearchBackend(Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_BACKEND"), out var backend))
-            options.Backend = backend;
-
-        if (TryParseSearchBackend(Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_FALLBACK_BACKEND"),
-                out var fallbackBackend))
-            options.FallbackBackend = fallbackBackend;
-
-        if (string.IsNullOrWhiteSpace(options.ApiKey))
-            options.ApiKey = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_API_KEY");
-
-        var endpoint = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_API_ENDPOINT");
-        if (!string.IsNullOrWhiteSpace(endpoint))
-            options.ApiEndpoint = endpoint;
-
-        var fallbackEndpoint = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_FALLBACK_API_ENDPOINT");
-        if (!string.IsNullOrWhiteSpace(fallbackEndpoint))
-            options.FallbackApiEndpoint = fallbackEndpoint;
-
-        var model = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_MODEL");
-        if (!string.IsNullOrWhiteSpace(model))
-            options.Model = model;
-
-        var fallbackModel = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_FALLBACK_MODEL");
-        if (!string.IsNullOrWhiteSpace(fallbackModel))
-            options.FallbackModel = fallbackModel;
-    }
-
-    private static bool TryParseSearchBackend(string? value, out SearchBackendKind backendKind)
-    {
-        backendKind = SearchBackendKind.None;
-        if (string.IsNullOrWhiteSpace(value)) return false;
-
-        return Enum.TryParse(value.Trim(), true, out backendKind);
     }
 
     private static string BuildPostgreSqlConnectionString(string databaseName)

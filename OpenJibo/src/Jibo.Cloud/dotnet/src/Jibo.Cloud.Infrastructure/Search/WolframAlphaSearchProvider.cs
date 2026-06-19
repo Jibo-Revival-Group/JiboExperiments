@@ -27,19 +27,19 @@ public sealed class WolframAlphaSearchProvider(
         KnowledgeSearchRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.Backend != SearchBackendKind.Wolfram ||
-            string.IsNullOrWhiteSpace(options.ApiKey) ||
+        if (request.BackendSpec.Kind != SearchBackendKind.Wolfram ||
+            string.IsNullOrWhiteSpace(request.BackendSpec.Credential) ||
             string.IsNullOrWhiteSpace(request.Query))
             return null;
 
         var normalizedQuery = request.Query.Trim();
-        var cacheKey = BuildCacheKey(request, normalizedQuery);
+        var cacheKey = BuildCacheKey(request.BackendSpec, normalizedQuery);
         if (TryGetCachedValue(cacheKey, out var cachedResult))
             return cachedResult;
 
         try
         {
-            var requestUri = BuildRequestUri(request, normalizedQuery);
+            var requestUri = BuildRequestUri(request.BackendSpec.Credential, normalizedQuery);
             using var response = await httpClient.GetAsync(requestUri, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
@@ -66,15 +66,11 @@ public sealed class WolframAlphaSearchProvider(
         }
     }
 
-    private Uri BuildRequestUri(KnowledgeSearchRequest request, string query)
+    private static Uri BuildRequestUri(string appId, string query)
     {
-        var endpoint = SearchBackendSettingsResolver.ResolveEndpoint(
-            options,
-            SearchBackendKind.Wolfram,
-            request.UseFallbackSettings) ?? SearchBackendSettingsResolver.DefaultWolframEndpoint;
-
+        var endpoint = SearchBackendSettingsResolver.DefaultWolframEndpoint;
         var builder = new UriBuilder(endpoint);
-        var queryString = $"appid={Uri.EscapeDataString(options.ApiKey!)}&i={Uri.EscapeDataString(query)}";
+        var queryString = $"appid={Uri.EscapeDataString(appId)}&i={Uri.EscapeDataString(query)}";
         builder.Query = queryString;
         return builder.Uri;
     }
@@ -87,9 +83,9 @@ public sealed class WolframAlphaSearchProvider(
         return !FailurePhrases.Any(phrase => lowered.Contains(phrase, StringComparison.Ordinal));
     }
 
-    private static string BuildCacheKey(KnowledgeSearchRequest request, string query)
+    private static string BuildCacheKey(SearchBackendSpec spec, string query)
     {
-        return $"wolfram|{request.UseFallbackSettings}|{query}";
+        return $"wolfram|{spec.Credential}|{query}";
     }
 
     private bool TryGetCachedValue(string cacheKey, out KnowledgeSearchResult? result)

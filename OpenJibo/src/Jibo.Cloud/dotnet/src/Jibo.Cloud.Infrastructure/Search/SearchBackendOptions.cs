@@ -4,21 +4,39 @@ namespace Jibo.Cloud.Infrastructure.Search;
 
 public sealed class SearchBackendOptions
 {
-    public SearchBackendKind Backend { get; set; } = SearchBackendKind.None;
+    public SearchBackendSpec Primary { get; init; } = SearchBackendSpec.None;
 
-    public SearchBackendKind? FallbackBackend { get; set; }
+    public SearchBackendSpec? Fallback { get; init; }
 
-    public string? ApiKey { get; set; }
+    public int CacheTtlSeconds { get; init; } = 300;
 
-    public string? ApiEndpoint { get; set; }
+    public int FailureCacheTtlSeconds { get; init; } = 45;
 
-    public string? FallbackApiEndpoint { get; set; }
+    public static SearchBackendOptions Create(
+        string? primary,
+        string? fallback,
+        int cacheTtlSeconds,
+        int failureCacheTtlSeconds)
+    {
+        var primarySpec = SearchBackendSpecParser.Parse(primary);
+        SearchBackendSpec? fallbackSpec = null;
+        var parsedFallback = SearchBackendSpecParser.Parse(fallback);
+        if (parsedFallback.IsUsable && !SpecsEquivalent(primarySpec, parsedFallback))
+            fallbackSpec = parsedFallback;
 
-    public string? Model { get; set; }
+        return new SearchBackendOptions
+        {
+            Primary = primarySpec,
+            Fallback = fallbackSpec,
+            CacheTtlSeconds = cacheTtlSeconds,
+            FailureCacheTtlSeconds = failureCacheTtlSeconds
+        };
+    }
 
-    public string? FallbackModel { get; set; }
-
-    public int CacheTtlSeconds { get; set; } = 300;
-
-    public int FailureCacheTtlSeconds { get; set; } = 45;
+    private static bool SpecsEquivalent(SearchBackendSpec left, SearchBackendSpec right)
+    {
+        return left.Kind == right.Kind &&
+               string.Equals(left.Credential, right.Credential, StringComparison.Ordinal) &&
+               string.Equals(left.Model, right.Model, StringComparison.OrdinalIgnoreCase);
+    }
 }

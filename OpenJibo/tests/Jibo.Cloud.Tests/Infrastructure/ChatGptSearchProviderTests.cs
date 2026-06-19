@@ -33,8 +33,7 @@ public sealed class ChatGptSearchProviderTests
 
         var result = await provider.SearchAsync(new KnowledgeSearchRequest(
             "How old is Donald Trump",
-            SearchBackendKind.ChatGPT,
-            UseFallbackSettings: false));
+            new SearchBackendSpec(SearchBackendKind.ChatGPT, "test-api-key", "gpt-5.4-nano")));
 
         Assert.NotNull(result);
         Assert.Equal(SearchBackendKind.ChatGPT, result!.BackendKind);
@@ -54,7 +53,7 @@ public sealed class ChatGptSearchProviderTests
     }
 
     [Fact]
-    public async Task SearchAsync_UsesConfiguredModel_WhenModelProvided()
+    public async Task SearchAsync_UsesDefaultModel_WhenModelOmitted()
     {
         HttpRequestMessage? capturedRequest = null;
         var handler = new RecordingHttpMessageHandler(request =>
@@ -62,16 +61,15 @@ public sealed class ChatGptSearchProviderTests
             capturedRequest = request;
             return JsonResponse("""{"choices":[{"message":{"role":"assistant","content":"Hi"}}]}""");
         });
-        var provider = CreateProvider(handler, model: "gpt-5.4-nano");
+        var provider = CreateProvider(handler, model: null);
 
         await provider.SearchAsync(new KnowledgeSearchRequest(
             "Hello",
-            SearchBackendKind.ChatGPT,
-            UseFallbackSettings: false));
+            new SearchBackendSpec(SearchBackendKind.ChatGPT, "test-api-key", null)));
 
         var body = await capturedRequest!.Content!.ReadAsStringAsync();
         using var json = JsonDocument.Parse(body);
-        Assert.Equal("gpt-5.4-nano", json.RootElement.GetProperty("model").GetString());
+        Assert.Equal(SearchBackendSettingsResolver.DefaultChatGptModel, json.RootElement.GetProperty("model").GetString());
     }
 
     [Fact]
@@ -93,8 +91,7 @@ public sealed class ChatGptSearchProviderTests
 
         var result = await provider.SearchAsync(new KnowledgeSearchRequest(
             "How old is Donald Trump",
-            SearchBackendKind.ChatGPT,
-            UseFallbackSettings: false));
+            new SearchBackendSpec(SearchBackendKind.ChatGPT, "test-api-key", null)));
 
         Assert.NotNull(result);
         Assert.Equal("Donald Trump was born on June 14, 1946.", result!.AnswerText);
@@ -109,8 +106,7 @@ public sealed class ChatGptSearchProviderTests
 
         var result = await provider.SearchAsync(new KnowledgeSearchRequest(
             "Hello",
-            SearchBackendKind.ChatGPT,
-            UseFallbackSettings: false));
+            new SearchBackendSpec(SearchBackendKind.ChatGPT, null, null)));
 
         Assert.Null(result);
     }
@@ -118,19 +114,15 @@ public sealed class ChatGptSearchProviderTests
     private static ChatGptSearchProvider CreateProvider(
         HttpMessageHandler handler,
         string? apiKey = "test-api-key",
-        string? model = null,
-        string endpoint = "https://api.openai.com/v1/chat/completions")
+        string? model = "gpt-5.4-nano")
     {
+        var primary = model is null
+            ? $"ChatGPT!{apiKey}"
+            : $"ChatGPT!{apiKey}!{model}";
+
         return new ChatGptSearchProvider(
             new HttpClient(handler),
-            new SearchBackendOptions
-            {
-                ApiKey = apiKey,
-                ApiEndpoint = endpoint,
-                Model = model,
-                CacheTtlSeconds = 300,
-                FailureCacheTtlSeconds = 45
-            },
+            SearchBackendOptions.Create(primary, null, 300, 45),
             NullLogger<ChatGptSearchProvider>.Instance);
     }
 

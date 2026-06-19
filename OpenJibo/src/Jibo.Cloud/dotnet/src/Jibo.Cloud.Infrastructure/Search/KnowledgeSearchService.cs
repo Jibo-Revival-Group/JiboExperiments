@@ -13,8 +13,7 @@ public sealed class KnowledgeSearchService(
         providers.ToDictionary(provider => provider.Kind);
 
     public bool IsConfigured =>
-        IsBackendConfigured(options.Backend) ||
-        (options.FallbackBackend is not null && IsBackendConfigured(options.FallbackBackend.Value));
+        options.Primary.IsUsable || options.Fallback?.IsUsable == true;
 
     public async Task<KnowledgeSearchResult?> SearchAsync(
         string query,
@@ -22,54 +21,33 @@ public sealed class KnowledgeSearchService(
     {
         if (string.IsNullOrWhiteSpace(query)) return null;
 
-        var primaryResult = await TrySearchBackendAsync(
-            options.Backend,
-            query,
-            useFallbackSettings: false,
-            cancellationToken);
-        if (primaryResult is not null) return primaryResult;
+        if (options.Primary.IsUsable)
+        {
+            var primaryResult = await TrySearchBackendAsync(options.Primary, query, cancellationToken);
+            if (primaryResult is not null) return primaryResult;
+        }
 
-        if (options.FallbackBackend is null ||
-            options.FallbackBackend.Value == SearchBackendKind.None ||
-            options.FallbackBackend.Value == options.Backend)
+        if (options.Fallback is null || !options.Fallback.IsUsable)
             return null;
 
-        return await TrySearchBackendAsync(
-            options.FallbackBackend.Value,
-            query,
-            useFallbackSettings: true,
-            cancellationToken);
+        return await TrySearchBackendAsync(options.Fallback, query, cancellationToken);
     }
 
     private async Task<KnowledgeSearchResult?> TrySearchBackendAsync(
-        SearchBackendKind backendKind,
+        SearchBackendSpec backendSpec,
         string query,
-        bool useFallbackSettings,
         CancellationToken cancellationToken)
     {
-        if (!IsBackendConfigured(backendKind)) return null;
-
-        if (!_providers.TryGetValue(backendKind, out var provider))
+        if (!_providers.TryGetValue(backendSpec.Kind, out var provider))
         {
-            logger.LogDebug("Search backend {BackendKind} is configured but no provider is registered.", backendKind);
+            logger.LogDebug(
+                "Search backend {BackendKind} is configured but no provider is registered.",
+                backendSpec.Kind);
             return null;
         }
 
         return await provider.SearchAsync(
-            new KnowledgeSearchRequest(query, backendKind, useFallbackSettings),
+            new KnowledgeSearchRequest(query, backendSpec),
             cancellationToken);
-    }
-
-    private bool IsBackendConfigured(SearchBackendKind backendKind)
-    {
-        if (backendKind == SearchBackendKind.None) return false;
-
-        return backendKind switch
-        {
-            SearchBackendKind.Wolfram or SearchBackendKind.ChatGPT =>
-                !string.IsNullOrWhiteSpace(options.ApiKey),
-            SearchBackendKind.Ollama => true,
-            _ => false
-        };
     }
 }

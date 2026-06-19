@@ -2,7 +2,7 @@ using Jibo.Cloud.Application.Abstractions;
 
 namespace Jibo.Cloud.Infrastructure.Search;
 
-internal static class SearchBackendSettingsResolver
+public static class SearchBackendSettingsResolver
 {
     public const string DefaultWolframEndpoint = "http://api.wolframalpha.com/v1/spoken";
     public const string DefaultOllamaBaseUrl = "http://127.0.0.1:11434";
@@ -10,39 +10,27 @@ internal static class SearchBackendSettingsResolver
     public const string DefaultOllamaModel = "llama3.1:8b";
     public const string DefaultChatGptModel = "gpt-5.4-nano";
 
-    public static string? ResolveEndpoint(
-        SearchBackendOptions options,
-        SearchBackendKind backend,
-        bool useFallbackSettings)
+    public static string? ResolveEndpoint(SearchBackendSpec spec)
     {
-        var configured = useFallbackSettings ? options.FallbackApiEndpoint : options.ApiEndpoint;
-        if (!string.IsNullOrWhiteSpace(configured))
-            return NormalizeEndpoint(backend, configured);
-
-        return backend switch
+        return spec.Kind switch
         {
             SearchBackendKind.Wolfram => DefaultWolframEndpoint,
-            SearchBackendKind.Ollama => $"{DefaultOllamaBaseUrl.TrimEnd('/')}/api/generate",
+            SearchBackendKind.Ollama => NormalizeOllamaEndpoint(
+                string.IsNullOrWhiteSpace(spec.Credential) ? DefaultOllamaBaseUrl : spec.Credential),
             SearchBackendKind.ChatGPT => DefaultChatGptEndpoint,
             _ => null
         };
     }
 
-    public static string ResolveModel(
-        SearchBackendOptions options,
-        SearchBackendKind backend,
-        bool useFallbackSettings)
+    public static string ResolveModel(SearchBackendSpec spec)
     {
-        if (backend is not (SearchBackendKind.Ollama or SearchBackendKind.ChatGPT))
+        if (spec.Kind is not (SearchBackendKind.Ollama or SearchBackendKind.ChatGPT))
             return string.Empty;
 
-        if (useFallbackSettings && !string.IsNullOrWhiteSpace(options.FallbackModel))
-            return options.FallbackModel.Trim();
+        if (!string.IsNullOrWhiteSpace(spec.Model))
+            return spec.Model.Trim();
 
-        if (!useFallbackSettings && !string.IsNullOrWhiteSpace(options.Model))
-            return options.Model.Trim();
-
-        return backend switch
+        return spec.Kind switch
         {
             SearchBackendKind.Ollama => DefaultOllamaModel,
             SearchBackendKind.ChatGPT => DefaultChatGptModel,
@@ -50,25 +38,9 @@ internal static class SearchBackendSettingsResolver
         };
     }
 
-    public static string? ResolveAlternateModel(SearchBackendOptions options, SearchBackendKind backend, string primaryModel)
-    {
-        if (backend is not (SearchBackendKind.Ollama or SearchBackendKind.ChatGPT))
-            return null;
-
-        if (string.IsNullOrWhiteSpace(options.FallbackModel))
-            return null;
-
-        var fallbackModel = options.FallbackModel.Trim();
-        return string.Equals(fallbackModel, primaryModel, StringComparison.OrdinalIgnoreCase)
-            ? null
-            : fallbackModel;
-    }
-
-    private static string NormalizeEndpoint(SearchBackendKind backend, string endpoint)
+    private static string NormalizeOllamaEndpoint(string endpoint)
     {
         var trimmed = endpoint.Trim();
-        if (backend != SearchBackendKind.Ollama) return trimmed;
-
         return trimmed.EndsWith("/api/generate", StringComparison.OrdinalIgnoreCase)
             ? trimmed
             : $"{trimmed.TrimEnd('/')}/api/generate";

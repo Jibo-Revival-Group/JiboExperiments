@@ -38,7 +38,7 @@ public sealed class WolframAlphaSearchProviderTests
     {
         var provider = CreateProvider(new RecordingHttpMessageHandler(_ => TextResponse("answer")), apiKey: null);
 
-        var result = await provider.SearchAsync(CreateRequest("What is two plus two"));
+        var result = await provider.SearchAsync(CreateRequest("What is two plus two", apiKey: null));
 
         Assert.Null(result);
     }
@@ -88,13 +88,11 @@ public sealed class WolframAlphaSearchProviderTests
             return new KnowledgeSearchResult("Fallback answer.", SearchBackendKind.Ollama);
         });
         var service = new KnowledgeSearchService(
-            new SearchBackendOptions
-            {
-                Backend = SearchBackendKind.Wolfram,
-                FallbackBackend = SearchBackendKind.Ollama,
-                ApiKey = "test-key",
-                FallbackModel = "llava:7b"
-            },
+            SearchBackendOptions.Create(
+                "Wolfram!test-key",
+                "Ollama!http://127.0.0.1:11434!llava:7b",
+                300,
+                45),
             [primary, fallback],
             NullLogger<KnowledgeSearchService>.Instance);
 
@@ -103,28 +101,24 @@ public sealed class WolframAlphaSearchProviderTests
         Assert.NotNull(result);
         Assert.Equal("Fallback answer.", result!.AnswerText);
         Assert.NotNull(fallbackRequest);
-        Assert.True(fallbackRequest!.UseFallbackSettings);
+        Assert.Equal(SearchBackendKind.Ollama, fallbackRequest!.BackendSpec.Kind);
+        Assert.Equal("llava:7b", fallbackRequest.BackendSpec.Model);
     }
 
-    private static KnowledgeSearchRequest CreateRequest(string query)
+    private static KnowledgeSearchRequest CreateRequest(string query, string? apiKey = "test-app-id")
     {
-        return new KnowledgeSearchRequest(query, SearchBackendKind.Wolfram, UseFallbackSettings: false);
+        return new KnowledgeSearchRequest(
+            query,
+            new SearchBackendSpec(SearchBackendKind.Wolfram, apiKey, null));
     }
 
     private static WolframAlphaSearchProvider CreateProvider(
         HttpMessageHandler handler,
-        string? apiKey = "test-app-id",
-        string endpoint = "http://api.wolframalpha.com/v1/spoken")
+        string? apiKey = "test-app-id")
     {
         return new WolframAlphaSearchProvider(
             new HttpClient(handler),
-            new SearchBackendOptions
-            {
-                ApiKey = apiKey,
-                ApiEndpoint = endpoint,
-                CacheTtlSeconds = 300,
-                FailureCacheTtlSeconds = 45
-            },
+            SearchBackendOptions.Create($"Wolfram!{apiKey}", null, 300, 45),
             NullLogger<WolframAlphaSearchProvider>.Instance);
     }
 

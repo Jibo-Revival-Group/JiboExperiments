@@ -25,6 +25,8 @@ services:
       context: .
       dockerfile: Dockerfile
     image: openjibo-cloud:self-hosted
+    env_file:
+      - .env
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080

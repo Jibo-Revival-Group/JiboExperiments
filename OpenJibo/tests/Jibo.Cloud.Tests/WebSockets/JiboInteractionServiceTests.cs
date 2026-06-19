@@ -1483,6 +1483,42 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_UnhandledChat_WithWolframConfigured_ReturnsKnowledgeAnswer()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult(
+                "The 20th president of the United States was James Garfield.",
+                SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "What is the 20th president of the United States",
+            NormalizedTranscript = "What is the 20th president of the United States"
+        });
+
+        Assert.Equal("knowledge_search", decision.IntentName);
+        Assert.Contains("James Garfield", decision.ReplyText);
+        Assert.NotNull(decision.ContextUpdates);
+        Assert.Equal("KnowledgeSearch", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_UnhandledChat_WolframFails_FallsBackToGenericReply()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(null));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "blargh",
+            NormalizedTranscript = "blargh"
+        });
+
+        Assert.Equal("chat", decision.IntentName);
+        Assert.NotNull(decision.ContextUpdates);
+        Assert.Equal("ErrorResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_HowAngryAreYou_RoutesThroughPegasusEmotionQueryPhrase()
     {
         var service = CreateService();
@@ -5351,6 +5387,7 @@ public sealed class JiboInteractionServiceTests
         ICalendarReportProvider? calendarReportProvider = null,
         ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null,
+        IKnowledgeSearchService? knowledgeSearchService = null,
         IJiboExperienceContentRepository? contentRepository = null,
         IJiboRandomizer? randomizer = null)
     {
@@ -5362,6 +5399,7 @@ public sealed class JiboInteractionServiceTests
             calendarReportProvider,
             commuteReportProvider,
             newsBriefingProvider,
+            knowledgeSearchService,
             cloudStateStore);
     }
 
@@ -5463,6 +5501,16 @@ public sealed class JiboInteractionServiceTests
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(Snapshot);
+        }
+    }
+
+    private sealed class StubKnowledgeSearchService(KnowledgeSearchResult? result) : IKnowledgeSearchService
+    {
+        public bool IsConfigured => true;
+
+        public Task<KnowledgeSearchResult?> SearchAsync(string query, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(result);
         }
     }
 }

@@ -8,6 +8,7 @@ using Jibo.Cloud.Infrastructure.Holidays;
 using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.News;
 using Jibo.Cloud.Infrastructure.Persistence;
+using Jibo.Cloud.Infrastructure.Search;
 using Jibo.Cloud.Infrastructure.Telemetry;
 using Jibo.Cloud.Infrastructure.Weather;
 using Jibo.Runtime.Abstractions;
@@ -47,12 +48,21 @@ public static class ServiceCollectionExtensions
         var holidayOptions = new HolidayCalendarOptions();
         configuration?.GetSection("OpenJibo:Holiday").Bind(holidayOptions);
 
+        var searchBackendOptions = new SearchBackendOptions();
+        configuration?.GetSection("OpenJibo:Search").Bind(searchBackendOptions);
+        ApplySearchBackendEnvironmentFallbacks(searchBackendOptions);
+
         services.AddSingleton(sttOptions);
         services.AddSingleton(openWeatherOptions);
         services.AddSingleton(newsApiOptions);
         services.AddSingleton(holidayOptions);
+        services.AddSingleton(searchBackendOptions);
         services.AddHttpClient<IWeatherReportProvider, OpenWeatherReportProvider>();
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
+        services.AddHttpClient<WolframAlphaSearchProvider>();
+        services.AddSingleton<IKnowledgeSearchProvider>(provider =>
+            provider.GetRequiredService<WolframAlphaSearchProvider>());
+        services.AddSingleton<IKnowledgeSearchService, KnowledgeSearchService>();
         services.AddSingleton<IHolidayCalendarProvider>(provider =>
             new NagerDateHolidayCalendarProvider(provider.GetRequiredService<HolidayCalendarOptions>()));
         services.AddSingleton<ICalendarReportProvider>(provider =>
@@ -162,6 +172,31 @@ public static class ServiceCollectionExtensions
         return Enum.TryParse<PersistenceBackendKind>(value, true, out var backendKind)
             ? backendKind
             : PersistenceBackendKind.Sqlite;
+    }
+
+    private static void ApplySearchBackendEnvironmentFallbacks(SearchBackendOptions options)
+    {
+        if (TryParseSearchBackend(Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_BACKEND"), out var backend))
+            options.Backend = backend;
+
+        if (TryParseSearchBackend(Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_FALLBACK_BACKEND"),
+                out var fallbackBackend))
+            options.FallbackBackend = fallbackBackend;
+
+        if (string.IsNullOrWhiteSpace(options.ApiKey))
+            options.ApiKey = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_API_KEY");
+
+        var endpoint = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_API_ENDPOINT");
+        if (!string.IsNullOrWhiteSpace(endpoint))
+            options.ApiEndpoint = endpoint;
+    }
+
+    private static bool TryParseSearchBackend(string? value, out SearchBackendKind backendKind)
+    {
+        backendKind = SearchBackendKind.None;
+        if (string.IsNullOrWhiteSpace(value)) return false;
+
+        return Enum.TryParse(value.Trim(), true, out backendKind);
     }
 
     private static string BuildPostgreSqlConnectionString(string databaseName)

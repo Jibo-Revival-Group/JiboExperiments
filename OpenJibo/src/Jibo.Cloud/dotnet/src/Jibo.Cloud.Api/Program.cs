@@ -6,6 +6,8 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 
+OpenJiboEnvLoader.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 if (ShouldResetDiagnosticsOnStartup(builder.Configuration))

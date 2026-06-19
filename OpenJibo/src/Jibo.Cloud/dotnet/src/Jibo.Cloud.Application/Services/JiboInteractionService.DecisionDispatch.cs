@@ -82,15 +82,22 @@ public sealed partial class JiboInteractionService
         if (householdListDecision is not null) return householdListDecision;
 
         var preferredName = ResolvePreferredGreetingName(turn, greetingPresence);
+        if (string.Equals(semanticIntent, "chat", StringComparison.OrdinalIgnoreCase))
+            return await BuildChatFallbackDecisionAsync(
+                catalog,
+                transcript,
+                lowered,
+                chitchatEmotion,
+                preferredName,
+                cancellationToken);
+
         var chitchatDecision = ChitchatStateMachine.TryBuildDecision(
             semanticIntent,
-            transcript,
             lowered,
             catalog,
             randomizer,
             chitchatEmotion,
-            preferredName,
-            () => BuildGenericReply(catalog, transcript, lowered));
+            preferredName);
         if (chitchatDecision is not null) return chitchatDecision;
 
         if (SeasonalHolidayRouteBuilder.TryBuildDecision(
@@ -727,7 +734,13 @@ public sealed partial class JiboInteractionService
             "calendar" => new JiboInteractionDecision("calendar", randomizer.Choose(catalog.CalendarReplies)),
             "commute" => new JiboInteractionDecision("commute", randomizer.Choose(catalog.CommuteReplies)),
             "news" => await BuildNewsDecisionAsync(turn, transcript, catalog, cancellationToken),
-            _ => new JiboInteractionDecision("chat", BuildGenericReply(catalog, transcript, lowered))
+            _ => await BuildChatFallbackDecisionAsync(
+                catalog,
+                transcript,
+                lowered,
+                chitchatEmotion,
+                preferredName,
+                cancellationToken)
         };
     }
 }

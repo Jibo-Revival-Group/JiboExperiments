@@ -24,50 +24,54 @@ public sealed class WolframAlphaSearchProvider(
     public SearchBackendKind Kind => SearchBackendKind.Wolfram;
 
     public async Task<KnowledgeSearchResult?> SearchAsync(
-        string query,
+        KnowledgeSearchRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(options.ApiKey) || string.IsNullOrWhiteSpace(query))
+        if (request.Backend != SearchBackendKind.Wolfram ||
+            string.IsNullOrWhiteSpace(options.ApiKey) ||
+            string.IsNullOrWhiteSpace(request.Query))
             return null;
 
-        var normalizedQuery = query.Trim();
-        if (TryGetCachedValue(normalizedQuery, out var cachedResult))
+        var normalizedQuery = request.Query.Trim();
+        var cacheKey = BuildCacheKey(request, normalizedQuery);
+        if (TryGetCachedValue(cacheKey, out var cachedResult))
             return cachedResult;
 
         try
         {
-            var requestUri = BuildRequestUri(normalizedQuery);
+            var requestUri = BuildRequestUri(request, normalizedQuery);
             using var response = await httpClient.GetAsync(requestUri, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                SetCachedValue(normalizedQuery, null, options.FailureCacheTtlSeconds);
+                SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
                 return null;
             }
 
             var answerText = (await response.Content.ReadAsStringAsync(cancellationToken)).Trim();
             if (!IsUsableAnswer(answerText))
             {
-                SetCachedValue(normalizedQuery, null, options.FailureCacheTtlSeconds);
+                SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
                 return null;
             }
 
             var result = new KnowledgeSearchResult(answerText, SearchBackendKind.Wolfram);
-            SetCachedValue(normalizedQuery, result, options.CacheTtlSeconds);
+            SetCachedValue(cacheKey, result, options.CacheTtlSeconds);
             return result;
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(exception, "Wolfram Alpha lookup failed.");
-            SetCachedValue(normalizedQuery, null, options.FailureCacheTtlSeconds);
+            SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
             return null;
         }
     }
 
-    private Uri BuildRequestUri(string query)
+    private Uri BuildRequestUri(KnowledgeSearchRequest request, string query)
     {
-        var endpoint = string.IsNullOrWhiteSpace(options.ApiEndpoint)
-            ? "http://api.wolframalpha.com/v1/spoken"
-            : options.ApiEndpoint.Trim();
+        var endpoint = SearchBackendSettingsResolver.ResolveEndpoint(
+            options,
+            SearchBackendKind.Wolfram,
+            request.UseFallbackSettings) ?? SearchBackendSettingsResolver.DefaultWolframEndpoint;
 
         var builder = new UriBuilder(endpoint);
         var queryString = $"appid={Uri.EscapeDataString(options.ApiKey!)}&i={Uri.EscapeDataString(query)}";
@@ -83,19 +87,24 @@ public sealed class WolframAlphaSearchProvider(
         return !FailurePhrases.Any(phrase => lowered.Contains(phrase, StringComparison.Ordinal));
     }
 
-    private bool TryGetCachedValue(string query, out KnowledgeSearchResult? result)
+    private static string BuildCacheKey(KnowledgeSearchRequest request, string query)
+    {
+        return $"wolfram|{request.UseFallbackSettings}|{query}";
+    }
+
+    private bool TryGetCachedValue(string cacheKey, out KnowledgeSearchResult? result)
     {
         result = null;
-        if (!_cache.TryGetValue(query, out var entry) || entry.ExpiresAtUtc <= DateTimeOffset.UtcNow)
+        if (!_cache.TryGetValue(cacheKey, out var entry) || entry.ExpiresAtUtc <= DateTimeOffset.UtcNow)
             return false;
 
         result = entry.Result;
         return true;
     }
 
-    private void SetCachedValue(string query, KnowledgeSearchResult? result, int ttlSeconds)
+    private void SetCachedValue(string cacheKey, KnowledgeSearchResult? result, int ttlSeconds)
     {
-        _cache[query] = new CacheEntry(
+        _cache[cacheKey] = new CacheEntry(
             result,
             DateTimeOffset.UtcNow.AddSeconds(Math.Max(1, ttlSeconds)));
     }

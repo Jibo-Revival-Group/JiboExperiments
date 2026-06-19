@@ -60,8 +60,11 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IWeatherReportProvider, OpenWeatherReportProvider>();
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
         services.AddHttpClient<WolframAlphaSearchProvider>();
-        services.AddSingleton<IKnowledgeSearchProvider>(provider =>
-            provider.GetRequiredService<WolframAlphaSearchProvider>());
+        services.AddHttpClient<OllamaSearchProvider>();
+        services.AddHttpClient<ChatGptSearchProvider>();
+        services.AddSingleton<IKnowledgeSearchProvider, WolframAlphaSearchProvider>();
+        services.AddSingleton<IKnowledgeSearchProvider, OllamaSearchProvider>();
+        services.AddSingleton<IKnowledgeSearchProvider, ChatGptSearchProvider>();
         services.AddSingleton<IKnowledgeSearchService, KnowledgeSearchService>();
         services.AddSingleton<IHolidayCalendarProvider>(provider =>
             new NagerDateHolidayCalendarProvider(provider.GetRequiredService<HolidayCalendarOptions>()));
@@ -189,6 +192,18 @@ public static class ServiceCollectionExtensions
         var endpoint = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_API_ENDPOINT");
         if (!string.IsNullOrWhiteSpace(endpoint))
             options.ApiEndpoint = endpoint;
+
+        var fallbackEndpoint = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_FALLBACK_API_ENDPOINT");
+        if (!string.IsNullOrWhiteSpace(fallbackEndpoint))
+            options.FallbackApiEndpoint = fallbackEndpoint;
+
+        var model = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_MODEL");
+        if (!string.IsNullOrWhiteSpace(model))
+            options.Model = model;
+
+        var fallbackModel = Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_FALLBACK_MODEL");
+        if (!string.IsNullOrWhiteSpace(fallbackModel))
+            options.FallbackModel = fallbackModel;
     }
 
     private static bool TryParseSearchBackend(string? value, out SearchBackendKind backendKind)

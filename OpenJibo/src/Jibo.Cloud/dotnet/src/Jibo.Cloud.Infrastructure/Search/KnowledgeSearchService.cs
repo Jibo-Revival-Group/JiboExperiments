@@ -22,7 +22,11 @@ public sealed class KnowledgeSearchService(
     {
         if (string.IsNullOrWhiteSpace(query)) return null;
 
-        var primaryResult = await TrySearchBackendAsync(options.Backend, query, cancellationToken);
+        var primaryResult = await TrySearchBackendAsync(
+            options.Backend,
+            query,
+            useFallbackSettings: false,
+            cancellationToken);
         if (primaryResult is not null) return primaryResult;
 
         if (options.FallbackBackend is null ||
@@ -30,12 +34,17 @@ public sealed class KnowledgeSearchService(
             options.FallbackBackend.Value == options.Backend)
             return null;
 
-        return await TrySearchBackendAsync(options.FallbackBackend.Value, query, cancellationToken);
+        return await TrySearchBackendAsync(
+            options.FallbackBackend.Value,
+            query,
+            useFallbackSettings: true,
+            cancellationToken);
     }
 
     private async Task<KnowledgeSearchResult?> TrySearchBackendAsync(
         SearchBackendKind backendKind,
         string query,
+        bool useFallbackSettings,
         CancellationToken cancellationToken)
     {
         if (!IsBackendConfigured(backendKind)) return null;
@@ -46,7 +55,9 @@ public sealed class KnowledgeSearchService(
             return null;
         }
 
-        return await provider.SearchAsync(query, cancellationToken);
+        return await provider.SearchAsync(
+            new KnowledgeSearchRequest(query, backendKind, useFallbackSettings),
+            cancellationToken);
     }
 
     private bool IsBackendConfigured(SearchBackendKind backendKind)

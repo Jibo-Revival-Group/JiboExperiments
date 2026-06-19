@@ -4,7 +4,9 @@ public interface IKnowledgeSearchProvider
 {
     SearchBackendKind Kind { get; }
 
-    Task<KnowledgeSearchResult?> SearchAsync(string query, CancellationToken cancellationToken = default);
+    Task<KnowledgeSearchResult?> SearchAsync(
+        KnowledgeSearchRequest request,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed record KnowledgeSearchResult(

@@ -20,7 +20,7 @@ public sealed class WolframAlphaSearchProviderTests
         });
         var provider = CreateProvider(handler, "test-app-id");
 
-        var result = await provider.SearchAsync("What is the 20th president of the United States");
+        var result = await provider.SearchAsync(CreateRequest("What is the 20th president of the United States"));
 
         Assert.NotNull(result);
         Assert.Equal(SearchBackendKind.Wolfram, result!.BackendKind);
@@ -38,7 +38,7 @@ public sealed class WolframAlphaSearchProviderTests
     {
         var provider = CreateProvider(new RecordingHttpMessageHandler(_ => TextResponse("answer")), apiKey: null);
 
-        var result = await provider.SearchAsync("What is two plus two");
+        var result = await provider.SearchAsync(CreateRequest("What is two plus two"));
 
         Assert.Null(result);
     }
@@ -49,7 +49,7 @@ public sealed class WolframAlphaSearchProviderTests
         var handler = new RecordingHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
         var provider = CreateProvider(handler);
 
-        var result = await provider.SearchAsync("What is two plus two");
+        var result = await provider.SearchAsync(CreateRequest("What is two plus two"));
 
         Assert.Null(result);
     }
@@ -61,7 +61,7 @@ public sealed class WolframAlphaSearchProviderTests
             TextResponse("Wolfram Alpha did not understand your input"));
         var provider = CreateProvider(handler);
 
-        var result = await provider.SearchAsync("blargh");
+        var result = await provider.SearchAsync(CreateRequest("blargh"));
 
         Assert.Null(result);
     }
@@ -72,7 +72,7 @@ public sealed class WolframAlphaSearchProviderTests
         var handler = new RecordingHttpMessageHandler(_ => TextResponse("   "));
         var provider = CreateProvider(handler);
 
-        var result = await provider.SearchAsync("What is two plus two");
+        var result = await provider.SearchAsync(CreateRequest("What is two plus two"));
 
         Assert.Null(result);
     }
@@ -80,15 +80,11 @@ public sealed class WolframAlphaSearchProviderTests
     [Fact]
     public async Task KnowledgeSearchService_UsesFallbackBackend_WhenPrimaryFails()
     {
-        var callCount = 0;
-        var primary = new StubKnowledgeSearchProvider(SearchBackendKind.Wolfram, () =>
+        KnowledgeSearchRequest? fallbackRequest = null;
+        var primary = new StubKnowledgeSearchProvider(SearchBackendKind.Wolfram, _ => null);
+        var fallback = new StubKnowledgeSearchProvider(SearchBackendKind.Ollama, request =>
         {
-            callCount += 1;
-            return null;
-        });
-        var fallback = new StubKnowledgeSearchProvider(SearchBackendKind.Ollama, () =>
-        {
-            callCount += 1;
+            fallbackRequest = request;
             return new KnowledgeSearchResult("Fallback answer.", SearchBackendKind.Ollama);
         });
         var service = new KnowledgeSearchService(
@@ -96,7 +92,8 @@ public sealed class WolframAlphaSearchProviderTests
             {
                 Backend = SearchBackendKind.Wolfram,
                 FallbackBackend = SearchBackendKind.Ollama,
-                ApiKey = "test-key"
+                ApiKey = "test-key",
+                FallbackModel = "llava:7b"
             },
             [primary, fallback],
             NullLogger<KnowledgeSearchService>.Instance);
@@ -105,7 +102,13 @@ public sealed class WolframAlphaSearchProviderTests
 
         Assert.NotNull(result);
         Assert.Equal("Fallback answer.", result!.AnswerText);
-        Assert.Equal(2, callCount);
+        Assert.NotNull(fallbackRequest);
+        Assert.True(fallbackRequest!.UseFallbackSettings);
+    }
+
+    private static KnowledgeSearchRequest CreateRequest(string query)
+    {
+        return new KnowledgeSearchRequest(query, SearchBackendKind.Wolfram, UseFallbackSettings: false);
     }
 
     private static WolframAlphaSearchProvider CreateProvider(
@@ -146,14 +149,16 @@ public sealed class WolframAlphaSearchProviderTests
 
     private sealed class StubKnowledgeSearchProvider(
         SearchBackendKind kind,
-        Func<KnowledgeSearchResult?> resultFactory)
+        Func<KnowledgeSearchRequest, KnowledgeSearchResult?> resultFactory)
         : IKnowledgeSearchProvider
     {
         public SearchBackendKind Kind { get; } = kind;
 
-        public Task<KnowledgeSearchResult?> SearchAsync(string query, CancellationToken cancellationToken = default)
+        public Task<KnowledgeSearchResult?> SearchAsync(
+            KnowledgeSearchRequest request,
+            CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(resultFactory());
+            return Task.FromResult(resultFactory(request));
         }
     }
 }

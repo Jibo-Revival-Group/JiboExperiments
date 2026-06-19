@@ -10,7 +10,13 @@ public sealed class SearchBackendOptions
 
     public string? ApiKey { get; set; }
 
-    public string ApiEndpoint { get; set; } = "http://api.wolframalpha.com/v1/spoken";
+    public string? ApiEndpoint { get; set; }
+
+    public string? FallbackApiEndpoint { get; set; }
+
+    public string? Model { get; set; }
+
+    public string? FallbackModel { get; set; }
 
     public int CacheTtlSeconds { get; set; } = 300;
 

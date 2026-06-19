@@ -144,6 +144,17 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
                     MinimumTranscribableWavBytes,
                     pageCounts.RawFrameCount,
                     pageCounts.AudioBearingPageCount);
+                if (!_options.CleanupTempFiles)
+                {
+                    TryDelete(oggPath);
+                    TryDelete(wavPath);
+                    logger.LogDebug(
+                        "STT deleted rejected tiny WAV artifacts turnId={TurnId} oggPath={OggPath} wavPath={WavPath}",
+                        turn.TurnId,
+                        oggPath,
+                        wavPath);
+                }
+
                 return BuildResult(string.Empty, turn, wavPath, ffmpegResult, string.Empty, string.Empty, pageCounts);
             }
 
@@ -240,11 +251,13 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
                     whisperResult.StdErr,
                     pageCounts);
 
+            TryDelete(oggPath);
             TryDelete(wavPath);
 
             logger.LogDebug(
-                "STT deleted blank WAV artifact turnId={TurnId} wavPath={WavPath}",
+                "STT deleted blank transcription artifacts turnId={TurnId} oggPath={OggPath} wavPath={WavPath}",
                 turn.TurnId,
+                oggPath,
                 wavPath);
 
             return BuildResult(

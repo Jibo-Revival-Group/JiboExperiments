@@ -1506,9 +1506,11 @@ public sealed class WebSocketTurnFinalizationService(
         TimeSpan turnAge,
         TimeSpan elapsedSinceLastAudio)
     {
+        if (!HasReceivedOggEndOfStream(turnState))
+            return false;
+
         return turnState.ListenHotphrase &&
                HasOggOpusFrames(turnState) &&
-               !HasReceivedOggEndOfStream(turnState) &&
                ((turnAge >= AutoFinalizeHotphraseOggEarlyProbeMinTurnAge &&
                  elapsedSinceLastAudio >= AutoFinalizeHotphraseOggEarlyProbeGap &&
                  turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes &&

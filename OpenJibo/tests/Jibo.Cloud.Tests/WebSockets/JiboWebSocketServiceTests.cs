@@ -5574,7 +5574,7 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-hotphrase-ogg-early-probe-token",
-            Binary = BuildOggFrame(0x00)
+            Binary = BuildOggFrame(0x04)
         });
 
         Assert.Equal(4, replies.Count);
@@ -6398,7 +6398,7 @@ public sealed class JiboWebSocketServiceTests
             Path = "/listen",
             Kind = "neo-hub-listen",
             Token = "hub-hotphrase-continuous-probe-token",
-            Binary = BuildOggFrame(0x00)
+            Binary = BuildOggFrame(0x04)
         });
 
         Assert.Equal(3, replies.Count);

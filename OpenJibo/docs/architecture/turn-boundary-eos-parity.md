@@ -63,6 +63,22 @@ Those fields should decide whether we are:
 - waiting on a constrained yes/no answer
 - or safely timing out an error path
 
+## Current Decision
+
+We are keeping the buffered turn finalizer, but we are no longer treating prompt echo as a valid answer.
+
+For constrained yes/no prompts, Open Jibo now distinguishes three cases:
+
+- clean yes/no replies, which can resolve immediately
+- mixed replies such as `no yes`, which should clarify instead of forcing a `no`
+- prompt echo or robot self-audio, which should stay open until a real answer arrives or the hard timeout is reached
+
+That matches the Pegasus shape more closely:
+
+- Pegasus attaches the yes/no constraint to the prompt itself and can stop ASR early with `earlyEOS`
+- Open Jibo does not yet have the same streaming ASR boundary, so we have to approximate it from buffered turns and transcript heuristics
+- the prompt-echo guard is the missing piece that keeps the robot from finalizing on its own question or self-audio
+
 ## Fix Plan
 
 1. Make decisive intent/action matches close the turn earlier instead of waiting for the hard timeout.
@@ -78,6 +94,7 @@ Those fields should decide whether we are:
    - the command turn closes sooner
    - the next turn is not polluted by audio bleed
    - stop and follow-up paths still behave intentionally
+7. Keep prompt echo and robot self-audio from counting as a yes/no answer until the user actually gives one.
 
 ## Why This Matters
 
@@ -86,6 +103,8 @@ The recent robot failures are consistent with us holding the mic open too long a
 That means the fix is not just audio trimming.
 
 We also need the turn boundary to be correct.
+
+This implementation now adds a prompt-echo guard on top of the existing yes/no clarification logic so we do not turn the robot's own prompt back into a false close.
 
 ## Follow-Up
 

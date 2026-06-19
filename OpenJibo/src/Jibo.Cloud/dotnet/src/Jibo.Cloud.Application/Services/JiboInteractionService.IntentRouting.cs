@@ -50,6 +50,9 @@ public sealed partial class JiboInteractionService
 
         if (isYesNoTurn)
         {
+            if (TranscriptHeuristics.IsLikelyPromptEchoTranscript(loweredTranscript))
+                return "yes_no_clarify";
+
             var yesNoReply = TryClassifyYesNoReply(NormalizeCommandPhrase(loweredTranscript));
             switch (yesNoReply)
             {

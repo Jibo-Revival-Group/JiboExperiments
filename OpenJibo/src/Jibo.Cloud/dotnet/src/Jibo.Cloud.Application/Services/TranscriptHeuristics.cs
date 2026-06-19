@@ -27,6 +27,22 @@ public static class TranscriptHeuristics
         "i hope you try again in a little while"
     };
 
+    private static readonly string[] PromptEchoPrefixes =
+    [
+        "do you want to ",
+        "do you want ",
+        "would you like to ",
+        "would you like ",
+        "do you feel like ",
+        "shall we ",
+        "can we ",
+        "could we ",
+        "should we ",
+        "may we ",
+        "what do you want to ",
+        "what would you like to "
+    ];
+
     private static readonly Regex PunctuationToSpaceRegex = new(
         @"[^\p{L}\p{N}\s']+",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
@@ -45,6 +61,15 @@ public static class TranscriptHeuristics
                    normalized.StartsWith($"{phrase} ", StringComparison.Ordinal) ||
                    normalized.StartsWith($"{phrase},", StringComparison.Ordinal) ||
                    normalized.StartsWith($"{phrase}.", StringComparison.Ordinal));
+    }
+
+    public static bool IsLikelyPromptEchoTranscript(string? value)
+    {
+        var normalized = NormalizeLooseTranscript(value);
+        if (string.IsNullOrWhiteSpace(normalized)) return false;
+
+        return IsLikelyRobotSelfAudioTranscript(normalized) ||
+               PromptEchoPrefixes.Any(prefix => normalized.StartsWith(prefix, StringComparison.Ordinal));
     }
 
     public static string ExtractWakePhraseCommand(string? value)

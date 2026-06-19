@@ -78,11 +78,29 @@ public sealed class AudioTranscriptNormalizerTests
     }
 
     [Theory]
+    [InlineData("Do you want to hear something")]
+    [InlineData("Would you like to play the word of the day game")]
+    [InlineData("Can we play the same word")]
+    [InlineData("I heard you")]
+    public void IsLikelyPromptEchoTranscript_ReturnsTrue_ForPromptEchoOrRobotSelfAudio(string value)
+    {
+        Assert.True(TranscriptHeuristics.IsLikelyPromptEchoTranscript(value));
+    }
+
+    [Theory]
     [InlineData("cloud version")]
     [InlineData("what's your cloud version")]
     [InlineData("hey jibo stop")]
     public void IsLikelyRobotSelfAudioTranscript_ReturnsFalse_ForUserSpeech(string value)
     {
         Assert.False(TranscriptHeuristics.IsLikelyRobotSelfAudioTranscript(value));
+    }
+
+    [Theory]
+    [InlineData("yes")]
+    [InlineData("no yes")]
+    public void IsLikelyPromptEchoTranscript_ReturnsFalse_ForUserSpeech(string value)
+    {
+        Assert.False(TranscriptHeuristics.IsLikelyPromptEchoTranscript(value));
     }
 }

@@ -2756,6 +2756,12 @@ public sealed class WebSocketTurnFinalizationService(
         var normalized = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
         if (string.IsNullOrWhiteSpace(normalized)) return false;
         if (IsAllowedYesNoAutoFinalizeTranscript(turn, normalized)) return false;
+        if (TranscriptHeuristics.IsLikelyPromptEchoTranscript(normalized))
+        {
+            turnAge = DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value;
+            reason = "yes_no_prompt_echo";
+            return true;
+        }
 
         turnAge = DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value;
         closeAsNoInput = turnAge >= AutoFinalizeHardBufferedAudioAge || HasReceivedOggEndOfStream(turnState);

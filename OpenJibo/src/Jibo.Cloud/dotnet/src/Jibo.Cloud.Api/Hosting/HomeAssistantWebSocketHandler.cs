@@ -162,6 +162,8 @@ internal sealed class HomeAssistantWebSocketHandler(
             string haInstanceId) =>
             throw new NotSupportedException();
 
+        public HomeAssistantLinkRecord? RemoveHomeAssistantLink(string linkId) => null;
+
         public void UpdateHomeAssistantLastSeen(string linkId, DateTimeOffset lastSeenUtc)
         {
         }

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
@@ -51,11 +52,20 @@ public sealed class HomeAssistantPortalApiTests
             new { code = spokenCode });
         Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
         var confirmPayload = await confirmResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var jiboVerificationToken = confirmPayload.GetProperty("jiboVerificationToken").GetString();
+        var portalSessionToken = confirmPayload.GetProperty("portalSessionToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(portalSessionToken));
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", portalSessionToken);
+
+        var dashboardResponse = await client.GetAsync("/api/portal/dashboard");
+        Assert.Equal(HttpStatusCode.OK, dashboardResponse.StatusCode);
+        var dashboardPayload = await dashboardResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Ghost-Instance-Onion-Silk", dashboardPayload.GetProperty("jiboFriendlyId").GetString());
+        Assert.False(dashboardPayload.GetProperty("homeAssistant").GetProperty("linked").GetBoolean());
 
         var linkResponse = await client.PostAsJsonAsync(
             "/api/portal/home-assistant/link",
-            new { jiboVerificationToken, haCode });
+            new { haCode });
         Assert.Equal(HttpStatusCode.OK, linkResponse.StatusCode);
 
         var pairedPayload = await ReadJsonFrameAsync(haSocket);
@@ -65,6 +75,33 @@ public sealed class HomeAssistantPortalApiTests
         var linksPayload = await linksResponse.Content.ReadFromJsonAsync<JsonElement>();
         var links = linksPayload.GetProperty("links");
         Assert.Equal(1, links.GetArrayLength());
+        Assert.True(links[0].GetProperty("connected").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Unlink_RemovesHomeAssistantLink()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var integrationStore = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.IUserIntegrationStore>();
+        integrationStore.AddHomeAssistantLink(
+            "BOJW-1000-0017-0820-0020",
+            "Ghost-Instance-Onion-Silk",
+            "ha-instance-1");
+
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var unlinkResponse = await client.DeleteAsync("/api/portal/home-assistant/link");
+        Assert.Equal(HttpStatusCode.OK, unlinkResponse.StatusCode);
+
+        Assert.Null(integrationStore.FindLinkForJibo("BOJW-1000-0017-0820-0020", "Ghost-Instance-Onion-Silk"));
     }
 
     [Fact]
@@ -102,15 +139,15 @@ public sealed class HomeAssistantPortalApiTests
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
         var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
 
-        var confirmResponse = await client.PostAsJsonAsync(
+        var confirmPayload = await (await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",
-            new { code = spokenCode });
-        var confirmPayload = await confirmResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var jiboVerificationToken = confirmPayload.GetProperty("jiboVerificationToken").GetString();
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
 
         var linkResponse = await client.PostAsJsonAsync(
             "/api/portal/home-assistant/link",
-            new { jiboVerificationToken, haCode });
+            new { haCode });
         var linkPayload = await linkResponse.Content.ReadFromJsonAsync<JsonElement>();
         var linkId = linkPayload.GetProperty("linkId").GetString();
 
@@ -174,11 +211,12 @@ public sealed class HomeAssistantPortalApiTests
         var confirmPayload = await (await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",
             new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
-        var jiboVerificationToken = confirmPayload.GetProperty("jiboVerificationToken").GetString();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
 
         await client.PostAsJsonAsync(
             "/api/portal/home-assistant/link",
-            new { jiboVerificationToken, haCode });
+            new { haCode });
 
         await ReadJsonFrameAsync(haSocket);
         await haSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "restart", CancellationToken.None);

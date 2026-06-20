@@ -35,14 +35,6 @@ public sealed partial class JiboInteractionService
                 "I don't have Home Assistant set up for my room yet.");
         }
 
-        if (homeAssistantConnectionRegistry is not null &&
-            !homeAssistantConnectionRegistry.IsInstanceConnected(link.HaInstanceId))
-        {
-            return new JiboInteractionDecision(
-                intentName,
-                "I can't reach Home Assistant right now. Check that it's connected to the server.");
-        }
-
         var transcript = turn.NormalizedTranscript ?? turn.RawTranscript;
         HomeAssistantLightCommandParser.TryParse(transcript, out var lightCommand);
 

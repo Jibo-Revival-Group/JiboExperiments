@@ -7,46 +7,7 @@
   <link rel="stylesheet" href="/portal/portal.css">
 </head>
 <body>
-<main class="shell">
-  <section class="hero">
-    <p class="eyebrow">OpenJibo Portal</p>
-    <h1>Link Home Assistant</h1>
-    <p class="lede">
-      Say "Hey Jibo, verify me" to hear your Jibo code, then enter it below.
-    </p>
-  </section>
-
-  <section class="panel" id="step-jibo">
-    <p class="step-label">Step 1</p>
-    <h2>Verify your Jibo</h2>
-    <p class="hint">Say "Hey Jibo, verify me" and enter the code Jibo speaks.</p>
-
-    <label for="jiboCode">Jibo verification code</label>
-    <input id="jiboCode" type="text" autocomplete="off" maxlength="12" placeholder="ABCD">
-
-    <button class="button primary" id="confirmJibo" type="button">Verify Jibo code</button>
-    <p id="jiboStatus" class="status hidden"></p>
-  </section>
-
-  <section class="panel" id="step-ha">
-    <p class="step-label">Step 2</p>
-    <h2>Link Home Assistant</h2>
-    <p class="hint">Install the OpenJibo Home Assistant integration, enter this server's URL, and copy the pairing code from the Home Assistant notification.</p>
-
-    <label for="haCode">Home Assistant verification code</label>
-    <input id="haCode" type="text" autocomplete="off" maxlength="12" placeholder="ABC123">
-
-    <button class="button primary" id="linkHomeAssistant" type="button">Link Home Assistant</button>
-    <p id="haStatus" class="status hidden"></p>
-  </section>
-
-  <section class="panel">
-    <h2>Linked integrations</h2>
-    <ul id="linksList" class="links-list">
-      <li>Loading...</li>
-    </ul>
-  </section>
-</main>
+<div id="app" class="app"></div>
 <script src="/portal/portal.js"></script>
 </body>
 </html>

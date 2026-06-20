@@ -142,6 +142,23 @@ public sealed class HomeAssistantConnectionRegistry
         return true;
     }
 
+    public async Task SendUnpairedAsync(
+        string instanceId,
+        string linkId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_connections.TryGetValue(instanceId, out var connection)) return;
+
+        if (_codeByInstanceId.TryRemove(instanceId, out var code))
+            _pendingByCode.TryRemove(code, out _);
+
+        await SendJsonAsync(connection.Socket, new
+        {
+            type = "unpaired",
+            linkId
+        }, cancellationToken);
+    }
+
     private static async Task SendJsonAsync(WebSocket socket, object payload, CancellationToken cancellationToken)
     {
         if (socket.State != WebSocketState.Open) return;

@@ -71,7 +71,7 @@ public sealed class JiboVerificationService
             pending.FriendlyId,
             DateTimeOffset.UtcNow.Add(TokenLifetime));
 
-        return JiboVerificationConfirmResult.Success(token, pending.FriendlyId);
+        return JiboVerificationConfirmResult.Success(token, pending.FriendlyId, pending.DeviceId);
     }
 
     public IssuedJiboVerificationToken? TryConsumeToken(string token)
@@ -148,12 +148,13 @@ public sealed class JiboVerificationService
         bool Ok,
         string? Token,
         string? FriendlyId,
+        string? DeviceId,
         string? Error)
     {
         public static JiboVerificationConfirmResult InvalidCode =>
-            new(false, null, null, "That verification code is invalid or has expired.");
+            new(false, null, null, null, "That verification code is invalid or has expired.");
 
-        public static JiboVerificationConfirmResult Success(string token, string friendlyId) =>
-            new(true, token, friendlyId, null);
+        public static JiboVerificationConfirmResult Success(string token, string friendlyId, string deviceId) =>
+            new(true, token, friendlyId, deviceId, null);
     }
 }

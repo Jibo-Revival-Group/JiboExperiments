@@ -111,6 +111,20 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
         }
     }
 
+    public HomeAssistantLinkRecord? RemoveHomeAssistantLink(string linkId)
+    {
+        lock (_syncRoot)
+        {
+            var index = _links.FindIndex(link => link.LinkId.Equals(linkId, StringComparison.OrdinalIgnoreCase));
+            if (index < 0) return null;
+
+            var removed = _links[index];
+            _links.RemoveAt(index);
+            PersistLocked();
+            return removed;
+        }
+    }
+
     private void PersistLocked()
     {
         _snapshotStore.Save(new UserIntegrationSnapshot

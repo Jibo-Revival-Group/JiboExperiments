@@ -12,5 +12,6 @@ public interface IUserIntegrationStore
         string jiboDeviceId,
         string jiboFriendlyName,
         string haInstanceId);
+    HomeAssistantLinkRecord? RemoveHomeAssistantLink(string linkId);
     void UpdateHomeAssistantLastSeen(string linkId, DateTimeOffset lastSeenUtc);
 }

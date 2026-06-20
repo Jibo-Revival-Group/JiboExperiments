@@ -1,4 +1,4 @@
-const friendlyNameInput = document.getElementById("friendlyName");
+const friendlyIdInput = document.getElementById("friendlyId");
 const startVerificationButton = document.getElementById("startVerification");
 const jiboWaiting = document.getElementById("jiboWaiting");
 const jiboCodeInput = document.getElementById("jiboCode");
@@ -49,7 +49,7 @@ async function loadLinks() {
   }
 
   linksList.innerHTML = links
-    .map((link) => `<li><strong>${escapeHtml(link.jiboFriendlyName)}</strong> linked at ${new Date(link.pairedAtUtc).toLocaleString()}</li>`)
+    .map((link) => `<li><strong>${escapeHtml(link.jiboFriendlyId)}</strong> linked at ${new Date(link.pairedAtUtc).toLocaleString()}</li>`)
     .join("");
 }
 
@@ -67,7 +67,7 @@ startVerificationButton.addEventListener("click", async () => {
 
   try {
     const payload = await postJson("/api/portal/jibo-verification/start", {
-      friendlyName: friendlyNameInput.value.trim(),
+      friendlyId: friendlyIdInput.value.trim(),
     });
 
     verificationSessionId = payload.sessionId;
@@ -90,7 +90,7 @@ confirmJiboButton.addEventListener("click", async () => {
     });
 
     jiboVerificationToken = payload.jiboVerificationToken;
-    showStatus(jiboStatus, `Jibo verified: ${payload.jiboFriendlyName}`);
+    showStatus(jiboStatus, `Jibo verified: ${payload.jiboFriendlyId}`);
   } catch (error) {
     showStatus(jiboStatus, error.message, true);
   }
@@ -110,7 +110,7 @@ linkHomeAssistantButton.addEventListener("click", async () => {
       haCode: haCodeInput.value.trim(),
     });
 
-    showStatus(haStatus, `Linked ${payload.jiboFriendlyName} with Home Assistant.`);
+    showStatus(haStatus, `Linked ${payload.jiboFriendlyId} with Home Assistant.`);
     jiboVerificationToken = null;
     haCodeInput.value = "";
     await loadLinks();

@@ -202,12 +202,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return device;
     }
 
-    public DeviceRegistration? FindDeviceByFriendlyName(string friendlyName)
+    public DeviceRegistration? FindDeviceByFriendlyId(string friendlyId)
     {
-        if (string.IsNullOrWhiteSpace(friendlyName)) return null;
+        if (string.IsNullOrWhiteSpace(friendlyId)) return null;
 
+        var trimmed = friendlyId.Trim();
         return _devices.Values.FirstOrDefault(device =>
-            device.FriendlyName.Equals(friendlyName.Trim(), StringComparison.OrdinalIgnoreCase));
+            device.RobotId.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
+            device.DeviceId.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
     }
 
     public UserRecord? CreateUser(string email, string password, string? firstName, string? lastName)

@@ -13,10 +13,11 @@ internal static class PortalEndpoints
             JiboVerificationService verificationService,
             ICloudStateStore stateStore) =>
         {
-            if (string.IsNullOrWhiteSpace(request.FriendlyName))
-                return Results.BadRequest(new { error = "friendlyName is required." });
+            var friendlyId = request.FriendlyId ?? request.FriendlyName;
+            if (string.IsNullOrWhiteSpace(friendlyId))
+                return Results.BadRequest(new { error = "friendlyId is required." });
 
-            var result = verificationService.StartVerification(stateStore, request.FriendlyName);
+            var result = verificationService.StartVerification(stateStore, friendlyId);
             if (!result.Ok)
                 return Results.NotFound(new { error = result.Error });
 
@@ -45,7 +46,7 @@ internal static class PortalEndpoints
             return Results.Json(new
             {
                 jiboVerificationToken = result.Token,
-                jiboFriendlyName = result.FriendlyName
+                jiboFriendlyId = result.FriendlyId
             });
         });
 
@@ -69,12 +70,12 @@ internal static class PortalEndpoints
 
             var link = integrationStore.AddHomeAssistantLink(
                 token.DeviceId,
-                token.FriendlyName,
+                token.FriendlyId,
                 pendingHa.InstanceId);
 
             var delivered = await registry.SendPairedAsync(
                 pendingHa.InstanceId,
-                token.FriendlyName,
+                token.FriendlyId,
                 link.LinkId);
 
             if (!delivered)
@@ -83,7 +84,7 @@ internal static class PortalEndpoints
             return Results.Json(new
             {
                 linkId = link.LinkId,
-                jiboFriendlyName = token.FriendlyName,
+                jiboFriendlyId = token.FriendlyId,
                 haInstanceId = pendingHa.InstanceId
             });
         });
@@ -95,7 +96,7 @@ internal static class PortalEndpoints
                 {
                     linkId = link.LinkId,
                     jiboDeviceId = link.JiboDeviceId,
-                    jiboFriendlyName = link.JiboFriendlyName,
+                    jiboFriendlyId = link.JiboFriendlyName,
                     haInstanceId = link.HaInstanceId,
                     pairedAtUtc = link.PairedAtUtc,
                     lastSeenUtc = link.LastSeenUtc
@@ -105,7 +106,7 @@ internal static class PortalEndpoints
         });
     }
 
-    private sealed record StartJiboVerificationRequest(string? FriendlyName);
+    private sealed record StartJiboVerificationRequest(string? FriendlyId, string? FriendlyName);
 
     private sealed record ConfirmJiboVerificationRequest(string? SessionId, string? Code);
 

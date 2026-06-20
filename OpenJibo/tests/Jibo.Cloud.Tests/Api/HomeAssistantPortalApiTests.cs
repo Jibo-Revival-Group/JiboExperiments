@@ -21,9 +21,9 @@ public sealed class HomeAssistantPortalApiTests
         var robot = store.GetRobot();
         store.UpdateRobot(new DeviceRegistration
         {
-            DeviceId = robot.DeviceId,
-            RobotId = robot.RobotId,
-            FriendlyName = "Portal Jibo",
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            FriendlyName = robot.FriendlyName,
             FirmwareVersion = robot.FirmwareVersion,
             ApplicationVersion = robot.ApplicationVersion,
             HostMappings = new Dictionary<string, string>(robot.HostMappings, StringComparer.OrdinalIgnoreCase)
@@ -45,13 +45,13 @@ public sealed class HomeAssistantPortalApiTests
 
         var startResponse = await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/start",
-            new { friendlyName = "Portal Jibo" });
+            new { friendlyId = "Ghost-Instance-Onion-Silk" });
         Assert.Equal(HttpStatusCode.OK, startResponse.StatusCode);
         var startPayload = await startResponse.Content.ReadFromJsonAsync<JsonElement>();
         var sessionId = startPayload.GetProperty("sessionId").GetString();
 
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode = verificationService.GetPendingCodeForDevice(store.GetRobot().DeviceId);
+        var spokenCode = verificationService.GetPendingCodeForDevice("Ghost-Instance-Onion-Silk");
         Assert.False(string.IsNullOrWhiteSpace(spokenCode));
 
         var confirmResponse = await client.PostAsJsonAsync(

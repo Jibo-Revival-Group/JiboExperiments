@@ -13,6 +13,7 @@ public sealed class SocketKindResolverTests
     [InlineData("openjibo.ai", "/", "openjibo")]
     [InlineData("localhost", "/", "openjibo")]
     [InlineData("localhost", "/v1/homeassistant/ws", "home-assistant")]
+    [InlineData("localhost", "v1/homeassistant/ws", "home-assistant")]
     [InlineData("custom.listen.example", "/", "neo-hub-listen")]
     public void Resolve_ReturnsExpectedSocketKind(string host, string path, string expected)
     {

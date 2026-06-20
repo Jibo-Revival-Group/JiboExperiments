@@ -67,6 +67,135 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal(1, links.GetArrayLength());
     }
 
+    [Fact]
+    public async Task Register_ReconnectsAsPaired_WhenLinkAlreadyExists()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var integrationStore = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.IUserIntegrationStore>();
+        var store = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.ICloudStateStore>();
+        var robot = store.GetRobot();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            FriendlyName = robot.FriendlyName,
+            FirmwareVersion = robot.FirmwareVersion,
+            ApplicationVersion = robot.ApplicationVersion,
+            HostMappings = new Dictionary<string, string>(robot.HostMappings, StringComparer.OrdinalIgnoreCase)
+        });
+
+        var wsClient = factory.Server.CreateWebSocketClient();
+        using var haSocket = await wsClient.ConnectAsync(
+            new Uri("ws://localhost/v1/homeassistant/ws"),
+            CancellationToken.None);
+
+        await haSocket.SendAsync(
+            Encoding.UTF8.GetBytes("""{"type":"register","instanceId":"ha-test-instance"}"""),
+            WebSocketMessageType.Text,
+            true,
+            CancellationToken.None);
+
+        var codePayload = await ReadJsonFrameAsync(haSocket);
+        var haCode = codePayload.GetProperty("code").GetString();
+
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmResponse = await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode });
+        var confirmPayload = await confirmResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var jiboVerificationToken = confirmPayload.GetProperty("jiboVerificationToken").GetString();
+
+        var linkResponse = await client.PostAsJsonAsync(
+            "/api/portal/home-assistant/link",
+            new { jiboVerificationToken, haCode });
+        var linkPayload = await linkResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var linkId = linkPayload.GetProperty("linkId").GetString();
+
+        var pairedPayload = await ReadJsonFrameAsync(haSocket);
+        Assert.Equal("paired", pairedPayload.GetProperty("type").GetString());
+
+        await haSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "restart", CancellationToken.None);
+
+        using var reconnectedSocket = await wsClient.ConnectAsync(
+            new Uri("ws://localhost/v1/homeassistant/ws"),
+            CancellationToken.None);
+        await reconnectedSocket.SendAsync(
+            Encoding.UTF8.GetBytes(
+                $$"""{"type":"register","instanceId":"ha-test-instance","linkId":"{{linkId}}"}"""),
+            WebSocketMessageType.Text,
+            true,
+            CancellationToken.None);
+
+        var reconnectPayload = await ReadJsonFrameAsync(reconnectedSocket);
+        Assert.Equal("paired", reconnectPayload.GetProperty("type").GetString());
+        Assert.Equal(linkId, reconnectPayload.GetProperty("linkId").GetString());
+
+        var link = integrationStore.FindLinkByLinkId(linkId!);
+        Assert.NotNull(link);
+        Assert.True(link.LastSeenUtc > link.PairedAtUtc);
+    }
+
+    [Fact]
+    public async Task Register_ReconnectsAsPaired_WhenOnlyInstanceIdIsKnown()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.ICloudStateStore>();
+        var robot = store.GetRobot();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            FriendlyName = robot.FriendlyName,
+            FirmwareVersion = robot.FirmwareVersion,
+            ApplicationVersion = robot.ApplicationVersion,
+            HostMappings = new Dictionary<string, string>(robot.HostMappings, StringComparer.OrdinalIgnoreCase)
+        });
+
+        var wsClient = factory.Server.CreateWebSocketClient();
+        using var haSocket = await wsClient.ConnectAsync(
+            new Uri("ws://localhost/v1/homeassistant/ws"),
+            CancellationToken.None);
+
+        await haSocket.SendAsync(
+            Encoding.UTF8.GetBytes("""{"type":"register","instanceId":"ha-known-instance"}"""),
+            WebSocketMessageType.Text,
+            true,
+            CancellationToken.None);
+
+        var codePayload = await ReadJsonFrameAsync(haSocket);
+        var haCode = codePayload.GetProperty("code").GetString();
+
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+        var jiboVerificationToken = confirmPayload.GetProperty("jiboVerificationToken").GetString();
+
+        await client.PostAsJsonAsync(
+            "/api/portal/home-assistant/link",
+            new { jiboVerificationToken, haCode });
+
+        await ReadJsonFrameAsync(haSocket);
+        await haSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "restart", CancellationToken.None);
+
+        using var reconnectedSocket = await wsClient.ConnectAsync(
+            new Uri("ws://localhost/v1/homeassistant/ws"),
+            CancellationToken.None);
+        await reconnectedSocket.SendAsync(
+            Encoding.UTF8.GetBytes("""{"type":"register","instanceId":"ha-known-instance"}"""),
+            WebSocketMessageType.Text,
+            true,
+            CancellationToken.None);
+
+        var reconnectPayload = await ReadJsonFrameAsync(reconnectedSocket);
+        Assert.Equal("paired", reconnectPayload.GetProperty("type").GetString());
+    }
+
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)
     {
         var buffer = new byte[4096];

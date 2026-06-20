@@ -33,6 +33,15 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
         }
     }
 
+    public HomeAssistantLinkRecord? FindLinkByLinkId(string linkId)
+    {
+        lock (_syncRoot)
+        {
+            return _links.FirstOrDefault(link =>
+                link.LinkId.Equals(linkId, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     public HomeAssistantLinkRecord? FindLinkForJibo(string? jiboDeviceId, string? jiboFriendlyId)
     {
         lock (_syncRoot)

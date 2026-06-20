@@ -36,6 +36,14 @@ public sealed class HomeAssistantConnectionRegistry
         return pending;
     }
 
+    public void RegisterPairedConnection(string instanceId, WebSocket socket)
+    {
+        _connections[instanceId] = new HomeAssistantConnection(instanceId, socket);
+
+        if (_codeByInstanceId.TryRemove(instanceId, out var code))
+            _pendingByCode.TryRemove(code, out _);
+    }
+
     public void RemoveConnection(string instanceId)
     {
         _connections.TryRemove(instanceId, out _);

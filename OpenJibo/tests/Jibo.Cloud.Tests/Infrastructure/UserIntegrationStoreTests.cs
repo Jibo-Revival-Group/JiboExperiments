@@ -21,4 +21,20 @@ public sealed class UserIntegrationStoreTests
         Assert.NotNull(store.FindLinkForJibo("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020"));
         Assert.Null(store.FindLinkForJibo("other-device", "other-friendly"));
     }
+
+    [Fact]
+    public void FindLinkByLinkId_ReturnsStoredLink()
+    {
+        var snapshotStore = new EncryptedUserDataSnapshotStore(
+            Path.Combine(Path.GetTempPath(), $"openjibo-user-int-{Guid.NewGuid():N}.json"),
+            new UserDataEncryptionService());
+        var store = new InMemoryUserIntegrationStore(snapshotStore);
+        var link = store.AddHomeAssistantLink(
+            "BOJW-1000-0017-0820-0020",
+            "Ghost-Instance-Onion-Silk",
+            "ha-instance-1");
+
+        Assert.NotNull(store.FindLinkByLinkId(link.LinkId));
+        Assert.Null(store.FindLinkByLinkId("missing-link"));
+    }
 }

@@ -19,6 +19,17 @@ public sealed class HomeAssistantConnectionRegistryTests
     }
 
     [Fact]
+    public void RegisterPairedConnection_DoesNotCreatePendingVerificationCode()
+    {
+        var registry = new HomeAssistantConnectionRegistry();
+        using var socket = new FakeWebSocket();
+
+        registry.RegisterPairedConnection("ha-instance-1", socket);
+
+        Assert.Null(registry.TryGetPendingByCode("ABCDEF"));
+    }
+
+    [Fact]
     public async Task SendCommandAsync_SendsCommandPayload()
     {
         var registry = new HomeAssistantConnectionRegistry();

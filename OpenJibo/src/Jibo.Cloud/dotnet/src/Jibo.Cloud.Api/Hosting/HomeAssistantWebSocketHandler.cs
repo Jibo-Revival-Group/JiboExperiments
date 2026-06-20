@@ -1,7 +1,9 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
+using Jibo.Cloud.Domain.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -9,12 +11,13 @@ namespace Jibo.Cloud.Api.Hosting;
 
 internal sealed class HomeAssistantWebSocketHandler(
     HomeAssistantConnectionRegistry registry,
+    IUserIntegrationStore integrationStore,
     ILogger<HomeAssistantWebSocketHandler> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     internal HomeAssistantWebSocketHandler(HomeAssistantConnectionRegistry registry)
-        : this(registry, NullLogger<HomeAssistantWebSocketHandler>.Instance)
+        : this(registry, EmptyUserIntegrationStore.Instance, NullLogger<HomeAssistantWebSocketHandler>.Instance)
     {
     }
 
@@ -49,12 +52,37 @@ internal sealed class HomeAssistantWebSocketHandler(
                             continue;
                         }
 
+                        var linkId = root.TryGetProperty("linkId", out var linkElement)
+                            ? linkElement.GetString()
+                            : null;
+
                         if (!string.IsNullOrWhiteSpace(instanceId))
                             registry.RemoveConnection(instanceId);
 
+                        var existingLink = TryResolveExistingLink(instanceId, linkId);
+                        if (existingLink is not null)
+                        {
+                            registry.RegisterPairedConnection(instanceId, socket);
+                            integrationStore.UpdateHomeAssistantLastSeen(
+                                existingLink.LinkId,
+                                DateTimeOffset.UtcNow);
+                            await registry.SendPairedAsync(
+                                instanceId,
+                                existingLink.JiboFriendlyName,
+                                existingLink.LinkId,
+                                context.RequestAborted);
+                            logger.LogInformation(
+                                "Home Assistant instance {InstanceId} reconnected as paired link {LinkId}",
+                                instanceId,
+                                existingLink.LinkId);
+                            break;
+                        }
+
                         var pending = registry.RegisterConnection(instanceId, socket);
                         await registry.SendVerificationCodeAsync(socket, pending, context.RequestAborted);
-                        logger.LogInformation("Home Assistant instance {InstanceId} registered for pairing", instanceId);
+                        logger.LogInformation(
+                            "Home Assistant instance {InstanceId} registered for pairing",
+                            instanceId);
                         break;
                     }
                     case "ping":
@@ -71,6 +99,25 @@ internal sealed class HomeAssistantWebSocketHandler(
             if (!string.IsNullOrWhiteSpace(instanceId))
                 registry.RemoveConnection(instanceId);
         }
+    }
+
+    private HomeAssistantLinkRecord? TryResolveExistingLink(string instanceId, string? linkId)
+    {
+        HomeAssistantLinkRecord? link = null;
+
+        if (!string.IsNullOrWhiteSpace(linkId))
+            link = integrationStore.FindLinkByLinkId(linkId);
+
+        link ??= integrationStore.FindLinkByHaInstanceId(instanceId);
+        if (link is null) return null;
+
+        if (!link.HaInstanceId.Equals(instanceId, StringComparison.OrdinalIgnoreCase)) return null;
+
+        if (!string.IsNullOrWhiteSpace(linkId) &&
+            !link.LinkId.Equals(linkId, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        return link;
     }
 
     private static async Task<string?> ReceiveTextAsync(WebSocket socket, CancellationToken cancellationToken)
@@ -95,5 +142,28 @@ internal sealed class HomeAssistantWebSocketHandler(
         return result.MessageType == WebSocketMessageType.Text
             ? Encoding.UTF8.GetString(ms.ToArray())
             : null;
+    }
+
+    private sealed class EmptyUserIntegrationStore : IUserIntegrationStore
+    {
+        public static readonly EmptyUserIntegrationStore Instance = new();
+
+        public IReadOnlyList<HomeAssistantLinkRecord> GetHomeAssistantLinks() => [];
+
+        public HomeAssistantLinkRecord? FindLinkByHaInstanceId(string haInstanceId) => null;
+
+        public HomeAssistantLinkRecord? FindLinkByLinkId(string linkId) => null;
+
+        public HomeAssistantLinkRecord? FindLinkForJibo(string? jiboDeviceId, string? jiboFriendlyId) => null;
+
+        public HomeAssistantLinkRecord AddHomeAssistantLink(
+            string jiboDeviceId,
+            string jiboFriendlyName,
+            string haInstanceId) =>
+            throw new NotSupportedException();
+
+        public void UpdateHomeAssistantLastSeen(string linkId, DateTimeOffset lastSeenUtc)
+        {
+        }
     }
 }

@@ -73,12 +73,19 @@ app.MapGet("/health", () => Results.Json(new
     version = OpenJiboCloudBuildInfo.Version
 }));
 
-app.MapGet("/portal", () => Results.Redirect("/portal/index.html"));
+app.MapPortalStaticFiles();
 app.MapPortalEndpoints();
 
 app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,
     IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>
 {
+    if (PortalStaticFileMapper.IsPortalPath(context.Request.Path))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        await context.Response.WriteAsync("Not found", cancellationToken);
+        return;
+    }
+
     var envelope = await ApiRequestEnvelopeFactory.CreateAsync(context, cancellationToken);
     var result = await service.DispatchAsync(envelope);
     await telemetrySink.RecordAsync(envelope, result, cancellationToken);

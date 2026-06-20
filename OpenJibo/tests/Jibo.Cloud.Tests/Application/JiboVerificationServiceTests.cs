@@ -1,48 +1,31 @@
 using Jibo.Cloud.Application.Services;
-using Jibo.Cloud.Domain.Models;
-using Jibo.Cloud.Infrastructure.Persistence;
 
 namespace Jibo.Cloud.Tests.Application;
 
 public sealed class JiboVerificationServiceTests
 {
     [Fact]
-    public void StartVerification_ReturnsNotFound_WhenFriendlyIdMissing()
+    public void ConfirmByCode_ReturnsInvalid_WhenCodeMissing()
     {
         var service = new JiboVerificationService();
-        var store = new InMemoryCloudStateStore();
 
-        var result = service.StartVerification(store, "Missing-Robot-Id-Here");
+        var result = service.TryConfirmByCode("DOES-NOT-EXIST");
 
         Assert.False(result.Ok);
-        Assert.Equal("No Jibo was found with that friendly ID.", result.Error);
+        Assert.Equal("That verification code is invalid or has expired.", result.Error);
     }
 
     [Fact]
-    public void Confirm_ReturnsToken_WhenCodeMatches()
+    public void ConfirmByCode_ReturnsToken_WhenCodeWasIssued()
     {
         var service = new JiboVerificationService();
-        var store = new InMemoryCloudStateStore();
-        var robot = store.GetRobot();
-        store.UpdateRobot(new DeviceRegistration
-        {
-            DeviceId = "BOJW-1000-0017-0820-0020",
-            RobotId = "Ghost-Instance-Onion-Silk",
-            FriendlyName = robot.FriendlyName,
-            FirmwareVersion = robot.FirmwareVersion,
-            ApplicationVersion = robot.ApplicationVersion,
-            HostMappings = new Dictionary<string, string>(robot.HostMappings, StringComparer.OrdinalIgnoreCase)
-        });
+        var issuedCode = service.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
 
-        var started = service.StartVerification(store, "Ghost-Instance-Onion-Silk");
-        Assert.True(started.Ok);
+        var confirmed = service.TryConfirmByCode(issuedCode);
 
-        var code = service.GetPendingCodeForDevice("Ghost-Instance-Onion-Silk");
-        Assert.False(string.IsNullOrWhiteSpace(code));
-
-        var confirmed = service.TryConfirm(started.SessionId!, code!);
         Assert.True(confirmed.Ok);
         Assert.False(string.IsNullOrWhiteSpace(confirmed.Token));
+        Assert.Equal("Ghost-Instance-Onion-Silk", confirmed.FriendlyId);
 
         var consumed = service.TryConsumeToken(confirmed.Token!);
         Assert.NotNull(consumed);

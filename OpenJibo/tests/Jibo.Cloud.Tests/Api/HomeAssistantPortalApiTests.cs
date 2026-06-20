@@ -43,20 +43,12 @@ public sealed class HomeAssistantPortalApiTests
         var haCode = codePayload.GetProperty("code").GetString();
         Assert.False(string.IsNullOrWhiteSpace(haCode));
 
-        var startResponse = await client.PostAsJsonAsync(
-            "/api/portal/jibo-verification/start",
-            new { friendlyId = "Ghost-Instance-Onion-Silk" });
-        Assert.Equal(HttpStatusCode.OK, startResponse.StatusCode);
-        var startPayload = await startResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var sessionId = startPayload.GetProperty("sessionId").GetString();
-
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode = verificationService.GetPendingCodeForDevice("Ghost-Instance-Onion-Silk");
-        Assert.False(string.IsNullOrWhiteSpace(spokenCode));
+        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
 
         var confirmResponse = await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",
-            new { sessionId, code = spokenCode });
+            new { code = spokenCode });
         Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
         var confirmPayload = await confirmResponse.Content.ReadFromJsonAsync<JsonElement>();
         var jiboVerificationToken = confirmPayload.GetProperty("jiboVerificationToken").GetString();

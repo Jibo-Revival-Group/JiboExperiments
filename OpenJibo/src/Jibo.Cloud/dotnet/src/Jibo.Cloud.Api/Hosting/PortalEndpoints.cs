@@ -8,38 +8,14 @@ internal static class PortalEndpoints
 {
     internal static void MapPortalEndpoints(this WebApplication app)
     {
-        app.MapPost("/api/portal/jibo-verification/start", (
-            [FromBody] StartJiboVerificationRequest request,
-            JiboVerificationService verificationService,
-            ICloudStateStore stateStore) =>
-        {
-            var friendlyId = request.FriendlyId ?? request.FriendlyName;
-            if (string.IsNullOrWhiteSpace(friendlyId))
-                return Results.BadRequest(new { error = "friendlyId is required." });
-
-            var result = verificationService.StartVerification(stateStore, friendlyId);
-            if (!result.Ok)
-                return Results.NotFound(new { error = result.Error });
-
-            var expiresInSeconds = result.ExpiresAtUtc.HasValue
-                ? (int)Math.Max(0, (result.ExpiresAtUtc.Value - DateTimeOffset.UtcNow).TotalSeconds)
-                : 0;
-
-            return Results.Json(new
-            {
-                sessionId = result.SessionId,
-                expiresInSeconds
-            });
-        });
-
         app.MapPost("/api/portal/jibo-verification/confirm", (
             [FromBody] ConfirmJiboVerificationRequest request,
             JiboVerificationService verificationService) =>
         {
-            if (string.IsNullOrWhiteSpace(request.SessionId) || string.IsNullOrWhiteSpace(request.Code))
-                return Results.BadRequest(new { error = "sessionId and code are required." });
+            if (string.IsNullOrWhiteSpace(request.Code))
+                return Results.BadRequest(new { error = "code is required." });
 
-            var result = verificationService.TryConfirm(request.SessionId, request.Code);
+            var result = verificationService.TryConfirmByCode(request.Code);
             if (!result.Ok)
                 return Results.BadRequest(new { error = result.Error });
 
@@ -106,9 +82,7 @@ internal static class PortalEndpoints
         });
     }
 
-    private sealed record StartJiboVerificationRequest(string? FriendlyId, string? FriendlyName);
+    private sealed record ConfirmJiboVerificationRequest(string? Code);
 
-    private sealed record ConfirmJiboVerificationRequest(string? SessionId, string? Code);
-
-    private sealed record LinkHomeAssistantRequest(string? JiboVerificationToken, string? HaCode, string? FriendlyName);
+    private sealed record LinkHomeAssistantRequest(string? JiboVerificationToken, string? HaCode);
 }

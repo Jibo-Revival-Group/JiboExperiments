@@ -1,26 +1,17 @@
-const friendlyIdInput = document.getElementById("friendlyId");
-const startVerificationButton = document.getElementById("startVerification");
-const jiboWaiting = document.getElementById("jiboWaiting");
-const jiboCodeInput = document.getElementById("jiboCode");
-const jiboCodeLabel = document.getElementById("jiboCodeLabel");
 const confirmJiboButton = document.getElementById("confirmJibo");
+const jiboCodeInput = document.getElementById("jiboCode");
 const jiboStatus = document.getElementById("jiboStatus");
 const haCodeInput = document.getElementById("haCode");
 const linkHomeAssistantButton = document.getElementById("linkHomeAssistant");
 const haStatus = document.getElementById("haStatus");
 const linksList = document.getElementById("linksList");
 
-let verificationSessionId = null;
 let jiboVerificationToken = null;
 
 function showStatus(element, message, isError = false) {
   element.textContent = message;
   element.classList.remove("hidden", "success", "error");
   element.classList.add(isError ? "error" : "success");
-}
-
-function show(element) {
-  element.classList.remove("hidden");
 }
 
 async function postJson(url, body) {
@@ -62,30 +53,11 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-startVerificationButton.addEventListener("click", async () => {
+confirmJiboButton.addEventListener("click", async () => {
   jiboStatus.classList.add("hidden");
 
   try {
-    const payload = await postJson("/api/portal/jibo-verification/start", {
-      friendlyId: friendlyIdInput.value.trim(),
-    });
-
-    verificationSessionId = payload.sessionId;
-    jiboVerificationToken = null;
-    show(jiboWaiting);
-    show(jiboCodeLabel);
-    show(jiboCodeInput);
-    show(confirmJiboButton);
-    jiboCodeInput.focus();
-  } catch (error) {
-    showStatus(jiboStatus, error.message, true);
-  }
-});
-
-confirmJiboButton.addEventListener("click", async () => {
-  try {
     const payload = await postJson("/api/portal/jibo-verification/confirm", {
-      sessionId: verificationSessionId,
       code: jiboCodeInput.value.trim(),
     });
 
@@ -113,6 +85,7 @@ linkHomeAssistantButton.addEventListener("click", async () => {
     showStatus(haStatus, `Linked ${payload.jiboFriendlyId} with Home Assistant.`);
     jiboVerificationToken = null;
     haCodeInput.value = "";
+    jiboCodeInput.value = "";
     await loadLinks();
   } catch (error) {
     showStatus(haStatus, error.message, true);

@@ -1,76 +1,68 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
-using Jibo.Cloud.Application.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
 public sealed class JiboVerificationService
 {
-    private static readonly TimeSpan VerificationLifetime = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(5);
 
-    private readonly ConcurrentDictionary<string, PendingJiboVerification> _sessions = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, string> _lookupKeyToSession = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, PendingJiboCode> _codesByCode =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly ConcurrentDictionary<string, string> _latestCodeByLookupId =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private readonly ConcurrentDictionary<string, IssuedJiboVerificationToken> _tokens =
         new(StringComparer.OrdinalIgnoreCase);
 
-    public JiboVerificationStartResult StartVerification(ICloudStateStore stateStore, string friendlyId)
+    public string IssueCodeForDevice(string? friendlyId, string? deviceId)
     {
-        var device = stateStore.FindDeviceByFriendlyId(friendlyId);
-        if (device is null)
-            return JiboVerificationStartResult.NotFound;
+        if (string.IsNullOrWhiteSpace(friendlyId) && string.IsNullOrWhiteSpace(deviceId))
+            throw new InvalidOperationException("Cannot issue Jibo verification code without device identity.");
 
         PurgeExpired();
 
-        if (_lookupKeyToSession.TryGetValue(device.RobotId, out var existingSessionId) &&
-            _sessions.TryGetValue(existingSessionId, out var existing) &&
-            existing.ExpiresAtUtc > DateTimeOffset.UtcNow)
-        {
-            return JiboVerificationStartResult.Success(existing.SessionId, existing.ExpiresAtUtc);
-        }
+        var resolvedFriendlyId = !string.IsNullOrWhiteSpace(friendlyId)
+            ? friendlyId.Trim()
+            : deviceId!.Trim();
+        var resolvedDeviceId = !string.IsNullOrWhiteSpace(deviceId)
+            ? deviceId.Trim()
+            : resolvedFriendlyId;
 
-        var sessionId = Guid.NewGuid().ToString("N");
+        RemoveExistingCodeForLookup(resolvedFriendlyId);
+        if (!resolvedFriendlyId.Equals(resolvedDeviceId, StringComparison.OrdinalIgnoreCase))
+            RemoveExistingCodeForLookup(resolvedDeviceId);
+
         var code = GenerateCode();
-        var pending = new PendingJiboVerification(
-            sessionId,
-            device.DeviceId,
-            device.RobotId,
+        var pending = new PendingJiboCode(
             code,
-            DateTimeOffset.UtcNow.Add(VerificationLifetime));
+            resolvedDeviceId,
+            resolvedFriendlyId,
+            DateTimeOffset.UtcNow.Add(CodeLifetime));
 
-        _sessions[sessionId] = pending;
-        RegisterLookupKeys(pending);
+        _codesByCode[code] = pending;
+        _latestCodeByLookupId[resolvedFriendlyId] = code;
+        if (!resolvedFriendlyId.Equals(resolvedDeviceId, StringComparison.OrdinalIgnoreCase))
+            _latestCodeByLookupId[resolvedDeviceId] = code;
 
-        return JiboVerificationStartResult.Success(sessionId, pending.ExpiresAtUtc);
+        return code;
     }
 
-    public string? GetPendingCodeForDevice(string? deviceOrFriendlyId)
-    {
-        if (string.IsNullOrWhiteSpace(deviceOrFriendlyId)) return null;
-
-        PurgeExpired();
-
-        if (_lookupKeyToSession.TryGetValue(deviceOrFriendlyId, out var sessionId) &&
-            _sessions.TryGetValue(sessionId, out var pending) &&
-            pending.ExpiresAtUtc > DateTimeOffset.UtcNow)
-            return pending.Code;
-
-        return null;
-    }
-
-    public JiboVerificationConfirmResult TryConfirm(string sessionId, string code)
+    public JiboVerificationConfirmResult TryConfirmByCode(string code)
     {
         PurgeExpired();
 
-        if (!_sessions.TryGetValue(sessionId, out var pending) || pending.ExpiresAtUtc <= DateTimeOffset.UtcNow)
-            return JiboVerificationConfirmResult.NotFound;
-
-        if (!string.Equals(NormalizeCode(code), pending.Code, StringComparison.Ordinal))
+        var normalized = NormalizeCode(code);
+        if (!_codesByCode.TryGetValue(normalized, out var pending) || pending.ExpiresAtUtc <= DateTimeOffset.UtcNow)
             return JiboVerificationConfirmResult.InvalidCode;
 
-        _sessions.TryRemove(sessionId, out _);
-        UnregisterLookupKeys(pending);
+        _codesByCode.TryRemove(normalized, out _);
+        _latestCodeByLookupId.TryRemove(pending.FriendlyId, out _);
+        if (!pending.FriendlyId.Equals(pending.DeviceId, StringComparison.OrdinalIgnoreCase))
+            _latestCodeByLookupId.TryRemove(pending.DeviceId, out _);
 
         var token = Guid.NewGuid().ToString("N");
         _tokens[token] = new IssuedJiboVerificationToken(
@@ -93,29 +85,26 @@ public sealed class JiboVerificationService
         return issued;
     }
 
-    private void RegisterLookupKeys(PendingJiboVerification pending)
+    private void RemoveExistingCodeForLookup(string lookupId)
     {
-        _lookupKeyToSession[pending.FriendlyId] = pending.SessionId;
-        if (!pending.FriendlyId.Equals(pending.DeviceId, StringComparison.OrdinalIgnoreCase))
-            _lookupKeyToSession[pending.DeviceId] = pending.SessionId;
-    }
-
-    private void UnregisterLookupKeys(PendingJiboVerification pending)
-    {
-        _lookupKeyToSession.TryRemove(pending.FriendlyId, out _);
-        if (!pending.FriendlyId.Equals(pending.DeviceId, StringComparison.OrdinalIgnoreCase))
-            _lookupKeyToSession.TryRemove(pending.DeviceId, out _);
+        if (!_latestCodeByLookupId.TryGetValue(lookupId, out var existingCode)) return;
+        _codesByCode.TryRemove(existingCode, out _);
+        _latestCodeByLookupId.TryRemove(lookupId, out _);
     }
 
     private void PurgeExpired()
     {
         var now = DateTimeOffset.UtcNow;
 
-        foreach (var pair in _sessions)
+        foreach (var pair in _codesByCode)
         {
             if (pair.Value.ExpiresAtUtc > now) continue;
-            _sessions.TryRemove(pair.Key, out var expired);
-            if (expired is not null) UnregisterLookupKeys(expired);
+            _codesByCode.TryRemove(pair.Key, out var expired);
+            if (expired is null) continue;
+
+            _latestCodeByLookupId.TryRemove(expired.FriendlyId, out _);
+            if (!expired.FriendlyId.Equals(expired.DeviceId, StringComparison.OrdinalIgnoreCase))
+                _latestCodeByLookupId.TryRemove(expired.DeviceId, out _);
         }
 
         foreach (var pair in _tokens)
@@ -128,10 +117,10 @@ public sealed class JiboVerificationService
     private static string GenerateCode()
     {
         const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        Span<byte> bytes = stackalloc byte[6];
+        Span<byte> bytes = stackalloc byte[4];
         RandomNumberGenerator.Fill(bytes);
 
-        var builder = new StringBuilder(6);
+        var builder = new StringBuilder(4);
         foreach (var value in bytes)
             builder.Append(alphabet[value % alphabet.Length]);
 
@@ -143,11 +132,10 @@ public sealed class JiboVerificationService
         return new string(code.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
     }
 
-    private sealed record PendingJiboVerification(
-        string SessionId,
+    private sealed record PendingJiboCode(
+        string Code,
         string DeviceId,
         string FriendlyId,
-        string Code,
         DateTimeOffset ExpiresAtUtc);
 
     public sealed record IssuedJiboVerificationToken(
@@ -156,30 +144,14 @@ public sealed class JiboVerificationService
         string FriendlyId,
         DateTimeOffset ExpiresAtUtc);
 
-    public sealed record JiboVerificationStartResult(
-        bool Ok,
-        string? SessionId,
-        DateTimeOffset? ExpiresAtUtc,
-        string? Error)
-    {
-        public static JiboVerificationStartResult NotFound =>
-            new(false, null, null, "No Jibo was found with that friendly ID.");
-
-        public static JiboVerificationStartResult Success(string sessionId, DateTimeOffset expiresAtUtc) =>
-            new(true, sessionId, expiresAtUtc, null);
-    }
-
     public sealed record JiboVerificationConfirmResult(
         bool Ok,
         string? Token,
         string? FriendlyId,
         string? Error)
     {
-        public static JiboVerificationConfirmResult NotFound =>
-            new(false, null, null, "Verification session was not found or has expired.");
-
         public static JiboVerificationConfirmResult InvalidCode =>
-            new(false, null, null, "That verification code is incorrect.");
+            new(false, null, null, "That verification code is invalid or has expired.");
 
         public static JiboVerificationConfirmResult Success(string token, string friendlyId) =>
             new(true, token, friendlyId, null);

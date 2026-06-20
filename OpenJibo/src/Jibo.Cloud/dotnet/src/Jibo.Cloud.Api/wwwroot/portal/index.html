@@ -12,28 +12,19 @@
     <p class="eyebrow">OpenJibo Portal</p>
     <h1>Link Home Assistant</h1>
     <p class="lede">
-      Verify your Jibo, then connect your Home Assistant instance using the code shown in Home Assistant.
+      Say "Hey Jibo, verify me" to hear your Jibo code, then enter it below.
     </p>
   </section>
 
   <section class="panel" id="step-jibo">
     <p class="step-label">Step 1</p>
     <h2>Verify your Jibo</h2>
-    <p class="hint">Enter your Jibo's friendly ID from Settings (for example Air-Degree-Lunch-Canvas), start verification, then say "Hey Jibo, verify me" and enter the spoken code.</p>
+    <p class="hint">Say "Hey Jibo, verify me" and enter the code Jibo speaks.</p>
 
-    <label for="friendlyId">Jibo friendly ID</label>
-    <input id="friendlyId" type="text" autocomplete="off" placeholder="Air-Degree-Lunch-Canvas">
+    <label for="jiboCode">Jibo verification code</label>
+    <input id="jiboCode" type="text" autocomplete="off" maxlength="12" placeholder="ABCD">
 
-    <button class="button primary" id="startVerification" type="button">Start verification</button>
-
-    <div id="jiboWaiting" class="hint hidden">
-      Verification started. Ask your Jibo: "Hey Jibo, verify me", then enter the code it speaks.
-    </div>
-
-    <label for="jiboCode" id="jiboCodeLabel" class="hidden">Jibo verification code</label>
-    <input id="jiboCode" type="text" autocomplete="off" maxlength="12" class="hidden" placeholder="ABC123">
-
-    <button class="button secondary hidden" id="confirmJibo" type="button">Confirm Jibo code</button>
+    <button class="button primary" id="confirmJibo" type="button">Verify Jibo code</button>
     <p id="jiboStatus" class="status hidden"></p>
   </section>
 

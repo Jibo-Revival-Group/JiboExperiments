@@ -13,21 +13,26 @@ public sealed partial class JiboInteractionService
                 "Verification is not available on this server right now.");
         }
 
-        var lookupId = turn.DeviceId;
-        if (string.IsNullOrWhiteSpace(lookupId) && cloudStateStore is not null)
+        var friendlyId = turn.DeviceId;
+        var deviceId = turn.DeviceId;
+
+        if (cloudStateStore is not null)
         {
             var robot = cloudStateStore.GetRobot();
-            lookupId = !string.IsNullOrWhiteSpace(robot.RobotId) ? robot.RobotId : robot.DeviceId;
+            if (string.IsNullOrWhiteSpace(friendlyId))
+                friendlyId = robot.RobotId;
+            if (string.IsNullOrWhiteSpace(deviceId))
+                deviceId = robot.DeviceId;
         }
 
-        var code = jiboVerificationService.GetPendingCodeForDevice(lookupId);
-        if (string.IsNullOrWhiteSpace(code))
+        if (string.IsNullOrWhiteSpace(friendlyId) && string.IsNullOrWhiteSpace(deviceId))
         {
             return new JiboInteractionDecision(
                 "verify_me",
-                "I don't have a verification request for you right now. Start one from the OpenJibo portal.");
+                "I can't determine which Jibo is speaking right now.");
         }
 
+        var code = jiboVerificationService.IssueCodeForDevice(friendlyId, deviceId);
         var spokenCode = string.Join(", ", code.ToCharArray());
         return new JiboInteractionDecision(
             "verify_me",

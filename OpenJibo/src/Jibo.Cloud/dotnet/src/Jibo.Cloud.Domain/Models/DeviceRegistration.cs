@@ -2,8 +2,8 @@ namespace Jibo.Cloud.Domain.Models;
 
 public sealed class DeviceRegistration
 {
-    public string DeviceId { get; init; } = "my-robot-serial-number";
-    public string RobotId { get; init; } = "my-robot-name";
+    public string DeviceId { get; init; } = string.Empty;
+    public string RobotId { get; init; } = string.Empty;
     public string FriendlyName { get; init; } = "OpenJibo Dev Robot";
     public string? FirmwareVersion { get; init; }
     public string? ApplicationVersion { get; init; }

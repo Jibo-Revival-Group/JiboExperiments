@@ -31,4 +31,17 @@ public sealed class JiboVerificationServiceTests
         Assert.NotNull(consumed);
         Assert.Equal("Ghost-Instance-Onion-Silk", consumed.FriendlyId);
     }
+
+    [Fact]
+    public void IssueCodeForDevice_GeneratesNumericOnlyCode()
+    {
+        var service = new JiboVerificationService();
+
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            var code = service.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+            Assert.Equal(4, code.Length);
+            Assert.Matches("^[0-9]{4}$", code);
+        }
+    }
 }

@@ -116,7 +116,7 @@ public sealed class JiboVerificationService
 
     private static string GenerateCode()
     {
-        const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        const string alphabet = "0123456789";
         Span<byte> bytes = stackalloc byte[4];
         RandomNumberGenerator.Fill(bytes);
 

@@ -71,6 +71,8 @@ public sealed partial class JiboInteractionService
 
         if (IsVerifyMeRequest(loweredTranscript)) return "verify_me";
 
+        if (IsLightsOffRequest(loweredTranscript)) return "ha_lights_off";
+
         if (IsUserBirthdaySetStatement(loweredTranscript) || IsUserBirthdaySetAttempt(loweredTranscript))
             return "memory_set_birthday";
 

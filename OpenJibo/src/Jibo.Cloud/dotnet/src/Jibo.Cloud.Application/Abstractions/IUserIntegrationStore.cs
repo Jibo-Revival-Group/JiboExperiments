@@ -6,6 +6,7 @@ public interface IUserIntegrationStore
 {
     IReadOnlyList<HomeAssistantLinkRecord> GetHomeAssistantLinks();
     HomeAssistantLinkRecord? FindLinkByHaInstanceId(string haInstanceId);
+    HomeAssistantLinkRecord? FindLinkForJibo(string? jiboDeviceId, string? jiboFriendlyId);
     HomeAssistantLinkRecord AddHomeAssistantLink(
         string jiboDeviceId,
         string jiboFriendlyName,

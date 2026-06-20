@@ -100,6 +100,22 @@ public sealed class HomeAssistantConnectionRegistry
         await SendJsonAsync(socket, new { type = "pong" }, cancellationToken);
     }
 
+    public async Task<bool> SendCommandAsync(
+        string instanceId,
+        string command,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_connections.TryGetValue(instanceId, out var connection)) return false;
+
+        await SendJsonAsync(connection.Socket, new
+        {
+            type = "command",
+            command
+        }, cancellationToken);
+
+        return true;
+    }
+
     private static async Task SendJsonAsync(WebSocket socket, object payload, CancellationToken cancellationToken)
     {
         if (socket.State != WebSocketState.Open) return;

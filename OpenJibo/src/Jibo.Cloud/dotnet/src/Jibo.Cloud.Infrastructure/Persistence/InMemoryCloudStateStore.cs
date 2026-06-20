@@ -71,8 +71,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _holidayCalendarProvider = holidayCalendarProvider;
         _ownerFirstName = ownerFirstName;
         _ownerLastName = ownerLastName;
+        var bootstrapDeviceId = CreateBootstrapDeviceId();
         _robot = new DeviceRegistration
         {
+            DeviceId = bootstrapDeviceId,
+            RobotId = bootstrapDeviceId,
+            FriendlyName = "OpenJibo Dev Robot",
             HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["api.jibo.com"] = "openjibo.com",
@@ -1173,6 +1177,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         });
 
         EnsureDefaultCommuteProfile();
+    }
+
+    private static string CreateBootstrapDeviceId()
+    {
+        return $"openjibo-bootstrap-{Guid.NewGuid():N}";
     }
 
     private void EnsureOwnerLoopMember(string loopId)

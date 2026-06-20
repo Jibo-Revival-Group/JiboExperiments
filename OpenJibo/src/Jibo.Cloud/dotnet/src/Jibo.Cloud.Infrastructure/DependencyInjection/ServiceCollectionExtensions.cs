@@ -191,6 +191,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<JiboWebSocketService>();
         services.AddSingleton<JiboVerificationService>();
         services.AddSingleton<HomeAssistantConnectionRegistry>();
+        services.AddSingleton<HomeAssistantCommandService>();
 
         return services;
     }

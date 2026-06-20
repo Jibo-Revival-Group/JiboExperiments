@@ -11,7 +11,8 @@ public sealed class WebSocketTurnFinalizationService(
     IConversationBroker conversationBroker,
     ISttStrategySelector sttStrategySelector,
     ITurnTelemetrySink sink,
-    ILogger<WebSocketTurnFinalizationService> logger
+    ILogger<WebSocketTurnFinalizationService> logger,
+    HomeAssistantCommandService? homeAssistantCommandService = null
 )
 {
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
@@ -1326,6 +1327,25 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             var plan = await conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken);
+
+            if (string.Equals(plan.IntentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) &&
+                homeAssistantCommandService is not null)
+            {
+                var dispatched = await homeAssistantCommandService.TryDispatchLightsOffAsync(
+                    finalizedTurn,
+                    cancellationToken);
+                await sink.RecordTurnDiagnosticAsync(
+                    "home_assistant_command_dispatch",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["intent"] = plan.IntentName,
+                        ["command"] = "lights_off_current_room",
+                        ["dispatched"] = dispatched,
+                        ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript
+                    }),
+                    cancellationToken);
+            }
+
             var listenAction = plan.Actions.OfType<ListenAction>().OrderBy(action => action.Sequence).LastOrDefault();
             session.LastTranscript = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript;
             session.LastIntent = plan.IntentName;

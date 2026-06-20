@@ -33,6 +33,14 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
         }
     }
 
+    public HomeAssistantLinkRecord? FindLinkForJibo(string? jiboDeviceId, string? jiboFriendlyId)
+    {
+        lock (_syncRoot)
+        {
+            return _links.FirstOrDefault(link => MatchesJiboIdentity(link, jiboDeviceId, jiboFriendlyId));
+        }
+    }
+
     public HomeAssistantLinkRecord AddHomeAssistantLink(
         string jiboDeviceId,
         string jiboFriendlyName,
@@ -101,5 +109,21 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
             SchemaVersion = UserIntegrationSnapshot.CurrentSchemaVersion,
             HomeAssistantLinks = _links.ToArray()
         });
+    }
+
+    private static bool MatchesJiboIdentity(
+        HomeAssistantLinkRecord link,
+        string? jiboDeviceId,
+        string? jiboFriendlyId)
+    {
+        foreach (var candidate in new[] { jiboDeviceId, jiboFriendlyId }.Where(static value =>
+                     !string.IsNullOrWhiteSpace(value)))
+        {
+            if (link.JiboDeviceId.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
+                link.JiboFriendlyName.Equals(candidate, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 }

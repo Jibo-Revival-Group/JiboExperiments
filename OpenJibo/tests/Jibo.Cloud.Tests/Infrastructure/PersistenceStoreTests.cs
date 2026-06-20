@@ -73,6 +73,18 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void CloudStateStore_BootstrapRobot_DoesNotUsePlaceholderSerialNumber()
+    {
+        var store = new InMemoryCloudStateStore();
+        var robot = store.GetRobot();
+
+        Assert.False(string.IsNullOrWhiteSpace(robot.DeviceId));
+        Assert.NotEqual("my-robot-serial-number", robot.DeviceId);
+        Assert.StartsWith("openjibo-bootstrap-", robot.DeviceId, StringComparison.Ordinal);
+        Assert.Equal(robot.DeviceId, robot.RobotId);
+    }
+
+    [Fact]
     public void PersonalMemoryStore_RoundTripsStateAndRevision()
     {
         var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-personal-memory-{Guid.NewGuid():N}.json");

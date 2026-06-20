@@ -47,7 +47,8 @@ public sealed class OllamaSearchProviderTests
         using var json = JsonDocument.Parse(body);
         Assert.Equal("llava:7b", json.RootElement.GetProperty("model").GetString());
         var prompt = json.RootElement.GetProperty("prompt").GetString();
-        Assert.Contains("Act as Jibo", prompt, StringComparison.Ordinal);
+        Assert.Contains("You ARE Jibo", prompt, StringComparison.Ordinal);
+        Assert.Contains("knowledge base", prompt, StringComparison.Ordinal);
         Assert.Contains("User Request:", prompt, StringComparison.Ordinal);
         Assert.Contains("How old is Donald Trump", prompt, StringComparison.Ordinal);
         Assert.False(json.RootElement.GetProperty("stream").GetBoolean());
@@ -96,7 +97,7 @@ public sealed class OllamaSearchProviderTests
         using var json = JsonDocument.Parse(body);
         var prompt = json.RootElement.GetProperty("prompt").GetString();
         Assert.Contains("Custom robot persona.", prompt, StringComparison.Ordinal);
-        Assert.DoesNotContain("Act as Jibo", prompt, StringComparison.Ordinal);
+        Assert.DoesNotContain("You ARE Jibo", prompt, StringComparison.Ordinal);
         Assert.Contains("What is six times seven", prompt, StringComparison.Ordinal);
     }
 

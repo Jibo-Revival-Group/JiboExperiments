@@ -13,9 +13,11 @@ public sealed class ChatGptSearchProviderTests
     public async Task SearchAsync_ReturnsAnswer_WhenOpenAiResponds()
     {
         HttpRequestMessage? capturedRequest = null;
+        string? capturedBody = null;
         var handler = new RecordingHttpMessageHandler(request =>
         {
             capturedRequest = request;
+            capturedBody = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
             return JsonResponse("""
                 {
                   "choices": [
@@ -44,13 +46,13 @@ public sealed class ChatGptSearchProviderTests
         Assert.Equal("Bearer", capturedRequest.Headers.Authorization!.Scheme);
         Assert.Equal("test-api-key", capturedRequest.Headers.Authorization.Parameter);
 
-        var body = await capturedRequest.Content!.ReadAsStringAsync();
-        using var json = JsonDocument.Parse(body);
+        using var json = JsonDocument.Parse(capturedBody!);
         Assert.Equal("gpt-5.4-nano", json.RootElement.GetProperty("model").GetString());
         var messages = json.RootElement.GetProperty("messages");
         Assert.Equal(2, messages.GetArrayLength());
         Assert.Equal("system", messages[0].GetProperty("role").GetString());
-        Assert.Contains("Act as Jibo", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
+        Assert.Contains("You ARE Jibo", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
+        Assert.Contains("knowledge base", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
         Assert.Equal("user", messages[1].GetProperty("role").GetString());
         Assert.Equal("How old is Donald Trump", messages[1].GetProperty("content").GetString());
         Assert.False(json.RootElement.GetProperty("stream").GetBoolean());
@@ -60,9 +62,11 @@ public sealed class ChatGptSearchProviderTests
     public async Task SearchAsync_UsesDefaultModel_WhenModelOmitted()
     {
         HttpRequestMessage? capturedRequest = null;
+        string? capturedBody = null;
         var handler = new RecordingHttpMessageHandler(request =>
         {
             capturedRequest = request;
+            capturedBody = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
             return JsonResponse("""{"choices":[{"message":{"role":"assistant","content":"Hi"}}]}""");
         });
         var provider = CreateProvider(handler, model: null);
@@ -71,8 +75,7 @@ public sealed class ChatGptSearchProviderTests
             "Hello",
             new SearchBackendSpec(SearchBackendKind.ChatGPT, "test-api-key", null)));
 
-        var body = await capturedRequest!.Content!.ReadAsStringAsync();
-        using var json = JsonDocument.Parse(body);
+        using var json = JsonDocument.Parse(capturedBody!);
         Assert.Equal(SearchBackendSettingsResolver.DefaultChatGptModel, json.RootElement.GetProperty("model").GetString());
     }
 
@@ -119,9 +122,11 @@ public sealed class ChatGptSearchProviderTests
     public async Task SearchAsync_UsesCustomInstructions_WhenConfigured()
     {
         HttpRequestMessage? capturedRequest = null;
+        string? capturedBody = null;
         var handler = new RecordingHttpMessageHandler(request =>
         {
             capturedRequest = request;
+            capturedBody = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
             return JsonResponse("""{"choices":[{"message":{"role":"assistant","content":"Hi"}}]}""");
         });
         var provider = CreateProvider(handler, llmInstructions: "Custom assistant instructions.");
@@ -130,11 +135,10 @@ public sealed class ChatGptSearchProviderTests
             "Hello",
             new SearchBackendSpec(SearchBackendKind.ChatGPT, "test-api-key", "gpt-5.4-nano")));
 
-        var body = await capturedRequest!.Content!.ReadAsStringAsync();
-        using var json = JsonDocument.Parse(body);
+        using var json = JsonDocument.Parse(capturedBody!);
         var messages = json.RootElement.GetProperty("messages");
         Assert.Equal("Custom assistant instructions.", messages[0].GetProperty("content").GetString());
-        Assert.DoesNotContain("Act as Jibo", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("You ARE Jibo", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
     }
 
     private static ChatGptSearchProvider CreateProvider(

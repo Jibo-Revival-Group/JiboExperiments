@@ -18,11 +18,7 @@ public sealed partial class JiboInteractionService
 
         if (cloudStateStore is not null)
         {
-            var robot = cloudStateStore.GetRobot();
-            if (string.IsNullOrWhiteSpace(friendlyId))
-                friendlyId = robot.RobotId;
-            if (string.IsNullOrWhiteSpace(deviceId))
-                deviceId = robot.DeviceId;
+            (deviceId, friendlyId) = JiboIdentityResolver.Resolve(turn, cloudStateStore);
         }
 
         if (string.IsNullOrWhiteSpace(friendlyId) && string.IsNullOrWhiteSpace(deviceId))

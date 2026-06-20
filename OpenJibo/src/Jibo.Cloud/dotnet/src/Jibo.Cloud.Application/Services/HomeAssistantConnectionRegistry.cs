@@ -44,6 +44,12 @@ public sealed class HomeAssistantConnectionRegistry
             _pendingByCode.TryRemove(code, out _);
     }
 
+    public bool IsInstanceConnected(string instanceId)
+    {
+        return _connections.TryGetValue(instanceId, out var connection) &&
+               connection.Socket.State == WebSocketState.Open;
+    }
+
     public void RemoveConnection(string instanceId)
     {
         _connections.TryRemove(instanceId, out _);

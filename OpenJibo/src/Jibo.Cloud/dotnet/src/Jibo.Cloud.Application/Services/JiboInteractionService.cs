@@ -15,6 +15,7 @@ public sealed partial class JiboInteractionService(
     IKnowledgeSearchService? knowledgeSearchService = null,
     ICloudStateStore? cloudStateStore = null,
     IUserIntegrationStore? userIntegrationStore = null,
+    HomeAssistantConnectionRegistry? homeAssistantConnectionRegistry = null,
     JiboVerificationService? jiboVerificationService = null)
 {
     private const string GreetingRouteMetadataKey = "greetingsRoute";

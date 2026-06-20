@@ -19,31 +19,28 @@ public sealed partial class JiboInteractionService
         HomeAssistantLightCommandParser.LightAction expectedAction,
         string intentName)
     {
-        if (userIntegrationStore is null)
+        if (userIntegrationStore is null || cloudStateStore is null)
         {
             return new JiboInteractionDecision(
                 intentName,
                 "Home Assistant control is not available on this server right now.");
         }
 
-        var deviceId = turn.DeviceId;
-        var friendlyId = turn.DeviceId;
-
-        if (cloudStateStore is not null)
-        {
-            var robot = cloudStateStore.GetRobot();
-            if (string.IsNullOrWhiteSpace(friendlyId))
-                friendlyId = robot.RobotId;
-            if (string.IsNullOrWhiteSpace(deviceId))
-                deviceId = robot.DeviceId;
-        }
-
+        var (deviceId, friendlyId) = JiboIdentityResolver.Resolve(turn, cloudStateStore);
         var link = userIntegrationStore.FindLinkForJibo(deviceId, friendlyId);
         if (link is null)
         {
             return new JiboInteractionDecision(
                 intentName,
                 "I don't have Home Assistant set up for my room yet.");
+        }
+
+        if (homeAssistantConnectionRegistry is not null &&
+            !homeAssistantConnectionRegistry.IsInstanceConnected(link.HaInstanceId))
+        {
+            return new JiboInteractionDecision(
+                intentName,
+                "I can't reach Home Assistant right now. Check that it's connected to the server.");
         }
 
         var transcript = turn.NormalizedTranscript ?? turn.RawTranscript;

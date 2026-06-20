@@ -1334,6 +1334,7 @@ public sealed class WebSocketTurnFinalizationService(
             {
                 var dispatched = await homeAssistantCommandService.TryDispatchLightCommandAsync(
                     finalizedTurn,
+                    plan.IntentName,
                     cancellationToken);
                 await sink.RecordTurnDiagnosticAsync(
                     "home_assistant_command_dispatch",

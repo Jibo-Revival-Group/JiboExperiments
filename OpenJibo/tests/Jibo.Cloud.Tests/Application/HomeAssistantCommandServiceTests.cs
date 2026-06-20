@@ -16,7 +16,7 @@ public sealed class HomeAssistantCommandServiceTests
         {
             DeviceId = "Ghost-Instance-Onion-Silk",
             NormalizedTranscript = "turn off the lights"
-        });
+        }, "ha_lights_off");
 
         Assert.True(dispatched);
         Assert.NotNull(socket.LastPayload);
@@ -33,7 +33,7 @@ public sealed class HomeAssistantCommandServiceTests
         {
             DeviceId = "Ghost-Instance-Onion-Silk",
             NormalizedTranscript = "turn on the lights"
-        });
+        }, "ha_lights_on");
 
         Assert.True(dispatched);
         Assert.Equal("lights_on_current_room", socket.LastPayload!.Value.GetProperty("command").GetString());
@@ -48,7 +48,7 @@ public sealed class HomeAssistantCommandServiceTests
         {
             DeviceId = "Ghost-Instance-Onion-Silk",
             NormalizedTranscript = "turn off zanes light"
-        });
+        }, "ha_lights_off");
 
         Assert.True(dispatched);
         Assert.Equal("lights_off_named", socket.LastPayload!.Value.GetProperty("command").GetString());
@@ -70,9 +70,31 @@ public sealed class HomeAssistantCommandServiceTests
         {
             DeviceId = "Ghost-Instance-Onion-Silk",
             NormalizedTranscript = "turn off the lights"
-        });
+        }, "ha_lights_off");
 
         Assert.False(dispatched);
+    }
+
+    [Fact]
+    public async Task TryDispatchLightCommandAsync_FallsBackToRoomCommand_WhenTranscriptDoesNotReparse()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchLightCommandAsync(new TurnContext
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            NormalizedTranscript = "turn off the lights please"
+        }, "ha_lights_off");
+
+        Assert.True(dispatched);
+        Assert.Equal("lights_off_current_room", socket.LastPayload!.Value.GetProperty("command").GetString());
+    }
+
+    [Fact]
+    public void IsInstanceConnected_ReturnsFalse_WhenSocketNotRegistered()
+    {
+        var registry = new HomeAssistantConnectionRegistry();
+        Assert.False(registry.IsInstanceConnected("missing-instance"));
     }
 
     private static (HomeAssistantCommandService Service, CapturingWebSocket Socket) CreateLinkedService()

@@ -41,15 +41,25 @@ public static class HomeAssistantLightCommandParser
     private static readonly HashSet<string> RoomLightPhrases = new(StringComparer.Ordinal)
     {
         "turn off the lights",
+        "turn off the light",
         "turn the lights off",
+        "turn the light off",
         "lights off",
+        "light off",
         "switch off the lights",
+        "switch off the light",
         "switch the lights off",
+        "switch the light off",
         "turn on the lights",
+        "turn on the light",
         "turn the lights on",
+        "turn the light on",
         "lights on",
+        "light on",
         "switch on the lights",
-        "switch the lights on"
+        "switch on the light",
+        "switch the lights on",
+        "switch the light on"
     };
 
     private static readonly Regex NamedLightPattern = new(

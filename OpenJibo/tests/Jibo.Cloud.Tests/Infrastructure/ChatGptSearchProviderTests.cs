@@ -51,7 +51,8 @@ public sealed class ChatGptSearchProviderTests
         var messages = json.RootElement.GetProperty("messages");
         Assert.Equal(2, messages.GetArrayLength());
         Assert.Equal("system", messages[0].GetProperty("role").GetString());
-        Assert.Contains("Act as Jibo", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
+        Assert.Contains("You ARE Jibo", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
+        Assert.Contains("knowledge base", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
         Assert.Equal("user", messages[1].GetProperty("role").GetString());
         Assert.Equal("How old is Donald Trump", messages[1].GetProperty("content").GetString());
         Assert.False(json.RootElement.GetProperty("stream").GetBoolean());
@@ -137,7 +138,7 @@ public sealed class ChatGptSearchProviderTests
         using var json = JsonDocument.Parse(capturedBody!);
         var messages = json.RootElement.GetProperty("messages");
         Assert.Equal("Custom assistant instructions.", messages[0].GetProperty("content").GetString());
-        Assert.DoesNotContain("Act as Jibo", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("You ARE Jibo", messages[0].GetProperty("content").GetString(), StringComparison.Ordinal);
     }
 
     private static ChatGptSearchProvider CreateProvider(

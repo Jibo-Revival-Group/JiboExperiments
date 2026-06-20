@@ -716,6 +716,7 @@ public sealed partial class JiboInteractionService
             "memory_get_preference" => BuildRecallPreferenceDecision(turn, transcript),
             "memory_set_affinity" => BuildRememberAffinityDecision(turn, transcript),
             "memory_get_affinity" => BuildRecallAffinityDecision(turn, transcript),
+            "verify_me" => BuildVerifyMeDecision(turn),
             "pizza" => BuildPizzaDecision(),
             "order_pizza" => BuildOrderPizzaDecision(),
             "proactive_pizza_day" => BuildProactivePizzaDayDecision(referenceLocalTime),

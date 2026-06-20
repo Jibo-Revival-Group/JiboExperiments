@@ -1,0 +1,109 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+using Jibo.Cloud.Application.Services;
+using Jibo.Cloud.Domain.Models;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Jibo.Cloud.Tests.Api;
+
+public sealed class HomeAssistantPortalApiTests
+{
+    [Fact]
+    public async Task LinkFlow_ConnectsHomeAssistantAndLinksJibo()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.ICloudStateStore>();
+        var robot = store.GetRobot();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = robot.DeviceId,
+            RobotId = robot.RobotId,
+            FriendlyName = "Portal Jibo",
+            FirmwareVersion = robot.FirmwareVersion,
+            ApplicationVersion = robot.ApplicationVersion,
+            HostMappings = new Dictionary<string, string>(robot.HostMappings, StringComparer.OrdinalIgnoreCase)
+        });
+
+        var wsClient = factory.Server.CreateWebSocketClient();
+        using var haSocket = await wsClient.ConnectAsync(
+            new Uri("ws://localhost/v1/homeassistant/ws"),
+            CancellationToken.None);
+
+        var registerBytes = Encoding.UTF8.GetBytes("""{"type":"register","instanceId":"ha-test-instance"}""");
+        await haSocket.SendAsync(registerBytes, WebSocketMessageType.Text, true, CancellationToken.None);
+
+        var codePayload = await ReadJsonFrameAsync(haSocket);
+        Assert.Equal("verification_code", codePayload.GetProperty("type").GetString());
+
+        var haCode = codePayload.GetProperty("code").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(haCode));
+
+        var startResponse = await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/start",
+            new { friendlyName = "Portal Jibo" });
+        Assert.Equal(HttpStatusCode.OK, startResponse.StatusCode);
+        var startPayload = await startResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var sessionId = startPayload.GetProperty("sessionId").GetString();
+
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode = verificationService.GetPendingCodeForDevice(store.GetRobot().DeviceId);
+        Assert.False(string.IsNullOrWhiteSpace(spokenCode));
+
+        var confirmResponse = await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { sessionId, code = spokenCode });
+        Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
+        var confirmPayload = await confirmResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var jiboVerificationToken = confirmPayload.GetProperty("jiboVerificationToken").GetString();
+
+        var linkResponse = await client.PostAsJsonAsync(
+            "/api/portal/home-assistant/link",
+            new { jiboVerificationToken, haCode });
+        Assert.Equal(HttpStatusCode.OK, linkResponse.StatusCode);
+
+        var pairedPayload = await ReadJsonFrameAsync(haSocket);
+        Assert.Equal("paired", pairedPayload.GetProperty("type").GetString());
+
+        var linksResponse = await client.GetAsync("/api/portal/home-assistant/links");
+        var linksPayload = await linksResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var links = linksPayload.GetProperty("links");
+        Assert.Equal(1, links.GetArrayLength());
+    }
+
+    private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)
+    {
+        var buffer = new byte[4096];
+        var result = await socket.ReceiveAsync(buffer, CancellationToken.None);
+        using var document = JsonDocument.Parse(buffer.AsMemory(0, result.Count));
+        return document.RootElement.Clone();
+    }
+
+    private static WebApplicationFactory<Program> CreateFactory()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"openjibo-portal-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+
+        return new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseSetting("OpenJibo:Telemetry:DirectoryPath", Path.Combine(root, "websocket"));
+                builder.UseSetting("OpenJibo:ProtocolTelemetry:DirectoryPath", Path.Combine(root, "http"));
+                builder.UseSetting("OpenJibo:TurnTelemetry:DirectoryPath", Path.Combine(root, "turn"));
+                builder.UseSetting("OpenJibo:Logging:DirectoryPath", Path.Combine(root, "logs"));
+                builder.UseSetting(
+                    "OpenJibo:UserIntegrations:PersistencePath",
+                    Path.Combine(root, "user-integrations.json"));
+                builder.UseSetting("OpenJibo:State:Backend", "File");
+                builder.UseSetting("OpenJibo:PersonalMemory:Backend", "File");
+                builder.UseSetting("OpenJibo:State:PersistencePath", Path.Combine(root, "cloud-state.json"));
+                builder.UseSetting(
+                    "OpenJibo:PersonalMemory:PersistencePath",
+                    Path.Combine(root, "personal-memory.json"));
+            });
+    }
+}

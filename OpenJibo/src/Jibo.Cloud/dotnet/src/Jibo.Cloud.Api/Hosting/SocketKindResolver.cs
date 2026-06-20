@@ -19,6 +19,9 @@ internal static class SocketKindResolver
         if (string.Equals(host, NeoHubHost, StringComparison.OrdinalIgnoreCase))
             return path.StartsWithSegments("/v1/proactive") ? "neo-hub-proactive" : "neo-hub-listen";
 
+        if (OpenJiboHosts.Contains(host) && path.StartsWithSegments("/v1/homeassistant"))
+            return "home-assistant";
+
         return OpenJiboHosts.Contains(host) ? "openjibo" : "neo-hub-listen";
     }
 }

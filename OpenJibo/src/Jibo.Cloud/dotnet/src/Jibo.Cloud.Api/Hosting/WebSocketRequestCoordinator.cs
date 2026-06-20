@@ -9,19 +9,27 @@ namespace Jibo.Cloud.Api.Hosting;
 
 internal sealed class WebSocketRequestCoordinator(
     JiboWebSocketService webSocketService,
+    HomeAssistantWebSocketHandler homeAssistantWebSocketHandler,
     IWebSocketTelemetrySink telemetrySink,
     ILogger<WebSocketRequestCoordinator> logger)
 {
     internal WebSocketRequestCoordinator(
         JiboWebSocketService webSocketService,
+        HomeAssistantWebSocketHandler homeAssistantWebSocketHandler,
         IWebSocketTelemetrySink telemetrySink)
-        : this(webSocketService, telemetrySink, NullLogger<WebSocketRequestCoordinator>.Instance)
+        : this(webSocketService, homeAssistantWebSocketHandler, telemetrySink,
+            NullLogger<WebSocketRequestCoordinator>.Instance)
     {
     }
 
     internal async Task HandleAsync(HttpContext context)
     {
         var kind = SocketKindResolver.Resolve(context.Request.Host.Host, context.Request.Path);
+        if (string.Equals(kind, "home-assistant", StringComparison.OrdinalIgnoreCase))
+        {
+            await homeAssistantWebSocketHandler.HandleAsync(context);
+            return;
+        }
         var token = TokenResolver.Resolve(context.Request);
         logger.LogDebug("WebSocket request start kind={Kind} token={Token} host={Host} path={Path}", kind, token,
             context.Request.Host.Host, context.Request.Path);

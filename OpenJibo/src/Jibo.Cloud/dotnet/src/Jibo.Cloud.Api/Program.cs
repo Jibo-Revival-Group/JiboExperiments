@@ -40,6 +40,7 @@ builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 });
 
 builder.Services.AddOpenJiboCloud(builder.Configuration);
+builder.Services.AddSingleton<HomeAssistantWebSocketHandler>();
 builder.Services.AddSingleton<WebSocketRequestCoordinator>();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
@@ -49,6 +50,8 @@ var app = builder.Build();
 app.Logger.LogInformation("Starting Open Jibo Cloud Api version {Version}", OpenJiboCloudBuildInfo.Version);
 
 app.UseCors();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseWebSockets();
 
 app.Use(async (context, next) =>
@@ -69,6 +72,9 @@ app.MapGet("/health", () => Results.Json(new
     service = "OpenJibo Cloud Api",
     version = OpenJiboCloudBuildInfo.Version
 }));
+
+app.MapGet("/portal", () => Results.Redirect("/portal/index.html"));
+app.MapPortalEndpoints();
 
 app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,
     IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>

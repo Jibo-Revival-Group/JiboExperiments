@@ -975,6 +975,20 @@ public sealed partial class JiboInteractionService
             "can you recognize me");
     }
 
+    private static bool IsVerifyMeRequest(string loweredTranscript)
+    {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        return MatchesAny(
+            normalized,
+            "verify me",
+            "verify",
+            "verification",
+            "verification code",
+            "give me my verification code",
+            "what is my verification code",
+            "what's my verification code");
+    }
+
     private static string? TryExtractNameFact(string transcript)
     {
         var normalized = NormalizeCommandPhrase(transcript);

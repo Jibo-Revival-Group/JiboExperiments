@@ -202,6 +202,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return device;
     }
 
+    public DeviceRegistration? FindDeviceByFriendlyName(string friendlyName)
+    {
+        if (string.IsNullOrWhiteSpace(friendlyName)) return null;
+
+        return _devices.Values.FirstOrDefault(device =>
+            device.FriendlyName.Equals(friendlyName.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
     public UserRecord? CreateUser(string email, string password, string? firstName, string? lastName)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))

@@ -69,6 +69,8 @@ public sealed partial class JiboInteractionService
 
         if (IsNameRecallQuestion(loweredTranscript)) return "memory_get_name";
 
+        if (IsVerifyMeRequest(loweredTranscript)) return "verify_me";
+
         if (IsUserBirthdaySetStatement(loweredTranscript) || IsUserBirthdaySetAttempt(loweredTranscript))
             return "memory_set_birthday";
 

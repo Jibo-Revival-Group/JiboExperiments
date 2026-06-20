@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenJibo Portal</title>
+  <link rel="stylesheet" href="/portal/portal.css">
+</head>
+<body>
+<main class="shell">
+  <section class="hero">
+    <p class="eyebrow">OpenJibo Portal</p>
+    <h1>Link Home Assistant</h1>
+    <p class="lede">
+      Verify your Jibo, then connect your Home Assistant instance using the code shown in Home Assistant.
+    </p>
+  </section>
+
+  <section class="panel" id="step-jibo">
+    <p class="step-label">Step 1</p>
+    <h2>Verify your Jibo</h2>
+    <p class="hint">Enter your Jibo's friendly name, start verification, then say "Hey Jibo, verify me" and enter the spoken code.</p>
+
+    <label for="friendlyName">Jibo friendly name</label>
+    <input id="friendlyName" type="text" autocomplete="off" placeholder="OpenJibo Dev Robot">
+
+    <button class="button primary" id="startVerification" type="button">Start verification</button>
+
+    <div id="jiboWaiting" class="hint hidden">
+      Verification started. Ask your Jibo: "Hey Jibo, verify me", then enter the code it speaks.
+    </div>
+
+    <label for="jiboCode" id="jiboCodeLabel" class="hidden">Jibo verification code</label>
+    <input id="jiboCode" type="text" autocomplete="off" maxlength="12" class="hidden" placeholder="ABC123">
+
+    <button class="button secondary hidden" id="confirmJibo" type="button">Confirm Jibo code</button>
+    <p id="jiboStatus" class="status hidden"></p>
+  </section>
+
+  <section class="panel" id="step-ha">
+    <p class="step-label">Step 2</p>
+    <h2>Link Home Assistant</h2>
+    <p class="hint">Install the OpenJibo Home Assistant integration, enter this server's URL, and copy the pairing code from the Home Assistant notification.</p>
+
+    <label for="haCode">Home Assistant verification code</label>
+    <input id="haCode" type="text" autocomplete="off" maxlength="12" placeholder="ABC123">
+
+    <button class="button primary" id="linkHomeAssistant" type="button">Link Home Assistant</button>
+    <p id="haStatus" class="status hidden"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Linked integrations</h2>
+    <ul id="linksList" class="links-list">
+      <li>Loading...</li>
+    </ul>
+  </section>
+</main>
+<script src="/portal/portal.js"></script>
+</body>
+</html>

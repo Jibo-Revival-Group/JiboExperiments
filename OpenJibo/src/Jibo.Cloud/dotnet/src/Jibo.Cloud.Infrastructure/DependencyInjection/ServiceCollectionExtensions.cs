@@ -139,6 +139,16 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IPersistenceSnapshotStoreFactory, PersistenceSnapshotStoreFactory>();
         services.AddSingleton<IMediaContentStoreFactory, MediaContentStoreFactory>();
+        var userIntegrationsPersistencePath = configuration?["OpenJibo:UserIntegrations:PersistencePath"]
+                                              ?? Path.Combine(AppContext.BaseDirectory, "App_Data",
+                                                  "user-integrations.json");
+        services.AddSingleton<UserDataEncryptionService>();
+        services.AddSingleton(provider =>
+            new EncryptedUserDataSnapshotStore(
+                userIntegrationsPersistencePath,
+                provider.GetRequiredService<UserDataEncryptionService>()));
+        services.AddSingleton<IUserIntegrationStore>(provider =>
+            new InMemoryUserIntegrationStore(provider.GetRequiredService<EncryptedUserDataSnapshotStore>()));
         services.AddSingleton<ICloudStateStore>(provider =>
         {
             var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
@@ -179,6 +189,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<WebSocketTurnFinalizationService>();
         services.AddSingleton<JiboCloudProtocolService>();
         services.AddSingleton<JiboWebSocketService>();
+        services.AddSingleton<JiboVerificationService>();
+        services.AddSingleton<HomeAssistantConnectionRegistry>();
 
         return services;
     }

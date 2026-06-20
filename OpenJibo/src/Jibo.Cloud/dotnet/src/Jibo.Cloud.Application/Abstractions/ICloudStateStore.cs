@@ -11,6 +11,7 @@ public interface ICloudStateStore
     DeviceRegistration GetRobot();
     RobotProfile GetRobotProfile();
     DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion);
+    DeviceRegistration? FindDeviceByFriendlyName(string friendlyName);
     UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);
     UserRecord? AuthenticateUser(string email, string password);
     UserRecord? GetUserById(string id);

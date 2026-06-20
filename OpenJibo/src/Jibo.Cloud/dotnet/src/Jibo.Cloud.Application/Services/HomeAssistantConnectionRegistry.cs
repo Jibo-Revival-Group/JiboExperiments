@@ -103,14 +103,26 @@ public sealed class HomeAssistantConnectionRegistry
     public async Task<bool> SendCommandAsync(
         string instanceId,
         string command,
+        IReadOnlyDictionary<string, string>? parameters = null,
         CancellationToken cancellationToken = default)
     {
         if (!_connections.TryGetValue(instanceId, out var connection)) return false;
 
+        if (parameters is null || parameters.Count == 0)
+        {
+            await SendJsonAsync(connection.Socket, new
+            {
+                type = "command",
+                command
+            }, cancellationToken);
+            return true;
+        }
+
         await SendJsonAsync(connection.Socket, new
         {
             type = "command",
-            command
+            command,
+            targetName = parameters.GetValueOrDefault("targetName")
         }, cancellationToken);
 
         return true;

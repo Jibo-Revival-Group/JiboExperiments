@@ -1328,10 +1328,11 @@ public sealed class WebSocketTurnFinalizationService(
 
             var plan = await conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken);
 
-            if (string.Equals(plan.IntentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) &&
+            if ((string.Equals(plan.IntentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(plan.IntentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase)) &&
                 homeAssistantCommandService is not null)
             {
-                var dispatched = await homeAssistantCommandService.TryDispatchLightsOffAsync(
+                var dispatched = await homeAssistantCommandService.TryDispatchLightCommandAsync(
                     finalizedTurn,
                     cancellationToken);
                 await sink.RecordTurnDiagnosticAsync(
@@ -1339,9 +1340,8 @@ public sealed class WebSocketTurnFinalizationService(
                     BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
                     {
                         ["intent"] = plan.IntentName,
-                        ["command"] = "lights_off_current_room",
-                        ["dispatched"] = dispatched,
-                        ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript
+                        ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                        ["dispatched"] = dispatched
                     }),
                     cancellationToken);
             }

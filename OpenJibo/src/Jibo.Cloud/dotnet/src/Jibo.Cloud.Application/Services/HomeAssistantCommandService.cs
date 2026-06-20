@@ -8,13 +8,43 @@ public sealed class HomeAssistantCommandService(
     HomeAssistantConnectionRegistry registry,
     ICloudStateStore cloudStateStore)
 {
-    public async Task<bool> TryDispatchLightsOffAsync(TurnContext turn, CancellationToken cancellationToken = default)
+    public async Task<bool> TryDispatchLightCommandAsync(
+        TurnContext turn,
+        CancellationToken cancellationToken = default)
     {
+        var transcript = turn.NormalizedTranscript ?? turn.RawTranscript;
+        if (!HomeAssistantLightCommandParser.TryParse(transcript, out var lightCommand)) return false;
+
         var (deviceId, friendlyId) = ResolveJiboIdentity(turn);
         var link = integrationStore.FindLinkForJibo(deviceId, friendlyId);
         if (link is null) return false;
 
-        return await registry.SendCommandAsync(link.HaInstanceId, "lights_off_current_room", cancellationToken);
+        var command = BuildHaCommand(lightCommand);
+        IReadOnlyDictionary<string, string>? parameters = null;
+        if (lightCommand.Scope == HomeAssistantLightCommandParser.LightScope.Named &&
+            !string.IsNullOrWhiteSpace(lightCommand.TargetName))
+            parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["targetName"] = lightCommand.TargetName
+            };
+
+        return await registry.SendCommandAsync(link.HaInstanceId, command, parameters, cancellationToken);
+    }
+
+    private static string BuildHaCommand(HomeAssistantLightCommandParser.LightCommand lightCommand)
+    {
+        return (lightCommand.Action, lightCommand.Scope) switch
+        {
+            (HomeAssistantLightCommandParser.LightAction.Off, HomeAssistantLightCommandParser.LightScope.Room) =>
+                "lights_off_current_room",
+            (HomeAssistantLightCommandParser.LightAction.On, HomeAssistantLightCommandParser.LightScope.Room) =>
+                "lights_on_current_room",
+            (HomeAssistantLightCommandParser.LightAction.Off, HomeAssistantLightCommandParser.LightScope.Named) =>
+                "lights_off_named",
+            (HomeAssistantLightCommandParser.LightAction.On, HomeAssistantLightCommandParser.LightScope.Named) =>
+                "lights_on_named",
+            _ => throw new InvalidOperationException("Unsupported light command.")
+        };
     }
 
     private (string? DeviceId, string? FriendlyId) ResolveJiboIdentity(TurnContext turn)

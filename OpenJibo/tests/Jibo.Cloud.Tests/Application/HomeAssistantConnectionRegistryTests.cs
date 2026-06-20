@@ -25,12 +25,16 @@ public sealed class HomeAssistantConnectionRegistryTests
         using var socket = new CapturingWebSocket();
         registry.RegisterConnection("ha-instance-1", socket);
 
-        var sent = await registry.SendCommandAsync("ha-instance-1", "lights_off_current_room");
+        var sent = await registry.SendCommandAsync(
+            "ha-instance-1",
+            "lights_off_named",
+            new Dictionary<string, string> { ["targetName"] = "zanes" });
 
         Assert.True(sent);
         Assert.NotNull(socket.LastPayload);
         Assert.Equal("command", socket.LastPayload!.Value.GetProperty("type").GetString());
-        Assert.Equal("lights_off_current_room", socket.LastPayload.Value.GetProperty("command").GetString());
+        Assert.Equal("lights_off_named", socket.LastPayload.Value.GetProperty("command").GetString());
+        Assert.Equal("zanes", socket.LastPayload.Value.GetProperty("targetName").GetString());
     }
 
     private sealed class CapturingWebSocket : System.Net.WebSockets.WebSocket

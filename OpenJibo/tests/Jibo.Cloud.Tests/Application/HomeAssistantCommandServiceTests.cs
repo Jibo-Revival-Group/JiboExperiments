@@ -8,7 +8,74 @@ namespace Jibo.Cloud.Tests.Application;
 public sealed class HomeAssistantCommandServiceTests
 {
     [Fact]
-    public async Task TryDispatchLightsOffAsync_SendsCommand_WhenJiboIsLinked()
+    public async Task TryDispatchLightCommandAsync_SendsRoomOffCommand_WhenJiboIsLinked()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchLightCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "turn off the lights"
+        });
+
+        Assert.True(dispatched);
+        Assert.NotNull(socket.LastPayload);
+        Assert.Equal("command", socket.LastPayload!.Value.GetProperty("type").GetString());
+        Assert.Equal("lights_off_current_room", socket.LastPayload.Value.GetProperty("command").GetString());
+    }
+
+    [Fact]
+    public async Task TryDispatchLightCommandAsync_SendsRoomOnCommand_WhenJiboIsLinked()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchLightCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "turn on the lights"
+        });
+
+        Assert.True(dispatched);
+        Assert.Equal("lights_on_current_room", socket.LastPayload!.Value.GetProperty("command").GetString());
+    }
+
+    [Fact]
+    public async Task TryDispatchLightCommandAsync_SendsNamedOffCommand_WithTargetName()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchLightCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "turn off zanes light"
+        });
+
+        Assert.True(dispatched);
+        Assert.Equal("lights_off_named", socket.LastPayload!.Value.GetProperty("command").GetString());
+        Assert.Equal("zanes", socket.LastPayload.Value.GetProperty("targetName").GetString());
+    }
+
+    [Fact]
+    public async Task TryDispatchLightCommandAsync_ReturnsFalse_WhenNoLinkExists()
+    {
+        var snapshotStore = new EncryptedUserDataSnapshotStore(
+            Path.Combine(Path.GetTempPath(), $"openjibo-ha-cmd-{Guid.NewGuid():N}.json"),
+            new UserDataEncryptionService());
+        var integrationStore = new InMemoryUserIntegrationStore(snapshotStore);
+        var registry = new HomeAssistantConnectionRegistry();
+        var cloudStateStore = new InMemoryCloudStateStore();
+
+        var service = new HomeAssistantCommandService(integrationStore, registry, cloudStateStore);
+        var dispatched = await service.TryDispatchLightCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "turn off the lights"
+        });
+
+        Assert.False(dispatched);
+    }
+
+    private static (HomeAssistantCommandService Service, CapturingWebSocket Socket) CreateLinkedService()
     {
         var snapshotStore = new EncryptedUserDataSnapshotStore(
             Path.Combine(Path.GetTempPath(), $"openjibo-ha-cmd-{Guid.NewGuid():N}.json"),
@@ -20,7 +87,7 @@ public sealed class HomeAssistantCommandServiceTests
             "ha-instance-1");
 
         var registry = new HomeAssistantConnectionRegistry();
-        using var socket = new CapturingWebSocket();
+        var socket = new CapturingWebSocket();
         registry.RegisterConnection("ha-instance-1", socket);
 
         var cloudStateStore = new InMemoryCloudStateStore();
@@ -32,34 +99,7 @@ public sealed class HomeAssistantCommandServiceTests
         });
 
         var service = new HomeAssistantCommandService(integrationStore, registry, cloudStateStore);
-        var dispatched = await service.TryDispatchLightsOffAsync(new TurnContext
-        {
-            DeviceId = "Ghost-Instance-Onion-Silk"
-        });
-
-        Assert.True(dispatched);
-        Assert.NotNull(socket.LastPayload);
-        Assert.Equal("command", socket.LastPayload!.Value.GetProperty("type").GetString());
-        Assert.Equal("lights_off_current_room", socket.LastPayload.Value.GetProperty("command").GetString());
-    }
-
-    [Fact]
-    public async Task TryDispatchLightsOffAsync_ReturnsFalse_WhenNoLinkExists()
-    {
-        var snapshotStore = new EncryptedUserDataSnapshotStore(
-            Path.Combine(Path.GetTempPath(), $"openjibo-ha-cmd-{Guid.NewGuid():N}.json"),
-            new UserDataEncryptionService());
-        var integrationStore = new InMemoryUserIntegrationStore(snapshotStore);
-        var registry = new HomeAssistantConnectionRegistry();
-        var cloudStateStore = new InMemoryCloudStateStore();
-
-        var service = new HomeAssistantCommandService(integrationStore, registry, cloudStateStore);
-        var dispatched = await service.TryDispatchLightsOffAsync(new TurnContext
-        {
-            DeviceId = "Ghost-Instance-Onion-Silk"
-        });
-
-        Assert.False(dispatched);
+        return (service, socket);
     }
 
     private sealed class CapturingWebSocket : System.Net.WebSockets.WebSocket

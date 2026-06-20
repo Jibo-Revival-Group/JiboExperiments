@@ -33,7 +33,7 @@ public sealed partial class JiboInteractionService
         }
 
         var code = jiboVerificationService.IssueCodeForDevice(friendlyId, deviceId);
-        var spokenCode = string.Join(", ", code.ToCharArray());
+        var spokenCode = SpokenDigitFormatter.Format(code);
         return new JiboInteractionDecision(
             "verify_me",
             $"Your verification code is {spokenCode}.");

@@ -718,6 +718,7 @@ public sealed partial class JiboInteractionService
             "memory_get_affinity" => BuildRecallAffinityDecision(turn, transcript),
             "verify_me" => BuildVerifyMeDecision(turn),
             "ha_lights_off" => BuildHaLightsOffDecision(turn),
+            "ha_lights_on" => BuildHaLightsOnDecision(turn),
             "pizza" => BuildPizzaDecision(),
             "order_pizza" => BuildOrderPizzaDecision(),
             "proactive_pizza_day" => BuildProactivePizzaDayDecision(referenceLocalTime),

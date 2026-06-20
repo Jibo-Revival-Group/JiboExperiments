@@ -71,7 +71,10 @@ public sealed partial class JiboInteractionService
 
         if (IsVerifyMeRequest(loweredTranscript)) return "verify_me";
 
-        if (IsLightsOffRequest(loweredTranscript)) return "ha_lights_off";
+        if (HomeAssistantLightCommandParser.TryParse(loweredTranscript, out var lightCommand))
+            return lightCommand.Action == HomeAssistantLightCommandParser.LightAction.On
+                ? "ha_lights_on"
+                : "ha_lights_off";
 
         if (IsUserBirthdaySetStatement(loweredTranscript) || IsUserBirthdaySetAttempt(loweredTranscript))
             return "memory_set_birthday";

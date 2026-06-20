@@ -989,18 +989,6 @@ public sealed partial class JiboInteractionService
             "what's my verification code");
     }
 
-    private static bool IsLightsOffRequest(string loweredTranscript)
-    {
-        var normalized = NormalizeCommandPhrase(loweredTranscript);
-        return MatchesAny(
-            normalized,
-            "turn off the lights",
-            "turn the lights off",
-            "lights off",
-            "switch off the lights",
-            "switch the lights off");
-    }
-
     private static string? TryExtractNameFact(string transcript)
     {
         var normalized = NormalizeCommandPhrase(transcript);

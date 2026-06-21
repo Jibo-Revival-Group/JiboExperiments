@@ -235,3 +235,15 @@ Implemented so far:
 Next step:
 
 - validate the staged conversion writes and rollback round-trip against the overlay-backed harness
+
+## One-Command Round Trip
+
+Use the round-trip wrapper when you want a single pass that scaffolds the overlay, applies the staged conversion, and then rolls it back.
+
+PowerShell:
+
+```powershell
+.\Roundtrip-OpenJiboHarness.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OverlayRoot C:\Projects\JiboExperiments\artifacts\harness-overlay -TargetMode open-jibo -Strict -Clean
+```
+
+This runs the same overlay-backed flow used during validation and leaves a `harness-roundtrip.json` summary in the chosen output directory.

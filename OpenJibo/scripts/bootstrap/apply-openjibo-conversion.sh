@@ -61,6 +61,102 @@ if (strict && !plan.CanApply) {
   throw new Error(`Conversion apply is not safe to run: ${issues.join("; ")}`);
 }
 
+const applyOutputDirectory = outputPath
+  ? path.dirname(path.resolve(outputPath))
+  : path.dirname(planPath);
+const backupRoot = path.resolve(applyOutputDirectory, "backups");
+fs.mkdirSync(backupRoot, { recursive: true });
+
+function candidatePaths(relativePaths) {
+  return relativePaths.map(relativePath => path.resolve(robotRoot, relativePath));
+}
+
+function firstExisting(candidates) {
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+function backupFile(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) return null;
+  const relative = path.relative(robotRoot, filePath);
+  const backupPath = path.resolve(backupRoot, relative);
+  fs.mkdirSync(path.dirname(backupPath), { recursive: true });
+  fs.copyFileSync(filePath, backupPath);
+  return backupPath;
+}
+
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+function writeJson(filePath, value) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
+}
+
+const jetstreamPath = firstExisting(candidatePaths([
+  "usr/local/etc/jibo-jetstream-service.json",
+  "etc/jibo-jetstream-service.json",
+]));
+const credentialsPath = firstExisting(candidatePaths([
+  "var/jibo/credentials.json",
+]));
+const oobeConfigPath = firstExisting(candidatePaths([
+  "skills/jibo/Jibo/Skills/oobe-config/config.json",
+  "opt/jibo/Jibo/Skills/oobe-config/config.json",
+]));
+
+if (!jetstreamPath || !credentialsPath || !oobeConfigPath) {
+  throw new Error("Expected conversion files were not found on the robot root.");
+}
+
+const backups = {
+  jetstream: backupFile(jetstreamPath),
+  credentials: backupFile(credentialsPath),
+  oobe: backupFile(oobeConfigPath),
+};
+
+const jetstream = readJson(jetstreamPath);
+const currentRegion = readJson(credentialsPath).region || "api";
+const oobe = readJson(oobeConfigPath);
+
+jetstream["region-settings"] = jetstream["region-settings"] || jetstream.regions || {};
+jetstream.regions = jetstream.regions || jetstream["region-settings"];
+
+const sourceRegion = jetstream["region-settings"].api || jetstream.regions.api || {
+  hub_port: 443,
+  hub_hostname: "neo-hub.jibo.com",
+  entrypoint_hostname: "api.jibo.com",
+};
+
+jetstream["region-settings"]["open-jibo"] = sourceRegion;
+jetstream.regions["open-jibo"] = sourceRegion;
+
+oobe.serverRegion = oobe.serverRegion || currentRegion || "api";
+oobe.otaFilter = oobe.otaFilter || "eau";
+oobe.openJiboConversion = {
+  enabled: true,
+  targetMode,
+  state: "pending",
+  createdUtc: new Date().toISOString(),
+  backupRoot,
+};
+
+writeJson(jetstreamPath, jetstream);
+writeJson(oobeConfigPath, oobe);
+
+const conversionMarkerPath = path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");
+writeJson(conversionMarkerPath, {
+  targetMode,
+  state: "pending",
+  sourceRegion: currentRegion,
+  createdUtc: new Date().toISOString(),
+  backups,
+  robotRoot,
+});
+
 const applyManifest = {
   RobotRoot: robotRoot,
   TargetMode: targetMode,
@@ -70,8 +166,13 @@ const applyManifest = {
   ProposedChanges: plan.ProposedChanges || [],
   RollbackPlan: plan.RollbackPlan || [],
   Notes: [
-    "This helper currently records an apply manifest and keeps the actual robot write step gated behind the predictive audit.",
-    "It is safe to run on a staged robot root because it does not modify robot files yet.",
+    "This helper writes the minimal staged conversion state after taking backups.",
+    "The active credentials region remains on the proven value until first-boot conversion completes.",
+  ],
+  WrittenFiles: [
+    jetstreamPath,
+    oobeConfigPath,
+    conversionMarkerPath,
   ],
 };
 

@@ -228,9 +228,10 @@ Build scripts in layers:
 3. Apply
    - snapshot files
    - add Open Jibo region/mode entries
-   - set active mode/region
+   - stage the Open Jibo conversion marker and first-boot pending state
+   - keep the live credentials region on the proven baseline until onboarding completes
    - install or update the Open Jibo skill
-   - mark first-boot setup pending
+   - prepare rollback metadata for a clean restore path
 4. Verify
    - confirm config files parse
    - confirm robot startup reaches the chosen cloud

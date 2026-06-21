@@ -13,6 +13,7 @@ For `1.0.20`, the target is a proven planning and prototype path:
 - document the conversion model and rollback invariants
 - identify the robot files and skill hooks that must be modified
 - build non-destructive audit helpers before any write helpers
+- make the audit/plan stages predictive so they can fail closed before any conversion write if the baseline, target mode, required skill set, or rollback snapshot is missing
 - define the Open Jibo onboarding/config skill contract
 - prove one controlled conversion on the known `1.9.2` baseline before expanding the matrix
 
@@ -216,11 +217,13 @@ Build scripts in layers:
    - list current region/mode/config values
    - list candidate files that would be touched
    - report whether required skills and OS features appear present
+   - record the rollback snapshot candidate and reject the plan if a safe snapshot cannot be produced
    - use `scripts/bootstrap/Audit-OpenJiboConversion.ps1` as the first non-destructive helper
 2. Plan
    - generate a proposed patch manifest
    - show backup paths and rollback plan
    - validate selected mode and target server values
+   - prove the plan is internally consistent before any write step is allowed to run
    - use `scripts/bootstrap/Plan-OpenJiboConversion.ps1` to turn the audit into a proposed manifest
 3. Apply
    - snapshot files
@@ -298,6 +301,7 @@ Safety requirements:
 - verify target file signatures before patching bytes
 - produce a recovery bundle before applying Open Jibo changes
 - keep rollback possible from the helper even if the robot skill fails to launch
+- do not apply a conversion write unless audit and plan have both confirmed the target baseline and a usable rollback snapshot
 - show clear owner-visible state for waiting, backup, patching, rebooting, and failure
 
 ## QA And Exit Criteria

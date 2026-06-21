@@ -36,11 +36,12 @@ The "easy button" recovery appliance should follow the same staged sequence ever
 3. Patch only enough to make SSH reachable over the USB/LAN path.
 4. Reboot out of RCM and confirm SSH access.
 5. Snapshot the robot before any conversion writes.
-6. Install the Open Jibo skill and conversion assets.
-7. Apply the region, mode, and first-boot/OOBE pending state.
-8. Reboot into the Open Jibo mode.
-9. Let the skill complete the onboarding and conversion.
-10. If onboarding is abandoned or a write step fails, restore the snapshot and return to stock behavior.
+6. Run the predictive conversion audit and plan helpers before any write step.
+7. Install the Open Jibo skill and conversion assets.
+8. Apply the region, mode, and first-boot/OOBE pending state.
+9. Reboot into the Open Jibo mode.
+10. Let the skill complete the onboarding and conversion.
+11. If onboarding is abandoned or a write step fails, restore the snapshot and return to stock behavior.
 
 ## Region-Driven Configuration
 

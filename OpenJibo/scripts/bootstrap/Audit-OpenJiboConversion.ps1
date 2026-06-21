@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$RobotRoot,
-    [string]$OutputPath
+    [string]$OutputPath,
+    [switch]$Strict
 )
 
 $ErrorActionPreference = "Stop"
@@ -120,6 +121,15 @@ $audit = [pscustomobject]@{
         if ([string]::IsNullOrWhiteSpace($oobeConfigPath)) { "Confirm the oobe-config bundle before wiring first-boot behavior." }
         if ([string]::IsNullOrWhiteSpace($region)) { "Region is not set yet; that needs to be recorded before any write helper runs." }
     ) | Where-Object { $_ }
+}
+
+$normalizedRecommendations = @($audit.Recommendations | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+
+$audit | Add-Member -NotePropertyName CanProceed -NotePropertyValue ($normalizedRecommendations.Count -eq 0)
+$audit | Add-Member -NotePropertyName BlockingIssues -NotePropertyValue $normalizedRecommendations
+
+if ($Strict -and -not $audit.CanProceed) {
+    throw "Conversion audit is not predictive-safe: $(@($audit.BlockingIssues) -join '; ')"
 }
 
 if ($OutputPath) {

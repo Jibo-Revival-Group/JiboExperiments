@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$RobotRoot,
     [string]$TargetMode = "open-jibo",
-    [string]$OutputPath
+    [string]$OutputPath,
+    [switch]$Strict
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,7 +23,9 @@ finally {
 }
 
 $existingMode = if ($audit.Credentials.Region) { [string]$audit.Credentials.Region } else { "unknown" }
-$requiresAttention = @($audit.Recommendations).Count -gt 0
+$recommendations = @($audit.Recommendations | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+$requiresAttention = $recommendations.Count -gt 0
+$canApply = -not $requiresAttention
 
 $proposedChanges = @(
     [pscustomobject]@{
@@ -64,6 +67,7 @@ $plan = [pscustomobject]@{
     TargetMode = $TargetMode
     ExistingMode = $existingMode
     RequiresAttention = $requiresAttention
+    CanApply = $canApply
     AuditSummary = [pscustomobject]@{
         JetstreamPath = $audit.Files.Jetstream
         CredentialsPath = $audit.Files.Credentials
@@ -72,7 +76,7 @@ $plan = [pscustomobject]@{
         Region = $audit.Credentials.Region
         OobeServerRegion = $audit.Oobe.ServerRegion
         OobeOtaFilter = $audit.Oobe.OtaFilter
-        Recommendations = @($audit.Recommendations)
+        Recommendations = $recommendations
     }
     Backups = @(
         $audit.Files.Jetstream
@@ -86,6 +90,10 @@ $plan = [pscustomobject]@{
         "take a backup before any write helper runs",
         "confirm the conversion mode target with the owner"
     )
+}
+
+if ($Strict -and -not $canApply) {
+    throw "Conversion plan is not ready to apply: $(@($audit.Recommendations) -join '; ')"
 }
 
 if ($OutputPath) {

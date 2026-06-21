@@ -31,6 +31,7 @@ Entry points:
 - `Rollback-OpenJiboConversion.ps1`
 - `Roundtrip-OpenJiboHarness.ps1`
 - `Validate-OpenJiboHarnessRoundTrip.ps1`
+- `Demo-OpenJiboHarness.ps1`
 
 Example:
 
@@ -40,4 +41,5 @@ Example:
 .\Rollback-OpenJiboConversion.ps1 -RobotRoot C:\Projects\JiboExperiments\artifacts\harness-overlay -ApplyPath C:\Projects\JiboExperiments\artifacts\harness-overlay\run-output\invoke\conversion-apply.json -Strict
 .\Roundtrip-OpenJiboHarness.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OverlayRoot C:\Projects\JiboExperiments\artifacts\harness-overlay -TargetMode open-jibo -Strict -Clean
 .\Validate-OpenJiboHarnessRoundTrip.ps1 -OutputDirectory C:\Projects\JiboExperiments\artifacts\harness-overlay-output
+.\Demo-OpenJiboHarness.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OverlayRoot C:\Projects\JiboExperiments\artifacts\demo-overlay -Strict -Clean
 ```

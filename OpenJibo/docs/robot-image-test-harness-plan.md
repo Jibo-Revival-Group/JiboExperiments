@@ -17,6 +17,8 @@ Reason:
 - the EMMC dump is already rich enough for state and file-layout regression
 - the flash bundle is better as a recovery/reference source than a boot target
 
+For the current phase, treat the copied-volume harness as the demo filesystem. A VM can wait until we need boot-time fidelity or kernel/runtime behavior that the copied volume cannot expose.
+
 ## What To Use
 
 ### Primary baseline
@@ -249,3 +251,7 @@ PowerShell:
 This runs the same overlay-backed flow used during validation and leaves a `harness-roundtrip.json` summary in the chosen output directory.
 
 Follow it with `Validate-OpenJiboHarnessRoundTrip.ps1` to confirm the summary and artifact files exist before you trust the output for a regression run.
+
+## Demo Filesystem
+
+Use `Demo-OpenJiboHarness.ps1` when you want the copied-volume demo filesystem path in one command. That is the preferred demo target until we have a concrete reason to introduce a VM.

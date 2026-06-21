@@ -170,6 +170,47 @@ Those belong on the physical robot or in a later high-fidelity emulation effort.
 7. Use the harness for conversion, backup, and rollback regression.
 8. Keep live robot sessions for STT, turn timing, and hardware-specific behavior.
 
+## Immediate Implementation Checklist
+
+When you are at the workstation, do this in order:
+
+1. Create a working directory for the harness overlay.
+2. Copy only the writable robot files from `jibo_full_emmc` into that overlay.
+3. Keep the source image tree read-only and untouched.
+4. Point the audit helper at the overlay and confirm it reports the expected `api` baseline.
+5. Point the plan helper at the same overlay and confirm the proposed writes match the documented conversion state.
+6. Point the apply helper at the overlay and confirm it writes only:
+   - `3.services/etc/jibo-jetstream-service.json`
+   - `5.skills/jibo/Jibo/Skills/oobe-config/config.json`
+   - `4.var/jibo/identity/openjibo-conversion.json`
+7. Verify the helper writes backups into the apply output tree.
+8. Add a one-command reset that deletes the overlay and recreates it from the source snapshot.
+9. Add negative tests for missing or malformed `credentials.json`, Jetstream, and OOBE config.
+10. Once the harness is stable, use it as the default target for conversion and rollback script changes.
+11. Keep the real robot for websocket timing, STT, and EOS validation.
+
+## Radio Skill Note
+
+The iHeart behavior is localized in the robot skill, not the Open Jibo cloud.
+
+Relevant files:
+
+- `C:\Users\JacobDubin\Downloads\jibo_full_emmc\5.skills\jibo\Jibo\Skills\@be\be\node_modules\@be\radio\index.js`
+- `C:\Users\JacobDubin\Downloads\jibo_full_emmc\5.skills\jibo\Jibo\Skills\@be\be\node_modules\@be\radio\mims\en-us\PresentingIHeart.mim`
+- `C:\Users\JacobDubin\Downloads\jibo_full_emmc\5.skills\jibo\Jibo\Skills\@be\be\node_modules\@be\radio\mims\en-us\CurrentStation.mim`
+
+Observed behavior:
+
+- the skill calls `getCountry()` and then reduces the result to `us` or `ca`
+- non-US NPR is explicitly blocked in the skill
+- the iHeart presentation prompts are country-specific inside the skill package
+
+Implication:
+
+- this is not an easy Open Jibo Cloud fix
+- the practical fix path is either a robot-skill update or replacing the skill with a cloud-commanded radio experience later
+- if we need to test parity in the harness, we should model the country code and station menu state as robot-local inputs
+
 ## Success Criteria
 
 The harness is worth keeping if it can reliably do all of these:
@@ -181,4 +222,3 @@ The harness is worth keeping if it can reliably do all of these:
 - reset fast enough for repeated test cycles
 
 If it cannot do those things, do not expand it into a VM project yet.
-

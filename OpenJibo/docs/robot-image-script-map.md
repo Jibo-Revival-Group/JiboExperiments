@@ -162,3 +162,4 @@ That means:
 - use the update bundle for flash/recovery references
 - keep real turn/audio regression on the robot
 
+For the next implementation step, see [robot-image-test-harness-plan.md](robot-image-test-harness-plan.md).

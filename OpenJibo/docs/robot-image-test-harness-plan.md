@@ -247,3 +247,5 @@ PowerShell:
 ```
 
 This runs the same overlay-backed flow used during validation and leaves a `harness-roundtrip.json` summary in the chosen output directory.
+
+Follow it with `Validate-OpenJiboHarnessRoundTrip.ps1` to confirm the summary and artifact files exist before you trust the output for a regression run.

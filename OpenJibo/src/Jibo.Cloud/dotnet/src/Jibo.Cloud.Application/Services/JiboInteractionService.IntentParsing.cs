@@ -157,116 +157,24 @@ public sealed partial class JiboInteractionService
     private static bool IsAffirmativeReply(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
-        return TryClassifyYesNoReply(normalized) == YesNoReply.Affirmative;
+        return YesNoTranscriptClassifier.IsAffirmative(normalized);
     }
 
     private static bool IsNegativeReply(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
-        return TryClassifyYesNoReply(normalized) == YesNoReply.Negative;
+        return YesNoTranscriptClassifier.IsNegative(normalized);
     }
 
     private static YesNoReply TryClassifyYesNoReply(string normalizedTranscript)
     {
-        if (string.IsNullOrWhiteSpace(normalizedTranscript)) return YesNoReply.None;
-
-        var normalized = normalizedTranscript;
-        while (TryTrimLeadingAcknowledgement(normalized, out var trimmed)) normalized = trimmed;
-
-        if (string.IsNullOrWhiteSpace(normalized)) return YesNoReply.None;
-
-        var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return tokens.Length == 0 ? YesNoReply.None : TryClassifyTrailingYesNoReply(tokens);
-    }
-
-    private static bool TryTrimLeadingAcknowledgement(string normalizedTranscript, out string trimmedTranscript)
-    {
-        foreach (var acknowledgement in YesNoAcknowledgementPrefixes)
+        return YesNoTranscriptClassifier.Classify(normalizedTranscript) switch
         {
-            if (string.Equals(acknowledgement, "uh", StringComparison.Ordinal) &&
-                (string.Equals(normalizedTranscript, "uh huh", StringComparison.Ordinal) ||
-                 normalizedTranscript.StartsWith("uh huh ", StringComparison.Ordinal)))
-                continue;
-
-            if (string.Equals(normalizedTranscript, acknowledgement, StringComparison.Ordinal))
-            {
-                trimmedTranscript = string.Empty;
-                return true;
-            }
-
-            if (!normalizedTranscript.StartsWith($"{acknowledgement} ", StringComparison.Ordinal)) continue;
-
-            trimmedTranscript = normalizedTranscript[(acknowledgement.Length + 1)..].TrimStart();
-            return true;
-        }
-
-        trimmedTranscript = normalizedTranscript;
-        return false;
-    }
-
-    private static YesNoReply TryClassifyTrailingYesNoReply(string[] tokens)
-    {
-        var selectedReply = YesNoReply.None;
-        var selectedIndex = -1;
-        var sawAffirmative = false;
-        var sawNegative = false;
-
-        for (var index = 0; index < tokens.Length; index += 1)
-        {
-            var token = tokens[index];
-            if (YesNoNegativeLeadTokens.Contains(token))
-            {
-                Consider(YesNoReply.Negative, index);
-                continue;
-            }
-
-            if (YesNoAffirmativeLeadTokens.Contains(token)) Consider(YesNoReply.Affirmative, index);
-        }
-
-        for (var index = 0; index + 1 < tokens.Length; index += 1)
-        {
-            var phrase = $"{tokens[index]} {tokens[index + 1]}";
-            if (YesNoNegativeLeadPhrases.Contains(phrase))
-            {
-                Consider(YesNoReply.Negative, index + 1);
-                continue;
-            }
-
-            if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 1);
-        }
-
-        for (var index = 0; index + 2 < tokens.Length; index += 1)
-        {
-            var phrase = $"{tokens[index]} {tokens[index + 1]} {tokens[index + 2]}";
-            if (YesNoNegativeLeadPhrases.Contains(phrase))
-            {
-                Consider(YesNoReply.Negative, index + 2);
-                continue;
-            }
-
-            if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 2);
-        }
-
-        return sawAffirmative && sawNegative
-            ? YesNoReply.Ambiguous
-            : selectedReply;
-
-        void Consider(YesNoReply candidateReply, int candidateIndex)
-        {
-            if (candidateIndex < 0 || candidateIndex < selectedIndex) return;
-
-            selectedReply = candidateReply;
-            selectedIndex = candidateIndex;
-            switch (candidateReply)
-            {
-                case YesNoReply.Affirmative:
-                    sawAffirmative = true;
-                    break;
-                case YesNoReply.Negative:
-                    sawNegative = true;
-                    break;
-            }
-        }
+            YesNoTranscriptClassification.Affirmative => YesNoReply.Affirmative,
+            YesNoTranscriptClassification.Negative => YesNoReply.Negative,
+            YesNoTranscriptClassification.Ambiguous => YesNoReply.Ambiguous,
+            _ => YesNoReply.None
+        };
     }
 
     private static bool IsTimeRequest(string loweredTranscript)

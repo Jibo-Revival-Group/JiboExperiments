@@ -38,7 +38,7 @@ internal static class PortalEndpoints
             IUserIntegrationStore integrationStore,
             HomeAssistantConnectionRegistry registry) =>
         {
-            var session = ResolvePortalSession(request, portalSessionService);
+            var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null)
                 return Results.Unauthorized();
 
@@ -48,11 +48,12 @@ internal static class PortalEndpoints
 
         app.MapPost("/api/portal/home-assistant/link", async (
             [FromBody] LinkHomeAssistantRequest request,
+            HttpRequest httpRequest,
             PortalSessionService portalSessionService,
             HomeAssistantConnectionRegistry registry,
             IUserIntegrationStore integrationStore) =>
         {
-            var session = ResolvePortalSession(request.PortalSessionToken, portalSessionService);
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
             if (session is null)
                 return Results.Unauthorized();
 
@@ -91,7 +92,7 @@ internal static class PortalEndpoints
             IUserIntegrationStore integrationStore,
             HomeAssistantConnectionRegistry registry) =>
         {
-            var session = ResolvePortalSession(request, portalSessionService);
+            var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null)
                 return Results.Unauthorized();
 
@@ -111,9 +112,11 @@ internal static class PortalEndpoints
 
         app.MapPost("/api/portal/logout", (
             [FromBody] PortalLogoutRequest request,
+            HttpRequest httpRequest,
             PortalSessionService portalSessionService) =>
         {
-            portalSessionService.RevokeSession(request.PortalSessionToken);
+            var token = ResolvePortalSessionToken(httpRequest, request.PortalSessionToken);
+            portalSessionService.RevokeSession(token);
             return Results.Json(new { ok = true });
         });
 
@@ -123,7 +126,7 @@ internal static class PortalEndpoints
             HomeAssistantConnectionRegistry registry,
             HttpRequest request) =>
         {
-            var session = ResolvePortalSession(request, portalSessionService);
+            var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is not null)
             {
                 var link = integrationStore.FindLinkForJibo(session.DeviceId, session.FriendlyId);
@@ -143,7 +146,15 @@ internal static class PortalEndpoints
 
     private static PortalSessionService.PortalSession? ResolvePortalSession(
         HttpRequest request,
+        string? portalSessionToken,
         PortalSessionService portalSessionService)
+    {
+        return portalSessionService.TryGetSession(ResolvePortalSessionToken(request, portalSessionToken));
+    }
+
+    private static string? ResolvePortalSessionToken(
+        HttpRequest request,
+        string? portalSessionToken)
     {
         var token = request.Headers.Authorization.FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(token) &&
@@ -151,14 +162,8 @@ internal static class PortalEndpoints
             token = token["Bearer ".Length..].Trim();
 
         token ??= request.Query["portalSessionToken"].FirstOrDefault();
-        return portalSessionService.TryGetSession(token);
-    }
-
-    private static PortalSessionService.PortalSession? ResolvePortalSession(
-        string? portalSessionToken,
-        PortalSessionService portalSessionService)
-    {
-        return portalSessionService.TryGetSession(portalSessionToken);
+        token ??= portalSessionToken;
+        return token;
     }
 
     private static object BuildDashboardPayload(

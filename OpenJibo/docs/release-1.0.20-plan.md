@@ -60,6 +60,7 @@ Cloud deployment planning starts in [cloud-deployment-topology-plan.md](cloud-de
 Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust-consensus-plan.md).
 
 - convert the robot into Open Jibo with explicit mode targets instead of an implicit one-off patch
+- make the conversion helper predictive and rollback-safe: audit first, refuse to write when the baseline or target state is unclear, and require a recorded rollback snapshot before any conversion write
 - define the mode set we actually want to support:
   - `open-jibo`
   - `open-jibo-ai`

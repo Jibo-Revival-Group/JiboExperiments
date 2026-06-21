@@ -76,6 +76,8 @@ public sealed class HomeAssistantPortalApiTests
         var links = linksPayload.GetProperty("links");
         Assert.Equal(1, links.GetArrayLength());
         Assert.True(links[0].GetProperty("connected").GetBoolean());
+
+        await TryCloseAsync(haSocket);
     }
 
     [Fact]
@@ -154,7 +156,7 @@ public sealed class HomeAssistantPortalApiTests
         var pairedPayload = await ReadJsonFrameAsync(haSocket);
         Assert.Equal("paired", pairedPayload.GetProperty("type").GetString());
 
-        await haSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "restart", CancellationToken.None);
+        await TryCloseAsync(haSocket);
 
         using var reconnectedSocket = await wsClient.ConnectAsync(
             new Uri("ws://localhost/v1/homeassistant/ws"),
@@ -219,7 +221,7 @@ public sealed class HomeAssistantPortalApiTests
             new { haCode });
 
         await ReadJsonFrameAsync(haSocket);
-        await haSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "restart", CancellationToken.None);
+        await TryCloseAsync(haSocket);
 
         using var reconnectedSocket = await wsClient.ConnectAsync(
             new Uri("ws://localhost/v1/homeassistant/ws"),
@@ -237,9 +239,27 @@ public sealed class HomeAssistantPortalApiTests
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)
     {
         var buffer = new byte[4096];
-        var result = await socket.ReceiveAsync(buffer, CancellationToken.None);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        var result = await socket.ReceiveAsync(buffer, timeout.Token);
         using var document = JsonDocument.Parse(buffer.AsMemory(0, result.Count));
         return document.RootElement.Clone();
+    }
+
+    private static async Task TryCloseAsync(WebSocket socket)
+    {
+        if (socket.State is not (WebSocketState.Open or WebSocketState.CloseReceived or WebSocketState.CloseSent))
+            return;
+
+        try
+        {
+            await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "test-complete", CancellationToken.None);
+        }
+        catch (IOException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
     }
 
     private static WebApplicationFactory<Program> CreateFactory()

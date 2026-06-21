@@ -12,6 +12,8 @@ RCM/device patch -> Azure-hosted OpenJibo cloud
 This is the path we can document, repeat, and improve.
 
 The `1.0.20` conversion planning track builds on this bootstrap path in [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md).
+The next-session checklist lives in [open-jibo-conversion-test-runbook.md](open-jibo-conversion-test-runbook.md).
+The extracted-image file map lives in [robot-image-script-map.md](robot-image-script-map.md).
 
 ## Why This Path Comes First
 
@@ -36,11 +38,12 @@ The "easy button" recovery appliance should follow the same staged sequence ever
 3. Patch only enough to make SSH reachable over the USB/LAN path.
 4. Reboot out of RCM and confirm SSH access.
 5. Snapshot the robot before any conversion writes.
-6. Install the Open Jibo skill and conversion assets.
-7. Apply the region, mode, and first-boot/OOBE pending state.
-8. Reboot into the Open Jibo mode.
-9. Let the skill complete the onboarding and conversion.
-10. If onboarding is abandoned or a write step fails, restore the snapshot and return to stock behavior.
+6. Run the predictive conversion audit and plan helpers before any write step.
+7. Install the Open Jibo skill and conversion assets.
+8. Apply the staged region/mode entries and the first-boot/OOBE pending state while keeping the proven live credentials region intact until onboarding finishes.
+9. Reboot into the Open Jibo mode.
+10. Let the skill complete the onboarding and conversion.
+11. If onboarding is abandoned or a write step fails, restore the snapshot and return to stock behavior.
 
 ## Region-Driven Configuration
 
@@ -75,11 +78,15 @@ Bootstrap helper scripts live in [scripts/bootstrap](/OpenJibo/scripts/bootstrap
 
 - `Audit-OpenJiboConversion.ps1`
 - `Plan-OpenJiboConversion.ps1`
+- `audit-openjibo-conversion.sh`
+- `plan-openjibo-conversion.sh`
+- `apply-openjibo-conversion.sh`
+- `invoke-openjibo-conversion.sh`
 - `Discover-JiboHosts.ps1`
 - `Generate-JiboDnsOverrides.ps1`
 - `Test-OpenJiboRouting.ps1`
 
-These are intentionally conservative helpers for discovery and verification, not destructive patch tools. They remain useful for controlled-network testing, even though the preferred long-term device path is region injection.
+These are intentionally conservative helpers for discovery and verification, not destructive patch tools. The Linux shell helpers are the canonical robot-facing conversion path; the PowerShell helpers remain useful for local staging and analysis.
 
 For the currently verified physical-device local setup, including the tested
 `.NET` server command, region caveat, persistent init script, TLS patch, and

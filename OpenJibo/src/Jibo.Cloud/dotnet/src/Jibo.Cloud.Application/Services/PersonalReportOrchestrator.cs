@@ -514,77 +514,13 @@ internal static partial class PersonalReportOrchestrator
 
     private static YesNoReply ClassifyYesNoReply(string loweredTranscript)
     {
-        var normalized = NormalizeYesNoTranscript(loweredTranscript);
-        if (string.IsNullOrWhiteSpace(normalized)) return YesNoReply.None;
-
-        while (TryTrimLeadingAcknowledgement(normalized, out var trimmed)) normalized = trimmed;
-
-        if (string.IsNullOrWhiteSpace(normalized)) return YesNoReply.None;
-
-        var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (tokens.Length == 0) return YesNoReply.None;
-
-        var selectedReply = YesNoReply.None;
-        var selectedIndex = -1;
-        var sawAffirmative = false;
-        var sawNegative = false;
-
-        for (var index = 0; index < tokens.Length; index += 1)
+        return YesNoTranscriptClassifier.Classify(loweredTranscript) switch
         {
-            var token = tokens[index];
-            if (YesNoNegativeLeadTokens.Contains(token))
-            {
-                Consider(YesNoReply.Negative, index);
-                continue;
-            }
-
-            if (YesNoAffirmativeLeadTokens.Contains(token)) Consider(YesNoReply.Affirmative, index);
-        }
-
-        for (var index = 0; index + 1 < tokens.Length; index += 1)
-        {
-            var phrase = $"{tokens[index]} {tokens[index + 1]}";
-            if (YesNoNegativeLeadPhrases.Contains(phrase))
-            {
-                Consider(YesNoReply.Negative, index + 1);
-                continue;
-            }
-
-            if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 1);
-        }
-
-        for (var index = 0; index + 2 < tokens.Length; index += 1)
-        {
-            var phrase = $"{tokens[index]} {tokens[index + 1]} {tokens[index + 2]}";
-            if (YesNoNegativeLeadPhrases.Contains(phrase))
-            {
-                Consider(YesNoReply.Negative, index + 2);
-                continue;
-            }
-
-            if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 2);
-        }
-
-        return sawAffirmative && sawNegative
-            ? YesNoReply.Ambiguous
-            : selectedReply;
-
-        void Consider(YesNoReply candidateReply, int candidateIndex)
-        {
-            if (candidateIndex < 0 || candidateIndex < selectedIndex) return;
-
-            selectedReply = candidateReply;
-            selectedIndex = candidateIndex;
-            switch (candidateReply)
-            {
-                case YesNoReply.Affirmative:
-                    sawAffirmative = true;
-                    break;
-                case YesNoReply.Negative:
-                    sawNegative = true;
-                    break;
-            }
-        }
+            YesNoTranscriptClassification.Affirmative => YesNoReply.Affirmative,
+            YesNoTranscriptClassification.Negative => YesNoReply.Negative,
+            YesNoTranscriptClassification.Ambiguous => YesNoReply.Ambiguous,
+            _ => YesNoReply.None
+        };
     }
 
     private static string NormalizeYesNoTranscript(string transcript)

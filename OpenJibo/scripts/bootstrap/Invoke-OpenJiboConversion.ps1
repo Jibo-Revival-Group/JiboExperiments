@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$RobotRoot,
     [string]$TargetMode = "open-jibo",
-    [string]$OutputPath,
+    [string]$OutputDirectory,
+    [switch]$Apply,
     [switch]$Strict
 )
 
@@ -27,7 +28,7 @@ function Escape-BashSingleQuoted {
 
 $scriptDir = Convert-ToGitBashPath $PSScriptRoot
 $robotRootUnix = Convert-ToGitBashPath $RobotRoot
-$outputPathUnix = Convert-ToGitBashPath $OutputPath
+$outputDirectoryUnix = Convert-ToGitBashPath $OutputDirectory
 
 $bash = if (Test-Path "C:\Program Files\Git\bin\bash.exe") {
     "C:\Program Files\Git\bin\bash.exe"
@@ -37,9 +38,12 @@ $bash = if (Test-Path "C:\Program Files\Git\bin\bash.exe") {
     throw "Unable to locate Git Bash. Use the Linux shell helper directly."
 }
 
-$command = "cd '$(Escape-BashSingleQuoted $scriptDir)' && ./plan-openjibo-conversion.sh --robot-root '$(Escape-BashSingleQuoted $robotRootUnix)' --target-mode '$TargetMode'"
-if ($OutputPathUnix) {
-    $command += " --output-path '$(Escape-BashSingleQuoted $outputPathUnix)'"
+$command = "cd '$(Escape-BashSingleQuoted $scriptDir)' && ./invoke-openjibo-conversion.sh --robot-root '$(Escape-BashSingleQuoted $robotRootUnix)' --target-mode '$TargetMode'"
+if ($outputDirectoryUnix) {
+    $command += " --output-directory '$(Escape-BashSingleQuoted $outputDirectoryUnix)'"
+}
+if ($Apply) {
+    $command += " --apply"
 }
 if ($Strict) {
     $command += " --strict"

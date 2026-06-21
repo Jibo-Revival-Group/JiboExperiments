@@ -163,6 +163,8 @@ const applyManifest = {
   SourcePlan: planPath,
   CanApply: Boolean(plan.CanApply),
   Backups: plan.Backups || [],
+  BackupRoot: backupRoot,
+  CreatedBackups: backups,
   ProposedChanges: plan.ProposedChanges || [],
   RollbackPlan: plan.RollbackPlan || [],
   Notes: [

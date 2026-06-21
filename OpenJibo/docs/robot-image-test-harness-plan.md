@@ -175,14 +175,14 @@ Those belong on the physical robot or in a later high-fidelity emulation effort.
 When you are at the workstation, do this in order:
 
 1. Create a working directory for the harness overlay.
-2. Copy only the writable robot files from `jibo_full_emmc` into that overlay.
+2. Copy only the writable robot files from `jibo_full_emmc` into that overlay using normalized robot-root paths.
 3. Keep the source image tree read-only and untouched.
 4. Point the audit helper at the overlay and confirm it reports the expected `api` baseline.
 5. Point the plan helper at the same overlay and confirm the proposed writes match the documented conversion state.
 6. Point the apply helper at the overlay and confirm it writes only:
-   - `3.services/etc/jibo-jetstream-service.json`
-   - `5.skills/jibo/Jibo/Skills/oobe-config/config.json`
-   - `4.var/jibo/identity/openjibo-conversion.json`
+   - `usr/local/etc/jibo-jetstream-service.json`
+   - `skills/jibo/Jibo/Skills/oobe-config/config.json`
+   - `var/jibo/identity/openjibo-conversion.json`
 7. Verify the helper writes backups into the apply output tree.
 8. Add a one-command reset that deletes the overlay and recreates it from the source snapshot.
 9. Add negative tests for missing or malformed `credentials.json`, Jetstream, and OOBE config.
@@ -222,3 +222,16 @@ The harness is worth keeping if it can reliably do all of these:
 - reset fast enough for repeated test cycles
 
 If it cannot do those things, do not expand it into a VM project yet.
+
+## Current Status
+
+Implemented so far:
+
+- disposable overlay scaffold from `jibo_full_emmc`
+- normalized robot-root layout in the overlay
+- combined scaffold/run entry points for audit and plan
+- rollback helper that restores the staged overlay from apply backups
+
+Next step:
+
+- validate the staged conversion writes and rollback round-trip against the overlay-backed harness

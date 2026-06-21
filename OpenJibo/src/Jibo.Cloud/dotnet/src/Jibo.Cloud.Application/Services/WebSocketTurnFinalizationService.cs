@@ -1328,14 +1328,23 @@ public sealed class WebSocketTurnFinalizationService(
 
             var plan = await conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken);
 
-            if ((string.Equals(plan.IntentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(plan.IntentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase)) &&
-                homeAssistantCommandService is not null)
+            if (homeAssistantCommandService is not null &&
+                (string.Equals(plan.IntentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(plan.IntentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(plan.IntentName, "ha_climate_set_temp", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(plan.IntentName, "ha_climate_cool_down", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(plan.IntentName, "ha_climate_warm_up", StringComparison.OrdinalIgnoreCase)))
             {
-                var dispatched = await homeAssistantCommandService.TryDispatchLightCommandAsync(
-                    finalizedTurn,
-                    plan.IntentName,
-                    cancellationToken);
+                var dispatched = string.Equals(plan.IntentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(plan.IntentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase)
+                    ? await homeAssistantCommandService.TryDispatchLightCommandAsync(
+                        finalizedTurn,
+                        plan.IntentName,
+                        cancellationToken)
+                    : await homeAssistantCommandService.TryDispatchClimateCommandAsync(
+                        finalizedTurn,
+                        plan.IntentName,
+                        cancellationToken);
                 await sink.RecordTurnDiagnosticAsync(
                     "home_assistant_command_dispatch",
                     BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>

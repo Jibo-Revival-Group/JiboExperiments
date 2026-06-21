@@ -48,6 +48,29 @@ public sealed class HomeAssistantConnectionRegistryTests
         Assert.Equal("zanes", socket.LastPayload.Value.GetProperty("targetName").GetString());
     }
 
+    [Fact]
+    public async Task SendCommandAsync_SendsMultiParameterPayload()
+    {
+        var registry = new HomeAssistantConnectionRegistry();
+        using var socket = new CapturingWebSocket();
+        registry.RegisterConnection("ha-instance-1", socket);
+
+        var sent = await registry.SendCommandAsync(
+            "ha-instance-1",
+            "climate_set_temperature_named",
+            new Dictionary<string, string>
+            {
+                ["targetName"] = "bedroom",
+                ["temperature"] = "72"
+            });
+
+        Assert.True(sent);
+        Assert.NotNull(socket.LastPayload);
+        Assert.Equal("climate_set_temperature_named", socket.LastPayload!.Value.GetProperty("command").GetString());
+        Assert.Equal("bedroom", socket.LastPayload.Value.GetProperty("targetName").GetString());
+        Assert.Equal("72", socket.LastPayload.Value.GetProperty("temperature").GetString());
+    }
+
     private sealed class CapturingWebSocket : System.Net.WebSockets.WebSocket
     {
         public System.Text.Json.JsonElement? LastPayload { get; private set; }

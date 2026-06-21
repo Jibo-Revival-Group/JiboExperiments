@@ -76,6 +76,15 @@ public sealed partial class JiboInteractionService
                 ? "ha_lights_on"
                 : "ha_lights_off";
 
+        if (HomeAssistantClimateCommandParser.TryParse(loweredTranscript, out var climateCommand))
+            return climateCommand.Action switch
+            {
+                HomeAssistantClimateCommandParser.ClimateAction.SetTemperature => "ha_climate_set_temp",
+                HomeAssistantClimateCommandParser.ClimateAction.CoolDown => "ha_climate_cool_down",
+                HomeAssistantClimateCommandParser.ClimateAction.WarmUp => "ha_climate_warm_up",
+                _ => "chat"
+            };
+
         if (IsUserBirthdaySetStatement(loweredTranscript) || IsUserBirthdaySetAttempt(loweredTranscript))
             return "memory_set_birthday";
 

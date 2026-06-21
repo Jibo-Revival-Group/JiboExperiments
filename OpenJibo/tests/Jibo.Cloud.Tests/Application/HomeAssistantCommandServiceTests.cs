@@ -91,6 +91,72 @@ public sealed class HomeAssistantCommandServiceTests
     }
 
     [Fact]
+    public async Task TryDispatchClimateCommandAsync_SendsRoomSetTemperatureCommand_WhenJiboIsLinked()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchClimateCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "set the temperature to 69"
+        }, "ha_climate_set_temp");
+
+        Assert.True(dispatched);
+        Assert.NotNull(socket.LastPayload);
+        Assert.Equal("climate_set_temperature_current_room", socket.LastPayload!.Value.GetProperty("command").GetString());
+        Assert.Equal("69", socket.LastPayload.Value.GetProperty("temperature").GetString());
+    }
+
+    [Fact]
+    public async Task TryDispatchClimateCommandAsync_SendsNamedSetTemperatureCommand_WithTargetName()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchClimateCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "set the bedroom thermostat to 72"
+        }, "ha_climate_set_temp");
+
+        Assert.True(dispatched);
+        Assert.Equal("climate_set_temperature_named", socket.LastPayload!.Value.GetProperty("command").GetString());
+        Assert.Equal("bedroom", socket.LastPayload.Value.GetProperty("targetName").GetString());
+        Assert.Equal("72", socket.LastPayload.Value.GetProperty("temperature").GetString());
+    }
+
+    [Fact]
+    public async Task TryDispatchClimateCommandAsync_SendsCoolDownCommand_WithDelta()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchClimateCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "it's hot in here"
+        }, "ha_climate_cool_down");
+
+        Assert.True(dispatched);
+        Assert.Equal("climate_cool_down_current_room", socket.LastPayload!.Value.GetProperty("command").GetString());
+        Assert.Equal("2", socket.LastPayload.Value.GetProperty("delta").GetString());
+    }
+
+    [Fact]
+    public async Task TryDispatchClimateCommandAsync_SendsWarmUpCommand_WithDelta()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchClimateCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "it's cold in here"
+        }, "ha_climate_warm_up");
+
+        Assert.True(dispatched);
+        Assert.Equal("climate_warm_up_current_room", socket.LastPayload!.Value.GetProperty("command").GetString());
+        Assert.Equal("2", socket.LastPayload.Value.GetProperty("delta").GetString());
+    }
+
+    [Fact]
     public void IsInstanceConnected_ReturnsFalse_WhenSocketNotRegistered()
     {
         var registry = new HomeAssistantConnectionRegistry();

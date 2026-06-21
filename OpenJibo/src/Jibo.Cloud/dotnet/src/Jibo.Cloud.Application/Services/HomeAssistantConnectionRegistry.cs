@@ -132,12 +132,19 @@ public sealed class HomeAssistantConnectionRegistry
             return true;
         }
 
-        await SendJsonAsync(connection.Socket, new
+        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
-            type = "command",
-            command,
-            targetName = parameters.GetValueOrDefault("targetName")
-        }, cancellationToken);
+            ["type"] = "command",
+            ["command"] = command
+        };
+
+        foreach (var pair in parameters)
+        {
+            if (!string.IsNullOrWhiteSpace(pair.Value))
+                payload[pair.Key] = pair.Value;
+        }
+
+        await SendJsonAsync(connection.Socket, payload, cancellationToken);
 
         return true;
     }

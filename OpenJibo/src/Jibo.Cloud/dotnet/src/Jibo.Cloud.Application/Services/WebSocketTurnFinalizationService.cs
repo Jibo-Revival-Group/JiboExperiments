@@ -2238,20 +2238,19 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static bool IsYesNoReplyTranscript(string normalizedTranscript)
     {
-        return TryClassifyYesNoReply(normalizedTranscript) is YesNoReply.Affirmative or YesNoReply.Negative;
+        return YesNoTranscriptClassifier.Classify(normalizedTranscript) is
+            YesNoTranscriptClassification.Affirmative or YesNoTranscriptClassification.Negative;
     }
 
     private static YesNoReply TryClassifyYesNoReply(string normalizedTranscript)
     {
-        if (string.IsNullOrWhiteSpace(normalizedTranscript)) return YesNoReply.None;
-
-        var normalized = NormalizeUsableTranscript(normalizedTranscript);
-        while (TryTrimLeadingAcknowledgement(normalized, out var trimmed)) normalized = trimmed;
-
-        if (string.IsNullOrWhiteSpace(normalized)) return YesNoReply.None;
-
-        var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return tokens.Length == 0 ? YesNoReply.None : TryClassifyTrailingYesNoReply(tokens);
+        return YesNoTranscriptClassifier.Classify(normalizedTranscript) switch
+        {
+            YesNoTranscriptClassification.Affirmative => YesNoReply.Affirmative,
+            YesNoTranscriptClassification.Negative => YesNoReply.Negative,
+            YesNoTranscriptClassification.Ambiguous => YesNoReply.Ambiguous,
+            _ => YesNoReply.None
+        };
     }
 
     private static bool TryTrimLeadingAcknowledgement(string normalizedTranscript, out string trimmedTranscript)

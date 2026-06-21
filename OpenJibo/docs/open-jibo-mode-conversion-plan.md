@@ -218,13 +218,13 @@ Build scripts in layers:
    - list candidate files that would be touched
    - report whether required skills and OS features appear present
    - record the rollback snapshot candidate and reject the plan if a safe snapshot cannot be produced
-   - use `scripts/bootstrap/Audit-OpenJiboConversion.ps1` as the first non-destructive helper
+   - use `scripts/bootstrap/audit-openjibo-conversion.sh` as the first non-destructive helper
 2. Plan
    - generate a proposed patch manifest
    - show backup paths and rollback plan
    - validate selected mode and target server values
    - prove the plan is internally consistent before any write step is allowed to run
-   - use `scripts/bootstrap/Plan-OpenJiboConversion.ps1` to turn the audit into a proposed manifest
+   - use `scripts/bootstrap/plan-openjibo-conversion.sh` to turn the audit into a proposed manifest
 3. Apply
    - snapshot files
    - add Open Jibo region/mode entries

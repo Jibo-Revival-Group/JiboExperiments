@@ -76,11 +76,15 @@ Bootstrap helper scripts live in [scripts/bootstrap](/OpenJibo/scripts/bootstrap
 
 - `Audit-OpenJiboConversion.ps1`
 - `Plan-OpenJiboConversion.ps1`
+- `audit-openjibo-conversion.sh`
+- `plan-openjibo-conversion.sh`
+- `apply-openjibo-conversion.sh`
+- `invoke-openjibo-conversion.sh`
 - `Discover-JiboHosts.ps1`
 - `Generate-JiboDnsOverrides.ps1`
 - `Test-OpenJiboRouting.ps1`
 
-These are intentionally conservative helpers for discovery and verification, not destructive patch tools. They remain useful for controlled-network testing, even though the preferred long-term device path is region injection.
+These are intentionally conservative helpers for discovery and verification, not destructive patch tools. The Linux shell helpers are the canonical robot-facing conversion path; the PowerShell helpers remain useful for local staging and analysis.
 
 For the currently verified physical-device local setup, including the tested
 `.NET` server command, region caveat, persistent init script, TLS patch, and

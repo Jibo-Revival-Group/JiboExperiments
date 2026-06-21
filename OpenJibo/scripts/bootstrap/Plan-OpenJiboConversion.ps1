@@ -8,104 +8,41 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$scriptDir = $PSScriptRoot
-$auditScript = Join-Path $scriptDir "Audit-OpenJiboConversion.ps1"
-$tempAuditPath = Join-Path ([System.IO.Path]::GetTempPath()) ("openjibo-conversion-audit-{0}.json" -f ([Guid]::NewGuid().ToString("N")))
+function Convert-ToGitBashPath {
+    param([string]$Path)
 
-try {
-    & $auditScript -RobotRoot $RobotRoot -OutputPath $tempAuditPath | Out-Null
-    $audit = Get-Content -LiteralPath $tempAuditPath -Raw | ConvertFrom-Json
-}
-finally {
-    if (Test-Path -LiteralPath $tempAuditPath) {
-        Remove-Item -LiteralPath $tempAuditPath -Force -ErrorAction SilentlyContinue
-    }
-}
-
-$existingMode = if ($audit.Credentials.Region) { [string]$audit.Credentials.Region } else { "unknown" }
-$recommendations = @($audit.Recommendations | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
-$requiresAttention = $recommendations.Count -gt 0
-$canApply = -not $requiresAttention
-
-$proposedChanges = @(
-    [pscustomobject]@{
-        File = "/usr/local/etc/jibo-jetstream-service.json"
-        Action = "add or update region-settings entries"
-        Details = @(
-            "preserve stock region where possible",
-            "add target mode region entry for $TargetMode",
-            "keep Open Jibo hostnames aligned with the documented bootstrap path"
-        )
-    }
-    [pscustomobject]@{
-        File = "/var/jibo/credentials.json"
-        Action = "record the active region"
-        Details = @(
-            "save the current stock region before any switch",
-            "switch the region field only after backups and validation"
-        )
-    }
-    [pscustomobject]@{
-        File = "/skills/jibo/Jibo/Skills/oobe-config/config.json"
-        Action = "mark first-boot/OOBE state"
-        Details = @(
-            "keep the setup payload compatible with the classic QR decoder",
-            "record first-boot pending state without destroying existing owner data"
-        )
-    }
-)
-
-$rollbackPlan = @(
-    "restore the recorded jetstream config snapshot",
-    "restore /var/jibo/credentials.json from the pre-conversion backup",
-    "clear first-boot pending state if onboarding is abandoned",
-    "leave the Open Jibo skill visible so the owner can retry conversion later"
-)
-
-$plan = [pscustomobject]@{
-    RobotRoot = $audit.RobotRoot
-    TargetMode = $TargetMode
-    ExistingMode = $existingMode
-    RequiresAttention = $requiresAttention
-    CanApply = $canApply
-    AuditSummary = [pscustomobject]@{
-        JetstreamPath = $audit.Files.Jetstream
-        CredentialsPath = $audit.Files.Credentials
-        OobeConfigPath = $audit.Files.OobeConfig
-        SsmCount = $audit.Files.SsmCount
-        Region = $audit.Credentials.Region
-        OobeServerRegion = $audit.Oobe.ServerRegion
-        OobeOtaFilter = $audit.Oobe.OtaFilter
-        Recommendations = $recommendations
-    }
-    Backups = @(
-        $audit.Files.Jetstream
-        $audit.Files.Credentials
-        $audit.Files.OobeConfig
-    ) | Where-Object { $_ }
-    ProposedChanges = $proposedChanges
-    RollbackPlan = $rollbackPlan
-    Preconditions = @(
-        "verify the audit report is clean enough for the target device",
-        "take a backup before any write helper runs",
-        "confirm the conversion mode target with the owner"
-    )
-}
-
-if ($Strict -and -not $canApply) {
-    throw "Conversion plan is not ready to apply: $(@($audit.Recommendations) -join '; ')"
-}
-
-if ($OutputPath) {
-    $resolvedOutput = if ([System.IO.Path]::IsPathRooted($OutputPath)) {
-        [System.IO.Path]::GetFullPath($OutputPath)
-    } else {
-        [System.IO.Path]::GetFullPath((Join-Path (Get-Location) $OutputPath))
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $Path }
+    $normalized = $Path -replace '\\', '/'
+    if ($normalized -match '^[A-Za-z]:/') {
+        return '/' + $normalized.Substring(0, 1).ToLowerInvariant() + $normalized.Substring(2)
     }
 
-    $plan | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resolvedOutput
-    Write-Host "Saved conversion plan to $resolvedOutput"
+    return $normalized
 }
-else {
-    $plan | Format-List
+
+function Escape-BashSingleQuoted {
+    param([string]$Text)
+    return ($Text -replace "'", "'\''")
 }
+
+$scriptDir = Convert-ToGitBashPath $PSScriptRoot
+$robotRootUnix = Convert-ToGitBashPath $RobotRoot
+$outputPathUnix = Convert-ToGitBashPath $OutputPath
+
+$bash = if (Test-Path "C:\Program Files\Git\bin\bash.exe") {
+    "C:\Program Files\Git\bin\bash.exe"
+} elseif (Test-Path "C:\Program Files\Git\usr\bin\bash.exe") {
+    "C:\Program Files\Git\usr\bin\bash.exe"
+} else {
+    throw "Unable to locate Git Bash. Use the Linux shell helper directly."
+}
+
+$command = "cd '$(Escape-BashSingleQuoted $scriptDir)' && ./plan-openjibo-conversion.sh --robot-root '$(Escape-BashSingleQuoted $robotRootUnix)' --target-mode '$TargetMode'"
+if ($OutputPathUnix) {
+    $command += " --output-path '$(Escape-BashSingleQuoted $outputPathUnix)'"
+}
+if ($Strict) {
+    $command += " --strict"
+}
+
+& $bash -lc $command

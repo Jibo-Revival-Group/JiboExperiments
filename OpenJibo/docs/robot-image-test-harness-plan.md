@@ -255,3 +255,13 @@ Follow it with `Validate-OpenJiboHarnessRoundTrip.ps1` to confirm the summary an
 ## Demo Filesystem
 
 Use `Demo-OpenJiboHarness.ps1` when you want the copied-volume demo filesystem path in one command. That is the preferred demo target until we have a concrete reason to introduce a VM.
+
+## Mode Recommendation
+
+If you are unsure what to run, use `Recommend-OpenJiboHarnessMode.ps1`.
+
+Current defaults:
+
+- `demo` means copied-volume demo filesystem
+- `roundtrip` means scaffold, apply, rollback, and validate
+- `vm` means wait until boot/runtime fidelity is required

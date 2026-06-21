@@ -22,7 +22,8 @@ public sealed class HomeAssistantInteractionServiceTests
         string expectedReply)
     {
         var integrationStore = CreateLinkedIntegrationStore();
-        var service = CreateService(integrationStore);
+        var cloudStateStore = CreateCloudStateStore();
+        var service = CreateService(integrationStore, cloudStateStore);
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -42,7 +43,7 @@ public sealed class HomeAssistantInteractionServiceTests
             Path.Combine(Path.GetTempPath(), $"openjibo-ha-intent-{Guid.NewGuid():N}.json"),
             new UserDataEncryptionService());
         var integrationStore = new InMemoryUserIntegrationStore(snapshotStore);
-        var service = CreateService(integrationStore);
+        var service = CreateService(integrationStore, CreateCloudStateStore());
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -90,12 +91,28 @@ public sealed class HomeAssistantInteractionServiceTests
         return integrationStore;
     }
 
-    private static JiboInteractionService CreateService(InMemoryUserIntegrationStore integrationStore)
+    private static InMemoryCloudStateStore CreateCloudStateStore()
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        cloudStateStore.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            FriendlyName = "Test Robot"
+        });
+
+        return cloudStateStore;
+    }
+
+    private static JiboInteractionService CreateService(
+        InMemoryUserIntegrationStore integrationStore,
+        InMemoryCloudStateStore cloudStateStore)
     {
         return new JiboInteractionService(
             new JiboExperienceContentCache(new InMemoryJiboExperienceContentRepository()),
             new FirstItemRandomizer(),
             new InMemoryPersonalMemoryStore(),
+            cloudStateStore: cloudStateStore,
             userIntegrationStore: integrationStore);
     }
 

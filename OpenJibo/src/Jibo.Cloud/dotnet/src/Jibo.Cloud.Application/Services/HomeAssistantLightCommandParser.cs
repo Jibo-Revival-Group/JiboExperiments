@@ -87,7 +87,7 @@ public static class HomeAssistantLightCommandParser
         var match = NamedLightPattern.Match(normalized);
         if (!match.Success) return false;
 
-        var target = match.Groups["target"].Value.Trim();
+        var target = StripTrailingCourtesyWords(match.Groups["target"].Value.Trim());
         if (string.IsNullOrWhiteSpace(target) || IsGenericLightsTarget(target)) return false;
 
         var actionToken = match.Groups["action"].Value;
@@ -116,6 +116,21 @@ public static class HomeAssistantLightCommandParser
                target.Equals("the lights", StringComparison.OrdinalIgnoreCase) ||
                target.Equals("lamps", StringComparison.OrdinalIgnoreCase) ||
                target.Equals("the lamps", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string StripTrailingCourtesyWords(string target)
+    {
+        var normalized = TranscriptTextNormalizer.NormalizeLooseText(target);
+        if (string.IsNullOrWhiteSpace(normalized)) return string.Empty;
+
+        foreach (var suffix in new[] { "please", "thanks", "thank you" })
+        {
+            if (normalized.Equals(suffix, StringComparison.Ordinal)) return string.Empty;
+            if (normalized.EndsWith($" {suffix}", StringComparison.Ordinal))
+                return normalized[..^(suffix.Length + 1)].Trim();
+        }
+
+        return normalized;
     }
 
     private static string NormalizeCommandPhrase(string? value)

@@ -57,6 +57,18 @@ function copyDirectory(src, dest) {
   fs.cpSync(src, dest, { recursive: true, force: true, preserveTimestamps: true });
 }
 
+function linkDirectory(src, dest) {
+  if (fs.existsSync(dest)) {
+    fs.rmSync(dest, { recursive: true, force: true });
+  }
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  try {
+    fs.symlinkSync(src, dest, "junction");
+  } catch (error) {
+    copyDirectory(src, dest);
+  }
+}
+
 if (clean && fs.existsSync(outputRoot)) {
   fs.rmSync(outputRoot, { recursive: true, force: true });
 }
@@ -71,9 +83,9 @@ const layout = [
 ];
 
 const mountedPaths = [
-  { target: "mounted/usr/local", mountPoint: "usr/local" },
-  { target: "mounted/var", mountPoint: "var" },
-  { target: "mounted/opt/jibo/Jibo/Skills", mountPoint: "opt/jibo/Jibo/Skills" },
+  { source: "3.services", target: "mounted/usr/local", mountPoint: "usr/local" },
+  { source: "4.var", target: "mounted/var", mountPoint: "var" },
+  { source: "5.skills", target: "mounted/opt/jibo/Jibo/Skills", mountPoint: "opt/jibo/Jibo/Skills" },
 ];
 
 const copied = [];
@@ -95,7 +107,7 @@ for (const item of layout) {
   const sourcePath = ensureSource(item.source);
   const targetPath = path.resolve(outputRoot, item.target);
   if (item.type === "directory") {
-    copyDirectory(sourcePath, targetPath);
+    linkDirectory(sourcePath, targetPath);
   } else {
     copyFile(sourcePath, targetPath);
   }
@@ -106,14 +118,21 @@ for (const item of layout) {
 const rootfsA = path.resolve(outputRoot, "rootfsA");
 const mounted = path.resolve(outputRoot, "mounted");
 for (const item of mountedPaths) {
-  const mountSource = path.resolve(mounted, item.target);
+  const mountSource = ensureSource(item.source);
   const mountTarget = path.resolve(rootfsA, item.mountPoint);
-  if (!fs.existsSync(mountSource)) {
-    throw new Error(`Mounted source missing after copy: ${item.target}`);
-  }
-  copyDirectory(mountSource, mountTarget);
+  linkDirectory(mountSource, mountTarget);
   copied.push({ source: mountSource, target: mountTarget, type: "mount-overlay" });
   writeProgress(`overlay:${item.mountPoint}`, { LastOverlay: item.mountPoint });
+}
+
+const demoRoot = path.resolve(outputRoot, "demo-root");
+if (fs.existsSync(demoRoot)) {
+  fs.rmSync(demoRoot, { recursive: true, force: true });
+}
+try {
+  fs.symlinkSync(rootfsA, demoRoot, "junction");
+} catch (error) {
+  copyDirectory(rootfsA, demoRoot);
 }
 
 const manifest = {
@@ -121,12 +140,14 @@ const manifest = {
   OutputRoot: outputRoot,
   Clean: clean,
   RootFs: path.resolve(outputRoot, "rootfsA"),
+  DemoRoot: demoRoot,
   SecondaryRootFs: path.resolve(outputRoot, "rootfsB"),
   MountedOverlayRoot: mounted,
   Notes: [
     "rootfsA is treated as the primary Linux filesystem image",
     "rootfsB is preserved as the secondary OTA slot reference",
     "services, var, and skills are copied into mounted overlay folders and then merged over rootfsA",
+    "demo-root is a single-folder view of the composed Linux filesystem",
   ],
   CopiedItems: copied,
 };

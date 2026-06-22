@@ -118,6 +118,7 @@ The filesystem composer should materialize a demo Linux root from the extracted 
 - `3.services` overlays onto `/usr/local`
 - `4.var` overlays onto `/var`
 - `5.skills` overlays onto `/opt/jibo/Jibo/Skills`
+- `demo-root` is a single-folder view that points at the composed Linux filesystem
 
 This is the right target for a copied-volume demo filesystem.
 

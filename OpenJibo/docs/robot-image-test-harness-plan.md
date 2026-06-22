@@ -277,7 +277,8 @@ It currently does this:
 - overlays `3.services` onto `usr/local`
 - overlays `4.var` onto `var`
 - overlays `5.skills` onto `opt/jibo/Jibo/Skills`
+- exposes `demo-root` as a single-folder view of the composed Linux filesystem
 
-That is the right target if you want to inspect the demo filesystem as a mounted Linux tree instead of just a normalized overlay harness.
+That is the right target if you want to inspect the demo filesystem as a mounted Linux tree instead of just a normalized overlay harness. Point the harness at `demo-root` when you want one path.
 
 The builder also writes `filesystem-progress.json` after each stage so a large copy can be inspected even if the run is interrupted.

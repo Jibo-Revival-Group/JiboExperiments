@@ -282,3 +282,12 @@ It currently does this:
 That is the right target if you want to inspect the demo filesystem as a mounted Linux tree instead of just a normalized overlay harness. Point the harness at `demo-root` when you want one path.
 
 The builder also writes `filesystem-progress.json` after each stage so a large copy can be inspected even if the run is interrupted.
+
+## Demo Inspector
+
+Use `Inspect-LinuxFilesystemDemo.ps1` after a build to confirm:
+
+- `filesystem-manifest.json` exists
+- `filesystem-progress.json` exists
+- `demo-root` resolves to the composed rootfs
+- the current stage and copy count match the last build pass

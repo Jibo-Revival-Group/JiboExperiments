@@ -34,6 +34,7 @@ Entry points:
 - `Demo-OpenJiboHarness.ps1`
 - `Recommend-OpenJiboHarnessMode.ps1`
 - `Build-LinuxFilesystemFromCopies.ps1`
+- `Inspect-LinuxFilesystemDemo.ps1`
 
 Example:
 
@@ -46,4 +47,5 @@ Example:
 .\Demo-OpenJiboHarness.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OverlayRoot C:\Projects\JiboExperiments\artifacts\demo-overlay -Strict -Clean
 .\Recommend-OpenJiboHarnessMode.ps1 -Goal demo
 .\Build-LinuxFilesystemFromCopies.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OutputRoot C:\Projects\JiboExperiments\artifacts\linux-fs-demo -Clean
+.\Inspect-LinuxFilesystemDemo.ps1 -OutputRoot C:\Projects\JiboExperiments\artifacts\linux-fs-demo5
 ```

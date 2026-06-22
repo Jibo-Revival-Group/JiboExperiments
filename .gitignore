@@ -434,6 +434,7 @@ OpenJibo/src/Jibo.Cloud/node/tls/openjibo-ca.crt
 OpenJibo/src/Jibo.Cloud/node/tls/openjibo-ca.key
 OpenJibo/.claude/
 .claude/
+.codex/
 
 OpenJibo/docs/DesignDoc/original server
 

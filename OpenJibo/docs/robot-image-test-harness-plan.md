@@ -17,6 +17,8 @@ Reason:
 - the EMMC dump is already rich enough for state and file-layout regression
 - the flash bundle is better as a recovery/reference source than a boot target
 
+For the current phase, treat the copied-volume harness as the demo filesystem. A VM can wait until we need boot-time fidelity or kernel/runtime behavior that the copied volume cannot expose.
+
 ## What To Use
 
 ### Primary baseline
@@ -175,14 +177,14 @@ Those belong on the physical robot or in a later high-fidelity emulation effort.
 When you are at the workstation, do this in order:
 
 1. Create a working directory for the harness overlay.
-2. Copy only the writable robot files from `jibo_full_emmc` into that overlay.
+2. Copy only the writable robot files from `jibo_full_emmc` into that overlay using normalized robot-root paths.
 3. Keep the source image tree read-only and untouched.
 4. Point the audit helper at the overlay and confirm it reports the expected `api` baseline.
 5. Point the plan helper at the same overlay and confirm the proposed writes match the documented conversion state.
 6. Point the apply helper at the overlay and confirm it writes only:
-   - `3.services/etc/jibo-jetstream-service.json`
-   - `5.skills/jibo/Jibo/Skills/oobe-config/config.json`
-   - `4.var/jibo/identity/openjibo-conversion.json`
+   - `usr/local/etc/jibo-jetstream-service.json`
+   - `skills/jibo/Jibo/Skills/oobe-config/config.json`
+   - `var/jibo/identity/openjibo-conversion.json`
 7. Verify the helper writes backups into the apply output tree.
 8. Add a one-command reset that deletes the overlay and recreates it from the source snapshot.
 9. Add negative tests for missing or malformed `credentials.json`, Jetstream, and OOBE config.
@@ -222,3 +224,61 @@ The harness is worth keeping if it can reliably do all of these:
 - reset fast enough for repeated test cycles
 
 If it cannot do those things, do not expand it into a VM project yet.
+
+## Current Status
+
+Implemented so far:
+
+- disposable overlay scaffold from `jibo_full_emmc`
+- normalized robot-root layout in the overlay
+- combined scaffold/run entry points for audit and plan
+- rollback helper that restores the staged overlay from apply backups
+
+Next step:
+
+- validate the staged conversion writes and rollback round-trip against the overlay-backed harness
+
+## One-Command Round Trip
+
+Use the round-trip wrapper when you want a single pass that scaffolds the overlay, applies the staged conversion, and then rolls it back.
+
+PowerShell:
+
+```powershell
+.\Roundtrip-OpenJiboHarness.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OverlayRoot C:\Projects\JiboExperiments\artifacts\harness-overlay -TargetMode open-jibo -Strict -Clean
+```
+
+This runs the same overlay-backed flow used during validation and leaves a `harness-roundtrip.json` summary in the chosen output directory.
+
+Follow it with `Validate-OpenJiboHarnessRoundTrip.ps1` to confirm the summary and artifact files exist before you trust the output for a regression run.
+
+## Demo Filesystem
+
+Use `Demo-OpenJiboHarness.ps1` when you want the copied-volume demo filesystem path in one command. That is the preferred demo target until we have a concrete reason to introduce a VM.
+
+## Mode Recommendation
+
+If you are unsure what to run, use `Recommend-OpenJiboHarnessMode.ps1`.
+
+Current defaults:
+
+- `demo` means copied-volume demo filesystem
+- `roundtrip` means scaffold, apply, rollback, and validate
+- `vm` means wait until boot/runtime fidelity is required
+
+## Linux Filesystem Composer
+
+Use `Build-LinuxFilesystemFromCopies.ps1` when you want an actual Linux filesystem root assembled from the extracted partitions.
+
+It currently does this:
+
+- copies `0.rootfsA` to the demo root as the primary Linux filesystem
+- preserves `1.rootfsB` as the secondary slot reference
+- overlays `3.services` onto `usr/local`
+- overlays `4.var` onto `var`
+- overlays `5.skills` onto `opt/jibo/Jibo/Skills`
+- exposes `demo-root` as a single-folder view of the composed Linux filesystem
+
+That is the right target if you want to inspect the demo filesystem as a mounted Linux tree instead of just a normalized overlay harness. Point the harness at `demo-root` when you want one path.
+
+The builder also writes `filesystem-progress.json` after each stage so a large copy can be inspected even if the run is interrupted.

@@ -276,7 +276,7 @@ It currently does this:
 - preserves `1.rootfsB` as the secondary slot reference
 - overlays `3.services` onto `usr/local`
 - overlays `4.var` onto `var`
-- overlays `5.skills` onto `opt/jibo/Jibo/Skills`
+- overlays `5.skills/jibo/Jibo/Skills` onto `opt/jibo/Jibo/Skills`
 - exposes `demo-root` as a single-folder view of the composed Linux filesystem
 
 That is the right target if you want to inspect the demo filesystem as a mounted Linux tree instead of just a normalized overlay harness. Point the harness at `demo-root` when you want one path.
@@ -291,3 +291,9 @@ Use `Inspect-LinuxFilesystemDemo.ps1` after a build to confirm:
 - `filesystem-progress.json` exists
 - `demo-root` resolves to the composed rootfs
 - the current stage and copy count match the last build pass
+
+## Direct Demo Root Runner
+
+Use `Run-OpenJiboFilesystemDemo.ps1` when you want to run the conversion helpers directly against `demo-root`.
+
+This is the next step after building the demo filesystem because it removes the overlay harness from the path and exercises the composed Linux tree as the robot root.

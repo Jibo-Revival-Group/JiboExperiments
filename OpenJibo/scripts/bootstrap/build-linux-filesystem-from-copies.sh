@@ -85,7 +85,7 @@ const layout = [
 const mountedPaths = [
   { source: "3.services", target: "mounted/usr/local", mountPoint: "usr/local" },
   { source: "4.var", target: "mounted/var", mountPoint: "var" },
-  { source: "5.skills", target: "mounted/opt/jibo/Jibo/Skills", mountPoint: "opt/jibo/Jibo/Skills" },
+  { source: "5.skills/jibo/Jibo/Skills", target: "mounted/opt/jibo/Jibo/Skills", mountPoint: "opt/jibo/Jibo/Skills" },
 ];
 
 const copied = [];

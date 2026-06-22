@@ -265,3 +265,19 @@ Current defaults:
 - `demo` means copied-volume demo filesystem
 - `roundtrip` means scaffold, apply, rollback, and validate
 - `vm` means wait until boot/runtime fidelity is required
+
+## Linux Filesystem Composer
+
+Use `Build-LinuxFilesystemFromCopies.ps1` when you want an actual Linux filesystem root assembled from the extracted partitions.
+
+It currently does this:
+
+- copies `0.rootfsA` to the demo root as the primary Linux filesystem
+- preserves `1.rootfsB` as the secondary slot reference
+- overlays `3.services` onto `usr/local`
+- overlays `4.var` onto `var`
+- overlays `5.skills` onto `opt/jibo/Jibo/Skills`
+
+That is the right target if you want to inspect the demo filesystem as a mounted Linux tree instead of just a normalized overlay harness.
+
+The builder also writes `filesystem-progress.json` after each stage so a large copy can be inspected even if the run is interrupted.

@@ -109,6 +109,20 @@ Verification should confirm:
 - the staged Open Jibo marker is present
 - the boot/mode files still match the baseline structure
 
+### Filesystem composer
+
+The filesystem composer should materialize a demo Linux root from the extracted copies:
+
+- `0.rootfsA` becomes the primary root filesystem
+- `1.rootfsB` stays preserved as the secondary OTA slot reference
+- `3.services` overlays onto `/usr/local`
+- `4.var` overlays onto `/var`
+- `5.skills` overlays onto `/opt/jibo/Jibo/Skills`
+
+This is the right target for a copied-volume demo filesystem.
+
+The composer should leave a `filesystem-progress.json` checkpoint while copying so interrupted runs can still be inspected.
+
 ## File Roles
 
 ### Identity and state

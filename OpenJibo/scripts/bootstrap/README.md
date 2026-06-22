@@ -33,6 +33,7 @@ Entry points:
 - `Validate-OpenJiboHarnessRoundTrip.ps1`
 - `Demo-OpenJiboHarness.ps1`
 - `Recommend-OpenJiboHarnessMode.ps1`
+- `Build-LinuxFilesystemFromCopies.ps1`
 
 Example:
 
@@ -44,4 +45,5 @@ Example:
 .\Validate-OpenJiboHarnessRoundTrip.ps1 -OutputDirectory C:\Projects\JiboExperiments\artifacts\harness-overlay-output
 .\Demo-OpenJiboHarness.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OverlayRoot C:\Projects\JiboExperiments\artifacts\demo-overlay -Strict -Clean
 .\Recommend-OpenJiboHarnessMode.ps1 -Goal demo
+.\Build-LinuxFilesystemFromCopies.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OutputRoot C:\Projects\JiboExperiments\artifacts\linux-fs-demo -Clean
 ```

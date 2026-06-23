@@ -28,21 +28,32 @@ internal static class PortalStaticFileMapper
         return Results.File(filePath, contentType);
     }
 
-    private static string ResolvePortalDirectory(string webRootPath, string contentRootPath)
+    private static string ResolvePortalDirectory(string? webRootPath, string? contentRootPath)
     {
         var candidates = new[]
         {
-            Path.Combine(webRootPath, "portal"),
+            CombineIfAvailable(webRootPath, "portal"),
             Path.Combine(AppContext.BaseDirectory, "wwwroot", "portal"),
-            Path.Combine(contentRootPath, "wwwroot", "portal")
+            CombineIfAvailable(contentRootPath, "wwwroot", "portal")
         };
 
         foreach (var candidate in candidates)
         {
-            if (Directory.Exists(candidate) && File.Exists(Path.Combine(candidate, "index.html")))
+            if (!string.IsNullOrWhiteSpace(candidate) &&
+                Directory.Exists(candidate) &&
+                File.Exists(Path.Combine(candidate, "index.html")))
                 return candidate;
         }
 
-        return candidates[0];
+        return candidates.FirstOrDefault(candidate => !string.IsNullOrWhiteSpace(candidate))
+               ?? Path.Combine(AppContext.BaseDirectory, "wwwroot", "portal");
+    }
+
+    private static string? CombineIfAvailable(string? first, params string[] parts)
+    {
+        if (string.IsNullOrWhiteSpace(first))
+            return null;
+
+        return Path.Combine(first, Path.Combine(parts));
     }
 }

@@ -186,6 +186,11 @@ public static class HomeAssistantClimateCommandParser
 
     private static bool IsGenericClimateTarget(string target)
     {
+        if (target.Equals("the", StringComparison.OrdinalIgnoreCase) ||
+            target.Equals("a", StringComparison.OrdinalIgnoreCase) ||
+            target.Equals("an", StringComparison.OrdinalIgnoreCase))
+            return true;
+
         return target.Equals("thermostat", StringComparison.OrdinalIgnoreCase) ||
                target.Equals("the thermostat", StringComparison.OrdinalIgnoreCase) ||
                target.Equals("temperature", StringComparison.OrdinalIgnoreCase) ||

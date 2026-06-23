@@ -487,17 +487,24 @@ public sealed class JiboCloudProtocolServiceTests
         using var immediatePayload = JsonDocument.Parse(immediate.BodyText);
         Assert.True(immediatePayload.RootElement.GetProperty("data").GetBoolean());
 
-        await Task.Delay(400);
-
-        var finished = await _service.DispatchAsync(new ProtocolEnvelope
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(2);
+        while (DateTimeOffset.UtcNow < deadline)
         {
-            HostName = "localhost",
-            Method = "POST",
-            Path = "/backup-status"
-        });
+            await Task.Delay(50);
 
-        using var finishedPayload = JsonDocument.Parse(finished.BodyText);
-        Assert.False(finishedPayload.RootElement.GetProperty("data").GetBoolean());
+            var finished = await _service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "localhost",
+                Method = "POST",
+                Path = "/backup-status"
+            });
+
+            using var finishedPayload = JsonDocument.Parse(finished.BodyText);
+            if (!finishedPayload.RootElement.GetProperty("data").GetBoolean())
+                return;
+        }
+
+        Assert.True(false, "Backup status did not clear within the expected time window.");
     }
 
     [Fact]

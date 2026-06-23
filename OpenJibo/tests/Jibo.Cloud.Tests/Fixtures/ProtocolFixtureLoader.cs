@@ -7,9 +7,10 @@ internal static class ProtocolFixtureLoader
 {
     public static ProtocolFixture Load(string relativePath)
     {
+        var normalizedRelativePath = relativePath.Replace('\\', Path.DirectorySeparatorChar);
         var fullPath = Path.Combine(
             AppContext.BaseDirectory,
-            relativePath.Replace('\\', Path.DirectorySeparatorChar));
+            normalizedRelativePath);
         using var document = JsonDocument.Parse(File.ReadAllText(fullPath));
         var root = document.RootElement;
 
@@ -29,7 +30,7 @@ internal static class ProtocolFixtureLoader
 
         return new ProtocolFixture
         {
-            Name = Path.GetFileNameWithoutExtension(relativePath),
+            Name = Path.GetFileNameWithoutExtension(normalizedRelativePath),
             Request = new ProtocolEnvelope
             {
                 HostName = root.TryGetProperty("host", out var hostElement)

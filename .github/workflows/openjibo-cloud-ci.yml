@@ -40,7 +40,9 @@ jobs:
 
       - name: Build and start stack
         shell: bash
-        run: docker compose up -d --build postgres migrate api
+        run: |
+          cp .env.example .env
+          docker compose up -d --build postgres migrate api
         env:
           OPENJIBO_POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
 

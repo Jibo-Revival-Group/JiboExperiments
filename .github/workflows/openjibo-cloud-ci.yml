@@ -9,6 +9,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: OpenJibo
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,8 +22,8 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Validate self-hosted deployment contract
-        shell: pwsh
-        run: ./scripts/cloud/Test-OpenJiboSelfHostedDeploymentContract.ps1
+        shell: bash
+        run: bash ./scripts/cloud/test-openjibo-self-hosted-deployment-contract.sh
 
       - name: Restore and test
         run: dotnet test tests/Jibo.Cloud.Tests/Jibo.Cloud.Tests.csproj
@@ -28,6 +31,9 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     needs: test
+    defaults:
+      run:
+        working-directory: OpenJibo
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,8 +55,10 @@ jobs:
           exit 1
 
       - name: Run smoke checks
-        shell: pwsh
-        run: ./scripts/cloud/Invoke-CloudSmoke.ps1 -BaseUrl http://localhost:8080
+        shell: bash
+        run: bash ./scripts/cloud/invoke-cloud-smoke.sh
+        env:
+          BASE_URL: http://localhost:8080
 
       - name: Capture logs
         if: always()

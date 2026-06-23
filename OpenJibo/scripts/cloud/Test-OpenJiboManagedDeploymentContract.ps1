@@ -1,9 +1,12 @@
 param(
     [string]$FoundationTemplatePath = "infra/azure/foundation/openjibo-managed-foundation.bicep",
     [string]$ManagedTemplatePath = "infra/azure/container-apps/openjibo-managed.bicep",
-    [string]$WorkflowPath = ".github/workflows/openjibo-cloud-managed-deploy.yml",
+    [string]$WorkflowPath = "../.github/workflows/openjibo-cloud-managed-deploy.yml",
     [string]$FoundationScriptPath = "scripts/cloud/Deploy-OpenJiboManagedFoundation.ps1",
-    [string]$ManagedScriptPath = "scripts/cloud/Deploy-OpenJiboManaged.ps1"
+    [string]$ManagedScriptPath = "scripts/cloud/Deploy-OpenJiboManaged.ps1",
+    [string]$LinuxFoundationScriptPath = "scripts/cloud/deploy-openjibo-managed-foundation.sh",
+    [string]$LinuxPublishScriptPath = "scripts/cloud/publish-openjibo-managed.sh",
+    [string]$LinuxManagedScriptPath = "scripts/cloud/deploy-openjibo-managed.sh"
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,6 +29,9 @@ $managedText = Get-RepoFileText -RelativePath $ManagedTemplatePath
 $workflowText = Get-RepoFileText -RelativePath $WorkflowPath
 $foundationScriptText = Get-RepoFileText -RelativePath $FoundationScriptPath
 $managedScriptText = Get-RepoFileText -RelativePath $ManagedScriptPath
+$linuxFoundationScriptText = Get-RepoFileText -RelativePath $LinuxFoundationScriptPath
+$linuxPublishScriptText = Get-RepoFileText -RelativePath $LinuxPublishScriptPath
+$linuxManagedScriptText = Get-RepoFileText -RelativePath $LinuxManagedScriptPath
 
 $requiredFoundationMarkers = @(
     "output keyVaultName string",
@@ -42,9 +48,11 @@ $requiredManagedMarkers = @(
 )
 
 $requiredWorkflowMarkers = @(
-    "Deploy-OpenJiboManagedFoundation.ps1",
-    "Deploy-OpenJiboManaged.ps1",
-    "Publish-OpenJiboManaged.ps1",
+    "shell: bash",
+    "working-directory: OpenJibo",
+    "deploy-openjibo-managed-foundation.sh",
+    "deploy-openjibo-managed.sh",
+    "publish-openjibo-managed.sh",
     "OPENJIBO_STATE_CONNECTION_STRING",
     "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING"
 )
@@ -78,6 +86,18 @@ if ($foundationScriptText -notmatch [regex]::Escape("openjibo-media-connection-s
 
 if ($managedScriptText -notmatch [regex]::Escape("RegistryName")) {
     throw "Managed deploy script is missing the registry parameter path."
+}
+
+if ($linuxFoundationScriptText -notmatch [regex]::Escape("openjibo-media-connection-string")) {
+    throw "Linux foundation script does not seed the media connection string secret."
+}
+
+if ($linuxPublishScriptText -notmatch [regex]::Escape("az acr build")) {
+    throw "Linux publish script is missing the ACR build path."
+}
+
+if ($linuxManagedScriptText -notmatch [regex]::Escape("--run-smoke")) {
+    throw "Linux managed deploy script is missing the managed smoke path."
 }
 
 foreach ($marker in $forbiddenMarkers) {

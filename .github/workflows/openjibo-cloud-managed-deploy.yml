@@ -12,6 +12,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: openjibo-managed
+    defaults:
+      run:
+        working-directory: OpenJibo
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,8 +25,8 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Validate managed deployment contract
-        shell: pwsh
-        run: ./scripts/cloud/Test-OpenJiboManagedDeploymentContract.ps1
+        shell: bash
+        run: bash ./scripts/cloud/test-openjibo-managed-deployment-contract.sh
 
       - name: Azure login
         uses: azure/login@v2
@@ -31,14 +34,14 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy managed foundation
-        shell: pwsh
+        shell: bash
         run: >
-          ./scripts/cloud/Deploy-OpenJiboManagedFoundation.ps1
-          -ResourceGroupName $env:OPENJIBO_RESOURCE_GROUP
-          -StateConnectionString $env:OPENJIBO_STATE_CONNECTION_STRING
-          -PersonalMemoryConnectionString $env:OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING
-          -OpenWeatherApiKey $env:OPENWEATHER_API_KEY
-          -NewsApiKey $env:NEWSAPI_KEY
+          bash ./scripts/cloud/deploy-openjibo-managed-foundation.sh
+          --resource-group-name "$OPENJIBO_RESOURCE_GROUP"
+          --state-connection-string "$OPENJIBO_STATE_CONNECTION_STRING"
+          --personal-memory-connection-string "$OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING"
+          --open-weather-api-key "$OPENWEATHER_API_KEY"
+          --news-api-key "$NEWSAPI_KEY"
         env:
           OPENJIBO_RESOURCE_GROUP: ${{ secrets.OPENJIBO_RESOURCE_GROUP }}
           OPENJIBO_STATE_CONNECTION_STRING: ${{ secrets.OPENJIBO_STATE_CONNECTION_STRING }}
@@ -47,21 +50,21 @@ jobs:
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
 
       - name: Build and push managed image
-        shell: pwsh
-        run: ./scripts/cloud/Publish-OpenJiboManaged.ps1 -RegistryName $env:OPENJIBO_ACR_NAME -Tag ${{ inputs.image_tag }}
+        shell: bash
+        run: bash ./scripts/cloud/publish-openjibo-managed.sh --registry-name "$OPENJIBO_ACR_NAME" --tag "${{ inputs.image_tag }}"
         env:
           OPENJIBO_ACR_NAME: openjiboacr
 
       - name: Deploy managed Container Apps stack
-        shell: pwsh
+        shell: bash
         run: >
-          ./scripts/cloud/Deploy-OpenJiboManaged.ps1
-          -ResourceGroupName $env:OPENJIBO_RESOURCE_GROUP
-          -KeyVaultName $env:OPENJIBO_KEY_VAULT_NAME
-          -RegistryName $env:OPENJIBO_ACR_NAME
-          -ImageTag ${{ inputs.image_tag }}
-          -RunMigration
-          -RunSmoke
+          bash ./scripts/cloud/deploy-openjibo-managed.sh
+          --resource-group-name "$OPENJIBO_RESOURCE_GROUP"
+          --key-vault-name "$OPENJIBO_KEY_VAULT_NAME"
+          --registry-name "$OPENJIBO_ACR_NAME"
+          --image-tag "${{ inputs.image_tag }}"
+          --run-migration
+          --run-smoke
         env:
           OPENJIBO_RESOURCE_GROUP: ${{ secrets.OPENJIBO_RESOURCE_GROUP }}
           OPENJIBO_KEY_VAULT_NAME: openjibokv

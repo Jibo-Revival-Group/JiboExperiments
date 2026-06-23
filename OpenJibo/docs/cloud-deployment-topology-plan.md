@@ -395,6 +395,7 @@ Recommendation:
 - use versioned SQL migration scripts as the source of truth
 - run migrations through an explicit Open Jibo migration command in CI/CD and managed deployments
 - for local/self-hosted startup, provide a script or entrypoint switch that can run migrations intentionally
+- keep the self-hosted/container migration launcher shell-native so Linux CI and Docker Compose do not depend on PowerShell
 - default to not applying destructive or risky migrations silently
 - require a dry-run/report mode before public self-hosted release
 - use a DbUp-style SQL script runner as the first implementation path
@@ -407,6 +408,8 @@ Later pipeline should:
 - publish versioned release artifacts
 - generate deployment manifests
 - run migration checks
+- run the Linux self-hosted contract check alongside the PowerShell contract check
+- run the managed deployment workflow through the bash wrappers so the Azure job stays Linux-native for its orchestration layer
 - run containerized integration tests against SQL and file storage
 
 ## `1.0.20` Exit Criteria

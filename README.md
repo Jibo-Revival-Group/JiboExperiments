@@ -4,6 +4,8 @@ This repository is the working lab for bringing Jibo back.
 
 The active OpenJibo work lives in [OpenJibo/README.md](OpenJibo/README.md), and the long-range story now lives in [OpenJibo/docs/roadmap.md](OpenJibo/docs/roadmap.md).
 
+Repo hygiene: keep generated scratch output, temp captures, and local workspace state out of Git. The `.codex/` tree is ignored by default, and only intentionally shared configuration should be promoted to tracked files.
+
 Start here:
 
 - [OpenJibo overview](OpenJibo/README.md)

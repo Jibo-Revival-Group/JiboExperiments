@@ -18,8 +18,16 @@ These scripts help exercise the new .NET hosted cloud locally.
   Deploys the managed foundation resources, then seeds Key Vault secrets from the deployment outputs and supplied bootstrap values.
 - `Deploy-OpenJiboManaged.ps1`
   Deploys the first Azure Container Apps stack from the Bicep template under `infra/azure/container-apps/`. Use `-RunMigration` to apply schema changes and `-RunSmoke` to verify the deployed endpoint.
+- `deploy-openjibo-managed-foundation.sh`
+  Bash deploy wrapper for the managed foundation stack.
+- `publish-openjibo-managed.sh`
+  Bash build-and-push wrapper for the managed ACR image.
+- `deploy-openjibo-managed.sh`
+  Bash deploy wrapper for the managed Container Apps stack plus optional migration and smoke.
 - `Test-OpenJiboManagedDeploymentContract.ps1`
   Validates the managed deployment contract by checking the Bicep templates, workflow, and deploy scripts for expected markers before any Azure calls run.
+- `test-openjibo-managed-deployment-contract.sh`
+  Bash contract checker for the managed deployment path and workflow markers.
 - `Test-OpenJiboSelfHostedDeploymentContract.ps1`
   Validates the self-hosted contract by checking the Compose file, migration wrapper, and smoke script before local CI brings up the stack.
 - GitHub Actions `openjibo-cloud-managed-deploy`
@@ -44,6 +52,12 @@ These scripts help exercise the new .NET hosted cloud locally.
   Starts the .NET API on Linux using the same PEM certificate material already used by the Node server.
 - `invoke-live-jibo-prep.sh`
   Bash equivalent of the live-run prep checklist for Ubuntu.
+- `invoke-openjibo-migration.sh`
+  Bash wrapper for the PostgreSQL migration runner so Linux container and self-hosted flows do not depend on PowerShell.
+- `invoke-cloud-smoke.sh`
+  Bash onboarding replay and health smoke for Linux CI and containerized self-hosted runs.
+- `test-openjibo-self-hosted-deployment-contract.sh`
+  Bash contract checker for the self-hosted compose/migration/smoke trio.
 - `get-websocket-capture-summary.sh`
   Bash summary helper for captured websocket telemetry and exported fixtures.
 - `import-websocket-capture-fixture.py`

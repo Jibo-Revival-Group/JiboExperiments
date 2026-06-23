@@ -34,6 +34,10 @@ These scripts help exercise the new .NET hosted cloud locally.
   Manual workflow that deploys the foundation, builds the managed image, deploys the ACA stack, runs migrations, and smokes the deployed endpoint.
 - `OPENJIBO_POSTGRES_PASSWORD`
   Required when running the self-hosted PostgreSQL stack locally or in CI so the database password stays out of source control.
+- `initialize-openjibo-compose-env.sh`
+  Copies `.env.example` to `.env` when the compose env file is missing.
+- `Initialize-OpenJiboComposeEnv.ps1`
+  PowerShell equivalent of the compose env bootstrap helper.
 - `Invoke-ProtocolFixture.ps1`
   Replays a sanitized HTTP fixture against a running local instance.
 - `Get-WebSocketCaptureSummary.ps1`

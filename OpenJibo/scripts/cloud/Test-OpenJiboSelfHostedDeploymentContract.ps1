@@ -62,6 +62,7 @@ $requiredSmokeMarkers = @(
 
 $requiredWorkflowMarkers = @(
     "working-directory: OpenJibo",
+    "initialize-openjibo-compose-env.sh",
     "test-openjibo-self-hosted-deployment-contract.sh",
     "invoke-cloud-smoke.sh"
 )

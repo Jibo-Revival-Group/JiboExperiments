@@ -41,7 +41,7 @@ jobs:
       - name: Build and start stack
         shell: bash
         run: |
-          cp .env.example .env
+          bash ./scripts/cloud/initialize-openjibo-compose-env.sh
           docker compose up -d --build postgres migrate api
         env:
           OPENJIBO_POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}

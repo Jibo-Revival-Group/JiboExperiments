@@ -61,6 +61,7 @@ required_smoke_markers=(
 
 required_workflow_markers=(
   "working-directory: OpenJibo"
+  "initialize-openjibo-compose-env.sh"
   "test-openjibo-self-hosted-deployment-contract.sh"
   "invoke-cloud-smoke.sh"
 )

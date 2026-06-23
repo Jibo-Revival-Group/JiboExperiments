@@ -4,7 +4,8 @@ param(
     [string]$MigrationScriptPath = "scripts/cloud/Invoke-OpenJiboMigration.ps1",
     [string]$LinuxMigrationScriptPath = "scripts/cloud/invoke-openjibo-migration.sh",
     [string]$SmokeScriptPath = "scripts/cloud/Invoke-CloudSmoke.ps1",
-    [string]$LinuxSmokeScriptPath = "scripts/cloud/invoke-cloud-smoke.sh"
+    [string]$LinuxSmokeScriptPath = "scripts/cloud/invoke-cloud-smoke.sh",
+    [string]$StackScriptPath = "scripts/cloud/invoke-openjibo-self-hosted-stack.sh"
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,6 +29,7 @@ $migrationText = Get-RepoFileText -RelativePath $MigrationScriptPath
 $linuxMigrationText = Get-RepoFileText -RelativePath $LinuxMigrationScriptPath
 $smokeText = Get-RepoFileText -RelativePath $SmokeScriptPath
 $linuxSmokeText = Get-RepoFileText -RelativePath $LinuxSmokeScriptPath
+$stackText = Get-RepoFileText -RelativePath $StackScriptPath
 
 $requiredComposeMarkers = @(
     "services:",
@@ -62,7 +64,7 @@ $requiredSmokeMarkers = @(
 
 $requiredWorkflowMarkers = @(
     "working-directory: OpenJibo",
-    "initialize-openjibo-compose-env.sh",
+    "invoke-openjibo-self-hosted-stack.sh",
     "test-openjibo-self-hosted-deployment-contract.sh",
     "invoke-cloud-smoke.sh"
 )
@@ -95,6 +97,18 @@ foreach ($marker in $requiredSmokeMarkers) {
     if ($linuxSmokeText -notmatch [regex]::Escape($marker)) {
         throw "Linux smoke script is missing expected marker: $marker"
     }
+}
+
+if ($stackText -notmatch [regex]::Escape("initialize-openjibo-compose-env.sh")) {
+    throw "Self-hosted stack launcher is missing env bootstrap helper reference."
+}
+
+if ($stackText -notmatch [regex]::Escape("compose up -d")) {
+    throw "Self-hosted stack launcher is missing compose launch command."
+}
+
+if ($stackText -notmatch [regex]::Escape("migrate") -or $stackText -notmatch [regex]::Escape("api")) {
+    throw "Self-hosted stack launcher is missing core service names."
 }
 
 foreach ($marker in $requiredWorkflowMarkers) {

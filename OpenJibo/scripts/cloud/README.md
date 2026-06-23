@@ -38,6 +38,10 @@ These scripts help exercise the new .NET hosted cloud locally.
   Copies `.env.example` to `.env` when the compose env file is missing.
 - `Initialize-OpenJiboComposeEnv.ps1`
   PowerShell equivalent of the compose env bootstrap helper.
+- `invoke-openjibo-self-hosted-stack.sh`
+  Starts the local self-hosted stack, bootstraps `.env`, and can include the migration service when requested.
+- `Invoke-OpenJiboSelfHostedStack.ps1`
+  PowerShell equivalent of the self-hosted stack launcher.
 - `Invoke-ProtocolFixture.ps1`
   Replays a sanitized HTTP fixture against a running local instance.
 - `Get-WebSocketCaptureSummary.ps1`

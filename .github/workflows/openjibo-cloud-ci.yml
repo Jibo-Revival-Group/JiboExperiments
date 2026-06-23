@@ -40,9 +40,7 @@ jobs:
 
       - name: Build and start stack
         shell: bash
-        run: |
-          bash ./scripts/cloud/initialize-openjibo-compose-env.sh
-          docker compose up -d --build postgres migrate api
+        run: bash ./scripts/cloud/invoke-openjibo-self-hosted-stack.sh --run-migration
         env:
           OPENJIBO_POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
 

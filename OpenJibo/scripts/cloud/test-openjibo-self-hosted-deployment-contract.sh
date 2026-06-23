@@ -6,6 +6,7 @@ workflow_path="../.github/workflows/openjibo-cloud-ci.yml"
 migration_script_path="scripts/cloud/Invoke-OpenJiboMigration.ps1"
 linux_migration_script_path="scripts/cloud/invoke-openjibo-migration.sh"
 smoke_script_path="scripts/cloud/invoke-cloud-smoke.sh"
+stack_script_path="scripts/cloud/invoke-openjibo-self-hosted-stack.sh"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
@@ -27,6 +28,7 @@ workflow_text="$(get_repo_file_text "$workflow_path")"
 migration_text="$(get_repo_file_text "$migration_script_path")"
 linux_migration_text="$(get_repo_file_text "$linux_migration_script_path")"
 smoke_text="$(get_repo_file_text "$smoke_script_path")"
+stack_text="$(get_repo_file_text "$stack_script_path")"
 
 required_compose_markers=(
   "services:"
@@ -61,7 +63,7 @@ required_smoke_markers=(
 
 required_workflow_markers=(
   "working-directory: OpenJibo"
-  "initialize-openjibo-compose-env.sh"
+  "invoke-openjibo-self-hosted-stack.sh"
   "test-openjibo-self-hosted-deployment-contract.sh"
   "invoke-cloud-smoke.sh"
 )
@@ -93,6 +95,21 @@ for marker in "${required_smoke_markers[@]}"; do
     exit 1
   fi
 done
+
+if [[ "$stack_text" != *"initialize-openjibo-compose-env.sh"* ]]; then
+  echo "Self-hosted stack launcher is missing env bootstrap helper reference." >&2
+  exit 1
+fi
+
+if [[ "$stack_text" != *"compose up -d"* ]]; then
+  echo "Self-hosted stack launcher is missing compose launch command." >&2
+  exit 1
+fi
+
+if [[ "$stack_text" != *"migrate"* ]] || [[ "$stack_text" != *"api"* ]]; then
+  echo "Self-hosted stack launcher is missing core service names." >&2
+  exit 1
+fi
 
 for marker in "${required_workflow_markers[@]}"; do
   if [[ "$workflow_text" != *"$marker"* ]]; then

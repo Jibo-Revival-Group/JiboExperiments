@@ -48,6 +48,8 @@ The current Open Jibo turn-finalization path still has a safety-oriented auto-fi
 
 That is useful as a backstop, but it is too late to be the common path.
 
+The hotphrase early-probe path is intentionally more aggressive than the generic timeout path. For live command turns like cloud version and similar decisive launches, the current implementation probes after a smaller buffered audio window so the turn can close before robot self-audio bleeds into the next capture.
+
 The important runtime state in Open Jibo is:
 
 - `AwaitingTurnCompletion`
@@ -93,6 +95,12 @@ That matches the Pegasus shape more closely:
 - Pegasus attaches the yes/no constraint to the prompt itself and can stop ASR early with `earlyEOS`
 - Open Jibo does not yet have the same streaming ASR boundary, so we approximate it from buffered OGG pages, bounded ASR probes, and transcript heuristics
 - the prompt-echo guard is the missing piece that keeps the robot from finalizing on its own question or self-audio
+
+Current tuning for the early-probe path:
+
+- decisive hotphrase launches can early-finalize once buffered audio reaches roughly three audio-bearing pages and about nine kilobytes
+- the continuous-probe fallback is slightly lower still, at roughly four audio-bearing pages and about seven kilobytes
+- the generic hard timeout remains unchanged as an error-state backstop
 
 The live robot capture that drove this decision did not include `audioTranscriptHint` in the `CONTEXT` payload. Waiting for OGG EOS or the hard timeout caused the cloud-version reply to arrive several seconds late, then Jibo's spoken reply bled into the next captured WAV. The parity behavior is to probe buffered ASR around the first meaningful speech window and emit `LISTEN` plus `EOS` plus the action as soon as the transcript maps to a usable command.
 

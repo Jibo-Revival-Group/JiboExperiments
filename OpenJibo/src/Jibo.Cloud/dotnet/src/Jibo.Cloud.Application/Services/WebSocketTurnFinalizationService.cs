@@ -17,10 +17,10 @@ public sealed class WebSocketTurnFinalizationService(
 {
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
     private const int AutoFinalizeMinBufferedAudioPages = 3;
-    private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 14_000;
-    private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 4;
-    private const int AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes = 12_000;
-    private const int AutoFinalizeHotphraseOggContinuousProbeMinAudioPages = 5;
+    private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 9_000;
+    private const int AutoFinalizeHotphraseOggEarlyProbeMinAudioPages = 3;
+    private const int AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes = 7_000;
+    private const int AutoFinalizeHotphraseOggContinuousProbeMinAudioPages = 4;
     private const string GlsmPhaseMetadataKey = "glsmPhase";
     private const int AutoFinalizeContinuationDeferralMaxAttempts = 4;
     private static readonly TimeSpan AutoFinalizeReconnectGrace = TimeSpan.FromSeconds(4);

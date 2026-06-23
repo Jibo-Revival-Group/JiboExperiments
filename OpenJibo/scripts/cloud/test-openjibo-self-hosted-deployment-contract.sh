@@ -7,6 +7,8 @@ migration_script_path="scripts/cloud/Invoke-OpenJiboMigration.ps1"
 linux_migration_script_path="scripts/cloud/invoke-openjibo-migration.sh"
 smoke_script_path="scripts/cloud/invoke-cloud-smoke.sh"
 stack_script_path="scripts/cloud/invoke-openjibo-self-hosted-stack.sh"
+postgres_init_script_path="scripts/cloud/postgres-init/01-create-databases.sh"
+compose_env_bootstrap_script_path="scripts/cloud/initialize-openjibo-compose-env.sh"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
@@ -29,6 +31,8 @@ migration_text="$(get_repo_file_text "$migration_script_path")"
 linux_migration_text="$(get_repo_file_text "$linux_migration_script_path")"
 smoke_text="$(get_repo_file_text "$smoke_script_path")"
 stack_text="$(get_repo_file_text "$stack_script_path")"
+postgres_init_text="$(get_repo_file_text "$postgres_init_script_path")"
+compose_env_bootstrap_text="$(get_repo_file_text "$compose_env_bootstrap_script_path")"
 
 required_compose_markers=(
   "services:"
@@ -120,6 +124,21 @@ done
 
 if [[ "$compose_text" == *"OPENJIBO_MEDIA_CONNECTION_STRING"* ]]; then
   echo "Self-hosted compose still references the managed media connection secret." >&2
+  exit 1
+fi
+
+if [[ "$compose_text" != *"docker-entrypoint-initdb.d"* ]]; then
+  echo "Self-hosted compose is missing the postgres initdb mount." >&2
+  exit 1
+fi
+
+if [[ "$postgres_init_text" != *"openjibo_memory"* ]]; then
+  echo "Self-hosted postgres init script is missing the memory database creation." >&2
+  exit 1
+fi
+
+if [[ "$compose_env_bootstrap_text" != *"OPENJIBO_POSTGRES_PASSWORD"* ]]; then
+  echo "Compose env bootstrap is missing the PostgreSQL password propagation logic." >&2
   exit 1
 fi
 

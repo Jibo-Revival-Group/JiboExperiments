@@ -5,7 +5,8 @@ param(
     [string]$LinuxMigrationScriptPath = "scripts/cloud/invoke-openjibo-migration.sh",
     [string]$SmokeScriptPath = "scripts/cloud/Invoke-CloudSmoke.ps1",
     [string]$LinuxSmokeScriptPath = "scripts/cloud/invoke-cloud-smoke.sh",
-    [string]$StackScriptPath = "scripts/cloud/invoke-openjibo-self-hosted-stack.sh"
+    [string]$StackScriptPath = "scripts/cloud/invoke-openjibo-self-hosted-stack.sh",
+    [string]$ComposeEnvBootstrapScriptPath = "scripts/cloud/initialize-openjibo-compose-env.sh"
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,6 +31,7 @@ $linuxMigrationText = Get-RepoFileText -RelativePath $LinuxMigrationScriptPath
 $smokeText = Get-RepoFileText -RelativePath $SmokeScriptPath
 $linuxSmokeText = Get-RepoFileText -RelativePath $LinuxSmokeScriptPath
 $stackText = Get-RepoFileText -RelativePath $StackScriptPath
+$composeEnvBootstrapText = Get-RepoFileText -RelativePath $ComposeEnvBootstrapScriptPath
 
 $requiredComposeMarkers = @(
     "services:",
@@ -119,6 +121,10 @@ foreach ($marker in $requiredWorkflowMarkers) {
 
 if ($composeText -match [regex]::Escape("OPENJIBO_MEDIA_CONNECTION_STRING")) {
     throw "Self-hosted compose still references the managed media connection secret."
+}
+
+if ($composeEnvBootstrapText -notmatch [regex]::Escape("OPENJIBO_POSTGRES_PASSWORD")) {
+    throw "Compose env bootstrap is missing the PostgreSQL password propagation logic."
 }
 
 Write-Host "Self-hosted deployment contract checks passed."

@@ -32,16 +32,20 @@ Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceG
 $deploymentJson = az @arguments | ConvertFrom-Json
 $outputs = $deploymentJson.properties.outputs
 
-if (-not [string]::IsNullOrWhiteSpace($StateConnectionString)) {
-    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-state-connection-string --value $StateConnectionString | Out-Null
+$storageConnectionString = $outputs.storageConnectionString.value
+$resolvedStateConnectionString = if ([string]::IsNullOrWhiteSpace($StateConnectionString)) { $storageConnectionString } else { $StateConnectionString }
+$resolvedPersonalMemoryConnectionString = if ([string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) { $storageConnectionString } else { $PersonalMemoryConnectionString }
+
+if (-not [string]::IsNullOrWhiteSpace($resolvedStateConnectionString)) {
+    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-state-connection-string --value $resolvedStateConnectionString | Out-Null
 }
 
-if (-not [string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) {
-    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-personal-memory-connection-string --value $PersonalMemoryConnectionString | Out-Null
+if (-not [string]::IsNullOrWhiteSpace($resolvedPersonalMemoryConnectionString)) {
+    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-personal-memory-connection-string --value $resolvedPersonalMemoryConnectionString | Out-Null
 }
 
-if (-not [string]::IsNullOrWhiteSpace($outputs.storageConnectionString.value)) {
-    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-media-connection-string --value $outputs.storageConnectionString.value | Out-Null
+if (-not [string]::IsNullOrWhiteSpace($storageConnectionString)) {
+    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-media-connection-string --value $storageConnectionString | Out-Null
 }
 
 if (-not [string]::IsNullOrWhiteSpace($OpenWeatherApiKey)) {

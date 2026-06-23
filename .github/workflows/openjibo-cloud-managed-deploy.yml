@@ -12,6 +12,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: openjibo-managed
+    permissions:
+      contents: read
+      id-token: write
     defaults:
       run:
         working-directory: OpenJibo
@@ -29,9 +32,11 @@ jobs:
         run: bash ./scripts/cloud/test-openjibo-managed-deployment-contract.sh
 
       - name: Azure login
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy managed foundation
         shell: bash

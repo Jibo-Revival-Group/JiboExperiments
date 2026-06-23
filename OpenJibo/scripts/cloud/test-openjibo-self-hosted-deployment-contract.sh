@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-compose_path="../docker-compose.yml"
+compose_path="docker-compose.yml"
 workflow_path="../.github/workflows/openjibo-cloud-ci.yml"
 migration_script_path="scripts/cloud/Invoke-OpenJiboMigration.ps1"
 linux_migration_script_path="scripts/cloud/invoke-openjibo-migration.sh"

@@ -1,5 +1,5 @@
 param(
-    [string]$ComposePath = "../docker-compose.yml",
+    [string]$ComposePath = "docker-compose.yml",
     [string]$WorkflowPath = "../.github/workflows/openjibo-cloud-ci.yml",
     [string]$MigrationScriptPath = "scripts/cloud/Invoke-OpenJiboMigration.ps1",
     [string]$LinuxMigrationScriptPath = "scripts/cloud/invoke-openjibo-migration.sh",

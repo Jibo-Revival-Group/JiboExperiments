@@ -35,6 +35,7 @@ $linuxManagedScriptText = Get-RepoFileText -RelativePath $LinuxManagedScriptPath
 
 $requiredFoundationMarkers = @(
     "output keyVaultName string",
+    "output registryName string",
     "output storageConnectionString string",
     "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'"
 )
@@ -45,6 +46,7 @@ $requiredManagedMarkers = @(
     "secretRef: 'media-connection-string'",
     "keyVaultUrl: 'https://",
     "var logAnalyticsWorkspaceKey"
+  "value: 'AzureBlob'"
 )
 
 $requiredWorkflowMarkers = @(
@@ -53,12 +55,16 @@ $requiredWorkflowMarkers = @(
     "deploy-openjibo-managed-foundation.sh",
     "deploy-openjibo-managed.sh",
     "publish-openjibo-managed.sh",
-    "OPENJIBO_STATE_CONNECTION_STRING",
-    "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING"
+    "steps.foundation.outputs.registryName",
+    "steps.foundation.outputs.keyVaultName"
 )
 
 $forbiddenMarkers = @(
     "OPENJIBO_MEDIA_CONNECTION_STRING",
+    "OPENJIBO_STATE_CONNECTION_STRING",
+    "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING",
+    "openjiboacr",
+    "openjibokv",
     "-MediaConnectionString"
 )
 

@@ -3,11 +3,17 @@ targetScope = 'resourceGroup'
 @description('Azure region for the managed deployment.')
 param location string = resourceGroup().location
 
+@description('Workload name segment used in Azure resource names.')
+param workloadName string = 'openjibo'
+
+@description('Deployment environment name segment used in Azure resource names.')
+param environmentName string = 'managed'
+
 @description('Name of the Container Apps environment.')
-param managedEnvironmentName string = 'openjibo-managed-env'
+param managedEnvironmentName string = 'cae-${workloadName}-${environmentName}'
 
 @description('Name of the Azure Container Apps resource.')
-param containerAppName string = 'openjibo-cloud'
+param containerAppName string = 'ca-${workloadName}-${environmentName}'
 
 @description('Login server for Azure Container Registry, for example myregistry.azurecr.io.')
 param registryLoginServer string
@@ -25,7 +31,7 @@ param minReplicas int = 1
 param maxReplicas int = 2
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
-  name: 'openjibo-managed-logs'
+  name: 'log-${workloadName}-${environmentName}'
 }
 
 var logAnalyticsWorkspaceKey = listKeys(logAnalyticsWorkspace.id, '2022-10-01').primarySharedKey
@@ -125,11 +131,11 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'OpenJibo__State__Backend'
-              value: 'AzureSql'
+              value: 'AzureBlob'
             }
             {
               name: 'OpenJibo__PersonalMemory__Backend'
-              value: 'AzureSql'
+              value: 'AzureBlob'
             }
             {
               name: 'OpenJibo__Media__Backend'

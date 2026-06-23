@@ -96,9 +96,10 @@ def set_secret(name: str, value: str) -> None:
             "--value", value,
         ], check=True, stdout=subprocess.DEVNULL)
 
-set_secret("openjibo-state-connection-string", state_connection_string)
-set_secret("openjibo-personal-memory-connection-string", personal_memory_connection_string)
-set_secret("openjibo-media-connection-string", outputs["storageConnectionString"]["value"])
+storage_connection_string = outputs["storageConnectionString"]["value"]
+set_secret("openjibo-state-connection-string", state_connection_string or storage_connection_string)
+set_secret("openjibo-personal-memory-connection-string", personal_memory_connection_string or storage_connection_string)
+set_secret("openjibo-media-connection-string", storage_connection_string)
 set_secret("openjibo-openweather-api-key", open_weather_api_key)
 set_secret("openjibo-newsapi-key", news_api_key)
 

@@ -3,17 +3,26 @@ targetScope = 'resourceGroup'
 @description('Azure region for the managed foundation.')
 param location string = resourceGroup().location
 
+@description('Workload name segment used in Azure resource names.')
+param workloadName string = 'openjibo'
+
+@description('Deployment environment name segment used in Azure resource names.')
+param environmentName string = 'managed'
+
+var uniqueSuffix = uniqueString(resourceGroup().id)
+var compactName = replace('${workloadName}${environmentName}', '-', '')
+
 @description('Name of the Log Analytics workspace.')
-param logAnalyticsWorkspaceName string = 'openjibo-managed-logs'
+param logAnalyticsWorkspaceName string = 'log-${workloadName}-${environmentName}'
 
 @description('Name of the Azure Container Registry.')
-param containerRegistryName string = 'openjiboacr'
+param containerRegistryName string = 'cr${compactName}${uniqueSuffix}'
 
 @description('Name of the Key Vault used by Open Jibo managed.')
-param keyVaultName string = 'openjibokv'
+param keyVaultName string = 'kv-${take(workloadName, 7)}-${take(environmentName, 5)}-${take(uniqueSuffix, 6)}'
 
 @description('Name of the storage account used by Open Jibo managed.')
-param storageAccountName string = 'openjibostore'
+param storageAccountName string = 'st${take(compactName, 11)}${take(uniqueSuffix, 11)}'
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: logAnalyticsWorkspaceName
@@ -68,6 +77,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
 
 output keyVaultName string = keyVault.name
 output keyVaultUri string = keyVault.properties.vaultUri
+output registryName string = registry.name
 output registryLoginServer string = registry.properties.loginServer
 output storageAccountName string = storageAccount.name
 output storageConnectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${listKeys(storageAccount.id, '2023-05-01').keys[0].value};EndpointSuffix=${environment().suffixes.storage}'

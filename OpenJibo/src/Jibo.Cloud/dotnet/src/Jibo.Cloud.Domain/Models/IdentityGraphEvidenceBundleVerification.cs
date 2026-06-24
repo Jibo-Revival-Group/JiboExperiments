@@ -11,7 +11,11 @@ public sealed class IdentityGraphEvidenceBundleVerification
     public string SignatureKeyId { get; init; } = string.Empty;
     public string Signature { get; init; } = string.Empty;
     public string ComputedSignature { get; init; } = string.Empty;
+    public string AdmissionPolicyVersion { get; init; } = string.Empty;
     public string AdmissionRecommendation { get; init; } = "quarantine";
+    public IReadOnlyList<string> AdmissionReasons { get; init; } = [];
+    public IReadOnlyList<string> SatisfiedEvidence { get; init; } = [];
+    public IReadOnlyList<string> RecommendedActions { get; init; } = [];
     public string AdmissionDecisionHash { get; init; } = string.Empty;
     public string SnapshotContentHash { get; init; } = string.Empty;
     public string AccountId { get; init; } = string.Empty;

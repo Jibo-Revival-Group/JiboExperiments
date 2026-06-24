@@ -5,6 +5,7 @@ resource_group_name=""
 key_vault_name=""
 registry_name=""
 image_tag="managed"
+location=""
 template_path="infra/azure/container-apps/openjibo-managed.bicep"
 parameters_path="infra/azure/container-apps/openjibo-managed.parameters.json"
 run_migration=false
@@ -26,6 +27,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --image-tag)
       image_tag="${2:-managed}"
+      shift 2
+      ;;
+    --location)
+      location="${2:-}"
       shift 2
       ;;
     --template-path)
@@ -87,14 +92,24 @@ registry_login_server="${registry_name}.azurecr.io"
 deployment_name="openjibo-managed-$(date -u +%s)"
 
 echo "Deploying Open Jibo managed Container Apps stack to resource group '${resource_group_name}'"
-deployment_json="$(az deployment group create \
-  --resource-group "$resource_group_name" \
-  --name "$deployment_name" \
-  --template-file "$resolved_template_path" \
-  --parameters "@${resolved_parameters_path}" \
-  --parameters "registryLoginServer=${registry_login_server}" \
-  --parameters "keyVaultName=${key_vault_name}" \
-  --output json)"
+deployment_args=(
+  az deployment group create
+  --resource-group "$resource_group_name"
+  --name "$deployment_name"
+  --template-file "$resolved_template_path"
+  --parameters "@${resolved_parameters_path}"
+  --parameters "registryLoginServer=${registry_login_server}"
+  --parameters "keyVaultName=${key_vault_name}"
+  --parameters "imageTag=${image_tag}"
+)
+
+if [[ -n "$location" ]]; then
+  deployment_args+=(--parameters "location=${location}")
+fi
+
+deployment_args+=(--output json)
+
+deployment_json="$("${deployment_args[@]}")"
 
 if [[ "$run_migration" == true ]]; then
   state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"

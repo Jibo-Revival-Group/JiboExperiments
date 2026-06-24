@@ -6,6 +6,7 @@ param(
     [string]$KeyVaultName,
 
     [string]$ImageTag = "managed",
+    [string]$Location = "",
     [Parameter(Mandatory = $true)]
     [string]$RegistryName,
     [string]$TemplatePath = "infra/azure/container-apps/openjibo-managed.bicep",
@@ -47,8 +48,14 @@ $arguments = @(
     "--parameters", "@$resolvedParametersPath",
     "--parameters", "registryLoginServer=$RegistryLoginServer",
     "--parameters", "keyVaultName=$KeyVaultName",
-    "--output", "json"
+    "--parameters", "imageTag=$ImageTag"
 )
+
+if (-not [string]::IsNullOrWhiteSpace($Location)) {
+    $arguments += @("--parameters", "location=$Location")
+}
+
+$arguments += @("--output", "json")
 
 Write-Host "Deploying Open Jibo managed Container Apps stack to resource group '$ResourceGroupName'"
 $deploymentJson = az @arguments | ConvertFrom-Json

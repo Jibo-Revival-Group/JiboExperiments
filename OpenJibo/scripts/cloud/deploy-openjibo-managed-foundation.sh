@@ -84,7 +84,7 @@ deployment_args=(
 )
 
 if [[ -n "$current_principal_id" ]]; then
-  deployment_args+=(--parameters "secretSeedPrincipalObjectId=${current_principal_id}")
+  deployment_args+=(--parameters "seedPrincipalObjectId=${current_principal_id}")
 fi
 
 deployment_args+=(--output json)

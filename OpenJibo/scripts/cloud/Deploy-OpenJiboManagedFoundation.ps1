@@ -42,7 +42,7 @@ $arguments = @(
 if (-not [string]::IsNullOrWhiteSpace($currentPrincipalId)) {
     $arguments += @(
         "--parameters",
-        "secretSeedPrincipalObjectId=$currentPrincipalId"
+        "seedPrincipalObjectId=$currentPrincipalId"
     )
 }
 

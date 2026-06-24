@@ -43,9 +43,8 @@ required_foundation_markers=(
   "var resolvedStorageAccountName"
   "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'"
   "publicNetworkAccess: 'Enabled'"
-  "enableRbacAuthorization: false"
-  "param secretSeedPrincipalObjectId string = ''"
-  "secretSeedAccessPolicies"
+  "param seedPrincipalObjectId string = ''"
+  "resource keyVaultSecretSeedAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01'"
 )
 
 required_managed_markers=(
@@ -94,7 +93,7 @@ if [[ "$foundation_script_text" != *"openjibo-media-connection-string"* ]]; then
   exit 1
 fi
 
-if [[ "$foundation_script_text" != *"secretSeedPrincipalObjectId"* ]]; then
+if [[ "$foundation_script_text" != *"seedPrincipalObjectId"* ]]; then
   echo "Foundation script does not pass the secret seed access policy principal to the deployment." >&2
   exit 1
 fi
@@ -104,7 +103,7 @@ if [[ "$managed_script_text" != *"RegistryName"* ]]; then
   exit 1
 fi
 
-if [[ "$linux_foundation_script_text" != *"secretSeedPrincipalObjectId"* ]]; then
+if [[ "$linux_foundation_script_text" != *"seedPrincipalObjectId"* ]]; then
   echo "Linux foundation script does not pass the secret seed access policy principal to the deployment." >&2
   exit 1
 fi

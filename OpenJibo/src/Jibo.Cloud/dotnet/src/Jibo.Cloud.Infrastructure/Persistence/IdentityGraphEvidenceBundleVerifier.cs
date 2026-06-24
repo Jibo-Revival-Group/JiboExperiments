@@ -77,6 +77,9 @@ public static class IdentityGraphEvidenceBundleVerifier
         var admissionPolicyVersion = Get(payloadFields, "admission-policy-version");
         var admissionRecommendation = Get(payloadFields, "admission-recommendation");
         var admissionReasons = SplitCsv(Get(payloadFields, "admission-reasons"));
+        var requiredEvidence = SplitCsv(Get(payloadFields, "admission-required-evidence"));
+        if (requiredEvidence.Count == 0)
+            requiredEvidence = ["application-version", "device-id", "host-mapping", "robot-id"];
         var satisfiedEvidence = SplitCsv(Get(payloadFields, "admission-satisfied-evidence"));
         var blockingEvidence = SplitCsv(Get(payloadFields, "admission-blocking-evidence"));
         var recommendedActions = SplitCsv(Get(payloadFields, "admission-recommended-actions"));
@@ -84,7 +87,7 @@ public static class IdentityGraphEvidenceBundleVerifier
         var admissionSignatureKeyId = Get(payloadFields, "admission-signature-key-id");
         var admissionSignature = Get(payloadFields, "admission-signature");
         var computedAdmissionDecisionPayload = BuildAdmissionDecisionPayload(accountId, loopId, snapshotContentHash,
-            admissionPolicyVersion, admissionRecommendation, admissionReasons, satisfiedEvidence, blockingEvidence, recommendedActions);
+            admissionPolicyVersion, admissionRecommendation, admissionReasons, requiredEvidence, satisfiedEvidence, blockingEvidence, recommendedActions);
         var computedAdmissionDecisionHash = ComputeSha256Hex(computedAdmissionDecisionPayload);
         var computedAdmissionSignature = SignPayload(computedAdmissionDecisionPayload);
 
@@ -126,6 +129,7 @@ public static class IdentityGraphEvidenceBundleVerifier
             AdmissionPolicyVersion = admissionPolicyVersion,
             AdmissionRecommendation = admissionRecommendation,
             AdmissionReasons = admissionReasons,
+            RequiredEvidence = requiredEvidence,
             SatisfiedEvidence = satisfiedEvidence,
             RecommendedActions = recommendedActions,
             AdmissionDecisionHash = admissionDecisionHash,
@@ -175,8 +179,8 @@ public static class IdentityGraphEvidenceBundleVerifier
             : value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     private static string BuildAdmissionDecisionPayload(string accountId, string loopId, string contentHash,
-        string policyVersion, string recommendation, IReadOnlyList<string> reasons, IReadOnlyList<string> satisfiedEvidence,
-        IReadOnlyList<string> blockingEvidence, IReadOnlyList<string> recommendedActions)
+        string policyVersion, string recommendation, IReadOnlyList<string> reasons, IReadOnlyList<string> requiredEvidence,
+        IReadOnlyList<string> satisfiedEvidence, IReadOnlyList<string> blockingEvidence, IReadOnlyList<string> recommendedActions)
     {
         var lines = new[]
         {
@@ -186,7 +190,7 @@ public static class IdentityGraphEvidenceBundleVerifier
             $"content-hash|{contentHash}",
             $"recommendation|{recommendation}",
             $"reasons|{string.Join(',', reasons.Order(StringComparer.Ordinal))}",
-            "required-evidence|application-version,device-id,host-mapping",
+            $"required-evidence|{string.Join(',', requiredEvidence.Order(StringComparer.Ordinal))}",
             $"satisfied-evidence|{string.Join(',', satisfiedEvidence.Order(StringComparer.Ordinal))}",
             $"blocking-evidence|{string.Join(',', blockingEvidence.Order(StringComparer.Ordinal))}",
             $"recommended-actions|{string.Join(',', recommendedActions.Order(StringComparer.Ordinal))}"

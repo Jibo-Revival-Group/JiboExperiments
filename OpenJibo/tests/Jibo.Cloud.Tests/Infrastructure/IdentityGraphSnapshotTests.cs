@@ -61,7 +61,9 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("record-signed-snapshot-for-peer-admission", graph.EvidenceBundle.RecommendedActions);
         Assert.Contains($"snapshot-content-hash|{graph.ContentHash}", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-reasons|required-corroborating-evidence-present", graph.EvidenceBundle.Payload);
-        Assert.Contains("admission-satisfied-evidence|application-version,device-id,host-mapping", graph.EvidenceBundle.Payload);
+        Assert.Equal(graph.AdmissionAssessment.RequiredEvidence, graph.EvidenceBundle.RequiredEvidence);
+        Assert.Contains("admission-required-evidence|application-version,device-id,host-mapping,robot-id", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-satisfied-evidence|application-version,device-id,host-mapping,robot-id", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-recommended-actions|record-signed-snapshot-for-peer-admission", graph.EvidenceBundle.Payload);
         Assert.Contains($"admission-decision-hash|{graph.AdmissionAssessment.DecisionHash}", graph.EvidenceBundle.Payload);
         Assert.Matches("^[a-f0-9]{64}$", graph.EvidenceBundle.BundleHash);
@@ -500,6 +502,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.AdmissionPolicyVersion, verification.AdmissionPolicyVersion);
         Assert.Equal(graph.EvidenceBundle.AdmissionRecommendation, verification.AdmissionRecommendation);
         Assert.Equal(graph.EvidenceBundle.AdmissionReasons, verification.AdmissionReasons);
+        Assert.Equal(graph.EvidenceBundle.RequiredEvidence.Order(StringComparer.Ordinal), verification.RequiredEvidence);
         Assert.Equal(graph.EvidenceBundle.SatisfiedEvidence.Order(StringComparer.Ordinal), verification.SatisfiedEvidence);
         Assert.Equal(graph.EvidenceBundle.RecommendedActions, verification.RecommendedActions);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);

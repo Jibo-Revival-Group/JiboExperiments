@@ -137,6 +137,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded the signed offline evidence bundle with admission policy, reason, satisfied-evidence, and recommended-action fields so retained artifacts explain both the peer-admission decision and the next owner/operator step without a running portal
 - added relationship-kind and evidence-signal-kind summaries to the signed offline evidence bundle so retained artifacts show the shape of the peer-admission snapshot without requiring the full relationship payload to be rehydrated
 - expanded offline evidence bundle verification to recompute nested snapshot and admission decision signatures so retained peer-admission artifacts can detect tampering below the outer bundle envelope before replication trusts them
+- carried required admission evidence into the signed offline identity graph evidence bundle so retained peer-admission artifacts explain the complete deny-by-evidence policy inputs and the offline verifier recomputes decisions from the same required-evidence set
 
 ## Working Order
 

@@ -10,10 +10,11 @@ param workloadName string = 'openjibo'
 param environmentName string = 'managed'
 
 var uniqueSuffix = uniqueString(resourceGroup().id)
+var keyVaultUniqueSuffix = uniqueString(resourceGroup().id, deployment().name)
 var compactName = replace('${workloadName}${environmentName}', '-', '')
 var resolvedLogAnalyticsWorkspaceName = empty(logAnalyticsWorkspaceName) ? 'log-${workloadName}-${environmentName}' : logAnalyticsWorkspaceName
 var resolvedContainerRegistryName = empty(containerRegistryName) ? 'cr${compactName}${uniqueSuffix}' : containerRegistryName
-var resolvedKeyVaultName = empty(keyVaultName) ? 'kv-${take(workloadName, 7)}-${take(environmentName, 5)}-${take(uniqueSuffix, 6)}' : keyVaultName
+var resolvedKeyVaultName = empty(keyVaultName) ? 'kv-${take(workloadName, 7)}-${take(environmentName, 5)}-${take(keyVaultUniqueSuffix, 6)}' : keyVaultName
 var resolvedStorageAccountName = empty(storageAccountName) ? 'st${take(compactName, 11)}${take(uniqueSuffix, 11)}' : storageAccountName
 
 @description('Name of the Log Analytics workspace. Leave blank to use the standard Open Jibo generated name.')
@@ -63,17 +64,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       name: 'standard'
     }
     softDeleteRetentionInDays: 30
-    accessPolicies: []
-    enableRbacAuthorization: false
-    publicNetworkAccess: 'Enabled'
-  }
-}
-
-resource keyVaultSecretSeedAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = if (!empty(seedPrincipalObjectId)) {
-  parent: keyVault
-  name: 'add'
-  properties: {
-    accessPolicies: [
+    accessPolicies: empty(seedPrincipalObjectId) ? [] : [
       {
         tenantId: subscription().tenantId
         objectId: seedPrincipalObjectId
@@ -86,6 +77,8 @@ resource keyVaultSecretSeedAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicie
         }
       }
     ]
+    enableRbacAuthorization: false
+    publicNetworkAccess: 'Enabled'
   }
 }
 

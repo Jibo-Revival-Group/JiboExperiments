@@ -41,7 +41,8 @@ $requiredFoundationMarkers = @(
     "param storageAccountName string = ''",
     "var resolvedStorageAccountName",
     "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'",
-    "publicNetworkAccess: 'Enabled'"
+    "publicNetworkAccess: 'Enabled'",
+    "accessPolicies: []"
 )
 
 $requiredManagedMarkers = @(

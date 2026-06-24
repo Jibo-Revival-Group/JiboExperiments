@@ -43,6 +43,7 @@ required_foundation_markers=(
   "var resolvedStorageAccountName"
   "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'"
   "publicNetworkAccess: 'Enabled'"
+  "accessPolicies: []"
 )
 
 required_managed_markers=(

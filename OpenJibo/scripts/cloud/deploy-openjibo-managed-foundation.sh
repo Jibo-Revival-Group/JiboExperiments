@@ -84,7 +84,7 @@ deployment_args=(
 )
 
 if [[ -n "$current_principal_id" ]]; then
-  deployment_args+=(--parameters "secretSeedPrincipalId=${current_principal_id}")
+  deployment_args+=(--parameters "secretSeedPrincipalObjectId=${current_principal_id}")
 fi
 
 deployment_args+=(--output json)
@@ -109,30 +109,6 @@ key_vault_name = outputs["keyVaultName"]["value"]
 storage_account_name = outputs["storageAccountName"]["value"]
 current_principal_id = sys.argv[7]
 
-def wait_for_secret_seed_rbac() -> None:
-    if not current_principal_id.strip():
-        return
-
-    command = [
-        "az", "role", "assignment", "list",
-        "--assignee", current_principal_id,
-        "--scope", f"/subscriptions/{subprocess.check_output(['az', 'account', 'show', '--query', 'id', '--output', 'tsv'], text=True).strip()}/resourceGroups/{resource_group_name}/providers/Microsoft.KeyVault/vaults/{key_vault_name}",
-        "--query", "[?roleDefinitionName=='Key Vault Secrets Officer'] | length(@)",
-        "--output", "tsv",
-    ]
-    for attempt in range(1, 7):
-        count = subprocess.check_output(command, text=True).strip()
-        if count and count != "0":
-            return
-        wait_seconds = attempt * 10
-        print(
-            f"Key Vault RBAC role assignment is not visible for principal '{current_principal_id}' yet; "
-            f"retrying in {wait_seconds} seconds.",
-            file=sys.stderr,
-        )
-        time.sleep(wait_seconds)
-
-wait_for_secret_seed_rbac()
 
 def set_secret(name: str, value: str) -> None:
     if not value.strip():
@@ -153,7 +129,7 @@ def set_secret(name: str, value: str) -> None:
                 raise
             wait_seconds = attempt * 10
             print(
-                f"Key Vault RBAC is not ready for secret '{name}' yet; "
+                f"Key Vault access policy is not ready for secret '{name}' yet; "
                 f"retrying in {wait_seconds} seconds.",
                 file=sys.stderr,
             )

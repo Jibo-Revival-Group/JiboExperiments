@@ -406,4 +406,58 @@ public sealed class IdentityGraphSnapshotTests
         Assert.NotEqual(admitted.EvidenceBundle.Signature, quarantined.EvidenceBundle.Signature);
     }
 
+    [Fact]
+    public void GetIdentityGraph_EvidenceBundleCarriesSnapshotSummaryForOfflineAdmissionReview()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var loopId = store.GetLoops()[0].LoopId;
+        store.AddLoopMember(loopId, "usr-family-member", "family@example.com", "Mae", "Jemison",
+            "unknown", null, false, "family");
+
+        var graph = store.GetIdentityGraph(loopId);
+
+        Assert.Equal(graph.People.Count, graph.EvidenceBundle.PeopleCount);
+        Assert.Equal(graph.Members.Count, graph.EvidenceBundle.MemberCount);
+        Assert.Equal(graph.Relationships.Count, graph.EvidenceBundle.RelationshipCount);
+        Assert.Equal(graph.EvidenceSignals.Count, graph.EvidenceBundle.EvidenceSignalCount);
+        Assert.Empty(graph.EvidenceBundle.BlockingEvidence);
+        Assert.Contains($"people-count|{graph.People.Count}", graph.EvidenceBundle.Payload);
+        Assert.Contains($"member-count|{graph.Members.Count}", graph.EvidenceBundle.Payload);
+        Assert.Contains($"relationship-count|{graph.Relationships.Count}", graph.EvidenceBundle.Payload);
+        Assert.Contains($"evidence-signal-count|{graph.EvidenceSignals.Count}", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-blocking-evidence|", graph.EvidenceBundle.Payload);
+    }
+
+    [Fact]
+    public void GetIdentityGraph_EvidenceBundleCarriesBlockingEvidenceForOfflineQuarantineReview()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "neo-hub.jibo.com"
+            }
+        });
+
+        var graph = store.GetIdentityGraph();
+
+        Assert.Contains("host-mapping:neo-hub.jibo.com->neo-hub.jibo.com", graph.EvidenceBundle.BlockingEvidence);
+        Assert.Contains("admission-blocking-evidence|host-mapping:neo-hub.jibo.com->neo-hub.jibo.com",
+            graph.EvidenceBundle.Payload);
+    }
+
 }

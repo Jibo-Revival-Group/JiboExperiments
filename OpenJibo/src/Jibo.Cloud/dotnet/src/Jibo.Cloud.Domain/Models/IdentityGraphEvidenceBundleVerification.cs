@@ -14,6 +14,7 @@ public sealed class IdentityGraphEvidenceBundleVerification
     public string AdmissionPolicyVersion { get; init; } = string.Empty;
     public string AdmissionRecommendation { get; init; } = "quarantine";
     public IReadOnlyList<string> AdmissionReasons { get; init; } = [];
+    public IReadOnlyList<string> RequiredEvidence { get; init; } = [];
     public IReadOnlyList<string> SatisfiedEvidence { get; init; } = [];
     public IReadOnlyList<string> RecommendedActions { get; init; } = [];
     public string AdmissionDecisionHash { get; init; } = string.Empty;

@@ -11,6 +11,10 @@ namespace Jibo.Cloud.Infrastructure.Persistence;
 public sealed class InMemoryCloudStateStore : ICloudStateStore
 {
     private const string CurrentSchemaVersion = "1";
+    private const int IdentityGraphSnapshotVersion = 1;
+    private const string IdentityGraphSignatureAlgorithm = "HMAC-SHA256";
+    private const string IdentityGraphSignatureKeyId = "open-jibo-local-snapshot-v1";
+    private const string IdentityGraphSigningKey = "open-jibo-local-identity-graph-development-key";
     private static long _nextUpdateIdSeed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
     private static readonly JsonSerializerOptions PersistenceJsonOptions = new()
@@ -423,15 +427,20 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             }
         }
 
+        var contentHash = ComputeIdentityGraphContentHash(_account.AccountId, resolvedLoopId, _robot, people, members,
+            relationships);
+
         return new IdentityGraphSnapshot
         {
             AccountId = _account.AccountId,
             LoopId = resolvedLoopId,
             RobotId = _robot.RobotId,
             DeviceId = _robot.DeviceId,
-            SnapshotVersion = 1,
-            ContentHash = ComputeIdentityGraphContentHash(_account.AccountId, resolvedLoopId, _robot, people, members,
-                relationships),
+            SnapshotVersion = IdentityGraphSnapshotVersion,
+            ContentHash = contentHash,
+            SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
+            SignatureKeyId = IdentityGraphSignatureKeyId,
+            Signature = SignIdentityGraphContentHash(_account.AccountId, resolvedLoopId, contentHash),
             People = people,
             Members = members,
             Relationships = relationships
@@ -444,7 +453,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         var lines = new List<string>
         {
-            $"snapshot-version|1",
+            $"snapshot-version|{IdentityGraphSnapshotVersion}",
             $"account|{accountId}",
             $"loop|{loopId}",
             $"robot|{robot.RobotId}|device|{robot.DeviceId}"
@@ -472,6 +481,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var payload = string.Join('\n', lines);
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
         return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static string SignIdentityGraphContentHash(string accountId, string loopId, string contentHash)
+    {
+        var payload = $"{IdentityGraphSnapshotVersion}|{accountId}|{loopId}|{contentHash}";
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(IdentityGraphSigningKey));
+        return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
     }
 
     private static void AddIdentityRelationship(ICollection<IdentityGraphRelationship> relationships, string? subjectId,

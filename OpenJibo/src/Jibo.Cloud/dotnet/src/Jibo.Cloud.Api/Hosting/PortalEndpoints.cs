@@ -46,6 +46,33 @@ internal static class PortalEndpoints
             return Results.Json(BuildDashboardPayload(session, link, registry));
         });
 
+        app.MapGet("/api/portal/identity-graph", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var graph = cloudStateStore.GetIdentityGraph();
+            return Results.Json(new
+            {
+                graph.AccountId,
+                graph.LoopId,
+                graph.RobotId,
+                graph.DeviceId,
+                graph.SnapshotVersion,
+                graph.ContentHash,
+                graph.SignatureAlgorithm,
+                graph.SignatureKeyId,
+                graph.Signature,
+                graph.People,
+                graph.Members,
+                graph.Relationships
+            });
+        });
+
         app.MapPost("/api/portal/home-assistant/link", async (
             [FromBody] LinkHomeAssistantRequest request,
             HttpRequest httpRequest,

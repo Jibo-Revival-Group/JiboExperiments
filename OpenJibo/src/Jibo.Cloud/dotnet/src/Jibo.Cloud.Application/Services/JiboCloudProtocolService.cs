@@ -253,7 +253,8 @@ public sealed class JiboCloudProtocolService(
                     ReadString(body, "gender"),
                     ReadLong(body, "birthday"),
                     ReadBool(body, "isChild"),
-                    "member");
+                    "member",
+                    ReadString(body, "legalGuardianId"));
 
                 var loop = stateStore.GetLoops().FirstOrDefault(l =>
                     l.LoopId.Equals(loopIdForMutation, StringComparison.OrdinalIgnoreCase));

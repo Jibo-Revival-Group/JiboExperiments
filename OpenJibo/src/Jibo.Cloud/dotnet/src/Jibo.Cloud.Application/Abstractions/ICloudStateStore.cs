@@ -27,7 +27,7 @@ public interface ICloudStateStore
     IdentityGraphSnapshot GetIdentityGraph(string? loopId = null);
 
     LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
-        string? lastName, string? gender, long? birthday, bool isChild, string type);
+        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null);
 
     LoopMemberRecord UpdateLoopMember(string loopId, string memberId, string? firstName, string? lastName,
         string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName);

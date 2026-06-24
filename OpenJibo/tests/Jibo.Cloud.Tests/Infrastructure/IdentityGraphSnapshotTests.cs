@@ -67,4 +67,37 @@ public sealed class IdentityGraphSnapshotTests
             relationship.Relationship == "represented-by" &&
             relationship.ObjectId == "usr-family-member");
     }
+
+    [Fact]
+    public void GetIdentityGraph_IncludesEnrollmentRelationshipsForRecognizedLoopMembers()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            FriendlyName = "Test Robot"
+        });
+        var loopId = store.GetLoops()[0].LoopId;
+        var member = store.AddLoopMember(loopId, "usr-family-member", "family@example.com", "Grace", "Hopper",
+            "unknown", null, false, "family");
+
+        store.SetMemberEnrollment(loopId, member.Id, face: true, voice: true);
+
+        var graph = store.GetIdentityGraph(loopId);
+
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == member.Id &&
+            relationship.SubjectKind == "loop-member" &&
+            relationship.Relationship == "face-enrolled-with" &&
+            relationship.ObjectId == "Ghost-Instance-Onion-Silk" &&
+            relationship.ObjectKind == "robot");
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == member.Id &&
+            relationship.SubjectKind == "loop-member" &&
+            relationship.Relationship == "voice-enrolled-with" &&
+            relationship.ObjectId == "Ghost-Instance-Onion-Silk" &&
+            relationship.ObjectKind == "robot");
+    }
+
 }

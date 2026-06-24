@@ -403,11 +403,24 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 resolvedLoopId);
 
             if (string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
+            {
                 AddIdentityRelationship(relationships, subjectId, "robot", "runs-on", _robot.DeviceId, "device",
                     resolvedLoopId);
-            else if (!string.IsNullOrWhiteSpace(member.AccountId))
-                AddIdentityRelationship(relationships, member.Id, "loop-member", "represented-by", member.AccountId,
-                    "account", resolvedLoopId);
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(member.AccountId))
+                    AddIdentityRelationship(relationships, member.Id, "loop-member", "represented-by", member.AccountId,
+                        "account", resolvedLoopId);
+
+                if (member.FaceEnrolled)
+                    AddIdentityRelationship(relationships, member.Id, "loop-member", "face-enrolled-with", _robot.RobotId,
+                        "robot", resolvedLoopId);
+
+                if (member.VoiceEnrolled)
+                    AddIdentityRelationship(relationships, member.Id, "loop-member", "voice-enrolled-with",
+                        _robot.RobotId, "robot", resolvedLoopId);
+            }
         }
 
         return new IdentityGraphSnapshot

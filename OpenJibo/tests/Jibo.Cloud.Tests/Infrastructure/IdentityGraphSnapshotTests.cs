@@ -487,6 +487,15 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.AdmissionRecommendation, verification.AdmissionRecommendation);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.SnapshotContentHash, verification.SnapshotContentHash);
+        Assert.Equal(graph.EvidenceBundle.AccountId, verification.AccountId);
+        Assert.Equal(graph.EvidenceBundle.LoopId, verification.LoopId);
+        Assert.Equal(graph.EvidenceBundle.RobotId, verification.RobotId);
+        Assert.Equal(graph.EvidenceBundle.DeviceId, verification.DeviceId);
+        Assert.Equal(graph.EvidenceBundle.PeopleCount, verification.PeopleCount);
+        Assert.Equal(graph.EvidenceBundle.MemberCount, verification.MemberCount);
+        Assert.Equal(graph.EvidenceBundle.RelationshipCount, verification.RelationshipCount);
+        Assert.Equal(graph.EvidenceBundle.EvidenceSignalCount, verification.EvidenceSignalCount);
+        Assert.Empty(verification.BlockingEvidence);
     }
 
     [Fact]
@@ -513,6 +522,31 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("bundle-hash-mismatch", verification.Errors);
         Assert.Contains("bundle-signature-mismatch", verification.Errors);
         Assert.Equal("quarantine", verification.AdmissionRecommendation);
+    }
+
+    [Fact]
+    public void VerifyEvidenceBundleEnvelope_ExtractsBlockingEvidenceForOfflineQuarantineReview()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "neo-hub.jibo.com"
+            }
+        });
+        var graph = store.GetIdentityGraph();
+
+        var verification = IdentityGraphEvidenceBundleVerifier.Verify(graph.EvidenceBundle.Envelope);
+
+        Assert.True(verification.IsValid);
+        Assert.Equal("quarantine", verification.AdmissionRecommendation);
+        Assert.Contains("host-mapping:neo-hub.jibo.com->neo-hub.jibo.com", verification.BlockingEvidence);
+        Assert.Equal(graph.EvidenceBundle.BlockingEvidence, verification.BlockingEvidence);
+        Assert.Equal(graph.EvidenceBundle.EvidenceSignalCount, verification.EvidenceSignalCount);
     }
 
 }

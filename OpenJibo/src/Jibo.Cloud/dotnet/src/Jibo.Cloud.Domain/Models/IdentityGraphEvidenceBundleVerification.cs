@@ -14,5 +14,14 @@ public sealed class IdentityGraphEvidenceBundleVerification
     public string AdmissionRecommendation { get; init; } = "quarantine";
     public string AdmissionDecisionHash { get; init; } = string.Empty;
     public string SnapshotContentHash { get; init; } = string.Empty;
+    public string AccountId { get; init; } = string.Empty;
+    public string LoopId { get; init; } = string.Empty;
+    public string RobotId { get; init; } = string.Empty;
+    public string DeviceId { get; init; } = string.Empty;
+    public int PeopleCount { get; init; }
+    public int MemberCount { get; init; }
+    public int RelationshipCount { get; init; }
+    public int EvidenceSignalCount { get; init; }
+    public IReadOnlyList<string> BlockingEvidence { get; init; } = [];
     public IReadOnlyList<string> Errors { get; init; } = [];
 }

@@ -45,6 +45,22 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("HMAC-SHA256", graph.AdmissionAssessment.SignatureAlgorithm);
         Assert.Equal("open-jibo-local-admission-v1", graph.AdmissionAssessment.SignatureKeyId);
         Assert.Matches("^[a-f0-9]{64}$", graph.AdmissionAssessment.Signature);
+        Assert.Equal("identity-graph-evidence-bundle-v1", graph.EvidenceBundle.BundleVersion);
+        Assert.Equal(graph.AccountId, graph.EvidenceBundle.AccountId);
+        Assert.Equal(graph.LoopId, graph.EvidenceBundle.LoopId);
+        Assert.Equal(graph.RobotId, graph.EvidenceBundle.RobotId);
+        Assert.Equal(graph.DeviceId, graph.EvidenceBundle.DeviceId);
+        Assert.Equal(graph.ContentHash, graph.EvidenceBundle.SnapshotContentHash);
+        Assert.Equal(graph.Signature, graph.EvidenceBundle.SnapshotSignature);
+        Assert.Equal(graph.AdmissionAssessment.DecisionHash, graph.EvidenceBundle.AdmissionDecisionHash);
+        Assert.Equal(graph.AdmissionAssessment.Signature, graph.EvidenceBundle.AdmissionSignature);
+        Assert.Equal("admit", graph.EvidenceBundle.AdmissionRecommendation);
+        Assert.Contains($"snapshot-content-hash|{graph.ContentHash}", graph.EvidenceBundle.Payload);
+        Assert.Contains($"admission-decision-hash|{graph.AdmissionAssessment.DecisionHash}", graph.EvidenceBundle.Payload);
+        Assert.Matches("^[a-f0-9]{64}$", graph.EvidenceBundle.BundleHash);
+        Assert.Equal("HMAC-SHA256", graph.EvidenceBundle.SignatureAlgorithm);
+        Assert.Equal("open-jibo-local-evidence-bundle-v1", graph.EvidenceBundle.SignatureKeyId);
+        Assert.Matches("^[a-f0-9]{64}$", graph.EvidenceBundle.Signature);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
         Assert.Contains(graph.Members, member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
@@ -351,6 +367,36 @@ public sealed class IdentityGraphSnapshotTests
         Assert.NotEqual(before.ContentHash, after.ContentHash);
         Assert.NotEqual(before.Signature, after.Signature);
         Assert.NotEqual(before.AdmissionAssessment.DecisionHash, after.AdmissionAssessment.DecisionHash);
+    }
+
+    [Fact]
+    public void GetIdentityGraph_EvidenceBundleChangesWithAdmissionDecision()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var admitted = store.GetIdentityGraph();
+
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk"
+        });
+        var quarantined = store.GetIdentityGraph();
+
+        Assert.Equal("admit", admitted.EvidenceBundle.AdmissionRecommendation);
+        Assert.Equal("quarantine", quarantined.EvidenceBundle.AdmissionRecommendation);
+        Assert.NotEqual(admitted.EvidenceBundle.Payload, quarantined.EvidenceBundle.Payload);
+        Assert.NotEqual(admitted.EvidenceBundle.BundleHash, quarantined.EvidenceBundle.BundleHash);
+        Assert.NotEqual(admitted.EvidenceBundle.Signature, quarantined.EvidenceBundle.Signature);
     }
 
 }

@@ -17,7 +17,14 @@ public sealed class IdentityGraphEvidenceBundleVerification
     public IReadOnlyList<string> SatisfiedEvidence { get; init; } = [];
     public IReadOnlyList<string> RecommendedActions { get; init; } = [];
     public string AdmissionDecisionHash { get; init; } = string.Empty;
+    public string ComputedAdmissionDecisionHash { get; init; } = string.Empty;
+    public string AdmissionSignature { get; init; } = string.Empty;
+    public string ComputedAdmissionSignature { get; init; } = string.Empty;
+    public bool AdmissionDecisionSignatureValid { get; init; }
     public string SnapshotContentHash { get; init; } = string.Empty;
+    public string SnapshotSignature { get; init; } = string.Empty;
+    public string ComputedSnapshotSignature { get; init; } = string.Empty;
+    public bool SnapshotSignatureValid { get; init; }
     public string AccountId { get; init; } = string.Empty;
     public string LoopId { get; init; } = string.Empty;
     public string RobotId { get; init; } = string.Empty;

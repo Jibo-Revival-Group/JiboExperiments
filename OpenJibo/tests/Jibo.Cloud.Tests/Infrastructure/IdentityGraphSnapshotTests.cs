@@ -503,7 +503,14 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.SatisfiedEvidence.Order(StringComparer.Ordinal), verification.SatisfiedEvidence);
         Assert.Equal(graph.EvidenceBundle.RecommendedActions, verification.RecommendedActions);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
+        Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.ComputedAdmissionDecisionHash);
+        Assert.Equal(graph.EvidenceBundle.AdmissionSignature, verification.AdmissionSignature);
+        Assert.Equal(graph.EvidenceBundle.AdmissionSignature, verification.ComputedAdmissionSignature);
+        Assert.True(verification.AdmissionDecisionSignatureValid);
         Assert.Equal(graph.EvidenceBundle.SnapshotContentHash, verification.SnapshotContentHash);
+        Assert.Equal(graph.EvidenceBundle.SnapshotSignature, verification.SnapshotSignature);
+        Assert.Equal(graph.EvidenceBundle.SnapshotSignature, verification.ComputedSnapshotSignature);
+        Assert.True(verification.SnapshotSignatureValid);
         Assert.Equal(graph.EvidenceBundle.AccountId, verification.AccountId);
         Assert.Equal(graph.EvidenceBundle.LoopId, verification.LoopId);
         Assert.Equal(graph.EvidenceBundle.RobotId, verification.RobotId);
@@ -540,7 +547,39 @@ public sealed class IdentityGraphSnapshotTests
         Assert.False(verification.IsValid);
         Assert.Contains("bundle-hash-mismatch", verification.Errors);
         Assert.Contains("bundle-signature-mismatch", verification.Errors);
+        Assert.Contains("admission-decision-hash-mismatch", verification.Errors);
+        Assert.Contains("admission-signature-mismatch", verification.Errors);
+        Assert.False(verification.AdmissionDecisionSignatureValid);
         Assert.Equal("quarantine", verification.AdmissionRecommendation);
+    }
+
+    [Fact]
+    public void VerifyEvidenceBundleEnvelope_RejectsTamperedSnapshotSignature()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var graph = store.GetIdentityGraph();
+        var tamperedEnvelope = graph.EvidenceBundle.Envelope.Replace($"snapshot-signature|{graph.EvidenceBundle.SnapshotSignature}",
+            "snapshot-signature|0000000000000000000000000000000000000000000000000000000000000000",
+            StringComparison.Ordinal);
+
+        var verification = IdentityGraphEvidenceBundleVerifier.Verify(tamperedEnvelope);
+
+        Assert.False(verification.IsValid);
+        Assert.Contains("bundle-hash-mismatch", verification.Errors);
+        Assert.Contains("bundle-signature-mismatch", verification.Errors);
+        Assert.Contains("snapshot-signature-mismatch", verification.Errors);
+        Assert.False(verification.SnapshotSignatureValid);
+        Assert.Equal(graph.EvidenceBundle.SnapshotSignature, verification.ComputedSnapshotSignature);
     }
 
     [Fact]

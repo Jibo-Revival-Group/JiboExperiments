@@ -128,6 +128,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - signed the deny-by-evidence admission decision separately from the identity graph snapshot so future peer admission can verify both the relationship payload and the resulting admit/quarantine recommendation
 - added child/guardian relationship edges to the identity graph so family membership snapshots preserve dependent-care context before multi-Jibo admission and replication work
 - added optional certificate thumbprint, issued identity, build hash, and config hash corroborating signals to the signed identity graph so clone-detection evidence can travel with owner-visible admission snapshots without becoming required admission gates
+- added a signed identity graph evidence bundle that binds the snapshot signature and the admission decision signature into one deterministic peer-admission payload for future replication handoff
 
 ## Working Order
 

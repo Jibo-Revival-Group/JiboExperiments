@@ -16,6 +16,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private const string IdentityGraphSignatureKeyId = "open-jibo-local-snapshot-v1";
     private const string IdentityGraphSigningKey = "open-jibo-local-identity-graph-development-key";
     private const string IdentityGraphAdmissionSignatureKeyId = "open-jibo-local-admission-v1";
+    private const string IdentityGraphEvidenceBundleSignatureKeyId = "open-jibo-local-evidence-bundle-v1";
     private static long _nextUpdateIdSeed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
     private static readonly JsonSerializerOptions PersistenceJsonOptions = new()
@@ -445,7 +446,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             relationships, evidenceSignals);
 
         var signaturePayload = BuildIdentityGraphSignaturePayload(_account.AccountId, resolvedLoopId, contentHash);
+        var signature = SignIdentityGraphPayload(signaturePayload);
         var admissionAssessment = BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId, contentHash, evidenceSignals);
+        var evidenceBundle = BuildSignedIdentityGraphEvidenceBundle(_account.AccountId, resolvedLoopId, _robot,
+            contentHash, signature, admissionAssessment);
 
         return new IdentityGraphSnapshot
         {
@@ -458,8 +462,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
             SignatureKeyId = IdentityGraphSignatureKeyId,
             SignaturePayload = signaturePayload,
-            Signature = SignIdentityGraphPayload(signaturePayload),
+            Signature = signature,
             AdmissionAssessment = admissionAssessment,
+            EvidenceBundle = evidenceBundle,
             People = people,
             Members = members,
             Relationships = relationships,
@@ -685,6 +690,58 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"satisfied-evidence|{string.Join(',', assessment.SatisfiedEvidence.Order(StringComparer.Ordinal))}",
             $"blocking-evidence|{string.Join(',', assessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
             $"recommended-actions|{string.Join(',', assessment.RecommendedActions.Order(StringComparer.Ordinal))}"
+        };
+
+        return string.Join('\n', lines);
+    }
+
+
+    private static IdentityGraphEvidenceBundle BuildSignedIdentityGraphEvidenceBundle(string accountId, string loopId,
+        DeviceRegistration robot, string contentHash, string snapshotSignature,
+        IdentityGraphAdmissionAssessment admissionAssessment)
+    {
+        var payload = BuildIdentityGraphEvidenceBundlePayload(accountId, loopId, robot, contentHash, snapshotSignature,
+            admissionAssessment);
+        var bundleHash = ComputeSha256Hex(payload);
+
+        return new IdentityGraphEvidenceBundle
+        {
+            AccountId = accountId,
+            LoopId = loopId,
+            RobotId = robot.RobotId,
+            DeviceId = robot.DeviceId,
+            SnapshotContentHash = contentHash,
+            SnapshotSignature = snapshotSignature,
+            AdmissionDecisionHash = admissionAssessment.DecisionHash,
+            AdmissionSignature = admissionAssessment.Signature,
+            AdmissionRecommendation = admissionAssessment.Recommendation,
+            Payload = payload,
+            BundleHash = bundleHash,
+            SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
+            SignatureKeyId = IdentityGraphEvidenceBundleSignatureKeyId,
+            Signature = SignIdentityGraphPayload(payload)
+        };
+    }
+
+    private static string BuildIdentityGraphEvidenceBundlePayload(string accountId, string loopId, DeviceRegistration robot,
+        string contentHash, string snapshotSignature, IdentityGraphAdmissionAssessment admissionAssessment)
+    {
+        var lines = new[]
+        {
+            "bundle-version|identity-graph-evidence-bundle-v1",
+            $"account|{accountId}",
+            $"loop|{loopId}",
+            $"robot|{robot.RobotId}",
+            $"device|{robot.DeviceId}",
+            $"snapshot-version|{IdentityGraphSnapshotVersion}",
+            $"snapshot-content-hash|{contentHash}",
+            $"snapshot-signature-key-id|{IdentityGraphSignatureKeyId}",
+            $"snapshot-signature|{snapshotSignature}",
+            $"admission-policy-version|{admissionAssessment.PolicyVersion}",
+            $"admission-recommendation|{admissionAssessment.Recommendation}",
+            $"admission-decision-hash|{admissionAssessment.DecisionHash}",
+            $"admission-signature-key-id|{admissionAssessment.SignatureKeyId}",
+            $"admission-signature|{admissionAssessment.Signature}"
         };
 
         return string.Join('\n', lines);

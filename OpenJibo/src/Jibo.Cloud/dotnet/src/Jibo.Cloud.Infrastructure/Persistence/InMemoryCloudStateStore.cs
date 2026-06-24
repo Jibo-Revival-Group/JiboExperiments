@@ -11,6 +11,7 @@ namespace Jibo.Cloud.Infrastructure.Persistence;
 public sealed class InMemoryCloudStateStore : ICloudStateStore
 {
     private const string CurrentSchemaVersion = "1";
+    private static long _nextUpdateIdSeed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
     private static readonly JsonSerializerOptions PersistenceJsonOptions = new()
     {
@@ -607,13 +608,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     public UpdateManifest CreateUpdate(string? fromVersion, string? toVersion, string? changes, string? shaHash,
         long? length, string? subsystem, string? filter, IDictionary<string, object?>? dependencies)
     {
+        var updateId = $"upd-{Interlocked.Increment(ref _nextUpdateIdSeed)}";
         var update = new UpdateManifest
         {
-            UpdateId = $"upd-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+            UpdateId = updateId,
             FromVersion = fromVersion ?? "unknown",
             ToVersion = toVersion ?? fromVersion ?? "unknown",
             Changes = changes ?? string.Empty,
-            Url = $"https://api.jibo.com/update/upd-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+            Url = $"https://api.jibo.com/update/{updateId}",
             ShaHash = shaHash ?? "fake-sha-hash",
             Length = length ?? 0,
             Subsystem = subsystem ?? "unknown",

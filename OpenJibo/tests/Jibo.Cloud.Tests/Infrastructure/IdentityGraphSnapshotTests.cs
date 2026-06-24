@@ -437,7 +437,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.Members.Count, graph.EvidenceBundle.MemberCount);
         Assert.Equal(graph.Relationships.Count, graph.EvidenceBundle.RelationshipCount);
         Assert.Equal(graph.EvidenceSignals.Count, graph.EvidenceBundle.EvidenceSignalCount);
-        Assert.Contains("member-of:3", graph.EvidenceBundle.RelationshipKinds);
+        Assert.Contains("member-of:4", graph.EvidenceBundle.RelationshipKinds);
         Assert.Contains("served-by:1", graph.EvidenceBundle.RelationshipKinds);
         Assert.Contains("application-version:1", graph.EvidenceBundle.EvidenceSignalKinds);
         Assert.Contains("host-mapping:1", graph.EvidenceBundle.EvidenceSignalKinds);

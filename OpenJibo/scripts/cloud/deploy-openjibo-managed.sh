@@ -135,7 +135,7 @@ PY
     exit 1
   fi
 
-  BASE_URL="https://${container_app_fqdn}" "${script_dir}/invoke-cloud-smoke.sh"
+  BASE_URL="https://${container_app_fqdn}" bash "${script_dir}/invoke-cloud-smoke.sh"
 fi
 
 printf '%s\n' "$deployment_json"

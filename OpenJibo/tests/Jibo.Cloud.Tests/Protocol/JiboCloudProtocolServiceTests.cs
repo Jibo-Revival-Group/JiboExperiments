@@ -504,7 +504,7 @@ public sealed class JiboCloudProtocolServiceTests
                 return;
         }
 
-        Assert.True(false, "Backup status did not clear within the expected time window.");
+        Assert.Fail("Backup status did not clear within the expected time window.");
     }
 
     [Fact]

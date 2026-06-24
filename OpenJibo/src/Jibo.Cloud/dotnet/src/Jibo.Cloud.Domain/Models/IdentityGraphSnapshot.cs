@@ -12,6 +12,7 @@ public sealed class IdentityGraphSnapshot
     public string SignatureKeyId { get; init; } = string.Empty;
     public string SignaturePayload { get; init; } = string.Empty;
     public string Signature { get; init; } = string.Empty;
+    public IdentityGraphAdmissionAssessment AdmissionAssessment { get; init; } = new();
     public IReadOnlyList<PersonRecord> People { get; init; } = [];
     public IReadOnlyList<LoopMemberRecord> Members { get; init; } = [];
     public IReadOnlyList<IdentityGraphRelationship> Relationships { get; init; } = [];

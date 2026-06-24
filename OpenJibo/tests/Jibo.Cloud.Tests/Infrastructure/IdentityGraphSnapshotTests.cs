@@ -33,6 +33,9 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("open-jibo-local-snapshot-v1", graph.SignatureKeyId);
         Assert.Equal($"1|{graph.AccountId}|{graph.LoopId}|{graph.ContentHash}", graph.SignaturePayload);
         Assert.Matches("^[a-f0-9]{64}$", graph.Signature);
+        Assert.Equal("deny-by-evidence-v1", graph.AdmissionAssessment.PolicyVersion);
+        Assert.Equal("admit", graph.AdmissionAssessment.Recommendation);
+        Assert.Contains("required-corroborating-evidence-present", graph.AdmissionAssessment.Reasons);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
         Assert.Contains(graph.Members, member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
@@ -185,6 +188,24 @@ public sealed class IdentityGraphSnapshotTests
         Assert.NotEqual(before.ContentHash, after.ContentHash);
         Assert.Contains(after.EvidenceSignals, signal =>
             signal.SignalKind == "application-version" && signal.Value == "1.0.21");
+    }
+
+    [Fact]
+    public void GetIdentityGraph_QuarantinesAdmissionWhenRequiredCorroboratingEvidenceIsMissing()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk"
+        });
+
+        var graph = store.GetIdentityGraph();
+
+        Assert.Equal("quarantine", graph.AdmissionAssessment.Recommendation);
+        Assert.Contains("missing-application-version", graph.AdmissionAssessment.Reasons);
+        Assert.Contains("missing-host-mapping", graph.AdmissionAssessment.Reasons);
+        Assert.Contains("device-id", graph.AdmissionAssessment.RequiredEvidence);
     }
 
 }

@@ -263,6 +263,9 @@ public sealed class HomeAssistantPortalApiTests
             $"1|{graph.GetProperty("accountId").GetString()}|{graph.GetProperty("loopId").GetString()}|{contentHash}",
             graph.GetProperty("signaturePayload").GetString());
         Assert.Matches("^[a-f0-9]{64}$", graph.GetProperty("signature").GetString());
+        var admissionAssessment = graph.GetProperty("admissionAssessment");
+        Assert.Equal("deny-by-evidence-v1", admissionAssessment.GetProperty("policyVersion").GetString());
+        Assert.Equal("quarantine", admissionAssessment.GetProperty("recommendation").GetString());
         Assert.NotEmpty(graph.GetProperty("relationships").EnumerateArray());
         Assert.Contains(graph.GetProperty("evidenceSignals").EnumerateArray(), signal =>
             signal.GetProperty("signalKind").GetString() == "device-id" &&

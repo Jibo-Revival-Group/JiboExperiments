@@ -70,6 +70,7 @@ internal static class PortalEndpoints
                 graph.SignatureKeyId,
                 graph.SignaturePayload,
                 graph.Signature,
+                graph.AdmissionAssessment,
                 graph.People,
                 graph.Members,
                 graph.Relationships,

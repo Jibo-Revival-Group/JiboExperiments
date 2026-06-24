@@ -61,6 +61,12 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("HMAC-SHA256", graph.EvidenceBundle.SignatureAlgorithm);
         Assert.Equal("open-jibo-local-evidence-bundle-v1", graph.EvidenceBundle.SignatureKeyId);
         Assert.Matches("^[a-f0-9]{64}$", graph.EvidenceBundle.Signature);
+        Assert.Contains("envelope-version|identity-graph-evidence-envelope-v1", graph.EvidenceBundle.Envelope);
+        Assert.Contains($"bundle-hash|{graph.EvidenceBundle.BundleHash}", graph.EvidenceBundle.Envelope);
+        Assert.Contains($"bundle-signature|{graph.EvidenceBundle.Signature}", graph.EvidenceBundle.Envelope);
+        Assert.Contains("payload-begin", graph.EvidenceBundle.Envelope);
+        Assert.Contains(graph.EvidenceBundle.Payload, graph.EvidenceBundle.Envelope);
+        Assert.Contains("payload-end", graph.EvidenceBundle.Envelope);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
         Assert.Contains(graph.Members, member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
@@ -395,6 +401,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("admit", admitted.EvidenceBundle.AdmissionRecommendation);
         Assert.Equal("quarantine", quarantined.EvidenceBundle.AdmissionRecommendation);
         Assert.NotEqual(admitted.EvidenceBundle.Payload, quarantined.EvidenceBundle.Payload);
+        Assert.NotEqual(admitted.EvidenceBundle.Envelope, quarantined.EvidenceBundle.Envelope);
         Assert.NotEqual(admitted.EvidenceBundle.BundleHash, quarantined.EvidenceBundle.BundleHash);
         Assert.NotEqual(admitted.EvidenceBundle.Signature, quarantined.EvidenceBundle.Signature);
     }

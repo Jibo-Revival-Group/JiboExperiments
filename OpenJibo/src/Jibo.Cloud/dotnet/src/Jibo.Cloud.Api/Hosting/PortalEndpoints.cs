@@ -92,7 +92,7 @@ internal static class PortalEndpoints
             var graph = cloudStateStore.GetIdentityGraph();
             var fileName = $"openjibo-identity-evidence-{graph.DeviceId}-{graph.EvidenceBundle.BundleHash}.txt";
             return Results.File(
-                Encoding.UTF8.GetBytes(graph.EvidenceBundle.Payload),
+                Encoding.UTF8.GetBytes(graph.EvidenceBundle.Envelope),
                 "text/plain; charset=utf-8",
                 fileName);
         });

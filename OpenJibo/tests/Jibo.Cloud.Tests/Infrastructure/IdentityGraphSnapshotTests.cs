@@ -39,6 +39,12 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("device-id", graph.AdmissionAssessment.SatisfiedEvidence);
         Assert.Empty(graph.AdmissionAssessment.BlockingEvidence);
         Assert.Contains("record-signed-snapshot-for-peer-admission", graph.AdmissionAssessment.RecommendedActions);
+        Assert.Contains($"content-hash|{graph.ContentHash}", graph.AdmissionAssessment.DecisionPayload);
+        Assert.Contains("recommendation|admit", graph.AdmissionAssessment.DecisionPayload);
+        Assert.Matches("^[a-f0-9]{64}$", graph.AdmissionAssessment.DecisionHash);
+        Assert.Equal("HMAC-SHA256", graph.AdmissionAssessment.SignatureAlgorithm);
+        Assert.Equal("open-jibo-local-admission-v1", graph.AdmissionAssessment.SignatureKeyId);
+        Assert.Matches("^[a-f0-9]{64}$", graph.AdmissionAssessment.Signature);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
         Assert.Contains(graph.Members, member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
@@ -148,6 +154,9 @@ public sealed class IdentityGraphSnapshotTests
         Assert.NotEqual(before.SignaturePayload, after.SignaturePayload);
         Assert.Equal(before.Signature, repeated.Signature);
         Assert.NotEqual(before.Signature, after.Signature);
+        Assert.NotEqual(before.AdmissionAssessment.DecisionPayload, after.AdmissionAssessment.DecisionPayload);
+        Assert.NotEqual(before.AdmissionAssessment.DecisionHash, after.AdmissionAssessment.DecisionHash);
+        Assert.NotEqual(before.AdmissionAssessment.Signature, after.AdmissionAssessment.Signature);
     }
 
     [Fact]
@@ -214,6 +223,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("required:host-mapping", graph.AdmissionAssessment.BlockingEvidence);
         Assert.Contains("capture-current-open-jibo-application-version", graph.AdmissionAssessment.RecommendedActions);
         Assert.Contains("record-open-jibo-host-mapping", graph.AdmissionAssessment.RecommendedActions);
+        Assert.Contains("recommendation|quarantine", graph.AdmissionAssessment.DecisionPayload);
+        Assert.Contains("blocking-evidence|required:application-version,required:host-mapping", graph.AdmissionAssessment.DecisionPayload);
     }
 
     [Fact]

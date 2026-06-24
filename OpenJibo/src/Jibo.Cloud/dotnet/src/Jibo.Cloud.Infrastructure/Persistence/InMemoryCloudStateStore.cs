@@ -493,8 +493,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 $"evidence|{signal.SignalKind}|{signal.SignalId}|{signal.Value}|{signal.Role}|{signal.LoopId}"));
 
         var payload = string.Join('\n', lines);
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
-        return Convert.ToHexString(hash).ToLowerInvariant();
+        return ComputeSha256Hex(payload);
     }
 
 
@@ -1377,8 +1376,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static string HashPassword(string password, string salt)
     {
-        var input = Encoding.UTF8.GetBytes($"{salt}:{password}");
-        return Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant();
+        return ComputeSha256Hex($"{salt}:{password}");
+    }
+
+    private static string ComputeSha256Hex(string value)
+    {
+        return ComputeSha256Hex(Encoding.UTF8.GetBytes(value));
+    }
+
+    private static string ComputeSha256Hex(byte[] value)
+    {
+        return Convert.ToHexString(SHA256.HashData(value)).ToLowerInvariant();
     }
 
     private void TouchState()

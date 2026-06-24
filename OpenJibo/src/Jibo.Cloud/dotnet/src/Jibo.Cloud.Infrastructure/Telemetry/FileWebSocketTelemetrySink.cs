@@ -56,13 +56,14 @@ public sealed class FileWebSocketTelemetrySink(
         }, cancellationToken);
     }
 
-    public Task RecordTurnEventAsync(WebSocketMessageEnvelope envelope, CloudSession session, string eventType,
+    public async Task RecordTurnEventAsync(WebSocketMessageEnvelope envelope, CloudSession session, string eventType,
         IReadOnlyDictionary<string, object?> details, CancellationToken cancellationToken = default)
     {
-        return !options.Value.Enabled
-            ? Task.CompletedTask
-            : WriteRecordAsync(BuildRecord(eventType, envelope, session, null, "internal", null, details),
-                cancellationToken);
+        if (!options.Value.Enabled) return;
+
+        await WriteRecordAsync(BuildRecord(eventType, envelope, session, null, "internal", null, details),
+            cancellationToken);
+        await AppendIndexAsync(envelope, session, eventType, details, cancellationToken);
     }
 
     public async Task RecordOutboundAsync(WebSocketMessageEnvelope envelope, CloudSession session,

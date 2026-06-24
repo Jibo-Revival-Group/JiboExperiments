@@ -495,7 +495,7 @@ These are the carryover items that need a clean proof pass first:
 
 ### 10. Hosted Capture And Storage Plan
 
-- Status: `ready`
+- Status: `in progress`
 - Tags: `docs`, `storage`
 - Why next:
   - repo-local captures work for single-operator testing, but group testing needs a cleaner archival/export boundary
@@ -504,6 +504,9 @@ These are the carryover items that need a clean proof pass first:
   - decide how testers submit noteworthy sessions
   - keep a lightweight `capture-index.ndjson` manifest beside raw captures so testers can quickly find sessions, operations, and fixture exports
   - preserve sanitized fixtures as the durable parity artifact
+- Progress update (`2026-06-24`):
+  - websocket turn diagnostics now append to `capture-index.ndjson`, not only the raw daily event log, so short-answer probes, turn-boundary decisions, and STT guardrail events are findable in the same manifest as connections, messages, HTTP protocol captures, and exported fixtures
+  - this keeps the local capture shape closer to the eventual hosted-retention boundary while the group-submission workflow is still being designed
 
 ### 11. Binary-Safe Media Storage
 

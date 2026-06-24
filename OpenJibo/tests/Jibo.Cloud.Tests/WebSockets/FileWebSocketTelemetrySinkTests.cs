@@ -80,6 +80,49 @@ public sealed class FileWebSocketTelemetrySinkTests : IDisposable
     }
 
     [Fact]
+    public async Task RecordTurnEventAsync_AddsTurnDiagnosticsToCaptureIndex()
+    {
+        var sink = CreateSink();
+        var envelope = new WebSocketMessageEnvelope
+        {
+            ConnectionId = "conn-1",
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "token-1",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-1","data":{"text":"yes"}}"""
+        };
+        var session = new CloudSession
+        {
+            Token = "token-1",
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            TurnState =
+            {
+                TransId = "trans-1"
+            }
+        };
+
+        await sink.RecordTurnEventAsync(envelope, session, "early_probe_scheduled", new Dictionary<string, object?>
+        {
+            ["listenRule"] = "shared/yes_no",
+            ["attempt"] = 1
+        });
+
+        var indexPath = Path.Combine(_directoryPath, "capture-index.ndjson");
+        var indexEntries = await ReadNdjsonAsync(indexPath);
+        var entry = Assert.Single(indexEntries,
+            item => item.GetProperty("eventType").GetString() == "early_probe_scheduled");
+        var details = entry.GetProperty("details");
+
+        Assert.Equal("trans-1", details.GetProperty("transId").GetString());
+        Assert.Equal("shared/yes_no",
+            details.GetProperty("details").GetProperty("listenRule").GetString());
+        Assert.True(details.TryGetProperty("eventFilePath", out var eventFilePath));
+        Assert.EndsWith(".events.ndjson", eventFilePath.GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task RecordsFixtureUsingRepoRootForRelativePaths()
     {
         Directory.CreateDirectory(_repoRoot);

@@ -449,7 +449,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var signature = SignIdentityGraphPayload(signaturePayload);
         var admissionAssessment = BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId, contentHash, evidenceSignals);
         var evidenceBundle = BuildSignedIdentityGraphEvidenceBundle(_account.AccountId, resolvedLoopId, _robot,
-            contentHash, signature, admissionAssessment, people.Count, members.Count, relationships.Count, evidenceSignals.Count);
+            contentHash, signature, admissionAssessment, people.Length, members.Count, relationships.Count, evidenceSignals.Count);
 
         return new IdentityGraphSnapshot
         {

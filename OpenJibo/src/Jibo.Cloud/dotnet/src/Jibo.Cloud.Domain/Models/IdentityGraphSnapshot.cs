@@ -8,6 +8,9 @@ public sealed class IdentityGraphSnapshot
     public string DeviceId { get; init; } = string.Empty;
     public int SnapshotVersion { get; init; } = 1;
     public string ContentHash { get; init; } = string.Empty;
+    public string SignatureAlgorithm { get; init; } = string.Empty;
+    public string SignatureKeyId { get; init; } = string.Empty;
+    public string Signature { get; init; } = string.Empty;
     public IReadOnlyList<PersonRecord> People { get; init; } = [];
     public IReadOnlyList<LoopMemberRecord> Members { get; init; } = [];
     public IReadOnlyList<IdentityGraphRelationship> Relationships { get; init; } = [];

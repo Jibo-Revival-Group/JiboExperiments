@@ -23,6 +23,9 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("Ghost-Instance-Onion-Silk", graph.RobotId);
         Assert.Equal(1, graph.SnapshotVersion);
         Assert.Matches("^[a-f0-9]{64}$", graph.ContentHash);
+        Assert.Equal("HMAC-SHA256", graph.SignatureAlgorithm);
+        Assert.Equal("open-jibo-local-snapshot-v1", graph.SignatureKeyId);
+        Assert.Matches("^[a-f0-9]{64}$", graph.Signature);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
         Assert.Contains(graph.Members, member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
@@ -118,6 +121,23 @@ public sealed class IdentityGraphSnapshotTests
 
         Assert.Equal(before.ContentHash, repeated.ContentHash);
         Assert.NotEqual(before.ContentHash, after.ContentHash);
+        Assert.Equal(before.Signature, repeated.Signature);
+        Assert.NotEqual(before.Signature, after.Signature);
+    }
+
+    [Fact]
+    public void GetIdentityGraph_SignatureIsScopedToLoopAndContentHash()
+    {
+        var store = new InMemoryCloudStateStore();
+        var defaultLoopId = store.GetLoops()[0].LoopId;
+        var defaultGraph = store.GetIdentityGraph(defaultLoopId);
+        const string alternateLoopId = "loop-secondary-test";
+        var alternateGraph = store.GetIdentityGraph(alternateLoopId);
+
+        Assert.Equal(defaultGraph.AccountId, alternateGraph.AccountId);
+        Assert.NotEqual(defaultGraph.LoopId, alternateGraph.LoopId);
+        Assert.NotEqual(defaultGraph.ContentHash, alternateGraph.ContentHash);
+        Assert.NotEqual(defaultGraph.Signature, alternateGraph.Signature);
     }
 
 }

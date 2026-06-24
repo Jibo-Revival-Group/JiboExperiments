@@ -67,25 +67,27 @@ fi
 
 deployment_name="openjibo-foundation-$(date -u +%s)"
 
-echo "Deploying Open Jibo managed foundation to resource group '${resource_group_name}'"
+echo "Deploying Open Jibo managed foundation to resource group '${resource_group_name}'" >&2
 deployment_json="$(az deployment group create \
   --resource-group "$resource_group_name" \
   --name "$deployment_name" \
   --template-file "$resolved_template_path" \
   --output json)"
 
-python3 - "$deployment_json" "$state_connection_string" "$personal_memory_connection_string" "$open_weather_api_key" "$news_api_key" <<'PY'
+python3 - "$deployment_json" "$resource_group_name" "$state_connection_string" "$personal_memory_connection_string" "$open_weather_api_key" "$news_api_key" <<'PY'
 import json
 import subprocess
 import sys
 
 deployment_json = json.loads(sys.argv[1])
-state_connection_string = sys.argv[2]
-personal_memory_connection_string = sys.argv[3]
-open_weather_api_key = sys.argv[4]
-news_api_key = sys.argv[5]
+resource_group_name = sys.argv[2]
+state_connection_string = sys.argv[3]
+personal_memory_connection_string = sys.argv[4]
+open_weather_api_key = sys.argv[5]
+news_api_key = sys.argv[6]
 outputs = deployment_json["properties"]["outputs"]
 key_vault_name = outputs["keyVaultName"]["value"]
+storage_account_name = outputs["storageAccountName"]["value"]
 
 def set_secret(name: str, value: str) -> None:
     if value.strip():
@@ -96,7 +98,13 @@ def set_secret(name: str, value: str) -> None:
             "--value", value,
         ], check=True, stdout=subprocess.DEVNULL)
 
-storage_connection_string = outputs["storageConnectionString"]["value"]
+storage_connection_string = subprocess.check_output([
+    "az", "storage", "account", "show-connection-string",
+    "--resource-group", resource_group_name,
+    "--name", storage_account_name,
+    "--query", "connectionString",
+    "--output", "tsv",
+], text=True).strip()
 set_secret("openjibo-state-connection-string", state_connection_string or storage_connection_string)
 set_secret("openjibo-personal-memory-connection-string", personal_memory_connection_string or storage_connection_string)
 set_secret("openjibo-media-connection-string", storage_connection_string)

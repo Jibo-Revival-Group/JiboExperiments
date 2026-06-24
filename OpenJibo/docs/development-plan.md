@@ -12,7 +12,7 @@ Day-to-day feature sequencing lives in [feature-backlog.md](feature-backlog.md).
 
 - Current OpenJibo Cloud release constant: `1.0.20`
 - Source of truth: [OpenJiboCloudBuildInfo.cs](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/OpenJiboCloudBuildInfo.cs)
-- Spoken diagnostic: `Cloud version 1 dot 0 dot 19.`
+- Spoken diagnostic: `Cloud version 1 dot 0 dot 20.`
 - HTTP diagnostic: `/health` returns the same version
 - Startup diagnostic: the API logs the same version on boot
 - .NET target framework: `net10.0` across the cloud projects and cloud test project

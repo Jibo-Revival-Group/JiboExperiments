@@ -11,21 +11,25 @@ param environmentName string = 'managed'
 
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var compactName = replace('${workloadName}${environmentName}', '-', '')
+var resolvedLogAnalyticsWorkspaceName = empty(logAnalyticsWorkspaceName) ? 'log-${workloadName}-${environmentName}' : logAnalyticsWorkspaceName
+var resolvedContainerRegistryName = empty(containerRegistryName) ? 'cr${compactName}${uniqueSuffix}' : containerRegistryName
+var resolvedKeyVaultName = empty(keyVaultName) ? 'kv-${take(workloadName, 7)}-${take(environmentName, 5)}-${take(uniqueSuffix, 6)}' : keyVaultName
+var resolvedStorageAccountName = empty(storageAccountName) ? 'st${take(compactName, 11)}${take(uniqueSuffix, 11)}' : storageAccountName
 
-@description('Name of the Log Analytics workspace.')
-param logAnalyticsWorkspaceName string = 'log-${workloadName}-${environmentName}'
+@description('Name of the Log Analytics workspace. Leave blank to use the standard Open Jibo generated name.')
+param logAnalyticsWorkspaceName string = ''
 
-@description('Name of the Azure Container Registry.')
-param containerRegistryName string = 'cr${compactName}${uniqueSuffix}'
+@description('Name of the Azure Container Registry. Leave blank to use the standard Open Jibo generated name.')
+param containerRegistryName string = ''
 
-@description('Name of the Key Vault used by Open Jibo managed.')
-param keyVaultName string = 'kv-${take(workloadName, 7)}-${take(environmentName, 5)}-${take(uniqueSuffix, 6)}'
+@description('Name of the Key Vault used by Open Jibo managed. Leave blank to use the standard Open Jibo generated name.')
+param keyVaultName string = ''
 
-@description('Name of the storage account used by Open Jibo managed.')
-param storageAccountName string = 'st${take(compactName, 11)}${take(uniqueSuffix, 11)}'
+@description('Name of the storage account used by Open Jibo managed. Leave blank to use the standard Open Jibo generated name.')
+param storageAccountName string = ''
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
-  name: logAnalyticsWorkspaceName
+  name: resolvedLogAnalyticsWorkspaceName
   location: location
   properties: {
     sku: {
@@ -36,7 +40,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 }
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
-  name: containerRegistryName
+  name: resolvedContainerRegistryName
   location: location
   sku: {
     name: 'Standard'
@@ -47,7 +51,7 @@ resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: keyVaultName
+  name: resolvedKeyVaultName
   location: location
   properties: {
     tenantId: subscription().tenantId
@@ -62,7 +66,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 }
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
-  name: storageAccountName
+  name: resolvedStorageAccountName
   location: location
   kind: 'StorageV2'
   sku: {
@@ -80,4 +84,3 @@ output keyVaultUri string = keyVault.properties.vaultUri
 output registryName string = registry.name
 output registryLoginServer string = registry.properties.loginServer
 output storageAccountName string = storageAccount.name
-output storageConnectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${listKeys(storageAccount.id, '2023-05-01').keys[0].value};EndpointSuffix=${environment().suffixes.storage}'

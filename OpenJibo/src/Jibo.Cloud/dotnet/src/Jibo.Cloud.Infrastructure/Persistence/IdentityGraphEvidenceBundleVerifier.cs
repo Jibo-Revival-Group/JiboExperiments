@@ -94,6 +94,15 @@ public static class IdentityGraphEvidenceBundleVerifier
             AdmissionRecommendation = Get(payloadFields, "admission-recommendation"),
             AdmissionDecisionHash = Get(payloadFields, "admission-decision-hash"),
             SnapshotContentHash = Get(payloadFields, "snapshot-content-hash"),
+            AccountId = Get(payloadFields, "account"),
+            LoopId = Get(payloadFields, "loop"),
+            RobotId = Get(payloadFields, "robot"),
+            DeviceId = Get(payloadFields, "device"),
+            PeopleCount = GetInt(payloadFields, "people-count"),
+            MemberCount = GetInt(payloadFields, "member-count"),
+            RelationshipCount = GetInt(payloadFields, "relationship-count"),
+            EvidenceSignalCount = GetInt(payloadFields, "evidence-signal-count"),
+            BlockingEvidence = SplitCsv(Get(payloadFields, "admission-blocking-evidence")),
             Errors = errors
         };
     }
@@ -111,6 +120,14 @@ public static class IdentityGraphEvidenceBundleVerifier
 
     private static string Get(IReadOnlyDictionary<string, string> fields, string key) =>
         fields.TryGetValue(key, out var value) ? value : string.Empty;
+
+    private static int GetInt(IReadOnlyDictionary<string, string> fields, string key) =>
+        int.TryParse(Get(fields, key), out var value) ? value : 0;
+
+    private static IReadOnlyList<string> SplitCsv(string value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? []
+            : value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     private static string ComputeSha256Hex(string payload) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();

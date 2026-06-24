@@ -115,6 +115,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded the identity graph snapshot so it now carries explicit account-to-loop ownership, loop-to-robot service, robot-to-device, person-to-account, member-to-loop, and loop-member-to-account relationships
 - kept the relationship graph derived from existing persisted loop/member/person/device state so backup/restore and self-hosted snapshots do not need a new hosted API shape for this slice
 - added focused regression coverage for the default robot topology and added family-member relationship edges before moving toward peer admission or direct Jibo-to-Jibo transport
+- tightened dialog parsing guardrails so dance ability questions, preference questions, explicit dance commands, and unrelated dance-topic chat resolve separately while preserving Pegasus-style command-vs-question behavior
 
 ## Working Order
 

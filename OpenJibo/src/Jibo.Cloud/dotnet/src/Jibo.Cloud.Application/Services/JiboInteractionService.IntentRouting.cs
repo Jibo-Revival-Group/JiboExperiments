@@ -374,8 +374,7 @@ public sealed partial class JiboInteractionService
 
         if (IsDanceQuestion(loweredTranscript)) return "dance_question";
 
-        if (MatchesAny(loweredTranscript, "can you dance", "do you dance", "are you able to dance"))
-            return "robot_can_dance";
+        if (IsDanceAbilityQuestion(loweredTranscript)) return "robot_can_dance";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -560,7 +559,7 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(loweredTranscript, "twerk")) return "twerk";
 
-        if (MatchesAny(loweredTranscript, "dance", "boogie")) return "dance";
+        if (IsDanceCommand(loweredTranscript)) return "dance";
 
         if (MatchesAny(
                 loweredTranscript,

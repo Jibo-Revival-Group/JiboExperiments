@@ -281,4 +281,76 @@ public sealed class IdentityGraphSnapshotTests
             signal.Value == "neo-hub.jibo.com");
     }
 
+    [Fact]
+    public void GetIdentityGraph_IncludesOptionalCloneDetectionCorroboratingSignals()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            CertificateThumbprint = "sha256:robot-cert-thumbprint",
+            IssuedIdentityId = "oji_issued_robot_001",
+            BuildHash = "build-sha256-001",
+            ConfigHash = "config-sha256-001",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+
+        var graph = store.GetIdentityGraph();
+
+        Assert.Equal("admit", graph.AdmissionAssessment.Recommendation);
+        Assert.Contains(graph.EvidenceSignals, signal =>
+            signal.SignalKind == "certificate-thumbprint" &&
+            signal.SignalId == "Ghost-Instance-Onion-Silk" &&
+            signal.Value == "sha256:robot-cert-thumbprint" &&
+            signal.Role == "corroborating");
+        Assert.Contains(graph.EvidenceSignals, signal =>
+            signal.SignalKind == "issued-identity" && signal.Value == "oji_issued_robot_001");
+        Assert.Contains(graph.EvidenceSignals, signal =>
+            signal.SignalKind == "build-hash" && signal.Value == "build-sha256-001");
+        Assert.Contains(graph.EvidenceSignals, signal =>
+            signal.SignalKind == "config-hash" && signal.Value == "config-sha256-001");
+    }
+
+    [Fact]
+    public void GetIdentityGraph_ContentHashChangesWithCloneDetectionCorroboratingSignals()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var before = store.GetIdentityGraph();
+
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            CertificateThumbprint = "sha256:robot-cert-thumbprint",
+            IssuedIdentityId = "oji_issued_robot_001",
+            BuildHash = "build-sha256-001",
+            ConfigHash = "config-sha256-001",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var after = store.GetIdentityGraph();
+
+        Assert.NotEqual(before.ContentHash, after.ContentHash);
+        Assert.NotEqual(before.Signature, after.Signature);
+        Assert.NotEqual(before.AdmissionAssessment.DecisionHash, after.AdmissionAssessment.DecisionHash);
+    }
+
 }

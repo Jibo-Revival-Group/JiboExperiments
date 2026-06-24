@@ -640,6 +640,10 @@ public sealed class JiboCloudProtocolService(
                 FriendlyName = robot.FriendlyName,
                 FirmwareVersion = envelope.FirmwareVersion ?? robot.FirmwareVersion,
                 ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
+                CertificateThumbprint = robot.CertificateThumbprint,
+                IssuedIdentityId = robot.IssuedIdentityId,
+                BuildHash = robot.BuildHash,
+                ConfigHash = robot.ConfigHash,
                 HostMappings = robot.HostMappings
             };
 
@@ -667,6 +671,10 @@ public sealed class JiboCloudProtocolService(
                 FriendlyName = robot.FriendlyName,
                 FirmwareVersion = envelope.FirmwareVersion ?? robot.FirmwareVersion,
                 ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
+                CertificateThumbprint = robot.CertificateThumbprint,
+                IssuedIdentityId = robot.IssuedIdentityId,
+                BuildHash = robot.BuildHash,
+                ConfigHash = robot.ConfigHash,
                 HostMappings = robot.HostMappings
             });
 

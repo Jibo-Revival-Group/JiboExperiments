@@ -127,6 +127,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added deterministic recommended admission actions so owner-visible quarantines now describe the next remediation step, while admitted snapshots tell the portal to retain the signed evidence bundle for future peer admission
 - signed the deny-by-evidence admission decision separately from the identity graph snapshot so future peer admission can verify both the relationship payload and the resulting admit/quarantine recommendation
 - added child/guardian relationship edges to the identity graph so family membership snapshots preserve dependent-care context before multi-Jibo admission and replication work
+- added optional certificate thumbprint, issued identity, build hash, and config hash corroborating signals to the signed identity graph so clone-detection evidence can travel with owner-visible admission snapshots without becoming required admission gates
 
 ## Working Order
 

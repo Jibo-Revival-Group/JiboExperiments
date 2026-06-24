@@ -205,6 +205,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 FriendlyName = current.FriendlyName,
                 FirmwareVersion = firmwareVersion ?? current.FirmwareVersion,
                 ApplicationVersion = applicationVersion ?? current.ApplicationVersion,
+                CertificateThumbprint = current.CertificateThumbprint,
+                IssuedIdentityId = current.IssuedIdentityId,
+                BuildHash = current.BuildHash,
+                ConfigHash = current.ConfigHash,
                 HostMappings = new Dictionary<string, string>(current.HostMappings, StringComparer.OrdinalIgnoreCase)
             });
 
@@ -473,7 +477,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"snapshot-version|{IdentityGraphSnapshotVersion}",
             $"account|{accountId}",
             $"loop|{loopId}",
-            $"robot|{robot.RobotId}|device|{robot.DeviceId}"
+            $"robot|{robot.RobotId}|device|{robot.DeviceId}|cert|{robot.CertificateThumbprint}|issued|{robot.IssuedIdentityId}|build|{robot.BuildHash}|config|{robot.ConfigHash}"
         };
 
         lines.AddRange(people
@@ -515,6 +519,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         AddIdentityEvidenceSignal(signals, "robot-id", robot.RobotId, robot.RobotId, loopId);
         AddIdentityEvidenceSignal(signals, "firmware-version", robot.RobotId, robot.FirmwareVersion, loopId);
         AddIdentityEvidenceSignal(signals, "application-version", robot.RobotId, robot.ApplicationVersion, loopId);
+        AddIdentityEvidenceSignal(signals, "certificate-thumbprint", robot.RobotId, robot.CertificateThumbprint, loopId);
+        AddIdentityEvidenceSignal(signals, "issued-identity", robot.RobotId, robot.IssuedIdentityId, loopId);
+        AddIdentityEvidenceSignal(signals, "build-hash", robot.RobotId, robot.BuildHash, loopId);
+        AddIdentityEvidenceSignal(signals, "config-hash", robot.RobotId, robot.ConfigHash, loopId);
 
         foreach (var mapping in robot.HostMappings.OrderBy(mapping => mapping.Key, StringComparer.OrdinalIgnoreCase))
             AddIdentityEvidenceSignal(signals, "host-mapping", mapping.Key, mapping.Value, loopId);

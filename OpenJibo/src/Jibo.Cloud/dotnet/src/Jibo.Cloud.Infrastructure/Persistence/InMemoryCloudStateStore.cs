@@ -368,6 +368,65 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .ToArray();
     }
 
+    public IdentityGraphSnapshot GetIdentityGraph(string? loopId = null)
+    {
+        var resolvedLoopId = string.IsNullOrWhiteSpace(loopId) ? ResolveDefaultLoopId() : loopId.Trim();
+        var members = GetLoopMembers(resolvedLoopId);
+        var people = _people
+            .Where(person => person.LoopId.Equals(resolvedLoopId, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        var relationships = new List<IdentityGraphRelationship>();
+
+        foreach (var person in people)
+        {
+            relationships.Add(new IdentityGraphRelationship
+            {
+                SubjectId = person.PersonId,
+                SubjectKind = "person",
+                Relationship = person.IsPrimary ? "primary-member-of" : "member-of",
+                ObjectId = resolvedLoopId,
+                ObjectKind = "loop",
+                LoopId = resolvedLoopId
+            });
+
+            if (!string.IsNullOrWhiteSpace(person.RobotId))
+                relationships.Add(new IdentityGraphRelationship
+                {
+                    SubjectId = person.PersonId,
+                    SubjectKind = "person",
+                    Relationship = person.IsPrimary ? "primary-user-of" : "known-by",
+                    ObjectId = person.RobotId,
+                    ObjectKind = "robot",
+                    LoopId = resolvedLoopId
+                });
+        }
+
+        foreach (var member in members)
+        {
+            var subjectId = string.IsNullOrWhiteSpace(member.AccountId) ? member.Id : member.AccountId;
+            relationships.Add(new IdentityGraphRelationship
+            {
+                SubjectId = subjectId,
+                SubjectKind = member.Type,
+                Relationship = "member-of",
+                ObjectId = resolvedLoopId,
+                ObjectKind = "loop",
+                LoopId = resolvedLoopId
+            });
+        }
+
+        return new IdentityGraphSnapshot
+        {
+            AccountId = _account.AccountId,
+            LoopId = resolvedLoopId,
+            RobotId = _robot.RobotId,
+            DeviceId = _robot.DeviceId,
+            People = people,
+            Members = members,
+            Relationships = relationships
+        };
+    }
+
     public LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
         string? lastName, string? gender, long? birthday, bool isChild, string type)
     {
@@ -1001,6 +1060,25 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             },
             UpdatedUtc = DateTimeOffset.UtcNow
         };
+
+        for (var i = 0; i < _people.Count; i++)
+        {
+            var person = _people[i];
+            if (!string.Equals(person.RobotId, oldRobotId, StringComparison.OrdinalIgnoreCase)) continue;
+
+            _people[i] = new PersonRecord
+            {
+                PersonId = person.PersonId,
+                AccountId = person.AccountId,
+                LoopId = person.LoopId,
+                RobotId = registration.RobotId,
+                DisplayName = person.DisplayName,
+                Alias = person.Alias,
+                IsPrimary = person.IsPrimary,
+                CreatedUtc = person.CreatedUtc,
+                UpdatedUtc = DateTimeOffset.UtcNow
+            };
+        }
 
         for (var i = 0; i < _loopMembers.Count; i++)
         {

@@ -24,6 +24,7 @@ public interface ICloudStateStore
     IReadOnlyList<LoopRecord> GetLoops();
     IReadOnlyList<PersonRecord> GetPeople();
     IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
+    IdentityGraphSnapshot GetIdentityGraph(string? loopId = null);
 
     LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
         string? lastName, string? gender, long? birthday, bool isChild, string type);

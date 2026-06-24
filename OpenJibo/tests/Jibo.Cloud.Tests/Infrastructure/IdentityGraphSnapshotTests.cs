@@ -135,6 +135,32 @@ public sealed class IdentityGraphSnapshotTests
     }
 
     [Fact]
+    public void GetIdentityGraph_IncludesGuardianRelationshipsForChildMembers()
+    {
+        var store = new InMemoryCloudStateStore();
+        var loopId = store.GetLoops()[0].LoopId;
+        var guardian = store.AddLoopMember(loopId, "usr-guardian", "guardian@example.com", "Mary", "Jackson",
+            "unknown", null, false, "family");
+        var child = store.AddLoopMember(loopId, "usr-child", "child@example.com", "Dorothy", "Vaughan",
+            "unknown", null, true, "family", guardian.Id);
+
+        var graph = store.GetIdentityGraph(loopId);
+
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == child.Id &&
+            relationship.SubjectKind == "loop-member" &&
+            relationship.Relationship == "dependent-of" &&
+            relationship.ObjectId == guardian.Id &&
+            relationship.ObjectKind == "loop-member");
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == guardian.Id &&
+            relationship.SubjectKind == "loop-member" &&
+            relationship.Relationship == "guardian-of" &&
+            relationship.ObjectId == child.Id &&
+            relationship.ObjectKind == "loop-member");
+    }
+
+    [Fact]
     public void GetIdentityGraph_ContentHashIsStableAndChangesWithEnrollmentEvidence()
     {
         var store = new InMemoryCloudStateStore();

@@ -425,6 +425,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 if (member.VoiceEnrolled)
                     AddIdentityRelationship(relationships, member.Id, "loop-member", "voice-enrolled-with",
                         _robot.RobotId, "robot", resolvedLoopId);
+
+                if (member.IsChild && !string.IsNullOrWhiteSpace(member.LegalGuardianId))
+                {
+                    AddIdentityRelationship(relationships, member.Id, "loop-member", "dependent-of",
+                        member.LegalGuardianId, "loop-member", resolvedLoopId);
+                    AddIdentityRelationship(relationships, member.LegalGuardianId, "loop-member", "guardian-of",
+                        member.Id, "loop-member", resolvedLoopId);
+                }
             }
         }
 
@@ -476,7 +484,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         lines.AddRange(members
             .OrderBy(member => member.Id, StringComparer.OrdinalIgnoreCase)
             .Select(member =>
-                $"member|{member.Id}|account|{member.AccountId}|type|{member.Type}|status|{member.Status}|face|{member.FaceEnrolled}|voice|{member.VoiceEnrolled}|guardian|{member.LegalGuardianId}"));
+                $"member|{member.Id}|account|{member.AccountId}|type|{member.Type}|status|{member.Status}|child|{member.IsChild}|face|{member.FaceEnrolled}|voice|{member.VoiceEnrolled}|guardian|{member.LegalGuardianId}"));
 
         lines.AddRange(relationships
             .OrderBy(relationship => relationship.SubjectId, StringComparer.OrdinalIgnoreCase)
@@ -714,7 +722,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
-        string? lastName, string? gender, long? birthday, bool isChild, string type)
+        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null)
     {
         var member = new LoopMemberRecord
         {
@@ -727,7 +735,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Birthday = birthday,
             IsChild = isChild,
             Type = type,
-            Status = "active"
+            Status = "active",
+            LegalGuardianId = legalGuardianId?.Trim()
         };
         lock (_syncRoot)
         {

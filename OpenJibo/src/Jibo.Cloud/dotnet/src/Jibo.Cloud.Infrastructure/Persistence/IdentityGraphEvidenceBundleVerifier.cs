@@ -106,6 +106,8 @@ public static class IdentityGraphEvidenceBundleVerifier
             MemberCount = GetInt(payloadFields, "member-count"),
             RelationshipCount = GetInt(payloadFields, "relationship-count"),
             EvidenceSignalCount = GetInt(payloadFields, "evidence-signal-count"),
+            RelationshipKinds = SplitCsv(Get(payloadFields, "relationship-kinds")),
+            EvidenceSignalKinds = SplitCsv(Get(payloadFields, "evidence-signal-kinds")),
             BlockingEvidence = SplitCsv(Get(payloadFields, "admission-blocking-evidence")),
             Errors = errors
         };

@@ -20,6 +20,8 @@ public sealed class IdentityGraphEvidenceBundle
     public int MemberCount { get; init; }
     public int RelationshipCount { get; init; }
     public int EvidenceSignalCount { get; init; }
+    public IReadOnlyList<string> RelationshipKinds { get; init; } = [];
+    public IReadOnlyList<string> EvidenceSignalKinds { get; init; } = [];
     public IReadOnlyList<string> BlockingEvidence { get; init; } = [];
     public string Payload { get; init; } = string.Empty;
     public string Envelope { get; init; } = string.Empty;

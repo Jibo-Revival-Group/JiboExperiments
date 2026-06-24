@@ -1,5 +1,6 @@
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Content;
+using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Tests.Application;

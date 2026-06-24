@@ -42,7 +42,7 @@ $arguments = @(
 if (-not [string]::IsNullOrWhiteSpace($currentPrincipalId)) {
     $arguments += @(
         "--parameters",
-        "secretSeedPrincipalId=$currentPrincipalId"
+        "secretSeedPrincipalObjectId=$currentPrincipalId"
     )
 }
 
@@ -53,32 +53,6 @@ $arguments += @(
 Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceGroupName'"
 $deploymentJson = az @arguments | ConvertFrom-Json
 $outputs = $deploymentJson.properties.outputs
-
-function Wait-OpenJiboKeyVaultSecretSeedRbac {
-    param(
-        [string]$VaultName,
-        [string]$PrincipalId
-    )
-
-    if ([string]::IsNullOrWhiteSpace($PrincipalId)) {
-        return
-    }
-
-    $subscriptionId = az account show --query id --output tsv
-    $scope = "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroupName/providers/Microsoft.KeyVault/vaults/$VaultName"
-    for ($attempt = 1; $attempt -le 6; $attempt++) {
-        $count = az role assignment list --assignee $PrincipalId --scope $scope --query "[?roleDefinitionName=='Key Vault Secrets Officer'] | length(@)" --output tsv
-        if (-not [string]::IsNullOrWhiteSpace($count) -and $count -ne "0") {
-            return
-        }
-
-        $waitSeconds = $attempt * 10
-        Write-Warning "Key Vault RBAC role assignment is not visible for principal '$PrincipalId' yet; retrying in $waitSeconds seconds."
-        Start-Sleep -Seconds $waitSeconds
-    }
-}
-
-Wait-OpenJiboKeyVaultSecretSeedRbac -VaultName $outputs.keyVaultName.value -PrincipalId $currentPrincipalId
 
 $storageConnectionString = az storage account show-connection-string --resource-group $ResourceGroupName --name $outputs.storageAccountName.value --query connectionString --output tsv
 $resolvedStateConnectionString = if ([string]::IsNullOrWhiteSpace($StateConnectionString)) { $storageConnectionString } else { $StateConnectionString }
@@ -106,7 +80,7 @@ function Set-OpenJiboKeyVaultSecretWithRetry {
             }
 
             $waitSeconds = $attempt * 10
-            Write-Warning "Key Vault RBAC is not ready for secret '$Name' yet; retrying in $waitSeconds seconds."
+            Write-Warning "Key Vault access policy is not ready for secret '$Name' yet; retrying in $waitSeconds seconds."
             Start-Sleep -Seconds $waitSeconds
         }
     }

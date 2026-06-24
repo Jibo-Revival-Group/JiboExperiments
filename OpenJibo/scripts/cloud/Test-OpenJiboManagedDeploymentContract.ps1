@@ -42,9 +42,9 @@ $requiredFoundationMarkers = @(
     "var resolvedStorageAccountName",
     "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'",
     "publicNetworkAccess: 'Enabled'",
-    "enableRbacAuthorization: true",
-    "param secretSeedPrincipalId string = ''",
-    "keyVaultSecretsOfficerRoleDefinitionId"
+    "enableRbacAuthorization: false",
+    "param secretSeedPrincipalObjectId string = ''",
+    "secretSeedAccessPolicies"
 )
 
 $requiredManagedMarkers = @(
@@ -54,8 +54,7 @@ $requiredManagedMarkers = @(
     "keyVaultUrl: 'https://",
     "var logAnalyticsWorkspaceKey",
     "value: 'AzureBlob'",
-    "keyVaultContainerAppSecretsUserRoleAssignment",
-    "keyVaultSecretsUserRoleDefinitionId"
+    "keyVaultContainerAppSecretAccessPolicy"
 )
 
 $requiredWorkflowMarkers = @(
@@ -77,8 +76,7 @@ $forbiddenMarkers = @(
     "-MediaConnectionString",
     "output storageConnectionString",
     "listKeys(storageAccount",
-    "keyvault set-policy",
-    "accessPolicies:"
+    "keyvault set-policy"
 )
 
 foreach ($marker in $requiredFoundationMarkers) {
@@ -103,16 +101,16 @@ if ($foundationScriptText -notmatch [regex]::Escape("openjibo-media-connection-s
     throw "Foundation script does not seed the media connection string secret."
 }
 
-if ($foundationScriptText -notmatch [regex]::Escape("secretSeedPrincipalId")) {
-    throw "Foundation script does not pass the secret seed RBAC principal to the deployment."
+if ($foundationScriptText -notmatch [regex]::Escape("secretSeedPrincipalObjectId")) {
+    throw "Foundation script does not pass the secret seed access policy principal to the deployment."
 }
 
 if ($managedScriptText -notmatch [regex]::Escape("RegistryName")) {
     throw "Managed deploy script is missing the registry parameter path."
 }
 
-if ($linuxFoundationScriptText -notmatch [regex]::Escape("secretSeedPrincipalId")) {
-    throw "Linux foundation script does not pass the secret seed RBAC principal to the deployment."
+if ($linuxFoundationScriptText -notmatch [regex]::Escape("secretSeedPrincipalObjectId")) {
+    throw "Linux foundation script does not pass the secret seed access policy principal to the deployment."
 }
 
 if ($linuxFoundationScriptText -notmatch [regex]::Escape("openjibo-media-connection-string")) {

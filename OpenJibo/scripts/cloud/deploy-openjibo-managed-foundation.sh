@@ -81,8 +81,13 @@ deployment_args=(
   --resource-group "$resource_group_name"
   --name "$deployment_name"
   --template-file "$resolved_template_path"
-  --output json
 )
+
+if [[ -n "$current_principal_id" ]]; then
+  deployment_args+=(--parameters "secretSeedPrincipalId=${current_principal_id}")
+fi
+
+deployment_args+=(--output json)
 
 echo "Deploying Open Jibo managed foundation to resource group '${resource_group_name}'" >&2
 deployment_json="$("${deployment_args[@]}")"
@@ -104,32 +109,30 @@ key_vault_name = outputs["keyVaultName"]["value"]
 storage_account_name = outputs["storageAccountName"]["value"]
 current_principal_id = sys.argv[7]
 
-def grant_secret_seed_policy() -> None:
+def wait_for_secret_seed_rbac() -> None:
     if not current_principal_id.strip():
         return
 
     command = [
-        "az", "keyvault", "set-policy",
-        "--name", key_vault_name,
-        "--object-id", current_principal_id,
-        "--secret-permissions", "get", "list", "set", "delete",
+        "az", "role", "assignment", "list",
+        "--assignee", current_principal_id,
+        "--scope", f"/subscriptions/{subprocess.check_output(['az', 'account', 'show', '--query', 'id', '--output', 'tsv'], text=True).strip()}/resourceGroups/{resource_group_name}/providers/Microsoft.KeyVault/vaults/{key_vault_name}",
+        "--query", "[?roleDefinitionName=='Key Vault Secrets Officer'] | length(@)",
+        "--output", "tsv",
     ]
     for attempt in range(1, 7):
-        try:
-            subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+        count = subprocess.check_output(command, text=True).strip()
+        if count and count != "0":
             return
-        except subprocess.CalledProcessError:
-            if attempt == 6:
-                raise
-            wait_seconds = attempt * 10
-            print(
-                f"Key Vault access policy is not ready for principal '{current_principal_id}' yet; "
-                f"retrying in {wait_seconds} seconds.",
-                file=sys.stderr,
-            )
-            time.sleep(wait_seconds)
+        wait_seconds = attempt * 10
+        print(
+            f"Key Vault RBAC role assignment is not visible for principal '{current_principal_id}' yet; "
+            f"retrying in {wait_seconds} seconds.",
+            file=sys.stderr,
+        )
+        time.sleep(wait_seconds)
 
-grant_secret_seed_policy()
+wait_for_secret_seed_rbac()
 
 def set_secret(name: str, value: str) -> None:
     if not value.strip():

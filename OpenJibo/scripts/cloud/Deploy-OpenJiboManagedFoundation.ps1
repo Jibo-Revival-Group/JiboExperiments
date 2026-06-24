@@ -36,7 +36,17 @@ $arguments = @(
     "deployment", "group", "create",
     "--resource-group", $ResourceGroupName,
     "--name", $deploymentName,
-    "--template-file", $resolvedTemplatePath,
+    "--template-file", $resolvedTemplatePath
+)
+
+if (-not [string]::IsNullOrWhiteSpace($currentPrincipalId)) {
+    $arguments += @(
+        "--parameters",
+        "secretSeedPrincipalId=$currentPrincipalId"
+    )
+}
+
+$arguments += @(
     "--output", "json"
 )
 
@@ -44,7 +54,7 @@ Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceG
 $deploymentJson = az @arguments | ConvertFrom-Json
 $outputs = $deploymentJson.properties.outputs
 
-function Set-OpenJiboKeyVaultSecretSeedPolicyWithRetry {
+function Wait-OpenJiboKeyVaultSecretSeedRbac {
     param(
         [string]$VaultName,
         [string]$PrincipalId
@@ -54,24 +64,21 @@ function Set-OpenJiboKeyVaultSecretSeedPolicyWithRetry {
         return
     }
 
+    $subscriptionId = az account show --query id --output tsv
+    $scope = "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroupName/providers/Microsoft.KeyVault/vaults/$VaultName"
     for ($attempt = 1; $attempt -le 6; $attempt++) {
-        try {
-            az keyvault set-policy --name $VaultName --object-id $PrincipalId --secret-permissions get list set delete | Out-Null
+        $count = az role assignment list --assignee $PrincipalId --scope $scope --query "[?roleDefinitionName=='Key Vault Secrets Officer'] | length(@)" --output tsv
+        if (-not [string]::IsNullOrWhiteSpace($count) -and $count -ne "0") {
             return
         }
-        catch {
-            if ($attempt -eq 6) {
-                throw
-            }
 
-            $waitSeconds = $attempt * 10
-            Write-Warning "Key Vault access policy is not ready for principal '$PrincipalId' yet; retrying in $waitSeconds seconds."
-            Start-Sleep -Seconds $waitSeconds
-        }
+        $waitSeconds = $attempt * 10
+        Write-Warning "Key Vault RBAC role assignment is not visible for principal '$PrincipalId' yet; retrying in $waitSeconds seconds."
+        Start-Sleep -Seconds $waitSeconds
     }
 }
 
-Set-OpenJiboKeyVaultSecretSeedPolicyWithRetry -VaultName $outputs.keyVaultName.value -PrincipalId $currentPrincipalId
+Wait-OpenJiboKeyVaultSecretSeedRbac -VaultName $outputs.keyVaultName.value -PrincipalId $currentPrincipalId
 
 $storageConnectionString = az storage account show-connection-string --resource-group $ResourceGroupName --name $outputs.storageAccountName.value --query connectionString --output tsv
 $resolvedStateConnectionString = if ([string]::IsNullOrWhiteSpace($StateConnectionString)) { $storageConnectionString } else { $StateConnectionString }

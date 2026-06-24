@@ -43,6 +43,7 @@ $requiredFoundationMarkers = @(
     "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'",
     "publicNetworkAccess: 'Enabled'",
     "accessPolicies: []",
+    "enableRbacAuthorization: false",
     "param seedPrincipalObjectId string = ''",
     "resource keyVaultSecretSeedAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01'"
 )

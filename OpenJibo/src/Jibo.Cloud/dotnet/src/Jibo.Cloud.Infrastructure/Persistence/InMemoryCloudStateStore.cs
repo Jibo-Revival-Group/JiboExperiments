@@ -377,42 +377,36 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .ToArray();
         var relationships = new List<IdentityGraphRelationship>();
 
+        AddIdentityRelationship(relationships, _account.AccountId, "account", "owns", resolvedLoopId, "loop", resolvedLoopId);
+        AddIdentityRelationship(relationships, resolvedLoopId, "loop", "served-by", _robot.RobotId, "robot", resolvedLoopId);
+        AddIdentityRelationship(relationships, _robot.RobotId, "robot", "runs-on", _robot.DeviceId, "device", resolvedLoopId);
+
         foreach (var person in people)
         {
-            relationships.Add(new IdentityGraphRelationship
-            {
-                SubjectId = person.PersonId,
-                SubjectKind = "person",
-                Relationship = person.IsPrimary ? "primary-member-of" : "member-of",
-                ObjectId = resolvedLoopId,
-                ObjectKind = "loop",
-                LoopId = resolvedLoopId
-            });
+            AddIdentityRelationship(relationships, person.PersonId, "person",
+                person.IsPrimary ? "primary-member-of" : "member-of", resolvedLoopId, "loop", resolvedLoopId);
+
+            if (!string.IsNullOrWhiteSpace(person.AccountId))
+                AddIdentityRelationship(relationships, person.PersonId, "person", "backed-by", person.AccountId, "account",
+                    resolvedLoopId);
 
             if (!string.IsNullOrWhiteSpace(person.RobotId))
-                relationships.Add(new IdentityGraphRelationship
-                {
-                    SubjectId = person.PersonId,
-                    SubjectKind = "person",
-                    Relationship = person.IsPrimary ? "primary-user-of" : "known-by",
-                    ObjectId = person.RobotId,
-                    ObjectKind = "robot",
-                    LoopId = resolvedLoopId
-                });
+                AddIdentityRelationship(relationships, person.PersonId, "person",
+                    person.IsPrimary ? "primary-user-of" : "known-by", person.RobotId, "robot", resolvedLoopId);
         }
 
         foreach (var member in members)
         {
             var subjectId = string.IsNullOrWhiteSpace(member.AccountId) ? member.Id : member.AccountId;
-            relationships.Add(new IdentityGraphRelationship
-            {
-                SubjectId = subjectId,
-                SubjectKind = member.Type,
-                Relationship = "member-of",
-                ObjectId = resolvedLoopId,
-                ObjectKind = "loop",
-                LoopId = resolvedLoopId
-            });
+            AddIdentityRelationship(relationships, subjectId, member.Type, "member-of", resolvedLoopId, "loop",
+                resolvedLoopId);
+
+            if (string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                AddIdentityRelationship(relationships, subjectId, "robot", "runs-on", _robot.DeviceId, "device",
+                    resolvedLoopId);
+            else if (!string.IsNullOrWhiteSpace(member.AccountId))
+                AddIdentityRelationship(relationships, member.Id, "loop-member", "represented-by", member.AccountId,
+                    "account", resolvedLoopId);
         }
 
         return new IdentityGraphSnapshot
@@ -425,6 +419,33 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Members = members,
             Relationships = relationships
         };
+    }
+
+    private static void AddIdentityRelationship(ICollection<IdentityGraphRelationship> relationships, string? subjectId,
+        string subjectKind, string relationship, string? objectId, string objectKind, string loopId)
+    {
+        if (string.IsNullOrWhiteSpace(subjectId) || string.IsNullOrWhiteSpace(objectId)) return;
+
+        var trimmedSubjectId = subjectId.Trim();
+        var trimmedObjectId = objectId.Trim();
+        if (relationships.Any(existing =>
+                existing.SubjectId.Equals(trimmedSubjectId, StringComparison.OrdinalIgnoreCase) &&
+                existing.SubjectKind.Equals(subjectKind, StringComparison.OrdinalIgnoreCase) &&
+                existing.Relationship.Equals(relationship, StringComparison.OrdinalIgnoreCase) &&
+                existing.ObjectId.Equals(trimmedObjectId, StringComparison.OrdinalIgnoreCase) &&
+                existing.ObjectKind.Equals(objectKind, StringComparison.OrdinalIgnoreCase) &&
+                existing.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        relationships.Add(new IdentityGraphRelationship
+        {
+            SubjectId = trimmedSubjectId,
+            SubjectKind = subjectKind,
+            Relationship = relationship,
+            ObjectId = trimmedObjectId,
+            ObjectKind = objectKind,
+            LoopId = loopId
+        });
     }
 
     public LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,

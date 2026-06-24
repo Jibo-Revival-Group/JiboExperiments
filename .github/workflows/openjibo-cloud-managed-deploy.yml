@@ -33,7 +33,7 @@ jobs:
 
       - name: Validate managed deployment contract
         shell: bash
-        run: bash ./scripts/cloud/test-openjibo-managed-deployment-contract.sh
+        run: bash ./OpenJibo/scripts/cloud/test-openjibo-managed-deployment-contract.sh
 
       - name: Azure login
         uses: azure/login@v3
@@ -78,7 +78,7 @@ jobs:
       - name: Deploy managed Container Apps stack
         shell: bash
         run: >
-          bash ./scripts/cloud/deploy-openjibo-managed.sh
+          bash ./OpenJibo/scripts/cloud/deploy-openjibo-managed.sh
           --resource-group-name "$OPENJIBO_RESOURCE_GROUP"
           --key-vault-name "${{ steps.foundation.outputs.keyVaultName }}"
           --registry-name "${{ steps.foundation.outputs.registryName }}"

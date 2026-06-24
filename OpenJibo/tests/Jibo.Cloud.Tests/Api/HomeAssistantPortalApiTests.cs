@@ -266,6 +266,15 @@ public sealed class HomeAssistantPortalApiTests
         var admissionAssessment = graph.GetProperty("admissionAssessment");
         Assert.Equal("deny-by-evidence-v1", admissionAssessment.GetProperty("policyVersion").GetString());
         Assert.Equal("quarantine", admissionAssessment.GetProperty("recommendation").GetString());
+        var evidenceBundle = graph.GetProperty("evidenceBundle");
+        Assert.Equal("identity-graph-evidence-bundle-v1", evidenceBundle.GetProperty("bundleVersion").GetString());
+        Assert.Equal(contentHash, evidenceBundle.GetProperty("snapshotContentHash").GetString());
+        Assert.Equal(admissionAssessment.GetProperty("decisionHash").GetString(),
+            evidenceBundle.GetProperty("admissionDecisionHash").GetString());
+        Assert.Equal("quarantine", evidenceBundle.GetProperty("admissionRecommendation").GetString());
+        Assert.Contains($"snapshot-content-hash|{contentHash}", evidenceBundle.GetProperty("payload").GetString());
+        Assert.Matches("^[a-f0-9]{64}$", evidenceBundle.GetProperty("bundleHash").GetString());
+        Assert.Matches("^[a-f0-9]{64}$", evidenceBundle.GetProperty("signature").GetString());
         Assert.Contains(admissionAssessment.GetProperty("satisfiedEvidence").EnumerateArray(), item =>
             item.GetString() == "device-id");
         Assert.Contains(admissionAssessment.GetProperty("blockingEvidence").EnumerateArray(), item =>
@@ -276,6 +285,33 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Contains(graph.GetProperty("evidenceSignals").EnumerateArray(), signal =>
             signal.GetProperty("signalKind").GetString() == "device-id" &&
             signal.GetProperty("value").GetString() == "BOJW-1000-0017-0820-0020");
+    }
+
+    [Fact]
+    public async Task IdentityGraphEvidenceBundleEndpoint_ReturnsDownloadablePeerAdmissionPayload()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var bundleResponse = await client.GetAsync("/api/portal/identity-graph/evidence-bundle");
+
+        Assert.Equal(HttpStatusCode.OK, bundleResponse.StatusCode);
+        Assert.Equal("text/plain", bundleResponse.Content.Headers.ContentType?.MediaType);
+        Assert.StartsWith("openjibo-identity-evidence-BOJW-1000-0017-0820-0020-",
+            bundleResponse.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
+        var payload = await bundleResponse.Content.ReadAsStringAsync();
+        Assert.Contains("bundle-version|identity-graph-evidence-bundle-v1", payload);
+        Assert.Contains("device|BOJW-1000-0017-0820-0020", payload);
+        Assert.Contains("admission-recommendation|quarantine", payload);
+        Assert.Contains("admission-decision-hash|", payload);
     }
 
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)

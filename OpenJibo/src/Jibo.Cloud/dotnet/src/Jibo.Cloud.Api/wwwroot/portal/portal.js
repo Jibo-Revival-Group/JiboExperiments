@@ -142,6 +142,9 @@ async function renderIdentityGraphPanel() {
           <div class="meta-item"><span>Blocking evidence</span><span>${escapeHtml((graph.admissionAssessment?.blockingEvidence || []).join(", ") || "—")}</span></div>
           <div class="meta-item"><span>Recommended actions</span><span>${escapeHtml((graph.admissionAssessment?.recommendedActions || []).join(", ") || "—")}</span></div>
         </div>
+        <div class="actions-row">
+          <a class="secondary-button" href="/api/portal/identity-graph/evidence-bundle?portalSessionToken=${encodeURIComponent(getSessionToken() || "")}">Download evidence bundle</a>
+        </div>
       </section>
     `;
   } catch (error) {

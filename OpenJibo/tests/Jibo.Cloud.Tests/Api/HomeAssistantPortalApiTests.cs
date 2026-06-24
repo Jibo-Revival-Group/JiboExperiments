@@ -269,7 +269,9 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Contains(admissionAssessment.GetProperty("satisfiedEvidence").EnumerateArray(), item =>
             item.GetString() == "device-id");
         Assert.Contains(admissionAssessment.GetProperty("blockingEvidence").EnumerateArray(), item =>
-            item.GetString() == "required:host-mapping");
+            item.GetString() == "required:application-version");
+        Assert.Contains(admissionAssessment.GetProperty("recommendedActions").EnumerateArray(), item =>
+            item.GetString() == "capture-current-open-jibo-application-version");
         Assert.NotEmpty(graph.GetProperty("relationships").EnumerateArray());
         Assert.Contains(graph.GetProperty("evidenceSignals").EnumerateArray(), signal =>
             signal.GetProperty("signalKind").GetString() == "device-id" &&

@@ -208,4 +208,29 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("device-id", graph.AdmissionAssessment.RequiredEvidence);
     }
 
+    [Fact]
+    public void GetIdentityGraph_QuarantinesAdmissionWhenHostMappingStillTargetsLegacyCloud()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "neo-hub.jibo.com"
+            }
+        });
+
+        var graph = store.GetIdentityGraph();
+
+        Assert.Equal("quarantine", graph.AdmissionAssessment.Recommendation);
+        Assert.Contains("untrusted-host-mapping-target", graph.AdmissionAssessment.Reasons);
+        Assert.Contains(graph.EvidenceSignals, signal =>
+            signal.SignalKind == "host-mapping" &&
+            signal.SignalId == "neo-hub.jibo.com" &&
+            signal.Value == "neo-hub.jibo.com");
+    }
+
 }

@@ -547,7 +547,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .Where(required => !presentEvidence.Contains(required))
             .ToArray();
 
-        if (missingEvidence.Length == 0)
+        var reasons = missingEvidence
+            .Select(missing => $"missing-{missing}")
+            .ToList();
+
+        var hasUntrustedHostMapping = evidenceSignals
+            .Where(signal => signal.SignalKind.Equals("host-mapping", StringComparison.OrdinalIgnoreCase))
+            .Any(signal => !IsTrustedOpenJiboHostMappingTarget(signal.Value));
+
+        if (hasUntrustedHostMapping) reasons.Add("untrusted-host-mapping-target");
+
+        if (reasons.Count == 0)
         {
             return new IdentityGraphAdmissionAssessment
             {
@@ -560,9 +570,20 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return new IdentityGraphAdmissionAssessment
         {
             Recommendation = "quarantine",
-            Reasons = missingEvidence.Select(missing => $"missing-{missing}").ToArray(),
+            Reasons = reasons,
             RequiredEvidence = requiredEvidence
         };
+    }
+
+    private static bool IsTrustedOpenJiboHostMappingTarget(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+
+        var target = value.Trim();
+        return target.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+               target.EndsWith(".local", StringComparison.OrdinalIgnoreCase) ||
+               target.Contains("openjibo", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildIdentityGraphSignaturePayload(string accountId, string loopId, string contentHash)

@@ -430,6 +430,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var contentHash = ComputeIdentityGraphContentHash(_account.AccountId, resolvedLoopId, _robot, people, members,
             relationships);
 
+        var signaturePayload = BuildIdentityGraphSignaturePayload(_account.AccountId, resolvedLoopId, contentHash);
+
         return new IdentityGraphSnapshot
         {
             AccountId = _account.AccountId,
@@ -440,7 +442,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             ContentHash = contentHash,
             SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
             SignatureKeyId = IdentityGraphSignatureKeyId,
-            Signature = SignIdentityGraphContentHash(_account.AccountId, resolvedLoopId, contentHash),
+            SignaturePayload = signaturePayload,
+            Signature = SignIdentityGraphPayload(signaturePayload),
             People = people,
             Members = members,
             Relationships = relationships
@@ -483,9 +486,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    private static string SignIdentityGraphContentHash(string accountId, string loopId, string contentHash)
+    private static string BuildIdentityGraphSignaturePayload(string accountId, string loopId, string contentHash)
     {
-        var payload = $"{IdentityGraphSnapshotVersion}|{accountId}|{loopId}|{contentHash}";
+        return $"{IdentityGraphSnapshotVersion}|{accountId}|{loopId}|{contentHash}";
+    }
+
+    private static string SignIdentityGraphPayload(string payload)
+    {
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(IdentityGraphSigningKey));
         return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
     }

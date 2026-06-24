@@ -10,6 +10,7 @@ public sealed class IdentityGraphSnapshot
     public string ContentHash { get; init; } = string.Empty;
     public string SignatureAlgorithm { get; init; } = string.Empty;
     public string SignatureKeyId { get; init; } = string.Empty;
+    public string SignaturePayload { get; init; } = string.Empty;
     public string Signature { get; init; } = string.Empty;
     public IReadOnlyList<PersonRecord> People { get; init; } = [];
     public IReadOnlyList<LoopMemberRecord> Members { get; init; } = [];

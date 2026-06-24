@@ -25,6 +25,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Matches("^[a-f0-9]{64}$", graph.ContentHash);
         Assert.Equal("HMAC-SHA256", graph.SignatureAlgorithm);
         Assert.Equal("open-jibo-local-snapshot-v1", graph.SignatureKeyId);
+        Assert.Equal($"1|{graph.AccountId}|{graph.LoopId}|{graph.ContentHash}", graph.SignaturePayload);
         Assert.Matches("^[a-f0-9]{64}$", graph.Signature);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
@@ -121,6 +122,8 @@ public sealed class IdentityGraphSnapshotTests
 
         Assert.Equal(before.ContentHash, repeated.ContentHash);
         Assert.NotEqual(before.ContentHash, after.ContentHash);
+        Assert.Equal(before.SignaturePayload, repeated.SignaturePayload);
+        Assert.NotEqual(before.SignaturePayload, after.SignaturePayload);
         Assert.Equal(before.Signature, repeated.Signature);
         Assert.NotEqual(before.Signature, after.Signature);
     }
@@ -137,6 +140,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(defaultGraph.AccountId, alternateGraph.AccountId);
         Assert.NotEqual(defaultGraph.LoopId, alternateGraph.LoopId);
         Assert.NotEqual(defaultGraph.ContentHash, alternateGraph.ContentHash);
+        Assert.NotEqual(defaultGraph.SignaturePayload, alternateGraph.SignaturePayload);
         Assert.NotEqual(defaultGraph.Signature, alternateGraph.Signature);
     }
 

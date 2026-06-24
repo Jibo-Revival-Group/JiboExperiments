@@ -236,6 +236,36 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal("paired", reconnectPayload.GetProperty("type").GetString());
     }
 
+
+    [Fact]
+    public async Task IdentityGraphEndpoint_ReturnsSignedEvidencePayloadForPortalSession()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var graphResponse = await client.GetAsync("/api/portal/identity-graph");
+
+        Assert.Equal(HttpStatusCode.OK, graphResponse.StatusCode);
+        var graph = await graphResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var contentHash = graph.GetProperty("contentHash").GetString();
+        Assert.Matches("^[a-f0-9]{64}$", contentHash);
+        Assert.Equal("HMAC-SHA256", graph.GetProperty("signatureAlgorithm").GetString());
+        Assert.Equal("open-jibo-local-snapshot-v1", graph.GetProperty("signatureKeyId").GetString());
+        Assert.Equal(
+            $"1|{graph.GetProperty("accountId").GetString()}|{graph.GetProperty("loopId").GetString()}|{contentHash}",
+            graph.GetProperty("signaturePayload").GetString());
+        Assert.Matches("^[a-f0-9]{64}$", graph.GetProperty("signature").GetString());
+        Assert.NotEmpty(graph.GetProperty("relationships").EnumerateArray());
+    }
+
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)
     {
         var buffer = new byte[4096];

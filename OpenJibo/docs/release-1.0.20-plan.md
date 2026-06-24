@@ -123,6 +123,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added corroborating identity graph evidence signals for device ID, robot ID, firmware/application versions, and host mappings so the signed owner-visible graph can distinguish relationship truth from clone-detection inputs before peer admission work begins
 - added the first deny-by-evidence admission assessment to the signed identity graph and portal API so future peer admission can start from explicit `admit`/`quarantine` decisions rather than implicit relationship presence
 - tightened deny-by-evidence admission so legacy cloud host mappings that have not been redirected to an Open Jibo/self-hosted target remain quarantined even when the required evidence fields are present
+- expanded the owner-visible admission assessment with satisfied and blocking evidence lists so quarantined snapshots explain exactly which missing or untrusted signal prevents peer admission
 
 ## Working Order
 

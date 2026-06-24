@@ -36,6 +36,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("deny-by-evidence-v1", graph.AdmissionAssessment.PolicyVersion);
         Assert.Equal("admit", graph.AdmissionAssessment.Recommendation);
         Assert.Contains("required-corroborating-evidence-present", graph.AdmissionAssessment.Reasons);
+        Assert.Contains("device-id", graph.AdmissionAssessment.SatisfiedEvidence);
+        Assert.Empty(graph.AdmissionAssessment.BlockingEvidence);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
         Assert.Contains(graph.Members, member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
@@ -206,6 +208,9 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("missing-application-version", graph.AdmissionAssessment.Reasons);
         Assert.Contains("missing-host-mapping", graph.AdmissionAssessment.Reasons);
         Assert.Contains("device-id", graph.AdmissionAssessment.RequiredEvidence);
+        Assert.Contains("device-id", graph.AdmissionAssessment.SatisfiedEvidence);
+        Assert.Contains("required:application-version", graph.AdmissionAssessment.BlockingEvidence);
+        Assert.Contains("required:host-mapping", graph.AdmissionAssessment.BlockingEvidence);
     }
 
     [Fact]
@@ -227,6 +232,8 @@ public sealed class IdentityGraphSnapshotTests
 
         Assert.Equal("quarantine", graph.AdmissionAssessment.Recommendation);
         Assert.Contains("untrusted-host-mapping-target", graph.AdmissionAssessment.Reasons);
+        Assert.Contains("host-mapping", graph.AdmissionAssessment.SatisfiedEvidence);
+        Assert.Contains("host-mapping:neo-hub.jibo.com->neo-hub.jibo.com", graph.AdmissionAssessment.BlockingEvidence);
         Assert.Contains(graph.EvidenceSignals, signal =>
             signal.SignalKind == "host-mapping" &&
             signal.SignalId == "neo-hub.jibo.com" &&

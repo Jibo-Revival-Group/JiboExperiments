@@ -6,4 +6,6 @@ public sealed class IdentityGraphAdmissionAssessment
     public string Recommendation { get; init; } = "quarantine";
     public IReadOnlyList<string> Reasons { get; init; } = [];
     public IReadOnlyList<string> RequiredEvidence { get; init; } = [];
+    public IReadOnlyList<string> SatisfiedEvidence { get; init; } = [];
+    public IReadOnlyList<string> BlockingEvidence { get; init; } = [];
 }

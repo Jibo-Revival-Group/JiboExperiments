@@ -133,6 +133,9 @@ async function renderIdentityGraphPanel() {
           <div class="meta-item"><span>Signature</span><span title="${escapeHtml(graph.signature || "")}">${escapeHtml(shortHash(graph.signature))}</span></div>
           <div class="meta-item"><span>Signature payload</span><span title="${escapeHtml(graph.signaturePayload || "")}">${escapeHtml(shortHash(graph.signaturePayload))}</span></div>
           <div class="meta-item"><span>Admission</span><span>${escapeHtml(graph.admissionAssessment?.recommendation || "quarantine")}</span></div>
+          <div class="meta-item"><span>Admission reasons</span><span>${escapeHtml((graph.admissionAssessment?.reasons || []).join(", ") || "—")}</span></div>
+          <div class="meta-item"><span>Satisfied evidence</span><span>${escapeHtml((graph.admissionAssessment?.satisfiedEvidence || []).join(", ") || "—")}</span></div>
+          <div class="meta-item"><span>Blocking evidence</span><span>${escapeHtml((graph.admissionAssessment?.blockingEvidence || []).join(", ") || "—")}</span></div>
         </div>
       </section>
     `;

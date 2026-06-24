@@ -266,6 +266,10 @@ public sealed class HomeAssistantPortalApiTests
         var admissionAssessment = graph.GetProperty("admissionAssessment");
         Assert.Equal("deny-by-evidence-v1", admissionAssessment.GetProperty("policyVersion").GetString());
         Assert.Equal("quarantine", admissionAssessment.GetProperty("recommendation").GetString());
+        Assert.Contains(admissionAssessment.GetProperty("satisfiedEvidence").EnumerateArray(), item =>
+            item.GetString() == "device-id");
+        Assert.Contains(admissionAssessment.GetProperty("blockingEvidence").EnumerateArray(), item =>
+            item.GetString() == "required:host-mapping");
         Assert.NotEmpty(graph.GetProperty("relationships").EnumerateArray());
         Assert.Contains(graph.GetProperty("evidenceSignals").EnumerateArray(), signal =>
             signal.GetProperty("signalKind").GetString() == "device-id" &&

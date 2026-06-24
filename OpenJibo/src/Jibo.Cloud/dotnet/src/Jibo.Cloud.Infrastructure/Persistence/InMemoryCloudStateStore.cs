@@ -547,15 +547,27 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .Where(required => !presentEvidence.Contains(required))
             .ToArray();
 
+        var satisfiedEvidence = requiredEvidence
+            .Where(required => presentEvidence.Contains(required))
+            .ToArray();
         var reasons = missingEvidence
             .Select(missing => $"missing-{missing}")
             .ToList();
+        var blockingEvidence = missingEvidence
+            .Select(missing => $"required:{missing}")
+            .ToList();
 
-        var hasUntrustedHostMapping = evidenceSignals
+        var untrustedHostMappings = evidenceSignals
             .Where(signal => signal.SignalKind.Equals("host-mapping", StringComparison.OrdinalIgnoreCase))
-            .Any(signal => !IsTrustedOpenJiboHostMappingTarget(signal.Value));
+            .Where(signal => !IsTrustedOpenJiboHostMappingTarget(signal.Value))
+            .Select(signal => $"host-mapping:{signal.SignalId}->{signal.Value}")
+            .ToArray();
 
-        if (hasUntrustedHostMapping) reasons.Add("untrusted-host-mapping-target");
+        if (untrustedHostMappings.Length > 0)
+        {
+            reasons.Add("untrusted-host-mapping-target");
+            blockingEvidence.AddRange(untrustedHostMappings);
+        }
 
         if (reasons.Count == 0)
         {
@@ -563,7 +575,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             {
                 Recommendation = "admit",
                 Reasons = ["required-corroborating-evidence-present"],
-                RequiredEvidence = requiredEvidence
+                RequiredEvidence = requiredEvidence,
+                SatisfiedEvidence = satisfiedEvidence
             };
         }
 
@@ -571,7 +584,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         {
             Recommendation = "quarantine",
             Reasons = reasons,
-            RequiredEvidence = requiredEvidence
+            RequiredEvidence = requiredEvidence,
+            SatisfiedEvidence = satisfiedEvidence,
+            BlockingEvidence = blockingEvidence
         };
     }
 

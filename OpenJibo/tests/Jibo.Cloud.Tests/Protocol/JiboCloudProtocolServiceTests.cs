@@ -554,17 +554,8 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("OK", downloadingPayload.RootElement.GetProperty("status").GetString());
         Assert.Equal(JsonValueKind.Object, downloadingPayload.RootElement.GetProperty("data").ValueKind);
 
-        await Task.Delay(1200);
-
-        var completedDownload = await _service.DispatchAsync(new ProtocolEnvelope
-        {
-            HostName = "localhost",
-            Method = "POST",
-            Path = "/download-status"
-        });
-
-        using var completedDownloadPayload = JsonDocument.Parse(completedDownload.BodyText);
-        Assert.Equal(JsonValueKind.Null, completedDownloadPayload.RootElement.GetProperty("data").ValueKind);
+        var completedDownloadPayload = await WaitForSchedulerDownloadDataKindAsync(JsonValueKind.Null);
+        Assert.Equal(JsonValueKind.Null, completedDownloadPayload.GetProperty("data").ValueKind);
 
         var updates = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -1319,5 +1310,27 @@ public sealed class JiboCloudProtocolServiceTests
                 StringComparison.OrdinalIgnoreCase));
         Assert.Contains(people,
             person => string.Equals(person.LoopId, store.GetLoops()[0].LoopId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<JsonElement> WaitForSchedulerDownloadDataKindAsync(JsonValueKind expectedKind)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        while (true)
+        {
+            var result = await _service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "localhost",
+                Method = "POST",
+                Path = "/download-status"
+            });
+
+            using var payload = JsonDocument.Parse(result.BodyText);
+            var root = payload.RootElement.Clone();
+            if (root.GetProperty("data").ValueKind == expectedKind || timeout.IsCancellationRequested)
+                return root;
+
+            await Task.Delay(100);
+        }
     }
 }

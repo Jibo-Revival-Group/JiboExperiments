@@ -77,7 +77,8 @@ public sealed class FileProtocolTelemetrySink(
                 ["operation"] = envelope.Operation,
                 ["statusCode"] = result.StatusCode,
                 ["contentType"] = result.ContentType,
-                ["requestId"] = envelope.RequestId
+                ["requestId"] = envelope.RequestId,
+                ["eventFilePath"] = filePath
             },
             cancellationToken);
 

@@ -74,6 +74,9 @@ public sealed class FileWebSocketTelemetrySinkTests : IDisposable
         Assert.Contains(indexEntries, entry => entry.GetProperty("eventType").GetString() == "message_out");
         Assert.Contains(indexEntries, entry => entry.GetProperty("eventType").GetString() == "connection_closed");
         Assert.Contains(indexEntries, entry => entry.GetProperty("eventType").GetString() == "fixture_export");
+        Assert.Contains(indexEntries, entry =>
+            entry.GetProperty("details").TryGetProperty("eventFilePath", out var eventFilePath) &&
+            eventFilePath.GetString()!.EndsWith(".events.ndjson", StringComparison.Ordinal));
     }
 
     [Fact]

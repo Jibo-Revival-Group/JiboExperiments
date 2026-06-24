@@ -41,7 +41,7 @@ The `.NET` cloud now supports structured live capture intended for first robot r
 - HTTP request/response event streams written as NDJSON
 - websocket event streams written as NDJSON
 - per-session websocket fixture export for replay
-- a small `capture-index.ndjson` manifest beside the raw files so group testers can quickly find the session type, operation, and export artifacts
+- a small `capture-index.ndjson` manifest beside the raw files so group testers can quickly find the session type, operation, raw event file, and export artifacts
 - turn metadata including `transID`, buffered audio counts, finalize attempts, and reply types
 
 Default capture location:
@@ -55,7 +55,7 @@ Artifacts:
 - `websocket/*.events.ndjson`
 - `*.events.ndjson`
 - `websocket/fixtures/*.flow.json`
-- `capture-index.ndjson`
+- `capture-index.ndjson` entries include an `eventFilePath` detail for HTTP, websocket, and turn records when a raw daily event file backs the index entry
 
 ## Suggested First Hookup Plan
 

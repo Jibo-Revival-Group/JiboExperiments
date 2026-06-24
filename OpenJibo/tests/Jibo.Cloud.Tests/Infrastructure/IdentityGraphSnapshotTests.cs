@@ -38,6 +38,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("required-corroborating-evidence-present", graph.AdmissionAssessment.Reasons);
         Assert.Contains("device-id", graph.AdmissionAssessment.SatisfiedEvidence);
         Assert.Empty(graph.AdmissionAssessment.BlockingEvidence);
+        Assert.Contains("record-signed-snapshot-for-peer-admission", graph.AdmissionAssessment.RecommendedActions);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
         Assert.Contains(graph.Members, member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
@@ -211,6 +212,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("device-id", graph.AdmissionAssessment.SatisfiedEvidence);
         Assert.Contains("required:application-version", graph.AdmissionAssessment.BlockingEvidence);
         Assert.Contains("required:host-mapping", graph.AdmissionAssessment.BlockingEvidence);
+        Assert.Contains("capture-current-open-jibo-application-version", graph.AdmissionAssessment.RecommendedActions);
+        Assert.Contains("record-open-jibo-host-mapping", graph.AdmissionAssessment.RecommendedActions);
     }
 
     [Fact]
@@ -234,6 +237,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("untrusted-host-mapping-target", graph.AdmissionAssessment.Reasons);
         Assert.Contains("host-mapping", graph.AdmissionAssessment.SatisfiedEvidence);
         Assert.Contains("host-mapping:neo-hub.jibo.com->neo-hub.jibo.com", graph.AdmissionAssessment.BlockingEvidence);
+        Assert.Contains("redirect-legacy-host-mapping-to-open-jibo-target", graph.AdmissionAssessment.RecommendedActions);
         Assert.Contains(graph.EvidenceSignals, signal =>
             signal.SignalKind == "host-mapping" &&
             signal.SignalId == "neo-hub.jibo.com" &&

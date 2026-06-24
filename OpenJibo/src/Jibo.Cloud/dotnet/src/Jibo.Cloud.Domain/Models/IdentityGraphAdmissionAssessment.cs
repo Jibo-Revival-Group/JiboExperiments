@@ -8,4 +8,5 @@ public sealed class IdentityGraphAdmissionAssessment
     public IReadOnlyList<string> RequiredEvidence { get; init; } = [];
     public IReadOnlyList<string> SatisfiedEvidence { get; init; } = [];
     public IReadOnlyList<string> BlockingEvidence { get; init; } = [];
+    public IReadOnlyList<string> RecommendedActions { get; init; } = [];
 }

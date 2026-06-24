@@ -576,7 +576,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 Recommendation = "admit",
                 Reasons = ["required-corroborating-evidence-present"],
                 RequiredEvidence = requiredEvidence,
-                SatisfiedEvidence = satisfiedEvidence
+                SatisfiedEvidence = satisfiedEvidence,
+                RecommendedActions = ["record-signed-snapshot-for-peer-admission"]
             };
         }
 
@@ -586,8 +587,35 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Reasons = reasons,
             RequiredEvidence = requiredEvidence,
             SatisfiedEvidence = satisfiedEvidence,
-            BlockingEvidence = blockingEvidence
+            BlockingEvidence = blockingEvidence,
+            RecommendedActions = BuildIdentityGraphRecommendedActions(missingEvidence, untrustedHostMappings)
         };
+    }
+
+
+    private static IReadOnlyList<string> BuildIdentityGraphRecommendedActions(
+        IReadOnlyCollection<string> missingEvidence,
+        IReadOnlyCollection<string> untrustedHostMappings)
+    {
+        var actions = new List<string>();
+
+        if (missingEvidence.Contains("device-id", StringComparer.OrdinalIgnoreCase) ||
+            missingEvidence.Contains("robot-id", StringComparer.OrdinalIgnoreCase))
+            actions.Add("verify-robot-identity-before-admission");
+
+        if (missingEvidence.Contains("application-version", StringComparer.OrdinalIgnoreCase))
+            actions.Add("capture-current-open-jibo-application-version");
+
+        if (missingEvidence.Contains("host-mapping", StringComparer.OrdinalIgnoreCase))
+            actions.Add("record-open-jibo-host-mapping");
+
+        if (untrustedHostMappings.Count > 0)
+            actions.Add("redirect-legacy-host-mapping-to-open-jibo-target");
+
+        if (actions.Count == 0)
+            actions.Add("manual-review-required");
+
+        return actions.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
     private static bool IsTrustedOpenJiboHostMappingTarget(string value)

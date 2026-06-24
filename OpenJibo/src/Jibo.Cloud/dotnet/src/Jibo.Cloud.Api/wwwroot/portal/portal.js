@@ -136,6 +136,7 @@ async function renderIdentityGraphPanel() {
           <div class="meta-item"><span>Admission reasons</span><span>${escapeHtml((graph.admissionAssessment?.reasons || []).join(", ") || "—")}</span></div>
           <div class="meta-item"><span>Satisfied evidence</span><span>${escapeHtml((graph.admissionAssessment?.satisfiedEvidence || []).join(", ") || "—")}</span></div>
           <div class="meta-item"><span>Blocking evidence</span><span>${escapeHtml((graph.admissionAssessment?.blockingEvidence || []).join(", ") || "—")}</span></div>
+          <div class="meta-item"><span>Recommended actions</span><span>${escapeHtml((graph.admissionAssessment?.recommendedActions || []).join(", ") || "—")}</span></div>
         </div>
       </section>
     `;

@@ -15,6 +15,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private const string IdentityGraphSignatureAlgorithm = "HMAC-SHA256";
     private const string IdentityGraphSignatureKeyId = "open-jibo-local-snapshot-v1";
     private const string IdentityGraphSigningKey = "open-jibo-local-identity-graph-development-key";
+    private const string IdentityGraphAdmissionSignatureKeyId = "open-jibo-local-admission-v1";
     private static long _nextUpdateIdSeed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
     private static readonly JsonSerializerOptions PersistenceJsonOptions = new()
@@ -432,7 +433,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             relationships, evidenceSignals);
 
         var signaturePayload = BuildIdentityGraphSignaturePayload(_account.AccountId, resolvedLoopId, contentHash);
-        var admissionAssessment = BuildIdentityGraphAdmissionAssessment(evidenceSignals);
+        var admissionAssessment = BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId, contentHash, evidenceSignals);
 
         return new IdentityGraphSnapshot
         {
@@ -528,6 +529,30 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         });
     }
 
+
+    private static IdentityGraphAdmissionAssessment BuildSignedIdentityGraphAdmissionAssessment(string accountId, string loopId,
+        string contentHash, IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
+    {
+        var assessment = BuildIdentityGraphAdmissionAssessment(evidenceSignals);
+        var decisionPayload = BuildIdentityGraphAdmissionDecisionPayload(accountId, loopId, contentHash, assessment);
+        var decisionHash = ComputeSha256Hex(decisionPayload);
+
+        return new IdentityGraphAdmissionAssessment
+        {
+            PolicyVersion = assessment.PolicyVersion,
+            Recommendation = assessment.Recommendation,
+            Reasons = assessment.Reasons,
+            RequiredEvidence = assessment.RequiredEvidence,
+            SatisfiedEvidence = assessment.SatisfiedEvidence,
+            BlockingEvidence = assessment.BlockingEvidence,
+            RecommendedActions = assessment.RecommendedActions,
+            DecisionPayload = decisionPayload,
+            DecisionHash = decisionHash,
+            SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
+            SignatureKeyId = IdentityGraphAdmissionSignatureKeyId,
+            Signature = SignIdentityGraphPayload(decisionPayload)
+        };
+    }
 
     private static IdentityGraphAdmissionAssessment BuildIdentityGraphAdmissionAssessment(
         IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
@@ -627,6 +652,27 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                target.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
                target.EndsWith(".local", StringComparison.OrdinalIgnoreCase) ||
                target.Contains("openjibo", StringComparison.OrdinalIgnoreCase);
+    }
+
+
+    private static string BuildIdentityGraphAdmissionDecisionPayload(string accountId, string loopId, string contentHash,
+        IdentityGraphAdmissionAssessment assessment)
+    {
+        var lines = new[]
+        {
+            $"policy-version|{assessment.PolicyVersion}",
+            $"account|{accountId}",
+            $"loop|{loopId}",
+            $"content-hash|{contentHash}",
+            $"recommendation|{assessment.Recommendation}",
+            $"reasons|{string.Join(',', assessment.Reasons.Order(StringComparer.Ordinal))}",
+            $"required-evidence|{string.Join(',', assessment.RequiredEvidence.Order(StringComparer.Ordinal))}",
+            $"satisfied-evidence|{string.Join(',', assessment.SatisfiedEvidence.Order(StringComparer.Ordinal))}",
+            $"blocking-evidence|{string.Join(',', assessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
+            $"recommended-actions|{string.Join(',', assessment.RecommendedActions.Order(StringComparer.Ordinal))}"
+        };
+
+        return string.Join('\n', lines);
     }
 
     private static string BuildIdentityGraphSignaturePayload(string accountId, string loopId, string contentHash)

@@ -134,6 +134,8 @@ async function renderIdentityGraphPanel() {
           <div class="meta-item"><span>Signature payload</span><span title="${escapeHtml(graph.signaturePayload || "")}">${escapeHtml(shortHash(graph.signaturePayload))}</span></div>
           <div class="meta-item"><span>Admission</span><span>${escapeHtml(graph.admissionAssessment?.recommendation || "quarantine")}</span></div>
           <div class="meta-item"><span>Admission reasons</span><span>${escapeHtml((graph.admissionAssessment?.reasons || []).join(", ") || "—")}</span></div>
+          <div class="meta-item"><span>Admission hash</span><span title="${escapeHtml(graph.admissionAssessment?.decisionHash || "")}">${escapeHtml(shortHash(graph.admissionAssessment?.decisionHash))}</span></div>
+          <div class="meta-item"><span>Admission signature</span><span title="${escapeHtml(graph.admissionAssessment?.signature || "")}">${escapeHtml(shortHash(graph.admissionAssessment?.signature))}</span></div>
           <div class="meta-item"><span>Satisfied evidence</span><span>${escapeHtml((graph.admissionAssessment?.satisfiedEvidence || []).join(", ") || "—")}</span></div>
           <div class="meta-item"><span>Blocking evidence</span><span>${escapeHtml((graph.admissionAssessment?.blockingEvidence || []).join(", ") || "—")}</span></div>
           <div class="meta-item"><span>Recommended actions</span><span>${escapeHtml((graph.admissionAssessment?.recommendedActions || []).join(", ") || "—")}</span></div>

@@ -125,6 +125,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - tightened deny-by-evidence admission so legacy cloud host mappings that have not been redirected to an Open Jibo/self-hosted target remain quarantined even when the required evidence fields are present
 - expanded the owner-visible admission assessment with satisfied and blocking evidence lists so quarantined snapshots explain exactly which missing or untrusted signal prevents peer admission
 - added deterministic recommended admission actions so owner-visible quarantines now describe the next remediation step, while admitted snapshots tell the portal to retain the signed evidence bundle for future peer admission
+- signed the deny-by-evidence admission decision separately from the identity graph snapshot so future peer admission can verify both the relationship payload and the resulting admit/quarantine recommendation
 
 ## Working Order
 

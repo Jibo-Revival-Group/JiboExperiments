@@ -54,8 +54,15 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.Signature, graph.EvidenceBundle.SnapshotSignature);
         Assert.Equal(graph.AdmissionAssessment.DecisionHash, graph.EvidenceBundle.AdmissionDecisionHash);
         Assert.Equal(graph.AdmissionAssessment.Signature, graph.EvidenceBundle.AdmissionSignature);
+        Assert.Equal("deny-by-evidence-v1", graph.EvidenceBundle.AdmissionPolicyVersion);
         Assert.Equal("admit", graph.EvidenceBundle.AdmissionRecommendation);
+        Assert.Contains("required-corroborating-evidence-present", graph.EvidenceBundle.AdmissionReasons);
+        Assert.Contains("device-id", graph.EvidenceBundle.SatisfiedEvidence);
+        Assert.Contains("record-signed-snapshot-for-peer-admission", graph.EvidenceBundle.RecommendedActions);
         Assert.Contains($"snapshot-content-hash|{graph.ContentHash}", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-reasons|required-corroborating-evidence-present", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-satisfied-evidence|application-version,device-id,host-mapping", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-recommended-actions|record-signed-snapshot-for-peer-admission", graph.EvidenceBundle.Payload);
         Assert.Contains($"admission-decision-hash|{graph.AdmissionAssessment.DecisionHash}", graph.EvidenceBundle.Payload);
         Assert.Matches("^[a-f0-9]{64}$", graph.EvidenceBundle.BundleHash);
         Assert.Equal("HMAC-SHA256", graph.EvidenceBundle.SignatureAlgorithm);
@@ -484,7 +491,11 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("identity-graph-evidence-bundle-v1", verification.BundleVersion);
         Assert.Equal(graph.EvidenceBundle.BundleHash, verification.ComputedBundleHash);
         Assert.Equal(graph.EvidenceBundle.Signature, verification.ComputedSignature);
+        Assert.Equal(graph.EvidenceBundle.AdmissionPolicyVersion, verification.AdmissionPolicyVersion);
         Assert.Equal(graph.EvidenceBundle.AdmissionRecommendation, verification.AdmissionRecommendation);
+        Assert.Equal(graph.EvidenceBundle.AdmissionReasons, verification.AdmissionReasons);
+        Assert.Equal(graph.EvidenceBundle.SatisfiedEvidence.Order(StringComparer.Ordinal), verification.SatisfiedEvidence);
+        Assert.Equal(graph.EvidenceBundle.RecommendedActions, verification.RecommendedActions);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.SnapshotContentHash, verification.SnapshotContentHash);
         Assert.Equal(graph.EvidenceBundle.AccountId, verification.AccountId);
@@ -546,6 +557,9 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("quarantine", verification.AdmissionRecommendation);
         Assert.Contains("host-mapping:neo-hub.jibo.com->neo-hub.jibo.com", verification.BlockingEvidence);
         Assert.Equal(graph.EvidenceBundle.BlockingEvidence, verification.BlockingEvidence);
+        Assert.Contains("untrusted-host-mapping-target", verification.AdmissionReasons);
+        Assert.Contains("host-mapping", verification.SatisfiedEvidence);
+        Assert.Contains("redirect-legacy-host-mapping-to-open-jibo-target", verification.RecommendedActions);
         Assert.Equal(graph.EvidenceBundle.EvidenceSignalCount, verification.EvidenceSignalCount);
     }
 

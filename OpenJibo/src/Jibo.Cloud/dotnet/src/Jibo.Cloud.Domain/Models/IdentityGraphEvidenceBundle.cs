@@ -11,7 +11,11 @@ public sealed class IdentityGraphEvidenceBundle
     public string SnapshotSignature { get; init; } = string.Empty;
     public string AdmissionDecisionHash { get; init; } = string.Empty;
     public string AdmissionSignature { get; init; } = string.Empty;
+    public string AdmissionPolicyVersion { get; init; } = "deny-by-evidence-v1";
     public string AdmissionRecommendation { get; init; } = "quarantine";
+    public IReadOnlyList<string> AdmissionReasons { get; init; } = [];
+    public IReadOnlyList<string> SatisfiedEvidence { get; init; } = [];
+    public IReadOnlyList<string> RecommendedActions { get; init; } = [];
     public int PeopleCount { get; init; }
     public int MemberCount { get; init; }
     public int RelationshipCount { get; init; }

@@ -34,13 +34,15 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   name: 'log-${workloadName}-${environmentName}'
 }
 
-var logAnalyticsWorkspaceKey = listKeys(logAnalyticsWorkspace.id, '2022-10-01').primarySharedKey
 var registryName = split(registryLoginServer, '.')[0]
-var registryCredentials = listCredentials(resourceId('Microsoft.ContainerRegistry/registries', registryName), '2023-07-01')
+var keyVaultSecretBaseUrl = 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets'
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: registryName
 }
+
+var logAnalyticsWorkspaceKey = logAnalyticsWorkspace.listKeys().primarySharedKey
+var registryCredentials = registry.listCredentials()
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
@@ -96,27 +98,27 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         }
         {
           name: 'state-connection-string'
-          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-state-connection-string'
+          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-state-connection-string'
           identity: 'system'
         }
         {
           name: 'personal-memory-connection-string'
-          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-personal-memory-connection-string'
+          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-personal-memory-connection-string'
           identity: 'system'
         }
         {
           name: 'media-connection-string'
-          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-media-connection-string'
+          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-media-connection-string'
           identity: 'system'
         }
         {
           name: 'open-weather-api-key'
-          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-openweather-api-key'
+          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-openweather-api-key'
           identity: 'system'
         }
         {
           name: 'news-api-key'
-          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-newsapi-key'
+          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-newsapi-key'
           identity: 'system'
         }
       ]
@@ -184,7 +186,8 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
 
 
 resource keyVaultContainerAppSecretAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
-  name: '${keyVault.name}/add'
+  parent: keyVault
+  name: 'add'
   properties: {
     accessPolicies: [
       {

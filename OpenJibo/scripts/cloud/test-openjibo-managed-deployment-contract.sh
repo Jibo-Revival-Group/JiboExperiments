@@ -53,7 +53,8 @@ required_managed_markers=(
   "param registryLoginServer string"
   "param keyVaultName string"
   "secretRef: 'media-connection-string'"
-  "keyVaultUrl: 'https://"
+  "keyVaultSecretBaseUrl"
+  "environment().suffixes.keyvaultDns"
   "var logAnalyticsWorkspaceKey"
   "value: 'AzureBlob'"
   "keyVaultContainerAppSecretAccessPolicy"
@@ -67,6 +68,7 @@ required_workflow_markers=(
   "publish-openjibo-managed.sh"
   "steps.foundation.outputs.registryName"
   "steps.foundation.outputs.keyVaultName"
+  "inputs.location"
 )
 
 for marker in "${required_foundation_markers[@]}"; do
@@ -128,6 +130,16 @@ fi
 
 if [[ "$linux_managed_script_text" != *"--run-smoke"* ]]; then
   echo "Linux managed deploy script is missing the managed smoke path." >&2
+  exit 1
+fi
+
+if [[ "$linux_managed_script_text" != *"--location"* ]]; then
+  echo "Linux managed deploy script is missing the regional override path." >&2
+  exit 1
+fi
+
+if [[ "$managed_script_text" != *"Location"* ]]; then
+  echo "Managed deploy script is missing the regional override path." >&2
   exit 1
 fi
 

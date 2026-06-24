@@ -17,12 +17,10 @@ public static class IdentityGraphEvidenceBundleVerifier
     public static IdentityGraphEvidenceBundleVerification Verify(string? envelope)
     {
         if (string.IsNullOrWhiteSpace(envelope))
-        {
             return new IdentityGraphEvidenceBundleVerification
             {
                 Errors = ["missing-envelope"]
             };
-        }
 
         var lines = envelope.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
         var header = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -87,7 +85,8 @@ public static class IdentityGraphEvidenceBundleVerifier
         var admissionSignatureKeyId = Get(payloadFields, "admission-signature-key-id");
         var admissionSignature = Get(payloadFields, "admission-signature");
         var computedAdmissionDecisionPayload = BuildAdmissionDecisionPayload(accountId, loopId, snapshotContentHash,
-            admissionPolicyVersion, admissionRecommendation, admissionReasons, requiredEvidence, satisfiedEvidence, blockingEvidence, recommendedActions);
+            admissionPolicyVersion, admissionRecommendation, admissionReasons, requiredEvidence, satisfiedEvidence,
+            blockingEvidence, recommendedActions);
         var computedAdmissionDecisionHash = ComputeSha256Hex(computedAdmissionDecisionPayload);
         var computedAdmissionSignature = SignPayload(computedAdmissionDecisionPayload);
 
@@ -136,11 +135,14 @@ public static class IdentityGraphEvidenceBundleVerifier
             ComputedAdmissionDecisionHash = computedAdmissionDecisionHash,
             AdmissionSignature = admissionSignature,
             ComputedAdmissionSignature = computedAdmissionSignature,
-            AdmissionDecisionSignatureValid = admissionDecisionHash.Equals(computedAdmissionDecisionHash, StringComparison.OrdinalIgnoreCase) && admissionSignature.Equals(computedAdmissionSignature, StringComparison.OrdinalIgnoreCase),
+            AdmissionDecisionSignatureValid =
+                admissionDecisionHash.Equals(computedAdmissionDecisionHash, StringComparison.OrdinalIgnoreCase) &&
+                admissionSignature.Equals(computedAdmissionSignature, StringComparison.OrdinalIgnoreCase),
             SnapshotContentHash = snapshotContentHash,
             SnapshotSignature = snapshotSignature,
             ComputedSnapshotSignature = computedSnapshotSignature,
-            SnapshotSignatureValid = snapshotSignature.Equals(computedSnapshotSignature, StringComparison.OrdinalIgnoreCase),
+            SnapshotSignatureValid =
+                snapshotSignature.Equals(computedSnapshotSignature, StringComparison.OrdinalIgnoreCase),
             AccountId = accountId,
             LoopId = loopId,
             RobotId = Get(payloadFields, "robot"),
@@ -164,23 +166,32 @@ public static class IdentityGraphEvidenceBundleVerifier
             var separator = line.IndexOf('|', StringComparison.Ordinal);
             if (separator > 0) fields[line[..separator]] = line[(separator + 1)..];
         }
+
         return fields;
     }
 
-    private static string Get(IReadOnlyDictionary<string, string> fields, string key) =>
-        fields.TryGetValue(key, out var value) ? value : string.Empty;
+    private static string Get(IReadOnlyDictionary<string, string> fields, string key)
+    {
+        return fields.TryGetValue(key, out var value) ? value : string.Empty;
+    }
 
-    private static int GetInt(IReadOnlyDictionary<string, string> fields, string key) =>
-        int.TryParse(Get(fields, key), out var value) ? value : 0;
+    private static int GetInt(IReadOnlyDictionary<string, string> fields, string key)
+    {
+        return int.TryParse(Get(fields, key), out var value) ? value : 0;
+    }
 
-    private static IReadOnlyList<string> SplitCsv(string value) =>
-        string.IsNullOrWhiteSpace(value)
+    private static IReadOnlyList<string> SplitCsv(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
             ? []
             : value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
 
     private static string BuildAdmissionDecisionPayload(string accountId, string loopId, string contentHash,
-        string policyVersion, string recommendation, IReadOnlyList<string> reasons, IReadOnlyList<string> requiredEvidence,
-        IReadOnlyList<string> satisfiedEvidence, IReadOnlyList<string> blockingEvidence, IReadOnlyList<string> recommendedActions)
+        string policyVersion, string recommendation, IReadOnlyList<string> reasons,
+        IReadOnlyList<string> requiredEvidence,
+        IReadOnlyList<string> satisfiedEvidence, IReadOnlyList<string> blockingEvidence,
+        IReadOnlyList<string> recommendedActions)
     {
         var lines = new[]
         {
@@ -199,8 +210,10 @@ public static class IdentityGraphEvidenceBundleVerifier
         return string.Join('\n', lines);
     }
 
-    private static string ComputeSha256Hex(string payload) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+    private static string ComputeSha256Hex(string payload)
+    {
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+    }
 
     private static string SignPayload(string payload)
     {

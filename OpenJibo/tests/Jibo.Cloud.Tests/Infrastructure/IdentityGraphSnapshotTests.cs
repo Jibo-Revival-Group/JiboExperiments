@@ -62,10 +62,14 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains($"snapshot-content-hash|{graph.ContentHash}", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-reasons|required-corroborating-evidence-present", graph.EvidenceBundle.Payload);
         Assert.Equal(graph.AdmissionAssessment.RequiredEvidence, graph.EvidenceBundle.RequiredEvidence);
-        Assert.Contains("admission-required-evidence|application-version,device-id,host-mapping,robot-id", graph.EvidenceBundle.Payload);
-        Assert.Contains("admission-satisfied-evidence|application-version,device-id,host-mapping,robot-id", graph.EvidenceBundle.Payload);
-        Assert.Contains("admission-recommended-actions|record-signed-snapshot-for-peer-admission", graph.EvidenceBundle.Payload);
-        Assert.Contains($"admission-decision-hash|{graph.AdmissionAssessment.DecisionHash}", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-required-evidence|application-version,device-id,host-mapping,robot-id",
+            graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-satisfied-evidence|application-version,device-id,host-mapping,robot-id",
+            graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-recommended-actions|record-signed-snapshot-for-peer-admission",
+            graph.EvidenceBundle.Payload);
+        Assert.Contains($"admission-decision-hash|{graph.AdmissionAssessment.DecisionHash}",
+            graph.EvidenceBundle.Payload);
         Assert.Matches("^[a-f0-9]{64}$", graph.EvidenceBundle.BundleHash);
         Assert.Equal("HMAC-SHA256", graph.EvidenceBundle.SignatureAlgorithm);
         Assert.Equal("open-jibo-local-evidence-bundle-v1", graph.EvidenceBundle.SignatureKeyId);
@@ -78,7 +82,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("payload-end", graph.EvidenceBundle.Envelope);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
-        Assert.Contains(graph.Members, member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
+        Assert.Contains(graph.Members,
+            member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
         Assert.Contains(graph.Relationships, relationship =>
             relationship.SubjectId == "person-openjibo-owner" &&
             relationship.Relationship == "primary-user-of" &&
@@ -147,7 +152,7 @@ public sealed class IdentityGraphSnapshotTests
         var member = store.AddLoopMember(loopId, "usr-family-member", "family@example.com", "Grace", "Hopper",
             "unknown", null, false, "family");
 
-        store.SetMemberEnrollment(loopId, member.Id, face: true, voice: true);
+        store.SetMemberEnrollment(loopId, member.Id, true, true);
 
         var graph = store.GetIdentityGraph(loopId);
 
@@ -202,7 +207,7 @@ public sealed class IdentityGraphSnapshotTests
         var before = store.GetIdentityGraph(loopId);
         var repeated = store.GetIdentityGraph(loopId);
 
-        store.SetMemberEnrollment(loopId, member.Id, face: true, voice: null);
+        store.SetMemberEnrollment(loopId, member.Id, true, null);
         var after = store.GetIdentityGraph(loopId);
 
         Assert.Equal(before.ContentHash, repeated.ContentHash);
@@ -281,7 +286,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("capture-current-open-jibo-application-version", graph.AdmissionAssessment.RecommendedActions);
         Assert.Contains("record-open-jibo-host-mapping", graph.AdmissionAssessment.RecommendedActions);
         Assert.Contains("recommendation|quarantine", graph.AdmissionAssessment.DecisionPayload);
-        Assert.Contains("blocking-evidence|required:application-version,required:host-mapping", graph.AdmissionAssessment.DecisionPayload);
+        Assert.Contains("blocking-evidence|required:application-version,required:host-mapping",
+            graph.AdmissionAssessment.DecisionPayload);
     }
 
     [Fact]
@@ -305,7 +311,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("untrusted-host-mapping-target", graph.AdmissionAssessment.Reasons);
         Assert.Contains("host-mapping", graph.AdmissionAssessment.SatisfiedEvidence);
         Assert.Contains("host-mapping:neo-hub.jibo.com->neo-hub.jibo.com", graph.AdmissionAssessment.BlockingEvidence);
-        Assert.Contains("redirect-legacy-host-mapping-to-open-jibo-target", graph.AdmissionAssessment.RecommendedActions);
+        Assert.Contains("redirect-legacy-host-mapping-to-open-jibo-target",
+            graph.AdmissionAssessment.RecommendedActions);
         Assert.Contains(graph.EvidenceSignals, signal =>
             signal.SignalKind == "host-mapping" &&
             signal.SignalId == "neo-hub.jibo.com" &&
@@ -502,8 +509,10 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.AdmissionPolicyVersion, verification.AdmissionPolicyVersion);
         Assert.Equal(graph.EvidenceBundle.AdmissionRecommendation, verification.AdmissionRecommendation);
         Assert.Equal(graph.EvidenceBundle.AdmissionReasons, verification.AdmissionReasons);
-        Assert.Equal(graph.EvidenceBundle.RequiredEvidence.Order(StringComparer.Ordinal), verification.RequiredEvidence);
-        Assert.Equal(graph.EvidenceBundle.SatisfiedEvidence.Order(StringComparer.Ordinal), verification.SatisfiedEvidence);
+        Assert.Equal(graph.EvidenceBundle.RequiredEvidence.Order(StringComparer.Ordinal),
+            verification.RequiredEvidence);
+        Assert.Equal(graph.EvidenceBundle.SatisfiedEvidence.Order(StringComparer.Ordinal),
+            verification.SatisfiedEvidence);
         Assert.Equal(graph.EvidenceBundle.RecommendedActions, verification.RecommendedActions);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.ComputedAdmissionDecisionHash);
@@ -571,7 +580,8 @@ public sealed class IdentityGraphSnapshotTests
             }
         });
         var graph = store.GetIdentityGraph();
-        var tamperedEnvelope = graph.EvidenceBundle.Envelope.Replace($"snapshot-signature|{graph.EvidenceBundle.SnapshotSignature}",
+        var tamperedEnvelope = graph.EvidenceBundle.Envelope.Replace(
+            $"snapshot-signature|{graph.EvidenceBundle.SnapshotSignature}",
             "snapshot-signature|0000000000000000000000000000000000000000000000000000000000000000",
             StringComparison.Ordinal);
 
@@ -612,5 +622,4 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("redirect-legacy-host-mapping-to-open-jibo-target", verification.RecommendedActions);
         Assert.Equal(graph.EvidenceBundle.EvidenceSignalCount, verification.EvidenceSignalCount);
     }
-
 }

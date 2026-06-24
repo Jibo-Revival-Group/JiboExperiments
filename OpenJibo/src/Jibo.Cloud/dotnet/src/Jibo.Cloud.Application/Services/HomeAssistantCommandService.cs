@@ -1,3 +1,4 @@
+using System.Globalization;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Runtime.Abstractions;
@@ -157,7 +158,7 @@ public sealed class HomeAssistantCommandService(
         if (climateCommand.Temperature is not null)
         {
             parameters ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            parameters["temperature"] = climateCommand.Temperature.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            parameters["temperature"] = climateCommand.Temperature.Value.ToString(CultureInfo.InvariantCulture);
         }
 
         if (climateCommand.Action is HomeAssistantClimateCommandParser.ClimateAction.CoolDown

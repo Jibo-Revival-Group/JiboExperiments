@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -18,7 +19,7 @@ public sealed class HomeAssistantPortalApiTests
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
-        var store = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.ICloudStateStore>();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
         var robot = store.GetRobot();
         store.UpdateRobot(new DeviceRegistration
         {
@@ -45,7 +46,8 @@ public sealed class HomeAssistantPortalApiTests
         Assert.False(string.IsNullOrWhiteSpace(haCode));
 
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
 
         var confirmResponse = await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",
@@ -85,14 +87,15 @@ public sealed class HomeAssistantPortalApiTests
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
-        var integrationStore = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.IUserIntegrationStore>();
+        var integrationStore = factory.Services.GetRequiredService<IUserIntegrationStore>();
         integrationStore.AddHomeAssistantLink(
             "BOJW-1000-0017-0820-0020",
             "Ghost-Instance-Onion-Silk",
             "ha-instance-1");
 
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
         var confirmPayload = await (await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",
             new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
@@ -111,8 +114,8 @@ public sealed class HomeAssistantPortalApiTests
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
-        var integrationStore = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.IUserIntegrationStore>();
-        var store = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.ICloudStateStore>();
+        var integrationStore = factory.Services.GetRequiredService<IUserIntegrationStore>();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
         var robot = store.GetRobot();
         store.UpdateRobot(new DeviceRegistration
         {
@@ -139,7 +142,8 @@ public sealed class HomeAssistantPortalApiTests
         var haCode = codePayload.GetProperty("code").GetString();
 
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
 
         var confirmPayload = await (await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",
@@ -182,7 +186,7 @@ public sealed class HomeAssistantPortalApiTests
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
-        var store = factory.Services.GetRequiredService<Jibo.Cloud.Application.Abstractions.ICloudStateStore>();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
         var robot = store.GetRobot();
         store.UpdateRobot(new DeviceRegistration
         {
@@ -209,7 +213,8 @@ public sealed class HomeAssistantPortalApiTests
         var haCode = codePayload.GetProperty("code").GetString();
 
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
         var confirmPayload = await (await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",
             new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
@@ -243,7 +248,8 @@ public sealed class HomeAssistantPortalApiTests
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
 
         var confirmPayload = await (await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",
@@ -297,7 +303,8 @@ public sealed class HomeAssistantPortalApiTests
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
 
         var confirmPayload = await (await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",

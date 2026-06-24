@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace Jibo.Cloud.Application.Services;
@@ -10,13 +11,13 @@ public sealed class HomeAssistantConnectionRegistry
     private static readonly TimeSpan VerificationLifetime = TimeSpan.FromMinutes(10);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    private readonly ConcurrentDictionary<string, string> _codeByInstanceId =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private readonly ConcurrentDictionary<string, HomeAssistantConnection> _connections =
         new(StringComparer.OrdinalIgnoreCase);
 
     private readonly ConcurrentDictionary<string, PendingHomeAssistantVerification> _pendingByCode =
-        new(StringComparer.OrdinalIgnoreCase);
-
-    private readonly ConcurrentDictionary<string, string> _codeByInstanceId =
         new(StringComparer.OrdinalIgnoreCase);
 
     public PendingHomeAssistantVerification RegisterConnection(string instanceId, WebSocket socket)
@@ -139,10 +140,8 @@ public sealed class HomeAssistantConnectionRegistry
         };
 
         foreach (var pair in parameters)
-        {
             if (!string.IsNullOrWhiteSpace(pair.Value))
                 payload[pair.Key] = pair.Value;
-        }
 
         await SendJsonAsync(connection.Socket, payload, cancellationToken);
 
@@ -192,7 +191,7 @@ public sealed class HomeAssistantConnectionRegistry
         Span<byte> bytes = stackalloc byte[6];
         RandomNumberGenerator.Fill(bytes);
 
-        var builder = new System.Text.StringBuilder(6);
+        var builder = new StringBuilder(6);
         foreach (var value in bytes)
             builder.Append(alphabet[value % alphabet.Length]);
 

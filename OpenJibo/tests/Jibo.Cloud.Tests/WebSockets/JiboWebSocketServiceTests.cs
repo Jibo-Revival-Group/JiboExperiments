@@ -148,7 +148,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_REDIRECT", ReadReplyType(guardedListenReplies[2]));
         using (var lateListenPayload = JsonDocument.Parse(guardedListenReplies[0].Text!))
         {
-            Assert.Equal("trans-cloud-version-guarded", lateListenPayload.RootElement.GetProperty("transID").GetString());
+            Assert.Equal("trans-cloud-version-guarded",
+                lateListenPayload.RootElement.GetProperty("transID").GetString());
             Assert.Equal("launch",
                 lateListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0]
                     .GetString());
@@ -384,8 +385,7 @@ public sealed class JiboWebSocketServiceTests
         foreach (var frame in new[]
                  {
                      BuildOggFrame(0x02, "OpusHead"),
-                     BuildOggFrame(0x00, "OpusTags")
-                     ,
+                     BuildOggFrame(0x00, "OpusTags"),
                      BuildOggFrame(0x00),
                      BuildOggFrame(0x00),
                      BuildOggFrame(0x00)
@@ -459,8 +459,7 @@ public sealed class JiboWebSocketServiceTests
         foreach (var frame in new[]
                  {
                      BuildOggFrame(0x02, "OpusHead"),
-                     BuildOggFrame(0x00, "OpusTags")
-                     ,
+                     BuildOggFrame(0x00, "OpusTags"),
                      BuildOggFrame(0x00),
                      BuildOggFrame(0x00),
                      BuildOggFrame(0x00)

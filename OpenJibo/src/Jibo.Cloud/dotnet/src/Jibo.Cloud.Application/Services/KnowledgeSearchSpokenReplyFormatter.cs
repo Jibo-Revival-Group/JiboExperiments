@@ -27,14 +27,16 @@ internal static partial class KnowledgeSearchSpokenReplyFormatter
         return $"According to {DescribeSource(backendKind)}. {spokenBody}";
     }
 
-    internal static string DescribeSource(SearchBackendKind backendKind) =>
-        backendKind switch
+    internal static string DescribeSource(SearchBackendKind backendKind)
+    {
+        return backendKind switch
         {
             SearchBackendKind.Wolfram => "wolf ram alpha",
             SearchBackendKind.ChatGPT => "chat gee pee tee",
             SearchBackendKind.Ollama => "ollama",
             _ => "my sources"
         };
+    }
 
     private static string ReplaceSpokenTerms(string text)
     {

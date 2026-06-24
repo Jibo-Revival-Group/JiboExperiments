@@ -8,10 +8,12 @@ public interface IUserIntegrationStore
     HomeAssistantLinkRecord? FindLinkByHaInstanceId(string haInstanceId);
     HomeAssistantLinkRecord? FindLinkByLinkId(string linkId);
     HomeAssistantLinkRecord? FindLinkForJibo(string? jiboDeviceId, string? jiboFriendlyId);
+
     HomeAssistantLinkRecord AddHomeAssistantLink(
         string jiboDeviceId,
         string jiboFriendlyName,
         string haInstanceId);
+
     HomeAssistantLinkRecord? RemoveHomeAssistantLink(string linkId);
     void UpdateHomeAssistantLastSeen(string linkId, DateTimeOffset lastSeenUtc);
 }

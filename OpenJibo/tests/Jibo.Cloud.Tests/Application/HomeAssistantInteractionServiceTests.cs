@@ -17,7 +17,8 @@ public sealed class HomeAssistantInteractionServiceTests
     [InlineData("turn off zanes light", "ha_lights_off", "Okay, turning off zanes light.")]
     [InlineData("turn on zane's light", "ha_lights_on", "Okay, turning on zane's light.")]
     [InlineData("set the temperature to 69", "ha_climate_set_temp", "Okay, setting the temperature to 69 degrees.")]
-    [InlineData("set the bedroom thermostat to 72", "ha_climate_set_temp", "Okay, setting the bedroom thermostat to 72 degrees.")]
+    [InlineData("set the bedroom thermostat to 72", "ha_climate_set_temp",
+        "Okay, setting the bedroom thermostat to 72 degrees.")]
     [InlineData("it's hot in here", "ha_climate_cool_down", "Okay, I'll cool things down a bit.")]
     [InlineData("it's cold in here", "ha_climate_warm_up", "Okay, I'll warm things up a bit.")]
     public async Task BuildDecisionAsync_HaLights_RecognizesIntent(
@@ -122,6 +123,9 @@ public sealed class HomeAssistantInteractionServiceTests
 
     private sealed class FirstItemRandomizer : IJiboRandomizer
     {
-        public T Choose<T>(IReadOnlyList<T> items) => items[0];
+        public T Choose<T>(IReadOnlyList<T> items)
+        {
+            return items[0];
+        }
     }
 }

@@ -13,9 +13,10 @@ public sealed class EncryptedUserDataSnapshotStore
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly string? _persistencePath;
     private readonly UserDataEncryptionService _encryptionService;
     private readonly ILogger<EncryptedUserDataSnapshotStore> _logger;
+
+    private readonly string? _persistencePath;
 
     public EncryptedUserDataSnapshotStore(
         string? persistencePath,

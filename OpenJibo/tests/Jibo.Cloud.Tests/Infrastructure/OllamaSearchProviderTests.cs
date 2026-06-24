@@ -17,12 +17,12 @@ public sealed class OllamaSearchProviderTests
         {
             capturedRequest = request;
             return JsonResponse("""
-                {
-                  "model": "llava:7b",
-                  "response": "Donald Trump was born on June 14, 1946.",
-                  "done": true
-                }
-                """);
+                                {
+                                  "model": "llava:7b",
+                                  "response": "Donald Trump was born on June 14, 1946.",
+                                  "done": true
+                                }
+                                """);
         });
         var provider = CreateProvider(
             handler,
@@ -63,7 +63,7 @@ public sealed class OllamaSearchProviderTests
             capturedRequest = request;
             return JsonResponse("""{"response":"42","done":true}""");
         });
-        var provider = CreateProvider(handler, "http://127.0.0.1:11434", model: null);
+        var provider = CreateProvider(handler, "http://127.0.0.1:11434", null);
 
         await provider.SearchAsync(new KnowledgeSearchRequest(
             "What is six times seven",
@@ -71,7 +71,8 @@ public sealed class OllamaSearchProviderTests
 
         var body = await capturedRequest!.Content!.ReadAsStringAsync();
         using var json = JsonDocument.Parse(body);
-        Assert.Equal(SearchBackendSettingsResolver.DefaultOllamaModel, json.RootElement.GetProperty("model").GetString());
+        Assert.Equal(SearchBackendSettingsResolver.DefaultOllamaModel,
+            json.RootElement.GetProperty("model").GetString());
     }
 
     [Fact]
@@ -87,7 +88,7 @@ public sealed class OllamaSearchProviderTests
             handler,
             "http://127.0.0.1:11434",
             "llava:7b",
-            llmInstructions: "Custom robot persona.\nBe brief.");
+            "Custom robot persona.\nBe brief.");
 
         await provider.SearchAsync(new KnowledgeSearchRequest(
             "What is six times seven",

@@ -41,6 +41,9 @@ public sealed class DialogParsingGuardrailTests
 
     private sealed class FirstItemRandomizer : IJiboRandomizer
     {
-        public T Choose<T>(IReadOnlyList<T> items) => items[0];
+        public T Choose<T>(IReadOnlyList<T> items)
+        {
+            return items[0];
+        }
     }
 }

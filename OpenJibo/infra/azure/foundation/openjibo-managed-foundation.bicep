@@ -29,21 +29,7 @@ param keyVaultName string = ''
 param storageAccountName string = ''
 
 @description('Object ID for the principal that seeds foundation Key Vault secrets. Leave blank to skip adding a secret seed access policy.')
-param secretSeedPrincipalObjectId string = ''
-
-var secretSeedAccessPolicies = empty(secretSeedPrincipalObjectId) ? [] : [
-  {
-    tenantId: subscription().tenantId
-    objectId: secretSeedPrincipalObjectId
-    permissions: {
-      secrets: [
-        'get'
-        'list'
-        'set'
-      ]
-    }
-  }
-]
+param seedPrincipalObjectId string = ''
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: resolvedLogAnalyticsWorkspaceName
@@ -78,8 +64,25 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     }
     softDeleteRetentionInDays: 30
     publicNetworkAccess: 'Enabled'
-    enableRbacAuthorization: false
-    accessPolicies: secretSeedAccessPolicies
+  }
+}
+
+resource keyVaultSecretSeedAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = if (!empty(seedPrincipalObjectId)) {
+  name: '${keyVault.name}/add'
+  properties: {
+    accessPolicies: [
+      {
+        tenantId: subscription().tenantId
+        objectId: seedPrincipalObjectId
+        permissions: {
+          secrets: [
+            'get'
+            'list'
+            'set'
+          ]
+        }
+      }
+    ]
   }
 }
 

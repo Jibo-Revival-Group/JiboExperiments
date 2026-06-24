@@ -460,4 +460,59 @@ public sealed class IdentityGraphSnapshotTests
             graph.EvidenceBundle.Payload);
     }
 
+    [Fact]
+    public void VerifyEvidenceBundleEnvelope_AcceptsUntamperedOfflinePayload()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var graph = store.GetIdentityGraph();
+
+        var verification = IdentityGraphEvidenceBundleVerifier.Verify(graph.EvidenceBundle.Envelope);
+
+        Assert.True(verification.IsValid);
+        Assert.Empty(verification.Errors);
+        Assert.Equal("identity-graph-evidence-envelope-v1", verification.EnvelopeVersion);
+        Assert.Equal("identity-graph-evidence-bundle-v1", verification.BundleVersion);
+        Assert.Equal(graph.EvidenceBundle.BundleHash, verification.ComputedBundleHash);
+        Assert.Equal(graph.EvidenceBundle.Signature, verification.ComputedSignature);
+        Assert.Equal(graph.EvidenceBundle.AdmissionRecommendation, verification.AdmissionRecommendation);
+        Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
+        Assert.Equal(graph.EvidenceBundle.SnapshotContentHash, verification.SnapshotContentHash);
+    }
+
+    [Fact]
+    public void VerifyEvidenceBundleEnvelope_RejectsTamperedOfflinePayload()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var graph = store.GetIdentityGraph();
+        var tamperedEnvelope = graph.EvidenceBundle.Envelope.Replace("admission-recommendation|admit",
+            "admission-recommendation|quarantine", StringComparison.Ordinal);
+
+        var verification = IdentityGraphEvidenceBundleVerifier.Verify(tamperedEnvelope);
+
+        Assert.False(verification.IsValid);
+        Assert.Contains("bundle-hash-mismatch", verification.Errors);
+        Assert.Contains("bundle-signature-mismatch", verification.Errors);
+        Assert.Equal("quarantine", verification.AdmissionRecommendation);
+    }
+
 }

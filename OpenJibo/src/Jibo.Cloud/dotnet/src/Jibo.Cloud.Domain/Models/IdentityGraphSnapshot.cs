@@ -15,4 +15,5 @@ public sealed class IdentityGraphSnapshot
     public IReadOnlyList<PersonRecord> People { get; init; } = [];
     public IReadOnlyList<LoopMemberRecord> Members { get; init; } = [];
     public IReadOnlyList<IdentityGraphRelationship> Relationships { get; init; } = [];
+    public IReadOnlyList<IdentityGraphEvidenceSignal> EvidenceSignals { get; init; } = [];
 }

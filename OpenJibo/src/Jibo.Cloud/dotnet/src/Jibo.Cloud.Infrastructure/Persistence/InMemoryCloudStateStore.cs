@@ -427,8 +427,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             }
         }
 
+        var evidenceSignals = BuildIdentityGraphEvidenceSignals(resolvedLoopId, _robot);
         var contentHash = ComputeIdentityGraphContentHash(_account.AccountId, resolvedLoopId, _robot, people, members,
-            relationships);
+            relationships, evidenceSignals);
 
         var signaturePayload = BuildIdentityGraphSignaturePayload(_account.AccountId, resolvedLoopId, contentHash);
 
@@ -446,13 +447,15 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Signature = SignIdentityGraphPayload(signaturePayload),
             People = people,
             Members = members,
-            Relationships = relationships
+            Relationships = relationships,
+            EvidenceSignals = evidenceSignals
         };
     }
 
     private static string ComputeIdentityGraphContentHash(string accountId, string loopId, DeviceRegistration robot,
         IReadOnlyCollection<PersonRecord> people, IReadOnlyCollection<LoopMemberRecord> members,
-        IReadOnlyCollection<IdentityGraphRelationship> relationships)
+        IReadOnlyCollection<IdentityGraphRelationship> relationships,
+        IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
     {
         var lines = new List<string>
         {
@@ -481,9 +484,46 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .Select(relationship =>
                 $"relationship|{relationship.SubjectId}|{relationship.SubjectKind}|{relationship.Relationship}|{relationship.ObjectId}|{relationship.ObjectKind}|{relationship.LoopId}"));
 
+        lines.AddRange(evidenceSignals
+            .OrderBy(signal => signal.SignalKind, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(signal => signal.SignalId, StringComparer.OrdinalIgnoreCase)
+            .Select(signal =>
+                $"evidence|{signal.SignalKind}|{signal.SignalId}|{signal.Value}|{signal.Role}|{signal.LoopId}"));
+
         var payload = string.Join('\n', lines);
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
         return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+
+    private static IReadOnlyList<IdentityGraphEvidenceSignal> BuildIdentityGraphEvidenceSignals(string loopId,
+        DeviceRegistration robot)
+    {
+        var signals = new List<IdentityGraphEvidenceSignal>();
+
+        AddIdentityEvidenceSignal(signals, "device-id", robot.DeviceId, robot.DeviceId, loopId);
+        AddIdentityEvidenceSignal(signals, "robot-id", robot.RobotId, robot.RobotId, loopId);
+        AddIdentityEvidenceSignal(signals, "firmware-version", robot.RobotId, robot.FirmwareVersion, loopId);
+        AddIdentityEvidenceSignal(signals, "application-version", robot.RobotId, robot.ApplicationVersion, loopId);
+
+        foreach (var mapping in robot.HostMappings.OrderBy(mapping => mapping.Key, StringComparer.OrdinalIgnoreCase))
+            AddIdentityEvidenceSignal(signals, "host-mapping", mapping.Key, mapping.Value, loopId);
+
+        return signals;
+    }
+
+    private static void AddIdentityEvidenceSignal(ICollection<IdentityGraphEvidenceSignal> signals, string signalKind,
+        string? signalId, string? value, string loopId)
+    {
+        if (string.IsNullOrWhiteSpace(signalId) || string.IsNullOrWhiteSpace(value)) return;
+
+        signals.Add(new IdentityGraphEvidenceSignal
+        {
+            SignalKind = signalKind,
+            SignalId = signalId.Trim(),
+            Value = value.Trim(),
+            LoopId = loopId
+        });
     }
 
     private static string BuildIdentityGraphSignaturePayload(string accountId, string loopId, string contentHash)

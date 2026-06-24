@@ -13,7 +13,13 @@ public sealed class IdentityGraphSnapshotTests
         {
             DeviceId = "BOJW-1000-0017-0820-0020",
             RobotId = "Ghost-Instance-Onion-Silk",
-            FriendlyName = "Test Robot"
+            FriendlyName = "Test Robot",
+            FirmwareVersion = "1.9.2",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
         });
 
         var graph = store.GetIdentityGraph();
@@ -49,6 +55,16 @@ public sealed class IdentityGraphSnapshotTests
             relationship.SubjectKind == "robot" &&
             relationship.Relationship == "runs-on" &&
             relationship.ObjectId == "BOJW-1000-0017-0820-0020");
+        Assert.Contains(graph.EvidenceSignals, signal =>
+            signal.SignalKind == "device-id" &&
+            signal.SignalId == "BOJW-1000-0017-0820-0020" &&
+            signal.Role == "corroborating");
+        Assert.Contains(graph.EvidenceSignals, signal =>
+            signal.SignalKind == "firmware-version" && signal.Value == "1.9.2");
+        Assert.Contains(graph.EvidenceSignals, signal =>
+            signal.SignalKind == "host-mapping" &&
+            signal.SignalId == "neo-hub.jibo.com" &&
+            signal.Value == "openjibo.local");
     }
 
     [Fact]
@@ -142,6 +158,33 @@ public sealed class IdentityGraphSnapshotTests
         Assert.NotEqual(defaultGraph.ContentHash, alternateGraph.ContentHash);
         Assert.NotEqual(defaultGraph.SignaturePayload, alternateGraph.SignaturePayload);
         Assert.NotEqual(defaultGraph.Signature, alternateGraph.Signature);
+    }
+
+    [Fact]
+    public void GetIdentityGraph_ContentHashChangesWithCorroboratingDeviceEvidence()
+    {
+        var store = new InMemoryCloudStateStore();
+        var loopId = store.GetLoops()[0].LoopId;
+
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20"
+        });
+        var before = store.GetIdentityGraph(loopId);
+
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.21"
+        });
+        var after = store.GetIdentityGraph(loopId);
+
+        Assert.NotEqual(before.ContentHash, after.ContentHash);
+        Assert.Contains(after.EvidenceSignals, signal =>
+            signal.SignalKind == "application-version" && signal.Value == "1.0.21");
     }
 
 }

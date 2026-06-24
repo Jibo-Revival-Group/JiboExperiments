@@ -28,6 +28,21 @@ public sealed class IdentityGraphSnapshotTests
             relationship.SubjectId == "person-openjibo-owner" &&
             relationship.Relationship == "primary-user-of" &&
             relationship.ObjectId == "Ghost-Instance-Onion-Silk");
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == graph.AccountId &&
+            relationship.SubjectKind == "account" &&
+            relationship.Relationship == "owns" &&
+            relationship.ObjectId == graph.LoopId);
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == graph.LoopId &&
+            relationship.SubjectKind == "loop" &&
+            relationship.Relationship == "served-by" &&
+            relationship.ObjectId == "Ghost-Instance-Onion-Silk");
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == "Ghost-Instance-Onion-Silk" &&
+            relationship.SubjectKind == "robot" &&
+            relationship.Relationship == "runs-on" &&
+            relationship.ObjectId == "BOJW-1000-0017-0820-0020");
     }
 
     [Fact]
@@ -46,5 +61,10 @@ public sealed class IdentityGraphSnapshotTests
             relationship.SubjectKind == "family" &&
             relationship.Relationship == "member-of" &&
             relationship.ObjectId == loopId);
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == member.Id &&
+            relationship.SubjectKind == "loop-member" &&
+            relationship.Relationship == "represented-by" &&
+            relationship.ObjectId == "usr-family-member");
     }
 }

@@ -66,6 +66,7 @@ internal static class PortalEndpoints
                 graph.ContentHash,
                 graph.SignatureAlgorithm,
                 graph.SignatureKeyId,
+                graph.SignaturePayload,
                 graph.Signature,
                 graph.People,
                 graph.Members,

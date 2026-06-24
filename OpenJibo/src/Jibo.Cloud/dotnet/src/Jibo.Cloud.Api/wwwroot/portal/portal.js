@@ -101,6 +101,50 @@ async function login(code) {
   }
 }
 
+
+function shortHash(value) {
+  if (!value) return "—";
+  const text = String(value);
+  return text.length > 16 ? `${text.slice(0, 12)}…${text.slice(-6)}` : text;
+}
+
+async function renderIdentityGraphPanel() {
+  try {
+    const graph = await apiFetch("/api/portal/identity-graph");
+    return `
+      <section class="card panel wide-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Identity graph</p>
+            <h2>Signed relationship evidence</h2>
+          </div>
+          <span class="badge success">Signed</span>
+        </div>
+        <p class="muted">This snapshot is the first owner-visible evidence bundle for future peer admission, restore validation, and Open Jibo network trust decisions.</p>
+        <div class="meta-list compact">
+          <div class="meta-item"><span>Snapshot version</span><span>${escapeHtml(graph.snapshotVersion || "—")}</span></div>
+          <div class="meta-item"><span>Loop</span><span>${escapeHtml(graph.loopId || "—")}</span></div>
+          <div class="meta-item"><span>Robot</span><span>${escapeHtml(graph.robotId || "—")}</span></div>
+          <div class="meta-item"><span>Device</span><span>${escapeHtml(graph.deviceId || "—")}</span></div>
+          <div class="meta-item"><span>People</span><span>${graph.people?.length || 0}</span></div>
+          <div class="meta-item"><span>Relationships</span><span>${graph.relationships?.length || 0}</span></div>
+          <div class="meta-item"><span>Content hash</span><span title="${escapeHtml(graph.contentHash || "")}">${escapeHtml(shortHash(graph.contentHash))}</span></div>
+          <div class="meta-item"><span>Signature</span><span title="${escapeHtml(graph.signature || "")}">${escapeHtml(shortHash(graph.signature))}</span></div>
+          <div class="meta-item"><span>Signature payload</span><span title="${escapeHtml(graph.signaturePayload || "")}">${escapeHtml(shortHash(graph.signaturePayload))}</span></div>
+        </div>
+      </section>
+    `;
+  } catch (error) {
+    return `
+      <section class="card panel wide-panel">
+        <p class="eyebrow">Identity graph</p>
+        <h2>Signed relationship evidence</h2>
+        <p class="status error">${escapeHtml(error.message)}</p>
+      </section>
+    `;
+  }
+}
+
 function haStatusBadge(homeAssistant) {
   if (!homeAssistant?.linked) {
     return `<span class="badge neutral">Not paired</span>`;
@@ -185,6 +229,8 @@ async function renderDashboard(message = "", tone = "success") {
     return;
   }
 
+  const identityGraphPanel = await renderIdentityGraphPanel();
+
   app.innerHTML = `
     <div class="shell">
       <header class="dashboard-header">
@@ -211,6 +257,8 @@ async function renderDashboard(message = "", tone = "success") {
 
         ${renderHomeAssistantPanel(dashboard)}
       </div>
+
+      ${identityGraphPanel}
 
       ${message ? `<p class="status ${tone}" style="margin-top: 1rem;">${escapeHtml(message)}</p>` : ""}
     </div>

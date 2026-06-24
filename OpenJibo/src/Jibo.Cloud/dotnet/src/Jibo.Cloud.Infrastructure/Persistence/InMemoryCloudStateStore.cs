@@ -449,7 +449,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var signature = SignIdentityGraphPayload(signaturePayload);
         var admissionAssessment = BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId, contentHash, evidenceSignals);
         var evidenceBundle = BuildSignedIdentityGraphEvidenceBundle(_account.AccountId, resolvedLoopId, _robot,
-            contentHash, signature, admissionAssessment, people.Length, members.Count, relationships.Count, evidenceSignals.Count);
+            contentHash, signature, admissionAssessment, people.Length, members.Count, relationships.Count,
+            evidenceSignals.Count, SummarizeIdentityGraphRelationshipKinds(relationships),
+            SummarizeIdentityGraphEvidenceSignalKinds(evidenceSignals));
 
         return new IdentityGraphSnapshot
         {
@@ -513,6 +515,22 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var payload = string.Join('\n', lines);
         return ComputeSha256Hex(payload);
     }
+
+    private static IReadOnlyList<string> SummarizeIdentityGraphRelationshipKinds(
+        IEnumerable<IdentityGraphRelationship> relationships) =>
+        relationships
+            .GroupBy(relationship => relationship.Relationship, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(group => $"{group.Key}:{group.Count()}")
+            .ToArray();
+
+    private static IReadOnlyList<string> SummarizeIdentityGraphEvidenceSignalKinds(
+        IEnumerable<IdentityGraphEvidenceSignal> evidenceSignals) =>
+        evidenceSignals
+            .GroupBy(signal => signal.SignalKind, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(group => $"{group.Key}:{group.Count()}")
+            .ToArray();
 
 
     private static IReadOnlyList<IdentityGraphEvidenceSignal> BuildIdentityGraphEvidenceSignals(string loopId,
@@ -698,10 +716,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static IdentityGraphEvidenceBundle BuildSignedIdentityGraphEvidenceBundle(string accountId, string loopId,
         DeviceRegistration robot, string contentHash, string snapshotSignature,
-        IdentityGraphAdmissionAssessment admissionAssessment, int peopleCount, int memberCount, int relationshipCount, int evidenceSignalCount)
+        IdentityGraphAdmissionAssessment admissionAssessment, int peopleCount, int memberCount, int relationshipCount,
+        int evidenceSignalCount, IReadOnlyList<string> relationshipKinds, IReadOnlyList<string> evidenceSignalKinds)
     {
         var payload = BuildIdentityGraphEvidenceBundlePayload(accountId, loopId, robot, contentHash, snapshotSignature,
-            admissionAssessment, peopleCount, memberCount, relationshipCount, evidenceSignalCount);
+            admissionAssessment, peopleCount, memberCount, relationshipCount, evidenceSignalCount, relationshipKinds,
+            evidenceSignalKinds);
         var bundleHash = ComputeSha256Hex(payload);
 
         var signature = SignIdentityGraphPayload(payload);
@@ -726,6 +746,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             MemberCount = memberCount,
             RelationshipCount = relationshipCount,
             EvidenceSignalCount = evidenceSignalCount,
+            RelationshipKinds = relationshipKinds,
+            EvidenceSignalKinds = evidenceSignalKinds,
             BlockingEvidence = admissionAssessment.BlockingEvidence,
             Payload = payload,
             Envelope = envelope,
@@ -756,7 +778,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static string BuildIdentityGraphEvidenceBundlePayload(string accountId, string loopId, DeviceRegistration robot,
         string contentHash, string snapshotSignature, IdentityGraphAdmissionAssessment admissionAssessment,
-        int peopleCount, int memberCount, int relationshipCount, int evidenceSignalCount)
+        int peopleCount, int memberCount, int relationshipCount, int evidenceSignalCount,
+        IReadOnlyList<string> relationshipKinds, IReadOnlyList<string> evidenceSignalKinds)
     {
         var lines = new[]
         {
@@ -769,6 +792,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"member-count|{memberCount}",
             $"relationship-count|{relationshipCount}",
             $"evidence-signal-count|{evidenceSignalCount}",
+            $"relationship-kinds|{string.Join(',', relationshipKinds)}",
+            $"evidence-signal-kinds|{string.Join(',', evidenceSignalKinds)}",
             $"snapshot-version|{IdentityGraphSnapshotVersion}",
             $"snapshot-content-hash|{contentHash}",
             $"snapshot-signature-key-id|{IdentityGraphSignatureKeyId}",

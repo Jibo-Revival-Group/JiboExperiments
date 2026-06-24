@@ -437,11 +437,17 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.Members.Count, graph.EvidenceBundle.MemberCount);
         Assert.Equal(graph.Relationships.Count, graph.EvidenceBundle.RelationshipCount);
         Assert.Equal(graph.EvidenceSignals.Count, graph.EvidenceBundle.EvidenceSignalCount);
+        Assert.Contains("member-of:3", graph.EvidenceBundle.RelationshipKinds);
+        Assert.Contains("served-by:1", graph.EvidenceBundle.RelationshipKinds);
+        Assert.Contains("application-version:1", graph.EvidenceBundle.EvidenceSignalKinds);
+        Assert.Contains("host-mapping:1", graph.EvidenceBundle.EvidenceSignalKinds);
         Assert.Empty(graph.EvidenceBundle.BlockingEvidence);
         Assert.Contains($"people-count|{graph.People.Count}", graph.EvidenceBundle.Payload);
         Assert.Contains($"member-count|{graph.Members.Count}", graph.EvidenceBundle.Payload);
         Assert.Contains($"relationship-count|{graph.Relationships.Count}", graph.EvidenceBundle.Payload);
         Assert.Contains($"evidence-signal-count|{graph.EvidenceSignals.Count}", graph.EvidenceBundle.Payload);
+        Assert.Contains("relationship-kinds|", graph.EvidenceBundle.Payload);
+        Assert.Contains("evidence-signal-kinds|", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-blocking-evidence|", graph.EvidenceBundle.Payload);
     }
 
@@ -506,6 +512,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.MemberCount, verification.MemberCount);
         Assert.Equal(graph.EvidenceBundle.RelationshipCount, verification.RelationshipCount);
         Assert.Equal(graph.EvidenceBundle.EvidenceSignalCount, verification.EvidenceSignalCount);
+        Assert.Equal(graph.EvidenceBundle.RelationshipKinds, verification.RelationshipKinds);
+        Assert.Equal(graph.EvidenceBundle.EvidenceSignalKinds, verification.EvidenceSignalKinds);
         Assert.Empty(verification.BlockingEvidence);
     }
 

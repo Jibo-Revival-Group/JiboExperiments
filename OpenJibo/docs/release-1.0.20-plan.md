@@ -135,6 +135,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added an offline identity graph evidence bundle verifier so retained peer-admission envelopes can detect payload hash/signature tampering before any replication handoff trusts them
 - expanded the offline evidence bundle verifier to extract account, loop, robot, device, summary counts, and blocking-evidence fields so retained quarantine/admission artifacts can be triaged without a running portal
 - expanded the signed offline evidence bundle with admission policy, reason, satisfied-evidence, and recommended-action fields so retained artifacts explain both the peer-admission decision and the next owner/operator step without a running portal
+- added relationship-kind and evidence-signal-kind summaries to the signed offline evidence bundle so retained artifacts show the shape of the peer-admission snapshot without requiring the full relationship payload to be rehydrated
 
 ## Working Order
 

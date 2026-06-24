@@ -26,6 +26,8 @@ public sealed class IdentityGraphEvidenceBundleVerification
     public int MemberCount { get; init; }
     public int RelationshipCount { get; init; }
     public int EvidenceSignalCount { get; init; }
+    public IReadOnlyList<string> RelationshipKinds { get; init; } = [];
+    public IReadOnlyList<string> EvidenceSignalKinds { get; init; } = [];
     public IReadOnlyList<string> BlockingEvidence { get; init; } = [];
     public IReadOnlyList<string> Errors { get; init; } = [];
 }

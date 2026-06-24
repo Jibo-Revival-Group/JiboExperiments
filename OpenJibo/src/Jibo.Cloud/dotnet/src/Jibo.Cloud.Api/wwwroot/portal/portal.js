@@ -128,6 +128,7 @@ async function renderIdentityGraphPanel() {
           <div class="meta-item"><span>Device</span><span>${escapeHtml(graph.deviceId || "—")}</span></div>
           <div class="meta-item"><span>People</span><span>${graph.people?.length || 0}</span></div>
           <div class="meta-item"><span>Relationships</span><span>${graph.relationships?.length || 0}</span></div>
+          <div class="meta-item"><span>Evidence signals</span><span>${graph.evidenceSignals?.length || 0}</span></div>
           <div class="meta-item"><span>Content hash</span><span title="${escapeHtml(graph.contentHash || "")}">${escapeHtml(shortHash(graph.contentHash))}</span></div>
           <div class="meta-item"><span>Signature</span><span title="${escapeHtml(graph.signature || "")}">${escapeHtml(shortHash(graph.signature))}</span></div>
           <div class="meta-item"><span>Signature payload</span><span title="${escapeHtml(graph.signaturePayload || "")}">${escapeHtml(shortHash(graph.signaturePayload))}</span></div>

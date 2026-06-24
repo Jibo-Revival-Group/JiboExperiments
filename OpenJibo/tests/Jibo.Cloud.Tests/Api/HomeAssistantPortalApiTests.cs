@@ -264,6 +264,9 @@ public sealed class HomeAssistantPortalApiTests
             graph.GetProperty("signaturePayload").GetString());
         Assert.Matches("^[a-f0-9]{64}$", graph.GetProperty("signature").GetString());
         Assert.NotEmpty(graph.GetProperty("relationships").EnumerateArray());
+        Assert.Contains(graph.GetProperty("evidenceSignals").EnumerateArray(), signal =>
+            signal.GetProperty("signalKind").GetString() == "device-id" &&
+            signal.GetProperty("value").GetString() == "BOJW-1000-0017-0820-0020");
     }
 
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)

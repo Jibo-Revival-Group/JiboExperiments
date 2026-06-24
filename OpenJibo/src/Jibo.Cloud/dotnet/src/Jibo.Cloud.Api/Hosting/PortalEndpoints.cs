@@ -70,7 +70,8 @@ internal static class PortalEndpoints
                 graph.Signature,
                 graph.People,
                 graph.Members,
-                graph.Relationships
+                graph.Relationships,
+                graph.EvidenceSignals
             });
         });
 

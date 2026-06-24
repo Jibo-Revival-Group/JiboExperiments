@@ -120,6 +120,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added a deterministic identity graph snapshot version and content hash so future signed snapshot/admission work has a stable evidence payload before any peer replication is introduced
 - added a first signed identity graph envelope with deterministic HMAC-SHA256 metadata and a portal-readable graph endpoint so owner-facing tooling can inspect the evidence payload before peer admission is enabled
 - exposed the identity graph signature payload in both the portal API and dashboard UI so owners can inspect the exact version/account/loop/hash tuple being signed before later admission and replication work
+- added corroborating identity graph evidence signals for device ID, robot ID, firmware/application versions, and host mappings so the signed owner-visible graph can distinguish relationship truth from clone-detection inputs before peer admission work begins
 
 ## Working Order
 

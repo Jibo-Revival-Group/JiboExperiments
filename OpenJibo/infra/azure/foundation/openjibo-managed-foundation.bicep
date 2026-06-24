@@ -63,12 +63,15 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       name: 'standard'
     }
     softDeleteRetentionInDays: 30
+    accessPolicies: []
+    enableRbacAuthorization: false
     publicNetworkAccess: 'Enabled'
   }
 }
 
 resource keyVaultSecretSeedAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = if (!empty(seedPrincipalObjectId)) {
-  name: '${keyVault.name}/add'
+  parent: keyVault
+  name: 'add'
   properties: {
     accessPolicies: [
       {

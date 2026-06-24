@@ -704,6 +704,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             admissionAssessment);
         var bundleHash = ComputeSha256Hex(payload);
 
+        var signature = SignIdentityGraphPayload(payload);
+        var envelope = BuildIdentityGraphEvidenceBundleEnvelope(payload, bundleHash, signature);
+
         return new IdentityGraphEvidenceBundle
         {
             AccountId = accountId,
@@ -716,11 +719,30 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AdmissionSignature = admissionAssessment.Signature,
             AdmissionRecommendation = admissionAssessment.Recommendation,
             Payload = payload,
+            Envelope = envelope,
             BundleHash = bundleHash,
             SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
             SignatureKeyId = IdentityGraphEvidenceBundleSignatureKeyId,
-            Signature = SignIdentityGraphPayload(payload)
+            Signature = signature
         };
+    }
+
+
+    private static string BuildIdentityGraphEvidenceBundleEnvelope(string payload, string bundleHash, string signature)
+    {
+        var lines = new[]
+        {
+            "envelope-version|identity-graph-evidence-envelope-v1",
+            $"bundle-hash|{bundleHash}",
+            $"bundle-signature-algorithm|{IdentityGraphSignatureAlgorithm}",
+            $"bundle-signature-key-id|{IdentityGraphEvidenceBundleSignatureKeyId}",
+            $"bundle-signature|{signature}",
+            "payload-begin",
+            payload,
+            "payload-end"
+        };
+
+        return string.Join('\n', lines);
     }
 
     private static string BuildIdentityGraphEvidenceBundlePayload(string accountId, string loopId, DeviceRegistration robot,

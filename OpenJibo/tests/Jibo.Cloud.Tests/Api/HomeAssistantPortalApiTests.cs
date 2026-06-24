@@ -275,6 +275,10 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Contains($"snapshot-content-hash|{contentHash}", evidenceBundle.GetProperty("payload").GetString());
         Assert.Matches("^[a-f0-9]{64}$", evidenceBundle.GetProperty("bundleHash").GetString());
         Assert.Matches("^[a-f0-9]{64}$", evidenceBundle.GetProperty("signature").GetString());
+        Assert.Contains("envelope-version|identity-graph-evidence-envelope-v1",
+            evidenceBundle.GetProperty("envelope").GetString());
+        Assert.Contains($"bundle-signature|{evidenceBundle.GetProperty("signature").GetString()}",
+            evidenceBundle.GetProperty("envelope").GetString());
         Assert.Contains(admissionAssessment.GetProperty("satisfiedEvidence").EnumerateArray(), item =>
             item.GetString() == "device-id");
         Assert.Contains(admissionAssessment.GetProperty("blockingEvidence").EnumerateArray(), item =>
@@ -308,10 +312,14 @@ public sealed class HomeAssistantPortalApiTests
         Assert.StartsWith("openjibo-identity-evidence-BOJW-1000-0017-0820-0020-",
             bundleResponse.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
         var payload = await bundleResponse.Content.ReadAsStringAsync();
+        Assert.Contains("envelope-version|identity-graph-evidence-envelope-v1", payload);
+        Assert.Contains("bundle-signature|", payload);
+        Assert.Contains("payload-begin", payload);
         Assert.Contains("bundle-version|identity-graph-evidence-bundle-v1", payload);
         Assert.Contains("device|BOJW-1000-0017-0820-0020", payload);
         Assert.Contains("admission-recommendation|quarantine", payload);
         Assert.Contains("admission-decision-hash|", payload);
+        Assert.Contains("payload-end", payload);
     }
 
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)

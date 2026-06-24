@@ -13,6 +13,7 @@ public sealed class IdentityGraphEvidenceBundle
     public string AdmissionSignature { get; init; } = string.Empty;
     public string AdmissionRecommendation { get; init; } = "quarantine";
     public string Payload { get; init; } = string.Empty;
+    public string Envelope { get; init; } = string.Empty;
     public string BundleHash { get; init; } = string.Empty;
     public string SignatureAlgorithm { get; init; } = string.Empty;
     public string SignatureKeyId { get; init; } = string.Empty;

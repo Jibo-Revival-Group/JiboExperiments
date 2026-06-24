@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Runtime.Abstractions;
-
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Jibo.Cloud.Application.Services;

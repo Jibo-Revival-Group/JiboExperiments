@@ -1,5 +1,4 @@
 using Jibo.Cloud.Application.Services;
-
 // ReSharper disable StringLiteralTypo
 
 namespace Jibo.Cloud.Tests.WebSockets;

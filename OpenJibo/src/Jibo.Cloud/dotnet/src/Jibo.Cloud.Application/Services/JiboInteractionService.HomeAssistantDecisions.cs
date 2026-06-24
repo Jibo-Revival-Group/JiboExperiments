@@ -20,16 +20,20 @@ public sealed partial class JiboInteractionService
         string intentName)
     {
         if (userIntegrationStore is null || cloudStateStore is null)
+        {
             return new JiboInteractionDecision(
                 intentName,
                 "Home Assistant control is not available on this server right now.");
+        }
 
         var (deviceId, friendlyId) = JiboIdentityResolver.Resolve(turn, cloudStateStore);
         var link = userIntegrationStore.FindLinkForJibo(deviceId, friendlyId);
         if (link is null)
+        {
             return new JiboInteractionDecision(
                 intentName,
                 "I don't have Home Assistant set up for my room yet.");
+        }
 
         var transcript = turn.NormalizedTranscript ?? turn.RawTranscript;
         HomeAssistantLightCommandParser.TryParse(transcript, out var lightCommand);
@@ -68,16 +72,20 @@ public sealed partial class JiboInteractionService
     private JiboInteractionDecision BuildHaClimateDecision(TurnContext turn, string intentName)
     {
         if (userIntegrationStore is null || cloudStateStore is null)
+        {
             return new JiboInteractionDecision(
                 intentName,
                 "Home Assistant control is not available on this server right now.");
+        }
 
         var (deviceId, friendlyId) = JiboIdentityResolver.Resolve(turn, cloudStateStore);
         var link = userIntegrationStore.FindLinkForJibo(deviceId, friendlyId);
         if (link is null)
+        {
             return new JiboInteractionDecision(
                 intentName,
                 "I don't have Home Assistant set up for my room yet.");
+        }
 
         var transcript = turn.NormalizedTranscript ?? turn.RawTranscript;
         HomeAssistantClimateCommandParser.TryParse(transcript, out var climateCommand);
@@ -85,8 +93,7 @@ public sealed partial class JiboInteractionService
         if (climateCommand.Action == HomeAssistantClimateCommandParser.ClimateAction.SetTemperature &&
             climateCommand.Temperature is not null)
         {
-            var tempLabel =
-                HomeAssistantClimateCommandParser.FormatTemperatureForSpeech(climateCommand.Temperature.Value);
+            var tempLabel = HomeAssistantClimateCommandParser.FormatTemperatureForSpeech(climateCommand.Temperature.Value);
             if (climateCommand.Scope == HomeAssistantClimateCommandParser.ClimateScope.Named &&
                 !string.IsNullOrWhiteSpace(climateCommand.TargetName))
             {

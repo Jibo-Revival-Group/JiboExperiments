@@ -10,8 +10,7 @@ internal static class PortalStaticFileMapper
         app.MapGet("/portal.html", () => Results.Redirect("/portal/index.html"));
         app.MapGet("/portal/index.html", () => Serve(portalDirectory, "index.html", "text/html; charset=utf-8"));
         app.MapGet("/portal/portal.css", () => Serve(portalDirectory, "portal.css", "text/css; charset=utf-8"));
-        app.MapGet("/portal/portal.js",
-            () => Serve(portalDirectory, "portal.js", "application/javascript; charset=utf-8"));
+        app.MapGet("/portal/portal.js", () => Serve(portalDirectory, "portal.js", "application/javascript; charset=utf-8"));
     }
 
     internal static bool IsPortalPath(PathString path)
@@ -39,10 +38,12 @@ internal static class PortalStaticFileMapper
         };
 
         foreach (var candidate in candidates)
+        {
             if (!string.IsNullOrWhiteSpace(candidate) &&
                 Directory.Exists(candidate) &&
                 File.Exists(Path.Combine(candidate, "index.html")))
                 return candidate;
+        }
 
         return candidates.FirstOrDefault(candidate => !string.IsNullOrWhiteSpace(candidate))
                ?? Path.Combine(AppContext.BaseDirectory, "wwwroot", "portal");

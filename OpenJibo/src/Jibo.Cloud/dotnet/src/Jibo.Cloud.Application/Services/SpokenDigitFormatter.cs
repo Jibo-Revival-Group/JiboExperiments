@@ -22,8 +22,10 @@ internal static class SpokenDigitFormatter
 
         var spoken = new List<string>(digits.Length);
         foreach (var character in digits)
+        {
             if (character is >= '0' and <= '9')
                 spoken.Add(DigitWords[character - '0']);
+        }
 
         return string.Join(" ", spoken);
     }

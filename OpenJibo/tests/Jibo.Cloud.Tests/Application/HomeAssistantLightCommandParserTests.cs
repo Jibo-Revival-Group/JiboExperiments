@@ -5,14 +5,10 @@ namespace Jibo.Cloud.Tests.Application;
 public sealed class HomeAssistantLightCommandParserTests
 {
     [Theory]
-    [InlineData("turn off the lights", HomeAssistantLightCommandParser.LightAction.Off,
-        HomeAssistantLightCommandParser.LightScope.Room)]
-    [InlineData("lights off", HomeAssistantLightCommandParser.LightAction.Off,
-        HomeAssistantLightCommandParser.LightScope.Room)]
-    [InlineData("turn on the lights", HomeAssistantLightCommandParser.LightAction.On,
-        HomeAssistantLightCommandParser.LightScope.Room)]
-    [InlineData("lights on", HomeAssistantLightCommandParser.LightAction.On,
-        HomeAssistantLightCommandParser.LightScope.Room)]
+    [InlineData("turn off the lights", HomeAssistantLightCommandParser.LightAction.Off, HomeAssistantLightCommandParser.LightScope.Room)]
+    [InlineData("lights off", HomeAssistantLightCommandParser.LightAction.Off, HomeAssistantLightCommandParser.LightScope.Room)]
+    [InlineData("turn on the lights", HomeAssistantLightCommandParser.LightAction.On, HomeAssistantLightCommandParser.LightScope.Room)]
+    [InlineData("lights on", HomeAssistantLightCommandParser.LightAction.On, HomeAssistantLightCommandParser.LightScope.Room)]
     public void TryParse_RoomCommands_ReturnExpectedScope(
         string transcript,
         HomeAssistantLightCommandParser.LightAction expectedAction,

@@ -18,6 +18,12 @@ public static class HomeAssistantClimateCommandParser
         Named
     }
 
+    public readonly record struct ClimateCommand(
+        ClimateAction Action,
+        ClimateScope Scope,
+        string? TargetName,
+        decimal? Temperature);
+
     private const decimal MinTemperature = 45m;
     private const decimal MaxTemperature = 90m;
 
@@ -202,10 +208,4 @@ public static class HomeAssistantClimateCommandParser
 
         return TranscriptTextNormalizer.StripLeadingPhrases(normalized, CommandLeadPhrases);
     }
-
-    public readonly record struct ClimateCommand(
-        ClimateAction Action,
-        ClimateScope Scope,
-        string? TargetName,
-        decimal? Temperature);
 }

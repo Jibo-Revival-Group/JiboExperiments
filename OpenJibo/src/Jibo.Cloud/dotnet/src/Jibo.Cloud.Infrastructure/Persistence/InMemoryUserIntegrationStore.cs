@@ -141,9 +141,11 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
     {
         foreach (var candidate in new[] { jiboDeviceId, jiboFriendlyId }.Where(static value =>
                      !string.IsNullOrWhiteSpace(value)))
+        {
             if (link.JiboDeviceId.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
                 link.JiboFriendlyName.Equals(candidate, StringComparison.OrdinalIgnoreCase))
                 return true;
+        }
 
         return false;
     }

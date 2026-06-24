@@ -645,6 +645,49 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         return page;
     }
 
+    private sealed class FakeExternalProcessRunner(
+        string whisperStdOut = "[00:00:00.000 --> 00:00:01.000] tell me a joke")
+        : IExternalProcessRunner
+    {
+        public List<(string FileName, IReadOnlyList<string> Arguments)> Calls { get; } = [];
+
+        public Task<ExternalProcessResult> RunAsync(string fileName, IReadOnlyList<string> arguments,
+            CancellationToken cancellationToken = default)
+        {
+            Calls.Add((fileName, arguments));
+
+            if (!string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
+                return Task.FromResult(new ExternalProcessResult(0, whisperStdOut, string.Empty));
+
+            var outputPath = arguments[^1];
+            File.WriteAllBytes(outputPath, Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
+            return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
+        }
+    }
+
+    private sealed class InspectingExternalProcessRunner : IExternalProcessRunner
+    {
+        public byte[]? WrittenFfmpegInputBytes { get; private set; }
+
+        public Task<ExternalProcessResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            CancellationToken cancellationToken = default)
+        {
+            if (!string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
+                return Task.FromResult(new ExternalProcessResult(0,
+                    "[00:00:00.000 --> 00:00:01.000] tell me a joke",
+                    string.Empty));
+
+            WrittenFfmpegInputBytes = File.ReadAllBytes(arguments[2]);
+
+            File.WriteAllBytes(arguments[^1],
+                Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
+
+            return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
+        }
+    }
+
     [Fact]
     public void Resolve_UsesWindowsEnvironmentOverrides_WhenConfiguredPathsAreEmpty()
     {
@@ -699,50 +742,6 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
 
         Assert.Equal(@"C:\Program Files\ffmpeg\bin\ffmpeg.exe", resolved.FfmpegPath);
         Assert.Equal(@"C:\Program Files\whisper.cpp\build\bin\Release\whisper-cli.exe", resolved.WhisperCliPath);
-        Assert.Equal(Path.Combine(homeDirectory, "whisper.cpp", "models", "ggml-base.en.bin"),
-            resolved.WhisperModelPath);
-    }
-
-    private sealed class FakeExternalProcessRunner(
-        string whisperStdOut = "[00:00:00.000 --> 00:00:01.000] tell me a joke")
-        : IExternalProcessRunner
-    {
-        public List<(string FileName, IReadOnlyList<string> Arguments)> Calls { get; } = [];
-
-        public Task<ExternalProcessResult> RunAsync(string fileName, IReadOnlyList<string> arguments,
-            CancellationToken cancellationToken = default)
-        {
-            Calls.Add((fileName, arguments));
-
-            if (!string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
-                return Task.FromResult(new ExternalProcessResult(0, whisperStdOut, string.Empty));
-
-            var outputPath = arguments[^1];
-            File.WriteAllBytes(outputPath, Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
-            return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
-        }
-    }
-
-    private sealed class InspectingExternalProcessRunner : IExternalProcessRunner
-    {
-        public byte[]? WrittenFfmpegInputBytes { get; private set; }
-
-        public Task<ExternalProcessResult> RunAsync(
-            string fileName,
-            IReadOnlyList<string> arguments,
-            CancellationToken cancellationToken = default)
-        {
-            if (!string.Equals(fileName, "ffmpeg", StringComparison.OrdinalIgnoreCase))
-                return Task.FromResult(new ExternalProcessResult(0,
-                    "[00:00:00.000 --> 00:00:01.000] tell me a joke",
-                    string.Empty));
-
-            WrittenFfmpegInputBytes = File.ReadAllBytes(arguments[2]);
-
-            File.WriteAllBytes(arguments[^1],
-                Enumerable.Range(0, 4096).Select(index => (byte)(index % 256)).ToArray());
-
-            return Task.FromResult(new ExternalProcessResult(0, string.Empty, string.Empty));
-        }
+        Assert.Equal(Path.Combine(homeDirectory, "whisper.cpp", "models", "ggml-base.en.bin"), resolved.WhisperModelPath);
     }
 }

@@ -388,12 +388,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .ToArray();
         var relationships = new List<IdentityGraphRelationship>();
 
-        AddIdentityRelationship(relationships, _account.AccountId, "account", "owns", resolvedLoopId, "loop",
-            resolvedLoopId);
-        AddIdentityRelationship(relationships, resolvedLoopId, "loop", "served-by", _robot.RobotId, "robot",
-            resolvedLoopId);
-        AddIdentityRelationship(relationships, _robot.RobotId, "robot", "runs-on", _robot.DeviceId, "device",
-            resolvedLoopId);
+        AddIdentityRelationship(relationships, _account.AccountId, "account", "owns", resolvedLoopId, "loop", resolvedLoopId);
+        AddIdentityRelationship(relationships, resolvedLoopId, "loop", "served-by", _robot.RobotId, "robot", resolvedLoopId);
+        AddIdentityRelationship(relationships, _robot.RobotId, "robot", "runs-on", _robot.DeviceId, "device", resolvedLoopId);
 
         foreach (var person in people)
         {
@@ -401,8 +398,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 person.IsPrimary ? "primary-member-of" : "member-of", resolvedLoopId, "loop", resolvedLoopId);
 
             if (!string.IsNullOrWhiteSpace(person.AccountId))
-                AddIdentityRelationship(relationships, person.PersonId, "person", "backed-by", person.AccountId,
-                    "account",
+                AddIdentityRelationship(relationships, person.PersonId, "person", "backed-by", person.AccountId, "account",
                     resolvedLoopId);
 
             if (!string.IsNullOrWhiteSpace(person.RobotId))
@@ -428,8 +424,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                         "account", resolvedLoopId);
 
                 if (member.FaceEnrolled)
-                    AddIdentityRelationship(relationships, member.Id, "loop-member", "face-enrolled-with",
-                        _robot.RobotId,
+                    AddIdentityRelationship(relationships, member.Id, "loop-member", "face-enrolled-with", _robot.RobotId,
                         "robot", resolvedLoopId);
 
                 if (member.VoiceEnrolled)
@@ -452,9 +447,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         var signaturePayload = BuildIdentityGraphSignaturePayload(_account.AccountId, resolvedLoopId, contentHash);
         var signature = SignIdentityGraphPayload(signaturePayload);
-        var admissionAssessment =
-            BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId, contentHash,
-                evidenceSignals);
+        var admissionAssessment = BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId, contentHash, evidenceSignals);
         var evidenceBundle = BuildSignedIdentityGraphEvidenceBundle(_account.AccountId, resolvedLoopId, _robot,
             contentHash, signature, admissionAssessment, people.Length, members.Count, relationships.Count,
             evidenceSignals.Count, SummarizeIdentityGraphRelationshipKinds(relationships),
@@ -479,6 +472,384 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Relationships = relationships,
             EvidenceSignals = evidenceSignals
         };
+    }
+
+    private static string ComputeIdentityGraphContentHash(string accountId, string loopId, DeviceRegistration robot,
+        IReadOnlyCollection<PersonRecord> people, IReadOnlyCollection<LoopMemberRecord> members,
+        IReadOnlyCollection<IdentityGraphRelationship> relationships,
+        IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
+    {
+        var lines = new List<string>
+        {
+            $"snapshot-version|{IdentityGraphSnapshotVersion}",
+            $"account|{accountId}",
+            $"loop|{loopId}",
+            $"robot|{robot.RobotId}|device|{robot.DeviceId}|cert|{robot.CertificateThumbprint}|issued|{robot.IssuedIdentityId}|build|{robot.BuildHash}|config|{robot.ConfigHash}"
+        };
+
+        lines.AddRange(people
+            .OrderBy(person => person.PersonId, StringComparer.OrdinalIgnoreCase)
+            .Select(person =>
+                $"person|{person.PersonId}|account|{person.AccountId}|robot|{person.RobotId}|primary|{person.IsPrimary}"));
+
+        lines.AddRange(members
+            .OrderBy(member => member.Id, StringComparer.OrdinalIgnoreCase)
+            .Select(member =>
+                $"member|{member.Id}|account|{member.AccountId}|type|{member.Type}|status|{member.Status}|child|{member.IsChild}|face|{member.FaceEnrolled}|voice|{member.VoiceEnrolled}|guardian|{member.LegalGuardianId}"));
+
+        lines.AddRange(relationships
+            .OrderBy(relationship => relationship.SubjectId, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(relationship => relationship.SubjectKind, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(relationship => relationship.Relationship, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(relationship => relationship.ObjectId, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(relationship => relationship.ObjectKind, StringComparer.OrdinalIgnoreCase)
+            .Select(relationship =>
+                $"relationship|{relationship.SubjectId}|{relationship.SubjectKind}|{relationship.Relationship}|{relationship.ObjectId}|{relationship.ObjectKind}|{relationship.LoopId}"));
+
+        lines.AddRange(evidenceSignals
+            .OrderBy(signal => signal.SignalKind, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(signal => signal.SignalId, StringComparer.OrdinalIgnoreCase)
+            .Select(signal =>
+                $"evidence|{signal.SignalKind}|{signal.SignalId}|{signal.Value}|{signal.Role}|{signal.LoopId}"));
+
+        var payload = string.Join('\n', lines);
+        return ComputeSha256Hex(payload);
+    }
+
+    private static IReadOnlyList<string> SummarizeIdentityGraphRelationshipKinds(
+        IEnumerable<IdentityGraphRelationship> relationships) =>
+        relationships
+            .GroupBy(relationship => relationship.Relationship, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(group => $"{group.Key}:{group.Count()}")
+            .ToArray();
+
+    private static IReadOnlyList<string> SummarizeIdentityGraphEvidenceSignalKinds(
+        IEnumerable<IdentityGraphEvidenceSignal> evidenceSignals) =>
+        evidenceSignals
+            .GroupBy(signal => signal.SignalKind, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(group => $"{group.Key}:{group.Count()}")
+            .ToArray();
+
+
+    private static IReadOnlyList<IdentityGraphEvidenceSignal> BuildIdentityGraphEvidenceSignals(string loopId,
+        DeviceRegistration robot)
+    {
+        var signals = new List<IdentityGraphEvidenceSignal>();
+
+        AddIdentityEvidenceSignal(signals, "device-id", robot.DeviceId, robot.DeviceId, loopId);
+        AddIdentityEvidenceSignal(signals, "robot-id", robot.RobotId, robot.RobotId, loopId);
+        AddIdentityEvidenceSignal(signals, "firmware-version", robot.RobotId, robot.FirmwareVersion, loopId);
+        AddIdentityEvidenceSignal(signals, "application-version", robot.RobotId, robot.ApplicationVersion, loopId);
+        AddIdentityEvidenceSignal(signals, "certificate-thumbprint", robot.RobotId, robot.CertificateThumbprint, loopId);
+        AddIdentityEvidenceSignal(signals, "issued-identity", robot.RobotId, robot.IssuedIdentityId, loopId);
+        AddIdentityEvidenceSignal(signals, "build-hash", robot.RobotId, robot.BuildHash, loopId);
+        AddIdentityEvidenceSignal(signals, "config-hash", robot.RobotId, robot.ConfigHash, loopId);
+
+        foreach (var mapping in robot.HostMappings.OrderBy(mapping => mapping.Key, StringComparer.OrdinalIgnoreCase))
+            AddIdentityEvidenceSignal(signals, "host-mapping", mapping.Key, mapping.Value, loopId);
+
+        return signals;
+    }
+
+    private static void AddIdentityEvidenceSignal(ICollection<IdentityGraphEvidenceSignal> signals, string signalKind,
+        string? signalId, string? value, string loopId)
+    {
+        if (string.IsNullOrWhiteSpace(signalId) || string.IsNullOrWhiteSpace(value)) return;
+
+        signals.Add(new IdentityGraphEvidenceSignal
+        {
+            SignalKind = signalKind,
+            SignalId = signalId.Trim(),
+            Value = value.Trim(),
+            LoopId = loopId
+        });
+    }
+
+
+    private static IdentityGraphAdmissionAssessment BuildSignedIdentityGraphAdmissionAssessment(string accountId, string loopId,
+        string contentHash, IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
+    {
+        var assessment = BuildIdentityGraphAdmissionAssessment(evidenceSignals);
+        var decisionPayload = BuildIdentityGraphAdmissionDecisionPayload(accountId, loopId, contentHash, assessment);
+        var decisionHash = ComputeSha256Hex(decisionPayload);
+
+        return new IdentityGraphAdmissionAssessment
+        {
+            PolicyVersion = assessment.PolicyVersion,
+            Recommendation = assessment.Recommendation,
+            Reasons = assessment.Reasons,
+            RequiredEvidence = assessment.RequiredEvidence,
+            SatisfiedEvidence = assessment.SatisfiedEvidence,
+            BlockingEvidence = assessment.BlockingEvidence,
+            RecommendedActions = assessment.RecommendedActions,
+            DecisionPayload = decisionPayload,
+            DecisionHash = decisionHash,
+            SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
+            SignatureKeyId = IdentityGraphAdmissionSignatureKeyId,
+            Signature = SignIdentityGraphPayload(decisionPayload)
+        };
+    }
+
+    private static IdentityGraphAdmissionAssessment BuildIdentityGraphAdmissionAssessment(
+        IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
+    {
+        string[] requiredEvidence =
+        [
+            "device-id",
+            "robot-id",
+            "application-version",
+            "host-mapping"
+        ];
+
+        var presentEvidence = evidenceSignals
+            .Select(signal => signal.SignalKind)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var missingEvidence = requiredEvidence
+            .Where(required => !presentEvidence.Contains(required))
+            .ToArray();
+
+        var satisfiedEvidence = requiredEvidence
+            .Where(required => presentEvidence.Contains(required))
+            .ToArray();
+        var reasons = missingEvidence
+            .Select(missing => $"missing-{missing}")
+            .ToList();
+        var blockingEvidence = missingEvidence
+            .Select(missing => $"required:{missing}")
+            .ToList();
+
+        var untrustedHostMappings = evidenceSignals
+            .Where(signal => signal.SignalKind.Equals("host-mapping", StringComparison.OrdinalIgnoreCase))
+            .Where(signal => !IsTrustedOpenJiboHostMappingTarget(signal.Value))
+            .Select(signal => $"host-mapping:{signal.SignalId}->{signal.Value}")
+            .ToArray();
+
+        if (untrustedHostMappings.Length > 0)
+        {
+            reasons.Add("untrusted-host-mapping-target");
+            blockingEvidence.AddRange(untrustedHostMappings);
+        }
+
+        if (reasons.Count == 0)
+        {
+            return new IdentityGraphAdmissionAssessment
+            {
+                Recommendation = "admit",
+                Reasons = ["required-corroborating-evidence-present"],
+                RequiredEvidence = requiredEvidence,
+                SatisfiedEvidence = satisfiedEvidence,
+                RecommendedActions = ["record-signed-snapshot-for-peer-admission"]
+            };
+        }
+
+        return new IdentityGraphAdmissionAssessment
+        {
+            Recommendation = "quarantine",
+            Reasons = reasons,
+            RequiredEvidence = requiredEvidence,
+            SatisfiedEvidence = satisfiedEvidence,
+            BlockingEvidence = blockingEvidence,
+            RecommendedActions = BuildIdentityGraphRecommendedActions(missingEvidence, untrustedHostMappings)
+        };
+    }
+
+
+    private static IReadOnlyList<string> BuildIdentityGraphRecommendedActions(
+        IReadOnlyCollection<string> missingEvidence,
+        IReadOnlyCollection<string> untrustedHostMappings)
+    {
+        var actions = new List<string>();
+
+        if (missingEvidence.Contains("device-id", StringComparer.OrdinalIgnoreCase) ||
+            missingEvidence.Contains("robot-id", StringComparer.OrdinalIgnoreCase))
+            actions.Add("verify-robot-identity-before-admission");
+
+        if (missingEvidence.Contains("application-version", StringComparer.OrdinalIgnoreCase))
+            actions.Add("capture-current-open-jibo-application-version");
+
+        if (missingEvidence.Contains("host-mapping", StringComparer.OrdinalIgnoreCase))
+            actions.Add("record-open-jibo-host-mapping");
+
+        if (untrustedHostMappings.Count > 0)
+            actions.Add("redirect-legacy-host-mapping-to-open-jibo-target");
+
+        if (actions.Count == 0)
+            actions.Add("manual-review-required");
+
+        return actions.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    private static bool IsTrustedOpenJiboHostMappingTarget(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+
+        var target = value.Trim();
+        return target.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+               target.EndsWith(".local", StringComparison.OrdinalIgnoreCase) ||
+               target.Contains("openjibo", StringComparison.OrdinalIgnoreCase);
+    }
+
+
+    private static string BuildIdentityGraphAdmissionDecisionPayload(string accountId, string loopId, string contentHash,
+        IdentityGraphAdmissionAssessment assessment)
+    {
+        var lines = new[]
+        {
+            $"policy-version|{assessment.PolicyVersion}",
+            $"account|{accountId}",
+            $"loop|{loopId}",
+            $"content-hash|{contentHash}",
+            $"recommendation|{assessment.Recommendation}",
+            $"reasons|{string.Join(',', assessment.Reasons.Order(StringComparer.Ordinal))}",
+            $"required-evidence|{string.Join(',', assessment.RequiredEvidence.Order(StringComparer.Ordinal))}",
+            $"satisfied-evidence|{string.Join(',', assessment.SatisfiedEvidence.Order(StringComparer.Ordinal))}",
+            $"blocking-evidence|{string.Join(',', assessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
+            $"recommended-actions|{string.Join(',', assessment.RecommendedActions.Order(StringComparer.Ordinal))}"
+        };
+
+        return string.Join('\n', lines);
+    }
+
+
+    private static IdentityGraphEvidenceBundle BuildSignedIdentityGraphEvidenceBundle(string accountId, string loopId,
+        DeviceRegistration robot, string contentHash, string snapshotSignature,
+        IdentityGraphAdmissionAssessment admissionAssessment, int peopleCount, int memberCount, int relationshipCount,
+        int evidenceSignalCount, IReadOnlyList<string> relationshipKinds, IReadOnlyList<string> evidenceSignalKinds)
+    {
+        var payload = BuildIdentityGraphEvidenceBundlePayload(accountId, loopId, robot, contentHash, snapshotSignature,
+            admissionAssessment, peopleCount, memberCount, relationshipCount, evidenceSignalCount, relationshipKinds,
+            evidenceSignalKinds);
+        var bundleHash = ComputeSha256Hex(payload);
+
+        var signature = SignIdentityGraphPayload(payload);
+        var envelope = BuildIdentityGraphEvidenceBundleEnvelope(payload, bundleHash, signature);
+
+        return new IdentityGraphEvidenceBundle
+        {
+            AccountId = accountId,
+            LoopId = loopId,
+            RobotId = robot.RobotId,
+            DeviceId = robot.DeviceId,
+            SnapshotContentHash = contentHash,
+            SnapshotSignature = snapshotSignature,
+            AdmissionDecisionHash = admissionAssessment.DecisionHash,
+            AdmissionSignature = admissionAssessment.Signature,
+            AdmissionPolicyVersion = admissionAssessment.PolicyVersion,
+            AdmissionRecommendation = admissionAssessment.Recommendation,
+            AdmissionReasons = admissionAssessment.Reasons,
+            RequiredEvidence = admissionAssessment.RequiredEvidence,
+            SatisfiedEvidence = admissionAssessment.SatisfiedEvidence,
+            RecommendedActions = admissionAssessment.RecommendedActions,
+            PeopleCount = peopleCount,
+            MemberCount = memberCount,
+            RelationshipCount = relationshipCount,
+            EvidenceSignalCount = evidenceSignalCount,
+            RelationshipKinds = relationshipKinds,
+            EvidenceSignalKinds = evidenceSignalKinds,
+            BlockingEvidence = admissionAssessment.BlockingEvidence,
+            Payload = payload,
+            Envelope = envelope,
+            BundleHash = bundleHash,
+            SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
+            SignatureKeyId = IdentityGraphEvidenceBundleSignatureKeyId,
+            Signature = signature
+        };
+    }
+
+
+    private static string BuildIdentityGraphEvidenceBundleEnvelope(string payload, string bundleHash, string signature)
+    {
+        var lines = new[]
+        {
+            "envelope-version|identity-graph-evidence-envelope-v1",
+            $"bundle-hash|{bundleHash}",
+            $"bundle-signature-algorithm|{IdentityGraphSignatureAlgorithm}",
+            $"bundle-signature-key-id|{IdentityGraphEvidenceBundleSignatureKeyId}",
+            $"bundle-signature|{signature}",
+            "payload-begin",
+            payload,
+            "payload-end"
+        };
+
+        return string.Join('\n', lines);
+    }
+
+    private static string BuildIdentityGraphEvidenceBundlePayload(string accountId, string loopId, DeviceRegistration robot,
+        string contentHash, string snapshotSignature, IdentityGraphAdmissionAssessment admissionAssessment,
+        int peopleCount, int memberCount, int relationshipCount, int evidenceSignalCount,
+        IReadOnlyList<string> relationshipKinds, IReadOnlyList<string> evidenceSignalKinds)
+    {
+        var lines = new[]
+        {
+            "bundle-version|identity-graph-evidence-bundle-v1",
+            $"account|{accountId}",
+            $"loop|{loopId}",
+            $"robot|{robot.RobotId}",
+            $"device|{robot.DeviceId}",
+            $"people-count|{peopleCount}",
+            $"member-count|{memberCount}",
+            $"relationship-count|{relationshipCount}",
+            $"evidence-signal-count|{evidenceSignalCount}",
+            $"relationship-kinds|{string.Join(',', relationshipKinds)}",
+            $"evidence-signal-kinds|{string.Join(',', evidenceSignalKinds)}",
+            $"snapshot-version|{IdentityGraphSnapshotVersion}",
+            $"snapshot-content-hash|{contentHash}",
+            $"snapshot-signature-key-id|{IdentityGraphSignatureKeyId}",
+            $"snapshot-signature|{snapshotSignature}",
+            $"admission-policy-version|{admissionAssessment.PolicyVersion}",
+            $"admission-recommendation|{admissionAssessment.Recommendation}",
+            $"admission-reasons|{string.Join(',', admissionAssessment.Reasons.Order(StringComparer.Ordinal))}",
+            $"admission-required-evidence|{string.Join(',', admissionAssessment.RequiredEvidence.Order(StringComparer.Ordinal))}",
+            $"admission-satisfied-evidence|{string.Join(',', admissionAssessment.SatisfiedEvidence.Order(StringComparer.Ordinal))}",
+            $"admission-blocking-evidence|{string.Join(',', admissionAssessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
+            $"admission-recommended-actions|{string.Join(',', admissionAssessment.RecommendedActions.Order(StringComparer.Ordinal))}",
+            $"admission-decision-hash|{admissionAssessment.DecisionHash}",
+            $"admission-signature-key-id|{admissionAssessment.SignatureKeyId}",
+            $"admission-signature|{admissionAssessment.Signature}"
+        };
+
+        return string.Join('\n', lines);
+    }
+
+    private static string BuildIdentityGraphSignaturePayload(string accountId, string loopId, string contentHash)
+    {
+        return $"{IdentityGraphSnapshotVersion}|{accountId}|{loopId}|{contentHash}";
+    }
+
+    private static string SignIdentityGraphPayload(string payload)
+    {
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(IdentityGraphSigningKey));
+        return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+    }
+
+    private static void AddIdentityRelationship(ICollection<IdentityGraphRelationship> relationships, string? subjectId,
+        string subjectKind, string relationship, string? objectId, string objectKind, string loopId)
+    {
+        if (string.IsNullOrWhiteSpace(subjectId) || string.IsNullOrWhiteSpace(objectId)) return;
+
+        var trimmedSubjectId = subjectId.Trim();
+        var trimmedObjectId = objectId.Trim();
+        if (relationships.Any(existing =>
+                existing.SubjectId.Equals(trimmedSubjectId, StringComparison.OrdinalIgnoreCase) &&
+                existing.SubjectKind.Equals(subjectKind, StringComparison.OrdinalIgnoreCase) &&
+                existing.Relationship.Equals(relationship, StringComparison.OrdinalIgnoreCase) &&
+                existing.ObjectId.Equals(trimmedObjectId, StringComparison.OrdinalIgnoreCase) &&
+                existing.ObjectKind.Equals(objectKind, StringComparison.OrdinalIgnoreCase) &&
+                existing.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        relationships.Add(new IdentityGraphRelationship
+        {
+            SubjectId = trimmedSubjectId,
+            SubjectKind = subjectKind,
+            Relationship = relationship,
+            ObjectId = trimmedObjectId,
+            ObjectKind = objectKind,
+            LoopId = loopId
+        });
     }
 
     public LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
@@ -1168,390 +1539,6 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         }
 
         TouchState();
-    }
-
-    private static string ComputeIdentityGraphContentHash(string accountId, string loopId, DeviceRegistration robot,
-        IReadOnlyCollection<PersonRecord> people, IReadOnlyCollection<LoopMemberRecord> members,
-        IReadOnlyCollection<IdentityGraphRelationship> relationships,
-        IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
-    {
-        var lines = new List<string>
-        {
-            $"snapshot-version|{IdentityGraphSnapshotVersion}",
-            $"account|{accountId}",
-            $"loop|{loopId}",
-            $"robot|{robot.RobotId}|device|{robot.DeviceId}|cert|{robot.CertificateThumbprint}|issued|{robot.IssuedIdentityId}|build|{robot.BuildHash}|config|{robot.ConfigHash}"
-        };
-
-        lines.AddRange(people
-            .OrderBy(person => person.PersonId, StringComparer.OrdinalIgnoreCase)
-            .Select(person =>
-                $"person|{person.PersonId}|account|{person.AccountId}|robot|{person.RobotId}|primary|{person.IsPrimary}"));
-
-        lines.AddRange(members
-            .OrderBy(member => member.Id, StringComparer.OrdinalIgnoreCase)
-            .Select(member =>
-                $"member|{member.Id}|account|{member.AccountId}|type|{member.Type}|status|{member.Status}|child|{member.IsChild}|face|{member.FaceEnrolled}|voice|{member.VoiceEnrolled}|guardian|{member.LegalGuardianId}"));
-
-        lines.AddRange(relationships
-            .OrderBy(relationship => relationship.SubjectId, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(relationship => relationship.SubjectKind, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(relationship => relationship.Relationship, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(relationship => relationship.ObjectId, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(relationship => relationship.ObjectKind, StringComparer.OrdinalIgnoreCase)
-            .Select(relationship =>
-                $"relationship|{relationship.SubjectId}|{relationship.SubjectKind}|{relationship.Relationship}|{relationship.ObjectId}|{relationship.ObjectKind}|{relationship.LoopId}"));
-
-        lines.AddRange(evidenceSignals
-            .OrderBy(signal => signal.SignalKind, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(signal => signal.SignalId, StringComparer.OrdinalIgnoreCase)
-            .Select(signal =>
-                $"evidence|{signal.SignalKind}|{signal.SignalId}|{signal.Value}|{signal.Role}|{signal.LoopId}"));
-
-        var payload = string.Join('\n', lines);
-        return ComputeSha256Hex(payload);
-    }
-
-    private static IReadOnlyList<string> SummarizeIdentityGraphRelationshipKinds(
-        IEnumerable<IdentityGraphRelationship> relationships)
-    {
-        return relationships
-            .GroupBy(relationship => relationship.Relationship, StringComparer.OrdinalIgnoreCase)
-            .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
-            .Select(group => $"{group.Key}:{group.Count()}")
-            .ToArray();
-    }
-
-    private static IReadOnlyList<string> SummarizeIdentityGraphEvidenceSignalKinds(
-        IEnumerable<IdentityGraphEvidenceSignal> evidenceSignals)
-    {
-        return evidenceSignals
-            .GroupBy(signal => signal.SignalKind, StringComparer.OrdinalIgnoreCase)
-            .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
-            .Select(group => $"{group.Key}:{group.Count()}")
-            .ToArray();
-    }
-
-
-    private static IReadOnlyList<IdentityGraphEvidenceSignal> BuildIdentityGraphEvidenceSignals(string loopId,
-        DeviceRegistration robot)
-    {
-        var signals = new List<IdentityGraphEvidenceSignal>();
-
-        AddIdentityEvidenceSignal(signals, "device-id", robot.DeviceId, robot.DeviceId, loopId);
-        AddIdentityEvidenceSignal(signals, "robot-id", robot.RobotId, robot.RobotId, loopId);
-        AddIdentityEvidenceSignal(signals, "firmware-version", robot.RobotId, robot.FirmwareVersion, loopId);
-        AddIdentityEvidenceSignal(signals, "application-version", robot.RobotId, robot.ApplicationVersion, loopId);
-        AddIdentityEvidenceSignal(signals, "certificate-thumbprint", robot.RobotId, robot.CertificateThumbprint,
-            loopId);
-        AddIdentityEvidenceSignal(signals, "issued-identity", robot.RobotId, robot.IssuedIdentityId, loopId);
-        AddIdentityEvidenceSignal(signals, "build-hash", robot.RobotId, robot.BuildHash, loopId);
-        AddIdentityEvidenceSignal(signals, "config-hash", robot.RobotId, robot.ConfigHash, loopId);
-
-        foreach (var mapping in robot.HostMappings.OrderBy(mapping => mapping.Key, StringComparer.OrdinalIgnoreCase))
-            AddIdentityEvidenceSignal(signals, "host-mapping", mapping.Key, mapping.Value, loopId);
-
-        return signals;
-    }
-
-    private static void AddIdentityEvidenceSignal(ICollection<IdentityGraphEvidenceSignal> signals, string signalKind,
-        string? signalId, string? value, string loopId)
-    {
-        if (string.IsNullOrWhiteSpace(signalId) || string.IsNullOrWhiteSpace(value)) return;
-
-        signals.Add(new IdentityGraphEvidenceSignal
-        {
-            SignalKind = signalKind,
-            SignalId = signalId.Trim(),
-            Value = value.Trim(),
-            LoopId = loopId
-        });
-    }
-
-
-    private static IdentityGraphAdmissionAssessment BuildSignedIdentityGraphAdmissionAssessment(string accountId,
-        string loopId,
-        string contentHash, IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
-    {
-        var assessment = BuildIdentityGraphAdmissionAssessment(evidenceSignals);
-        var decisionPayload = BuildIdentityGraphAdmissionDecisionPayload(accountId, loopId, contentHash, assessment);
-        var decisionHash = ComputeSha256Hex(decisionPayload);
-
-        return new IdentityGraphAdmissionAssessment
-        {
-            PolicyVersion = assessment.PolicyVersion,
-            Recommendation = assessment.Recommendation,
-            Reasons = assessment.Reasons,
-            RequiredEvidence = assessment.RequiredEvidence,
-            SatisfiedEvidence = assessment.SatisfiedEvidence,
-            BlockingEvidence = assessment.BlockingEvidence,
-            RecommendedActions = assessment.RecommendedActions,
-            DecisionPayload = decisionPayload,
-            DecisionHash = decisionHash,
-            SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
-            SignatureKeyId = IdentityGraphAdmissionSignatureKeyId,
-            Signature = SignIdentityGraphPayload(decisionPayload)
-        };
-    }
-
-    private static IdentityGraphAdmissionAssessment BuildIdentityGraphAdmissionAssessment(
-        IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
-    {
-        string[] requiredEvidence =
-        [
-            "device-id",
-            "robot-id",
-            "application-version",
-            "host-mapping"
-        ];
-
-        var presentEvidence = evidenceSignals
-            .Select(signal => signal.SignalKind)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var missingEvidence = requiredEvidence
-            .Where(required => !presentEvidence.Contains(required))
-            .ToArray();
-
-        var satisfiedEvidence = requiredEvidence
-            .Where(required => presentEvidence.Contains(required))
-            .ToArray();
-        var reasons = missingEvidence
-            .Select(missing => $"missing-{missing}")
-            .ToList();
-        var blockingEvidence = missingEvidence
-            .Select(missing => $"required:{missing}")
-            .ToList();
-
-        var untrustedHostMappings = evidenceSignals
-            .Where(signal => signal.SignalKind.Equals("host-mapping", StringComparison.OrdinalIgnoreCase))
-            .Where(signal => !IsTrustedOpenJiboHostMappingTarget(signal.Value))
-            .Select(signal => $"host-mapping:{signal.SignalId}->{signal.Value}")
-            .ToArray();
-
-        if (untrustedHostMappings.Length > 0)
-        {
-            reasons.Add("untrusted-host-mapping-target");
-            blockingEvidence.AddRange(untrustedHostMappings);
-        }
-
-        if (reasons.Count == 0)
-            return new IdentityGraphAdmissionAssessment
-            {
-                Recommendation = "admit",
-                Reasons = ["required-corroborating-evidence-present"],
-                RequiredEvidence = requiredEvidence,
-                SatisfiedEvidence = satisfiedEvidence,
-                RecommendedActions = ["record-signed-snapshot-for-peer-admission"]
-            };
-
-        return new IdentityGraphAdmissionAssessment
-        {
-            Recommendation = "quarantine",
-            Reasons = reasons,
-            RequiredEvidence = requiredEvidence,
-            SatisfiedEvidence = satisfiedEvidence,
-            BlockingEvidence = blockingEvidence,
-            RecommendedActions = BuildIdentityGraphRecommendedActions(missingEvidence, untrustedHostMappings)
-        };
-    }
-
-
-    private static IReadOnlyList<string> BuildIdentityGraphRecommendedActions(
-        IReadOnlyCollection<string> missingEvidence,
-        IReadOnlyCollection<string> untrustedHostMappings)
-    {
-        var actions = new List<string>();
-
-        if (missingEvidence.Contains("device-id", StringComparer.OrdinalIgnoreCase) ||
-            missingEvidence.Contains("robot-id", StringComparer.OrdinalIgnoreCase))
-            actions.Add("verify-robot-identity-before-admission");
-
-        if (missingEvidence.Contains("application-version", StringComparer.OrdinalIgnoreCase))
-            actions.Add("capture-current-open-jibo-application-version");
-
-        if (missingEvidence.Contains("host-mapping", StringComparer.OrdinalIgnoreCase))
-            actions.Add("record-open-jibo-host-mapping");
-
-        if (untrustedHostMappings.Count > 0)
-            actions.Add("redirect-legacy-host-mapping-to-open-jibo-target");
-
-        if (actions.Count == 0)
-            actions.Add("manual-review-required");
-
-        return actions.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-    }
-
-    private static bool IsTrustedOpenJiboHostMappingTarget(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return false;
-
-        var target = value.Trim();
-        return target.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-               target.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
-               target.EndsWith(".local", StringComparison.OrdinalIgnoreCase) ||
-               target.Contains("openjibo", StringComparison.OrdinalIgnoreCase);
-    }
-
-
-    private static string BuildIdentityGraphAdmissionDecisionPayload(string accountId, string loopId,
-        string contentHash,
-        IdentityGraphAdmissionAssessment assessment)
-    {
-        var lines = new[]
-        {
-            $"policy-version|{assessment.PolicyVersion}",
-            $"account|{accountId}",
-            $"loop|{loopId}",
-            $"content-hash|{contentHash}",
-            $"recommendation|{assessment.Recommendation}",
-            $"reasons|{string.Join(',', assessment.Reasons.Order(StringComparer.Ordinal))}",
-            $"required-evidence|{string.Join(',', assessment.RequiredEvidence.Order(StringComparer.Ordinal))}",
-            $"satisfied-evidence|{string.Join(',', assessment.SatisfiedEvidence.Order(StringComparer.Ordinal))}",
-            $"blocking-evidence|{string.Join(',', assessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
-            $"recommended-actions|{string.Join(',', assessment.RecommendedActions.Order(StringComparer.Ordinal))}"
-        };
-
-        return string.Join('\n', lines);
-    }
-
-
-    private static IdentityGraphEvidenceBundle BuildSignedIdentityGraphEvidenceBundle(string accountId, string loopId,
-        DeviceRegistration robot, string contentHash, string snapshotSignature,
-        IdentityGraphAdmissionAssessment admissionAssessment, int peopleCount, int memberCount, int relationshipCount,
-        int evidenceSignalCount, IReadOnlyList<string> relationshipKinds, IReadOnlyList<string> evidenceSignalKinds)
-    {
-        var payload = BuildIdentityGraphEvidenceBundlePayload(accountId, loopId, robot, contentHash, snapshotSignature,
-            admissionAssessment, peopleCount, memberCount, relationshipCount, evidenceSignalCount, relationshipKinds,
-            evidenceSignalKinds);
-        var bundleHash = ComputeSha256Hex(payload);
-
-        var signature = SignIdentityGraphPayload(payload);
-        var envelope = BuildIdentityGraphEvidenceBundleEnvelope(payload, bundleHash, signature);
-
-        return new IdentityGraphEvidenceBundle
-        {
-            AccountId = accountId,
-            LoopId = loopId,
-            RobotId = robot.RobotId,
-            DeviceId = robot.DeviceId,
-            SnapshotContentHash = contentHash,
-            SnapshotSignature = snapshotSignature,
-            AdmissionDecisionHash = admissionAssessment.DecisionHash,
-            AdmissionSignature = admissionAssessment.Signature,
-            AdmissionPolicyVersion = admissionAssessment.PolicyVersion,
-            AdmissionRecommendation = admissionAssessment.Recommendation,
-            AdmissionReasons = admissionAssessment.Reasons,
-            RequiredEvidence = admissionAssessment.RequiredEvidence,
-            SatisfiedEvidence = admissionAssessment.SatisfiedEvidence,
-            RecommendedActions = admissionAssessment.RecommendedActions,
-            PeopleCount = peopleCount,
-            MemberCount = memberCount,
-            RelationshipCount = relationshipCount,
-            EvidenceSignalCount = evidenceSignalCount,
-            RelationshipKinds = relationshipKinds,
-            EvidenceSignalKinds = evidenceSignalKinds,
-            BlockingEvidence = admissionAssessment.BlockingEvidence,
-            Payload = payload,
-            Envelope = envelope,
-            BundleHash = bundleHash,
-            SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
-            SignatureKeyId = IdentityGraphEvidenceBundleSignatureKeyId,
-            Signature = signature
-        };
-    }
-
-
-    private static string BuildIdentityGraphEvidenceBundleEnvelope(string payload, string bundleHash, string signature)
-    {
-        var lines = new[]
-        {
-            "envelope-version|identity-graph-evidence-envelope-v1",
-            $"bundle-hash|{bundleHash}",
-            $"bundle-signature-algorithm|{IdentityGraphSignatureAlgorithm}",
-            $"bundle-signature-key-id|{IdentityGraphEvidenceBundleSignatureKeyId}",
-            $"bundle-signature|{signature}",
-            "payload-begin",
-            payload,
-            "payload-end"
-        };
-
-        return string.Join('\n', lines);
-    }
-
-    private static string BuildIdentityGraphEvidenceBundlePayload(string accountId, string loopId,
-        DeviceRegistration robot,
-        string contentHash, string snapshotSignature, IdentityGraphAdmissionAssessment admissionAssessment,
-        int peopleCount, int memberCount, int relationshipCount, int evidenceSignalCount,
-        IReadOnlyList<string> relationshipKinds, IReadOnlyList<string> evidenceSignalKinds)
-    {
-        var lines = new[]
-        {
-            "bundle-version|identity-graph-evidence-bundle-v1",
-            $"account|{accountId}",
-            $"loop|{loopId}",
-            $"robot|{robot.RobotId}",
-            $"device|{robot.DeviceId}",
-            $"people-count|{peopleCount}",
-            $"member-count|{memberCount}",
-            $"relationship-count|{relationshipCount}",
-            $"evidence-signal-count|{evidenceSignalCount}",
-            $"relationship-kinds|{string.Join(',', relationshipKinds)}",
-            $"evidence-signal-kinds|{string.Join(',', evidenceSignalKinds)}",
-            $"snapshot-version|{IdentityGraphSnapshotVersion}",
-            $"snapshot-content-hash|{contentHash}",
-            $"snapshot-signature-key-id|{IdentityGraphSignatureKeyId}",
-            $"snapshot-signature|{snapshotSignature}",
-            $"admission-policy-version|{admissionAssessment.PolicyVersion}",
-            $"admission-recommendation|{admissionAssessment.Recommendation}",
-            $"admission-reasons|{string.Join(',', admissionAssessment.Reasons.Order(StringComparer.Ordinal))}",
-            $"admission-required-evidence|{string.Join(',', admissionAssessment.RequiredEvidence.Order(StringComparer.Ordinal))}",
-            $"admission-satisfied-evidence|{string.Join(',', admissionAssessment.SatisfiedEvidence.Order(StringComparer.Ordinal))}",
-            $"admission-blocking-evidence|{string.Join(',', admissionAssessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
-            $"admission-recommended-actions|{string.Join(',', admissionAssessment.RecommendedActions.Order(StringComparer.Ordinal))}",
-            $"admission-decision-hash|{admissionAssessment.DecisionHash}",
-            $"admission-signature-key-id|{admissionAssessment.SignatureKeyId}",
-            $"admission-signature|{admissionAssessment.Signature}"
-        };
-
-        return string.Join('\n', lines);
-    }
-
-    private static string BuildIdentityGraphSignaturePayload(string accountId, string loopId, string contentHash)
-    {
-        return $"{IdentityGraphSnapshotVersion}|{accountId}|{loopId}|{contentHash}";
-    }
-
-    private static string SignIdentityGraphPayload(string payload)
-    {
-        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(IdentityGraphSigningKey));
-        return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
-    }
-
-    private static void AddIdentityRelationship(ICollection<IdentityGraphRelationship> relationships, string? subjectId,
-        string subjectKind, string relationship, string? objectId, string objectKind, string loopId)
-    {
-        if (string.IsNullOrWhiteSpace(subjectId) || string.IsNullOrWhiteSpace(objectId)) return;
-
-        var trimmedSubjectId = subjectId.Trim();
-        var trimmedObjectId = objectId.Trim();
-        if (relationships.Any(existing =>
-                existing.SubjectId.Equals(trimmedSubjectId, StringComparison.OrdinalIgnoreCase) &&
-                existing.SubjectKind.Equals(subjectKind, StringComparison.OrdinalIgnoreCase) &&
-                existing.Relationship.Equals(relationship, StringComparison.OrdinalIgnoreCase) &&
-                existing.ObjectId.Equals(trimmedObjectId, StringComparison.OrdinalIgnoreCase) &&
-                existing.ObjectKind.Equals(objectKind, StringComparison.OrdinalIgnoreCase) &&
-                existing.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase)))
-            return;
-
-        relationships.Add(new IdentityGraphRelationship
-        {
-            SubjectId = trimmedSubjectId,
-            SubjectKind = subjectKind,
-            Relationship = relationship,
-            ObjectId = trimmedObjectId,
-            ObjectKind = objectKind,
-            LoopId = loopId
-        });
     }
 
     private static bool IsUpdateNewerThanRequest(string candidateVersion, string? fromVersion)

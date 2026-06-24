@@ -4,12 +4,21 @@ public static class OperatingSystemPlatformResolver
 {
     public static OperatingSystemPlatform Resolve()
     {
-        if (OperatingSystem.IsWindows()) return OperatingSystemPlatform.Windows;
-
-        if (OperatingSystem.IsLinux()) return OperatingSystemPlatform.Linux;
-
-        if (OperatingSystem.IsMacOS()) return OperatingSystemPlatform.MacOS;
-
-        return OperatingSystemPlatform.Unknown;
+        if (OperatingSystem.IsWindows())
+        {
+            return OperatingSystemPlatform.Windows;
+        }
+        else if (OperatingSystem.IsLinux())
+        {
+            return OperatingSystemPlatform.Linux;
+        }
+        else if (OperatingSystem.IsMacOS())
+        {
+            return OperatingSystemPlatform.MacOS;
+        }
+        else
+        {
+            return OperatingSystemPlatform.Unknown;
+        }
     }
 }

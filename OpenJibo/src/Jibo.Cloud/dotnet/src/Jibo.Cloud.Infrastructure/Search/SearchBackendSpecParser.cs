@@ -38,9 +38,7 @@ public static class SearchBackendSpecParser
 
         var modelSeparatorIndex = remainder.IndexOf('!');
         if (modelSeparatorIndex < 0)
-        {
             credential = NullIfEmpty(remainder);
-        }
         else
         {
             credential = NullIfEmpty(remainder[..modelSeparatorIndex]);

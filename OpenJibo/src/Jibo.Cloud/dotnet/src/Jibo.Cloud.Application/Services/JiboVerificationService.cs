@@ -154,9 +154,7 @@ public sealed class JiboVerificationService
         public static JiboVerificationConfirmResult InvalidCode =>
             new(false, null, null, null, "That verification code is invalid or has expired.");
 
-        public static JiboVerificationConfirmResult Success(string token, string friendlyId, string deviceId)
-        {
-            return new JiboVerificationConfirmResult(true, token, friendlyId, deviceId, null);
-        }
+        public static JiboVerificationConfirmResult Success(string token, string friendlyId, string deviceId) =>
+            new(true, token, friendlyId, deviceId, null);
     }
 }

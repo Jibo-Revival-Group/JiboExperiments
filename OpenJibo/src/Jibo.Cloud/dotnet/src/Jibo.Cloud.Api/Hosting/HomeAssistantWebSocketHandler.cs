@@ -4,6 +4,7 @@ using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Api.Hosting;
@@ -147,38 +148,21 @@ internal sealed class HomeAssistantWebSocketHandler(
     {
         public static readonly EmptyUserIntegrationStore Instance = new();
 
-        public IReadOnlyList<HomeAssistantLinkRecord> GetHomeAssistantLinks()
-        {
-            return [];
-        }
+        public IReadOnlyList<HomeAssistantLinkRecord> GetHomeAssistantLinks() => [];
 
-        public HomeAssistantLinkRecord? FindLinkByHaInstanceId(string haInstanceId)
-        {
-            return null;
-        }
+        public HomeAssistantLinkRecord? FindLinkByHaInstanceId(string haInstanceId) => null;
 
-        public HomeAssistantLinkRecord? FindLinkByLinkId(string linkId)
-        {
-            return null;
-        }
+        public HomeAssistantLinkRecord? FindLinkByLinkId(string linkId) => null;
 
-        public HomeAssistantLinkRecord? FindLinkForJibo(string? jiboDeviceId, string? jiboFriendlyId)
-        {
-            return null;
-        }
+        public HomeAssistantLinkRecord? FindLinkForJibo(string? jiboDeviceId, string? jiboFriendlyId) => null;
 
         public HomeAssistantLinkRecord AddHomeAssistantLink(
             string jiboDeviceId,
             string jiboFriendlyName,
-            string haInstanceId)
-        {
+            string haInstanceId) =>
             throw new NotSupportedException();
-        }
 
-        public HomeAssistantLinkRecord? RemoveHomeAssistantLink(string linkId)
-        {
-            return null;
-        }
+        public HomeAssistantLinkRecord? RemoveHomeAssistantLink(string linkId) => null;
 
         public void UpdateHomeAssistantLastSeen(string linkId, DateTimeOffset lastSeenUtc)
         {

@@ -19,17 +19,17 @@ public sealed class ChatGptSearchProviderTests
             capturedRequest = request;
             capturedBody = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
             return JsonResponse("""
-                                {
-                                  "choices": [
-                                    {
-                                      "message": {
-                                        "role": "assistant",
-                                        "content": "Donald Trump was born on June 14, 1946. As of June 19, 2026, he is 80 years old."
-                                      }
-                                    }
-                                  ]
-                                }
-                                """);
+                {
+                  "choices": [
+                    {
+                      "message": {
+                        "role": "assistant",
+                        "content": "Donald Trump was born on June 14, 1946. As of June 19, 2026, he is 80 years old."
+                      }
+                    }
+                  ]
+                }
+                """);
         });
         var provider = CreateProvider(handler);
 
@@ -76,25 +76,24 @@ public sealed class ChatGptSearchProviderTests
             new SearchBackendSpec(SearchBackendKind.ChatGPT, "test-api-key", null)));
 
         using var json = JsonDocument.Parse(capturedBody!);
-        Assert.Equal(SearchBackendSettingsResolver.DefaultChatGptModel,
-            json.RootElement.GetProperty("model").GetString());
+        Assert.Equal(SearchBackendSettingsResolver.DefaultChatGptModel, json.RootElement.GetProperty("model").GetString());
     }
 
     [Fact]
     public async Task SearchAsync_StripsMarkdownBold_ForSpeech()
     {
         var handler = new RecordingHttpMessageHandler(_ => JsonResponse("""
-                                                                        {
-                                                                          "choices": [
-                                                                            {
-                                                                              "message": {
-                                                                                "role": "assistant",
-                                                                                "content": "Donald Trump was born on **June 14, 1946**."
-                                                                              }
-                                                                            }
-                                                                          ]
-                                                                        }
-                                                                        """));
+            {
+              "choices": [
+                {
+                  "message": {
+                    "role": "assistant",
+                    "content": "Donald Trump was born on **June 14, 1946**."
+                  }
+                }
+              ]
+            }
+            """));
         var provider = CreateProvider(handler);
 
         var result = await provider.SearchAsync(new KnowledgeSearchRequest(
@@ -110,7 +109,7 @@ public sealed class ChatGptSearchProviderTests
     {
         var provider = CreateProvider(
             new RecordingHttpMessageHandler(_ => JsonResponse("""{"choices":[]}""")),
-            null);
+            apiKey: null);
 
         var result = await provider.SearchAsync(new KnowledgeSearchRequest(
             "Hello",

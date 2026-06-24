@@ -1,5 +1,3 @@
-using System.Net.WebSockets;
-using System.Text.Json;
 using Jibo.Cloud.Application.Services;
 
 namespace Jibo.Cloud.Tests.Application;
@@ -73,13 +71,13 @@ public sealed class HomeAssistantConnectionRegistryTests
         Assert.Equal("72", socket.LastPayload.Value.GetProperty("temperature").GetString());
     }
 
-    private sealed class CapturingWebSocket : WebSocket
+    private sealed class CapturingWebSocket : System.Net.WebSockets.WebSocket
     {
-        public JsonElement? LastPayload { get; private set; }
+        public System.Text.Json.JsonElement? LastPayload { get; private set; }
 
-        public override WebSocketCloseStatus? CloseStatus => null;
+        public override System.Net.WebSockets.WebSocketCloseStatus? CloseStatus => null;
         public override string? CloseStatusDescription => null;
-        public override WebSocketState State => WebSocketState.Open;
+        public override System.Net.WebSockets.WebSocketState State => System.Net.WebSockets.WebSocketState.Open;
         public override string? SubProtocol => null;
 
         public override void Abort()
@@ -87,49 +85,40 @@ public sealed class HomeAssistantConnectionRegistryTests
         }
 
         public override Task CloseAsync(
-            WebSocketCloseStatus closeStatus,
+            System.Net.WebSockets.WebSocketCloseStatus closeStatus,
             string? statusDescription,
-            CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+            CancellationToken cancellationToken) => Task.CompletedTask;
 
         public override Task CloseOutputAsync(
-            WebSocketCloseStatus closeStatus,
+            System.Net.WebSockets.WebSocketCloseStatus closeStatus,
             string? statusDescription,
-            CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+            CancellationToken cancellationToken) => Task.CompletedTask;
 
         public override void Dispose()
         {
         }
 
-        public override Task<WebSocketReceiveResult> ReceiveAsync(
+        public override Task<System.Net.WebSockets.WebSocketReceiveResult> ReceiveAsync(
             ArraySegment<byte> buffer,
-            CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException();
-        }
+            CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public override Task SendAsync(
             ArraySegment<byte> buffer,
-            WebSocketMessageType messageType,
+            System.Net.WebSockets.WebSocketMessageType messageType,
             bool endOfMessage,
             CancellationToken cancellationToken)
         {
-            using var document = JsonDocument.Parse(buffer.Array!.AsMemory(buffer.Offset, buffer.Count));
+            using var document = System.Text.Json.JsonDocument.Parse(buffer.Array!.AsMemory(buffer.Offset, buffer.Count));
             LastPayload = document.RootElement.Clone();
             return Task.CompletedTask;
         }
     }
 
-    private sealed class FakeWebSocket : WebSocket
+    private sealed class FakeWebSocket : System.Net.WebSockets.WebSocket
     {
-        public override WebSocketCloseStatus? CloseStatus => null;
+        public override System.Net.WebSockets.WebSocketCloseStatus? CloseStatus => null;
         public override string? CloseStatusDescription => null;
-        public override WebSocketState State => WebSocketState.Open;
+        public override System.Net.WebSockets.WebSocketState State => System.Net.WebSockets.WebSocketState.Open;
         public override string? SubProtocol => null;
 
         public override void Abort()
@@ -137,39 +126,27 @@ public sealed class HomeAssistantConnectionRegistryTests
         }
 
         public override Task CloseAsync(
-            WebSocketCloseStatus closeStatus,
+            System.Net.WebSockets.WebSocketCloseStatus closeStatus,
             string? statusDescription,
-            CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+            CancellationToken cancellationToken) => Task.CompletedTask;
 
         public override Task CloseOutputAsync(
-            WebSocketCloseStatus closeStatus,
+            System.Net.WebSockets.WebSocketCloseStatus closeStatus,
             string? statusDescription,
-            CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+            CancellationToken cancellationToken) => Task.CompletedTask;
 
         public override void Dispose()
         {
         }
 
-        public override Task<WebSocketReceiveResult> ReceiveAsync(
+        public override Task<System.Net.WebSockets.WebSocketReceiveResult> ReceiveAsync(
             ArraySegment<byte> buffer,
-            CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException();
-        }
+            CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public override Task SendAsync(
             ArraySegment<byte> buffer,
-            WebSocketMessageType messageType,
+            System.Net.WebSockets.WebSocketMessageType messageType,
             bool endOfMessage,
-            CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
+            CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

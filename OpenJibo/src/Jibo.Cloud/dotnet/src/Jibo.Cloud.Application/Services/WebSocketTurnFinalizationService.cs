@@ -1236,6 +1236,7 @@ public sealed class WebSocketTurnFinalizationService(
                 ResetBufferedAudio(session);
                 ClearListenTracking(turnState);
                 return noInputReplies;
+
             }
 
             if (ShouldDeferForIncompleteHotphraseLaunchCommand(finalizedTurn, turnState, messageType,
@@ -1581,10 +1582,10 @@ public sealed class WebSocketTurnFinalizationService(
                } &&
                pageCounts.AudioBearingPageCount >= AutoFinalizeMinBufferedAudioPages &&
                turnState.LastAudioReceivedUtc.HasValue &&
-               (receivedEndOfStream || reachedHardTimeout ||
-                transcriptHintEarlyFinalize ||
-                reachedSilenceWindow) &&
-               turnAge >= AutoFinalizeMinTurnAge;
+                (receivedEndOfStream || reachedHardTimeout ||
+                 transcriptHintEarlyFinalize ||
+                 reachedSilenceWindow) &&
+                turnAge >= AutoFinalizeMinTurnAge;
     }
 
     private static bool ShouldEarlyFinalizeBufferedAudio(CloudSession session)
@@ -2753,6 +2754,7 @@ public sealed class WebSocketTurnFinalizationService(
 
         reason = "robot_self_audio";
         return true;
+
     }
 
     private static bool IsHotphraseNonCommandTranscript(string normalized)
@@ -2836,6 +2838,7 @@ public sealed class WebSocketTurnFinalizationService(
 
         reason = "clock_command_incomplete";
         return true;
+
     }
 
     private static bool ShouldHandleUnexpectedYesNoAutoFinalizeTranscript(

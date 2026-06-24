@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -121,20 +122,16 @@ public sealed class ChatGptSearchProvider(
 
     private sealed record ChatCompletionRequest(
         [property: JsonPropertyName("model")] string Model,
-        [property: JsonPropertyName("messages")]
-        IReadOnlyList<ChatCompletionMessage> Messages,
+        [property: JsonPropertyName("messages")] IReadOnlyList<ChatCompletionMessage> Messages,
         [property: JsonPropertyName("stream")] bool Stream = false);
 
     private sealed record ChatCompletionMessage(
         [property: JsonPropertyName("role")] string Role,
-        [property: JsonPropertyName("content")]
-        string Content);
+        [property: JsonPropertyName("content")] string Content);
 
     private sealed record ChatCompletionResponse(
-        [property: JsonPropertyName("choices")]
-        IReadOnlyList<ChatCompletionChoice>? Choices);
+        [property: JsonPropertyName("choices")] IReadOnlyList<ChatCompletionChoice>? Choices);
 
     private sealed record ChatCompletionChoice(
-        [property: JsonPropertyName("message")]
-        ChatCompletionMessage? Message);
+        [property: JsonPropertyName("message")] ChatCompletionMessage? Message);
 }

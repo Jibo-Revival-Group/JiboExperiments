@@ -5,14 +5,10 @@ namespace Jibo.Cloud.Tests.Application;
 public sealed class HomeAssistantClimateCommandParserTests
 {
     [Theory]
-    [InlineData("set the temperature to 69", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
-        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 69)]
-    [InlineData("set temperature to 72 degrees", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
-        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 72)]
-    [InlineData("set thermostat to 68", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
-        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 68)]
-    [InlineData("change the temp to 70", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
-        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 70)]
+    [InlineData("set the temperature to 69", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature, HomeAssistantClimateCommandParser.ClimateScope.Room, null, 69)]
+    [InlineData("set temperature to 72 degrees", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature, HomeAssistantClimateCommandParser.ClimateScope.Room, null, 72)]
+    [InlineData("set thermostat to 68", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature, HomeAssistantClimateCommandParser.ClimateScope.Room, null, 68)]
+    [InlineData("change the temp to 70", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature, HomeAssistantClimateCommandParser.ClimateScope.Room, null, 70)]
     public void TryParse_SetTemperatureRoomCommands_ReturnExpected(
         string transcript,
         HomeAssistantClimateCommandParser.ClimateAction expectedAction,
@@ -52,8 +48,7 @@ public sealed class HomeAssistantClimateCommandParserTests
     [InlineData("too hot", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
     [InlineData("make it cooler", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
     [InlineData("turn down the heat", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
-    public void TryParse_CoolDownPhrases_ReturnExpected(string transcript,
-        HomeAssistantClimateCommandParser.ClimateAction expectedAction)
+    public void TryParse_CoolDownPhrases_ReturnExpected(string transcript, HomeAssistantClimateCommandParser.ClimateAction expectedAction)
     {
         var parsed = HomeAssistantClimateCommandParser.TryParse(transcript, out var command);
 
@@ -69,8 +64,7 @@ public sealed class HomeAssistantClimateCommandParserTests
     [InlineData("too cold", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
     [InlineData("make it warmer", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
     [InlineData("turn up the heat", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
-    public void TryParse_WarmUpPhrases_ReturnExpected(string transcript,
-        HomeAssistantClimateCommandParser.ClimateAction expectedAction)
+    public void TryParse_WarmUpPhrases_ReturnExpected(string transcript, HomeAssistantClimateCommandParser.ClimateAction expectedAction)
     {
         var parsed = HomeAssistantClimateCommandParser.TryParse(transcript, out var command);
 
@@ -95,8 +89,7 @@ public sealed class HomeAssistantClimateCommandParserTests
     public void FormatTargetForSpeech_AppendsThermostatWhenMissing()
     {
         Assert.Equal("bedroom thermostat", HomeAssistantClimateCommandParser.FormatTargetForSpeech("bedroom"));
-        Assert.Equal("bedroom thermostat",
-            HomeAssistantClimateCommandParser.FormatTargetForSpeech("bedroom thermostat"));
+        Assert.Equal("bedroom thermostat", HomeAssistantClimateCommandParser.FormatTargetForSpeech("bedroom thermostat"));
     }
 
     [Fact]

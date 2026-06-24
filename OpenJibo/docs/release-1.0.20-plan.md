@@ -132,6 +132,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - exposed the signed identity graph evidence bundle through the portal API and owner dashboard download path so the deterministic peer-admission payload can be retained outside the running cloud before replication handoff exists
 - wrapped the downloadable identity graph evidence bundle in a self-describing signed envelope so retained peer-admission artifacts carry their payload boundaries, bundle hash, signature algorithm, key id, and signature without depending on the live portal JSON response
 - added offline-review summary counts and blocking-evidence details to the signed identity graph evidence bundle so retained peer-admission artifacts can be triaged without rehydrating the full portal response
+- added an offline identity graph evidence bundle verifier so retained peer-admission envelopes can detect payload hash/signature tampering before any replication handoff trusts them
 
 ## Working Order
 

@@ -39,7 +39,9 @@ $requiredFoundationMarkers = @(
     "output storageAccountName string",
     "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'",
     "param storageAccountName string = ''",
-    "var resolvedStorageAccountName"
+    "var resolvedStorageAccountName",
+    "param keyVaultSecretsOfficerPrincipalId string = ''",
+    "keyVaultSecretsOfficerRoleAssignment"
 )
 
 $requiredManagedMarkers = @(

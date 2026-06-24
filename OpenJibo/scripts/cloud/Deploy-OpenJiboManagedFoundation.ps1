@@ -20,6 +20,18 @@ if (-not (Test-Path -LiteralPath $resolvedTemplatePath)) {
 
 $deploymentName = "openjibo-foundation-{0}" -f ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
 
+$currentPrincipalId = ""
+try {
+    $accessToken = az account get-access-token --query accessToken --output tsv
+    $payload = $accessToken.Split(".")[1]
+    $payload = $payload.PadRight($payload.Length + ((4 - ($payload.Length % 4)) % 4), "=")
+    $claimsJson = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($payload.Replace("-", "+").Replace("_", "/")))
+    $currentPrincipalId = (ConvertFrom-Json $claimsJson).oid
+}
+catch {
+    Write-Warning "Could not resolve current Azure principal object id: $_"
+}
+
 $arguments = @(
     "deployment", "group", "create",
     "--resource-group", $ResourceGroupName,
@@ -27,6 +39,10 @@ $arguments = @(
     "--template-file", $resolvedTemplatePath,
     "--output", "json"
 )
+
+if (-not [string]::IsNullOrWhiteSpace($currentPrincipalId)) {
+    $arguments += @("--parameters", "keyVaultSecretsOfficerPrincipalId=$currentPrincipalId")
+}
 
 Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceGroupName'"
 $deploymentJson = az @arguments | ConvertFrom-Json
@@ -36,24 +52,42 @@ $storageConnectionString = az storage account show-connection-string --resource-
 $resolvedStateConnectionString = if ([string]::IsNullOrWhiteSpace($StateConnectionString)) { $storageConnectionString } else { $StateConnectionString }
 $resolvedPersonalMemoryConnectionString = if ([string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) { $storageConnectionString } else { $PersonalMemoryConnectionString }
 
-if (-not [string]::IsNullOrWhiteSpace($resolvedStateConnectionString)) {
-    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-state-connection-string --value $resolvedStateConnectionString | Out-Null
+function Set-OpenJiboKeyVaultSecretWithRetry {
+    param(
+        [string]$VaultName,
+        [string]$Name,
+        [string]$Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return
+    }
+
+    for ($attempt = 1; $attempt -le 6; $attempt++) {
+        try {
+            az keyvault secret set --vault-name $VaultName --name $Name --value $Value | Out-Null
+            return
+        }
+        catch {
+            if ($attempt -eq 6) {
+                throw
+            }
+
+            $waitSeconds = $attempt * 10
+            Write-Warning "Key Vault RBAC is not ready for secret '$Name' yet; retrying in $waitSeconds seconds."
+            Start-Sleep -Seconds $waitSeconds
+        }
+    }
 }
 
-if (-not [string]::IsNullOrWhiteSpace($resolvedPersonalMemoryConnectionString)) {
-    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-personal-memory-connection-string --value $resolvedPersonalMemoryConnectionString | Out-Null
-}
+Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-state-connection-string -Value $resolvedStateConnectionString
 
-if (-not [string]::IsNullOrWhiteSpace($storageConnectionString)) {
-    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-media-connection-string --value $storageConnectionString | Out-Null
-}
+Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-personal-memory-connection-string -Value $resolvedPersonalMemoryConnectionString
 
-if (-not [string]::IsNullOrWhiteSpace($OpenWeatherApiKey)) {
-    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-openweather-api-key --value $OpenWeatherApiKey | Out-Null
-}
+Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-media-connection-string -Value $storageConnectionString
 
-if (-not [string]::IsNullOrWhiteSpace($NewsApiKey)) {
-    az keyvault secret set --vault-name $outputs.keyVaultName.value --name openjibo-newsapi-key --value $NewsApiKey | Out-Null
-}
+Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-openweather-api-key -Value $OpenWeatherApiKey
+
+Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-newsapi-key -Value $NewsApiKey
 
 $deploymentJson

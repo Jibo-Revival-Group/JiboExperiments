@@ -67,17 +67,35 @@ fi
 
 deployment_name="openjibo-foundation-$(date -u +%s)"
 
+current_principal_id="$(python3 -c 'import base64, json, subprocess, sys
+try:
+    token = subprocess.check_output(["az", "account", "get-access-token", "--query", "accessToken", "--output", "tsv"], text=True).strip()
+    payload = token.split(".")[1]
+    payload += "=" * (-len(payload) % 4)
+    print(json.loads(base64.urlsafe_b64decode(payload.encode("utf-8"))).get("oid", ""))
+except Exception as exc:
+    print(f"Warning: could not resolve current Azure principal object id: {exc}", file=sys.stderr)')"
+
+deployment_args=(
+  az deployment group create
+  --resource-group "$resource_group_name"
+  --name "$deployment_name"
+  --template-file "$resolved_template_path"
+  --output json
+)
+
+if [[ -n "$current_principal_id" ]]; then
+  deployment_args+=(--parameters "keyVaultSecretsOfficerPrincipalId=${current_principal_id}")
+fi
+
 echo "Deploying Open Jibo managed foundation to resource group '${resource_group_name}'" >&2
-deployment_json="$(az deployment group create \
-  --resource-group "$resource_group_name" \
-  --name "$deployment_name" \
-  --template-file "$resolved_template_path" \
-  --output json)"
+deployment_json="$("${deployment_args[@]}")"
 
 python3 - "$deployment_json" "$resource_group_name" "$state_connection_string" "$personal_memory_connection_string" "$open_weather_api_key" "$news_api_key" <<'PY'
 import json
 import subprocess
 import sys
+import time
 
 deployment_json = json.loads(sys.argv[1])
 resource_group_name = sys.argv[2]
@@ -90,13 +108,29 @@ key_vault_name = outputs["keyVaultName"]["value"]
 storage_account_name = outputs["storageAccountName"]["value"]
 
 def set_secret(name: str, value: str) -> None:
-    if value.strip():
-        subprocess.run([
-            "az", "keyvault", "secret", "set",
-            "--vault-name", key_vault_name,
-            "--name", name,
-            "--value", value,
-        ], check=True, stdout=subprocess.DEVNULL)
+    if not value.strip():
+        return
+
+    command = [
+        "az", "keyvault", "secret", "set",
+        "--vault-name", key_vault_name,
+        "--name", name,
+        "--value", value,
+    ]
+    for attempt in range(1, 7):
+        try:
+            subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+            return
+        except subprocess.CalledProcessError:
+            if attempt == 6:
+                raise
+            wait_seconds = attempt * 10
+            print(
+                f"Key Vault RBAC is not ready for secret '{name}' yet; "
+                f"retrying in {wait_seconds} seconds.",
+                file=sys.stderr,
+            )
+            time.sleep(wait_seconds)
 
 storage_connection_string = subprocess.check_output([
     "az", "storage", "account", "show-connection-string",

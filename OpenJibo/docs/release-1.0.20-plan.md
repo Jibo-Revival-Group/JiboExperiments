@@ -117,6 +117,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added focused regression coverage for the default robot topology and added family-member relationship edges before moving toward peer admission or direct Jibo-to-Jibo transport
 - tightened dialog parsing guardrails so dance ability questions, preference questions, explicit dance commands, and unrelated dance-topic chat resolve separately while preserving Pegasus-style command-vs-question behavior
 - extended the identity graph slice with recognition-enrollment edges so face and voice trained loop members are explicitly tied back to the serving robot before peer admission or direct Jibo-to-Jibo transport work begins
+- added a deterministic identity graph snapshot version and content hash so future signed snapshot/admission work has a stable evidence payload before any peer replication is introduced
 
 ## Working Order
 

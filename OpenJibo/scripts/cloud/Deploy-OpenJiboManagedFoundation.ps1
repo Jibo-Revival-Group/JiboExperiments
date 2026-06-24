@@ -40,13 +40,38 @@ $arguments = @(
     "--output", "json"
 )
 
-if (-not [string]::IsNullOrWhiteSpace($currentPrincipalId)) {
-    $arguments += @("--parameters", "keyVaultSecretSeederPrincipalId=$currentPrincipalId")
-}
-
 Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceGroupName'"
 $deploymentJson = az @arguments | ConvertFrom-Json
 $outputs = $deploymentJson.properties.outputs
+
+function Set-OpenJiboKeyVaultSecretSeedPolicyWithRetry {
+    param(
+        [string]$VaultName,
+        [string]$PrincipalId
+    )
+
+    if ([string]::IsNullOrWhiteSpace($PrincipalId)) {
+        return
+    }
+
+    for ($attempt = 1; $attempt -le 6; $attempt++) {
+        try {
+            az keyvault set-policy --name $VaultName --object-id $PrincipalId --secret-permissions get list set delete | Out-Null
+            return
+        }
+        catch {
+            if ($attempt -eq 6) {
+                throw
+            }
+
+            $waitSeconds = $attempt * 10
+            Write-Warning "Key Vault access policy is not ready for principal '$PrincipalId' yet; retrying in $waitSeconds seconds."
+            Start-Sleep -Seconds $waitSeconds
+        }
+    }
+}
+
+Set-OpenJiboKeyVaultSecretSeedPolicyWithRetry -VaultName $outputs.keyVaultName.value -PrincipalId $currentPrincipalId
 
 $storageConnectionString = az storage account show-connection-string --resource-group $ResourceGroupName --name $outputs.storageAccountName.value --query connectionString --output tsv
 $resolvedStateConnectionString = if ([string]::IsNullOrWhiteSpace($StateConnectionString)) { $storageConnectionString } else { $StateConnectionString }

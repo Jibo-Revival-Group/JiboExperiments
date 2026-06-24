@@ -40,8 +40,8 @@ $requiredFoundationMarkers = @(
     "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'",
     "param storageAccountName string = ''",
     "var resolvedStorageAccountName",
-    "param keyVaultSecretSeederPrincipalId string = ''",
-    "accessPolicies: empty(keyVaultSecretSeederPrincipalId)"
+    "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'",
+    "publicNetworkAccess: 'Enabled'"
 )
 
 $requiredManagedMarkers = @(
@@ -94,6 +94,10 @@ foreach ($marker in $requiredWorkflowMarkers) {
 
 if ($foundationScriptText -notmatch [regex]::Escape("openjibo-media-connection-string")) {
     throw "Foundation script does not seed the media connection string secret."
+}
+
+if ($foundationScriptText -notmatch [regex]::Escape("keyvault set-policy")) {
+    throw "Foundation script does not grant the secret seed access policy after deployment."
 }
 
 if ($managedScriptText -notmatch [regex]::Escape("RegistryName")) {

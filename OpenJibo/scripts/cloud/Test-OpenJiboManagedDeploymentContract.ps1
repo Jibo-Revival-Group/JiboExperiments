@@ -36,8 +36,10 @@ $linuxManagedScriptText = Get-RepoFileText -RelativePath $LinuxManagedScriptPath
 $requiredFoundationMarkers = @(
     "output keyVaultName string",
     "output registryName string",
-    "output storageConnectionString string",
-    "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'"
+    "output storageAccountName string",
+    "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'",
+    "param storageAccountName string = ''",
+    "var resolvedStorageAccountName"
 )
 
 $requiredManagedMarkers = @(
@@ -45,8 +47,8 @@ $requiredManagedMarkers = @(
     "param keyVaultName string",
     "secretRef: 'media-connection-string'",
     "keyVaultUrl: 'https://",
-    "var logAnalyticsWorkspaceKey"
-  "value: 'AzureBlob'"
+    "var logAnalyticsWorkspaceKey",
+    "value: 'AzureBlob'"
 )
 
 $requiredWorkflowMarkers = @(
@@ -65,7 +67,9 @@ $forbiddenMarkers = @(
     "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING",
     "openjiboacr",
     "openjibokv",
-    "-MediaConnectionString"
+    "-MediaConnectionString",
+    "output storageConnectionString",
+    "listKeys(storageAccount"
 )
 
 foreach ($marker in $requiredFoundationMarkers) {
@@ -96,6 +100,10 @@ if ($managedScriptText -notmatch [regex]::Escape("RegistryName")) {
 
 if ($linuxFoundationScriptText -notmatch [regex]::Escape("openjibo-media-connection-string")) {
     throw "Linux foundation script does not seed the media connection string secret."
+}
+
+if ($linuxFoundationScriptText -notmatch [regex]::Escape('"az", "storage", "account", "show-connection-string"')) {
+    throw "Linux foundation script does not resolve the storage connection string outside Bicep outputs."
 }
 
 if ($linuxPublishScriptText -notmatch [regex]::Escape("az acr build")) {

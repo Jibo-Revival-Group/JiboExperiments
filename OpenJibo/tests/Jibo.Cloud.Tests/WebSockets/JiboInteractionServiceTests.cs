@@ -2772,6 +2772,45 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("shopping list", recallDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("add milk to my grocery list", "shopping_list_add", "grocery list", "milk", "shopping", "grocery")]
+    [InlineData("please put eggs on my shopping list", "shopping_list_add", "shopping list", "eggs", "shopping", "shopping")]
+    [InlineData("add call mom to my to do list", "todo_list_add", "to-do list", "call mom", "todo", "todo")]
+    public async Task BuildDecisionAsync_ListInlineAdd_AddsItemWithoutPrompt(
+        string transcript,
+        string expectedIntent,
+        string expectedListLabel,
+        string expectedItem,
+        string expectedListType,
+        string expectedDisplayType)
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+        var tenantAttributes = new Dictionary<string, object?>
+        {
+            ["accountId"] = "acct-inline",
+            ["loopId"] = "loop-inline"
+        };
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            DeviceId = "device-inline",
+            Attributes = new Dictionary<string, object?>(tenantAttributes)
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains($"Added {expectedItem} to your {expectedListLabel}.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("awaiting_item", decision.ContextUpdates![HouseholdListStateKey]);
+        Assert.Equal(expectedListType, decision.ContextUpdates[HouseholdListTypeKey]);
+        Assert.Equal(expectedDisplayType, decision.ContextUpdates[HouseholdListDisplayTypeKey]);
+        Assert.Equal([expectedItem], memoryStore.GetListItems(
+            new PersonalMemoryTenantScope("acct-inline", "loop-inline", "device-inline"),
+            expectedListType));
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_GroceryList_DirectAddAndRecallVariants_UseGroceryWording()
     {

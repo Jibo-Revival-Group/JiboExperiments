@@ -37,8 +37,10 @@ linux_managed_script_text="$(get_repo_file_text "$linux_managed_script_path")"
 required_foundation_markers=(
   "output keyVaultName string"
   "output registryName string"
-  "output storageConnectionString string"
+  "output storageAccountName string"
   "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'"
+  "param storageAccountName string = ''"
+  "var resolvedStorageAccountName"
 )
 
 required_managed_markers=(
@@ -96,6 +98,12 @@ if [[ "$linux_foundation_script_text" != *"openjibo-media-connection-string"* ]]
   exit 1
 fi
 
+storage_connection_marker='"az", "storage", "account", "show-connection-string"'
+if [[ "$linux_foundation_script_text" != *"$storage_connection_marker"* ]]; then
+  echo "Linux foundation script does not resolve the storage connection string outside Bicep outputs." >&2
+  exit 1
+fi
+
 if [[ "$linux_publish_script_text" != *"az acr build"* ]]; then
   echo "Linux publish script is missing the ACR build path." >&2
   exit 1
@@ -106,7 +114,7 @@ if [[ "$linux_managed_script_text" != *"--run-smoke"* ]]; then
   exit 1
 fi
 
-for forbidden_marker in "OPENJIBO_MEDIA_CONNECTION_STRING" "OPENJIBO_STATE_CONNECTION_STRING" "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING" "openjiboacr" "openjibokv" "-MediaConnectionString"; do
+for forbidden_marker in "OPENJIBO_MEDIA_CONNECTION_STRING" "OPENJIBO_STATE_CONNECTION_STRING" "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING" "openjiboacr" "openjibokv" "-MediaConnectionString" "output storageConnectionString" "listKeys(storageAccount"; do
   if [[ "$workflow_text" == *"$forbidden_marker"* ]]; then
     echo "Workflow still references forbidden marker: $forbidden_marker" >&2
     exit 1

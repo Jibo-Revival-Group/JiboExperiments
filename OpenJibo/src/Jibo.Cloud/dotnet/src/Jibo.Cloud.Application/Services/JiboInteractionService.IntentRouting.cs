@@ -1273,7 +1273,8 @@ public sealed partial class JiboInteractionService
                 "what is on my to do list",
                 "what are my tasks",
                 "what do i need to buy",
-                "what do i need to do"))
+                "what do i need to do") ||
+            IsInlineHouseholdListRequest(loweredTranscript))
             return loweredTranscript.Contains("to do", StringComparison.OrdinalIgnoreCase) ||
                    loweredTranscript.Contains("todo", StringComparison.OrdinalIgnoreCase) ||
                    loweredTranscript.Contains("task", StringComparison.OrdinalIgnoreCase)
@@ -1385,6 +1386,26 @@ public sealed partial class JiboInteractionService
         if (IsDateRequest(loweredTranscript)) return "date";
 
         return MatchesAny(loweredTranscript, "hello", "hi", "hey") ? "hello" : "chat";
+    }
+
+    private static bool IsInlineHouseholdListRequest(string loweredTranscript)
+    {
+        var mentionsList = loweredTranscript.Contains("shopping list", StringComparison.OrdinalIgnoreCase) ||
+                           loweredTranscript.Contains("grocery list", StringComparison.OrdinalIgnoreCase) ||
+                           loweredTranscript.Contains("to do list", StringComparison.OrdinalIgnoreCase) ||
+                           loweredTranscript.Contains("todo list", StringComparison.OrdinalIgnoreCase);
+
+        if (!mentionsList) return false;
+
+        return loweredTranscript.StartsWith("add ", StringComparison.OrdinalIgnoreCase) ||
+               loweredTranscript.StartsWith("put ", StringComparison.OrdinalIgnoreCase) ||
+               loweredTranscript.StartsWith("buy ", StringComparison.OrdinalIgnoreCase) ||
+               loweredTranscript.StartsWith("get ", StringComparison.OrdinalIgnoreCase) ||
+               loweredTranscript.StartsWith("please add ", StringComparison.OrdinalIgnoreCase) ||
+               loweredTranscript.StartsWith("please put ", StringComparison.OrdinalIgnoreCase) ||
+               loweredTranscript.StartsWith("i need ", StringComparison.OrdinalIgnoreCase) ||
+               loweredTranscript.StartsWith("i need to ", StringComparison.OrdinalIgnoreCase) ||
+               loweredTranscript.StartsWith("remind me to ", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsFriendQuestion(string loweredTranscript)

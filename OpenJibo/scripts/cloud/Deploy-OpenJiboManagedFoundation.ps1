@@ -32,7 +32,7 @@ Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceG
 $deploymentJson = az @arguments | ConvertFrom-Json
 $outputs = $deploymentJson.properties.outputs
 
-$storageConnectionString = $outputs.storageConnectionString.value
+$storageConnectionString = az storage account show-connection-string --resource-group $ResourceGroupName --name $outputs.storageAccountName.value --query connectionString --output tsv
 $resolvedStateConnectionString = if ([string]::IsNullOrWhiteSpace($StateConnectionString)) { $storageConnectionString } else { $StateConnectionString }
 $resolvedPersonalMemoryConnectionString = if ([string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) { $storageConnectionString } else { $PersonalMemoryConnectionString }
 

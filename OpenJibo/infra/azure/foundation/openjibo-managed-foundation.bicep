@@ -28,9 +28,6 @@ param keyVaultName string = ''
 @description('Name of the storage account used by Open Jibo managed. Leave blank to use the standard Open Jibo generated name.')
 param storageAccountName string = ''
 
-@description('Object ID of the principal that seeds Key Vault secrets after deployment. Leave blank to skip bootstrap secret access policy.')
-param keyVaultSecretSeederPrincipalId string = ''
-
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: resolvedLogAnalyticsWorkspaceName
   location: location
@@ -62,21 +59,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       family: 'A'
       name: 'standard'
     }
-    enableRbacAuthorization: false
-    accessPolicies: empty(keyVaultSecretSeederPrincipalId) ? [] : [
-      {
-        tenantId: subscription().tenantId
-        objectId: keyVaultSecretSeederPrincipalId
-        permissions: {
-          secrets: [
-            'get'
-            'list'
-            'set'
-            'delete'
-          ]
-        }
-      }
-    ]
     softDeleteRetentionInDays: 30
     publicNetworkAccess: 'Enabled'
   }

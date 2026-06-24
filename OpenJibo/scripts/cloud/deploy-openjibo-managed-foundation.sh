@@ -84,14 +84,10 @@ deployment_args=(
   --output json
 )
 
-if [[ -n "$current_principal_id" ]]; then
-  deployment_args+=(--parameters "keyVaultSecretSeederPrincipalId=${current_principal_id}")
-fi
-
 echo "Deploying Open Jibo managed foundation to resource group '${resource_group_name}'" >&2
 deployment_json="$("${deployment_args[@]}")"
 
-python3 - "$deployment_json" "$resource_group_name" "$state_connection_string" "$personal_memory_connection_string" "$open_weather_api_key" "$news_api_key" <<'PY'
+python3 - "$deployment_json" "$resource_group_name" "$state_connection_string" "$personal_memory_connection_string" "$open_weather_api_key" "$news_api_key" "$current_principal_id" <<'PY'
 import json
 import subprocess
 import sys
@@ -106,6 +102,34 @@ news_api_key = sys.argv[6]
 outputs = deployment_json["properties"]["outputs"]
 key_vault_name = outputs["keyVaultName"]["value"]
 storage_account_name = outputs["storageAccountName"]["value"]
+current_principal_id = sys.argv[7]
+
+def grant_secret_seed_policy() -> None:
+    if not current_principal_id.strip():
+        return
+
+    command = [
+        "az", "keyvault", "set-policy",
+        "--name", key_vault_name,
+        "--object-id", current_principal_id,
+        "--secret-permissions", "get", "list", "set", "delete",
+    ]
+    for attempt in range(1, 7):
+        try:
+            subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+            return
+        except subprocess.CalledProcessError:
+            if attempt == 6:
+                raise
+            wait_seconds = attempt * 10
+            print(
+                f"Key Vault access policy is not ready for principal '{current_principal_id}' yet; "
+                f"retrying in {wait_seconds} seconds.",
+                file=sys.stderr,
+            )
+            time.sleep(wait_seconds)
+
+grant_secret_seed_policy()
 
 def set_secret(name: str, value: str) -> None:
     if not value.strip():

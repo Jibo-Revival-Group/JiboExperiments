@@ -429,10 +429,49 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             LoopId = resolvedLoopId,
             RobotId = _robot.RobotId,
             DeviceId = _robot.DeviceId,
+            SnapshotVersion = 1,
+            ContentHash = ComputeIdentityGraphContentHash(_account.AccountId, resolvedLoopId, _robot, people, members,
+                relationships),
             People = people,
             Members = members,
             Relationships = relationships
         };
+    }
+
+    private static string ComputeIdentityGraphContentHash(string accountId, string loopId, DeviceRegistration robot,
+        IReadOnlyCollection<PersonRecord> people, IReadOnlyCollection<LoopMemberRecord> members,
+        IReadOnlyCollection<IdentityGraphRelationship> relationships)
+    {
+        var lines = new List<string>
+        {
+            $"snapshot-version|1",
+            $"account|{accountId}",
+            $"loop|{loopId}",
+            $"robot|{robot.RobotId}|device|{robot.DeviceId}"
+        };
+
+        lines.AddRange(people
+            .OrderBy(person => person.PersonId, StringComparer.OrdinalIgnoreCase)
+            .Select(person =>
+                $"person|{person.PersonId}|account|{person.AccountId}|robot|{person.RobotId}|primary|{person.IsPrimary}"));
+
+        lines.AddRange(members
+            .OrderBy(member => member.Id, StringComparer.OrdinalIgnoreCase)
+            .Select(member =>
+                $"member|{member.Id}|account|{member.AccountId}|type|{member.Type}|status|{member.Status}|face|{member.FaceEnrolled}|voice|{member.VoiceEnrolled}|guardian|{member.LegalGuardianId}"));
+
+        lines.AddRange(relationships
+            .OrderBy(relationship => relationship.SubjectId, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(relationship => relationship.SubjectKind, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(relationship => relationship.Relationship, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(relationship => relationship.ObjectId, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(relationship => relationship.ObjectKind, StringComparer.OrdinalIgnoreCase)
+            .Select(relationship =>
+                $"relationship|{relationship.SubjectId}|{relationship.SubjectKind}|{relationship.Relationship}|{relationship.ObjectId}|{relationship.ObjectKind}|{relationship.LoopId}"));
+
+        var payload = string.Join('\n', lines);
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
+        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
     private static void AddIdentityRelationship(ICollection<IdentityGraphRelationship> relationships, string? subjectId,

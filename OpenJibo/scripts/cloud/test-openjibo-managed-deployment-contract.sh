@@ -41,8 +41,8 @@ required_foundation_markers=(
   "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'"
   "param storageAccountName string = ''"
   "var resolvedStorageAccountName"
-  "param keyVaultSecretSeederPrincipalId string = ''"
-  "accessPolicies: empty(keyVaultSecretSeederPrincipalId)"
+  "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'"
+  "publicNetworkAccess: 'Enabled'"
 )
 
 required_managed_markers=(
@@ -87,6 +87,11 @@ done
 
 if [[ "$foundation_script_text" != *"openjibo-media-connection-string"* ]]; then
   echo "Foundation script does not seed the media connection string secret." >&2
+  exit 1
+fi
+
+if [[ "$foundation_script_text" != *"keyvault set-policy"* ]]; then
+  echo "Foundation script does not grant the secret seed access policy after deployment." >&2
   exit 1
 fi
 

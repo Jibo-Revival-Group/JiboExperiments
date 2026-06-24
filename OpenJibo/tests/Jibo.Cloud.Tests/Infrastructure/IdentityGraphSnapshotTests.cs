@@ -21,6 +21,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("usr_openjibo_owner", graph.AccountId);
         Assert.Equal("BOJW-1000-0017-0820-0020", graph.DeviceId);
         Assert.Equal("Ghost-Instance-Onion-Silk", graph.RobotId);
+        Assert.Equal(1, graph.SnapshotVersion);
+        Assert.Matches("^[a-f0-9]{64}$", graph.ContentHash);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
         Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
         Assert.Contains(graph.Members, member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
@@ -98,6 +100,24 @@ public sealed class IdentityGraphSnapshotTests
             relationship.Relationship == "voice-enrolled-with" &&
             relationship.ObjectId == "Ghost-Instance-Onion-Silk" &&
             relationship.ObjectKind == "robot");
+    }
+
+    [Fact]
+    public void GetIdentityGraph_ContentHashIsStableAndChangesWithEnrollmentEvidence()
+    {
+        var store = new InMemoryCloudStateStore();
+        var loopId = store.GetLoops()[0].LoopId;
+        var member = store.AddLoopMember(loopId, "usr-family-member", "family@example.com", "Katherine", "Johnson",
+            "unknown", null, false, "family");
+
+        var before = store.GetIdentityGraph(loopId);
+        var repeated = store.GetIdentityGraph(loopId);
+
+        store.SetMemberEnrollment(loopId, member.Id, face: true, voice: null);
+        var after = store.GetIdentityGraph(loopId);
+
+        Assert.Equal(before.ContentHash, repeated.ContentHash);
+        Assert.NotEqual(before.ContentHash, after.ContentHash);
     }
 
 }

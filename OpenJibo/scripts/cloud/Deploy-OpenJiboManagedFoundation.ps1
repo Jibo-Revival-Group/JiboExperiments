@@ -41,7 +41,7 @@ $arguments = @(
 )
 
 if (-not [string]::IsNullOrWhiteSpace($currentPrincipalId)) {
-    $arguments += @("--parameters", "keyVaultSecretsOfficerPrincipalId=$currentPrincipalId")
+    $arguments += @("--parameters", "keyVaultSecretSeederPrincipalId=$currentPrincipalId")
 }
 
 Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceGroupName'"

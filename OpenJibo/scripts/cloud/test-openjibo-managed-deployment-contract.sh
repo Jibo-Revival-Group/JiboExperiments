@@ -41,8 +41,8 @@ required_foundation_markers=(
   "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'"
   "param storageAccountName string = ''"
   "var resolvedStorageAccountName"
-  "param keyVaultSecretsOfficerPrincipalId string = ''"
-  "keyVaultSecretsOfficerRoleAssignment"
+  "param keyVaultSecretSeederPrincipalId string = ''"
+  "accessPolicies: empty(keyVaultSecretSeederPrincipalId)"
 )
 
 required_managed_markers=(

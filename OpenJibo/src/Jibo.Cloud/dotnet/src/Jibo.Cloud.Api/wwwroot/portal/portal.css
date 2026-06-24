@@ -232,6 +232,31 @@ input:focus {
   border: 1px solid var(--line);
 }
 
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.72rem 1rem;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.secondary-button:hover {
+  border-color: rgba(255, 122, 69, 0.45);
+  transform: translateY(-1px);
+}
+
 .button.danger {
   background: var(--danger-soft);
   color: var(--danger);

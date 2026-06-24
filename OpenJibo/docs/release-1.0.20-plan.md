@@ -129,6 +129,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added child/guardian relationship edges to the identity graph so family membership snapshots preserve dependent-care context before multi-Jibo admission and replication work
 - added optional certificate thumbprint, issued identity, build hash, and config hash corroborating signals to the signed identity graph so clone-detection evidence can travel with owner-visible admission snapshots without becoming required admission gates
 - added a signed identity graph evidence bundle that binds the snapshot signature and the admission decision signature into one deterministic peer-admission payload for future replication handoff
+- exposed the signed identity graph evidence bundle through the portal API and owner dashboard download path so the deterministic peer-admission payload can be retained outside the running cloud before replication handoff exists
 
 ## Working Order
 

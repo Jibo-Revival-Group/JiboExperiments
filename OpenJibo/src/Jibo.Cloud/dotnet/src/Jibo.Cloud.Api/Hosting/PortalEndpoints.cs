@@ -1,3 +1,4 @@
+using System.Text;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
@@ -71,11 +72,29 @@ internal static class PortalEndpoints
                 graph.SignaturePayload,
                 graph.Signature,
                 graph.AdmissionAssessment,
+                graph.EvidenceBundle,
                 graph.People,
                 graph.Members,
                 graph.Relationships,
                 graph.EvidenceSignals
             });
+        });
+
+        app.MapGet("/api/portal/identity-graph/evidence-bundle", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var graph = cloudStateStore.GetIdentityGraph();
+            var fileName = $"openjibo-identity-evidence-{graph.DeviceId}-{graph.EvidenceBundle.BundleHash}.txt";
+            return Results.File(
+                Encoding.UTF8.GetBytes(graph.EvidenceBundle.Payload),
+                "text/plain; charset=utf-8",
+                fileName);
         });
 
         app.MapPost("/api/portal/home-assistant/link", async (

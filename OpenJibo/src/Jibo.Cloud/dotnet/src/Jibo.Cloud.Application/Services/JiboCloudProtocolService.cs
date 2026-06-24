@@ -806,7 +806,7 @@ public sealed class JiboCloudProtocolService(
         }
         else
         {
-            StartSchedulerUpdateCycle(ReadSchedulerFilterFromPath(envelope.Path));
+            StartSchedulerUpdateCycle(ReadSchedulerFilter(envelope));
         }
 
         result = ProtocolDispatchResult.Ok(new
@@ -815,6 +815,15 @@ public sealed class JiboCloudProtocolService(
         });
         return true;
 
+    }
+
+    private static string? ReadSchedulerFilter(ProtocolEnvelope envelope)
+    {
+        var pathFilter = ReadSchedulerFilterFromPath(envelope.Path);
+        if (!string.IsNullOrWhiteSpace(pathFilter)) return pathFilter;
+
+        var body = envelope.TryParseBody();
+        return ReadString(body, "filter") ?? ReadString(body, "subsystem");
     }
 
     private object[] ListSchedulerUpdates(string? filter)

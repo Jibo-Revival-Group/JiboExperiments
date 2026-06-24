@@ -68,6 +68,8 @@ public sealed class FileTurnTelemetrySinkTests
         Assert.Contains(lines,
             line => line.Contains("\"message\":\"Turn telemetry diagnostic\"", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.Contains("\"message\":\"Turn telemetry error\"", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("\"eventFilePath\":", StringComparison.Ordinal) &&
+                                       line.Contains(".events.ndjson", StringComparison.Ordinal));
     }
 
     [Fact]

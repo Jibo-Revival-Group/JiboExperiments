@@ -64,5 +64,7 @@ public sealed class FileProtocolTelemetrySinkTests : IDisposable
             line => line.Contains("\"eventType\":\"protocol_record\"", StringComparison.Ordinal));
         Assert.Contains(indexLines, line => line.Contains("\"servicePrefix\":\"Notification_20150505\"",
             StringComparison.Ordinal));
+        Assert.Contains(indexLines, line => line.Contains("\"eventFilePath\":", StringComparison.Ordinal) &&
+                                      line.Contains(".events.ndjson", StringComparison.Ordinal));
     }
 }

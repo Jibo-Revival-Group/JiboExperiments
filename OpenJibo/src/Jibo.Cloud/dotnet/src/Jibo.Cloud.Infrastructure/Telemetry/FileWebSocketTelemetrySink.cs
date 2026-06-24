@@ -150,7 +150,7 @@ public sealed class FileWebSocketTelemetrySink(
     {
         var directory = GetBaseDirectory();
         Directory.CreateDirectory(directory);
-        var filePath = Path.Combine(directory, $"{DateTimeOffset.UtcNow:yyyyMMdd}.events.ndjson");
+        var filePath = GetDailyEventFilePath(directory);
         var line = JsonSerializer.Serialize(record) + Environment.NewLine;
 
         await _writeLock.WaitAsync(cancellationToken);
@@ -274,9 +274,15 @@ public sealed class FileWebSocketTelemetrySink(
                 ["kind"] = envelope.Kind,
                 ["token"] = envelope.Token,
                 ["transId"] = session.TurnState.TransId ?? session.LastTransId,
+                ["eventFilePath"] = GetDailyEventFilePath(directory),
                 ["details"] = details
             },
             cancellationToken);
+    }
+
+    private static string GetDailyEventFilePath(string directory)
+    {
+        return Path.Combine(directory, $"{DateTimeOffset.UtcNow:yyyyMMdd}.events.ndjson");
     }
 
     private static string BuildFixtureName(CloudSession session, CapturedWebSocketFixtureBuilder fixture)

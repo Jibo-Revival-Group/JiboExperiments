@@ -65,7 +65,8 @@ public sealed class FileTurnTelemetrySink(
             new Dictionary<string, object?>
             {
                 ["message"] = logMessage,
-                ["level"] = level.ToString()
+                ["level"] = level.ToString(),
+                ["eventFilePath"] = filePath
             },
             cancellationToken);
 

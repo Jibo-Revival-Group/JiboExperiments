@@ -12,7 +12,8 @@ internal static class PortalEndpoints
         app.MapPost("/api/portal/jibo-verification/confirm", (
             [FromBody] ConfirmJiboVerificationRequest request,
             JiboVerificationService verificationService,
-            PortalSessionService portalSessionService) =>
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
         {
             if (string.IsNullOrWhiteSpace(request.Code))
                 return Results.BadRequest(new { error = "code is required." });
@@ -22,6 +23,7 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = result.Error });
 
             var session = portalSessionService.CreateSession(result.DeviceId!, result.FriendlyId!);
+            RegisterVerifiedRobotIdentity(cloudStateStore, result.DeviceId!, result.FriendlyId!);
 
             return Results.Json(new
             {
@@ -193,6 +195,25 @@ internal static class PortalEndpoints
         token ??= request.Query["portalSessionToken"].FirstOrDefault();
         token ??= portalSessionToken;
         return token;
+    }
+
+    private static void RegisterVerifiedRobotIdentity(ICloudStateStore cloudStateStore, string deviceId, string friendlyId)
+    {
+        var currentRobot = cloudStateStore.GetRobot();
+        if (string.Equals(currentRobot.DeviceId, deviceId, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(currentRobot.RobotId, friendlyId, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        cloudStateStore.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = deviceId,
+            RobotId = friendlyId,
+            FriendlyName = currentRobot.FriendlyName,
+            FirmwareVersion = currentRobot.FirmwareVersion,
+            ApplicationVersion = currentRobot.ApplicationVersion,
+            IsActive = currentRobot.IsActive,
+            HostMappings = new Dictionary<string, string>(currentRobot.HostMappings, StringComparer.OrdinalIgnoreCase)
+        });
     }
 
     private static object BuildDashboardPayload(

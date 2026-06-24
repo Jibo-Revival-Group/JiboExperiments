@@ -1328,28 +1328,29 @@ public sealed class WebSocketTurnFinalizationService(
 
             var plan = await conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken);
 
+            var intentName = plan.IntentName;
             if (homeAssistantCommandService is not null &&
-                (string.Equals(plan.IntentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(plan.IntentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(plan.IntentName, "ha_climate_set_temp", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(plan.IntentName, "ha_climate_cool_down", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(plan.IntentName, "ha_climate_warm_up", StringComparison.OrdinalIgnoreCase)))
+                (string.Equals(intentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(intentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(intentName, "ha_climate_set_temp", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(intentName, "ha_climate_cool_down", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(intentName, "ha_climate_warm_up", StringComparison.OrdinalIgnoreCase)))
             {
-                var dispatched = string.Equals(plan.IntentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
-                                 string.Equals(plan.IntentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase)
+                var dispatched = string.Equals(intentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(intentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase)
                     ? await homeAssistantCommandService.TryDispatchLightCommandAsync(
                         finalizedTurn,
-                        plan.IntentName,
+                        intentName,
                         cancellationToken)
                     : await homeAssistantCommandService.TryDispatchClimateCommandAsync(
                         finalizedTurn,
-                        plan.IntentName,
+                        intentName,
                         cancellationToken);
                 await sink.RecordTurnDiagnosticAsync(
                     "home_assistant_command_dispatch",
                     BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
                     {
-                        ["intent"] = plan.IntentName,
+                        ["intent"] = intentName,
                         ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
                         ["dispatched"] = dispatched
                     }),
@@ -1380,7 +1381,7 @@ public sealed class WebSocketTurnFinalizationService(
                     "skill_payload_summary",
                     BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
                     {
-                        ["intent"] = plan.IntentName,
+                        ["intent"] = intentName,
                         ["skillName"] = invokedSkillAction.SkillName,
                         ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
                         ["payload"] = invokedSkillAction.Payload
@@ -1406,7 +1407,7 @@ public sealed class WebSocketTurnFinalizationService(
                         "news_provider_trace",
                         BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
                         {
-                            ["intent"] = plan.IntentName,
+                            ["intent"] = intentName,
                             ["skillName"] = invokedSkillAction.SkillName,
                             ["status"] = providerStatus,
                             ["requestedHeadlines"] = requestedHeadlines,
@@ -1439,7 +1440,7 @@ public sealed class WebSocketTurnFinalizationService(
                 BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
                 {
                     ["messageType"] = messageType,
-                    ["intent"] = plan.IntentName,
+                    ["intent"] = intentName,
                     ["actionCount"] = plan.Actions.Count,
                     ["actionTypes"] = plan.Actions.Select(action => action.GetType().Name).ToArray(),
                     ["keepMicOpen"] = plan.FollowUp.KeepMicOpen,
@@ -1500,7 +1501,7 @@ public sealed class WebSocketTurnFinalizationService(
                 BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
                 {
                     ["messageType"] = messageType,
-                    ["intent"] = plan.IntentName,
+                    ["intent"] = intentName,
                     ["replyCount"] = replies.Length,
                     ["replyTypes"] = ReadReplyTypes(replies),
                     ["hasEos"] = replies.Any(reply => string.Equals(ReadReplyType(reply), "EOS",
@@ -1525,7 +1526,7 @@ public sealed class WebSocketTurnFinalizationService(
                     {
                         ["messageType"] = messageType,
                         ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
-                        ["intent"] = plan.IntentName,
+                        ["intent"] = intentName,
                         ["listenRules"] = ReadRules(finalizedTurn, "listenRules").ToArray(),
                         ["clientRules"] = ReadRules(finalizedTurn, "clientRules").ToArray(),
                         ["listenAsrHints"] = ReadRules(finalizedTurn, "listenAsrHints").ToArray(),

@@ -432,6 +432,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             relationships, evidenceSignals);
 
         var signaturePayload = BuildIdentityGraphSignaturePayload(_account.AccountId, resolvedLoopId, contentHash);
+        var admissionAssessment = BuildIdentityGraphAdmissionAssessment(evidenceSignals);
 
         return new IdentityGraphSnapshot
         {
@@ -445,6 +446,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             SignatureKeyId = IdentityGraphSignatureKeyId,
             SignaturePayload = signaturePayload,
             Signature = SignIdentityGraphPayload(signaturePayload),
+            AdmissionAssessment = admissionAssessment,
             People = people,
             Members = members,
             Relationships = relationships,
@@ -524,6 +526,43 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Value = value.Trim(),
             LoopId = loopId
         });
+    }
+
+
+    private static IdentityGraphAdmissionAssessment BuildIdentityGraphAdmissionAssessment(
+        IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
+    {
+        string[] requiredEvidence =
+        [
+            "device-id",
+            "robot-id",
+            "application-version",
+            "host-mapping"
+        ];
+
+        var presentEvidence = evidenceSignals
+            .Select(signal => signal.SignalKind)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var missingEvidence = requiredEvidence
+            .Where(required => !presentEvidence.Contains(required))
+            .ToArray();
+
+        if (missingEvidence.Length == 0)
+        {
+            return new IdentityGraphAdmissionAssessment
+            {
+                Recommendation = "admit",
+                Reasons = ["required-corroborating-evidence-present"],
+                RequiredEvidence = requiredEvidence
+            };
+        }
+
+        return new IdentityGraphAdmissionAssessment
+        {
+            Recommendation = "quarantine",
+            Reasons = missingEvidence.Select(missing => $"missing-{missing}").ToArray(),
+            RequiredEvidence = requiredEvidence
+        };
     }
 
     private static string BuildIdentityGraphSignaturePayload(string accountId, string loopId, string contentHash)

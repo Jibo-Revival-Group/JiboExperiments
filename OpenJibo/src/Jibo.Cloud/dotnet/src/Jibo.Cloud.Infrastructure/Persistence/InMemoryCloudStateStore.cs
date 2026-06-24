@@ -449,7 +449,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var signature = SignIdentityGraphPayload(signaturePayload);
         var admissionAssessment = BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId, contentHash, evidenceSignals);
         var evidenceBundle = BuildSignedIdentityGraphEvidenceBundle(_account.AccountId, resolvedLoopId, _robot,
-            contentHash, signature, admissionAssessment);
+            contentHash, signature, admissionAssessment, people.Count, members.Count, relationships.Count, evidenceSignals.Count);
 
         return new IdentityGraphSnapshot
         {
@@ -698,10 +698,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static IdentityGraphEvidenceBundle BuildSignedIdentityGraphEvidenceBundle(string accountId, string loopId,
         DeviceRegistration robot, string contentHash, string snapshotSignature,
-        IdentityGraphAdmissionAssessment admissionAssessment)
+        IdentityGraphAdmissionAssessment admissionAssessment, int peopleCount, int memberCount, int relationshipCount, int evidenceSignalCount)
     {
         var payload = BuildIdentityGraphEvidenceBundlePayload(accountId, loopId, robot, contentHash, snapshotSignature,
-            admissionAssessment);
+            admissionAssessment, peopleCount, memberCount, relationshipCount, evidenceSignalCount);
         var bundleHash = ComputeSha256Hex(payload);
 
         var signature = SignIdentityGraphPayload(payload);
@@ -718,6 +718,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AdmissionDecisionHash = admissionAssessment.DecisionHash,
             AdmissionSignature = admissionAssessment.Signature,
             AdmissionRecommendation = admissionAssessment.Recommendation,
+            PeopleCount = peopleCount,
+            MemberCount = memberCount,
+            RelationshipCount = relationshipCount,
+            EvidenceSignalCount = evidenceSignalCount,
+            BlockingEvidence = admissionAssessment.BlockingEvidence,
             Payload = payload,
             Envelope = envelope,
             BundleHash = bundleHash,
@@ -746,7 +751,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     private static string BuildIdentityGraphEvidenceBundlePayload(string accountId, string loopId, DeviceRegistration robot,
-        string contentHash, string snapshotSignature, IdentityGraphAdmissionAssessment admissionAssessment)
+        string contentHash, string snapshotSignature, IdentityGraphAdmissionAssessment admissionAssessment,
+        int peopleCount, int memberCount, int relationshipCount, int evidenceSignalCount)
     {
         var lines = new[]
         {
@@ -755,12 +761,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"loop|{loopId}",
             $"robot|{robot.RobotId}",
             $"device|{robot.DeviceId}",
+            $"people-count|{peopleCount}",
+            $"member-count|{memberCount}",
+            $"relationship-count|{relationshipCount}",
+            $"evidence-signal-count|{evidenceSignalCount}",
             $"snapshot-version|{IdentityGraphSnapshotVersion}",
             $"snapshot-content-hash|{contentHash}",
             $"snapshot-signature-key-id|{IdentityGraphSignatureKeyId}",
             $"snapshot-signature|{snapshotSignature}",
             $"admission-policy-version|{admissionAssessment.PolicyVersion}",
             $"admission-recommendation|{admissionAssessment.Recommendation}",
+            $"admission-blocking-evidence|{string.Join(',', admissionAssessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
             $"admission-decision-hash|{admissionAssessment.DecisionHash}",
             $"admission-signature-key-id|{admissionAssessment.SignatureKeyId}",
             $"admission-signature|{admissionAssessment.Signature}"

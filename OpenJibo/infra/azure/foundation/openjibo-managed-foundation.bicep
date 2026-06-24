@@ -28,8 +28,8 @@ param keyVaultName string = ''
 @description('Name of the storage account used by Open Jibo managed. Leave blank to use the standard Open Jibo generated name.')
 param storageAccountName string = ''
 
-@description('Object ID of the principal that seeds Key Vault secrets after deployment. Leave blank to skip bootstrap secret writer assignment.')
-param keyVaultSecretsOfficerPrincipalId string = ''
+@description('Object ID of the principal that seeds Key Vault secrets after deployment. Leave blank to skip bootstrap secret access policy.')
+param keyVaultSecretSeederPrincipalId string = ''
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: resolvedLogAnalyticsWorkspaceName
@@ -49,7 +49,7 @@ resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
     name: 'Standard'
   }
   properties: {
-    adminUserEnabled: false
+    adminUserEnabled: true
   }
 }
 
@@ -62,23 +62,23 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       family: 'A'
       name: 'standard'
     }
-    enableRbacAuthorization: true
+    enableRbacAuthorization: false
+    accessPolicies: empty(keyVaultSecretSeederPrincipalId) ? [] : [
+      {
+        tenantId: subscription().tenantId
+        objectId: keyVaultSecretSeederPrincipalId
+        permissions: {
+          secrets: [
+            'get'
+            'list'
+            'set'
+            'delete'
+          ]
+        }
+      }
+    ]
     softDeleteRetentionInDays: 30
     publicNetworkAccess: 'Enabled'
-  }
-}
-
-var keyVaultSecretsOfficerRoleDefinitionId = subscriptionResourceId(
-  'Microsoft.Authorization/roleDefinitions',
-  'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
-)
-
-resource keyVaultSecretsOfficerRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(keyVaultSecretsOfficerPrincipalId)) {
-  name: guid(keyVault.id, keyVaultSecretsOfficerPrincipalId, 'kv-secrets-officer')
-  scope: keyVault
-  properties: {
-    principalId: keyVaultSecretsOfficerPrincipalId
-    roleDefinitionId: keyVaultSecretsOfficerRoleDefinitionId
   }
 }
 

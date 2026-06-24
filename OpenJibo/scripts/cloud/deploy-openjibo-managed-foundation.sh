@@ -85,7 +85,7 @@ deployment_args=(
 )
 
 if [[ -n "$current_principal_id" ]]; then
-  deployment_args+=(--parameters "keyVaultSecretsOfficerPrincipalId=${current_principal_id}")
+  deployment_args+=(--parameters "keyVaultSecretSeederPrincipalId=${current_principal_id}")
 fi
 
 echo "Deploying Open Jibo managed foundation to resource group '${resource_group_name}'" >&2

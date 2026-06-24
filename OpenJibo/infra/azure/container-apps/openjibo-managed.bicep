@@ -36,6 +36,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 
 var logAnalyticsWorkspaceKey = listKeys(logAnalyticsWorkspace.id, '2022-10-01').primarySharedKey
 var registryName = split(registryLoginServer, '.')[0]
+var registryCredentials = listCredentials(resourceId('Microsoft.ContainerRegistry/registries', registryName), '2023-07-01')
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: registryName
@@ -84,10 +85,15 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       registries: [
         {
           server: registryLoginServer
-          identity: 'system'
+          username: registryName
+          passwordSecretRef: 'acr-password'
         }
       ]
       secrets: [
+        {
+          name: 'acr-password'
+          value: registryCredentials.passwords[0].value
+        }
         {
           name: 'state-connection-string'
           keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/openjibo-state-connection-string'
@@ -176,33 +182,22 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-var acrPullRoleDefinitionId = subscriptionResourceId(
-  'Microsoft.Authorization/roleDefinitions',
-  '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-)
 
-var keyVaultSecretsUserRoleDefinitionId = subscriptionResourceId(
-  'Microsoft.Authorization/roleDefinitions',
-  '4633458b-17de-408a-b874-0445c86b69e6'
-)
-
-resource registryPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(registry.id, containerApp.name, 'acr-pull')
-  scope: registry
+resource keyVaultContainerAppAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
+  name: '${keyVault.name}/add'
   properties: {
-    principalId: containerApp.identity.principalId
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: acrPullRoleDefinitionId
-  }
-}
-
-resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, containerApp.name, 'kv-secrets-user')
-  scope: keyVault
-  properties: {
-    principalId: containerApp.identity.principalId
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: keyVaultSecretsUserRoleDefinitionId
+    accessPolicies: [
+      {
+        tenantId: subscription().tenantId
+        objectId: containerApp.identity.principalId
+        permissions: {
+          secrets: [
+            'get'
+            'list'
+          ]
+        }
+      }
+    ]
   }
 }
 

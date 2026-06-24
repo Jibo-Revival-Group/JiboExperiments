@@ -581,6 +581,57 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task SchedulerOtaUpdate_UsesRequestBodyFilter()
+    {
+        await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "CreateUpdate",
+            BodyText =
+                """{"fromVersion":"12.10.0","toVersion":"12.10.1","changes":"Robot OTA","subsystem":"robot","length":400}"""
+        });
+
+        await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "CreateUpdate",
+            BodyText =
+                """{"fromVersion":"12.10.0","toVersion":"12.10.1","changes":"Avatar OTA","subsystem":"avatar","length":400}"""
+        });
+
+        var start = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/ota-update",
+            BodyText = """{"filter":"robot"}"""
+        });
+
+        Assert.Equal(200, start.StatusCode);
+
+        await Task.Delay(1000);
+
+        var updates = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "GET",
+            Path = "/update"
+        });
+
+        using var updatesPayload = JsonDocument.Parse(updates.BodyText);
+        Assert.Contains(updatesPayload.RootElement.GetProperty("updates").EnumerateArray(),
+            item => item.GetProperty("subsystem").GetString() == "robot" &&
+                    item.GetProperty("downloaded").GetBoolean());
+        Assert.Contains(updatesPayload.RootElement.GetProperty("updates").EnumerateArray(),
+            item => item.GetProperty("subsystem").GetString() == "avatar" &&
+                    !item.GetProperty("downloaded").GetBoolean());
+    }
+
+    [Fact]
     public async Task SchedulerCheckUpdates_IgnoresSameVersionNoopUpdates()
     {
         await _service.DispatchAsync(new ProtocolEnvelope

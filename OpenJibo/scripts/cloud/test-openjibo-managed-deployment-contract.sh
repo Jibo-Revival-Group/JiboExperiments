@@ -43,7 +43,9 @@ required_foundation_markers=(
   "var resolvedStorageAccountName"
   "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'"
   "publicNetworkAccess: 'Enabled'"
-  "accessPolicies: []"
+  "enableRbacAuthorization: true"
+  "param secretSeedPrincipalId string = ''"
+  "keyVaultSecretsOfficerRoleDefinitionId"
 )
 
 required_managed_markers=(
@@ -53,6 +55,8 @@ required_managed_markers=(
   "keyVaultUrl: 'https://"
   "var logAnalyticsWorkspaceKey"
   "value: 'AzureBlob'"
+  "keyVaultContainerAppSecretsUserRoleAssignment"
+  "keyVaultSecretsUserRoleDefinitionId"
 )
 
 required_workflow_markers=(
@@ -91,13 +95,18 @@ if [[ "$foundation_script_text" != *"openjibo-media-connection-string"* ]]; then
   exit 1
 fi
 
-if [[ "$foundation_script_text" != *"keyvault set-policy"* ]]; then
-  echo "Foundation script does not grant the secret seed access policy after deployment." >&2
+if [[ "$foundation_script_text" != *"secretSeedPrincipalId"* ]]; then
+  echo "Foundation script does not pass the secret seed RBAC principal to the deployment." >&2
   exit 1
 fi
 
 if [[ "$managed_script_text" != *"RegistryName"* ]]; then
   echo "Managed deploy script is missing the registry parameter path." >&2
+  exit 1
+fi
+
+if [[ "$linux_foundation_script_text" != *"secretSeedPrincipalId"* ]]; then
+  echo "Linux foundation script does not pass the secret seed RBAC principal to the deployment." >&2
   exit 1
 fi
 
@@ -122,7 +131,7 @@ if [[ "$linux_managed_script_text" != *"--run-smoke"* ]]; then
   exit 1
 fi
 
-for forbidden_marker in "OPENJIBO_MEDIA_CONNECTION_STRING" "OPENJIBO_STATE_CONNECTION_STRING" "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING" "openjiboacr" "openjibokv" "-MediaConnectionString" "output storageConnectionString" "listKeys(storageAccount"; do
+for forbidden_marker in "OPENJIBO_MEDIA_CONNECTION_STRING" "OPENJIBO_STATE_CONNECTION_STRING" "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING" "openjiboacr" "openjibokv" "-MediaConnectionString" "output storageConnectionString" "listKeys(storageAccount" "keyvault set-policy" "accessPolicies:"; do
   if [[ "$workflow_text" == *"$forbidden_marker"* ]]; then
     echo "Workflow still references forbidden marker: $forbidden_marker" >&2
     exit 1

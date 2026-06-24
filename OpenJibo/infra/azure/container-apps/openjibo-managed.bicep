@@ -37,6 +37,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 var logAnalyticsWorkspaceKey = listKeys(logAnalyticsWorkspace.id, '2022-10-01').primarySharedKey
 var registryName = split(registryLoginServer, '.')[0]
 var registryCredentials = listCredentials(resourceId('Microsoft.ContainerRegistry/registries', registryName), '2023-07-01')
+var keyVaultSecretsUserRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: registryName
@@ -183,21 +184,13 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
 }
 
 
-resource keyVaultContainerAppAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
-  name: '${keyVault.name}/add'
+resource keyVaultContainerAppSecretsUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, containerApp.identity.principalId, keyVaultSecretsUserRoleDefinitionId)
+  scope: keyVault
   properties: {
-    accessPolicies: [
-      {
-        tenantId: subscription().tenantId
-        objectId: containerApp.identity.principalId
-        permissions: {
-          secrets: [
-            'get'
-            'list'
-          ]
-        }
-      }
-    ]
+    principalId: containerApp.identity.principalId
+    roleDefinitionId: keyVaultSecretsUserRoleDefinitionId
+    principalType: 'ServicePrincipal'
   }
 }
 

@@ -28,6 +28,11 @@ param keyVaultName string = ''
 @description('Name of the storage account used by Open Jibo managed. Leave blank to use the standard Open Jibo generated name.')
 param storageAccountName string = ''
 
+@description('Object ID for the principal that seeds foundation Key Vault secrets. Leave blank to skip the seed role assignment.')
+param secretSeedPrincipalId string = ''
+
+var keyVaultSecretsOfficerRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')
+
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: resolvedLogAnalyticsWorkspaceName
   location: location
@@ -61,7 +66,16 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     }
     softDeleteRetentionInDays: 30
     publicNetworkAccess: 'Enabled'
-    accessPolicies: []
+    enableRbacAuthorization: true
+  }
+}
+
+resource keyVaultSecretSeedRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(secretSeedPrincipalId)) {
+  name: guid(keyVault.id, secretSeedPrincipalId, keyVaultSecretsOfficerRoleDefinitionId)
+  scope: keyVault
+  properties: {
+    principalId: secretSeedPrincipalId
+    roleDefinitionId: keyVaultSecretsOfficerRoleDefinitionId
   }
 }
 

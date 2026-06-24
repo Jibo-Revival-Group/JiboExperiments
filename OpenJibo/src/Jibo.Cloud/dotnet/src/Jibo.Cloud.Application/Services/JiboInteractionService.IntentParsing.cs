@@ -831,13 +831,43 @@ public sealed partial class JiboInteractionService
 
     private static bool IsDanceQuestion(string loweredTranscript)
     {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
         return MatchesAny(
-            loweredTranscript,
+            normalized,
             "do you like to dance",
             "do you like dancing",
             "what kind of dance do you like",
             "what kind of dancing do you like",
             "do you enjoy dancing");
+    }
+
+    private static bool IsDanceAbilityQuestion(string loweredTranscript)
+    {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        return normalized is
+            "can you dance" or
+            "could you dance" or
+            "would you dance" or
+            "will you dance" or
+            "do you dance" or
+            "are you able to dance" or
+            "do you know how to dance";
+    }
+
+    private static bool IsDanceCommand(string loweredTranscript)
+    {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        return normalized is
+                   "dance" or
+                   "boogie" or
+                   "do a dance" or
+                   "do your dance" or
+                   "show me a dance" or
+                   "show us a dance" or
+                   "dance for me" or
+                   "dance with me" ||
+               normalized.StartsWith("dance ", StringComparison.Ordinal) ||
+               normalized.StartsWith("boogie ", StringComparison.Ordinal);
     }
 
     private static bool IsRobotBirthdayQuestion(string loweredTranscript)

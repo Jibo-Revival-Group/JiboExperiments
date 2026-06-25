@@ -51,6 +51,14 @@ required_foundation_markers=(
   "enableRbacAuthorization: false"
   "param seedPrincipalObjectId string = ''"
   "resource keyVaultSecretSeedAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01'"
+  "resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-preview'"
+  "resource postgresStateDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-06-01-preview'"
+  "resource postgresPersonalMemoryDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-06-01-preview'"
+  "resource postgresAllowAzureServicesFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2023-06-01-preview'"
+  "param postgresDeploymentRunnerFirewallIpAddress string = ''"
+  "output postgresFullyQualifiedDomainName string"
+  "output postgresStateDatabaseName string"
+  "output postgresPersonalMemoryDatabaseName string"
 )
 
 required_managed_markers=(
@@ -60,10 +68,13 @@ required_managed_markers=(
   "OpenJibo__CanonicalApiHostname"
   "OpenJibo__CanonicalApiBaseUrl"
   "output canonicalApiHostname string"
+  "output containerAppName string"
+  "output managedEnvironmentName string"
   "secretRef: 'media-connection-string'"
   "keyVaultSecretBaseUrl"
   "environment().suffixes.keyvaultDns"
   "var logAnalyticsWorkspaceKey"
+  "value: 'PostgreSql'"
   "value: 'AzureBlob'"
   "keyVaultContainerAppSecretAccessPolicy"
 )
@@ -80,6 +91,8 @@ required_workflow_markers=(
   "api_hostname"
   "api.openjibo.com"
   "--api-hostname"
+  "--run-migration"
+  "--run-smoke"
 )
 
 for marker in "${required_foundation_markers[@]}"; do
@@ -103,35 +116,31 @@ for marker in "${required_workflow_markers[@]}"; do
   fi
 done
 
-if [[ "$foundation_script_text" != *"openjibo-media-connection-string"* ]]; then
-  echo "Foundation script does not seed the media connection string secret." >&2
-  exit 1
-fi
+for marker in "openjibo-media-connection-string" "openjibo-postgres-admin-password" "postgresFullyQualifiedDomainName" "Invoke-OpenJiboAzWithRetry"; do
+  if [[ "$foundation_script_text" != *"$marker"* ]]; then
+    echo "Foundation script is missing expected marker: $marker" >&2
+    exit 1
+  fi
+done
 
 if [[ "$foundation_script_text" != *"seedPrincipalObjectId"* ]]; then
   echo "Foundation script does not pass the secret seed access policy principal to the deployment." >&2
   exit 1
 fi
 
-if [[ "$managed_script_text" != *"RegistryName"* ]]; then
-  echo "Managed deploy script is missing the registry parameter path." >&2
-  exit 1
-fi
+for marker in "RegistryName" "ApiHostname" "containerapp hostname bind" "SkipHostnameBinding"; do
+  if [[ "$managed_script_text" != *"$marker"* ]]; then
+    echo "Managed deploy script is missing expected marker: $marker" >&2
+    exit 1
+  fi
+done
 
-if [[ "$managed_script_text" != *"ApiHostname"* ]]; then
-  echo "Managed deploy script is missing the canonical API hostname parameter path." >&2
-  exit 1
-fi
-
-if [[ "$linux_foundation_script_text" != *"seedPrincipalObjectId"* ]]; then
-  echo "Linux foundation script does not pass the secret seed access policy principal to the deployment." >&2
-  exit 1
-fi
-
-if [[ "$linux_foundation_script_text" != *"openjibo-media-connection-string"* ]]; then
-  echo "Linux foundation script does not seed the media connection string secret." >&2
-  exit 1
-fi
+for marker in "seedPrincipalObjectId" "openjibo-media-connection-string" "openjibo-postgres-admin-password" "postgresFullyQualifiedDomainName" "run_command_with_retry"; do
+  if [[ "$linux_foundation_script_text" != *"$marker"* ]]; then
+    echo "Linux foundation script is missing expected marker: $marker" >&2
+    exit 1
+  fi
+done
 
 storage_connection_marker='"az", "storage", "account", "show-connection-string"'
 if [[ "$linux_foundation_script_text" != *"$storage_connection_marker"* ]]; then
@@ -144,15 +153,12 @@ if [[ "$linux_publish_script_text" != *"az acr build"* ]]; then
   exit 1
 fi
 
-if [[ "$linux_managed_script_text" != *"--run-smoke"* ]]; then
-  echo "Linux managed deploy script is missing the managed smoke path." >&2
-  exit 1
-fi
-
-if [[ "$linux_managed_script_text" != *"--api-hostname"* ]]; then
-  echo "Linux managed deploy script is missing the canonical API hostname parameter path." >&2
-  exit 1
-fi
+for marker in "--run-smoke" "--run-migration" "--api-hostname" "az containerapp hostname bind" "--skip-hostname-binding"; do
+  if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
+    echo "Linux managed deploy script is missing expected marker: $marker" >&2
+    exit 1
+  fi
+done
 
 if [[ "$smoke_script_text" == *'Host = "api.jibo.com"'* ]]; then
   echo "Managed smoke script still hardcodes the api.jibo.com host header." >&2

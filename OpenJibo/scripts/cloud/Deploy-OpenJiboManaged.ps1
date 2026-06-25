@@ -7,6 +7,7 @@ param(
 
     [string]$ImageTag = "managed",
     [string]$Location = "",
+    [string]$ApiHostname = "api.openjibo.com",
     [Parameter(Mandatory = $true)]
     [string]$RegistryName,
     [string]$TemplatePath = "infra/azure/container-apps/openjibo-managed.bicep",
@@ -48,7 +49,8 @@ $arguments = @(
     "--parameters", "@$resolvedParametersPath",
     "--parameters", "registryLoginServer=$RegistryLoginServer",
     "--parameters", "keyVaultName=$KeyVaultName",
-    "--parameters", "imageTag=$ImageTag"
+    "--parameters", "imageTag=$ImageTag",
+    "--parameters", "apiHostname=$ApiHostname"
 )
 
 if (-not [string]::IsNullOrWhiteSpace($Location)) {
@@ -71,13 +73,19 @@ if ($RunMigration) {
 }
 
 if ($RunSmoke) {
-    $containerAppFqdn = $deploymentJson.properties.outputs.containerAppFqdn.value
-    if ([string]::IsNullOrWhiteSpace($containerAppFqdn)) {
-        throw "Container app FQDN was not returned from the deployment."
+    $smokeBaseUrl = if (-not [string]::IsNullOrWhiteSpace($ApiHostname)) {
+        "https://$ApiHostname"
+    } else {
+        $containerAppFqdn = $deploymentJson.properties.outputs.containerAppFqdn.value
+        if ([string]::IsNullOrWhiteSpace($containerAppFqdn)) {
+            throw "Container app FQDN was not returned from the deployment."
+        }
+
+        "https://$containerAppFqdn"
     }
 
     $smokeScript = Join-Path $repoRoot "scripts/cloud/Invoke-CloudSmoke.ps1"
-    & $smokeScript -BaseUrl "https://$containerAppFqdn"
+    & $smokeScript -BaseUrl $smokeBaseUrl
 }
 
 $deploymentJson

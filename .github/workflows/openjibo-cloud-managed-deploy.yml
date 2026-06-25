@@ -11,6 +11,10 @@ on:
         description: Optional Azure region override for the Container Apps stack (for example eastus2)
         required: false
         default: ""
+      api_hostname:
+        description: Canonical robot-facing hosted API hostname
+        required: false
+        default: api.openjibo.com
 
 jobs:
   deploy:
@@ -83,6 +87,7 @@ jobs:
           --key-vault-name "${{ steps.foundation.outputs.keyVaultName }}"
           --registry-name "${{ steps.foundation.outputs.registryName }}"
           --image-tag "${{ inputs.image_tag }}"
+          --api-hostname "${{ inputs.api_hostname }}"
           ${{ inputs.location != '' && format('--location {0}', inputs.location) || '' }}
           --run-smoke
         env:

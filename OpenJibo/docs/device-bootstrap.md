@@ -6,7 +6,7 @@ The first supported OpenJibo recovery path is:
 
 ```text
 QR Wi-Fi -> inject OpenJibo region config -> set robot region ->
-RCM/device patch -> Azure-hosted OpenJibo cloud
+RCM/device patch -> Azure-hosted OpenJibo cloud at api.openjibo.com
 ```
 
 This is the path we can document, repeat, and improve.
@@ -24,10 +24,10 @@ The extracted-image file map lives in [robot-image-script-map.md](robot-image-sc
 ## Bootstrap Checklist
 
 1. Connect the robot to a controlled Wi-Fi network.
-2. Add an OpenJibo region entry to `/etc/jibo-jetstream-service.json`.
-3. Set the robot `region` field in `/var/jibo/credentials.json` to the OpenJibo region.
+2. Add an OpenJibo region entry to `/etc/jibo-jetstream-service.json` that points `entrypoint_hostname` to `api.openjibo.com`.
+3. Set the robot `region` field in `/var/jibo/credentials.json` to the OpenJibo region after audit, plan, and backup are complete.
 4. Gain RCM/device access for targeted TLS or host validation changes.
-5. Verify robot startup, token flow, socket flow, and first-turn behavior.
+5. Verify robot startup, token flow, socket flow, and first-turn behavior against the Azure-hosted Open Jibo API.
 
 ## Easy Button Flow
 
@@ -52,7 +52,7 @@ Current findings suggest the preferred OpenJibo bootstrap path is to inject a ne
 Confirmed paths:
 
 - `/etc/jibo-jetstream-service.json`
-  Add an OpenJibo region definition that points Jibo to our cloud.
+  Add an OpenJibo region definition that points Jibo to our cloud. The default managed target is `api.openjibo.com` for the robot-facing API entrypoint. The hub hostname defaults to the same hostname until live testing proves a separate `neo-hub.openjibo.com` boundary is needed.
 - `/var/jibo/credentials.json`
   Set the robot `region` field to the injected OpenJibo region.
 
@@ -68,9 +68,9 @@ These should be treated as configuration discovery targets, not yet as the autho
 
 The currently relevant public hostnames for the OpenJibo cloud path are:
 
-- `api.jibo.com`
-- `api-socket.jibo.com`
-- `neo-hub.jibo.com`
+- `api.openjibo.com`: canonical managed Open Jibo robot-facing API entrypoint
+- `neo-hub.openjibo.com`: reserved for a later split if listen/proactive traffic needs a distinct ingress or certificate boundary
+- `api.jibo.com`, `api-socket.jibo.com`, and `neo-hub.jibo.com`: historical stock hostnames that the conversion path should preserve as rollback evidence, not use as the managed Open Jibo target
 
 ## Scripted Helpers
 
@@ -87,6 +87,16 @@ Bootstrap helper scripts live in [scripts/bootstrap](/OpenJibo/scripts/bootstrap
 - `Test-OpenJiboRouting.ps1`
 
 These are intentionally conservative helpers for discovery and verification, not destructive patch tools. The Linux shell helpers are the canonical robot-facing conversion path; the PowerShell helpers remain useful for local staging and analysis.
+
+Example managed conversion planning command:
+
+```bash
+./scripts/bootstrap/invoke-openjibo-conversion.sh \
+  --robot-root /mnt/jibo-root \
+  --target-mode open-jibo \
+  --api-hostname api.openjibo.com \
+  --strict
+```
 
 For the currently verified physical-device local setup, including the tested
 `.NET` server command, region caveat, persistent init script, TLS patch, and

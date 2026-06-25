@@ -24,6 +24,9 @@ param keyVaultName string
 @description('Tag for the managed Open Jibo image.')
 param imageTag string = 'managed'
 
+@description('Canonical robot-facing hosted API hostname. This should match the hostname written by the robot conversion helpers.')
+param apiHostname string = 'api.openjibo.com'
+
 @description('Minimum number of replicas for the runtime container.')
 param minReplicas int = 1
 
@@ -36,6 +39,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 
 var registryName = split(registryLoginServer, '.')[0]
 var keyVaultSecretBaseUrl = 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets'
+var canonicalApiBaseUrl = 'https://${apiHostname}'
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: registryName
@@ -138,6 +142,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'http://+:8080'
             }
             {
+              name: 'OpenJibo__CanonicalApiHostname'
+              value: apiHostname
+            }
+            {
+              name: 'OpenJibo__CanonicalApiBaseUrl'
+              value: canonicalApiBaseUrl
+            }
+            {
               name: 'OpenJibo__State__Backend'
               value: 'AzureBlob'
             }
@@ -205,3 +217,5 @@ resource keyVaultContainerAppSecretAccessPolicy 'Microsoft.KeyVault/vaults/acces
 }
 
 output containerAppFqdn string = containerApp.properties.configuration.ingress.fqdn
+output canonicalApiHostname string = apiHostname
+output canonicalApiBaseUrl string = canonicalApiBaseUrl

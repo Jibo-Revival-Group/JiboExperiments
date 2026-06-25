@@ -3,6 +3,8 @@ set -euo pipefail
 
 robot_root=""
 target_mode="open-jibo"
+api_hostname="api.openjibo.com"
+hub_hostname=""
 output_path=""
 strict=false
 
@@ -14,6 +16,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --target-mode)
       target_mode="${2:-open-jibo}"
+      shift 2
+      ;;
+    --api-hostname)
+      api_hostname="${2:-api.openjibo.com}"
+      shift 2
+      ;;
+    --hub-hostname)
+      hub_hostname="${2:-}"
       shift 2
       ;;
     --output-path)
@@ -52,14 +62,16 @@ fi
 
 "$audit_script" "${audit_args[@]}" >/dev/null
 
-node - "$temp_audit_path" "$target_mode" "$output_path" "$strict" <<'NODE'
+node - "$temp_audit_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict" <<'NODE'
 const fs = require("fs");
 const path = require("path");
 
 const auditPath = path.resolve(process.argv[2]);
 const targetMode = process.argv[3];
-const outputPath = (process.argv[4] || "").trim();
-const strict = String(process.argv[5]).toLowerCase() === "true";
+const apiHostname = (process.argv[4] || "api.openjibo.com").trim() || "api.openjibo.com";
+const hubHostname = (process.argv[5] || "").trim() || apiHostname;
+const outputPath = (process.argv[6] || "").trim();
+const strict = String(process.argv[7]).toLowerCase() === "true";
 
 const audit = JSON.parse(fs.readFileSync(auditPath, "utf8"));
 const recommendations = (audit.Recommendations || []).filter(item => String(item).trim().length > 0);
@@ -74,7 +86,8 @@ const proposedChanges = [
     Details: [
       "preserve stock region where possible",
       `add target mode region entry for ${targetMode}`,
-      "keep Open Jibo hostnames aligned with the documented bootstrap path",
+      `set entrypoint_hostname to ${apiHostname}`,
+      `set hub_hostname to ${hubHostname}`,
     ],
   },
   {
@@ -91,6 +104,7 @@ const proposedChanges = [
     Details: [
       "keep the setup payload compatible with the classic QR decoder",
       "record first-boot pending state without destroying existing owner data",
+      `record canonical API hostname ${apiHostname}`,
     ],
   },
 ];
@@ -105,6 +119,8 @@ const rollbackPlan = [
 const plan = {
   RobotRoot: audit.RobotRoot,
   TargetMode: targetMode,
+  ApiHostname: apiHostname,
+  HubHostname: hubHostname,
   ExistingMode: existingMode,
   RequiresAttention: requiresAttention,
   CanApply: canApply,
@@ -129,6 +145,7 @@ const plan = {
     "verify the audit report is clean enough for the target device",
     "take a backup before any write helper runs",
     "confirm the conversion mode target with the owner",
+    "confirm api.openjibo.com DNS/custom-domain routing is ready before physical robot conversion",
   ],
 };
 

@@ -88,6 +88,9 @@ public static class IdentityGraphEvidenceBundleVerifier
         var revocationChecks = SplitCsv(Get(payloadFields, "admission-revocation-checks"));
         var revocationAnchors = SplitCsv(Get(payloadFields, "admission-revocation-anchors"));
         var revocationListHash = Get(payloadFields, "admission-revocation-list-hash");
+        var peerTransportStatus = Get(payloadFields, "peer-transport-status");
+        var replicationReadiness = Get(payloadFields, "replication-readiness");
+        var syncDirection = Get(payloadFields, "sync-direction");
         var admissionDecisionHash = Get(payloadFields, "admission-decision-hash");
         var admissionSignatureKeyId = Get(payloadFields, "admission-signature-key-id");
         var admissionSignature = Get(payloadFields, "admission-signature");
@@ -150,6 +153,9 @@ public static class IdentityGraphEvidenceBundleVerifier
             RevocationChecks = revocationChecks,
             RevocationAnchors = revocationAnchors,
             RevocationListHash = revocationListHash,
+            PeerTransportStatus = peerTransportStatus,
+            ReplicationReadiness = replicationReadiness,
+            SyncDirection = syncDirection,
             LocalRevocationMatches = localRevocationMatches,
             AdmissionDecisionHash = admissionDecisionHash,
             ComputedAdmissionDecisionHash = computedAdmissionDecisionHash,

@@ -855,6 +855,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             RevocationChecks = admissionAssessment.RevocationChecks,
             RevocationAnchors = admissionAssessment.RevocationAnchors,
             RevocationListHash = admissionAssessment.RevocationListHash,
+            PeerTransportStatus = "not-enabled",
+            ReplicationReadiness = admissionAssessment.Recommendation.Equals("admit", StringComparison.OrdinalIgnoreCase)
+                ? "ready-for-retention"
+                : "blocked-by-admission",
+            SyncDirection = "snapshot-retention-only",
             PeopleCount = peopleCount,
             MemberCount = memberCount,
             RelationshipCount = relationshipCount,
@@ -921,6 +926,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"admission-revocation-checks|{string.Join(',', admissionAssessment.RevocationChecks.Order(StringComparer.Ordinal))}",
             $"admission-revocation-anchors|{string.Join(',', admissionAssessment.RevocationAnchors.Order(StringComparer.Ordinal))}",
             $"admission-revocation-list-hash|{admissionAssessment.RevocationListHash}",
+            "peer-transport-status|not-enabled",
+            $"replication-readiness|{(admissionAssessment.Recommendation.Equals("admit", StringComparison.OrdinalIgnoreCase) ? "ready-for-retention" : "blocked-by-admission")}",
+            "sync-direction|snapshot-retention-only",
             $"admission-decision-hash|{admissionAssessment.DecisionHash}",
             $"admission-signature-key-id|{admissionAssessment.SignatureKeyId}",
             $"admission-signature|{admissionAssessment.Signature}"

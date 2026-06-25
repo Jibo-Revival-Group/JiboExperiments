@@ -20,6 +20,9 @@ public sealed class IdentityGraphEvidenceBundle
     public IReadOnlyList<string> RevocationChecks { get; init; } = [];
     public IReadOnlyList<string> RevocationAnchors { get; init; } = [];
     public string RevocationListHash { get; init; } = string.Empty;
+    public string PeerTransportStatus { get; init; } = "not-enabled";
+    public string ReplicationReadiness { get; init; } = "blocked";
+    public string SyncDirection { get; init; } = "snapshot-retention-only";
     public int PeopleCount { get; init; }
     public int MemberCount { get; init; }
     public int RelationshipCount { get; init; }

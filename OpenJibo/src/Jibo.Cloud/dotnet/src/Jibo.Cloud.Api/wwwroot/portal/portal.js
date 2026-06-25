@@ -138,6 +138,9 @@ async function renderIdentityGraphPanel() {
           <div class="meta-item"><span>Admission signature</span><span title="${escapeHtml(graph.admissionAssessment?.signature || "")}">${escapeHtml(shortHash(graph.admissionAssessment?.signature))}</span></div>
           <div class="meta-item"><span>Evidence bundle</span><span title="${escapeHtml(graph.evidenceBundle?.bundleHash || "")}">${escapeHtml(shortHash(graph.evidenceBundle?.bundleHash))}</span></div>
           <div class="meta-item"><span>Bundle signature</span><span title="${escapeHtml(graph.evidenceBundle?.signature || "")}">${escapeHtml(shortHash(graph.evidenceBundle?.signature))}</span></div>
+          <div class="meta-item"><span>Peer transport</span><span>${escapeHtml(graph.evidenceBundle?.peerTransportStatus || "not-enabled")}</span></div>
+          <div class="meta-item"><span>Replication readiness</span><span>${escapeHtml(graph.evidenceBundle?.replicationReadiness || "blocked")}</span></div>
+          <div class="meta-item"><span>Sync direction</span><span>${escapeHtml(graph.evidenceBundle?.syncDirection || "snapshot-retention-only")}</span></div>
           <div class="meta-item"><span>Satisfied evidence</span><span>${escapeHtml((graph.admissionAssessment?.satisfiedEvidence || []).join(", ") || "—")}</span></div>
           <div class="meta-item"><span>Blocking evidence</span><span>${escapeHtml((graph.admissionAssessment?.blockingEvidence || []).join(", ") || "—")}</span></div>
           <div class="meta-item"><span>Recommended actions</span><span>${escapeHtml((graph.admissionAssessment?.recommendedActions || []).join(", ") || "—")}</span></div>

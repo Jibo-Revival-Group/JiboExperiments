@@ -453,6 +453,8 @@ public sealed class IdentityGraphSnapshotTests
 
         Assert.Equal("admit", admitted.EvidenceBundle.AdmissionRecommendation);
         Assert.Equal("quarantine", quarantined.EvidenceBundle.AdmissionRecommendation);
+        Assert.Equal("ready-for-retention", admitted.EvidenceBundle.ReplicationReadiness);
+        Assert.Equal("blocked-by-admission", quarantined.EvidenceBundle.ReplicationReadiness);
         Assert.NotEqual(admitted.EvidenceBundle.Payload, quarantined.EvidenceBundle.Payload);
         Assert.NotEqual(admitted.EvidenceBundle.Envelope, quarantined.EvidenceBundle.Envelope);
         Assert.NotEqual(admitted.EvidenceBundle.BundleHash, quarantined.EvidenceBundle.BundleHash);
@@ -586,6 +588,15 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.RevocationChecks, verification.RevocationChecks);
         Assert.Equal(graph.EvidenceBundle.RevocationAnchors, verification.RevocationAnchors);
         Assert.Equal(graph.EvidenceBundle.RevocationListHash, verification.RevocationListHash);
+        Assert.Equal("not-enabled", graph.EvidenceBundle.PeerTransportStatus);
+        Assert.Equal("ready-for-retention", graph.EvidenceBundle.ReplicationReadiness);
+        Assert.Equal("snapshot-retention-only", graph.EvidenceBundle.SyncDirection);
+        Assert.Equal(graph.EvidenceBundle.PeerTransportStatus, verification.PeerTransportStatus);
+        Assert.Equal(graph.EvidenceBundle.ReplicationReadiness, verification.ReplicationReadiness);
+        Assert.Equal(graph.EvidenceBundle.SyncDirection, verification.SyncDirection);
+        Assert.Contains("peer-transport-status|not-enabled", graph.EvidenceBundle.Payload);
+        Assert.Contains("replication-readiness|ready-for-retention", graph.EvidenceBundle.Payload);
+        Assert.Contains("sync-direction|snapshot-retention-only", graph.EvidenceBundle.Payload);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.ComputedAdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionSignature, verification.AdmissionSignature);

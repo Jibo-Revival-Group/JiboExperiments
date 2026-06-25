@@ -56,6 +56,10 @@ required_foundation_markers=(
 required_managed_markers=(
   "param registryLoginServer string"
   "param keyVaultName string"
+  "param apiHostname string = 'api.openjibo.com'"
+  "OpenJibo__CanonicalApiHostname"
+  "OpenJibo__CanonicalApiBaseUrl"
+  "output canonicalApiHostname string"
   "secretRef: 'media-connection-string'"
   "keyVaultSecretBaseUrl"
   "environment().suffixes.keyvaultDns"
@@ -73,6 +77,9 @@ required_workflow_markers=(
   "steps.foundation.outputs.registryName"
   "steps.foundation.outputs.keyVaultName"
   "inputs.location"
+  "api_hostname"
+  "api.openjibo.com"
+  "--api-hostname"
 )
 
 for marker in "${required_foundation_markers[@]}"; do
@@ -111,6 +118,11 @@ if [[ "$managed_script_text" != *"RegistryName"* ]]; then
   exit 1
 fi
 
+if [[ "$managed_script_text" != *"ApiHostname"* ]]; then
+  echo "Managed deploy script is missing the canonical API hostname parameter path." >&2
+  exit 1
+fi
+
 if [[ "$linux_foundation_script_text" != *"seedPrincipalObjectId"* ]]; then
   echo "Linux foundation script does not pass the secret seed access policy principal to the deployment." >&2
   exit 1
@@ -134,6 +146,11 @@ fi
 
 if [[ "$linux_managed_script_text" != *"--run-smoke"* ]]; then
   echo "Linux managed deploy script is missing the managed smoke path." >&2
+  exit 1
+fi
+
+if [[ "$linux_managed_script_text" != *"--api-hostname"* ]]; then
+  echo "Linux managed deploy script is missing the canonical API hostname parameter path." >&2
   exit 1
 fi
 

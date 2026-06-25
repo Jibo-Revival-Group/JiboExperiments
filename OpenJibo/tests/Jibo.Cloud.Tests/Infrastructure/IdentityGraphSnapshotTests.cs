@@ -143,6 +143,35 @@ public sealed class IdentityGraphSnapshotTests
             relationship.ObjectId == "usr-family-member");
     }
 
+
+    [Fact]
+    public void GetIdentityGraph_IncludesAdditionalLoopRobotAsServedDeviceRelationship()
+    {
+        var store = new InMemoryCloudStateStore();
+        var loopId = store.GetLoops()[0].LoopId;
+        var secondRobot = store.GetOrCreateDevice("BOJW-SECONDARY-0001", "1.9.2", "1.0.20");
+
+        store.AddLoopMember(loopId, secondRobot.RobotId, null, "Kitchen", "Jibo", "unknown", null, false,
+            "robot");
+
+        var graph = store.GetIdentityGraph(loopId);
+
+        Assert.Contains(graph.Members, member =>
+            member.Type == "robot" && member.AccountId == secondRobot.RobotId && member.Status == "active");
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == loopId &&
+            relationship.SubjectKind == "loop" &&
+            relationship.Relationship == "served-by" &&
+            relationship.ObjectId == secondRobot.RobotId &&
+            relationship.ObjectKind == "robot");
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == secondRobot.RobotId &&
+            relationship.SubjectKind == "robot" &&
+            relationship.Relationship == "runs-on" &&
+            relationship.ObjectId == secondRobot.DeviceId &&
+            relationship.ObjectKind == "device");
+    }
+
     [Fact]
     public void GetIdentityGraph_IncludesEnrollmentRelationshipsForRecognizedLoopMembers()
     {

@@ -13,7 +13,8 @@ param(
     [string]$TemplatePath = "infra/azure/container-apps/openjibo-managed.bicep",
     [string]$ParametersPath = "infra/azure/container-apps/openjibo-managed.parameters.json",
     [switch]$RunMigration,
-    [switch]$RunSmoke
+    [switch]$RunSmoke,
+    [switch]$SkipHostnameBinding
 )
 
 $ErrorActionPreference = "Stop"
@@ -61,6 +62,20 @@ $arguments += @("--output", "json")
 
 Write-Host "Deploying Open Jibo managed Container Apps stack to resource group '$ResourceGroupName'"
 $deploymentJson = az @arguments | ConvertFrom-Json
+
+if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostname)) {
+    $containerAppName = $deploymentJson.properties.outputs.containerAppName.value
+    if ([string]::IsNullOrWhiteSpace($containerAppName)) {
+        throw "Container app name was not returned from the deployment."
+    }
+
+    Write-Host "Binding '$ApiHostname' to Container App '$containerAppName'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate."
+    az containerapp hostname bind `
+        --resource-group $ResourceGroupName `
+        --name $containerAppName `
+        --hostname $ApiHostname `
+        --output none
+}
 
 if ($RunMigration) {
     $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv

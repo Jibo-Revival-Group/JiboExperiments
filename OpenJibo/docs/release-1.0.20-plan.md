@@ -144,6 +144,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added signed revocation check and revocation anchor fields to the identity graph admission decision and offline evidence bundle so future peer admission can bind admit/quarantine decisions to the device, robot, certificate, and issued-identity handles used for revocation review
 - added a local identity-graph revocation deny list so any matching device/robot/certificate/issued-identity anchor forces quarantine, signs the revocation match into the admission decision, and carries the blocking reason into offline evidence bundles before peer replication trusts retained artifacts
 - exposed identity-graph revocation recording through the portal API and dashboard so owners/operators can quarantine a signed admission bundle by anchor, immediately regenerate the signed decision, and retain the quarantined evidence bundle before peer replication exists
+- expanded offline evidence bundle verification with a local revocation deny-list input so retained bundles can remain cryptographically valid while still producing an effective quarantine decision when a receiving peer has already revoked one of the signed device, robot, certificate, or issued-identity anchors
 
 ## Working Order
 

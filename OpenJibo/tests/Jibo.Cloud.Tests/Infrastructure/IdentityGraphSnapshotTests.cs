@@ -571,6 +571,41 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.RelationshipKinds, verification.RelationshipKinds);
         Assert.Equal(graph.EvidenceBundle.EvidenceSignalKinds, verification.EvidenceSignalKinds);
         Assert.Empty(verification.BlockingEvidence);
+        Assert.Empty(verification.LocalRevocationMatches);
+        Assert.Equal("admit", verification.EffectiveAdmissionRecommendation);
+        Assert.True(verification.IsLocallyAdmissible);
+    }
+
+    [Fact]
+    public void VerifyEvidenceBundleEnvelope_AppliesLocalRevocationDenyListWithoutChangingSignedPayloadValidity()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var graph = store.GetIdentityGraph();
+
+        var verification = IdentityGraphEvidenceBundleVerifier.Verify(
+            graph.EvidenceBundle.Envelope,
+            ["device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020"]);
+
+        Assert.True(verification.IsValid);
+        Assert.Empty(verification.Errors);
+        Assert.Equal("admit", verification.AdmissionRecommendation);
+        Assert.Equal("quarantine", verification.EffectiveAdmissionRecommendation);
+        Assert.False(verification.IsLocallyAdmissible);
+        Assert.Contains(
+            "device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020",
+            verification.LocalRevocationMatches);
+        Assert.True(verification.AdmissionDecisionSignatureValid);
+        Assert.True(verification.SnapshotSignatureValid);
     }
 
     [Fact]

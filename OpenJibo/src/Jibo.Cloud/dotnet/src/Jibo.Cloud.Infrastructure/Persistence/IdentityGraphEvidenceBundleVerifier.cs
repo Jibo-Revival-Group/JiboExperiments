@@ -14,12 +14,14 @@ public static class IdentityGraphEvidenceBundleVerifier
     private const string ExpectedAdmissionSignatureKeyId = "open-jibo-local-admission-v1";
     private const string IdentityGraphSigningKey = "open-jibo-local-identity-graph-development-key";
 
-    public static IdentityGraphEvidenceBundleVerification Verify(string? envelope)
+    public static IdentityGraphEvidenceBundleVerification Verify(string? envelope, IEnumerable<string>? localRevokedAnchors = null)
     {
         if (string.IsNullOrWhiteSpace(envelope))
         {
             return new IdentityGraphEvidenceBundleVerification
             {
+                IsLocallyAdmissible = false,
+                EffectiveAdmissionRecommendation = "quarantine",
                 Errors = ["missing-envelope"]
             };
         }
@@ -118,9 +120,18 @@ public static class IdentityGraphEvidenceBundleVerifier
         if (!admissionSignature.Equals(computedAdmissionSignature, StringComparison.OrdinalIgnoreCase))
             errors.Add("admission-signature-mismatch");
 
+        var localRevocationMatches = MatchLocalRevocationAnchors(revocationAnchors, localRevokedAnchors);
+        var effectiveAdmissionRecommendation = admissionRecommendation.Equals("admit", StringComparison.OrdinalIgnoreCase)
+            && localRevocationMatches.Count == 0
+                ? "admit"
+                : "quarantine";
+
         return new IdentityGraphEvidenceBundleVerification
         {
             IsValid = errors.Count == 0,
+            IsLocallyAdmissible = errors.Count == 0
+                && effectiveAdmissionRecommendation.Equals("admit", StringComparison.OrdinalIgnoreCase),
+            EffectiveAdmissionRecommendation = effectiveAdmissionRecommendation,
             EnvelopeVersion = envelopeVersion,
             BundleVersion = bundleVersion,
             BundleHash = bundleHash,
@@ -137,6 +148,7 @@ public static class IdentityGraphEvidenceBundleVerifier
             RecommendedActions = recommendedActions,
             RevocationChecks = revocationChecks,
             RevocationAnchors = revocationAnchors,
+            LocalRevocationMatches = localRevocationMatches,
             AdmissionDecisionHash = admissionDecisionHash,
             ComputedAdmissionDecisionHash = computedAdmissionDecisionHash,
             AdmissionSignature = admissionSignature,
@@ -159,6 +171,21 @@ public static class IdentityGraphEvidenceBundleVerifier
             BlockingEvidence = blockingEvidence,
             Errors = errors
         };
+    }
+
+    private static IReadOnlyList<string> MatchLocalRevocationAnchors(IReadOnlyList<string> bundleAnchors,
+        IEnumerable<string>? localRevokedAnchors)
+    {
+        if (bundleAnchors.Count == 0 || localRevokedAnchors is null)
+            return [];
+
+        var revoked = new HashSet<string>(
+            localRevokedAnchors.Where(anchor => !string.IsNullOrWhiteSpace(anchor)).Select(anchor => anchor.Trim()),
+            StringComparer.OrdinalIgnoreCase);
+        if (revoked.Count == 0)
+            return [];
+
+        return bundleAnchors.Where(revoked.Contains).Order(StringComparer.Ordinal).ToArray();
     }
 
     private static Dictionary<string, string> ParsePipeFields(IEnumerable<string> lines)

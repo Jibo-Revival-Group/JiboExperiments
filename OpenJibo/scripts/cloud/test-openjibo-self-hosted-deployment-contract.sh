@@ -132,6 +132,11 @@ if [[ "$compose_text" != *"docker-entrypoint-initdb.d"* ]]; then
   exit 1
 fi
 
+if [[ "$compose_text" != *"./scripts/cloud/postgres-init:/docker-entrypoint-initdb.d:ro"* ]]; then
+  echo "Self-hosted compose postgres initdb mount points at the wrong path." >&2
+  exit 1
+fi
+
 if [[ "$postgres_init_text" != *"openjibo_memory"* ]]; then
   echo "Self-hosted postgres init script is missing the memory database creation." >&2
   exit 1

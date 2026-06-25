@@ -123,6 +123,10 @@ if ($composeText -match [regex]::Escape("OPENJIBO_MEDIA_CONNECTION_STRING")) {
     throw "Self-hosted compose still references the managed media connection secret."
 }
 
+if ($composeText -notmatch [regex]::Escape("./scripts/cloud/postgres-init:/docker-entrypoint-initdb.d:ro")) {
+    throw "Self-hosted compose postgres initdb mount points at the wrong path."
+}
+
 if ($composeEnvBootstrapText -notmatch [regex]::Escape("OPENJIBO_POSTGRES_PASSWORD")) {
     throw "Compose env bootstrap is missing the PostgreSQL password propagation logic."
 }

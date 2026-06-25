@@ -464,6 +464,9 @@ These are the carryover items that need a clean proof pass first:
   - Test 26 repeated the backup-in-progress warning from robot-local `@be/surprises-ota` without `Backup_*` HTTP traffic
   - Test 27 repeated the same no-`Backup_*` finding and added evidence of local startup reconnect / `Q4-Server_connection_lost` before the test
   - Test 28 showed the same class of surprise handoff beginning at `@be/surprises` after Nimbus, before VAD inhibited the offer
+- Progress update (`2026-06-25`):
+  - added a local scheduler `/apply-update` proof endpoint so a staged update can advance the stored robot firmware version, require reboot, and disappear from subsequent scheduler update checks instead of remaining as a phantom pending update
+  - added focused protocol coverage for staging a controlled robot update, applying it, and verifying the robot profile platform plus empty follow-up `/check-updates` response
 - Exit criteria:
   - no phantom "always has updates" behavior
   - one controlled update can be staged and delivered

@@ -584,6 +584,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             SatisfiedEvidence = assessment.SatisfiedEvidence,
             BlockingEvidence = assessment.BlockingEvidence,
             RecommendedActions = assessment.RecommendedActions,
+            RevocationChecks = assessment.RevocationChecks,
+            RevocationAnchors = assessment.RevocationAnchors,
             DecisionPayload = decisionPayload,
             DecisionHash = decisionHash,
             SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
@@ -640,7 +642,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 Reasons = ["required-corroborating-evidence-present"],
                 RequiredEvidence = requiredEvidence,
                 SatisfiedEvidence = satisfiedEvidence,
-                RecommendedActions = ["record-signed-snapshot-for-peer-admission"]
+                RecommendedActions = ["record-signed-snapshot-for-peer-admission"],
+                RevocationChecks = ["no-local-revocation-evidence"],
+                RevocationAnchors = BuildIdentityGraphRevocationAnchors(evidenceSignals)
             };
         }
 
@@ -651,8 +655,30 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             RequiredEvidence = requiredEvidence,
             SatisfiedEvidence = satisfiedEvidence,
             BlockingEvidence = blockingEvidence,
-            RecommendedActions = BuildIdentityGraphRecommendedActions(missingEvidence, untrustedHostMappings)
+            RecommendedActions = BuildIdentityGraphRecommendedActions(missingEvidence, untrustedHostMappings),
+            RevocationChecks = ["defer-revocation-admission-until-blocking-evidence-resolved"],
+            RevocationAnchors = BuildIdentityGraphRevocationAnchors(evidenceSignals)
         };
+    }
+
+    private static IReadOnlyList<string> BuildIdentityGraphRevocationAnchors(
+        IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
+    {
+        string[] anchorKinds =
+        [
+            "device-id",
+            "robot-id",
+            "certificate-thumbprint",
+            "issued-identity"
+        ];
+
+        return evidenceSignals
+            .Where(signal => anchorKinds.Contains(signal.SignalKind, StringComparer.OrdinalIgnoreCase))
+            .OrderBy(signal => signal.SignalKind, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(signal => signal.SignalId, StringComparer.OrdinalIgnoreCase)
+            .Select(signal => $"{signal.SignalKind}:{signal.SignalId}={signal.Value}")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
 
@@ -707,7 +733,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"required-evidence|{string.Join(',', assessment.RequiredEvidence.Order(StringComparer.Ordinal))}",
             $"satisfied-evidence|{string.Join(',', assessment.SatisfiedEvidence.Order(StringComparer.Ordinal))}",
             $"blocking-evidence|{string.Join(',', assessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
-            $"recommended-actions|{string.Join(',', assessment.RecommendedActions.Order(StringComparer.Ordinal))}"
+            $"recommended-actions|{string.Join(',', assessment.RecommendedActions.Order(StringComparer.Ordinal))}",
+            $"revocation-checks|{string.Join(',', assessment.RevocationChecks.Order(StringComparer.Ordinal))}",
+            $"revocation-anchors|{string.Join(',', assessment.RevocationAnchors.Order(StringComparer.Ordinal))}"
         };
 
         return string.Join('\n', lines);
@@ -743,6 +771,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             RequiredEvidence = admissionAssessment.RequiredEvidence,
             SatisfiedEvidence = admissionAssessment.SatisfiedEvidence,
             RecommendedActions = admissionAssessment.RecommendedActions,
+            RevocationChecks = admissionAssessment.RevocationChecks,
+            RevocationAnchors = admissionAssessment.RevocationAnchors,
             PeopleCount = peopleCount,
             MemberCount = memberCount,
             RelationshipCount = relationshipCount,
@@ -806,6 +836,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"admission-satisfied-evidence|{string.Join(',', admissionAssessment.SatisfiedEvidence.Order(StringComparer.Ordinal))}",
             $"admission-blocking-evidence|{string.Join(',', admissionAssessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
             $"admission-recommended-actions|{string.Join(',', admissionAssessment.RecommendedActions.Order(StringComparer.Ordinal))}",
+            $"admission-revocation-checks|{string.Join(',', admissionAssessment.RevocationChecks.Order(StringComparer.Ordinal))}",
+            $"admission-revocation-anchors|{string.Join(',', admissionAssessment.RevocationAnchors.Order(StringComparer.Ordinal))}",
             $"admission-decision-hash|{admissionAssessment.DecisionHash}",
             $"admission-signature-key-id|{admissionAssessment.SignatureKeyId}",
             $"admission-signature|{admissionAssessment.Signature}"

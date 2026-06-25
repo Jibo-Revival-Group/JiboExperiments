@@ -328,7 +328,7 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Contains(admissionAssessment.GetProperty("blockingEvidence").EnumerateArray(), item =>
             item.GetString() == "revoked:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020");
         Assert.Contains(admissionAssessment.GetProperty("recommendedActions").EnumerateArray(), item =>
-            item.GetString() == "investigate-local-revocation-match");
+            item.GetString() == "keep-revoked-identity-anchor-quarantined");
         var evidenceBundle = revoked.GetProperty("evidenceBundle");
         Assert.Equal(admissionAssessment.GetProperty("decisionHash").GetString(),
             evidenceBundle.GetProperty("admissionDecisionHash").GetString());

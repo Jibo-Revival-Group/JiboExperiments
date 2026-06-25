@@ -1,3 +1,4 @@
+using Jibo.Cloud.Application.Abstractions;
 using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
@@ -109,6 +110,30 @@ public sealed partial class JiboInteractionService
                 out var seasonalHolidayDecision))
             return seasonalHolidayDecision!;
 
+        return await RouteSemanticIntent(
+            turn,
+            semanticIntent,
+            catalog,
+            lowered,
+            clientEntities,
+            isTimerValueTurn,
+            isAlarmValueTurn,
+            referenceLocalTime,
+            transcript,
+            greetingPresence,
+            listenAsrHints,
+            chitchatEmotion,
+            preferredName,
+            cancellationToken
+        );
+    }
+
+    private async Task<JiboInteractionDecision> RouteSemanticIntent(TurnContext turn, string semanticIntent,
+        JiboExperienceCatalog catalog, string lowered, IReadOnlyDictionary<string, string> clientEntities,
+        bool isTimerValueTurn, bool isAlarmValueTurn, DateTimeOffset? referenceLocalTime, string transcript,
+        GreetingPresenceProfile greetingPresence, string[] listenAsrHints, string? chitchatEmotion,
+        string? preferredName, CancellationToken cancellationToken)
+    {
         return semanticIntent switch
         {
             "joke" => BuildJokeDecision(catalog),

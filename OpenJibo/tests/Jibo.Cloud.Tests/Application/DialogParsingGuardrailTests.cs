@@ -57,7 +57,7 @@ public sealed class DialogParsingGuardrailTests
         });
 
         Assert.Equal("memory_get_preference", decision.IntentName);
-        Assert.Contains($"favorite {expectedCategory}", decision.SpokenText);
+        Assert.Contains($"favorite {expectedCategory}", decision.ReplyText);
     }
 
     private static JiboInteractionService CreateService(InMemoryPersonalMemoryStore? memoryStore = null)

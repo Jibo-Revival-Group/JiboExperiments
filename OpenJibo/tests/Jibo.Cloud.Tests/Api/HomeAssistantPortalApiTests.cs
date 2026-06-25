@@ -292,6 +292,44 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task IdentityGraphRevocationEndpoint_QuarantinesSignedPeerAdmissionPayload()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode = verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var revokeResponse = await client.PostAsJsonAsync(
+            "/api/portal/identity-graph/revocations",
+            new { anchor = "device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020" });
+
+        Assert.Equal(HttpStatusCode.OK, revokeResponse.StatusCode);
+        var revoked = await revokeResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(revoked.GetProperty("revoked").GetBoolean());
+        Assert.Equal("device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020",
+            revoked.GetProperty("anchor").GetString());
+        var admissionAssessment = revoked.GetProperty("admissionAssessment");
+        Assert.Equal("quarantine", admissionAssessment.GetProperty("recommendation").GetString());
+        Assert.Contains(admissionAssessment.GetProperty("revocationChecks").EnumerateArray(), item =>
+            item.GetString() == "local-revocation-match:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020");
+        Assert.Contains(admissionAssessment.GetProperty("blockingEvidence").EnumerateArray(), item =>
+            item.GetString() == "revoked:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020");
+        Assert.Contains(admissionAssessment.GetProperty("recommendedActions").EnumerateArray(), item =>
+            item.GetString() == "investigate-local-revocation-match");
+        var evidenceBundle = revoked.GetProperty("evidenceBundle");
+        Assert.Equal(admissionAssessment.GetProperty("decisionHash").GetString(),
+            evidenceBundle.GetProperty("admissionDecisionHash").GetString());
+        Assert.Contains("admission-revocation-checks|local-revocation-match:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020",
+            evidenceBundle.GetProperty("payload").GetString());
+    }
+
+    [Fact]
     public async Task IdentityGraphEvidenceBundleEndpoint_ReturnsDownloadablePeerAdmissionPayload()
     {
         await using var factory = CreateFactory();

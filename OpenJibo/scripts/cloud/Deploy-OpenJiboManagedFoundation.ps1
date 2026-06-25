@@ -6,7 +6,10 @@ param(
     [string]$StateConnectionString = "",
     [string]$PersonalMemoryConnectionString = "",
     [string]$OpenWeatherApiKey = "",
-    [string]$NewsApiKey = ""
+    [string]$NewsApiKey = "",
+    [string]$PostgresAdminLogin = "openjiboadmin",
+    [string]$PostgresAdminPassword = "",
+    [string]$PostgresServerName = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,6 +19,77 @@ $resolvedTemplatePath = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $Temp
 
 if (-not (Test-Path -LiteralPath $resolvedTemplatePath)) {
     throw "Could not find Bicep template at $resolvedTemplatePath"
+}
+
+function New-OpenJiboPostgresPassword {
+    $lower = "abcdefghijklmnopqrstuvwxyz"
+    $upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    $digits = "0123456789"
+    $symbols = "!#$%+?@_"
+    $all = $lower + $upper + $digits + $symbols
+    $characters = New-Object System.Collections.Generic.List[char]
+
+    foreach ($set in @($lower, $upper, $digits, $symbols)) {
+        $characters.Add($set[[System.Security.Cryptography.RandomNumberGenerator]::GetInt32($set.Length)])
+    }
+
+    for ($index = $characters.Count; $index -lt 32; $index++) {
+        $characters.Add($all[[System.Security.Cryptography.RandomNumberGenerator]::GetInt32($all.Length)])
+    }
+
+    for ($index = $characters.Count - 1; $index -gt 0; $index--) {
+        $swapIndex = [System.Security.Cryptography.RandomNumberGenerator]::GetInt32($index + 1)
+        $temporary = $characters[$index]
+        $characters[$index] = $characters[$swapIndex]
+        $characters[$swapIndex] = $temporary
+    }
+
+    -join $characters
+}
+
+function Invoke-OpenJiboAzWithRetry {
+    param(
+        [string[]]$Arguments,
+        [string]$Description,
+        [int]$Attempts = 8
+    )
+
+    for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+        $output = & az @Arguments 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            return (($output | Out-String).Trim())
+        }
+
+        if ($attempt -eq $Attempts) {
+            throw "$Description failed after $Attempts attempts. $output"
+        }
+
+        $waitSeconds = [Math]::Min(90, $attempt * 10)
+        $lastLine = (($output | Select-Object -Last 1) | Out-String).Trim()
+        if ([string]::IsNullOrWhiteSpace($lastLine)) {
+            Write-Warning "$Description failed; retrying in $waitSeconds seconds."
+        }
+        else {
+            Write-Warning "$Description failed; retrying in $waitSeconds seconds. Last Azure CLI message: $lastLine"
+        }
+
+        Start-Sleep -Seconds $waitSeconds
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($PostgresAdminPassword)) {
+    $PostgresAdminPassword = New-OpenJiboPostgresPassword
+}
+
+$deploymentRunnerIp = ""
+try {
+    $candidateIp = (Invoke-RestMethod -Uri "https://api.ipify.org" -TimeoutSec 10).ToString()
+    if ($candidateIp -match '^([0-9]{1,3}\.){3}[0-9]{1,3}$') {
+        $deploymentRunnerIp = $candidateIp
+    }
+}
+catch {
+    Write-Warning "Could not resolve deployment runner public IP for the PostgreSQL migration firewall rule: $_"
 }
 
 $deploymentName = "openjibo-foundation-{0}" -f ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
@@ -36,8 +110,18 @@ $arguments = @(
     "deployment", "group", "create",
     "--resource-group", $ResourceGroupName,
     "--name", $deploymentName,
-    "--template-file", $resolvedTemplatePath
+    "--template-file", $resolvedTemplatePath,
+    "--parameters", "postgresAdministratorLogin=$PostgresAdminLogin",
+    "--parameters", "postgresAdministratorPassword=$PostgresAdminPassword"
 )
+
+if (-not [string]::IsNullOrWhiteSpace($PostgresServerName)) {
+    $arguments += @("--parameters", "postgresServerName=$PostgresServerName")
+}
+
+if (-not [string]::IsNullOrWhiteSpace($deploymentRunnerIp)) {
+    $arguments += @("--parameters", "postgresDeploymentRunnerFirewallIpAddress=$deploymentRunnerIp")
+}
 
 if (-not [string]::IsNullOrWhiteSpace($currentPrincipalId)) {
     $arguments += @(
@@ -54,9 +138,20 @@ Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceG
 $deploymentJson = az @arguments | ConvertFrom-Json
 $outputs = $deploymentJson.properties.outputs
 
-$storageConnectionString = az storage account show-connection-string --resource-group $ResourceGroupName --name $outputs.storageAccountName.value --query connectionString --output tsv
-$resolvedStateConnectionString = if ([string]::IsNullOrWhiteSpace($StateConnectionString)) { $storageConnectionString } else { $StateConnectionString }
-$resolvedPersonalMemoryConnectionString = if ([string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) { $storageConnectionString } else { $PersonalMemoryConnectionString }
+$storageConnectionString = Invoke-OpenJiboAzWithRetry `
+    -Arguments @("storage", "account", "show-connection-string", "--resource-group", $ResourceGroupName, "--name", $outputs.storageAccountName.value, "--query", "connectionString", "--output", "tsv") `
+    -Description "Storage connection string lookup"
+
+function New-OpenJiboPostgresConnectionString {
+    param(
+        [string]$DatabaseName
+    )
+
+    "Host=$($outputs.postgresFullyQualifiedDomainName.value);Port=5432;Database=$DatabaseName;Username=$($outputs.postgresAdministratorLogin.value);Password=$PostgresAdminPassword;SSL Mode=Require;Trust Server Certificate=true"
+}
+
+$resolvedStateConnectionString = if ([string]::IsNullOrWhiteSpace($StateConnectionString)) { New-OpenJiboPostgresConnectionString -DatabaseName $outputs.postgresStateDatabaseName.value } else { $StateConnectionString }
+$resolvedPersonalMemoryConnectionString = if ([string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) { New-OpenJiboPostgresConnectionString -DatabaseName $outputs.postgresPersonalMemoryDatabaseName.value } else { $PersonalMemoryConnectionString }
 
 function Set-OpenJiboKeyVaultSecretWithRetry {
     param(
@@ -69,21 +164,10 @@ function Set-OpenJiboKeyVaultSecretWithRetry {
         return
     }
 
-    for ($attempt = 1; $attempt -le 6; $attempt++) {
-        try {
-            az keyvault secret set --vault-name $VaultName --name $Name --value $Value | Out-Null
-            return
-        }
-        catch {
-            if ($attempt -eq 6) {
-                throw
-            }
-
-            $waitSeconds = $attempt * 10
-            Write-Warning "Key Vault access policy is not ready for secret '$Name' yet; retrying in $waitSeconds seconds."
-            Start-Sleep -Seconds $waitSeconds
-        }
-    }
+    Invoke-OpenJiboAzWithRetry `
+        -Arguments @("keyvault", "secret", "set", "--vault-name", $VaultName, "--name", $Name, "--value", $Value) `
+        -Description "Key Vault secret set for '$Name'" `
+        -Attempts 6 | Out-Null
 }
 
 Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-state-connection-string -Value $resolvedStateConnectionString
@@ -91,6 +175,8 @@ Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name
 Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-personal-memory-connection-string -Value $resolvedPersonalMemoryConnectionString
 
 Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-media-connection-string -Value $storageConnectionString
+
+Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-postgres-admin-password -Value $PostgresAdminPassword
 
 Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-openweather-api-key -Value $OpenWeatherApiKey
 

@@ -196,7 +196,6 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-
 resource keyVaultContainerAppSecretAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
   parent: keyVault
   name: 'add'
@@ -216,6 +215,8 @@ resource keyVaultContainerAppSecretAccessPolicy 'Microsoft.KeyVault/vaults/acces
   }
 }
 
+output containerAppName string = containerApp.name
+output managedEnvironmentName string = managedEnvironment.name
 output containerAppFqdn string = containerApp.properties.configuration.ingress.fqdn
 output canonicalApiHostname string = apiHostname
 output canonicalApiBaseUrl string = canonicalApiBaseUrl

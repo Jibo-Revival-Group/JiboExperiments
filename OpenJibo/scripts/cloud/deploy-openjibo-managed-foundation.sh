@@ -7,6 +7,9 @@ state_connection_string=""
 personal_memory_connection_string=""
 open_weather_api_key=""
 news_api_key=""
+postgres_admin_login="openjiboadmin"
+postgres_admin_password=""
+postgres_server_name=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -32,6 +35,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     --news-api-key)
       news_api_key="${2:-}"
+      shift 2
+      ;;
+    --postgres-admin-login)
+      postgres_admin_login="${2:-openjiboadmin}"
+      shift 2
+      ;;
+    --postgres-admin-password)
+      postgres_admin_password="${2:-}"
+      shift 2
+      ;;
+    --postgres-server-name)
+      postgres_server_name="${2:-}"
       shift 2
       ;;
     *)
@@ -65,6 +80,33 @@ if [[ ! -f "$resolved_template_path" ]]; then
   exit 1
 fi
 
+if [[ -z "$postgres_admin_password" ]]; then
+  postgres_admin_password="$(python3 - <<'PY'
+import secrets
+import string
+
+alphabet = string.ascii_letters + string.digits + "!#$%+?@_"
+password = [
+    secrets.choice(string.ascii_lowercase),
+    secrets.choice(string.ascii_uppercase),
+    secrets.choice(string.digits),
+    secrets.choice("!#$%+?@_"),
+]
+password.extend(secrets.choice(alphabet) for _ in range(28))
+secrets.SystemRandom().shuffle(password)
+print("".join(password))
+PY
+)"
+fi
+
+deployment_runner_ip=""
+if command -v curl >/dev/null 2>&1; then
+  deployment_runner_ip="$(curl -fsS --max-time 10 https://api.ipify.org 2>/dev/null || true)"
+  if [[ ! "$deployment_runner_ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    deployment_runner_ip=""
+  fi
+fi
+
 deployment_name="openjibo-foundation-$(date -u +%s)"
 
 current_principal_id="$(python3 -c 'import base64, json, subprocess, sys
@@ -81,7 +123,17 @@ deployment_args=(
   --resource-group "$resource_group_name"
   --name "$deployment_name"
   --template-file "$resolved_template_path"
+  --parameters "postgresAdministratorLogin=${postgres_admin_login}"
+  --parameters "postgresAdministratorPassword=${postgres_admin_password}"
 )
+
+if [[ -n "$postgres_server_name" ]]; then
+  deployment_args+=(--parameters "postgresServerName=${postgres_server_name}")
+fi
+
+if [[ -n "$deployment_runner_ip" ]]; then
+  deployment_args+=(--parameters "postgresDeploymentRunnerFirewallIpAddress=${deployment_runner_ip}")
+fi
 
 if [[ -n "$current_principal_id" ]]; then
   deployment_args+=(--parameters "seedPrincipalObjectId=${current_principal_id}")
@@ -92,7 +144,7 @@ deployment_args+=(--output json)
 echo "Deploying Open Jibo managed foundation to resource group '${resource_group_name}'" >&2
 deployment_json="$("${deployment_args[@]}")"
 
-python3 - "$deployment_json" "$resource_group_name" "$state_connection_string" "$personal_memory_connection_string" "$open_weather_api_key" "$news_api_key" "$current_principal_id" <<'PY'
+python3 - "$deployment_json" "$resource_group_name" "$state_connection_string" "$personal_memory_connection_string" "$open_weather_api_key" "$news_api_key" "$current_principal_id" "$postgres_admin_password" <<'PY'
 import json
 import subprocess
 import sys
@@ -104,47 +156,78 @@ state_connection_string = sys.argv[3]
 personal_memory_connection_string = sys.argv[4]
 open_weather_api_key = sys.argv[5]
 news_api_key = sys.argv[6]
+current_principal_id = sys.argv[7]
+postgres_admin_password = sys.argv[8]
 outputs = deployment_json["properties"]["outputs"]
 key_vault_name = outputs["keyVaultName"]["value"]
 storage_account_name = outputs["storageAccountName"]["value"]
-current_principal_id = sys.argv[7]
+postgres_host = outputs["postgresFullyQualifiedDomainName"]["value"]
+postgres_login = outputs["postgresAdministratorLogin"]["value"]
+state_database_name = outputs["postgresStateDatabaseName"]["value"]
+personal_memory_database_name = outputs["postgresPersonalMemoryDatabaseName"]["value"]
+
+
+def run_command_with_retry(command: list[str], description: str, attempts: int = 8) -> str:
+    for attempt in range(1, attempts + 1):
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout.strip()
+
+        if attempt == attempts:
+            if result.stdout.strip():
+                print(result.stdout.strip(), file=sys.stderr)
+            if result.stderr.strip():
+                print(result.stderr.strip(), file=sys.stderr)
+            raise subprocess.CalledProcessError(result.returncode, command, result.stdout, result.stderr)
+
+        wait_seconds = min(90, attempt * 10)
+        detail = (result.stderr or result.stdout or "").strip().splitlines()
+        suffix = f" Last Azure CLI message: {detail[-1]}" if detail else ""
+        print(f"{description} failed; retrying in {wait_seconds} seconds.{suffix}", file=sys.stderr)
+        time.sleep(wait_seconds)
+
+    raise RuntimeError(f"Unexpected retry loop exit for {description}.")
 
 
 def set_secret(name: str, value: str) -> None:
     if not value.strip():
         return
 
-    command = [
-        "az", "keyvault", "secret", "set",
-        "--vault-name", key_vault_name,
-        "--name", name,
-        "--value", value,
-    ]
-    for attempt in range(1, 7):
-        try:
-            subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
-            return
-        except subprocess.CalledProcessError:
-            if attempt == 6:
-                raise
-            wait_seconds = attempt * 10
-            print(
-                f"Key Vault access policy is not ready for secret '{name}' yet; "
-                f"retrying in {wait_seconds} seconds.",
-                file=sys.stderr,
-            )
-            time.sleep(wait_seconds)
+    run_command_with_retry(
+        [
+            "az", "keyvault", "secret", "set",
+            "--vault-name", key_vault_name,
+            "--name", name,
+            "--value", value,
+        ],
+        f"Key Vault secret set for '{name}'",
+        attempts=6,
+    )
 
-storage_connection_string = subprocess.check_output([
-    "az", "storage", "account", "show-connection-string",
-    "--resource-group", resource_group_name,
-    "--name", storage_account_name,
-    "--query", "connectionString",
-    "--output", "tsv",
-], text=True).strip()
-set_secret("openjibo-state-connection-string", state_connection_string or storage_connection_string)
-set_secret("openjibo-personal-memory-connection-string", personal_memory_connection_string or storage_connection_string)
+
+def postgres_connection_string(database_name: str) -> str:
+    return (
+        f"Host={postgres_host};Port=5432;Database={database_name};"
+        f"Username={postgres_login};Password={postgres_admin_password};"
+        "SSL Mode=Require;Trust Server Certificate=true"
+    )
+
+
+storage_connection_string = run_command_with_retry(
+    [
+        "az", "storage", "account", "show-connection-string",
+        "--resource-group", resource_group_name,
+        "--name", storage_account_name,
+        "--query", "connectionString",
+        "--output", "tsv",
+    ],
+    "Storage connection string lookup",
+)
+
+set_secret("openjibo-state-connection-string", state_connection_string or postgres_connection_string(state_database_name))
+set_secret("openjibo-personal-memory-connection-string", personal_memory_connection_string or postgres_connection_string(personal_memory_database_name))
 set_secret("openjibo-media-connection-string", storage_connection_string)
+set_secret("openjibo-postgres-admin-password", postgres_admin_password)
 set_secret("openjibo-openweather-api-key", open_weather_api_key)
 set_secret("openjibo-newsapi-key", news_api_key)
 

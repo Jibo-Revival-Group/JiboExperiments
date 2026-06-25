@@ -89,6 +89,7 @@ jobs:
           --image-tag "${{ inputs.image_tag }}"
           --api-hostname "${{ inputs.api_hostname }}"
           ${{ inputs.location != '' && format('--location {0}', inputs.location) || '' }}
+          --run-migration
           --run-smoke
         env:
           OPENJIBO_RESOURCE_GROUP: ${{ secrets.OPENJIBO_RESOURCE_GROUP }}

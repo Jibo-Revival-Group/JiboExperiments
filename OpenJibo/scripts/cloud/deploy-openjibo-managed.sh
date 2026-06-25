@@ -11,6 +11,7 @@ template_path="infra/azure/container-apps/openjibo-managed.bicep"
 parameters_path="infra/azure/container-apps/openjibo-managed.parameters.json"
 run_migration=false
 run_smoke=false
+skip_hostname_binding=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -52,6 +53,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --run-smoke)
       run_smoke=true
+      shift
+      ;;
+    --skip-hostname-binding)
+      skip_hostname_binding=true
       shift
       ;;
     *)
@@ -116,6 +121,24 @@ fi
 deployment_args+=(--output json)
 
 deployment_json="$("${deployment_args[@]}")"
+
+if [[ "$skip_hostname_binding" != true && -n "$api_hostname" ]]; then
+  container_app_name="$(python3 - "$deployment_json" <<'PY'
+import json
+import sys
+
+deployment_json = json.loads(sys.argv[1])
+print(deployment_json["properties"]["outputs"]["containerAppName"]["value"])
+PY
+)"
+
+  echo "Binding '${api_hostname}' to Container App '${container_app_name}'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate." >&2
+  az containerapp hostname bind \
+    --resource-group "$resource_group_name" \
+    --name "$container_app_name" \
+    --hostname "$api_hostname" \
+    --output none
+fi
 
 if [[ "$run_migration" == true ]]; then
   state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"

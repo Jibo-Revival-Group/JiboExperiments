@@ -26,6 +26,18 @@ function Get-RepoFileText {
     return Get-Content -LiteralPath $fullPath -Raw
 }
 
+function Assert-ContainsMarker {
+    param(
+        [string]$Text,
+        [string]$Marker,
+        [string]$FailurePrefix
+    )
+
+    if ($Text -notmatch [regex]::Escape($Marker)) {
+        throw "$FailurePrefix`: $Marker"
+    }
+}
+
 $foundationText = Get-RepoFileText -RelativePath $FoundationTemplatePath
 $managedText = Get-RepoFileText -RelativePath $ManagedTemplatePath
 $workflowText = Get-RepoFileText -RelativePath $WorkflowPath
@@ -49,16 +61,31 @@ $requiredFoundationMarkers = @(
     "accessPolicies: []",
     "enableRbacAuthorization: false",
     "param seedPrincipalObjectId string = ''",
-    "resource keyVaultSecretSeedAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01'"
+    "resource keyVaultSecretSeedAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01'",
+    "resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-preview'",
+    "resource postgresStateDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-06-01-preview'",
+    "resource postgresPersonalMemoryDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2023-06-01-preview'",
+    "resource postgresAllowAzureServicesFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2023-06-01-preview'",
+    "param postgresDeploymentRunnerFirewallIpAddress string = ''",
+    "output postgresFullyQualifiedDomainName string",
+    "output postgresStateDatabaseName string",
+    "output postgresPersonalMemoryDatabaseName string"
 )
 
 $requiredManagedMarkers = @(
     "param registryLoginServer string",
     "param keyVaultName string",
+    "param apiHostname string = 'api.openjibo.com'",
+    "OpenJibo__CanonicalApiHostname",
+    "OpenJibo__CanonicalApiBaseUrl",
+    "output canonicalApiHostname string",
+    "output containerAppName string",
+    "output managedEnvironmentName string",
     "secretRef: 'media-connection-string'",
     "keyVaultSecretBaseUrl",
     "environment().suffixes.keyvaultDns",
     "var logAnalyticsWorkspaceKey",
+    "value: 'PostgreSql'",
     "value: 'AzureBlob'",
     "keyVaultContainerAppSecretAccessPolicy"
 )
@@ -70,8 +97,56 @@ $requiredWorkflowMarkers = @(
     "deploy-openjibo-managed.sh",
     "publish-openjibo-managed.sh",
     "steps.foundation.outputs.registryName",
-    "steps.foundation.outputs.keyVaultName"
+    "steps.foundation.outputs.keyVaultName",
+    "inputs.location",
+    "api_hostname",
+    "api.openjibo.com",
+    "--api-hostname",
+    "--run-migration",
+    "--run-smoke"
 )
+
+foreach ($marker in $requiredFoundationMarkers) {
+    Assert-ContainsMarker -Text $foundationText -Marker $marker -FailurePrefix "Foundation template is missing expected marker"
+}
+
+foreach ($marker in $requiredManagedMarkers) {
+    Assert-ContainsMarker -Text $managedText -Marker $marker -FailurePrefix "Managed template is missing expected marker"
+}
+
+foreach ($marker in $requiredWorkflowMarkers) {
+    Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing expected marker"
+}
+
+foreach ($marker in @("openjibo-media-connection-string", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
+    Assert-ContainsMarker -Text $foundationScriptText -Marker $marker -FailurePrefix "Foundation script is missing expected marker"
+}
+
+foreach ($marker in @("RegistryName", "ApiHostname", "containerapp hostname bind", "SkipHostnameBinding")) {
+    Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
+}
+
+foreach ($marker in @("seedPrincipalObjectId", "openjibo-media-connection-string", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "run_command_with_retry")) {
+    Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker $marker -FailurePrefix "Linux foundation script is missing expected marker"
+}
+
+Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker '"az", "storage", "account", "show-connection-string"' -FailurePrefix "Linux foundation script does not resolve the storage connection string outside Bicep outputs"
+Assert-ContainsMarker -Text $linuxPublishScriptText -Marker "az acr build" -FailurePrefix "Linux publish script is missing the ACR build path"
+
+foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "az containerapp hostname bind", "--skip-hostname-binding")) {
+    Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing expected marker"
+}
+
+if ($smokeScriptText -match [regex]::Escape('Host = "api.jibo.com"')) {
+    throw "Managed smoke script still hardcodes the api.jibo.com host header."
+}
+
+if ($linuxSmokeScriptText -match [regex]::Escape('"Host": "api.jibo.com"')) {
+    throw "Linux smoke script still hardcodes the api.jibo.com host header."
+}
+
+Assert-ContainsMarker -Text $linuxManagedScriptText -Marker "--location" -FailurePrefix "Linux managed deploy script is missing the regional override path"
+Assert-ContainsMarker -Text $managedScriptText -Marker "Location" -FailurePrefix "Managed deploy script is missing the regional override path"
 
 $forbiddenMarkers = @(
     "OPENJIBO_MEDIA_CONNECTION_STRING",
@@ -84,64 +159,6 @@ $forbiddenMarkers = @(
     "listKeys(storageAccount",
     "keyvault set-policy"
 )
-
-foreach ($marker in $requiredFoundationMarkers) {
-    if ($foundationText -notmatch [regex]::Escape($marker)) {
-        throw "Foundation template is missing expected marker: $marker"
-    }
-}
-
-foreach ($marker in $requiredManagedMarkers) {
-    if ($managedText -notmatch [regex]::Escape($marker)) {
-        throw "Managed template is missing expected marker: $marker"
-    }
-}
-
-foreach ($marker in $requiredWorkflowMarkers) {
-    if ($workflowText -notmatch [regex]::Escape($marker)) {
-        throw "Workflow is missing expected marker: $marker"
-    }
-}
-
-if ($foundationScriptText -notmatch [regex]::Escape("openjibo-media-connection-string")) {
-    throw "Foundation script does not seed the media connection string secret."
-}
-
-if ($foundationScriptText -notmatch [regex]::Escape("seedPrincipalObjectId")) {
-    throw "Foundation script does not pass the secret seed access policy principal to the deployment."
-}
-
-if ($managedScriptText -notmatch [regex]::Escape("RegistryName")) {
-    throw "Managed deploy script is missing the registry parameter path."
-}
-
-if ($linuxFoundationScriptText -notmatch [regex]::Escape("seedPrincipalObjectId")) {
-    throw "Linux foundation script does not pass the secret seed access policy principal to the deployment."
-}
-
-if ($linuxFoundationScriptText -notmatch [regex]::Escape("openjibo-media-connection-string")) {
-    throw "Linux foundation script does not seed the media connection string secret."
-}
-
-if ($linuxFoundationScriptText -notmatch [regex]::Escape('"az", "storage", "account", "show-connection-string"')) {
-    throw "Linux foundation script does not resolve the storage connection string outside Bicep outputs."
-}
-
-if ($linuxPublishScriptText -notmatch [regex]::Escape("az acr build")) {
-    throw "Linux publish script is missing the ACR build path."
-}
-
-if ($linuxManagedScriptText -notmatch [regex]::Escape("--run-smoke")) {
-    throw "Linux managed deploy script is missing the managed smoke path."
-}
-
-if ($smokeScriptText -match [regex]::Escape('Host = "api.jibo.com"')) {
-    throw "Managed smoke script still hardcodes the api.jibo.com host header."
-}
-
-if ($linuxSmokeScriptText -match [regex]::Escape('"Host": "api.jibo.com"')) {
-    throw "Linux smoke script still hardcodes the api.jibo.com host header."
-}
 
 foreach ($marker in $forbiddenMarkers) {
     if ($workflowText -match [regex]::Escape($marker)) {

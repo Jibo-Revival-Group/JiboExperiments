@@ -31,7 +31,7 @@ These scripts help exercise the new .NET hosted cloud locally.
 - `Test-OpenJiboSelfHostedDeploymentContract.ps1`
   Validates the self-hosted contract by checking the Compose file, migration wrapper, and smoke script before local CI brings up the stack.
 - GitHub Actions `openjibo-cloud-managed-deploy`
-  Manual workflow that deploys the foundation, builds the managed image, deploys the ACA stack, runs migrations, and smokes the deployed endpoint. The workflow defaults the robot-facing API hostname to `api.openjibo.com`.
+  Manual workflow that deploys the foundation, builds the managed image, deploys the ACA stack, binds the canonical custom hostname, runs migrations, and smokes the deployed endpoint. The workflow defaults the robot-facing API hostname to `api.openjibo.com`.
 - `OPENJIBO_POSTGRES_PASSWORD`
   Required when running the self-hosted PostgreSQL stack locally or in CI so the database password stays out of source control.
 - `initialize-openjibo-compose-env.sh`
@@ -72,5 +72,27 @@ These scripts help exercise the new .NET hosted cloud locally.
   Bash summary helper for captured websocket telemetry and exported live-run fixtures.
 - `import-websocket-capture-fixture.py`
   Cross-platform import/sanitization helper for exported websocket fixtures.
+
+## Managed Azure storage
+
+The managed Azure path separates persistent storage from the application container:
+
+- State snapshots use Azure Database for PostgreSQL Flexible Server and the `openjibo_state` database.
+- Personal memory snapshots use the same PostgreSQL server and the `openjibo_memory` database.
+- Media stays on Azure Blob Storage through the `OpenJibo__Media__Backend=AzureBlob` runtime setting.
+
+`deploy-openjibo-managed-foundation.sh` and `Deploy-OpenJiboManagedFoundation.ps1` create the PostgreSQL server and databases, generate a PostgreSQL administrator password when one is not supplied, and seed the state, personal-memory, media, and API-provider secrets into Key Vault. The scripts still accept explicit state and personal-memory connection string overrides for emergency or external-database cases, but the default managed deployment is PostgreSQL-backed.
+
+The foundation adds a PostgreSQL firewall rule for Azure services and, when the deployment runner public IP can be detected, a narrow firewall rule for that runner so deploy-time migrations can connect. If migrations fail with a PostgreSQL network error, confirm the runner IP was detected and that the database firewall allows the current deploy runner.
+
+## Managed hostname binding
+
+`deploy-openjibo-managed.sh` and `Deploy-OpenJiboManaged.ps1` bind the requested `api.openjibo.com` style hostname after the Container App deployment. Azure Container Apps managed certificates require DNS to point directly at the generated Container App hostname before certificate issuance can succeed. For subdomains such as `api.openjibo.com`, create a CNAME from the custom hostname to the generated Container App FQDN returned by the deployment output.
+
+Use `--skip-hostname-binding` or `-SkipHostnameBinding` only for temporary diagnostics where the generated Container App FQDN is enough.
+
+## Managed migrations
+
+The managed workflow runs PostgreSQL migrations on every deploy before smoke tests. Treat checked-in migration scripts as forward-only operational changes: prefer additive schema changes, avoid destructive backwards edits, and do not remove or rewrite already-applied migrations unless the production impact is understood and intentionally coordinated. Any destructive data change should be paired with an explicit backup or recovery plan before it lands in the deploy path.
 
 See [docs/local-cloud-quickstart.md](../../docs/local-cloud-quickstart.md) for the full local setup guide.

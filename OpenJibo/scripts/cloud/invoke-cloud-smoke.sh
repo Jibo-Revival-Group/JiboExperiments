@@ -16,7 +16,7 @@ print(parsed.netloc or parsed.path)
 PY
 )"
 
-python3 - "$base_url" "$test_email" "$test_password" "$test_first_name" "$test_last_name" "$test_robot_id" <<'PY'
+python3 - "$base_url" "$base_host" "$test_email" "$test_password" "$test_first_name" "$test_last_name" "$test_robot_id" <<'PY'
 import json
 import sys
 from dataclasses import dataclass
@@ -24,7 +24,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from typing import Any, Dict, List, Optional
 
-base_url, test_email, test_password, test_first_name, test_last_name, test_robot_id = sys.argv[1:7]
+base_url, base_host, test_email, test_password, test_first_name, test_last_name, test_robot_id = sys.argv[1:8]
 
 
 @dataclass

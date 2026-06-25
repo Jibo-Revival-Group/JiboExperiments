@@ -9,6 +9,8 @@ managed_script_path="scripts/cloud/Deploy-OpenJiboManaged.ps1"
 linux_foundation_script_path="scripts/cloud/deploy-openjibo-managed-foundation.sh"
 linux_publish_script_path="scripts/cloud/publish-openjibo-managed.sh"
 linux_managed_script_path="scripts/cloud/deploy-openjibo-managed.sh"
+smoke_script_path="scripts/cloud/Invoke-CloudSmoke.ps1"
+linux_smoke_script_path="scripts/cloud/invoke-cloud-smoke.sh"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
@@ -33,6 +35,8 @@ managed_script_text="$(get_repo_file_text "$managed_script_path")"
 linux_foundation_script_text="$(get_repo_file_text "$linux_foundation_script_path")"
 linux_publish_script_text="$(get_repo_file_text "$linux_publish_script_path")"
 linux_managed_script_text="$(get_repo_file_text "$linux_managed_script_path")"
+smoke_script_text="$(get_repo_file_text "$smoke_script_path")"
+linux_smoke_script_text="$(get_repo_file_text "$linux_smoke_script_path")"
 
 required_foundation_markers=(
   "output keyVaultName string"
@@ -130,6 +134,16 @@ fi
 
 if [[ "$linux_managed_script_text" != *"--run-smoke"* ]]; then
   echo "Linux managed deploy script is missing the managed smoke path." >&2
+  exit 1
+fi
+
+if [[ "$smoke_script_text" == *'Host = "api.jibo.com"'* ]]; then
+  echo "Managed smoke script still hardcodes the api.jibo.com host header." >&2
+  exit 1
+fi
+
+if [[ "$linux_smoke_script_text" == *'"Host": "api.jibo.com"'* ]]; then
+  echo "Linux smoke script still hardcodes the api.jibo.com host header." >&2
   exit 1
 fi
 

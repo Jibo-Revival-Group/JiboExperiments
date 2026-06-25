@@ -6,7 +6,9 @@ param(
     [string]$ManagedScriptPath = "scripts/cloud/Deploy-OpenJiboManaged.ps1",
     [string]$LinuxFoundationScriptPath = "scripts/cloud/deploy-openjibo-managed-foundation.sh",
     [string]$LinuxPublishScriptPath = "scripts/cloud/publish-openjibo-managed.sh",
-    [string]$LinuxManagedScriptPath = "scripts/cloud/deploy-openjibo-managed.sh"
+    [string]$LinuxManagedScriptPath = "scripts/cloud/deploy-openjibo-managed.sh",
+    [string]$SmokeScriptPath = "scripts/cloud/Invoke-CloudSmoke.ps1",
+    [string]$LinuxSmokeScriptPath = "scripts/cloud/invoke-cloud-smoke.sh"
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,6 +34,8 @@ $managedScriptText = Get-RepoFileText -RelativePath $ManagedScriptPath
 $linuxFoundationScriptText = Get-RepoFileText -RelativePath $LinuxFoundationScriptPath
 $linuxPublishScriptText = Get-RepoFileText -RelativePath $LinuxPublishScriptPath
 $linuxManagedScriptText = Get-RepoFileText -RelativePath $LinuxManagedScriptPath
+$smokeScriptText = Get-RepoFileText -RelativePath $SmokeScriptPath
+$linuxSmokeScriptText = Get-RepoFileText -RelativePath $LinuxSmokeScriptPath
 
 $requiredFoundationMarkers = @(
     "output keyVaultName string",
@@ -52,7 +56,8 @@ $requiredManagedMarkers = @(
     "param registryLoginServer string",
     "param keyVaultName string",
     "secretRef: 'media-connection-string'",
-    "keyVaultUrl: 'https://",
+    "keyVaultSecretBaseUrl",
+    "environment().suffixes.keyvaultDns",
     "var logAnalyticsWorkspaceKey",
     "value: 'AzureBlob'",
     "keyVaultContainerAppSecretAccessPolicy"
@@ -128,6 +133,14 @@ if ($linuxPublishScriptText -notmatch [regex]::Escape("az acr build")) {
 
 if ($linuxManagedScriptText -notmatch [regex]::Escape("--run-smoke")) {
     throw "Linux managed deploy script is missing the managed smoke path."
+}
+
+if ($smokeScriptText -match [regex]::Escape('Host = "api.jibo.com"')) {
+    throw "Managed smoke script still hardcodes the api.jibo.com host header."
+}
+
+if ($linuxSmokeScriptText -match [regex]::Escape('"Host": "api.jibo.com"')) {
+    throw "Linux smoke script still hardcodes the api.jibo.com host header."
 }
 
 foreach ($marker in $forbiddenMarkers) {

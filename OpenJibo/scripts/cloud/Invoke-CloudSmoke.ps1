@@ -8,6 +8,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$baseHost = ([System.Uri]::new($BaseUrl)).Authority
 
 function Invoke-JsonRequest {
     param(
@@ -94,7 +95,7 @@ Add-Result (Invoke-JsonRequest -Name "Health" -Method "GET" -Url "$BaseUrl/healt
 $createBody = @{ email = $TestEmail; password = $TestPassword; firstName = $TestFirstName; lastName = $TestLastName } | ConvertTo-Json
 $account = Invoke-JsonRequest -Name "AccountCreate" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "Account_20151111.Create"
-    Host = "api.jibo.com"
+    Host = $baseHost
 } -Body $createBody
 Add-Result $account
 
@@ -105,7 +106,7 @@ if (-not $account.Success -and $account.StatusCode -ne 409) {
 if (-not $account.Success) {
     $login = Invoke-JsonRequest -Name "AccountLogin" -Method "POST" -Url "$BaseUrl/" -Headers @{
         "X-Amz-Target" = "Account_20151111.Login"
-        Host = "api.jibo.com"
+        Host = $baseHost
     } -Body (@{ email = $TestEmail; password = $TestPassword } | ConvertTo-Json)
     Add-Result $login
     if (-not $login.Success) {
@@ -121,7 +122,7 @@ if ($account.Body -and $account.Body.PSObject.Properties.Name -contains "id") {
 
 $loops = Invoke-JsonRequest -Name "LoopList" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "Loop_20160324.ListLoops"
-    Host = "api.jibo.com"
+    Host = $baseHost
 } -Body "{}"
 Add-Result $loops
 
@@ -136,7 +137,7 @@ if ($loops.Body -is [System.Array] -and $loops.Body.Count -gt 0 -and $loops.Body
 
 $members = Invoke-JsonRequest -Name "LoopListMembers" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "Loop_20160324.ListMembers"
-    Host = "api.jibo.com"
+    Host = $baseHost
 } -Body (@{ loopId = $loopId } | ConvertTo-Json)
 Add-Result $members
 
@@ -151,7 +152,7 @@ if ($accountId) {
 
 $prepare = Invoke-JsonRequest -Name "PrepareRobot" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "OOBE_20161026.PrepareRobot"
-    Host = "api.jibo.com"
+    Host = $baseHost
 } -Body ($prepareBody | ConvertTo-Json)
 Add-Result $prepare
 
@@ -170,7 +171,7 @@ if ([string]::IsNullOrWhiteSpace($token)) {
 
 $statusBefore = Invoke-JsonRequest -Name "GetStatusBeforeSetup" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "OOBE_20161026.GetStatus"
-    Host = "api.jibo.com"
+    Host = $baseHost
 } -Body (@{ token = $token } | ConvertTo-Json)
 Add-Result $statusBefore
 
@@ -181,7 +182,7 @@ if (-not $statusBefore.Success) {
 $setupBody = @{ token = $token; id = $TestRobotId } | ConvertTo-Json
 $setup = Invoke-JsonRequest -Name "SetupRobot" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "OOBE_20161026.SetupRobot"
-    Host = "api.jibo.com"
+    Host = $baseHost
 } -Body $setupBody
 Add-Result $setup
 
@@ -191,7 +192,7 @@ if (-not $setup.Success) {
 
 $statusAfter = Invoke-JsonRequest -Name "GetStatusAfterSetup" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "OOBE_20161026.GetStatus"
-    Host = "api.jibo.com"
+    Host = $baseHost
 } -Body (@{ token = $token } | ConvertTo-Json)
 Add-Result $statusAfter
 

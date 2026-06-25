@@ -83,6 +83,9 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - use PostgreSQL as the first Docker Compose database
 - deploy auth as a separate service under the Open Jibo domain family
 - keep auth in the shared repo/solution initially, but as its own project and deployable
+- make `api.openjibo.com` the canonical robot-facing hosted API, with `neo-hub.openjibo.com` only if we later need a distinct host or route boundary for listen/proactive traffic
+- launch `openjibo.com` as a real public web app and account entry surface for the release, not just a brochure site
+- keep the infrastructure plan flexible enough to map multiple hostnames to the same deployment when that is the simplest safe option
 - publish managed images to Azure Container Registry first
 - gate real-robot deployment with a virtual-Jibo or purpose-built smoke client
 - prefer recorded onboarding/session replay as the first CI-friendly deployment gate
@@ -149,7 +152,8 @@ The suggested order for early `1.0.20` execution is:
 4. STT cleanup for the remaining short-utterance misses
 5. continue the broader personality and presence queue once the regression gaps are understood
 6. split the platform-conversion track into named backlog items and work the topmost one at a time
-7. keep the cloud deployment, self-hosting, storage, and multi-Jibo architecture tracks in discovery until they are ready for their own proof slices
+7. keep the cloud deployment, custom-domain, and public-site tracks in discovery until they are ready for their own proof slices
+8. keep the storage and multi-Jibo architecture tracks in discovery until they are ready for their own proof slices
 
 ## Deferred Full Regression Milestone
 

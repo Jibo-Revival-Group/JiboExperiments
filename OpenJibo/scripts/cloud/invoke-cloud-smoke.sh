@@ -7,6 +7,14 @@ test_password="${TEST_PASSWORD:-OpenJiboSmokePass!42}"
 test_first_name="${TEST_FIRST_NAME:-Open}"
 test_last_name="${TEST_LAST_NAME:-Jibo}"
 test_robot_id="${TEST_ROBOT_ID:-open-jibo-smoke-robot}"
+base_host="$(python3 - "$base_url" <<'PY'
+from urllib.parse import urlparse
+import sys
+
+parsed = urlparse(sys.argv[1])
+print(parsed.netloc or parsed.path)
+PY
+)"
 
 python3 - "$base_url" "$test_email" "$test_password" "$test_first_name" "$test_last_name" "$test_robot_id" <<'PY'
 import json
@@ -75,7 +83,7 @@ account = request_json(
     f"{base_url.rstrip('/')}/",
     {
         "X-Amz-Target": "Account_20151111.Create",
-        "Host": "api.jibo.com",
+        "Host": base_host,
     },
     {
         "email": test_email,
@@ -96,7 +104,7 @@ if not account.success:
         f"{base_url.rstrip('/')}/",
         {
             "X-Amz-Target": "Account_20151111.Login",
-            "Host": "api.jibo.com",
+            "Host": base_host,
         },
         {
             "email": test_email,
@@ -118,7 +126,7 @@ loops = request_json(
     f"{base_url.rstrip('/')}/",
     {
         "X-Amz-Target": "Loop_20160324.ListLoops",
-        "Host": "api.jibo.com",
+        "Host": base_host,
     },
     {},
 )
@@ -136,7 +144,7 @@ members = request_json(
     f"{base_url.rstrip('/')}/",
     {
         "X-Amz-Target": "Loop_20160324.ListMembers",
-        "Host": "api.jibo.com",
+        "Host": base_host,
     },
     {"loopId": loop_id},
 )
@@ -154,7 +162,7 @@ prepare = request_json(
     f"{base_url.rstrip('/')}/",
     {
         "X-Amz-Target": "OOBE_20161026.PrepareRobot",
-        "Host": "api.jibo.com",
+        "Host": base_host,
     },
     prepare_body,
 )
@@ -174,7 +182,7 @@ status_before = request_json(
     f"{base_url.rstrip('/')}/",
     {
         "X-Amz-Target": "OOBE_20161026.GetStatus",
-        "Host": "api.jibo.com",
+        "Host": base_host,
     },
     {"token": token},
 )
@@ -188,7 +196,7 @@ setup = request_json(
     f"{base_url.rstrip('/')}/",
     {
         "X-Amz-Target": "OOBE_20161026.SetupRobot",
-        "Host": "api.jibo.com",
+        "Host": base_host,
     },
     {"token": token, "id": test_robot_id},
 )
@@ -202,7 +210,7 @@ status_after = request_json(
     f"{base_url.rstrip('/')}/",
     {
         "X-Amz-Target": "OOBE_20161026.GetStatus",
-        "Host": "api.jibo.com",
+        "Host": base_host,
     },
     {"token": token},
 )

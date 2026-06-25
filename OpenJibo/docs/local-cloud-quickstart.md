@@ -67,13 +67,13 @@ For a Linux live-device run on port `443`, reuse the existing PEM certificate ma
 CERT_PEM=/path/to/cert.pem \
 KEY_PEM=/path/to/key.pem \
 ASPNETCORE_URLS="https://0.0.0.0:443;http://0.0.0.0:24605" \
-./OpenJibo/scripts/cloud/start-dotnet-with-node-cert.sh
+./scripts/cloud/start-dotnet-with-node-cert.sh
 ```
 
 Then run:
 
 ```bash
-./OpenJibo/scripts/cloud/invoke-live-jibo-prep.sh
+./scripts/cloud/invoke-live-jibo-prep.sh
 ```
 
 ## Run The Node Cloud

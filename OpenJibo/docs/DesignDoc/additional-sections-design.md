@@ -208,14 +208,14 @@ PARALLEL="--parallel --concurrency=$CONCURRENCY"
 
 **Usage:**
 ```bash
-./OpenJibo/scripts/quickbuild.sh [scope] [nodocker]
+./scripts/quickbuild.sh [scope] [nodocker]
 ```
 
 **Examples:**
 ```bash
-./OpenJibo/scripts/quickbuild.sh all
-./OpenJibo/scripts/quickbuild.sh core
-./OpenJibo/scripts/quickbuild.sh skills nodocker
+./scripts/quickbuild.sh all
+./scripts/quickbuild.sh core
+./scripts/quickbuild.sh skills nodocker
 ```
 
 ### AWS ECS (Production)

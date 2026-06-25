@@ -68,7 +68,7 @@ CERT_PEM=src/Jibo.Cloud/node/cert.pem \
 KEY_PEM=src/Jibo.Cloud/node/key.pem \
 OpenJibo__Robot__RobotId=5a0b6398faa0f0001c5d0df1 \
 ASPNETCORE_URLS="https://0.0.0.0:443;http://0.0.0.0:24605" \
-sudo env "PATH=$PATH" ./OpenJibo/scripts/cloud/start-dotnet-with-node-cert.sh
+sudo env "PATH=$PATH" ./scripts/cloud/start-dotnet-with-node-cert.sh
 ```
 
 Notes:

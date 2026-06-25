@@ -55,7 +55,7 @@ If your chain is separate, pass it as `CHAIN_PEM`.
 2. From the repo root, start the `.NET` cloud using the same cert/key:
 
 ```bash
-./OpenJibo/scripts/cloud/start-dotnet-with-node-cert.sh
+./scripts/cloud/start-dotnet-with-node-cert.sh
 ```
 
 Optional environment overrides:
@@ -65,13 +65,13 @@ CERT_PEM=/path/to/cert.pem \
 KEY_PEM=/path/to/key.pem \
 CHAIN_PEM=/path/to/chain.pem \
 ASPNETCORE_URLS="https://0.0.0.0:443;http://0.0.0.0:24605" \
-./OpenJibo/scripts/cloud/start-dotnet-with-node-cert.sh
+./scripts/cloud/start-dotnet-with-node-cert.sh
 ```
 
 3. In another terminal, run the prep checklist:
 
 ```bash
-./OpenJibo/scripts/cloud/invoke-live-jibo-prep.sh
+./scripts/cloud/invoke-live-jibo-prep.sh
 ```
 
 By default this uses the local HTTP port exposed by the launcher:
@@ -83,14 +83,14 @@ That avoids certificate-name validation issues during preflight.
 If you want to override it, either of these works:
 
 ```bash
-BASE_URL=http://localhost:24605 ./OpenJibo/scripts/cloud/invoke-live-jibo-prep.sh
-BASEURL=http://localhost:24605 ./OpenJibo/scripts/cloud/invoke-live-jibo-prep.sh
+BASE_URL=http://localhost:24605 ./scripts/cloud/invoke-live-jibo-prep.sh
+BASEURL=http://localhost:24605 ./scripts/cloud/invoke-live-jibo-prep.sh
 ```
 
 4. Verify controlled routing from the Ubuntu environment:
 
 ```bash
-./OpenJibo/scripts/bootstrap/test-openjibo-routing.sh
+./scripts/bootstrap/test-openjibo-routing.sh
 ```
 
 5. Power on Jibo and let it connect using the existing controlled network configuration.
@@ -104,7 +104,7 @@ BASEURL=http://localhost:24605 ./OpenJibo/scripts/cloud/invoke-live-jibo-prep.sh
 7. After the run, summarize the captured websocket telemetry:
 
 ```bash
-./OpenJibo/scripts/cloud/get-websocket-capture-summary.sh
+./scripts/cloud/get-websocket-capture-summary.sh
 ```
 
 8. Inspect exported fixtures under:
@@ -119,7 +119,7 @@ Telemetry from the same run should also now be present under:
 9. Import the best fixture into the checked-in websocket fixture set:
 
 ```bash
-python3 ./OpenJibo/scripts/cloud/import-websocket-capture-fixture.py \
+python3 ./scripts/cloud/import-websocket-capture-fixture.py \
   /path/to/exported.flow.json \
   neo-hub-real-jibo-first-chat
 ```

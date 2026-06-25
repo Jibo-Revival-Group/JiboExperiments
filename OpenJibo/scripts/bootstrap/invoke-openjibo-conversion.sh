@@ -3,6 +3,8 @@ set -euo pipefail
 
 robot_root=""
 target_mode="open-jibo"
+api_hostname="api.openjibo.com"
+hub_hostname=""
 output_directory=""
 apply=false
 strict=false
@@ -15,6 +17,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --target-mode)
       target_mode="${2:-open-jibo}"
+      shift 2
+      ;;
+    --api-hostname)
+      api_hostname="${2:-api.openjibo.com}"
+      shift 2
+      ;;
+    --hub-hostname)
+      hub_hostname="${2:-}"
       shift 2
       ;;
     --output-directory)
@@ -59,7 +69,11 @@ plan_path="$output_directory/conversion-plan.json"
 apply_path="$output_directory/conversion-apply.json"
 
 audit_args=(--robot-root "$robot_root" --output-path "$audit_path")
-plan_args=(--robot-root "$robot_root" --target-mode "$target_mode" --output-path "$plan_path")
+plan_args=(--robot-root "$robot_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-path "$plan_path")
+
+if [[ -n "$hub_hostname" ]]; then
+  plan_args+=(--hub-hostname "$hub_hostname")
+fi
 
 if [[ "$strict" == true ]]; then
   audit_args+=(--strict)
@@ -71,7 +85,10 @@ fi
 
 applied=false
 if [[ "$apply" == true ]]; then
-  apply_args=(--robot-root "$robot_root" --plan-path "$plan_path" --target-mode "$target_mode" --output-path "$apply_path")
+  apply_args=(--robot-root "$robot_root" --plan-path "$plan_path" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-path "$apply_path")
+  if [[ -n "$hub_hostname" ]]; then
+    apply_args+=(--hub-hostname "$hub_hostname")
+  fi
   if [[ "$strict" == true ]]; then
     apply_args+=(--strict)
   fi
@@ -79,20 +96,22 @@ if [[ "$apply" == true ]]; then
   applied=true
 fi
 
-node - "$robot_root" "$target_mode" "$output_directory" "$audit_path" "$plan_path" "$applied" "$apply_path" <<'NODE'
+node - "$robot_root" "$target_mode" "$api_hostname" "${hub_hostname:-$api_hostname}" "$output_directory" "$audit_path" "$plan_path" "$applied" "$apply_path" <<'NODE'
 const path = require("path");
 
 const summary = {
   RobotRoot: path.resolve(process.argv[2]),
   TargetMode: process.argv[3],
-  OutputDirectory: path.resolve(process.argv[4]),
-  AuditPath: path.resolve(process.argv[5]),
-  PlanPath: path.resolve(process.argv[6]),
-  Applied: String(process.argv[7]).toLowerCase() === "true",
+  ApiHostname: process.argv[4],
+  HubHostname: process.argv[5],
+  OutputDirectory: path.resolve(process.argv[6]),
+  AuditPath: path.resolve(process.argv[7]),
+  PlanPath: path.resolve(process.argv[8]),
+  Applied: String(process.argv[9]).toLowerCase() === "true",
 };
 
 if (summary.Applied) {
-  summary.ApplyPath = path.resolve(process.argv[8]);
+  summary.ApplyPath = path.resolve(process.argv[10]);
 }
 
 console.log(JSON.stringify(summary, null, 2));

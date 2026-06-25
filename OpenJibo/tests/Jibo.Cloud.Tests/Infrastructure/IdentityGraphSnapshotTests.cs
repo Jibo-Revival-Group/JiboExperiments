@@ -39,6 +39,9 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("device-id", graph.AdmissionAssessment.SatisfiedEvidence);
         Assert.Empty(graph.AdmissionAssessment.BlockingEvidence);
         Assert.Contains("record-signed-snapshot-for-peer-admission", graph.AdmissionAssessment.RecommendedActions);
+        Assert.Contains("no-local-revocation-evidence", graph.AdmissionAssessment.RevocationChecks);
+        Assert.Contains("device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020", graph.AdmissionAssessment.RevocationAnchors);
+        Assert.Contains("robot-id:Ghost-Instance-Onion-Silk=Ghost-Instance-Onion-Silk", graph.AdmissionAssessment.RevocationAnchors);
         Assert.Contains($"content-hash|{graph.ContentHash}", graph.AdmissionAssessment.DecisionPayload);
         Assert.Contains("recommendation|admit", graph.AdmissionAssessment.DecisionPayload);
         Assert.Matches("^[a-f0-9]{64}$", graph.AdmissionAssessment.DecisionHash);
@@ -59,12 +62,16 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("required-corroborating-evidence-present", graph.EvidenceBundle.AdmissionReasons);
         Assert.Contains("device-id", graph.EvidenceBundle.SatisfiedEvidence);
         Assert.Contains("record-signed-snapshot-for-peer-admission", graph.EvidenceBundle.RecommendedActions);
+        Assert.Equal(graph.AdmissionAssessment.RevocationChecks, graph.EvidenceBundle.RevocationChecks);
+        Assert.Equal(graph.AdmissionAssessment.RevocationAnchors, graph.EvidenceBundle.RevocationAnchors);
         Assert.Contains($"snapshot-content-hash|{graph.ContentHash}", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-reasons|required-corroborating-evidence-present", graph.EvidenceBundle.Payload);
         Assert.Equal(graph.AdmissionAssessment.RequiredEvidence, graph.EvidenceBundle.RequiredEvidence);
         Assert.Contains("admission-required-evidence|application-version,device-id,host-mapping,robot-id", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-satisfied-evidence|application-version,device-id,host-mapping,robot-id", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-recommended-actions|record-signed-snapshot-for-peer-admission", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-revocation-checks|no-local-revocation-evidence", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-revocation-anchors|device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020,robot-id:Ghost-Instance-Onion-Silk=Ghost-Instance-Onion-Silk", graph.EvidenceBundle.Payload);
         Assert.Contains($"admission-decision-hash|{graph.AdmissionAssessment.DecisionHash}", graph.EvidenceBundle.Payload);
         Assert.Matches("^[a-f0-9]{64}$", graph.EvidenceBundle.BundleHash);
         Assert.Equal("HMAC-SHA256", graph.EvidenceBundle.SignatureAlgorithm);
@@ -280,6 +287,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("required:host-mapping", graph.AdmissionAssessment.BlockingEvidence);
         Assert.Contains("capture-current-open-jibo-application-version", graph.AdmissionAssessment.RecommendedActions);
         Assert.Contains("record-open-jibo-host-mapping", graph.AdmissionAssessment.RecommendedActions);
+        Assert.Contains("defer-revocation-admission-until-blocking-evidence-resolved", graph.AdmissionAssessment.RevocationChecks);
         Assert.Contains("recommendation|quarantine", graph.AdmissionAssessment.DecisionPayload);
         Assert.Contains("blocking-evidence|required:application-version,required:host-mapping", graph.AdmissionAssessment.DecisionPayload);
     }
@@ -345,6 +353,10 @@ public sealed class IdentityGraphSnapshotTests
             signal.SignalKind == "build-hash" && signal.Value == "build-sha256-001");
         Assert.Contains(graph.EvidenceSignals, signal =>
             signal.SignalKind == "config-hash" && signal.Value == "config-sha256-001");
+        Assert.Contains("certificate-thumbprint:Ghost-Instance-Onion-Silk=sha256:robot-cert-thumbprint",
+            graph.EvidenceBundle.RevocationAnchors);
+        Assert.Contains("issued-identity:Ghost-Instance-Onion-Silk=oji_issued_robot_001",
+            graph.EvidenceBundle.RevocationAnchors);
     }
 
     [Fact]
@@ -505,6 +517,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.RequiredEvidence.Order(StringComparer.Ordinal), verification.RequiredEvidence);
         Assert.Equal(graph.EvidenceBundle.SatisfiedEvidence.Order(StringComparer.Ordinal), verification.SatisfiedEvidence);
         Assert.Equal(graph.EvidenceBundle.RecommendedActions, verification.RecommendedActions);
+        Assert.Equal(graph.EvidenceBundle.RevocationChecks, verification.RevocationChecks);
+        Assert.Equal(graph.EvidenceBundle.RevocationAnchors, verification.RevocationAnchors);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.ComputedAdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionSignature, verification.AdmissionSignature);

@@ -17,6 +17,8 @@ public sealed class IdentityGraphEvidenceBundle
     public IReadOnlyList<string> RequiredEvidence { get; init; } = [];
     public IReadOnlyList<string> SatisfiedEvidence { get; init; } = [];
     public IReadOnlyList<string> RecommendedActions { get; init; } = [];
+    public IReadOnlyList<string> RevocationChecks { get; init; } = [];
+    public IReadOnlyList<string> RevocationAnchors { get; init; } = [];
     public int PeopleCount { get; init; }
     public int MemberCount { get; init; }
     public int RelationshipCount { get; init; }

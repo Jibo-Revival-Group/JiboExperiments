@@ -83,11 +83,14 @@ public static class IdentityGraphEvidenceBundleVerifier
         var satisfiedEvidence = SplitCsv(Get(payloadFields, "admission-satisfied-evidence"));
         var blockingEvidence = SplitCsv(Get(payloadFields, "admission-blocking-evidence"));
         var recommendedActions = SplitCsv(Get(payloadFields, "admission-recommended-actions"));
+        var revocationChecks = SplitCsv(Get(payloadFields, "admission-revocation-checks"));
+        var revocationAnchors = SplitCsv(Get(payloadFields, "admission-revocation-anchors"));
         var admissionDecisionHash = Get(payloadFields, "admission-decision-hash");
         var admissionSignatureKeyId = Get(payloadFields, "admission-signature-key-id");
         var admissionSignature = Get(payloadFields, "admission-signature");
         var computedAdmissionDecisionPayload = BuildAdmissionDecisionPayload(accountId, loopId, snapshotContentHash,
-            admissionPolicyVersion, admissionRecommendation, admissionReasons, requiredEvidence, satisfiedEvidence, blockingEvidence, recommendedActions);
+            admissionPolicyVersion, admissionRecommendation, admissionReasons, requiredEvidence, satisfiedEvidence,
+            blockingEvidence, recommendedActions, revocationChecks, revocationAnchors);
         var computedAdmissionDecisionHash = ComputeSha256Hex(computedAdmissionDecisionPayload);
         var computedAdmissionSignature = SignPayload(computedAdmissionDecisionPayload);
 
@@ -132,6 +135,8 @@ public static class IdentityGraphEvidenceBundleVerifier
             RequiredEvidence = requiredEvidence,
             SatisfiedEvidence = satisfiedEvidence,
             RecommendedActions = recommendedActions,
+            RevocationChecks = revocationChecks,
+            RevocationAnchors = revocationAnchors,
             AdmissionDecisionHash = admissionDecisionHash,
             ComputedAdmissionDecisionHash = computedAdmissionDecisionHash,
             AdmissionSignature = admissionSignature,
@@ -180,7 +185,9 @@ public static class IdentityGraphEvidenceBundleVerifier
 
     private static string BuildAdmissionDecisionPayload(string accountId, string loopId, string contentHash,
         string policyVersion, string recommendation, IReadOnlyList<string> reasons, IReadOnlyList<string> requiredEvidence,
-        IReadOnlyList<string> satisfiedEvidence, IReadOnlyList<string> blockingEvidence, IReadOnlyList<string> recommendedActions)
+        IReadOnlyList<string> satisfiedEvidence, IReadOnlyList<string> blockingEvidence,
+        IReadOnlyList<string> recommendedActions, IReadOnlyList<string> revocationChecks,
+        IReadOnlyList<string> revocationAnchors)
     {
         var lines = new[]
         {
@@ -193,7 +200,9 @@ public static class IdentityGraphEvidenceBundleVerifier
             $"required-evidence|{string.Join(',', requiredEvidence.Order(StringComparer.Ordinal))}",
             $"satisfied-evidence|{string.Join(',', satisfiedEvidence.Order(StringComparer.Ordinal))}",
             $"blocking-evidence|{string.Join(',', blockingEvidence.Order(StringComparer.Ordinal))}",
-            $"recommended-actions|{string.Join(',', recommendedActions.Order(StringComparer.Ordinal))}"
+            $"recommended-actions|{string.Join(',', recommendedActions.Order(StringComparer.Ordinal))}",
+            $"revocation-checks|{string.Join(',', revocationChecks.Order(StringComparer.Ordinal))}",
+            $"revocation-anchors|{string.Join(',', revocationAnchors.Order(StringComparer.Ordinal))}"
         };
 
         return string.Join('\n', lines);

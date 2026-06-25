@@ -9,6 +9,8 @@ public sealed class IdentityGraphAdmissionAssessment
     public IReadOnlyList<string> SatisfiedEvidence { get; init; } = [];
     public IReadOnlyList<string> BlockingEvidence { get; init; } = [];
     public IReadOnlyList<string> RecommendedActions { get; init; } = [];
+    public IReadOnlyList<string> RevocationChecks { get; init; } = [];
+    public IReadOnlyList<string> RevocationAnchors { get; init; } = [];
     public string DecisionPayload { get; init; } = string.Empty;
     public string DecisionHash { get; init; } = string.Empty;
     public string SignatureAlgorithm { get; init; } = string.Empty;

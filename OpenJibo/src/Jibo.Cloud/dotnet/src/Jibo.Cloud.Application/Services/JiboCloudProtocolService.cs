@@ -794,6 +794,12 @@ public sealed class JiboCloudProtocolService(
             return true;
         }
 
+        if (envelope.Path.Equals("/apply-update", StringComparison.OrdinalIgnoreCase))
+        {
+            result = ApplySchedulerUpdate(envelope);
+            return true;
+        }
+
         if (envelope.Path.Equals("/check-updates", StringComparison.OrdinalIgnoreCase))
         {
             var body = envelope.TryParseBody();
@@ -824,6 +830,57 @@ public sealed class JiboCloudProtocolService(
         });
         return true;
 
+    }
+
+    private ProtocolDispatchResult ApplySchedulerUpdate(ProtocolEnvelope envelope)
+    {
+        var body = envelope.TryParseBody();
+        var updateId = ReadString(body, "id") ?? ReadString(body, "updateId");
+        var subsystem = ReadString(body, "subsystem") ?? "robot";
+        var update = stateStore.ListUpdates()
+            .FirstOrDefault(candidate => updateId is not null
+                ? candidate.UpdateId.Equals(updateId, StringComparison.OrdinalIgnoreCase)
+                : candidate.Subsystem.Equals(subsystem, StringComparison.OrdinalIgnoreCase));
+
+        if (update is null)
+            return ProtocolDispatchResult.Raw(404, JsonSerializer.Serialize(new
+            {
+                status = "NOT_FOUND",
+                updateId
+            }), "application/json");
+
+        var robot = stateStore.GetRobot();
+        stateStore.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = robot.DeviceId,
+            RobotId = robot.RobotId,
+            FriendlyName = robot.FriendlyName,
+            FirmwareVersion = update.ToVersion,
+            ApplicationVersion = robot.ApplicationVersion,
+            CertificateThumbprint = robot.CertificateThumbprint,
+            IssuedIdentityId = robot.IssuedIdentityId,
+            BuildHash = robot.BuildHash,
+            ConfigHash = robot.ConfigHash,
+            HostMappings = robot.HostMappings
+        });
+
+        lock (_schedulerLock)
+        {
+            _schedulerState.DownloadedUpdateIds.Remove(update.UpdateId);
+            if (_schedulerState.DownloadStatus?.Updates.Any(item =>
+                    item.Id.Equals(update.UpdateId, StringComparison.OrdinalIgnoreCase)) == true)
+                _schedulerState.DownloadStatus = null;
+        }
+
+        return ProtocolDispatchResult.Ok(new
+        {
+            status = "OK",
+            updateId = update.UpdateId,
+            fromVersion = update.FromVersion,
+            toVersion = update.ToVersion,
+            firmwareVersion = update.ToVersion,
+            rebootRequired = true
+        });
     }
 
     private static string? ReadSchedulerFilter(ProtocolEnvelope envelope)

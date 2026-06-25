@@ -623,6 +623,60 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task SchedulerApplyUpdate_AdvancesFirmwareAndClearsPendingUpdate()
+    {
+        var create = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "CreateUpdate",
+            BodyText =
+                """{"fromVersion":"12.10.0","toVersion":"12.10.2","changes":"Controlled OTA apply","subsystem":"robot","length":400}"""
+        });
+
+        using var createPayload = JsonDocument.Parse(create.BodyText);
+        var updateId = createPayload.RootElement.GetProperty("_id").GetString();
+
+        var apply = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/apply-update",
+            BodyText = "{\"id\":\"" + updateId + "\"}"
+        });
+
+        using var applyPayload = JsonDocument.Parse(apply.BodyText);
+        Assert.Equal(200, apply.StatusCode);
+        Assert.Equal("OK", applyPayload.RootElement.GetProperty("status").GetString());
+        Assert.Equal("12.10.2", applyPayload.RootElement.GetProperty("firmwareVersion").GetString());
+        Assert.True(applyPayload.RootElement.GetProperty("rebootRequired").GetBoolean());
+
+        var checkUpdates = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "localhost",
+            Method = "POST",
+            Path = "/check-updates",
+            BodyText = """{"filter":"robot"}"""
+        });
+
+        using var checkPayload = JsonDocument.Parse(checkUpdates.BodyText);
+        Assert.Empty(checkPayload.RootElement.GetProperty("data").EnumerateArray());
+
+        var robot = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Robot_20160715",
+            Operation = "GetRobot",
+            BodyText = "{}"
+        });
+
+        using var robotPayload = JsonDocument.Parse(robot.BodyText);
+        Assert.Equal("12.10.2", robotPayload.RootElement.GetProperty("payload").GetProperty("platform").GetString());
+    }
+
+    [Fact]
     public async Task SchedulerCheckUpdates_IgnoresSameVersionNoopUpdates()
     {
         await _service.DispatchAsync(new ProtocolEnvelope

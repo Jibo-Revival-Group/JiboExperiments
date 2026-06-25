@@ -551,6 +551,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-06-25`):
   - expanded user birthday memory parsing with Pegasus-style `birth date`, `birthdate`, possessive birthday, and `falls on` set/recall aliases so user-date memory stays ahead of generic date and robot-birthday routes
   - added targeted parser coverage for the new birthday alias families
+- Progress update (`2026-06-25`, preference recall alias slice):
+  - expanded personal preference recall parsing for `do you know my favorite ...`, `tell me my favorite ...`, and `tell me what my favorite ... is` variants so owner-memory lookup stays ahead of generic chat
+  - added focused guardrail coverage for the new favorite/favourite recall alias families
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

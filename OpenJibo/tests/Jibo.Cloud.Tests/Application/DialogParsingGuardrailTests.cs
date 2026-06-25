@@ -1,3 +1,4 @@
+using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
@@ -31,12 +32,40 @@ public sealed class DialogParsingGuardrailTests
         Assert.Equal(expectedIntent, decision.IntentName);
     }
 
-    private static JiboInteractionService CreateService()
+
+    [Theory]
+    [InlineData("do you know my favorite color", "color")]
+    [InlineData("tell me my favorite colour", "colour")]
+    [InlineData("tell me what my favorite sport is", "sport")]
+    [InlineData("tell me what my favourite food is", "food")]
+    public async Task BuildDecisionAsync_PreferenceRecallAliases_StayOnMemoryRoute(
+        string transcript,
+        string expectedCategory)
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        memoryStore.SetPreference(
+            new PersonalMemoryTenantScope("usr_openjibo_owner", "openjibo-default-loop", "Ghost-Instance-Onion-Silk"),
+            expectedCategory,
+            "blue");
+        var service = CreateService(memoryStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal("memory_get_preference", decision.IntentName);
+        Assert.Contains($"favorite {expectedCategory}", decision.SpokenText);
+    }
+
+    private static JiboInteractionService CreateService(InMemoryPersonalMemoryStore? memoryStore = null)
     {
         return new JiboInteractionService(
             new JiboExperienceContentCache(new InMemoryJiboExperienceContentRepository()),
             new FirstItemRandomizer(),
-            new InMemoryPersonalMemoryStore());
+            memoryStore ?? new InMemoryPersonalMemoryStore());
     }
 
     private sealed class FirstItemRandomizer : IJiboRandomizer

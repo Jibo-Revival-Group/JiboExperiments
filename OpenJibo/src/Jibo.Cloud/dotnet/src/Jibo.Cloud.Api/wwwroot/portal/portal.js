@@ -142,9 +142,19 @@ async function renderIdentityGraphPanel() {
           <div class="meta-item"><span>Blocking evidence</span><span>${escapeHtml((graph.admissionAssessment?.blockingEvidence || []).join(", ") || "—")}</span></div>
           <div class="meta-item"><span>Recommended actions</span><span>${escapeHtml((graph.admissionAssessment?.recommendedActions || []).join(", ") || "—")}</span></div>
         </div>
+        <div class="meta-list compact">
+          <div class="meta-item"><span>Revocation checks</span><span>${escapeHtml((graph.admissionAssessment?.revocationChecks || []).join(", ") || "—")}</span></div>
+          <div class="meta-item"><span>Revocation anchors</span><span>${escapeHtml((graph.admissionAssessment?.revocationAnchors || []).join(", ") || "—")}</span></div>
+        </div>
         <div class="actions-row">
           <a class="secondary-button" href="/api/portal/identity-graph/evidence-bundle?portalSessionToken=${encodeURIComponent(getSessionToken() || "")}">Download evidence bundle</a>
         </div>
+        <div class="inline-form">
+          <label for="revocationAnchor">Quarantine by revocation anchor</label>
+          <input id="revocationAnchor" type="text" placeholder="device-id:...=...">
+          <button class="button danger" id="revokeIdentityAnchorButton" type="button">Record revocation</button>
+        </div>
+        <p id="identityGraphActionStatus" class="status hidden"></p>
       </section>
     `;
   } catch (error) {
@@ -306,6 +316,24 @@ async function renderDashboard(message = "", tone = "success") {
       try {
         await apiFetch("/api/portal/home-assistant/link", { method: "DELETE" });
         await renderDashboard("Home Assistant unpaired.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  }
+
+  const revokeIdentityAnchorButton = document.getElementById("revokeIdentityAnchorButton");
+  if (revokeIdentityAnchorButton) {
+    revokeIdentityAnchorButton.addEventListener("click", async () => {
+      const anchor = document.getElementById("revocationAnchor").value.trim();
+      const status = document.getElementById("identityGraphActionStatus");
+      try {
+        await apiFetch("/api/portal/identity-graph/revocations", {
+          method: "POST",
+          body: JSON.stringify({ anchor }),
+        });
+        await renderDashboard("Identity graph revocation recorded; the signed admission bundle is now quarantined.");
       } catch (error) {
         status.textContent = error.message;
         status.className = "status error";

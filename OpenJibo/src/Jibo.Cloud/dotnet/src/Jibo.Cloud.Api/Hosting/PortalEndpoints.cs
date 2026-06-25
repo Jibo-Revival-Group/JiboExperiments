@@ -80,6 +80,32 @@ internal static class PortalEndpoints
             });
         });
 
+
+        app.MapPost("/api/portal/identity-graph/revocations", (
+            [FromBody] RevokeIdentityGraphAnchorRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(request.Anchor))
+                return Results.BadRequest(new { error = "anchor is required." });
+
+            cloudStateStore.RevokeIdentityGraphAnchor(request.Anchor);
+            var graph = cloudStateStore.GetIdentityGraph();
+
+            return Results.Json(new
+            {
+                revoked = true,
+                anchor = request.Anchor.Trim(),
+                graph.AdmissionAssessment,
+                graph.EvidenceBundle
+            });
+        });
+
         app.MapGet("/api/portal/identity-graph/evidence-bundle", (
             HttpRequest request,
             PortalSessionService portalSessionService,
@@ -278,4 +304,6 @@ internal static class PortalEndpoints
     private sealed record LinkHomeAssistantRequest(string? PortalSessionToken, string? HaCode);
 
     private sealed record PortalLogoutRequest(string? PortalSessionToken);
+
+    private sealed record RevokeIdentityGraphAnchorRequest(string? Anchor, string? PortalSessionToken);
 }

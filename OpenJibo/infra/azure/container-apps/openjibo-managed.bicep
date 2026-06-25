@@ -151,11 +151,11 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'OpenJibo__State__Backend'
-              value: 'AzureBlob'
+              value: 'PostgreSql'
             }
             {
               name: 'OpenJibo__PersonalMemory__Backend'
-              value: 'AzureBlob'
+              value: 'PostgreSql'
             }
             {
               name: 'OpenJibo__Media__Backend'

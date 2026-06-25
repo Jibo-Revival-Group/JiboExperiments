@@ -4,6 +4,8 @@ set -euo pipefail
 source_root=""
 overlay_root=""
 target_mode="open-jibo"
+api_hostname="api.openjibo.com"
+hub_hostname=""
 output_directory=""
 apply=false
 strict=false
@@ -21,6 +23,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --target-mode)
       target_mode="${2:-open-jibo}"
+      shift 2
+      ;;
+    --api-hostname)
+      api_hostname="${2:-api.openjibo.com}"
+      shift 2
+      ;;
+    --hub-hostname)
+      hub_hostname="${2:-}"
       shift 2
       ;;
     --output-directory)
@@ -71,7 +81,10 @@ fi
 
 "$scaffold_script" "${scaffold_args[@]}" >/dev/null
 
-invoke_args=(--robot-root "$overlay_root" --target-mode "$target_mode" --output-directory "$invoke_output_directory")
+invoke_args=(--robot-root "$overlay_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-directory "$invoke_output_directory")
+if [[ -n "$hub_hostname" ]]; then
+  invoke_args+=(--hub-hostname "$hub_hostname")
+fi
 if [[ "$apply" == true ]]; then
   invoke_args+=(--apply)
 fi
@@ -81,7 +94,7 @@ fi
 
 "$invoke_script" "${invoke_args[@]}" >/dev/null
 
-node - "$source_root" "$overlay_root" "$target_mode" "$output_directory" "$scaffold_output" "$invoke_output_directory" <<'NODE'
+node - "$source_root" "$overlay_root" "$target_mode" "$api_hostname" "${hub_hostname:-$api_hostname}" "$output_directory" "$scaffold_output" "$invoke_output_directory" <<'NODE'
 const fs = require("fs");
 const path = require("path");
 
@@ -89,12 +102,14 @@ const summary = {
   SourceRoot: path.resolve(process.argv[2]),
   OverlayRoot: path.resolve(process.argv[3]),
   TargetMode: process.argv[4],
-  OutputDirectory: path.resolve(process.argv[5]),
-  ScaffoldPath: path.resolve(process.argv[6]),
-  InvokeOutputDirectory: path.resolve(process.argv[7]),
+  ApiHostname: process.argv[5],
+  HubHostname: process.argv[6],
+  OutputDirectory: path.resolve(process.argv[7]),
+  ScaffoldPath: path.resolve(process.argv[8]),
+  InvokeOutputDirectory: path.resolve(process.argv[9]),
 };
 
 const json = JSON.stringify(summary, null, 2);
-fs.writeFileSync(path.resolve(process.argv[5], "harness-summary.json"), json);
+fs.writeFileSync(path.resolve(process.argv[7], "harness-summary.json"), json);
 console.log(json);
 NODE

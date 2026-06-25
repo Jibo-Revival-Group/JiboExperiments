@@ -4,6 +4,8 @@ set -euo pipefail
 robot_root=""
 plan_path=""
 target_mode="open-jibo"
+api_hostname="api.openjibo.com"
+hub_hostname=""
 output_path=""
 strict=false
 
@@ -19,6 +21,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --target-mode)
       target_mode="${2:-open-jibo}"
+      shift 2
+      ;;
+    --api-hostname)
+      api_hostname="${2:-api.openjibo.com}"
+      shift 2
+      ;;
+    --hub-hostname)
+      hub_hostname="${2:-}"
       shift 2
       ;;
     --output-path)
@@ -41,15 +51,17 @@ if [[ -z "$robot_root" || -z "$plan_path" ]]; then
   exit 2
 fi
 
-node - "$robot_root" "$plan_path" "$target_mode" "$output_path" "$strict" <<'NODE'
+node - "$robot_root" "$plan_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict" <<'NODE'
 const fs = require("fs");
 const path = require("path");
 
 const robotRoot = path.resolve(process.argv[2]);
 const planPath = path.resolve(process.argv[3]);
 const targetMode = process.argv[4];
-const outputPath = (process.argv[5] || "").trim();
-const strict = String(process.argv[6]).toLowerCase() === "true";
+const apiHostname = (process.argv[5] || "api.openjibo.com").trim() || "api.openjibo.com";
+const hubHostname = (process.argv[6] || "").trim() || apiHostname;
+const outputPath = (process.argv[7] || "").trim();
+const strict = String(process.argv[8]).toLowerCase() === "true";
 
 if (!fs.existsSync(planPath)) {
   throw new Error(`Plan file not found at ${planPath}`);
@@ -125,14 +137,20 @@ const oobe = readJson(oobeConfigPath);
 jetstream["region-settings"] = jetstream["region-settings"] || jetstream.regions || {};
 jetstream.regions = jetstream.regions || jetstream["region-settings"];
 
-const sourceRegion = jetstream["region-settings"].api || jetstream.regions.api || {
+const baseRegion = jetstream["region-settings"].api || jetstream.regions.api || {
   hub_port: 443,
-  hub_hostname: "neo-hub.jibo.com",
-  entrypoint_hostname: "api.jibo.com",
+  entrypoint_port: 443,
+};
+const openJiboRegion = {
+  ...baseRegion,
+  hub_port: baseRegion.hub_port || 443,
+  entrypoint_port: baseRegion.entrypoint_port || 443,
+  hub_hostname: hubHostname,
+  entrypoint_hostname: apiHostname,
 };
 
-jetstream["region-settings"]["open-jibo"] = sourceRegion;
-jetstream.regions["open-jibo"] = sourceRegion;
+jetstream["region-settings"]["open-jibo"] = openJiboRegion;
+jetstream.regions["open-jibo"] = openJiboRegion;
 
 oobe.serverRegion = oobe.serverRegion || currentRegion || "api";
 oobe.otaFilter = oobe.otaFilter || "eau";
@@ -140,6 +158,8 @@ oobe.openJiboConversion = {
   enabled: true,
   targetMode,
   state: "pending",
+  apiHostname,
+  hubHostname,
   createdUtc: new Date().toISOString(),
   backupRoot,
 };
@@ -152,6 +172,8 @@ writeJson(conversionMarkerPath, {
   targetMode,
   state: "pending",
   sourceRegion: currentRegion,
+  apiHostname,
+  hubHostname,
   createdUtc: new Date().toISOString(),
   backups,
   robotRoot,
@@ -162,6 +184,8 @@ const applyManifest = {
   TargetMode: targetMode,
   SourcePlan: planPath,
   CanApply: Boolean(plan.CanApply),
+  ApiHostname: apiHostname,
+  HubHostname: hubHostname,
   Backups: plan.Backups || [],
   BackupRoot: backupRoot,
   CreatedBackups: backups,
@@ -170,6 +194,7 @@ const applyManifest = {
   Notes: [
     "This helper writes the minimal staged conversion state after taking backups.",
     "The active credentials region remains on the proven value until first-boot conversion completes.",
+    "The staged open-jibo region points to the canonical Open Jibo API hostname.",
   ],
   WrittenFiles: [
     jetstreamPath,

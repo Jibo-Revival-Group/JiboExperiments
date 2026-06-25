@@ -30,6 +30,7 @@ internal sealed class WebSocketRequestCoordinator(
             await homeAssistantWebSocketHandler.HandleAsync(context);
             return;
         }
+
         var token = TokenResolver.Resolve(context.Request);
         logger.LogDebug("WebSocket request start kind={Kind} token={Token} host={Host} path={Path}", kind, token,
             context.Request.Host.Host, context.Request.Path);

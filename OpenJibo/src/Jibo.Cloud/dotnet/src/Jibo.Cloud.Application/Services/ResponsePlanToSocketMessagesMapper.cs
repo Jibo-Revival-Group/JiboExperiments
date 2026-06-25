@@ -1089,14 +1089,14 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (cards.Length == 0) return [];
 
         var sequenceCards = new List<WeatherHiLoSequenceCard>(cards.Length);
-        
+
         // ReSharper disable once LoopCanBeConvertedToQuery
         foreach (var card in cards)
         {
             var weatherCardPayload = BuildWeatherCardPayload(card);
-            
+
             var view = BuildWeatherHiLoView(weatherCardPayload);
-            
+
             if (view is null) continue;
 
             var sequenceCard = BuildSequenceCard(view, weatherCardPayload);
@@ -1107,7 +1107,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
         return sequenceCards;
     }
 
-    private static WeatherHiLoSequenceCard BuildSequenceCard(object view, Dictionary<string, object?> weatherCardPayload)
+    private static WeatherHiLoSequenceCard BuildSequenceCard(object view,
+        Dictionary<string, object?> weatherCardPayload)
     {
         return new WeatherHiLoSequenceCard(
             view,

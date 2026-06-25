@@ -18,7 +18,7 @@ public sealed class WolframAlphaSearchProviderTests
             return TextResponse(
                 "The 20th president of the United States was James Garfield from March 4, 1881, to September 19, 1881");
         });
-        var provider = CreateProvider(handler, "test-app-id");
+        var provider = CreateProvider(handler);
 
         var result = await provider.SearchAsync(CreateRequest("What is the 20th president of the United States"));
 
@@ -36,9 +36,9 @@ public sealed class WolframAlphaSearchProviderTests
     [Fact]
     public async Task SearchAsync_ReturnsNull_WhenApiKeyMissing()
     {
-        var provider = CreateProvider(new RecordingHttpMessageHandler(_ => TextResponse("answer")), apiKey: null);
+        var provider = CreateProvider(new RecordingHttpMessageHandler(_ => TextResponse("answer")), null);
 
-        var result = await provider.SearchAsync(CreateRequest("What is two plus two", apiKey: null));
+        var result = await provider.SearchAsync(CreateRequest("What is two plus two", null));
 
         Assert.Null(result);
     }

@@ -15,6 +15,7 @@ using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+
 // ReSharper disable UnusedMethodReturnValue.Global
 
 namespace Jibo.Cloud.Infrastructure.DependencyInjection;

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+
 // ReSharper disable StringLiteralTypo
 
 namespace Jibo.Cloud.Application.Services;
@@ -90,7 +91,9 @@ internal static class TranscriptTextNormalizer
     internal static string StripLeadingWakePhrase(string? value)
     {
         var normalized = NormalizeLooseText(value);
-        return string.IsNullOrWhiteSpace(normalized) ? string.Empty : StripLeadingPhrases(normalized, WakePhraseLeadPhrases);
+        return string.IsNullOrWhiteSpace(normalized)
+            ? string.Empty
+            : StripLeadingPhrases(normalized, WakePhraseLeadPhrases);
     }
 
     internal static string ExtractWakePhraseCommand(string? value)

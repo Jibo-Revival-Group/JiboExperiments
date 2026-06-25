@@ -16,8 +16,6 @@ public static class HomeAssistantLightCommandParser
         Named
     }
 
-    public readonly record struct LightCommand(LightAction Action, LightScope Scope, string? TargetName);
-
     private static readonly string[] CommandLeadPhrases =
     [
         "hey jibo",
@@ -142,4 +140,6 @@ public static class HomeAssistantLightCommandParser
 
         return TranscriptTextNormalizer.StripLeadingPhrases(normalized, CommandLeadPhrases);
     }
+
+    public readonly record struct LightCommand(LightAction Action, LightScope Scope, string? TargetName);
 }

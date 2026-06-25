@@ -214,7 +214,6 @@ public sealed class JiboCloudProtocolService(
             secretAccessKey = account.SecretAccessKey,
             serviceMode = false
         });
-
     }
 
     private ProtocolDispatchResult HandleLoop(string operation, ProtocolEnvelope envelope)
@@ -816,20 +815,15 @@ public sealed class JiboCloudProtocolService(
             !envelope.Path.Equals("/ota-update", StringComparison.OrdinalIgnoreCase)) return false;
 
         if (envelope.Path.Equals("/backup-robot", StringComparison.OrdinalIgnoreCase))
-        {
             StartSchedulerBackupCycle();
-        }
         else
-        {
             StartSchedulerUpdateCycle(ReadSchedulerFilter(envelope));
-        }
 
         result = ProtocolDispatchResult.Ok(new
         {
             status = "OK"
         });
         return true;
-
     }
 
     private ProtocolDispatchResult ApplySchedulerUpdate(ProtocolEnvelope envelope)

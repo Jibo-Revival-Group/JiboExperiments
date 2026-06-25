@@ -139,7 +139,8 @@ internal static class PortalEndpoints
 
             var pendingHa = registry.TryGetPendingByCode(request.HaCode);
             if (pendingHa is null)
-                return Results.BadRequest(new { error = "Home Assistant verification code is invalid or has expired." });
+                return Results.BadRequest(new
+                    { error = "Home Assistant verification code is invalid or has expired." });
 
             var link = integrationStore.AddHomeAssistantLink(
                 session.DeviceId,
@@ -243,7 +244,8 @@ internal static class PortalEndpoints
         return token;
     }
 
-    private static void RegisterVerifiedRobotIdentity(ICloudStateStore cloudStateStore, string deviceId, string friendlyId)
+    private static void RegisterVerifiedRobotIdentity(ICloudStateStore cloudStateStore, string deviceId,
+        string friendlyId)
     {
         var currentRobot = cloudStateStore.GetRobot();
         if (string.Equals(currentRobot.DeviceId, deviceId, StringComparison.OrdinalIgnoreCase) &&

@@ -131,6 +131,12 @@
     <File Path="scripts/cloud/postgres-init/01-create-databases.sh" />
   </Folder>
   <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path=".env" />
+    <File Path=".env.example" />
+    <File Path=".gitignore" />
+    <File Path="docker-compose.yml" />
+    <File Path="Dockerfile" />
     <File Path="NuGet.Config" />
     <File Path="README.md" />
   </Folder>

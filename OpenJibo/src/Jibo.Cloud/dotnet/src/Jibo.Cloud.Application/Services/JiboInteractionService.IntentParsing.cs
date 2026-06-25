@@ -1038,7 +1038,15 @@ public sealed partial class JiboInteractionService
                normalized.StartsWith("what s my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("what's my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you remember my favorite", StringComparison.Ordinal) ||
-               normalized.StartsWith("do you remember my favourite", StringComparison.Ordinal);
+               normalized.StartsWith("do you remember my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you know my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you know my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("tell me my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("tell me my favourite", StringComparison.Ordinal) ||
+               (normalized.StartsWith("tell me what my favorite", StringComparison.Ordinal) &&
+                normalized.EndsWith(" is", StringComparison.Ordinal)) ||
+               (normalized.StartsWith("tell me what my favourite", StringComparison.Ordinal) &&
+                normalized.EndsWith(" is", StringComparison.Ordinal));
     }
 
     private static string? TryExtractPreferenceLookupCategory(string transcript)
@@ -1050,17 +1058,39 @@ public sealed partial class JiboInteractionService
             "what s my favorite ",
             "what's my favorite ",
             "do you remember my favorite ",
+            "do you know my favorite ",
+            "tell me my favorite ",
             "what is my favourite ",
             "what s my favourite ",
             "what's my favourite ",
-            "do you remember my favourite "
+            "do you remember my favourite ",
+            "do you know my favourite ",
+            "tell me my favourite "
         };
 
-        return (from prefix in prefixes
+        var category = (from prefix in prefixes
             where normalized.StartsWith(prefix, StringComparison.Ordinal)
             select normalized[prefix.Length..].Trim()
-            into category
-            select string.IsNullOrWhiteSpace(category) ? null : category).FirstOrDefault();
+            into candidate
+            select string.IsNullOrWhiteSpace(candidate) ? null : candidate).FirstOrDefault();
+
+        if (!string.IsNullOrWhiteSpace(category)) return category;
+
+        return TryExtractTellMeWhatPreferenceCategory(normalized, "favorite") ??
+               TryExtractTellMeWhatPreferenceCategory(normalized, "favourite");
+    }
+
+
+    private static string? TryExtractTellMeWhatPreferenceCategory(string normalized, string spelling)
+    {
+        var prefix = $"tell me what my {spelling} ";
+        const string suffix = " is";
+        if (!normalized.StartsWith(prefix, StringComparison.Ordinal) ||
+            !normalized.EndsWith(suffix, StringComparison.Ordinal))
+            return null;
+
+        var category = normalized[prefix.Length..^suffix.Length].Trim();
+        return string.IsNullOrWhiteSpace(category) ? null : category;
     }
 
     private static (string Category, string Value)? TryExtractPreferenceSet(string transcript)

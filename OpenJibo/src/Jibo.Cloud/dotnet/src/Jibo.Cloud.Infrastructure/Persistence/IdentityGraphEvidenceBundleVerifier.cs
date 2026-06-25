@@ -87,12 +87,13 @@ public static class IdentityGraphEvidenceBundleVerifier
         var recommendedActions = SplitCsv(Get(payloadFields, "admission-recommended-actions"));
         var revocationChecks = SplitCsv(Get(payloadFields, "admission-revocation-checks"));
         var revocationAnchors = SplitCsv(Get(payloadFields, "admission-revocation-anchors"));
+        var revocationListHash = Get(payloadFields, "admission-revocation-list-hash");
         var admissionDecisionHash = Get(payloadFields, "admission-decision-hash");
         var admissionSignatureKeyId = Get(payloadFields, "admission-signature-key-id");
         var admissionSignature = Get(payloadFields, "admission-signature");
         var computedAdmissionDecisionPayload = BuildAdmissionDecisionPayload(accountId, loopId, snapshotContentHash,
             admissionPolicyVersion, admissionRecommendation, admissionReasons, requiredEvidence, satisfiedEvidence,
-            blockingEvidence, recommendedActions, revocationChecks, revocationAnchors);
+            blockingEvidence, recommendedActions, revocationChecks, revocationAnchors, revocationListHash);
         var computedAdmissionDecisionHash = ComputeSha256Hex(computedAdmissionDecisionPayload);
         var computedAdmissionSignature = SignPayload(computedAdmissionDecisionPayload);
 
@@ -148,6 +149,7 @@ public static class IdentityGraphEvidenceBundleVerifier
             RecommendedActions = recommendedActions,
             RevocationChecks = revocationChecks,
             RevocationAnchors = revocationAnchors,
+            RevocationListHash = revocationListHash,
             LocalRevocationMatches = localRevocationMatches,
             AdmissionDecisionHash = admissionDecisionHash,
             ComputedAdmissionDecisionHash = computedAdmissionDecisionHash,
@@ -214,7 +216,7 @@ public static class IdentityGraphEvidenceBundleVerifier
         string policyVersion, string recommendation, IReadOnlyList<string> reasons, IReadOnlyList<string> requiredEvidence,
         IReadOnlyList<string> satisfiedEvidence, IReadOnlyList<string> blockingEvidence,
         IReadOnlyList<string> recommendedActions, IReadOnlyList<string> revocationChecks,
-        IReadOnlyList<string> revocationAnchors)
+        IReadOnlyList<string> revocationAnchors, string revocationListHash)
     {
         var lines = new[]
         {
@@ -229,7 +231,8 @@ public static class IdentityGraphEvidenceBundleVerifier
             $"blocking-evidence|{string.Join(',', blockingEvidence.Order(StringComparer.Ordinal))}",
             $"recommended-actions|{string.Join(',', recommendedActions.Order(StringComparer.Ordinal))}",
             $"revocation-checks|{string.Join(',', revocationChecks.Order(StringComparer.Ordinal))}",
-            $"revocation-anchors|{string.Join(',', revocationAnchors.Order(StringComparer.Ordinal))}"
+            $"revocation-anchors|{string.Join(',', revocationAnchors.Order(StringComparer.Ordinal))}",
+            $"revocation-list-hash|{revocationListHash}"
         };
 
         return string.Join('\n', lines);

@@ -21,6 +21,7 @@ public sealed class IdentityGraphEvidenceBundleVerification
     public IReadOnlyList<string> RecommendedActions { get; init; } = [];
     public IReadOnlyList<string> RevocationChecks { get; init; } = [];
     public IReadOnlyList<string> RevocationAnchors { get; init; } = [];
+    public string RevocationListHash { get; init; } = string.Empty;
     public IReadOnlyList<string> LocalRevocationMatches { get; init; } = [];
     public string AdmissionDecisionHash { get; init; } = string.Empty;
     public string ComputedAdmissionDecisionHash { get; init; } = string.Empty;

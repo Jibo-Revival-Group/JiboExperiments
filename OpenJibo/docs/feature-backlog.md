@@ -1099,6 +1099,7 @@ For `1.0.20` and beyond:
    - use deny-by-evidence admission and full versioned snapshots as the first sync model
    - sign trust-boundary records before replication, not every local write
    - use hardware-stable `DeviceId`, cert thumbprint, issued-identity lineage, and build/config hashes as corroborating clone-detection signals only
+   - current progress: signed identity graph admission decisions and offline evidence bundles now carry a deterministic local revocation-list hash, so retained artifacts can prove which deny-list state was used for the signed admit/quarantine decision
    - planning anchor: [storage-trust-consensus-plan.md](storage-trust-consensus-plan.md)
    - status: `discovery`
 7. OpenJibo.com web UI and account surface

@@ -42,6 +42,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("no-local-revocation-evidence", graph.AdmissionAssessment.RevocationChecks);
         Assert.Contains("device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020", graph.AdmissionAssessment.RevocationAnchors);
         Assert.Contains("robot-id:Ghost-Instance-Onion-Silk=Ghost-Instance-Onion-Silk", graph.AdmissionAssessment.RevocationAnchors);
+        Assert.Equal("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", graph.AdmissionAssessment.RevocationListHash);
         Assert.Contains($"content-hash|{graph.ContentHash}", graph.AdmissionAssessment.DecisionPayload);
         Assert.Contains("recommendation|admit", graph.AdmissionAssessment.DecisionPayload);
         Assert.Matches("^[a-f0-9]{64}$", graph.AdmissionAssessment.DecisionHash);
@@ -64,6 +65,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("record-signed-snapshot-for-peer-admission", graph.EvidenceBundle.RecommendedActions);
         Assert.Equal(graph.AdmissionAssessment.RevocationChecks, graph.EvidenceBundle.RevocationChecks);
         Assert.Equal(graph.AdmissionAssessment.RevocationAnchors, graph.EvidenceBundle.RevocationAnchors);
+        Assert.Equal(graph.AdmissionAssessment.RevocationListHash, graph.EvidenceBundle.RevocationListHash);
         Assert.Contains($"snapshot-content-hash|{graph.ContentHash}", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-reasons|required-corroborating-evidence-present", graph.EvidenceBundle.Payload);
         Assert.Equal(graph.AdmissionAssessment.RequiredEvidence, graph.EvidenceBundle.RequiredEvidence);
@@ -72,6 +74,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("admission-recommended-actions|record-signed-snapshot-for-peer-admission", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-revocation-checks|no-local-revocation-evidence", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-revocation-anchors|device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020,robot-id:Ghost-Instance-Onion-Silk=Ghost-Instance-Onion-Silk", graph.EvidenceBundle.Payload);
+        Assert.Contains($"admission-revocation-list-hash|{graph.AdmissionAssessment.RevocationListHash}", graph.EvidenceBundle.Payload);
         Assert.Contains($"admission-decision-hash|{graph.AdmissionAssessment.DecisionHash}", graph.EvidenceBundle.Payload);
         Assert.Matches("^[a-f0-9]{64}$", graph.EvidenceBundle.BundleHash);
         Assert.Equal("HMAC-SHA256", graph.EvidenceBundle.SignatureAlgorithm);
@@ -514,6 +517,8 @@ public sealed class IdentityGraphSnapshotTests
             graph.AdmissionAssessment.RevocationChecks);
         Assert.Contains("keep-revoked-identity-anchor-quarantined",
             graph.AdmissionAssessment.RecommendedActions);
+        Assert.NotEqual("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", graph.AdmissionAssessment.RevocationListHash);
+        Assert.Contains($"admission-revocation-list-hash|{graph.AdmissionAssessment.RevocationListHash}", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-reasons|revoked-identity-anchor", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-blocking-evidence|revoked:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020",
             graph.EvidenceBundle.Payload);
@@ -551,6 +556,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.RecommendedActions, verification.RecommendedActions);
         Assert.Equal(graph.EvidenceBundle.RevocationChecks, verification.RevocationChecks);
         Assert.Equal(graph.EvidenceBundle.RevocationAnchors, verification.RevocationAnchors);
+        Assert.Equal(graph.EvidenceBundle.RevocationListHash, verification.RevocationListHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.ComputedAdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionSignature, verification.AdmissionSignature);

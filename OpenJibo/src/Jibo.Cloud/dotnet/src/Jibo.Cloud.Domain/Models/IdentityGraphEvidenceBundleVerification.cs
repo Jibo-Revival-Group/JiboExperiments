@@ -3,6 +3,8 @@ namespace Jibo.Cloud.Domain.Models;
 public sealed class IdentityGraphEvidenceBundleVerification
 {
     public bool IsValid { get; init; }
+    public bool IsLocallyAdmissible { get; init; }
+    public string EffectiveAdmissionRecommendation { get; init; } = "quarantine";
     public string EnvelopeVersion { get; init; } = string.Empty;
     public string BundleVersion { get; init; } = string.Empty;
     public string BundleHash { get; init; } = string.Empty;
@@ -19,6 +21,7 @@ public sealed class IdentityGraphEvidenceBundleVerification
     public IReadOnlyList<string> RecommendedActions { get; init; } = [];
     public IReadOnlyList<string> RevocationChecks { get; init; } = [];
     public IReadOnlyList<string> RevocationAnchors { get; init; } = [];
+    public IReadOnlyList<string> LocalRevocationMatches { get; init; } = [];
     public string AdmissionDecisionHash { get; init; } = string.Empty;
     public string ComputedAdmissionDecisionHash { get; init; } = string.Empty;
     public string AdmissionSignature { get; init; } = string.Empty;

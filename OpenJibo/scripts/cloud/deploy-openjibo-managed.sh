@@ -6,6 +6,7 @@ key_vault_name=""
 registry_name=""
 image_tag="managed"
 location=""
+api_hostname="api.openjibo.com"
 template_path="infra/azure/container-apps/openjibo-managed.bicep"
 parameters_path="infra/azure/container-apps/openjibo-managed.parameters.json"
 run_migration=false
@@ -31,6 +32,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --location)
       location="${2:-}"
+      shift 2
+      ;;
+    --api-hostname)
+      api_hostname="${2:-api.openjibo.com}"
       shift 2
       ;;
     --template-path)
@@ -101,6 +106,7 @@ deployment_args=(
   --parameters "registryLoginServer=${registry_login_server}"
   --parameters "keyVaultName=${key_vault_name}"
   --parameters "imageTag=${image_tag}"
+  --parameters "apiHostname=${api_hostname}"
 )
 
 if [[ -n "$location" ]]; then
@@ -121,21 +127,27 @@ if [[ "$run_migration" == true ]]; then
 fi
 
 if [[ "$run_smoke" == true ]]; then
-  container_app_fqdn="$(python3 - "$deployment_json" <<'PY'
+  smoke_base_url="$(python3 - "$deployment_json" "$api_hostname" <<'PY'
 import json
 import sys
 
+api_hostname = sys.argv[2].strip()
+if api_hostname:
+    print(f"https://{api_hostname}")
+    raise SystemExit(0)
+
 deployment_json = json.loads(sys.argv[1])
-print(deployment_json["properties"]["outputs"]["containerAppFqdn"]["value"])
+container_app_fqdn = deployment_json["properties"]["outputs"]["containerAppFqdn"]["value"]
+print(f"https://{container_app_fqdn}")
 PY
 )"
 
-  if [[ -z "$container_app_fqdn" ]]; then
-    echo "Container app FQDN was not returned from the deployment." >&2
+  if [[ -z "$smoke_base_url" ]]; then
+    echo "Smoke base URL could not be resolved from the canonical API hostname or deployment output." >&2
     exit 1
   fi
 
-  BASE_URL="https://${container_app_fqdn}" bash "${script_dir}/invoke-cloud-smoke.sh"
+  BASE_URL="$smoke_base_url" bash "${script_dir}/invoke-cloud-smoke.sh"
 fi
 
 printf '%s\n' "$deployment_json"

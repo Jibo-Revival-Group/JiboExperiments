@@ -109,6 +109,24 @@ public sealed partial class JiboInteractionService(
         " are my favourite "
     ];
 
+    // Imported from Pegasus birthday/birth-date parser phrasing so user memory
+    // stays ahead of generic date questions and robot-birthday personality routes.
+    private static readonly string[] BirthdaySetMarkers =
+    [
+        "my birthday is ",
+        "my birthday s ",
+        "my bday is ",
+        "my bday s ",
+        "my birth date is ",
+        "my birth date s ",
+        "my birthdate is ",
+        "my birthdate s ",
+        "my birthday falls on ",
+        "my bday falls on ",
+        "my birth date falls on ",
+        "my birthdate falls on "
+    ];
+
     private static readonly string[] WeatherDateEntityKeys =
     [
         "date",

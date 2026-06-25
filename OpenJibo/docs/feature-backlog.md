@@ -548,6 +548,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-05-21`):
   - expanded friendship parsing for Pegasus-style `do you have friends`, `are we friends`, and `are we best friends` phrasing
   - added named-person guardrails so forms like `are you friends with Siri` and `is Dr. Breazeal your best friend` stay on the friendship route instead of falling into generic chat
+- Progress update (`2026-06-25`):
+  - expanded user birthday memory parsing with Pegasus-style `birth date`, `birthdate`, possessive birthday, and `falls on` set/recall aliases so user-date memory stays ahead of generic date and robot-birthday routes
+  - added targeted parser coverage for the new birthday alias families
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

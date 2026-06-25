@@ -1674,6 +1674,49 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("You told me your birthday is april 12.", recallDecision.ReplyText);
     }
 
+    [Theory]
+    [InlineData("my birth date is April 12", "when is my birth date")]
+    [InlineData("my birthdate is April 12", "tell me my birthdate")]
+    [InlineData("my birthday falls on April 12", "do you remember my birthday")]
+    [InlineData("my birthday's April 12", "what's my birthday")]
+    public async Task BuildDecisionAsync_BirthdayMemory_PegasusBirthDateAliasesSetThenRecallWithinTenant(
+        string setTranscript,
+        string recallTranscript)
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+
+        var setDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = setTranscript,
+            NormalizedTranscript = setTranscript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-a",
+                ["loopId"] = "loop-a"
+            },
+            DeviceId = "device-a"
+        });
+
+        Assert.Equal("memory_set_birthday", setDecision.IntentName);
+        Assert.Equal("Got it. I will remember your birthday is april 12.", setDecision.ReplyText);
+
+        var recallDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = recallTranscript,
+            NormalizedTranscript = recallTranscript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-a",
+                ["loopId"] = "loop-a"
+            },
+            DeviceId = "device-a"
+        });
+
+        Assert.Equal("memory_get_birthday", recallDecision.IntentName);
+        Assert.Equal("You told me your birthday is april 12.", recallDecision.ReplyText);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_PreferenceMemory_SetThenRecallWithinTenant()
     {

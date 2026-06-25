@@ -945,19 +945,33 @@ public sealed partial class JiboInteractionService
 
     private static bool IsUserBirthdayRecallQuestion(string loweredTranscript)
     {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
         return MatchesAny(
-            loweredTranscript,
+            normalized,
             "when is my birthday",
-            "when's my birthday",
+            "when s my birthday",
             "what is my birthday",
             "what s my birthday",
-            "what's my birthday",
             "when is my bday",
             "when s my bday",
             "what is my bday",
             "what s my bday",
-            "what's my bday",
-            "do you remember my birthday");
+            "when is my birth date",
+            "when s my birth date",
+            "what is my birth date",
+            "what s my birth date",
+            "when is my birthdate",
+            "when s my birthdate",
+            "what is my birthdate",
+            "what s my birthdate",
+            "do you remember my birthday",
+            "do you remember my bday",
+            "do you remember my birth date",
+            "do you remember my birthdate",
+            "tell me my birthday",
+            "tell me my bday",
+            "tell me my birth date",
+            "tell me my birthdate");
     }
 
     private static bool IsUserBirthdaySetStatement(string loweredTranscript)
@@ -968,15 +982,16 @@ public sealed partial class JiboInteractionService
     private static bool IsUserBirthdaySetAttempt(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
-        return normalized.Contains("my birthday is", StringComparison.Ordinal) ||
-               normalized.Contains("my bday is", StringComparison.Ordinal);
+        return BirthdaySetMarkers.Any(marker => normalized.Contains(marker.TrimEnd(), StringComparison.Ordinal));
     }
 
     private static bool IsUserBirthdayRecallAttempt(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
         return (normalized.Contains("my birthday", StringComparison.Ordinal) ||
-                normalized.Contains("my bday", StringComparison.Ordinal)) &&
+                normalized.Contains("my bday", StringComparison.Ordinal) ||
+                normalized.Contains("my birth date", StringComparison.Ordinal) ||
+                normalized.Contains("my birthdate", StringComparison.Ordinal)) &&
                (normalized.StartsWith("when", StringComparison.Ordinal) ||
                 normalized.StartsWith("what", StringComparison.Ordinal) ||
                 normalized.StartsWith("tell me", StringComparison.Ordinal) ||
@@ -986,13 +1001,7 @@ public sealed partial class JiboInteractionService
     private static string? TryExtractBirthdayFact(string transcript)
     {
         var normalized = NormalizeCommandPhrase(transcript);
-        var markers = new[]
-        {
-            "my birthday is ",
-            "my bday is "
-        };
-
-        return (from marker in markers
+        return (from marker in BirthdaySetMarkers
                 let markerIndex = normalized.IndexOf(marker, StringComparison.Ordinal)
                 where markerIndex >= 0
                 select normalized[(markerIndex + marker.Length)..].Trim())

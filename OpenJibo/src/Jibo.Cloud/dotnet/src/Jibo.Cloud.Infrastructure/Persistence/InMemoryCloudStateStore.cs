@@ -602,6 +602,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             RecommendedActions = assessment.RecommendedActions,
             RevocationChecks = assessment.RevocationChecks,
             RevocationAnchors = assessment.RevocationAnchors,
+            RevocationListHash = assessment.RevocationListHash,
             DecisionPayload = decisionPayload,
             DecisionHash = decisionHash,
             SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
@@ -614,6 +615,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals,
         IReadOnlyCollection<string> revokedAnchors)
     {
+        var revocationListHash = ComputeRevocationListHash(revokedAnchors);
+
         string[] requiredEvidence =
         [
             "device-id",
@@ -673,7 +676,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 SatisfiedEvidence = satisfiedEvidence,
                 RecommendedActions = ["record-signed-snapshot-for-peer-admission"],
                 RevocationChecks = ["no-local-revocation-evidence"],
-                RevocationAnchors = revocationAnchors
+                RevocationAnchors = revocationAnchors,
+                RevocationListHash = revocationListHash
             };
         }
 
@@ -690,8 +694,20 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             BlockingEvidence = blockingEvidence,
             RecommendedActions = BuildIdentityGraphRecommendedActions(missingEvidence, untrustedHostMappings, revokedMatches),
             RevocationChecks = revocationChecks,
-            RevocationAnchors = revocationAnchors
+            RevocationAnchors = revocationAnchors,
+            RevocationListHash = revocationListHash
         };
+    }
+
+    private static string ComputeRevocationListHash(IEnumerable<string> revokedAnchors)
+    {
+        var payload = string.Join('\n', revokedAnchors
+            .Where(anchor => !string.IsNullOrWhiteSpace(anchor))
+            .Select(anchor => anchor.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase));
+
+        return ComputeSha256Hex(payload);
     }
 
     private static IReadOnlyList<string> BuildIdentityGraphRevocationAnchors(
@@ -772,7 +788,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"blocking-evidence|{string.Join(',', assessment.BlockingEvidence.Order(StringComparer.Ordinal))}",
             $"recommended-actions|{string.Join(',', assessment.RecommendedActions.Order(StringComparer.Ordinal))}",
             $"revocation-checks|{string.Join(',', assessment.RevocationChecks.Order(StringComparer.Ordinal))}",
-            $"revocation-anchors|{string.Join(',', assessment.RevocationAnchors.Order(StringComparer.Ordinal))}"
+            $"revocation-anchors|{string.Join(',', assessment.RevocationAnchors.Order(StringComparer.Ordinal))}",
+            $"revocation-list-hash|{assessment.RevocationListHash}"
         };
 
         return string.Join('\n', lines);
@@ -810,6 +827,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             RecommendedActions = admissionAssessment.RecommendedActions,
             RevocationChecks = admissionAssessment.RevocationChecks,
             RevocationAnchors = admissionAssessment.RevocationAnchors,
+            RevocationListHash = admissionAssessment.RevocationListHash,
             PeopleCount = peopleCount,
             MemberCount = memberCount,
             RelationshipCount = relationshipCount,
@@ -875,6 +893,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"admission-recommended-actions|{string.Join(',', admissionAssessment.RecommendedActions.Order(StringComparer.Ordinal))}",
             $"admission-revocation-checks|{string.Join(',', admissionAssessment.RevocationChecks.Order(StringComparer.Ordinal))}",
             $"admission-revocation-anchors|{string.Join(',', admissionAssessment.RevocationAnchors.Order(StringComparer.Ordinal))}",
+            $"admission-revocation-list-hash|{admissionAssessment.RevocationListHash}",
             $"admission-decision-hash|{admissionAssessment.DecisionHash}",
             $"admission-signature-key-id|{admissionAssessment.SignatureKeyId}",
             $"admission-signature|{admissionAssessment.Signature}"

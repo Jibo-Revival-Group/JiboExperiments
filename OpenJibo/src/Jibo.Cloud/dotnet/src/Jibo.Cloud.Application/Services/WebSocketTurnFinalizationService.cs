@@ -1328,6 +1328,15 @@ public sealed class WebSocketTurnFinalizationService(
             var plan = await conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken);
 
             var intentName = plan.IntentName;
+
+            if (intentName == null)
+            {
+                logger.LogWarning(
+                    "Could not determine intent for the finalized turn with transcript: {Transcript}, defaulting to chat",
+                    finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript);
+                intentName = "chat";
+            }
+
             if (homeAssistantCommandService is not null &&
                 (string.Equals(intentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(intentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase) ||
@@ -1806,9 +1815,6 @@ public sealed class WebSocketTurnFinalizationService(
         var turnAge = turnState.FirstAudioReceivedUtc.HasValue
             ? now - turnState.FirstAudioReceivedUtc.Value
             : TimeSpan.Zero;
-        var elapsedSinceLastAudio = turnState.LastAudioReceivedUtc.HasValue
-            ? now - turnState.LastAudioReceivedUtc.Value
-            : TimeSpan.Zero;
         var earlyProbeReady = ShouldEarlyProbeHotphraseOggAudio(turnState, pageCounts, turnAge);
         var transcriptHintEarlyFinalize = ShouldEarlyFinalizeFromTranscriptHint(turnState);
 
@@ -2262,31 +2268,6 @@ public sealed class WebSocketTurnFinalizationService(
         };
     }
 
-    private static bool TryTrimLeadingAcknowledgement(string normalizedTranscript, out string trimmedTranscript)
-    {
-        foreach (var acknowledgement in YesNoAcknowledgementPrefixes)
-        {
-            if (string.Equals(acknowledgement, "uh", StringComparison.Ordinal) &&
-                (string.Equals(normalizedTranscript, "uh huh", StringComparison.Ordinal) ||
-                 normalizedTranscript.StartsWith("uh huh ", StringComparison.Ordinal)))
-                continue;
-
-            if (string.Equals(normalizedTranscript, acknowledgement, StringComparison.Ordinal))
-            {
-                trimmedTranscript = string.Empty;
-                return true;
-            }
-
-            if (!normalizedTranscript.StartsWith($"{acknowledgement} ", StringComparison.Ordinal)) continue;
-
-            trimmedTranscript = normalizedTranscript[(acknowledgement.Length + 1)..].TrimStart();
-            return true;
-        }
-
-        trimmedTranscript = normalizedTranscript;
-        return false;
-    }
-
     private static string NormalizeUsableTranscript(string? transcript)
     {
         var normalized = NormalizeTranscript(transcript);
@@ -2319,71 +2300,6 @@ public sealed class WebSocketTurnFinalizationService(
 
         trimmedTranscript = normalizedTranscript;
         return false;
-    }
-
-    private static YesNoReply TryClassifyTrailingYesNoReply(IReadOnlyList<string> tokens)
-    {
-        var selectedReply = YesNoReply.None;
-        var selectedIndex = -1;
-        var sawAffirmative = false;
-        var sawNegative = false;
-
-        for (var index = 0; index < tokens.Count; index += 1)
-        {
-            var token = tokens[index];
-            if (YesNoNegativeLeadTokens.Contains(token))
-            {
-                Consider(YesNoReply.Negative, index);
-                continue;
-            }
-
-            if (YesNoAffirmativeLeadTokens.Contains(token)) Consider(YesNoReply.Affirmative, index);
-        }
-
-        for (var index = 0; index + 1 < tokens.Count; index += 1)
-        {
-            var phrase = $"{tokens[index]} {tokens[index + 1]}";
-            if (YesNoNegativeLeadPhrases.Contains(phrase))
-            {
-                Consider(YesNoReply.Negative, index + 1);
-                continue;
-            }
-
-            if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 1);
-        }
-
-        for (var index = 0; index + 2 < tokens.Count; index += 1)
-        {
-            var phrase = $"{tokens[index]} {tokens[index + 1]} {tokens[index + 2]}";
-            if (YesNoNegativeLeadPhrases.Contains(phrase))
-            {
-                Consider(YesNoReply.Negative, index + 2);
-                continue;
-            }
-
-            if (YesNoAffirmativeLeadPhrases.Contains(phrase)) Consider(YesNoReply.Affirmative, index + 2);
-        }
-
-        return sawAffirmative && sawNegative
-            ? YesNoReply.Ambiguous
-            : selectedReply;
-
-        void Consider(YesNoReply candidateReply, int candidateIndex)
-        {
-            if (candidateIndex < 0 || candidateIndex < selectedIndex) return;
-
-            selectedReply = candidateReply;
-            selectedIndex = candidateIndex;
-            switch (candidateReply)
-            {
-                case YesNoReply.Affirmative:
-                    sawAffirmative = true;
-                    break;
-                case YesNoReply.Negative:
-                    sawNegative = true;
-                    break;
-            }
-        }
     }
 
     private async Task ApplyContextUpdatesAsync(

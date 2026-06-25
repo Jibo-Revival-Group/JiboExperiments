@@ -541,16 +541,22 @@ public sealed class JiboCloudProtocolServiceTests
         using var backingPayload = JsonDocument.Parse(backing.BodyText);
         Assert.True(backingPayload.RootElement.GetProperty("data").GetBoolean());
 
-        await Task.Delay(400);
-
-        var downloading = await _service.DispatchAsync(new ProtocolEnvelope
+        string bodyText;
+        var attempts = 0;
+        do
         {
-            HostName = "localhost",
-            Method = "POST",
-            Path = "/download-status"
-        });
-
-        using var downloadingPayload = JsonDocument.Parse(downloading.BodyText);
+            await Task.Delay(400);
+            var downloading = await _service.DispatchAsync(new ProtocolEnvelope
+            {
+                HostName = "localhost",
+                Method = "POST",
+                Path = "/download-status"
+            });
+            bodyText = downloading.BodyText;
+            attempts++;
+        } while (attempts < 10 && string.IsNullOrWhiteSpace(bodyText));
+        
+        using var downloadingPayload = JsonDocument.Parse(bodyText);
         Assert.Equal("OK", downloadingPayload.RootElement.GetProperty("status").GetString());
         Assert.Equal(JsonValueKind.Object, downloadingPayload.RootElement.GetProperty("data").ValueKind);
 

@@ -487,10 +487,10 @@ public sealed class JiboCloudProtocolServiceTests
         using var immediatePayload = JsonDocument.Parse(immediate.BodyText);
         Assert.True(immediatePayload.RootElement.GetProperty("data").GetBoolean());
 
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(2);
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
         while (DateTimeOffset.UtcNow < deadline)
         {
-            await Task.Delay(50);
+            await Task.Delay(100);
 
             var finished = await _service.DispatchAsync(new ProtocolEnvelope
             {

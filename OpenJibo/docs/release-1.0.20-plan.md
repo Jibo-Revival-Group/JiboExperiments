@@ -146,6 +146,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - exposed identity-graph revocation recording through the portal API and dashboard so owners/operators can quarantine a signed admission bundle by anchor, immediately regenerate the signed decision, and retain the quarantined evidence bundle before peer replication exists
 - expanded offline evidence bundle verification with a local revocation deny-list input so retained bundles can remain cryptographically valid while still producing an effective quarantine decision when a receiving peer has already revoked one of the signed device, robot, certificate, or issued-identity anchors
 - bound identity graph admission decisions and offline evidence bundles to a deterministic local revocation-list hash so retained peer-admission artifacts show which deny-list state was used when the admit/quarantine decision was signed
+- expanded multi-Jibo identity graph evidence so additional robot loop members resolve to their registered device and add explicit loop `served-by` plus robot `runs-on` relationships before direct peer transport is introduced
 
 ## Working Order
 

@@ -415,7 +415,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
             if (string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
             {
-                AddIdentityRelationship(relationships, subjectId, "robot", "runs-on", _robot.DeviceId, "device",
+                var memberRobot = ResolveIdentityGraphRobotMemberDevice(member) ?? _robot;
+                var memberRobotId = string.IsNullOrWhiteSpace(memberRobot.RobotId) ? subjectId : memberRobot.RobotId;
+
+                AddIdentityRelationship(relationships, resolvedLoopId, "loop", "served-by", memberRobotId, "robot",
+                    resolvedLoopId);
+                AddIdentityRelationship(relationships, memberRobotId, "robot", "runs-on", memberRobot.DeviceId, "device",
                     resolvedLoopId);
             }
             else
@@ -475,6 +480,28 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Relationships = relationships,
             EvidenceSignals = evidenceSignals
         };
+    }
+
+
+    private DeviceRegistration? ResolveIdentityGraphRobotMemberDevice(LoopMemberRecord member)
+    {
+        if (!string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase)) return null;
+
+        var candidates = new[]
+            { member.AccountId, member.Id, member.Nickname, member.FirstName, member.Email }
+            .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
+            .Select(candidate => candidate!.Trim());
+
+        foreach (var candidate in candidates)
+        {
+            var match = _devices.Values.FirstOrDefault(device =>
+                device.RobotId.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
+                device.DeviceId.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
+                device.FriendlyName.Equals(candidate, StringComparison.OrdinalIgnoreCase));
+            if (match is not null) return match;
+        }
+
+        return null;
     }
 
     private static string ComputeIdentityGraphContentHash(string accountId, string loopId, DeviceRegistration robot,

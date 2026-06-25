@@ -2,6 +2,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$RobotRoot,
     [string]$TargetMode = "open-jibo",
+    [string]$ApiHostname = "api.openjibo.com",
+    [string]$HubHostname = "",
     [string]$OutputDirectory,
     [switch]$Apply,
     [switch]$Strict
@@ -38,7 +40,10 @@ $bash = if (Test-Path "C:\Program Files\Git\bin\bash.exe") {
     throw "Unable to locate Git Bash. Use the Linux shell helper directly."
 }
 
-$command = "cd '$(Escape-BashSingleQuoted $scriptDir)' && ./invoke-openjibo-conversion.sh --robot-root '$(Escape-BashSingleQuoted $robotRootUnix)' --target-mode '$TargetMode'"
+$command = "cd '$(Escape-BashSingleQuoted $scriptDir)' && ./invoke-openjibo-conversion.sh --robot-root '$(Escape-BashSingleQuoted $robotRootUnix)' --target-mode '$TargetMode' --api-hostname '$(Escape-BashSingleQuoted $ApiHostname)'"
+if (-not [string]::IsNullOrWhiteSpace($HubHostname)) {
+    $command += " --hub-hostname '$(Escape-BashSingleQuoted $HubHostname)'"
+}
 if ($outputDirectoryUnix) {
     $command += " --output-directory '$(Escape-BashSingleQuoted $outputDirectoryUnix)'"
 }

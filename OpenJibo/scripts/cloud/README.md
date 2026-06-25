@@ -17,21 +17,21 @@ These scripts help exercise the new .NET hosted cloud locally.
 - `Deploy-OpenJiboManagedFoundation.ps1`
   Deploys the managed foundation resources, then seeds Key Vault secrets from the deployment outputs and supplied bootstrap values.
 - `Deploy-OpenJiboManaged.ps1`
-  Deploys the first Azure Container Apps stack from the Bicep template under `infra/azure/container-apps/`. Use `-RunMigration` to apply schema changes and `-RunSmoke` to verify the deployed endpoint.
+  Deploys the first Azure Container Apps stack from the Bicep template under `infra/azure/container-apps/`. Use `-RunMigration` to apply schema changes and `-RunSmoke` to verify the deployed endpoint. Use `-ApiHostname api.openjibo.com` to keep deploy smoke and runtime configuration aligned with the canonical robot-facing API hostname.
 - `deploy-openjibo-managed-foundation.sh`
   Bash deploy wrapper for the managed foundation stack.
 - `publish-openjibo-managed.sh`
   Bash build-and-push wrapper for the managed ACR image.
 - `deploy-openjibo-managed.sh`
-  Bash deploy wrapper for the managed Container Apps stack plus optional migration and smoke.
+  Bash deploy wrapper for the managed Container Apps stack plus optional migration and smoke. Use `--api-hostname api.openjibo.com` to deploy and smoke the canonical managed API hostname; this is the default for the managed path.
 - `Test-OpenJiboManagedDeploymentContract.ps1`
   Validates the managed deployment contract by checking the Bicep templates, workflow, and deploy scripts for expected markers before any Azure calls run.
 - `test-openjibo-managed-deployment-contract.sh`
-  Bash contract checker for the managed deployment path and workflow markers.
+  Bash contract checker for the managed deployment path and workflow markers, including the canonical `api.openjibo.com` hostname path.
 - `Test-OpenJiboSelfHostedDeploymentContract.ps1`
   Validates the self-hosted contract by checking the Compose file, migration wrapper, and smoke script before local CI brings up the stack.
 - GitHub Actions `openjibo-cloud-managed-deploy`
-  Manual workflow that deploys the foundation, builds the managed image, deploys the ACA stack, runs migrations, and smokes the deployed endpoint.
+  Manual workflow that deploys the foundation, builds the managed image, deploys the ACA stack, runs migrations, and smokes the deployed endpoint. The workflow defaults the robot-facing API hostname to `api.openjibo.com`.
 - `OPENJIBO_POSTGRES_PASSWORD`
   Required when running the self-hosted PostgreSQL stack locally or in CI so the database password stays out of source control.
 - `initialize-openjibo-compose-env.sh`
@@ -69,7 +69,7 @@ These scripts help exercise the new .NET hosted cloud locally.
 - `test-openjibo-self-hosted-deployment-contract.sh`
   Bash contract checker for the self-hosted compose/migration/smoke trio.
 - `get-websocket-capture-summary.sh`
-  Bash summary helper for captured websocket telemetry and exported fixtures.
+  Bash summary helper for captured websocket telemetry and exported live-run fixtures.
 - `import-websocket-capture-fixture.py`
   Cross-platform import/sanitization helper for exported websocket fixtures.
 

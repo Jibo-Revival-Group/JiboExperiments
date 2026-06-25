@@ -488,6 +488,38 @@ public sealed class IdentityGraphSnapshotTests
     }
 
     [Fact]
+    public void GetIdentityGraph_QuarantinesAdmissionWhenRevocationAnchorMatchesLocalDenyList()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        store.RevokeIdentityGraphAnchor("device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020");
+
+        var graph = store.GetIdentityGraph();
+
+        Assert.Equal("quarantine", graph.AdmissionAssessment.Recommendation);
+        Assert.Contains("revoked-identity-anchor", graph.AdmissionAssessment.Reasons);
+        Assert.Contains("revoked:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020",
+            graph.AdmissionAssessment.BlockingEvidence);
+        Assert.Contains(
+            "local-revocation-match:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020",
+            graph.AdmissionAssessment.RevocationChecks);
+        Assert.Contains("keep-revoked-identity-anchor-quarantined",
+            graph.AdmissionAssessment.RecommendedActions);
+        Assert.Contains("admission-reasons|revoked-identity-anchor", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-blocking-evidence|revoked:device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020",
+            graph.EvidenceBundle.Payload);
+    }
+
+    [Fact]
     public void VerifyEvidenceBundleEnvelope_AcceptsUntamperedOfflinePayload()
     {
         var store = new InMemoryCloudStateStore();

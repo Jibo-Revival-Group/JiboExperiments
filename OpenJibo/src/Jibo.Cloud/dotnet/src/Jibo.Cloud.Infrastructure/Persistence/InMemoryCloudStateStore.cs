@@ -44,6 +44,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly string? _ownerFirstName;
     private readonly string? _ownerLastName;
     private readonly List<PersonRecord> _people;
+    private readonly HashSet<string> _revokedIdentityGraphAnchors = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly ConcurrentDictionary<string, CloudSession>
         _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
@@ -447,7 +448,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         var signaturePayload = BuildIdentityGraphSignaturePayload(_account.AccountId, resolvedLoopId, contentHash);
         var signature = SignIdentityGraphPayload(signaturePayload);
-        var admissionAssessment = BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId, contentHash, evidenceSignals);
+        var revokedAnchors = _revokedIdentityGraphAnchors.ToArray();
+        var admissionAssessment = BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId, contentHash,
+            evidenceSignals, revokedAnchors);
         var evidenceBundle = BuildSignedIdentityGraphEvidenceBundle(_account.AccountId, resolvedLoopId, _robot,
             contentHash, signature, admissionAssessment, people.Length, members.Count, relationships.Count,
             evidenceSignals.Count, SummarizeIdentityGraphRelationshipKinds(relationships),
@@ -568,10 +571,23 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
 
-    private static IdentityGraphAdmissionAssessment BuildSignedIdentityGraphAdmissionAssessment(string accountId, string loopId,
-        string contentHash, IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
+    public void RevokeIdentityGraphAnchor(string anchor)
     {
-        var assessment = BuildIdentityGraphAdmissionAssessment(evidenceSignals);
+        if (string.IsNullOrWhiteSpace(anchor)) return;
+
+        lock (_syncRoot)
+        {
+            _revokedIdentityGraphAnchors.Add(anchor.Trim());
+        }
+
+        TouchState();
+    }
+
+    private static IdentityGraphAdmissionAssessment BuildSignedIdentityGraphAdmissionAssessment(string accountId, string loopId,
+        string contentHash, IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals,
+        IReadOnlyCollection<string> revokedAnchors)
+    {
+        var assessment = BuildIdentityGraphAdmissionAssessment(evidenceSignals, revokedAnchors);
         var decisionPayload = BuildIdentityGraphAdmissionDecisionPayload(accountId, loopId, contentHash, assessment);
         var decisionHash = ComputeSha256Hex(decisionPayload);
 
@@ -595,7 +611,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     private static IdentityGraphAdmissionAssessment BuildIdentityGraphAdmissionAssessment(
-        IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals)
+        IReadOnlyCollection<IdentityGraphEvidenceSignal> evidenceSignals,
+        IReadOnlyCollection<string> revokedAnchors)
     {
         string[] requiredEvidence =
         [
@@ -634,6 +651,18 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             blockingEvidence.AddRange(untrustedHostMappings);
         }
 
+        var revocationAnchors = BuildIdentityGraphRevocationAnchors(evidenceSignals);
+        var revokedMatches = revocationAnchors
+            .Where(anchor => revokedAnchors.Contains(anchor, StringComparer.OrdinalIgnoreCase))
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (revokedMatches.Length > 0)
+        {
+            reasons.Add("revoked-identity-anchor");
+            blockingEvidence.AddRange(revokedMatches.Select(anchor => $"revoked:{anchor}"));
+        }
+
         if (reasons.Count == 0)
         {
             return new IdentityGraphAdmissionAssessment
@@ -644,9 +673,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 SatisfiedEvidence = satisfiedEvidence,
                 RecommendedActions = ["record-signed-snapshot-for-peer-admission"],
                 RevocationChecks = ["no-local-revocation-evidence"],
-                RevocationAnchors = BuildIdentityGraphRevocationAnchors(evidenceSignals)
+                RevocationAnchors = revocationAnchors
             };
         }
+
+        string[] revocationChecks = revokedMatches.Length > 0
+            ? revokedMatches.Select(anchor => $"local-revocation-match:{anchor}").ToArray()
+            : ["defer-revocation-admission-until-blocking-evidence-resolved"];
 
         return new IdentityGraphAdmissionAssessment
         {
@@ -655,9 +688,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             RequiredEvidence = requiredEvidence,
             SatisfiedEvidence = satisfiedEvidence,
             BlockingEvidence = blockingEvidence,
-            RecommendedActions = BuildIdentityGraphRecommendedActions(missingEvidence, untrustedHostMappings),
-            RevocationChecks = ["defer-revocation-admission-until-blocking-evidence-resolved"],
-            RevocationAnchors = BuildIdentityGraphRevocationAnchors(evidenceSignals)
+            RecommendedActions = BuildIdentityGraphRecommendedActions(missingEvidence, untrustedHostMappings, revokedMatches),
+            RevocationChecks = revocationChecks,
+            RevocationAnchors = revocationAnchors
         };
     }
 
@@ -684,7 +717,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static IReadOnlyList<string> BuildIdentityGraphRecommendedActions(
         IReadOnlyCollection<string> missingEvidence,
-        IReadOnlyCollection<string> untrustedHostMappings)
+        IReadOnlyCollection<string> untrustedHostMappings,
+        IReadOnlyCollection<string> revokedMatches)
     {
         var actions = new List<string>();
 
@@ -700,6 +734,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         if (untrustedHostMappings.Count > 0)
             actions.Add("redirect-legacy-host-mapping-to-open-jibo-target");
+
+        if (revokedMatches.Count > 0)
+            actions.Add("keep-revoked-identity-anchor-quarantined");
 
         if (actions.Count == 0)
             actions.Add("manual-review-required");
@@ -1898,7 +1935,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Holidays = _holidayOverrides.ToArray(),
             LoopMembers = _loopMembers.ToArray(),
             People = _people.ToArray(),
-            Users = _users.ToArray()
+            Users = _users.ToArray(),
+            RevokedIdentityGraphAnchors = _revokedIdentityGraphAnchors.ToArray()
         };
     }
 
@@ -1958,6 +1996,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _users.Clear();
         _users.AddRange(snapshot.Users ?? []);
 
+        _revokedIdentityGraphAnchors.Clear();
+        foreach (var anchor in snapshot.RevokedIdentityGraphAnchors ?? [])
+            _revokedIdentityGraphAnchors.Add(anchor);
+
         ApplyConfiguredOwnerName();
         EnsureDefaultTopology();
 
@@ -2005,6 +2047,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public LoopMemberRecord[]? LoopMembers { get; init; }
         public PersonRecord[]? People { get; init; }
         public UserRecord[]? Users { get; init; }
+        public string[]? RevokedIdentityGraphAnchors { get; init; }
     }
 
     private sealed class CloudSessionSnapshot

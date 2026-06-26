@@ -135,6 +135,13 @@ for marker in "RegistryName" "ApiHostname" "containerapp hostname bind" "SkipHos
   fi
 done
 
+for marker in "managedEnvironmentName" "--environment"; do
+  if [[ "$managed_script_text" != *"$marker"* ]]; then
+    echo "Managed deploy script is missing hostname binding environment marker: $marker" >&2
+    exit 1
+  fi
+done
+
 for marker in "seedPrincipalObjectId" "openjibo-media-connection-string" "openjibo-postgres-admin-password" "postgresFullyQualifiedDomainName" "run_command_with_retry"; do
   if [[ "$linux_foundation_script_text" != *"$marker"* ]]; then
     echo "Linux foundation script is missing expected marker: $marker" >&2
@@ -156,6 +163,13 @@ fi
 for marker in "--run-smoke" "--run-migration" "--api-hostname" "az containerapp hostname bind" "--skip-hostname-binding"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing expected marker: $marker" >&2
+    exit 1
+  fi
+done
+
+for marker in "managedEnvironmentName" "--environment"; do
+  if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
+    echo "Linux managed deploy script is missing hostname binding environment marker: $marker" >&2
     exit 1
   fi
 done

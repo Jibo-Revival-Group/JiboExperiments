@@ -131,12 +131,21 @@ deployment_json = json.loads(sys.argv[1])
 print(deployment_json["properties"]["outputs"]["containerAppName"]["value"])
 PY
 )"
+  managed_environment_name="$(python3 - "$deployment_json" <<'PY'
+import json
+import sys
+
+deployment_json = json.loads(sys.argv[1])
+print(deployment_json["properties"]["outputs"]["managedEnvironmentName"]["value"])
+PY
+)"
 
   echo "Binding '${api_hostname}' to Container App '${container_app_name}'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate." >&2
   az containerapp hostname bind \
     --resource-group "$resource_group_name" \
     --name "$container_app_name" \
     --hostname "$api_hostname" \
+    --environment "$managed_environment_name" \
     --output none
 fi
 

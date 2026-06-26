@@ -126,6 +126,10 @@ foreach ($marker in @("RegistryName", "ApiHostname", "containerapp hostname bind
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
 }
 
+foreach ($marker in @("managedEnvironmentName", "--environment")) {
+    Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing hostname binding environment marker"
+}
+
 foreach ($marker in @("seedPrincipalObjectId", "openjibo-media-connection-string", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "run_command_with_retry")) {
     Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker $marker -FailurePrefix "Linux foundation script is missing expected marker"
 }
@@ -135,6 +139,10 @@ Assert-ContainsMarker -Text $linuxPublishScriptText -Marker "az acr build" -Fail
 
 foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "az containerapp hostname bind", "--skip-hostname-binding")) {
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing expected marker"
+}
+
+foreach ($marker in @("managedEnvironmentName", "--environment")) {
+    Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing hostname binding environment marker"
 }
 
 if ($smokeScriptText -match [regex]::Escape('Host = "api.jibo.com"')) {

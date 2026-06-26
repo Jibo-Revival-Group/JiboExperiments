@@ -65,8 +65,12 @@ $deploymentJson = az @arguments | ConvertFrom-Json
 
 if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostname)) {
     $containerAppName = $deploymentJson.properties.outputs.containerAppName.value
+    $managedEnvironmentName = $deploymentJson.properties.outputs.managedEnvironmentName.value
     if ([string]::IsNullOrWhiteSpace($containerAppName)) {
         throw "Container app name was not returned from the deployment."
+    }
+    if ([string]::IsNullOrWhiteSpace($managedEnvironmentName)) {
+        throw "Managed environment name was not returned from the deployment."
     }
 
     Write-Host "Binding '$ApiHostname' to Container App '$containerAppName'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate."
@@ -74,6 +78,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
         --resource-group $ResourceGroupName `
         --name $containerAppName `
         --hostname $ApiHostname `
+        --environment $managedEnvironmentName `
         --output none
 }
 

@@ -141,6 +141,11 @@ PY
 )"
 
   echo "Binding '${api_hostname}' to Container App '${container_app_name}'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate." >&2
+  az containerapp hostname add \
+    --resource-group "$resource_group_name" \
+    --name "$container_app_name" \
+    --hostname "$api_hostname" \
+    --output none
   az containerapp hostname bind \
     --resource-group "$resource_group_name" \
     --name "$container_app_name" \

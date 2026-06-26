@@ -122,7 +122,7 @@ foreach ($marker in @("openjibo-media-connection-string", "openjibo-postgres-adm
     Assert-ContainsMarker -Text $foundationScriptText -Marker $marker -FailurePrefix "Foundation script is missing expected marker"
 }
 
-foreach ($marker in @("RegistryName", "ApiHostname", "containerapp hostname bind", "SkipHostnameBinding")) {
+foreach ($marker in @("RegistryName", "ApiHostname", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
 }
 
@@ -137,7 +137,7 @@ foreach ($marker in @("seedPrincipalObjectId", "openjibo-media-connection-string
 Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker '"az", "storage", "account", "show-connection-string"' -FailurePrefix "Linux foundation script does not resolve the storage connection string outside Bicep outputs"
 Assert-ContainsMarker -Text $linuxPublishScriptText -Marker "az acr build" -FailurePrefix "Linux publish script is missing the ACR build path"
 
-foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "az containerapp hostname bind", "--skip-hostname-binding")) {
+foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "az containerapp hostname add", "az containerapp hostname bind", "--skip-hostname-binding")) {
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing expected marker"
 }
 

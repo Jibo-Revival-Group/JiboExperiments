@@ -74,6 +74,11 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
     }
 
     Write-Host "Binding '$ApiHostname' to Container App '$containerAppName'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate."
+    az containerapp hostname add `
+        --resource-group $ResourceGroupName `
+        --name $containerAppName `
+        --hostname $ApiHostname `
+        --output none
     az containerapp hostname bind `
         --resource-group $ResourceGroupName `
         --name $containerAppName `

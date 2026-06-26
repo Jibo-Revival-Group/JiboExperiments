@@ -126,7 +126,7 @@ foreach ($marker in @("RegistryName", "ApiHostname", "containerapp hostname bind
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
 }
 
-foreach ($marker in @("managedEnvironmentName", "--environment")) {
+foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-method CNAME")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing hostname binding environment marker"
 }
 
@@ -141,7 +141,7 @@ foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "az co
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing expected marker"
 }
 
-foreach ($marker in @("managedEnvironmentName", "--environment")) {
+foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-method CNAME")) {
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing hostname binding environment marker"
 }
 

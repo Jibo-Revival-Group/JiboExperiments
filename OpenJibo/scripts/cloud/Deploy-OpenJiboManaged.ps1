@@ -79,6 +79,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
         --name $containerAppName `
         --hostname $ApiHostname `
         --environment $managedEnvironmentName `
+        --validation-method CNAME `
         --output none
 }
 

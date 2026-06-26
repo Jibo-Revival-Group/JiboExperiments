@@ -146,6 +146,7 @@ PY
     --name "$container_app_name" \
     --hostname "$api_hostname" \
     --environment "$managed_environment_name" \
+    --validation-method CNAME \
     --output none
 fi
 

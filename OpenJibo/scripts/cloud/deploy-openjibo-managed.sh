@@ -158,7 +158,7 @@ fi
 if [[ "$run_migration" == true ]]; then
   state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
   personal_memory_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-personal-memory-connection-string --query value -o tsv)"
-  "${script_dir}/invoke-openjibo-migration.sh" \
+  bash "${script_dir}/invoke-openjibo-migration.sh" \
     --target all \
     --state-connection "$state_connection_string" \
     --memory-connection "$personal_memory_connection_string"

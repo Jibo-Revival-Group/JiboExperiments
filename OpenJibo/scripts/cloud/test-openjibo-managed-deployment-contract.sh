@@ -179,6 +179,13 @@ if [[ "$smoke_script_text" == *'Host = "api.jibo.com"'* ]]; then
   exit 1
 fi
 
+for marker in "request_json_with_retry"; do
+  if [[ "$linux_smoke_script_text" != *"$marker"* ]]; then
+    echo "Linux smoke script is missing retry marker: $marker" >&2
+    exit 1
+  fi
+done
+
 if [[ "$linux_smoke_script_text" == *'"Host": "api.jibo.com"'* ]]; then
   echo "Linux smoke script still hardcodes the api.jibo.com host header." >&2
   exit 1

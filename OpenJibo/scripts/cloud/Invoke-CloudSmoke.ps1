@@ -82,6 +82,28 @@ function Invoke-JsonRequest {
     }
 }
 
+function Invoke-JsonRequestWithRetry {
+    param(
+        [string]$Name,
+        [string]$Method,
+        [string]$Url,
+        [hashtable]$Headers,
+        [string]$Body,
+        [int]$Attempts = 4,
+        [int[]]$RetryStatusCodes = @(500, 502, 503, 504)
+    )
+
+    for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+        $result = Invoke-JsonRequest -Name $Name -Method $Method -Url $Url -Headers $Headers -Body $Body
+        if ($result.Success -or ($RetryStatusCodes -notcontains $result.StatusCode) -or ($attempt -eq $Attempts)) {
+            return $result
+        }
+
+        Write-Warning "$Name attempt $attempt failed with $($result.StatusCode); retrying after a short delay."
+        Start-Sleep -Seconds ([Math]::Min(5, $attempt * 2))
+    }
+}
+
 $results = New-Object System.Collections.Generic.List[object]
 
 function Add-Result {
@@ -93,14 +115,14 @@ function Add-Result {
 Add-Result (Invoke-JsonRequest -Name "Health" -Method "GET" -Url "$BaseUrl/health" -Headers @{})
 
 $createBody = @{ email = $TestEmail; password = $TestPassword; firstName = $TestFirstName; lastName = $TestLastName } | ConvertTo-Json
-$account = Invoke-JsonRequest -Name "AccountCreate" -Method "POST" -Url "$BaseUrl/" -Headers @{
+$account = Invoke-JsonRequestWithRetry -Name "AccountCreate" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "Account_20151111.Create"
     Host = $baseHost
 } -Body $createBody
 Add-Result $account
 
 if (-not $account.Success -and $account.StatusCode -ne 409) {
-    throw "Account create failed with status code $($account.StatusCode): $($account.Error)"
+    throw "Account create failed with status code $($account.StatusCode): $($account.Error). Body: $($account.BodyText ?? $account.Body)"
 }
 
 if (-not $account.Success) {
@@ -110,7 +132,7 @@ if (-not $account.Success) {
     } -Body (@{ email = $TestEmail; password = $TestPassword } | ConvertTo-Json)
     Add-Result $login
     if (-not $login.Success) {
-        throw "Account login failed with status code $($login.StatusCode): $($login.Error)"
+        throw "Account login failed with status code $($login.StatusCode): $($login.Error). Body: $($login.BodyText ?? $login.Body)"
     }
     $account = $login
 }

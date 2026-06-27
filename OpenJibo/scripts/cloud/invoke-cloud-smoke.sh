@@ -68,6 +68,35 @@ def request_json(name: str, method: str, url: str, headers: Optional[Dict[str, s
         return Result(name, False, None, None, None, str(exc))
 
 
+def request_json_with_retry(
+    name: str,
+    method: str,
+    url: str,
+    headers: Optional[Dict[str, str]] = None,
+    body: Optional[Dict[str, Any]] = None,
+    attempts: int = 4,
+    retry_status_codes: tuple[int, ...] = (500, 502, 503, 504),
+) -> Result:
+    last_result: Result | None = None
+    for attempt in range(1, attempts + 1):
+        result = request_json(name, method, url, headers, body)
+        last_result = result
+        if result.success:
+            return result
+        if result.status_code not in retry_status_codes or attempt == attempts:
+            return result
+        print(
+            f"{name} attempt {attempt} failed with {result.status_code}; retrying after a short delay...",
+            file=sys.stderr,
+        )
+        import time
+
+        time.sleep(min(5, attempt * 2))
+
+    assert last_result is not None
+    return last_result
+
+
 results: List[Result] = []
 
 def add_result(result: Result) -> Result:
@@ -77,7 +106,7 @@ def add_result(result: Result) -> Result:
 
 add_result(request_json("Health", "GET", f"{base_url.rstrip('/')}/health", {}))
 
-account = request_json(
+account = request_json_with_retry(
     "AccountCreate",
     "POST",
     f"{base_url.rstrip('/')}/",
@@ -95,7 +124,10 @@ account = request_json(
 add_result(account)
 
 if not account.success and account.status_code != 409:
-    raise SystemExit(f"Account create failed with status code {account.status_code}: {account.error}")
+    raise SystemExit(
+        f"Account create failed with status code {account.status_code}: {account.error}. "
+        f"Body: {account.body_text or account.body}"
+    )
 
 if not account.success:
     login = request_json(
@@ -113,7 +145,10 @@ if not account.success:
     )
     add_result(login)
     if not login.success:
-        raise SystemExit(f"Account login failed with status code {login.status_code}: {login.error}")
+        raise SystemExit(
+            f"Account login failed with status code {login.status_code}: {login.error}. "
+            f"Body: {login.body_text or login.body}"
+        )
     account = login
 
 account_id = None

@@ -166,11 +166,23 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               secretRef: 'state-connection-string'
             }
             {
+              name: 'OPENJIBO_STATE_STORAGE_CONNECTION_STRING'
+              secretRef: 'state-connection-string'
+            }
+            {
               name: 'OpenJibo__PersonalMemory__ConnectionString'
               secretRef: 'personal-memory-connection-string'
             }
             {
+              name: 'OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING'
+              secretRef: 'personal-memory-connection-string'
+            }
+            {
               name: 'OpenJibo__Media__ConnectionString'
+              secretRef: 'media-connection-string'
+            }
+            {
+              name: 'OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING'
               secretRef: 'media-connection-string'
             }
             {

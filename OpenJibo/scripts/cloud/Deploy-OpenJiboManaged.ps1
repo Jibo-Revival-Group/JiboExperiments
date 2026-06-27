@@ -42,6 +42,55 @@ if ([string]::IsNullOrWhiteSpace($RegistryName)) {
 $RegistryLoginServer = "$RegistryName.azurecr.io"
 $deploymentName = "openjibo-managed-{0}" -f ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
 
+function Get-PostgresServerNameFromConnectionString {
+    param([string]$ConnectionString)
+
+    foreach ($segment in $ConnectionString.Split(";")) {
+        $parts = $segment.Split("=", 2)
+        if ($parts.Length -eq 2 -and $parts[0].Trim().Equals("Host", [System.StringComparison]::OrdinalIgnoreCase)) {
+            return ($parts[1].Trim().Split(".", 2))[0]
+        }
+    }
+
+    throw "Could not determine the PostgreSQL server name from the connection string."
+}
+
+function Ensure-PostgresFirewallRule {
+    param(
+        [string]$ServerName,
+        [string]$RuleName,
+        [string]$IpAddress
+    )
+
+    $showArgs = @(
+        "postgres", "flexible-server", "firewall-rule", "show",
+        "--resource-group", $ResourceGroupName,
+        "--name", $ServerName,
+        "--rule-name", $RuleName,
+        "--output", "none"
+    )
+
+    & az @showArgs *> $null
+    if ($LASTEXITCODE -eq 0) {
+        & az postgres flexible-server firewall-rule update `
+            --resource-group $ResourceGroupName `
+            --name $ServerName `
+            --rule-name $RuleName `
+            --start-ip-address $IpAddress `
+            --end-ip-address $IpAddress `
+            --output none | Out-Null
+        return
+    }
+
+    & az postgres flexible-server firewall-rule create `
+        --resource-group $ResourceGroupName `
+        --name $ServerName `
+        --rule-name $RuleName `
+        --start-ip-address $IpAddress `
+        --end-ip-address $IpAddress `
+        --output none | Out-Null
+}
+
 $arguments = @(
     "deployment", "group", "create",
     "--resource-group", $ResourceGroupName,
@@ -86,6 +135,27 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
         --environment $managedEnvironmentName `
         --validation-method CNAME `
         --output none
+
+    $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
+    $postgresServerName = Get-PostgresServerNameFromConnectionString -ConnectionString $stateConnectionString
+    $outboundIpAddresses = az containerapp env show `
+        --resource-group $ResourceGroupName `
+        --name $managedEnvironmentName `
+        --query properties.outboundIpAddresses `
+        --output json | ConvertFrom-Json
+
+    if (-not $outboundIpAddresses -or $outboundIpAddresses.Count -eq 0) {
+        throw "Container Apps environment did not report any outbound IP addresses."
+    }
+
+    foreach ($outboundIpAddress in $outboundIpAddresses) {
+        if ([string]::IsNullOrWhiteSpace($outboundIpAddress)) {
+            continue
+        }
+
+        $ruleName = "AllowContainerApps-{0}" -f $outboundIpAddress.Replace(".", "-")
+        Ensure-PostgresFirewallRule -ServerName $postgresServerName -RuleName $ruleName -IpAddress $outboundIpAddress
+    }
 }
 
 if ($RunMigration) {

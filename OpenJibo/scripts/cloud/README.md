@@ -85,6 +85,8 @@ The managed Azure path separates persistent storage from the application contain
 
 The foundation adds a PostgreSQL firewall rule for Azure services and, when the deployment runner public IP can be detected, a narrow firewall rule for that runner so deploy-time migrations can connect. If migrations fail with a PostgreSQL network error, confirm the runner IP was detected and that the database firewall allows the current deploy runner.
 
+`deploy-openjibo-managed.sh` and `Deploy-OpenJiboManaged.ps1` also query the Container Apps environment outbound IPs and create matching PostgreSQL firewall rules before migrations and smoke checks run. That keeps the managed runtime on PostgreSQL while giving the deployed container its own firewall path.
+
 ## Managed hostname binding
 
 `deploy-openjibo-managed.sh` and `Deploy-OpenJiboManaged.ps1` bind the requested `api.openjibo.com` style hostname after the Container App deployment. Azure Container Apps managed certificates require DNS to point directly at the generated Container App hostname before certificate issuance can succeed. For subdomains such as `api.openjibo.com`, create a CNAME from the custom hostname to the generated Container App FQDN returned by the deployment output.

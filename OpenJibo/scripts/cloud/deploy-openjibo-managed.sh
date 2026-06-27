@@ -88,6 +88,49 @@ resolve_path() {
 resolved_template_path="$(resolve_path "$template_path")"
 resolved_parameters_path="$(resolve_path "$parameters_path")"
 
+parse_postgres_server_name() {
+  python3 - "$1" <<'PY'
+import sys
+
+connection_string = sys.argv[1]
+for segment in connection_string.split(";"):
+    key, _, value = segment.partition("=")
+    if key.strip().lower() == "host" and value.strip():
+        print(value.strip().split(".", 1)[0])
+        raise SystemExit(0)
+
+raise SystemExit("Could not determine the PostgreSQL server name from the connection string.")
+PY
+}
+
+ensure_postgres_firewall_rule() {
+  local postgres_server_name="$1"
+  local rule_name="$2"
+  local ip_address="$3"
+
+  if az postgres flexible-server firewall-rule show \
+    --resource-group "$resource_group_name" \
+    --name "$postgres_server_name" \
+    --rule-name "$rule_name" \
+    --output none >/dev/null 2>&1; then
+    az postgres flexible-server firewall-rule update \
+      --resource-group "$resource_group_name" \
+      --name "$postgres_server_name" \
+      --rule-name "$rule_name" \
+      --start-ip-address "$ip_address" \
+      --end-ip-address "$ip_address" \
+      --output none
+  else
+    az postgres flexible-server firewall-rule create \
+      --resource-group "$resource_group_name" \
+      --name "$postgres_server_name" \
+      --rule-name "$rule_name" \
+      --start-ip-address "$ip_address" \
+      --end-ip-address "$ip_address" \
+      --output none
+  fi
+}
+
 if [[ ! -f "$resolved_template_path" ]]; then
   echo "Could not find Bicep template at $resolved_template_path" >&2
   exit 1
@@ -153,6 +196,37 @@ PY
     --environment "$managed_environment_name" \
     --validation-method CNAME \
     --output none
+
+  state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
+  postgres_server_name="$(parse_postgres_server_name "$state_connection_string")"
+  outbound_ip_addresses_json="$(az containerapp env show \
+    --resource-group "$resource_group_name" \
+    --name "$managed_environment_name" \
+    --query "properties.outboundIpAddresses" \
+    -o json)"
+
+  while IFS= read -r outbound_ip; do
+    if [[ -z "$outbound_ip" ]]; then
+      continue
+    fi
+
+    rule_name="AllowContainerApps-${outbound_ip//./-}"
+    ensure_postgres_firewall_rule "$postgres_server_name" "$rule_name" "$outbound_ip"
+  done < <(
+    python3 - "$outbound_ip_addresses_json" <<'PY'
+import json
+import sys
+
+outbound_ip_addresses = json.loads(sys.argv[1])
+
+if not isinstance(outbound_ip_addresses, list) or not outbound_ip_addresses:
+    raise SystemExit("Container Apps environment did not report any outbound IP addresses.")
+
+for outbound_ip in outbound_ip_addresses:
+    if isinstance(outbound_ip, str) and outbound_ip.strip():
+        print(outbound_ip.strip())
+PY
+  )
 fi
 
 if [[ "$run_migration" == true ]]; then

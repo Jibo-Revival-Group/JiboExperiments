@@ -71,6 +71,8 @@ required_managed_markers=(
   "output containerAppName string"
   "output managedEnvironmentName string"
   "secretRef: 'media-connection-string'"
+  "containerapp env show"
+  "firewall-rule create"
   "OPENJIBO_STATE_STORAGE_CONNECTION_STRING"
   "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING"
   "OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING"

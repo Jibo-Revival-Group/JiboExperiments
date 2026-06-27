@@ -202,8 +202,9 @@ PY
   outbound_ip_addresses_json="$(az containerapp env show \
     --resource-group "$resource_group_name" \
     --name "$managed_environment_name" \
-    --query "properties.outboundIpAddresses" \
-    -o json)"
+    --query "properties.outboundIpAddresses || []" \
+    --output json \
+    --only-show-errors)"
 
   while IFS= read -r outbound_ip; do
     if [[ -z "$outbound_ip" ]]; then
@@ -220,13 +221,15 @@ import sys
 outbound_ip_addresses = json.loads(sys.argv[1])
 
 if not isinstance(outbound_ip_addresses, list) or not outbound_ip_addresses:
-    raise SystemExit("Container Apps environment did not report any outbound IP addresses.")
+    raise SystemExit(0)
 
 for outbound_ip in outbound_ip_addresses:
     if isinstance(outbound_ip, str) and outbound_ip.strip():
         print(outbound_ip.strip())
 PY
   )
+
+  sleep 30
 fi
 
 if [[ "$run_migration" == true ]]; then

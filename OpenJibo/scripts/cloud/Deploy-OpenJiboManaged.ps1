@@ -141,14 +141,15 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
     $outboundIpAddresses = az containerapp env show `
         --resource-group $ResourceGroupName `
         --name $managedEnvironmentName `
-        --query properties.outboundIpAddresses `
-        --output json | ConvertFrom-Json
+        --query "properties.outboundIpAddresses || []" `
+        --output json `
+        --only-show-errors | ConvertFrom-Json
 
     if (-not $outboundIpAddresses -or $outboundIpAddresses.Count -eq 0) {
-        throw "Container Apps environment did not report any outbound IP addresses."
+        Write-Warning "Container Apps environment did not report any outbound IP addresses for PostgreSQL firewall rules."
     }
 
-    foreach ($outboundIpAddress in $outboundIpAddresses) {
+    foreach ($outboundIpAddress in @($outboundIpAddresses)) {
         if ([string]::IsNullOrWhiteSpace($outboundIpAddress)) {
             continue
         }
@@ -156,6 +157,8 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
         $ruleName = "AllowContainerApps-{0}" -f $outboundIpAddress.Replace(".", "-")
         Ensure-PostgresFirewallRule -ServerName $postgresServerName -RuleName $ruleName -IpAddress $outboundIpAddress
     }
+
+    Start-Sleep -Seconds 30
 }
 
 if ($RunMigration) {

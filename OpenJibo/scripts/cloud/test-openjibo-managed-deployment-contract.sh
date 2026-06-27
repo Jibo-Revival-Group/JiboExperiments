@@ -71,8 +71,6 @@ required_managed_markers=(
   "output containerAppName string"
   "output managedEnvironmentName string"
   "secretRef: 'media-connection-string'"
-  "containerapp env show"
-  "firewall-rule create"
   "OPENJIBO_STATE_STORAGE_CONNECTION_STRING"
   "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING"
   "OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING"
@@ -175,6 +173,13 @@ done
 for marker in "managedEnvironmentName" "--environment" "--validation-method CNAME"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing hostname binding environment marker: $marker" >&2
+    exit 1
+  fi
+done
+
+for marker in "containerapp env show" "firewall-rule create" "firewall-rule update"; do
+  if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
+    echo "Linux managed deploy script is missing firewall marker: $marker" >&2
     exit 1
   fi
 done

@@ -82,8 +82,6 @@ $requiredManagedMarkers = @(
     "output containerAppName string",
     "output managedEnvironmentName string",
     "secretRef: 'media-connection-string'",
-    "containerapp env show",
-    "firewall-rule create",
     "OPENJIBO_STATE_STORAGE_CONNECTION_STRING",
     "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING",
     "OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING",
@@ -133,6 +131,10 @@ foreach ($marker in @("RegistryName", "ApiHostname", "containerapp hostname add"
 
 foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-method CNAME")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing hostname binding environment marker"
+}
+
+foreach ($marker in @("containerapp env show", "firewall-rule create", "firewall-rule update")) {
+    Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing firewall marker"
 }
 
 foreach ($marker in @("seedPrincipalObjectId", "openjibo-media-connection-string", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "run_command_with_retry")) {

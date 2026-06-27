@@ -62,11 +62,15 @@ function Ensure-PostgresFirewallRule {
         [string]$IpAddress
     )
 
+    $helpText = & az postgres flexible-server firewall-rule create -h 2>&1
+    $serverFlag = if ($helpText -match '--server-name') { '--server-name' } else { '--name' }
+    $ruleFlag = if ($helpText -match '--rule-name') { '--rule-name' } else { '--name' }
+
     $showArgs = @(
         "postgres", "flexible-server", "firewall-rule", "show",
         "--resource-group", $ResourceGroupName,
-        "--server-name", $ServerName,
-        "--rule-name", $RuleName,
+        $serverFlag, $ServerName,
+        $ruleFlag, $RuleName,
         "--output", "none"
     )
 
@@ -74,8 +78,8 @@ function Ensure-PostgresFirewallRule {
     if ($LASTEXITCODE -eq 0) {
         & az postgres flexible-server firewall-rule update `
             --resource-group $ResourceGroupName `
-            --server-name $ServerName `
-            --rule-name $RuleName `
+            $serverFlag $ServerName `
+            $ruleFlag $RuleName `
             --start-ip-address $IpAddress `
             --end-ip-address $IpAddress `
             --output none | Out-Null
@@ -84,8 +88,8 @@ function Ensure-PostgresFirewallRule {
 
     & az postgres flexible-server firewall-rule create `
         --resource-group $ResourceGroupName `
-        --server-name $ServerName `
-        --rule-name $RuleName `
+        $serverFlag $ServerName `
+        $ruleFlag $RuleName `
         --start-ip-address $IpAddress `
         --end-ip-address $IpAddress `
         --output none | Out-Null

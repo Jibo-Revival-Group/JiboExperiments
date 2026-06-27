@@ -107,24 +107,40 @@ ensure_postgres_firewall_rule() {
   local postgres_server_name="$1"
   local rule_name="$2"
   local ip_address="$3"
+  local help_text=""
+  local server_flag=""
+  local rule_flag=""
+
+  help_text="$(az postgres flexible-server firewall-rule create -h 2>&1 || true)"
+  if grep -q -- '--server-name' <<<"$help_text"; then
+    server_flag="--server-name"
+  else
+    server_flag="--name"
+  fi
+
+  if grep -q -- '--rule-name' <<<"$help_text"; then
+    rule_flag="--rule-name"
+  else
+    rule_flag="--name"
+  fi
 
   if az postgres flexible-server firewall-rule show \
     --resource-group "$resource_group_name" \
-    --server-name "$postgres_server_name" \
-    --rule-name "$rule_name" \
+    "$server_flag" "$postgres_server_name" \
+    "$rule_flag" "$rule_name" \
     --output none >/dev/null 2>&1; then
     az postgres flexible-server firewall-rule update \
       --resource-group "$resource_group_name" \
-      --server-name "$postgres_server_name" \
-      --rule-name "$rule_name" \
+      "$server_flag" "$postgres_server_name" \
+      "$rule_flag" "$rule_name" \
       --start-ip-address "$ip_address" \
       --end-ip-address "$ip_address" \
       --output none
   else
     az postgres flexible-server firewall-rule create \
       --resource-group "$resource_group_name" \
-      --server-name "$postgres_server_name" \
-      --rule-name "$rule_name" \
+      "$server_flag" "$postgres_server_name" \
+      "$rule_flag" "$rule_name" \
       --start-ip-address "$ip_address" \
       --end-ip-address "$ip_address" \
       --output none

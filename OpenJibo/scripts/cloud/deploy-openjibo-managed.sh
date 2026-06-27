@@ -199,12 +199,12 @@ PY
 
   state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
   postgres_server_name="$(parse_postgres_server_name "$state_connection_string")"
-  outbound_ip_addresses_json="$(az containerapp env show \
+  outbound_ip_addresses_text="$(az containerapp env show \
     --resource-group "$resource_group_name" \
     --name "$managed_environment_name" \
-    --query "properties.outboundIpAddresses || []" \
-    --output json \
-    --only-show-errors)"
+    --query "properties.outboundIpAddresses" \
+    --output tsv \
+    --only-show-errors || true)"
 
   while IFS= read -r outbound_ip; do
     if [[ -z "$outbound_ip" ]]; then
@@ -213,21 +213,7 @@ PY
 
     rule_name="AllowContainerApps-${outbound_ip//./-}"
     ensure_postgres_firewall_rule "$postgres_server_name" "$rule_name" "$outbound_ip"
-  done < <(
-    python3 - "$outbound_ip_addresses_json" <<'PY'
-import json
-import sys
-
-outbound_ip_addresses = json.loads(sys.argv[1])
-
-if not isinstance(outbound_ip_addresses, list) or not outbound_ip_addresses:
-    raise SystemExit(0)
-
-for outbound_ip in outbound_ip_addresses:
-    if isinstance(outbound_ip, str) and outbound_ip.strip():
-        print(outbound_ip.strip())
-PY
-  )
+  done <<< "$outbound_ip_addresses_text"
 
   sleep 30
 fi

@@ -138,18 +138,18 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 
     $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
     $postgresServerName = Get-PostgresServerNameFromConnectionString -ConnectionString $stateConnectionString
-    $outboundIpAddresses = az containerapp env show `
+    $outboundIpAddressesText = az containerapp env show `
         --resource-group $ResourceGroupName `
         --name $managedEnvironmentName `
-        --query "properties.outboundIpAddresses || []" `
-        --output json `
-        --only-show-errors | ConvertFrom-Json
+        --query properties.outboundIpAddresses `
+        --output tsv `
+        --only-show-errors 2>$null
 
-    if (-not $outboundIpAddresses -or $outboundIpAddresses.Count -eq 0) {
+    if ([string]::IsNullOrWhiteSpace($outboundIpAddressesText)) {
         Write-Warning "Container Apps environment did not report any outbound IP addresses for PostgreSQL firewall rules."
     }
 
-    foreach ($outboundIpAddress in @($outboundIpAddresses)) {
+    foreach ($outboundIpAddress in @($outboundIpAddressesText -split "`r?`n")) {
         if ([string]::IsNullOrWhiteSpace($outboundIpAddress)) {
             continue
         }

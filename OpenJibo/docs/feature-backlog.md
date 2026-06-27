@@ -507,6 +507,8 @@ These are the carryover items that need a clean proof pass first:
   - decide how testers submit noteworthy sessions
   - keep a lightweight `capture-index.ndjson` manifest beside raw captures so testers can quickly find sessions, operations, and fixture exports
   - preserve sanitized fixtures as the durable parity artifact
+- Architecture note:
+  - [telemetry-production-safety.md](architecture/telemetry-production-safety.md) now records the production-safe split between Serilog logs and hosted capture storage, plus the rule that capture failures must never break request handling
 - Progress update (`2026-06-24`):
   - websocket turn diagnostics now append to `capture-index.ndjson`, not only the raw daily event log, so short-answer probes, turn-boundary decisions, and STT guardrail events are findable in the same manifest as connections, messages, HTTP protocol captures, and exported fixtures
   - this keeps the local capture shape closer to the eventual hosted-retention boundary while the group-submission workflow is still being designed

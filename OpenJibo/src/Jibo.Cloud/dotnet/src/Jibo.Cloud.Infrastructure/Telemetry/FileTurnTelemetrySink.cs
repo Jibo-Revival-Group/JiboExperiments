@@ -43,34 +43,43 @@ public sealed class FileTurnTelemetrySink(
     private async Task WriteEventAsync(string eventType, object payload, string logMessage, LogLevel level,
         CancellationToken cancellationToken)
     {
-        var directory = GetBaseDirectory();
-        Directory.CreateDirectory(directory);
-        var filePath = Path.Combine(directory, $"{DateTimeOffset.UtcNow:yyyyMMdd}.events.ndjson");
-        var line = JsonSerializer.Serialize(payload, JsonOptions) + Environment.NewLine;
-
-        await _writeLock.WaitAsync(cancellationToken);
         try
         {
-            await File.AppendAllTextAsync(filePath, line, cancellationToken);
-        }
-        finally
-        {
-            _writeLock.Release();
-        }
+            var directory = GetBaseDirectory();
+            Directory.CreateDirectory(directory);
+            var filePath = Path.Combine(directory, $"{DateTimeOffset.UtcNow:yyyyMMdd}.events.ndjson");
+            var line = JsonSerializer.Serialize(payload, JsonOptions) + Environment.NewLine;
 
-        await CaptureIndexWriter.AppendAsync(
-            directory,
-            "turn",
-            eventType,
-            new Dictionary<string, object?>
+            await _writeLock.WaitAsync(cancellationToken);
+            try
             {
-                ["message"] = logMessage,
-                ["level"] = level.ToString(),
-                ["eventFilePath"] = filePath
-            },
-            cancellationToken);
+                await File.AppendAllTextAsync(filePath, line, cancellationToken);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
 
-        logger.Log(level, "{LogMessage} {Payload}", logMessage, payload);
+            await CaptureIndexWriter.AppendAsync(
+                directory,
+                "turn",
+                eventType,
+                new Dictionary<string, object?>
+                {
+                    ["message"] = logMessage,
+                    ["level"] = level.ToString(),
+                    ["eventFilePath"] = filePath
+                },
+                cancellationToken);
+
+            logger.Log(level, "{LogMessage} {Payload}", logMessage, payload);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Skipping turn telemetry event {EventType} because capture storage was unavailable.",
+                eventType);
+        }
     }
 
     private string GetBaseDirectory()

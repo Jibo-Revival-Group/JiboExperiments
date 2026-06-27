@@ -17,77 +17,88 @@ public sealed class FileProtocolTelemetrySink(
     {
         if (!options.Value.Enabled) return;
 
-        var directory = CapturePathResolver.Resolve(
-            options.Value.DirectoryPath,
-            Directory.GetCurrentDirectory(),
-            AppContext.BaseDirectory);
-        Directory.CreateDirectory(directory);
-        var filePath = Path.Combine(directory, $"{DateTimeOffset.UtcNow:yyyyMMdd}.events.ndjson");
-
-        var payload = new
+        try
         {
-            capturedUtc = DateTimeOffset.UtcNow,
-            request = new
+            var directory = CapturePathResolver.Resolve(
+                options.Value.DirectoryPath,
+                Directory.GetCurrentDirectory(),
+                AppContext.BaseDirectory);
+            Directory.CreateDirectory(directory);
+            var filePath = Path.Combine(directory, $"{DateTimeOffset.UtcNow:yyyyMMdd}.events.ndjson");
+
+            var payload = new
             {
-                envelope.RequestId,
-                envelope.Transport,
+                capturedUtc = DateTimeOffset.UtcNow,
+                request = new
+                {
+                    envelope.RequestId,
+                    envelope.Transport,
+                    envelope.Method,
+                    envelope.HostName,
+                    envelope.Path,
+                    envelope.ServicePrefix,
+                    envelope.Operation,
+                    envelope.DeviceId,
+                    envelope.CorrelationId,
+                    envelope.FirmwareVersion,
+                    envelope.ApplicationVersion,
+                    envelope.Headers,
+                    envelope.BodyText
+                },
+                response = new
+                {
+                    result.StatusCode,
+                    result.ContentType,
+                    result.Headers,
+                    result.BodyText
+                }
+            };
+
+            var line = JsonSerializer.Serialize(payload) + Environment.NewLine;
+
+            await _writeLock.WaitAsync(cancellationToken);
+            try
+            {
+                await File.AppendAllTextAsync(filePath, line, cancellationToken);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+
+            await CaptureIndexWriter.AppendAsync(
+                directory,
+                "http",
+                "protocol_record",
+                new Dictionary<string, object?>
+                {
+                    ["method"] = envelope.Method,
+                    ["host"] = envelope.HostName,
+                    ["path"] = envelope.Path,
+                    ["servicePrefix"] = envelope.ServicePrefix,
+                    ["operation"] = envelope.Operation,
+                    ["statusCode"] = result.StatusCode,
+                    ["contentType"] = result.ContentType,
+                    ["requestId"] = envelope.RequestId,
+                    ["eventFilePath"] = filePath
+                },
+                cancellationToken);
+
+            logger.LogDebug(
+                "HTTP telemetry {Method} {Host}{Path} target={Target} status={StatusCode}",
                 envelope.Method,
                 envelope.HostName,
                 envelope.Path,
-                envelope.ServicePrefix,
-                envelope.Operation,
-                envelope.DeviceId,
-                envelope.CorrelationId,
-                envelope.FirmwareVersion,
-                envelope.ApplicationVersion,
-                envelope.Headers,
-                envelope.BodyText
-            },
-            response = new
-            {
-                result.StatusCode,
-                result.ContentType,
-                result.Headers,
-                result.BodyText
-            }
-        };
-
-        var line = JsonSerializer.Serialize(payload) + Environment.NewLine;
-
-        await _writeLock.WaitAsync(cancellationToken);
-        try
-        {
-            await File.AppendAllTextAsync(filePath, line, cancellationToken);
+                $"{envelope.ServicePrefix}.{envelope.Operation}".Trim('.'),
+                result.StatusCode);
         }
-        finally
+        catch (Exception ex)
         {
-            _writeLock.Release();
+            logger.LogWarning(ex,
+                "Skipping HTTP telemetry write for {Method} {Host}{Path} because capture storage was unavailable.",
+                envelope.Method,
+                envelope.HostName,
+                envelope.Path);
         }
-
-        await CaptureIndexWriter.AppendAsync(
-            directory,
-            "http",
-            "protocol_record",
-            new Dictionary<string, object?>
-            {
-                ["method"] = envelope.Method,
-                ["host"] = envelope.HostName,
-                ["path"] = envelope.Path,
-                ["servicePrefix"] = envelope.ServicePrefix,
-                ["operation"] = envelope.Operation,
-                ["statusCode"] = result.StatusCode,
-                ["contentType"] = result.ContentType,
-                ["requestId"] = envelope.RequestId,
-                ["eventFilePath"] = filePath
-            },
-            cancellationToken);
-
-        logger.LogDebug(
-            "HTTP telemetry {Method} {Host}{Path} target={Target} status={StatusCode}",
-            envelope.Method,
-            envelope.HostName,
-            envelope.Path,
-            $"{envelope.ServicePrefix}.{envelope.Operation}".Trim('.'),
-            result.StatusCode);
     }
 }

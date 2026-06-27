@@ -138,6 +138,22 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'Production'
             }
             {
+              name: 'OpenJibo__Telemetry__Enabled'
+              value: 'false'
+            }
+            {
+              name: 'OpenJibo__Telemetry__ExportFixtures'
+              value: 'false'
+            }
+            {
+              name: 'OpenJibo__ProtocolTelemetry__Enabled'
+              value: 'false'
+            }
+            {
+              name: 'OpenJibo__TurnTelemetry__Enabled'
+              value: 'false'
+            }
+            {
               name: 'ASPNETCORE_URLS'
               value: 'http://+:8080'
             }

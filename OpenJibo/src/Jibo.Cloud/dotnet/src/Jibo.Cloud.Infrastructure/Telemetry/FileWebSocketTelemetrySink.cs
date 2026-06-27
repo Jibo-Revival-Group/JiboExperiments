@@ -27,20 +27,28 @@ public sealed class FileWebSocketTelemetrySink(
     {
         if (!options.Value.Enabled) return;
 
-        _fixtures[session.SessionId] = new CapturedWebSocketFixtureBuilder
+        try
         {
-            Session = new CapturedWebSocketFixtureSession
+            _fixtures[session.SessionId] = new CapturedWebSocketFixtureBuilder
             {
-                HostName = envelope.HostName,
-                Path = envelope.Path,
-                Kind = envelope.Kind,
-                Token = envelope.Token
-            }
-        };
+                Session = new CapturedWebSocketFixtureSession
+                {
+                    HostName = envelope.HostName,
+                    Path = envelope.Path,
+                    Kind = envelope.Kind,
+                    Token = envelope.Token
+                }
+            };
 
-        await WriteRecordAsync(BuildRecord("connection_opened", envelope, session, null, "internal", null, null),
-            cancellationToken);
-        await AppendIndexAsync(envelope, session, "connection_opened", null, cancellationToken);
+            await WriteRecordAsync(BuildRecord("connection_opened", envelope, session, null, "internal", null, null),
+                cancellationToken);
+            await AppendIndexAsync(envelope, session, "connection_opened", null, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Skipping websocket telemetry open record because capture storage was unavailable.");
+        }
     }
 
     public async Task RecordInboundAsync(WebSocketMessageEnvelope envelope, CloudSession session, string? messageType,
@@ -48,12 +56,20 @@ public sealed class FileWebSocketTelemetrySink(
     {
         if (!options.Value.Enabled) return;
 
-        await WriteRecordAsync(BuildRecord("message_in", envelope, session, messageType, "in", null, null),
-            cancellationToken);
-        await AppendIndexAsync(envelope, session, "message_in", new Dictionary<string, object?>
+        try
         {
-            ["messageType"] = messageType
-        }, cancellationToken);
+            await WriteRecordAsync(BuildRecord("message_in", envelope, session, messageType, "in", null, null),
+                cancellationToken);
+            await AppendIndexAsync(envelope, session, "message_in", new Dictionary<string, object?>
+            {
+                ["messageType"] = messageType
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Skipping websocket telemetry inbound record because capture storage was unavailable.");
+        }
     }
 
     public async Task RecordTurnEventAsync(WebSocketMessageEnvelope envelope, CloudSession session, string eventType,
@@ -61,9 +77,18 @@ public sealed class FileWebSocketTelemetrySink(
     {
         if (!options.Value.Enabled) return;
 
-        await WriteRecordAsync(BuildRecord(eventType, envelope, session, null, "internal", null, details),
-            cancellationToken);
-        await AppendIndexAsync(envelope, session, eventType, details, cancellationToken);
+        try
+        {
+            await WriteRecordAsync(BuildRecord(eventType, envelope, session, null, "internal", null, details),
+                cancellationToken);
+            await AppendIndexAsync(envelope, session, eventType, details, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Skipping websocket telemetry event {EventType} because capture storage was unavailable.",
+                eventType);
+        }
     }
 
     public async Task RecordOutboundAsync(WebSocketMessageEnvelope envelope, CloudSession session,
@@ -71,26 +96,34 @@ public sealed class FileWebSocketTelemetrySink(
     {
         if (!options.Value.Enabled) return;
 
-        var replyTypes = replies
-            .Select(reply => ReadReplyType(reply.Text))
-            .Where(type => !string.IsNullOrWhiteSpace(type))
-            .Select(type => type!)
-            .ToArray();
-
-        await WriteRecordAsync(BuildRecord("message_out", envelope, session, null, "out", replyTypes, null),
-            cancellationToken);
-        await AppendIndexAsync(envelope, session, "message_out", new Dictionary<string, object?>
+        try
         {
-            ["replyTypes"] = replyTypes
-        }, cancellationToken);
+            var replyTypes = replies
+                .Select(reply => ReadReplyType(reply.Text))
+                .Where(type => !string.IsNullOrWhiteSpace(type))
+                .Select(type => type!)
+                .ToArray();
 
-        if (_fixtures.TryGetValue(session.SessionId, out var fixture))
-            fixture.Steps.Add(new CapturedWebSocketFixtureStep
+            await WriteRecordAsync(BuildRecord("message_out", envelope, session, null, "out", replyTypes, null),
+                cancellationToken);
+            await AppendIndexAsync(envelope, session, "message_out", new Dictionary<string, object?>
             {
-                Text = ParseJsonElement(envelope.Text),
-                Binary = envelope.Binary?.Select(value => (int)value).ToArray(),
-                ExpectedReplyTypes = replyTypes
-            });
+                ["replyTypes"] = replyTypes
+            }, cancellationToken);
+
+            if (_fixtures.TryGetValue(session.SessionId, out var fixture))
+                fixture.Steps.Add(new CapturedWebSocketFixtureStep
+                {
+                    Text = ParseJsonElement(envelope.Text),
+                    Binary = envelope.Binary?.Select(value => (int)value).ToArray(),
+                    ExpectedReplyTypes = replyTypes
+                });
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Skipping websocket telemetry outbound record because capture storage was unavailable.");
+        }
     }
 
     public async Task RecordConnectionClosedAsync(WebSocketMessageEnvelope envelope, CloudSession session,
@@ -98,53 +131,61 @@ public sealed class FileWebSocketTelemetrySink(
     {
         if (!options.Value.Enabled) return;
 
-        await WriteRecordAsync(BuildRecord(
-            "connection_closed",
-            envelope,
-            session,
-            null,
-            "internal",
-            null,
-            new Dictionary<string, object?> { ["reason"] = reason }), cancellationToken);
-        await AppendIndexAsync(envelope, session, "connection_closed", new Dictionary<string, object?>
-        {
-            ["reason"] = reason
-        }, cancellationToken);
-
-        if (!options.Value.ExportFixtures || !_fixtures.TryRemove(session.SessionId, out var fixture) ||
-            fixture.Steps.Count == 0) return;
-
-        var fixtureName = BuildFixtureName(session, fixture);
-        var capturedFixture = new CapturedWebSocketFixture
-        {
-            Name = fixtureName,
-            Session = fixture.Session,
-            Steps = [.. fixture.Steps]
-        };
-
-        var fixtureDirectory = Path.Combine(GetBaseDirectory(), "fixtures");
-        Directory.CreateDirectory(fixtureDirectory);
-        var fixturePath = Path.Combine(fixtureDirectory, $"{fixtureName}.flow.json");
-
-        await _writeLock.WaitAsync(cancellationToken);
         try
         {
-            await File.WriteAllTextAsync(fixturePath, JsonSerializer.Serialize(capturedFixture, JsonOptions),
-                cancellationToken);
-        }
-        finally
-        {
-            _writeLock.Release();
-        }
+            await WriteRecordAsync(BuildRecord(
+                "connection_closed",
+                envelope,
+                session,
+                null,
+                "internal",
+                null,
+                new Dictionary<string, object?> { ["reason"] = reason }), cancellationToken);
+            await AppendIndexAsync(envelope, session, "connection_closed", new Dictionary<string, object?>
+            {
+                ["reason"] = reason
+            }, cancellationToken);
 
-        await AppendIndexAsync(envelope, session, "fixture_export", new Dictionary<string, object?>
-        {
-            ["fixturePath"] = fixturePath,
-            ["stepCount"] = fixture.Steps.Count,
-            ["fixtureName"] = fixtureName
-        }, cancellationToken);
+            if (!options.Value.ExportFixtures || !_fixtures.TryRemove(session.SessionId, out var fixture) ||
+                fixture.Steps.Count == 0) return;
 
-        logger.LogInformation("Exported websocket fixture {FixturePath}", fixturePath);
+            var fixtureName = BuildFixtureName(session, fixture);
+            var capturedFixture = new CapturedWebSocketFixture
+            {
+                Name = fixtureName,
+                Session = fixture.Session,
+                Steps = [.. fixture.Steps]
+            };
+
+            var fixtureDirectory = Path.Combine(GetBaseDirectory(), "fixtures");
+            Directory.CreateDirectory(fixtureDirectory);
+            var fixturePath = Path.Combine(fixtureDirectory, $"{fixtureName}.flow.json");
+
+            await _writeLock.WaitAsync(cancellationToken);
+            try
+            {
+                await File.WriteAllTextAsync(fixturePath, JsonSerializer.Serialize(capturedFixture, JsonOptions),
+                    cancellationToken);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+
+            await AppendIndexAsync(envelope, session, "fixture_export", new Dictionary<string, object?>
+            {
+                ["fixturePath"] = fixturePath,
+                ["stepCount"] = fixture.Steps.Count,
+                ["fixtureName"] = fixtureName
+            }, cancellationToken);
+
+            logger.LogInformation("Exported websocket fixture {FixturePath}", fixturePath);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Skipping websocket telemetry close record because capture storage was unavailable.");
+        }
     }
 
     private async Task WriteRecordAsync(WebSocketTelemetryRecord record, CancellationToken cancellationToken)

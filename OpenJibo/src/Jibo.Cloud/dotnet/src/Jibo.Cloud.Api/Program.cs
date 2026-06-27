@@ -88,7 +88,18 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
 
     var envelope = await ApiRequestEnvelopeFactory.CreateAsync(context, cancellationToken);
     var result = await service.DispatchAsync(envelope);
-    await telemetrySink.RecordAsync(envelope, result, cancellationToken);
+    try
+    {
+        await telemetrySink.RecordAsync(envelope, result, cancellationToken);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex,
+            "HTTP telemetry recording failed for {Method} {Host}{Path}; returning response without telemetry.",
+            envelope.Method,
+            envelope.HostName,
+            envelope.Path);
+    }
 
     context.Response.StatusCode = result.StatusCode;
     context.Response.ContentType = result.ContentType;

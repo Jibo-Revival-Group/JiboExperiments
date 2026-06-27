@@ -199,12 +199,13 @@ PY
 
   state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
   postgres_server_name="$(parse_postgres_server_name "$state_connection_string")"
-  outbound_ip_addresses_text="$(az containerapp env show \
+  environment_json="$(
+    az containerapp env show \
     --resource-group "$resource_group_name" \
     --name "$managed_environment_name" \
-    --query "properties.outboundIpAddresses" \
-    --output tsv \
-    --only-show-errors || true)"
+    --output json \
+    --only-show-errors 2>/dev/null || true
+  )"
 
   while IFS= read -r outbound_ip; do
     if [[ -z "$outbound_ip" ]]; then
@@ -213,7 +214,42 @@ PY
 
     rule_name="AllowContainerApps-${outbound_ip//./-}"
     ensure_postgres_firewall_rule "$postgres_server_name" "$rule_name" "$outbound_ip"
-  done <<< "$outbound_ip_addresses_text"
+  done < <(
+    python3 - "$environment_json" <<'PY'
+import json
+import sys
+import re
+
+text = sys.argv[1].strip()
+if not text:
+    raise SystemExit(0)
+
+document = json.loads(text)
+ips = []
+ip_pattern = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+
+def collect(value):
+    if isinstance(value, str):
+        if ip_pattern.fullmatch(value.strip()):
+            ips.append(value)
+        return
+    if isinstance(value, list):
+        for item in value:
+            collect(item)
+        return
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in {"outboundIpAddresses", "staticIp", "staticIpAddress"}:
+                collect(child)
+            else:
+                collect(child)
+
+collect(document)
+
+for outbound_ip in dict.fromkeys(ips):
+    print(outbound_ip)
+PY
+  )
 
   sleep 30
 fi

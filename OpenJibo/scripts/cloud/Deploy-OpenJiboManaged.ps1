@@ -138,22 +138,63 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 
     $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
     $postgresServerName = Get-PostgresServerNameFromConnectionString -ConnectionString $stateConnectionString
-    $outboundIpAddressesText = az containerapp env show `
+    $environmentJsonText = az containerapp env show `
         --resource-group $ResourceGroupName `
         --name $managedEnvironmentName `
-        --query properties.outboundIpAddresses `
-        --output tsv `
+        --output json `
         --only-show-errors 2>$null
+    $outboundIpAddresses = @()
 
-    if ([string]::IsNullOrWhiteSpace($outboundIpAddressesText)) {
+    if (-not [string]::IsNullOrWhiteSpace($environmentJsonText)) {
+        try {
+            $environmentJson = $environmentJsonText | ConvertFrom-Json
+        }
+        catch {
+            Write-Warning "Container Apps environment lookup did not return valid JSON for PostgreSQL firewall rules."
+            $environmentJson = $null
+        }
+    }
+
+    function Get-CandidateIpAddresses {
+        param([object]$Value)
+
+        if ($null -eq $Value) {
+            return
+        }
+
+        if ($Value -is [string]) {
+            if ($Value -match '^(?:\d{1,3}\.){3}\d{1,3}$') {
+                $script:outboundIpAddresses += $Value
+            }
+            return
+        }
+
+        if ($Value -is [System.Collections.IDictionary]) {
+            foreach ($entry in $Value.GetEnumerator()) {
+                if ($entry.Key -in @("outboundIpAddresses", "staticIp", "staticIpAddress")) {
+                    Get-CandidateIpAddresses -Value $entry.Value
+                }
+                else {
+                    Get-CandidateIpAddresses -Value $entry.Value
+                }
+            }
+            return
+        }
+
+        if ($Value -is [System.Collections.IEnumerable] -and $Value -isnot [string]) {
+            foreach ($item in $Value) {
+                Get-CandidateIpAddresses -Value $item
+            }
+        }
+    }
+
+    Get-CandidateIpAddresses -Value $environmentJson
+
+    if ($outboundIpAddresses.Count -eq 0) {
         Write-Warning "Container Apps environment did not report any outbound IP addresses for PostgreSQL firewall rules."
     }
 
-    foreach ($outboundIpAddress in @($outboundIpAddressesText -split "`r?`n")) {
-        if ([string]::IsNullOrWhiteSpace($outboundIpAddress)) {
-            continue
-        }
-
+    foreach ($outboundIpAddress in ($outboundIpAddresses | Select-Object -Unique)) {
         $ruleName = "AllowContainerApps-{0}" -f $outboundIpAddress.Replace(".", "-")
         Ensure-PostgresFirewallRule -ServerName $postgresServerName -RuleName $ruleName -IpAddress $outboundIpAddress
     }

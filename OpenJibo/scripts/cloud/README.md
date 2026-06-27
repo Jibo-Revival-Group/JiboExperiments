@@ -77,11 +77,11 @@ These scripts help exercise the new .NET hosted cloud locally.
 
 The managed Azure path separates persistent storage from the application container:
 
-- State snapshots use Azure Blob Storage through the managed storage account connection string.
-- Personal memory snapshots use the same Azure Blob Storage connection string.
+- State snapshots use Azure Database for PostgreSQL Flexible Server and the `openjibo_state` database.
+- Personal memory snapshots use the same PostgreSQL server and the `openjibo_memory` database.
 - Media stays on Azure Blob Storage through the `OpenJibo__Media__Backend=AzureBlob` runtime setting.
 
-`deploy-openjibo-managed-foundation.sh` and `Deploy-OpenJiboManagedFoundation.ps1` create the PostgreSQL server and databases, generate a PostgreSQL administrator password when one is not supplied, and seed the state, personal-memory, media, and API-provider secrets into Key Vault. The scripts still accept explicit state and personal-memory connection string overrides for emergency or external-database cases, and the managed runtime keeps the database resources available for migrations and future compatibility, but the app's managed persistence path now uses Blob-backed snapshots for the first deployed stack.
+`deploy-openjibo-managed-foundation.sh` and `Deploy-OpenJiboManagedFoundation.ps1` create the PostgreSQL server and databases, generate a PostgreSQL administrator password when one is not supplied, and seed the state, personal-memory, media, and API-provider secrets into Key Vault. The scripts still accept explicit state and personal-memory connection string overrides for emergency or external-database cases, but the default managed deployment is PostgreSQL-backed.
 
 The foundation adds a PostgreSQL firewall rule for Azure services and, when the deployment runner public IP can be detected, a narrow firewall rule for that runner so deploy-time migrations can connect. If migrations fail with a PostgreSQL network error, confirm the runner IP was detected and that the database firewall allows the current deploy runner.
 

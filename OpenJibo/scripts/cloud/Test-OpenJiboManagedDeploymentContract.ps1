@@ -88,7 +88,7 @@ $requiredManagedMarkers = @(
     "keyVaultSecretBaseUrl",
     "environment().suffixes.keyvaultDns",
     "var logAnalyticsWorkspaceKey",
-    "value: 'AzureBlob'",
+    "value: 'PostgreSql'",
     "value: 'AzureBlob'",
     "keyVaultContainerAppSecretAccessPolicy"
 )

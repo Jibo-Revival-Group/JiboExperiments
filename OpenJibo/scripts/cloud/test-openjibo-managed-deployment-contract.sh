@@ -77,7 +77,7 @@ required_managed_markers=(
   "keyVaultSecretBaseUrl"
   "environment().suffixes.keyvaultDns"
   "var logAnalyticsWorkspaceKey"
-  "value: 'AzureBlob'"
+  "value: 'PostgreSql'"
   "value: 'AzureBlob'"
   "keyVaultContainerAppSecretAccessPolicy"
 )

@@ -65,7 +65,7 @@ function Ensure-PostgresFirewallRule {
     $showArgs = @(
         "postgres", "flexible-server", "firewall-rule", "show",
         "--resource-group", $ResourceGroupName,
-        "--name", $ServerName,
+        "--server-name", $ServerName,
         "--rule-name", $RuleName,
         "--output", "none"
     )
@@ -74,7 +74,7 @@ function Ensure-PostgresFirewallRule {
     if ($LASTEXITCODE -eq 0) {
         & az postgres flexible-server firewall-rule update `
             --resource-group $ResourceGroupName `
-            --name $ServerName `
+            --server-name $ServerName `
             --rule-name $RuleName `
             --start-ip-address $IpAddress `
             --end-ip-address $IpAddress `
@@ -84,7 +84,7 @@ function Ensure-PostgresFirewallRule {
 
     & az postgres flexible-server firewall-rule create `
         --resource-group $ResourceGroupName `
-        --name $ServerName `
+        --server-name $ServerName `
         --rule-name $RuleName `
         --start-ip-address $IpAddress `
         --end-ip-address $IpAddress `

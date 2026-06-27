@@ -110,12 +110,12 @@ ensure_postgres_firewall_rule() {
 
   if az postgres flexible-server firewall-rule show \
     --resource-group "$resource_group_name" \
-    --name "$postgres_server_name" \
+    --server-name "$postgres_server_name" \
     --rule-name "$rule_name" \
     --output none >/dev/null 2>&1; then
     az postgres flexible-server firewall-rule update \
       --resource-group "$resource_group_name" \
-      --name "$postgres_server_name" \
+      --server-name "$postgres_server_name" \
       --rule-name "$rule_name" \
       --start-ip-address "$ip_address" \
       --end-ip-address "$ip_address" \
@@ -123,7 +123,7 @@ ensure_postgres_firewall_rule() {
   else
     az postgres flexible-server firewall-rule create \
       --resource-group "$resource_group_name" \
-      --name "$postgres_server_name" \
+      --server-name "$postgres_server_name" \
       --rule-name "$rule_name" \
       --start-ip-address "$ip_address" \
       --end-ip-address "$ip_address" \

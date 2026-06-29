@@ -151,6 +151,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added explicit peer-transport, replication-readiness, and sync-direction fields to signed identity graph evidence bundles and the owner dashboard so retained admission artifacts state that direct peer transport is still disabled and snapshots are retention-only until admission succeeds
 - expanded the signed evidence bundle handoff contract with peer admission mode, owner-retention policy, and an explicit direct-peer-transport guard so offline retained artifacts cannot be mistaken for enabled peer replication
 - hardened the offline identity graph evidence bundle verifier so even a correctly signed retained artifact is rejected if it claims direct peer transport is enabled, changes the retention-only sync direction, or advertises a replication-ready transport state before peer admission is actually implemented
+- exposed the offline evidence bundle verifier through the authenticated portal API so retained peer-admission artifacts can be checked against local revocation anchors without trusting direct peer transport or enabling replication
 
 ## Working Order
 

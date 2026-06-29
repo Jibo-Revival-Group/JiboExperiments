@@ -73,6 +73,8 @@ internal static class HouseholdListOrchestrator
         var state = ReadString(turn, StateMetadataKey);
         var listType = ReadString(turn, TypeMetadataKey);
         var displayType = ReadString(turn, DisplayTypeMetadataKey);
+        var noInputCount = ReadInt(turn, NoInputCountMetadataKey);
+        var noMatchCount = ReadInt(turn, NoMatchCountMetadataKey);
         var isActiveState = !string.IsNullOrWhiteSpace(state) &&
                             !string.Equals(state, IdleState, StringComparison.OrdinalIgnoreCase);
         var isShoppingIntent = string.Equals(semanticIntent, "shopping_list", StringComparison.OrdinalIgnoreCase);
@@ -92,6 +94,13 @@ internal static class HouseholdListOrchestrator
             return Task.FromResult<JiboInteractionDecision?>(BuildCancelledDecision(resolvedListType,
                 resolvedDisplayType));
 
+        if (isActiveState && string.IsNullOrWhiteSpace(transcript))
+            return Task.FromResult<JiboInteractionDecision?>(BuildNoInputDecision(
+                resolvedListType,
+                resolvedDisplayType,
+                noInputCount + 1,
+                noMatchCount));
+
         if (IsRecallRequest(loweredTranscript))
             return Task.FromResult<JiboInteractionDecision?>(BuildRecallDecision(
                 resolvedListType,
@@ -107,6 +116,13 @@ internal static class HouseholdListOrchestrator
                     BuildDoneReply(resolvedDisplayType,
                         personalMemoryStore.GetListItems(tenantScope, resolvedListType)),
                     ContextUpdates: BuildContextUpdates(resolvedListType, resolvedDisplayType, IdleState)));
+
+            if (IsLowSignalFollowUp(loweredTranscript))
+                return Task.FromResult<JiboInteractionDecision?>(BuildNoMatchDecision(
+                    resolvedListType,
+                    resolvedDisplayType,
+                    noMatchCount + 1,
+                    noInputCount));
 
             directItem = NormalizeItem(transcript);
         }
@@ -133,15 +149,16 @@ internal static class HouseholdListOrchestrator
             ContextUpdates: BuildContextUpdates(resolvedListType, resolvedDisplayType, AwaitingItemState)));
     }
 
-    private static IDictionary<string, object?> BuildContextUpdates(string listType, string displayType, string state)
+    private static IDictionary<string, object?> BuildContextUpdates(string listType, string displayType, string state,
+        int noMatchCount = 0, int noInputCount = 0)
     {
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             [StateMetadataKey] = state,
             [TypeMetadataKey] = listType,
             [DisplayTypeMetadataKey] = displayType,
-            [NoMatchCountMetadataKey] = 0,
-            [NoInputCountMetadataKey] = 0
+            [NoMatchCountMetadataKey] = noMatchCount,
+            [NoInputCountMetadataKey] = noInputCount
         };
     }
 
@@ -158,6 +175,38 @@ internal static class HouseholdListOrchestrator
                 [NoMatchCountMetadataKey] = 0,
                 [NoInputCountMetadataKey] = 0
             });
+    }
+
+    private static JiboInteractionDecision BuildNoInputDecision(string listType, string displayType, int noInputCount,
+        int noMatchCount)
+    {
+        if (noInputCount >= 2)
+            return new JiboInteractionDecision(
+                BuildListIntentName(listType, "done"),
+                $"Okay. I stopped listening for your {BuildListLabel(displayType)}.",
+                ContextUpdates: BuildContextUpdates(listType, displayType, IdleState));
+
+        return new JiboInteractionDecision(
+            BuildListIntentName(listType, "no_input"),
+            $"I didn't hear an item. What should I add to your {BuildListLabel(displayType)}?",
+            ContextUpdates: BuildContextUpdates(listType, displayType, AwaitingItemState, noMatchCount,
+                noInputCount));
+    }
+
+    private static JiboInteractionDecision BuildNoMatchDecision(string listType, string displayType, int noMatchCount,
+        int noInputCount)
+    {
+        if (noMatchCount >= 2)
+            return new JiboInteractionDecision(
+                BuildListIntentName(listType, "done"),
+                $"Okay. I stopped the {BuildListLabel(displayType)} for now.",
+                ContextUpdates: BuildContextUpdates(listType, displayType, IdleState));
+
+        return new JiboInteractionDecision(
+            BuildListIntentName(listType, "no_match"),
+            $"I can add an item if you say it, or say done. What should I add to your {BuildListLabel(displayType)}?",
+            ContextUpdates: BuildContextUpdates(listType, displayType, AwaitingItemState, noMatchCount,
+                noInputCount));
     }
 
     private static JiboInteractionDecision BuildRecallDecision(string listType, string displayType,
@@ -397,8 +446,34 @@ internal static class HouseholdListOrchestrator
             "nothing else");
     }
 
+    private static bool IsLowSignalFollowUp(string loweredTranscript)
+    {
+        var normalized = NormalizeItem(loweredTranscript).ToLowerInvariant();
+        return normalized is "um" or
+            "uh" or
+            "hmm" or
+            "i don't know" or
+            "i dont know" or
+            "not sure" or
+            "i am not sure" or
+            "i'm not sure";
+    }
+
     private static string? ReadString(TurnContext turn, string key)
     {
         return turn.Attributes.TryGetValue(key, out var value) ? value?.ToString() : null;
+    }
+
+    private static int ReadInt(TurnContext turn, string key)
+    {
+        if (!turn.Attributes.TryGetValue(key, out var value) || value is null) return 0;
+
+        return value switch
+        {
+            int typed => typed,
+            long typed => (int)typed,
+            string text when int.TryParse(text, out var parsed) => parsed,
+            _ => 0
+        };
     }
 }

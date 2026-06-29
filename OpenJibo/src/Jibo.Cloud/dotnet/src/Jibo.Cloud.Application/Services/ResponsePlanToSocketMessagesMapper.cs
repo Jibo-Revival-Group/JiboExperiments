@@ -972,8 +972,12 @@ public sealed class ResponsePlanToSocketMessagesMapper
     {
         return string.Equals(intentName, "shopping_list_prompt", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(intentName, "shopping_list_add", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(intentName, "shopping_list_no_input", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(intentName, "shopping_list_no_match", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(intentName, "todo_list_prompt", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(intentName, "todo_list_add", StringComparison.OrdinalIgnoreCase);
+               string.Equals(intentName, "todo_list_add", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(intentName, "todo_list_no_input", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(intentName, "todo_list_no_match", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IDictionary<string, object?> BuildHouseholdListFollowUpPayload()

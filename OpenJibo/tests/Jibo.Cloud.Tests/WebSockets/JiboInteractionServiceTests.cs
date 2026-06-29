@@ -24,6 +24,8 @@ public sealed class JiboInteractionServiceTests
     private const string HouseholdListStateKey = "householdListState";
     private const string HouseholdListTypeKey = "householdListType";
     private const string HouseholdListDisplayTypeKey = "householdListDisplayType";
+    private const string HouseholdListNoMatchCountKey = "householdListNoMatchCount";
+    private const string HouseholdListNoInputCountKey = "householdListNoInputCount";
     private const string ChitchatStateKey = "chitchatState";
     private const string ChitchatRouteKey = "chitchatRoute";
     private const string ChitchatEmotionKey = "chitchatEmotion";
@@ -3031,6 +3033,76 @@ public sealed class JiboInteractionServiceTests
             StringComparison.OrdinalIgnoreCase);
         Assert.Equal(["milk and eggs for tonight"],
             memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-c", "loop-c", "device-c"), "shopping"));
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_GroceryList_FollowUpBlankRetriesOnceThenCloses()
+    {
+        var service = CreateService();
+
+        var firstNoInputDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                [HouseholdListStateKey] = "awaiting_item",
+                [HouseholdListTypeKey] = "shopping",
+                [HouseholdListDisplayTypeKey] = "grocery"
+            }
+        });
+
+        Assert.Equal("shopping_list_no_input", firstNoInputDecision.IntentName);
+        Assert.Equal("awaiting_item", firstNoInputDecision.ContextUpdates![HouseholdListStateKey]);
+        Assert.Equal(1, firstNoInputDecision.ContextUpdates[HouseholdListNoInputCountKey]);
+        Assert.Contains("What should I add to your grocery list?", firstNoInputDecision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+
+        var secondNoInputDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = string.Empty,
+            NormalizedTranscript = string.Empty,
+            Attributes = new Dictionary<string, object?>
+            {
+                [HouseholdListStateKey] = firstNoInputDecision.ContextUpdates[HouseholdListStateKey],
+                [HouseholdListTypeKey] = firstNoInputDecision.ContextUpdates[HouseholdListTypeKey],
+                [HouseholdListDisplayTypeKey] = firstNoInputDecision.ContextUpdates[HouseholdListDisplayTypeKey],
+                [HouseholdListNoInputCountKey] = firstNoInputDecision.ContextUpdates[HouseholdListNoInputCountKey]
+            }
+        });
+
+        Assert.Equal("shopping_list_done", secondNoInputDecision.IntentName);
+        Assert.Equal("idle", secondNoInputDecision.ContextUpdates![HouseholdListStateKey]);
+        Assert.Contains("stopped listening", secondNoInputDecision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_GroceryList_FollowUpLowSignalRetriesWithoutAddingItem()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "um",
+            NormalizedTranscript = "um",
+            DeviceId = "device-low-signal",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-low-signal",
+                ["loopId"] = "loop-low-signal",
+                [HouseholdListStateKey] = "awaiting_item",
+                [HouseholdListTypeKey] = "shopping",
+                [HouseholdListDisplayTypeKey] = "grocery"
+            }
+        });
+
+        Assert.Equal("shopping_list_no_match", decision.IntentName);
+        Assert.Equal("awaiting_item", decision.ContextUpdates![HouseholdListStateKey]);
+        Assert.Equal(1, decision.ContextUpdates[HouseholdListNoMatchCountKey]);
+        Assert.Empty(memoryStore.GetListItems(
+            new PersonalMemoryTenantScope("acct-low-signal", "loop-low-signal", "device-low-signal"),
+            "shopping"));
     }
 
     [Fact]

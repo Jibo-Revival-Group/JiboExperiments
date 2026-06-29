@@ -158,6 +158,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - hardened the grocery/to-do follow-up item state so blank follow-up turns retry once with the dedicated household-list listen context, repeated blank turns close cleanly, and low-signal filler such as `um` does not get stored as a list item
 - bound retained peer-admission evidence bundles to an explicit local revocation review status so offline artifacts remain retention-only and verifiers reject signed bundles that try to skip the required local deny-list check before admission
 - bound retained peer-admission evidence bundles to explicit Open Jibo Cloud exporter metadata so offline verifiers can reject correctly signed bundles that claim another service exported the retention artifact before direct peer replication exists
+- expanded household-list inline item parsing for natural short follow-up phrasing such as `we need apples for my grocery list` and `need to call the vet on my to-do list`, keeping grocery/to-do reliability moving without changing the hosted API shape
 
 ## Working Order
 

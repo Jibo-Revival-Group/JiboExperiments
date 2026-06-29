@@ -325,6 +325,48 @@ public sealed class ProviderCachingTests
     }
 
     [Fact]
+    public async Task NewsApiBriefingProvider_SkipsUnsafeAndUpdateHeadlines_BeforeFallback()
+    {
+        var handler = new CountingHttpMessageHandler(message =>
+        {
+            var path = message.RequestUri?.AbsolutePath ?? string.Empty;
+            if (!string.Equals(path, "/v2/top-headlines", StringComparison.OrdinalIgnoreCase))
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
+
+            var query = message.RequestUri?.Query ?? string.Empty;
+            return JsonResponse(query.Contains("category=technology", StringComparison.OrdinalIgnoreCase)
+                ? """
+                  {"status":"ok","articles":[
+                    {"title":"Updated: AI gadget launch timing","description":"The wire updates an earlier item.","source":{"name":"AP News"},"url":"https://example.com/update"},
+                    {"title":"Home robotics event adds graphic violence warning","description":"The exhibit warning is not family-safe.","source":{"name":"AP News"},"url":"https://example.com/unsafe-title"},
+                    {"title":"Robotics lab opens downtown","description":"Organizers removed graphic violence from the exhibit.","source":{"name":"AP News"},"url":"https://example.com/unsafe-summary"}
+                  ]}
+                  """
+                : """
+                  {"status":"ok","articles":[
+                    {"title":"General robotics update","description":"Top story","source":{"name":"AP News"},"url":"https://example.com/general"}
+                  ]}
+                  """);
+        });
+        var provider = new NewsApiBriefingProvider(
+            new HttpClient(handler),
+            new NewsApiOptions
+            {
+                ApiKey = "test-key",
+                CacheTtlSeconds = 300,
+                FailureCacheTtlSeconds = 30
+            },
+            NullLogger<NewsApiBriefingProvider>.Instance);
+
+        var result = await provider.GetBriefingAsync(new NewsBriefingRequest(["technology"]));
+
+        Assert.NotNull(result);
+        Assert.Single(result.Headlines);
+        Assert.Equal("General robotics update", result.Headlines[0].Title);
+        Assert.Equal(2, handler.GetCallCount("/v2/top-headlines"));
+    }
+
+    [Fact]
     public async Task NewsApiBriefingProvider_FallsBackToEverything_WhenTopHeadlinesAreEmpty()
     {
         var handler = new CountingHttpMessageHandler(message =>

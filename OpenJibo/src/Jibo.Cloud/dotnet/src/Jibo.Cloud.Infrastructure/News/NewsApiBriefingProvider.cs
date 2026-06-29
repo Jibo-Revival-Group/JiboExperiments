@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +15,10 @@ public sealed class NewsApiBriefingProvider(
     private const int MaxHeadlines = 5;
     private const int MaxCategories = 2;
     private const string DefaultUserAgent = "OpenJiboCloud/1.0";
+
+    private static readonly Regex UnsafeHeadlineTermPattern = new(
+        @"\b(?:murder|homicide|suicide|porn|pornography|sex\s+crime|sexual\s+assault|graphic\s+violence|beheading|massacre)\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly HashSet<string> SupportedCategories = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -458,9 +463,14 @@ public sealed class NewsApiBriefingProvider(
         if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(summary)) return false;
 
         var loweredTitle = title.Trim().ToLowerInvariant();
-        return !loweredTitle.StartsWith("correction:", StringComparison.Ordinal) &&
-               !loweredTitle.StartsWith("corrected:", StringComparison.Ordinal) &&
-               !loweredTitle.Contains(" correction", StringComparison.Ordinal);
+        if (loweredTitle.StartsWith("correction:", StringComparison.Ordinal) ||
+            loweredTitle.StartsWith("corrected:", StringComparison.Ordinal) ||
+            loweredTitle.StartsWith("update:", StringComparison.Ordinal) ||
+            loweredTitle.StartsWith("updated:", StringComparison.Ordinal) ||
+            loweredTitle.Contains(" correction", StringComparison.Ordinal))
+            return false;
+
+        return !UnsafeHeadlineTermPattern.IsMatch(title) && !UnsafeHeadlineTermPattern.IsMatch(summary);
     }
 
     private static ApiError? TryParseApiError(string? responseBody)

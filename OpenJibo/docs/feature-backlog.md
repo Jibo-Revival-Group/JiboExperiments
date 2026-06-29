@@ -607,6 +607,7 @@ These are the carryover items that need a clean proof pass first:
   - filter items without summaries, corrections, duplicate headlines, banned words, and adult headlines for children or unidentified speakers
   - the first provider-hardening slice now filters blank-title, missing-summary, and duplicate-title headlines before speech or payload emission, and reports skipped headline diagnostics for capture review
   - the second provider-hardening slice now also rejects correction/update headlines plus family-unsafe violent or adult terms before speech or payload emission, keeping the hosted briefing safe for unidentified or child listeners while provider preference controls are still pending
+  - the provider ingestion hardening now applies the same correction/update and family-safety screen before fallback decisions, so unsafe category results are not cached as usable source headlines before application-level formatting gets a chance to filter them
   - include image view metadata with unique IDs, category labels, source image URLs, and sane scaling
 
 ### 14. Proactivity Selector And Surprise Offers

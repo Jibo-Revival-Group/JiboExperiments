@@ -3275,8 +3275,8 @@ public sealed class JiboWebSocketServiceTests
             newsBriefingProvider: new StubNewsBriefingProvider(
                 new NewsBriefingSnapshot(
                     [
-                        new NewsHeadline("Robotics club opens a new community lab"),
-                        new NewsHeadline("Local students win a regional coding challenge")
+                        new NewsHeadline("Robotics club opens a new community lab", "Neighbors can try hands-on robot projects this weekend."),
+                        new NewsHeadline("Local students win a regional coding challenge", "The team advanced after presenting an assistive coding prototype.")
                     ],
                     "NewsAPI")));
 

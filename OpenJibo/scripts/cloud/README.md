@@ -70,6 +70,8 @@ These scripts help exercise the new .NET hosted cloud locally.
   Bash contract checker for the self-hosted compose/migration/smoke trio.
 - `get-websocket-capture-summary.sh`
   Bash summary helper for captured websocket telemetry and exported live-run fixtures.
+- `inspect-websocket-recognition-candidates.py` / `inspect-websocket-recognition-candidates.sh`
+  Scans websocket telemetry and fixtures for face, voice, speaker, person, enrollment, confidence, and score-like fields so live robot captures can be assessed before wiring them into persisted recognition observations.
 - `import-websocket-capture-fixture.py`
   Cross-platform import/sanitization helper for exported websocket fixtures.
 

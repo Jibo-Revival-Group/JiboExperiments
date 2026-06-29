@@ -683,6 +683,46 @@ public sealed class IdentityGraphSnapshotTests
     }
 
     [Fact]
+    public void VerifyEvidenceBundleEnvelope_RejectsSignedPayloadThatEnablesDirectPeerTransport()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var graph = store.GetIdentityGraph();
+        var payload = graph.EvidenceBundle.Payload
+            .Replace("peer-transport-status|not-enabled", "peer-transport-status|enabled",
+                StringComparison.Ordinal)
+            .Replace("replication-readiness|ready-for-retention", "replication-readiness|ready-for-peer-replication",
+                StringComparison.Ordinal)
+            .Replace("sync-direction|snapshot-retention-only", "sync-direction|bidirectional",
+                StringComparison.Ordinal)
+            .Replace("direct-peer-transport-allowed|false", "direct-peer-transport-allowed|true",
+                StringComparison.Ordinal);
+        var signedEnvelope = RebuildEvidenceBundleEnvelope(payload);
+
+        var verification = IdentityGraphEvidenceBundleVerifier.Verify(signedEnvelope);
+
+        Assert.False(verification.IsValid);
+        Assert.False(verification.IsLocallyAdmissible);
+        Assert.Equal("enabled", verification.PeerTransportStatus);
+        Assert.True(verification.DirectPeerTransportAllowed);
+        Assert.Contains("unexpected-peer-transport-status", verification.Errors);
+        Assert.Contains("unexpected-replication-readiness", verification.Errors);
+        Assert.Contains("unexpected-sync-direction", verification.Errors);
+        Assert.Contains("direct-peer-transport-enabled", verification.Errors);
+        Assert.DoesNotContain("bundle-hash-mismatch", verification.Errors);
+        Assert.DoesNotContain("bundle-signature-mismatch", verification.Errors);
+    }
+
+    [Fact]
     public void VerifyEvidenceBundleEnvelope_RejectsTamperedOfflinePayload()
     {
         var store = new InMemoryCloudStateStore();
@@ -767,5 +807,37 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("host-mapping", verification.SatisfiedEvidence);
         Assert.Contains("redirect-legacy-host-mapping-to-open-jibo-target", verification.RecommendedActions);
         Assert.Equal(graph.EvidenceBundle.EvidenceSignalCount, verification.EvidenceSignalCount);
+    }
+
+    private static string RebuildEvidenceBundleEnvelope(string payload)
+    {
+        var bundleHash = ComputeSha256Hex(payload);
+        var signature = SignIdentityGraphPayload(payload);
+
+        return string.Join('\n',
+        [
+            "envelope-version|identity-graph-evidence-envelope-v1",
+            $"bundle-hash|{bundleHash}",
+            "bundle-signature-algorithm|HMAC-SHA256",
+            "bundle-signature-key-id|open-jibo-local-evidence-bundle-v1",
+            $"bundle-signature|{signature}",
+            "payload-begin",
+            payload,
+            "payload-end"
+        ]);
+    }
+
+    private static string ComputeSha256Hex(string payload)
+    {
+        return Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(payload)))
+            .ToLowerInvariant();
+    }
+
+    private static string SignIdentityGraphPayload(string payload)
+    {
+        using var hmac = new System.Security.Cryptography.HMACSHA256(
+            System.Text.Encoding.UTF8.GetBytes("open-jibo-local-identity-graph-development-key"));
+        return Convert.ToHexString(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
     }
 }

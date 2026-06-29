@@ -125,6 +125,19 @@ public static class IdentityGraphEvidenceBundleVerifier
             errors.Add("admission-decision-hash-mismatch");
         if (!admissionSignature.Equals(computedAdmissionSignature, StringComparison.OrdinalIgnoreCase))
             errors.Add("admission-signature-mismatch");
+        if (!peerTransportStatus.Equals("not-enabled", StringComparison.OrdinalIgnoreCase))
+            errors.Add("unexpected-peer-transport-status");
+        if (!replicationReadiness.Equals("ready-for-retention", StringComparison.OrdinalIgnoreCase) &&
+            !replicationReadiness.Equals("blocked-by-admission", StringComparison.OrdinalIgnoreCase))
+            errors.Add("unexpected-replication-readiness");
+        if (!syncDirection.Equals("snapshot-retention-only", StringComparison.OrdinalIgnoreCase))
+            errors.Add("unexpected-sync-direction");
+        if (!peerAdmissionMode.Equals("offline-signed-evidence", StringComparison.OrdinalIgnoreCase))
+            errors.Add("unexpected-peer-admission-mode");
+        if (!retentionPolicy.Equals("owner-retained-until-peer-admission", StringComparison.OrdinalIgnoreCase))
+            errors.Add("unexpected-retention-policy");
+        if (directPeerTransportAllowed)
+            errors.Add("direct-peer-transport-enabled");
 
         var localRevocationMatches = MatchLocalRevocationAnchors(revocationAnchors, localRevokedAnchors);
         var effectiveAdmissionRecommendation =

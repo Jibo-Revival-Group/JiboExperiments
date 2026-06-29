@@ -150,6 +150,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded multi-Jibo identity graph evidence so additional robot loop members resolve to their registered device and add explicit loop `served-by` plus robot `runs-on` relationships before direct peer transport is introduced
 - added explicit peer-transport, replication-readiness, and sync-direction fields to signed identity graph evidence bundles and the owner dashboard so retained admission artifacts state that direct peer transport is still disabled and snapshots are retention-only until admission succeeds
 - expanded the signed evidence bundle handoff contract with peer admission mode, owner-retention policy, and an explicit direct-peer-transport guard so offline retained artifacts cannot be mistaken for enabled peer replication
+- hardened the offline identity graph evidence bundle verifier so even a correctly signed retained artifact is rejected if it claims direct peer transport is enabled, changes the retention-only sync direction, or advertises a replication-ready transport state before peer admission is actually implemented
 
 ## Working Order
 

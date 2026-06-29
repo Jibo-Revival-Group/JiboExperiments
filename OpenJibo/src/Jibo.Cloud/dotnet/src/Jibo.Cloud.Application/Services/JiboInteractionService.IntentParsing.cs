@@ -832,26 +832,43 @@ public sealed partial class JiboInteractionService
     private static bool IsDanceQuestion(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
-        return MatchesAny(
-            normalized,
-            "do you like to dance",
-            "do you like dancing",
-            "what kind of dance do you like",
-            "what kind of dancing do you like",
-            "do you enjoy dancing");
+        return normalized is
+                   "do you like to dance" or
+                   "do you like dancing" or
+                   "do you enjoy dancing" or
+                   "do you love to dance" or
+                   "do you love dancing" or
+                   "what kind of dance do you like" or
+                   "what kind of dancing do you like" or
+                   "what is your favorite dance" or
+                   "what s your favorite dance" or
+                   "what's your favorite dance" or
+                   "what is your favourite dance" or
+                   "what s your favourite dance" or
+                   "what's your favourite dance" or
+                   "what dance do you like" or
+                   "which dance do you like" ||
+               normalized.Contains("your favorite dance", StringComparison.Ordinal) ||
+               normalized.Contains("your favourite dance", StringComparison.Ordinal);
     }
 
     private static bool IsDanceAbilityQuestion(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
         return normalized is
-            "can you dance" or
-            "could you dance" or
-            "would you dance" or
-            "will you dance" or
-            "do you dance" or
-            "are you able to dance" or
-            "do you know how to dance";
+                   "can you dance" or
+                   "could you dance" or
+                   "would you dance" or
+                   "will you dance" or
+                   "do you dance" or
+                   "are you able to dance" or
+                   "do you know how to dance" or
+                   "are you good at dancing" or
+                   "are you good at dance" or
+                   "can you do a dance" or
+                   "can you do the dance" ||
+               normalized.StartsWith("can you dance ", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you know how to dance ", StringComparison.Ordinal);
     }
 
     private static bool IsDanceCommand(string loweredTranscript)
@@ -864,10 +881,36 @@ public sealed partial class JiboInteractionService
                    "do your dance" or
                    "show me a dance" or
                    "show us a dance" or
+                   "show me your dance" or
+                   "show us your dance" or
                    "dance for me" or
-                   "dance with me" ||
+                   "dance for us" or
+                   "dance with me" or
+                   "dance with us" or
+                   "bust a move" or
+                   "bust some moves" or
+                   "do some dancing" or
+                   "start dancing" or
+                   "lets dance" or
+                   "let s dance" ||
                normalized.StartsWith("dance ", StringComparison.Ordinal) ||
                normalized.StartsWith("boogie ", StringComparison.Ordinal);
+    }
+
+    private static bool IsTwerkCommand(string loweredTranscript)
+    {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        return normalized is
+                   "twerk" or
+                   "do a twerk" or
+                   "do the twerk" or
+                   "show me a twerk" or
+                   "show us a twerk" or
+                   "can you twerk" or
+                   "will you twerk" or
+                   "would you twerk" or
+                   "could you twerk" ||
+               normalized.StartsWith("twerk ", StringComparison.Ordinal);
     }
 
     private static bool IsRobotBirthdayQuestion(string loweredTranscript)

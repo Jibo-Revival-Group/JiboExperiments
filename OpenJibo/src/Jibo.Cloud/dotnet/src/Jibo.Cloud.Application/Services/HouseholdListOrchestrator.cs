@@ -32,6 +32,10 @@ internal static class HouseholdListOrchestrator
         "remind me to ",
         "i need to ",
         "i need ",
+        "we need to ",
+        "we need ",
+        "need to ",
+        "need ",
         "please add ",
         "please put "
     ];

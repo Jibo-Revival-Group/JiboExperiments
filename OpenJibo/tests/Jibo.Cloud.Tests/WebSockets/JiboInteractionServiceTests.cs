@@ -2865,6 +2865,10 @@ public sealed class JiboInteractionServiceTests
         "shopping", "shopping")]
     [InlineData("please put eggs on my shopping list", "shopping_list_add", "shopping list", "eggs", "shopping",
         "shopping")]
+    [InlineData("we need apples for my grocery list", "shopping_list_add", "grocery list", "apples", "shopping",
+        "grocery")]
+    [InlineData("need to call the vet on my to do list", "todo_list_add", "to-do list", "call the vet", "todo",
+        "todo")]
     [InlineData("would you add mail the package for my to do list", "todo_list_add", "to-do list",
         "mail the package", "todo", "todo")]
     [InlineData("add call mom to my to do list", "todo_list_add", "to-do list", "call mom", "todo", "todo")]

@@ -116,6 +116,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-06-24`)
 
+- kept loop/identity recognition advancement in the platform track by persisting robot recognition observations, projecting them into signed identity graph relationships, and carrying recognition evidence summaries into offline retention bundles so conversion smoke runs can prove enrollment plus recognition state survives a cloud restart before peer replication exists
 - expanded the identity graph snapshot so it now carries explicit account-to-loop ownership, loop-to-robot service, robot-to-device, person-to-account, member-to-loop, and loop-member-to-account relationships
 - kept the relationship graph derived from existing persisted loop/member/person/device state so backup/restore and self-hosted snapshots do not need a new hosted API shape for this slice
 - added focused regression coverage for the default robot topology and added family-member relationship edges before moving toward peer admission or direct Jibo-to-Jibo transport

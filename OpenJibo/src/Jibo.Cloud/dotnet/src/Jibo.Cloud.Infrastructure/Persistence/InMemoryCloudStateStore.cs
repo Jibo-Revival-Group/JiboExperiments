@@ -45,6 +45,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly string? _ownerFirstName;
     private readonly string? _ownerLastName;
     private readonly List<PersonRecord> _people;
+    private readonly List<RecognitionObservationRecord> _recognitionObservations = [];
     private readonly HashSet<string> _revokedIdentityGraphAnchors = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly ConcurrentDictionary<string, CloudSession>
@@ -454,7 +455,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             }
         }
 
-        var evidenceSignals = BuildIdentityGraphEvidenceSignals(resolvedLoopId, _robot);
+        var recognitionObservations = GetRecognitionObservations(resolvedLoopId);
+        foreach (var observation in recognitionObservations)
+        {
+            AddIdentityRelationship(relationships, observation.MemberId, "loop-member",
+                $"{observation.Modality}-recognized-by", observation.RobotId, "robot", resolvedLoopId);
+        }
+
+        var evidenceSignals = BuildIdentityGraphEvidenceSignals(resolvedLoopId, _robot, recognitionObservations);
         var contentHash = ComputeIdentityGraphContentHash(_account.AccountId, resolvedLoopId, _robot, people, members,
             relationships, evidenceSignals);
 
@@ -642,6 +650,45 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         TouchState();
         return GetLoopMember(loopId, memberId);
+    }
+
+
+    public IReadOnlyList<RecognitionObservationRecord> GetRecognitionObservations(string loopId)
+    {
+        return _recognitionObservations
+            .Where(observation => observation.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(observation => observation.ObservedUtc)
+            .ThenBy(observation => observation.ObservationId, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    public RecognitionObservationRecord RecordRecognitionObservation(string loopId, string memberId, string modality,
+        string outcome, double? confidence = null, string? source = null)
+    {
+        if (string.IsNullOrWhiteSpace(loopId)) throw new ArgumentException("Loop id is required.", nameof(loopId));
+        if (string.IsNullOrWhiteSpace(memberId)) throw new ArgumentException("Member id is required.", nameof(memberId));
+        if (string.IsNullOrWhiteSpace(modality)) throw new ArgumentException("Recognition modality is required.", nameof(modality));
+
+        var member = GetLoopMember(loopId, memberId);
+        var normalizedModality = modality.Trim().ToLowerInvariant();
+        var observation = new RecognitionObservationRecord
+        {
+            LoopId = loopId.Trim(),
+            MemberId = member.Id,
+            RobotId = _robot.RobotId,
+            Modality = normalizedModality,
+            Outcome = string.IsNullOrWhiteSpace(outcome) ? "recognized" : outcome.Trim().ToLowerInvariant(),
+            Confidence = confidence,
+            Source = source?.Trim()
+        };
+
+        lock (_syncRoot)
+        {
+            _recognitionObservations.Add(observation);
+        }
+
+        TouchState();
+        return observation;
     }
 
     public IReadOnlyList<UpdateManifest> ListUpdates(string? subsystem = null, string? filter = null)
@@ -1278,7 +1325,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
 
     private static IReadOnlyList<IdentityGraphEvidenceSignal> BuildIdentityGraphEvidenceSignals(string loopId,
-        DeviceRegistration robot)
+        DeviceRegistration robot, IReadOnlyCollection<RecognitionObservationRecord>? recognitionObservations = null)
     {
         var signals = new List<IdentityGraphEvidenceSignal>();
 
@@ -1294,6 +1341,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         foreach (var mapping in robot.HostMappings.OrderBy(mapping => mapping.Key, StringComparer.OrdinalIgnoreCase))
             AddIdentityEvidenceSignal(signals, "host-mapping", mapping.Key, mapping.Value, loopId);
+
+        foreach (var observation in recognitionObservations ?? [])
+        {
+            AddIdentityEvidenceSignal(signals, $"recognition-{observation.Modality}", observation.ObservationId,
+                $"{observation.MemberId}:{observation.Outcome}:{observation.Confidence?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unknown"}", loopId);
+        }
 
         return signals;
     }
@@ -2020,6 +2073,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             LoopMembers = _loopMembers.ToArray(),
             People = _people.ToArray(),
             Users = _users.ToArray(),
+            RecognitionObservations = _recognitionObservations.ToArray(),
             RevokedIdentityGraphAnchors = _revokedIdentityGraphAnchors.ToArray()
         };
     }
@@ -2080,6 +2134,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _users.Clear();
         _users.AddRange(snapshot.Users ?? []);
 
+        _recognitionObservations.Clear();
+        _recognitionObservations.AddRange(snapshot.RecognitionObservations ?? []);
+
         _revokedIdentityGraphAnchors.Clear();
         foreach (var anchor in snapshot.RevokedIdentityGraphAnchors ?? [])
             _revokedIdentityGraphAnchors.Add(anchor);
@@ -2131,6 +2188,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public LoopMemberRecord[]? LoopMembers { get; init; }
         public PersonRecord[]? People { get; init; }
         public UserRecord[]? Users { get; init; }
+        public RecognitionObservationRecord[]? RecognitionObservations { get; init; }
         public string[]? RevokedIdentityGraphAnchors { get; init; }
     }
 

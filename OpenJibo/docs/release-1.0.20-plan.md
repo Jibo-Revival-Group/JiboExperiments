@@ -160,6 +160,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - bound retained peer-admission evidence bundles to explicit Open Jibo Cloud exporter metadata so offline verifiers can reject correctly signed bundles that claim another service exported the retention artifact before direct peer replication exists
 - expanded household-list inline item parsing for natural short follow-up phrasing such as `we need apples for my grocery list` and `need to call the vet on my to-do list`, keeping grocery/to-do reliability moving without changing the hosted API shape
 - hardened NewsAPI provider ingestion so correction/update and family-unsafe headlines are rejected before category fallback and caching, preventing unsafe provider batches from being treated as usable source snapshots before runtime formatting filters run
+- tightened `who am I` identity recall so a multi-person presence context no longer borrows a loop-level remembered name when no person-scoped name exists, preserving the `1.0.20` regression expectation that Jibo should not guess from the wrong loop member
 
 ## Working Order
 

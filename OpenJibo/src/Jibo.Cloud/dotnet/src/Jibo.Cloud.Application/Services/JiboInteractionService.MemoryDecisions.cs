@@ -25,7 +25,8 @@ public sealed partial class JiboInteractionService
     {
         var personScope = ResolveTenantScope(turn, presence?.PrimaryPersonId);
         var name = personalMemoryStore.GetName(personScope);
-        if (string.IsNullOrWhiteSpace(name)) name = personalMemoryStore.GetName(ResolveTenantScope(turn));
+        if (string.IsNullOrWhiteSpace(name) && CanUseLoopLevelNameMemoryFallback(presence))
+            name = personalMemoryStore.GetName(ResolveTenantScope(turn));
 
         name = ToDisplayName(name ?? string.Empty);
 
@@ -38,6 +39,14 @@ public sealed partial class JiboInteractionService
                 presence is not null && !string.IsNullOrWhiteSpace(presence.PrimaryPersonId)
                     ? $"I think you are {name}."
                     : $"You told me your name is {name}.");
+    }
+
+    private static bool CanUseLoopLevelNameMemoryFallback(GreetingPresenceProfile? presence)
+    {
+        if (presence is null) return true;
+        if (string.IsNullOrWhiteSpace(presence.PrimaryPersonId)) return true;
+
+        return presence.PeoplePresentIds.Count <= 1;
     }
 
     private JiboInteractionDecision BuildRememberBirthdayDecision(TurnContext turn, string transcript)

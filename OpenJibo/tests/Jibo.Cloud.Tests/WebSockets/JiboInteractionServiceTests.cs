@@ -1137,6 +1137,32 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Actually things are looking mostly sunny.", decision.ReplyText);
     }
 
+    [Fact]
+    public async Task BuildDecisionAsync_WhoAmI_WithMultiplePeoplePresent_DoesNotBorrowLoopLevelName()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        memoryStore.SetName(new PersonalMemoryTenantScope("acct-presence", "loop-presence", "device-presence"),
+            "jake");
+        var service = CreateService(memoryStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "who am I",
+            NormalizedTranscript = "who am I",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-presence",
+                ["loopId"] = "loop-presence",
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-a","peoplePresent":[{"id":"person-a"},{"id":"person-b"}]},"loop":{"users":[{"id":"person-a","firstName":"jake"},{"id":"person-b","firstName":"sam"}]}}}"""
+            },
+            DeviceId = "device-presence"
+        });
+
+        Assert.Equal("memory_get_name", decision.IntentName);
+        Assert.Equal("I do not know your name yet. You can say, my name is Alex.", decision.ReplyText);
+    }
+
     [Theory]
     [InlineData("what are you up to", "being helpful")]
     [InlineData("what are you doing", "making people smile")]

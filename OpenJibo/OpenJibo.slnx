@@ -101,6 +101,8 @@
     <File Path="scripts/cloud/Deploy-OpenJiboManagedFoundation.ps1" />
     <File Path="scripts/cloud/get-websocket-capture-summary.sh" />
     <File Path="scripts/cloud/Get-WebSocketCaptureSummary.ps1" />
+    <File Path="scripts/cloud/inspect-websocket-recognition-candidates.py" />
+    <File Path="scripts/cloud/inspect-websocket-recognition-candidates.sh" />
     <File Path="scripts/cloud/import-websocket-capture-fixture.py" />
     <File Path="scripts/cloud/Import-WebSocketCaptureFixture.ps1" />
     <File Path="scripts/cloud/initialize-openjibo-compose-env.sh" />

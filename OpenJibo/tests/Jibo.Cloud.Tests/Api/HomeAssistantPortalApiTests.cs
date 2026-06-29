@@ -369,6 +369,62 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Contains("payload-end", payload);
     }
 
+
+    [Fact]
+    public async Task IdentityGraphEvidenceBundleVerifyEndpoint_ReturnsOfflineAdmissionReview()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+        var graph = store.GetIdentityGraph();
+
+        var verifyResponse = await client.PostAsJsonAsync(
+            "/api/portal/identity-graph/evidence-bundle/verify",
+            new
+            {
+                envelope = graph.EvidenceBundle.Envelope,
+                localRevokedAnchors = new[]
+                {
+                    "device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020"
+                }
+            });
+
+        Assert.Equal(HttpStatusCode.OK, verifyResponse.StatusCode);
+        var verification = await verifyResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(verification.GetProperty("isValid").GetBoolean());
+        Assert.False(verification.GetProperty("isLocallyAdmissible").GetBoolean());
+        Assert.Equal("admit", verification.GetProperty("admissionRecommendation").GetString());
+        Assert.Equal("quarantine", verification.GetProperty("effectiveAdmissionRecommendation").GetString());
+        Assert.Equal("not-enabled", verification.GetProperty("peerTransportStatus").GetString());
+        Assert.Equal("snapshot-retention-only", verification.GetProperty("syncDirection").GetString());
+        Assert.False(verification.GetProperty("directPeerTransportAllowed").GetBoolean());
+        Assert.Equal("Ghost-Instance-Onion-Silk", verification.GetProperty("robotId").GetString());
+        Assert.Contains(verification.GetProperty("localRevocationMatches").EnumerateArray(), item =>
+            item.GetString() == "device-id:BOJW-1000-0017-0820-0020=BOJW-1000-0017-0820-0020");
+        Assert.True(verification.GetProperty("admissionDecisionSignatureValid").GetBoolean());
+        Assert.True(verification.GetProperty("snapshotSignatureValid").GetBoolean());
+        Assert.Empty(verification.GetProperty("errors").EnumerateArray());
+    }
+
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)
     {
         var buffer = new byte[4096];

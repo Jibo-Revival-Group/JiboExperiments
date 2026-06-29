@@ -2,6 +2,7 @@ using System.Text;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Jibo.Cloud.Api.Hosting;
@@ -121,6 +122,63 @@ internal static class PortalEndpoints
                 Encoding.UTF8.GetBytes(graph.EvidenceBundle.Envelope),
                 "text/plain; charset=utf-8",
                 fileName);
+        });
+
+
+        app.MapPost("/api/portal/identity-graph/evidence-bundle/verify", (
+            [FromBody] VerifyIdentityGraphEvidenceBundleRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(request.Envelope))
+                return Results.BadRequest(new { error = "envelope is required." });
+
+            var verification = IdentityGraphEvidenceBundleVerifier.Verify(
+                request.Envelope,
+                request.LocalRevokedAnchors ?? []);
+
+            return Results.Json(new
+            {
+                verification.IsValid,
+                verification.IsLocallyAdmissible,
+                verification.EffectiveAdmissionRecommendation,
+                verification.AdmissionRecommendation,
+                verification.AdmissionPolicyVersion,
+                verification.AdmissionReasons,
+                verification.RequiredEvidence,
+                verification.SatisfiedEvidence,
+                verification.BlockingEvidence,
+                verification.RecommendedActions,
+                verification.RevocationChecks,
+                verification.RevocationAnchors,
+                verification.RevocationListHash,
+                verification.LocalRevocationMatches,
+                verification.PeerTransportStatus,
+                verification.ReplicationReadiness,
+                verification.SyncDirection,
+                verification.PeerAdmissionMode,
+                verification.RetentionPolicy,
+                verification.DirectPeerTransportAllowed,
+                verification.AccountId,
+                verification.LoopId,
+                verification.RobotId,
+                verification.DeviceId,
+                verification.PeopleCount,
+                verification.MemberCount,
+                verification.RelationshipCount,
+                verification.EvidenceSignalCount,
+                verification.RelationshipKinds,
+                verification.EvidenceSignalKinds,
+                verification.BundleHash,
+                verification.ComputedBundleHash,
+                verification.AdmissionDecisionSignatureValid,
+                verification.SnapshotSignatureValid,
+                verification.Errors
+            });
         });
 
         app.MapPost("/api/portal/home-assistant/link", async (
@@ -308,4 +366,9 @@ internal static class PortalEndpoints
     private sealed record PortalLogoutRequest(string? PortalSessionToken);
 
     private sealed record RevokeIdentityGraphAnchorRequest(string? Anchor, string? PortalSessionToken);
+
+    private sealed record VerifyIdentityGraphEvidenceBundleRequest(
+        string? Envelope,
+        string? PortalSessionToken,
+        string[]? LocalRevokedAnchors);
 }

@@ -1793,6 +1793,46 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("You told me your favorite sport is football.", recallDecision.ReplyText);
     }
 
+
+    [Theory]
+    [InlineData("could you tell me my favorite music")]
+    [InlineData("would you tell me my favourite music")]
+    [InlineData("could you tell me what my fave music is")]
+    [InlineData("would you tell me what my favorite music is")]
+    public async Task BuildDecisionAsync_PreferenceMemory_PoliteHelperRecallAliasesStayOnMemoryRoute(
+        string recallTranscript)
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+
+        await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "my favorite music is jazz",
+            NormalizedTranscript = "my favorite music is jazz",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-a",
+                ["loopId"] = "loop-a"
+            },
+            DeviceId = "device-a"
+        });
+
+        var recallDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = recallTranscript,
+            NormalizedTranscript = recallTranscript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-a",
+                ["loopId"] = "loop-a"
+            },
+            DeviceId = "device-a"
+        });
+
+        Assert.Equal("memory_get_preference", recallDecision.IntentName);
+        Assert.Equal("You told me your favorite music is jazz.", recallDecision.ReplyText);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_PreferenceSetAttemptWithoutValue_RoutesToPreferencePrompt()
     {

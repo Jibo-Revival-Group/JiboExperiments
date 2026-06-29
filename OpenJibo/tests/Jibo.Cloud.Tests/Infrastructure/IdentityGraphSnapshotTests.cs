@@ -1,4 +1,5 @@
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Persistence;
 
 namespace Jibo.Cloud.Tests.Infrastructure;
@@ -69,6 +70,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.AdmissionAssessment.RevocationChecks, graph.EvidenceBundle.RevocationChecks);
         Assert.Equal(graph.AdmissionAssessment.RevocationAnchors, graph.EvidenceBundle.RevocationAnchors);
         Assert.Equal(graph.AdmissionAssessment.RevocationListHash, graph.EvidenceBundle.RevocationListHash);
+        Assert.Equal(OpenJiboCloudBuildInfo.Version, graph.EvidenceBundle.ExportedByCloudVersion);
+        Assert.Equal("open-jibo-cloud", graph.EvidenceBundle.ExportedByService);
         Assert.Contains($"snapshot-content-hash|{graph.ContentHash}", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-reasons|required-corroborating-evidence-present", graph.EvidenceBundle.Payload);
         Assert.Equal(graph.AdmissionAssessment.RequiredEvidence, graph.EvidenceBundle.RequiredEvidence);
@@ -86,6 +89,8 @@ public sealed class IdentityGraphSnapshotTests
             graph.EvidenceBundle.Payload);
         Assert.Contains($"admission-decision-hash|{graph.AdmissionAssessment.DecisionHash}",
             graph.EvidenceBundle.Payload);
+        Assert.Contains($"exported-by-cloud-version|{OpenJiboCloudBuildInfo.Version}", graph.EvidenceBundle.Payload);
+        Assert.Contains("exported-by-service|open-jibo-cloud", graph.EvidenceBundle.Payload);
         Assert.Matches("^[a-f0-9]{64}$", graph.EvidenceBundle.BundleHash);
         Assert.Equal("HMAC-SHA256", graph.EvidenceBundle.SignatureAlgorithm);
         Assert.Equal("open-jibo-local-evidence-bundle-v1", graph.EvidenceBundle.SignatureKeyId);
@@ -621,6 +626,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.PeerAdmissionMode, verification.PeerAdmissionMode);
         Assert.Equal(graph.EvidenceBundle.RetentionPolicy, verification.RetentionPolicy);
         Assert.Equal(graph.EvidenceBundle.AdmissionReviewStatus, verification.AdmissionReviewStatus);
+        Assert.Equal(graph.EvidenceBundle.ExportedByCloudVersion, verification.ExportedByCloudVersion);
+        Assert.Equal(graph.EvidenceBundle.ExportedByService, verification.ExportedByService);
         Assert.Equal(graph.EvidenceBundle.DirectPeerTransportAllowed, verification.DirectPeerTransportAllowed);
         Assert.Equal(graph.EvidenceBundle.TrustPurpose, verification.TrustPurpose);
         Assert.Contains("trust-purpose|peer-admission-retention", graph.EvidenceBundle.Payload);
@@ -630,6 +637,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("peer-admission-mode|offline-signed-evidence", graph.EvidenceBundle.Payload);
         Assert.Contains("retention-policy|owner-retained-until-peer-admission", graph.EvidenceBundle.Payload);
         Assert.Contains("admission-review-status|requires-local-revocation-check", graph.EvidenceBundle.Payload);
+        Assert.Contains($"exported-by-cloud-version|{OpenJiboCloudBuildInfo.Version}", graph.EvidenceBundle.Payload);
+        Assert.Contains("exported-by-service|open-jibo-cloud", graph.EvidenceBundle.Payload);
         Assert.Contains("direct-peer-transport-allowed|false", graph.EvidenceBundle.Payload);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.ComputedAdmissionDecisionHash);
@@ -849,6 +858,35 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("host-mapping", verification.SatisfiedEvidence);
         Assert.Contains("redirect-legacy-host-mapping-to-open-jibo-target", verification.RecommendedActions);
         Assert.Equal(graph.EvidenceBundle.EvidenceSignalCount, verification.EvidenceSignalCount);
+    }
+
+    [Fact]
+    public void VerifyEvidenceBundleEnvelope_RejectsSignedPayloadFromUnexpectedExporter()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var graph = store.GetIdentityGraph();
+        var payload = graph.EvidenceBundle.Payload.Replace(
+            "exported-by-service|open-jibo-cloud",
+            "exported-by-service|direct-peer-replicator",
+            StringComparison.Ordinal);
+        var signedEnvelope = RebuildEvidenceBundleEnvelope(payload);
+
+        var verification = IdentityGraphEvidenceBundleVerifier.Verify(signedEnvelope);
+
+        Assert.False(verification.IsValid);
+        Assert.Equal(OpenJiboCloudBuildInfo.Version, verification.ExportedByCloudVersion);
+        Assert.Equal("direct-peer-replicator", verification.ExportedByService);
+        Assert.Contains("unexpected-exported-by-service", verification.Errors);
     }
 
     private static string RebuildEvidenceBundleEnvelope(string payload)

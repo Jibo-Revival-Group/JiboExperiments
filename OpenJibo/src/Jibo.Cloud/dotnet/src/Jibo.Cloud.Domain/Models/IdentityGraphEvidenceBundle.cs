@@ -27,6 +27,8 @@ public sealed class IdentityGraphEvidenceBundle
     public string PeerAdmissionMode { get; init; } = "offline-signed-evidence";
     public string RetentionPolicy { get; init; } = "owner-retained-until-peer-admission";
     public string AdmissionReviewStatus { get; init; } = "requires-local-revocation-check";
+    public string ExportedByCloudVersion { get; init; } = string.Empty;
+    public string ExportedByService { get; init; } = "open-jibo-cloud";
     public bool DirectPeerTransportAllowed { get; init; }
     public int PeopleCount { get; init; }
     public int MemberCount { get; init; }

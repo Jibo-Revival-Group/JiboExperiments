@@ -94,6 +94,8 @@ public static class IdentityGraphEvidenceBundleVerifier
         var peerAdmissionMode = Get(payloadFields, "peer-admission-mode");
         var retentionPolicy = Get(payloadFields, "retention-policy");
         var admissionReviewStatus = Get(payloadFields, "admission-review-status");
+        var exportedByCloudVersion = Get(payloadFields, "exported-by-cloud-version");
+        var exportedByService = Get(payloadFields, "exported-by-service");
         var directPeerTransportAllowed = GetBool(payloadFields, "direct-peer-transport-allowed");
         var admissionDecisionHash = Get(payloadFields, "admission-decision-hash");
         var admissionSignatureKeyId = Get(payloadFields, "admission-signature-key-id");
@@ -142,6 +144,10 @@ public static class IdentityGraphEvidenceBundleVerifier
             errors.Add("unexpected-retention-policy");
         if (!admissionReviewStatus.Equals("requires-local-revocation-check", StringComparison.OrdinalIgnoreCase))
             errors.Add("unexpected-admission-review-status");
+        if (string.IsNullOrWhiteSpace(exportedByCloudVersion))
+            errors.Add("missing-exported-by-cloud-version");
+        if (!exportedByService.Equals("open-jibo-cloud", StringComparison.OrdinalIgnoreCase))
+            errors.Add("unexpected-exported-by-service");
         if (directPeerTransportAllowed)
             errors.Add("direct-peer-transport-enabled");
 
@@ -183,6 +189,8 @@ public static class IdentityGraphEvidenceBundleVerifier
             PeerAdmissionMode = peerAdmissionMode,
             RetentionPolicy = retentionPolicy,
             AdmissionReviewStatus = admissionReviewStatus,
+            ExportedByCloudVersion = exportedByCloudVersion,
+            ExportedByService = exportedByService,
             DirectPeerTransportAllowed = directPeerTransportAllowed,
             LocalRevocationMatches = localRevocationMatches,
             AdmissionDecisionHash = admissionDecisionHash,

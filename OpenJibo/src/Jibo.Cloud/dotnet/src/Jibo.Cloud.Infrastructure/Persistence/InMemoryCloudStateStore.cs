@@ -1563,6 +1563,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                     ? "ready-for-retention"
                     : "blocked-by-admission",
             SyncDirection = "snapshot-retention-only",
+            PeerAdmissionMode = "offline-signed-evidence",
+            RetentionPolicy = "owner-retained-until-peer-admission",
+            DirectPeerTransportAllowed = false,
             PeopleCount = peopleCount,
             MemberCount = memberCount,
             RelationshipCount = relationshipCount,
@@ -1633,6 +1636,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             "peer-transport-status|not-enabled",
             $"replication-readiness|{(admissionAssessment.Recommendation.Equals("admit", StringComparison.OrdinalIgnoreCase) ? "ready-for-retention" : "blocked-by-admission")}",
             "sync-direction|snapshot-retention-only",
+            "peer-admission-mode|offline-signed-evidence",
+            "retention-policy|owner-retained-until-peer-admission",
+            "direct-peer-transport-allowed|false",
             $"admission-decision-hash|{admissionAssessment.DecisionHash}",
             $"admission-signature-key-id|{admissionAssessment.SignatureKeyId}",
             $"admission-signature|{admissionAssessment.Signature}"

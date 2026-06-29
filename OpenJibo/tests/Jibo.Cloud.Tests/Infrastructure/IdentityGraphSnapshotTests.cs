@@ -613,12 +613,14 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal("snapshot-retention-only", graph.EvidenceBundle.SyncDirection);
         Assert.Equal("offline-signed-evidence", graph.EvidenceBundle.PeerAdmissionMode);
         Assert.Equal("owner-retained-until-peer-admission", graph.EvidenceBundle.RetentionPolicy);
+        Assert.Equal("requires-local-revocation-check", graph.EvidenceBundle.AdmissionReviewStatus);
         Assert.False(graph.EvidenceBundle.DirectPeerTransportAllowed);
         Assert.Equal(graph.EvidenceBundle.PeerTransportStatus, verification.PeerTransportStatus);
         Assert.Equal(graph.EvidenceBundle.ReplicationReadiness, verification.ReplicationReadiness);
         Assert.Equal(graph.EvidenceBundle.SyncDirection, verification.SyncDirection);
         Assert.Equal(graph.EvidenceBundle.PeerAdmissionMode, verification.PeerAdmissionMode);
         Assert.Equal(graph.EvidenceBundle.RetentionPolicy, verification.RetentionPolicy);
+        Assert.Equal(graph.EvidenceBundle.AdmissionReviewStatus, verification.AdmissionReviewStatus);
         Assert.Equal(graph.EvidenceBundle.DirectPeerTransportAllowed, verification.DirectPeerTransportAllowed);
         Assert.Equal(graph.EvidenceBundle.TrustPurpose, verification.TrustPurpose);
         Assert.Contains("trust-purpose|peer-admission-retention", graph.EvidenceBundle.Payload);
@@ -627,6 +629,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains("sync-direction|snapshot-retention-only", graph.EvidenceBundle.Payload);
         Assert.Contains("peer-admission-mode|offline-signed-evidence", graph.EvidenceBundle.Payload);
         Assert.Contains("retention-policy|owner-retained-until-peer-admission", graph.EvidenceBundle.Payload);
+        Assert.Contains("admission-review-status|requires-local-revocation-check", graph.EvidenceBundle.Payload);
         Assert.Contains("direct-peer-transport-allowed|false", graph.EvidenceBundle.Payload);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.AdmissionDecisionHash);
         Assert.Equal(graph.EvidenceBundle.AdmissionDecisionHash, verification.ComputedAdmissionDecisionHash);
@@ -739,6 +742,8 @@ public sealed class IdentityGraphSnapshotTests
                 StringComparison.Ordinal)
             .Replace("sync-direction|snapshot-retention-only", "sync-direction|bidirectional",
                 StringComparison.Ordinal)
+            .Replace("admission-review-status|requires-local-revocation-check",
+                "admission-review-status|skipped", StringComparison.Ordinal)
             .Replace("direct-peer-transport-allowed|false", "direct-peer-transport-allowed|true",
                 StringComparison.Ordinal);
         var signedEnvelope = RebuildEvidenceBundleEnvelope(payload);
@@ -748,10 +753,12 @@ public sealed class IdentityGraphSnapshotTests
         Assert.False(verification.IsValid);
         Assert.False(verification.IsLocallyAdmissible);
         Assert.Equal("enabled", verification.PeerTransportStatus);
+        Assert.Equal("skipped", verification.AdmissionReviewStatus);
         Assert.True(verification.DirectPeerTransportAllowed);
         Assert.Contains("unexpected-peer-transport-status", verification.Errors);
         Assert.Contains("unexpected-replication-readiness", verification.Errors);
         Assert.Contains("unexpected-sync-direction", verification.Errors);
+        Assert.Contains("unexpected-admission-review-status", verification.Errors);
         Assert.Contains("direct-peer-transport-enabled", verification.Errors);
         Assert.DoesNotContain("bundle-hash-mismatch", verification.Errors);
         Assert.DoesNotContain("bundle-signature-mismatch", verification.Errors);

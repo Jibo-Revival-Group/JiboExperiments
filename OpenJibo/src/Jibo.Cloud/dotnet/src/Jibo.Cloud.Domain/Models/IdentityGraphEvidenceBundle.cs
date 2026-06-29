@@ -26,6 +26,7 @@ public sealed class IdentityGraphEvidenceBundle
     public string SyncDirection { get; init; } = "snapshot-retention-only";
     public string PeerAdmissionMode { get; init; } = "offline-signed-evidence";
     public string RetentionPolicy { get; init; } = "owner-retained-until-peer-admission";
+    public string AdmissionReviewStatus { get; init; } = "requires-local-revocation-check";
     public bool DirectPeerTransportAllowed { get; init; }
     public int PeopleCount { get; init; }
     public int MemberCount { get; init; }

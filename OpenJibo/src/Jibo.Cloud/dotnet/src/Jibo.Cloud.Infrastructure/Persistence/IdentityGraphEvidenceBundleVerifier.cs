@@ -93,6 +93,7 @@ public static class IdentityGraphEvidenceBundleVerifier
         var syncDirection = Get(payloadFields, "sync-direction");
         var peerAdmissionMode = Get(payloadFields, "peer-admission-mode");
         var retentionPolicy = Get(payloadFields, "retention-policy");
+        var admissionReviewStatus = Get(payloadFields, "admission-review-status");
         var directPeerTransportAllowed = GetBool(payloadFields, "direct-peer-transport-allowed");
         var admissionDecisionHash = Get(payloadFields, "admission-decision-hash");
         var admissionSignatureKeyId = Get(payloadFields, "admission-signature-key-id");
@@ -139,6 +140,8 @@ public static class IdentityGraphEvidenceBundleVerifier
             errors.Add("unexpected-peer-admission-mode");
         if (!retentionPolicy.Equals("owner-retained-until-peer-admission", StringComparison.OrdinalIgnoreCase))
             errors.Add("unexpected-retention-policy");
+        if (!admissionReviewStatus.Equals("requires-local-revocation-check", StringComparison.OrdinalIgnoreCase))
+            errors.Add("unexpected-admission-review-status");
         if (directPeerTransportAllowed)
             errors.Add("direct-peer-transport-enabled");
 
@@ -179,6 +182,7 @@ public static class IdentityGraphEvidenceBundleVerifier
             SyncDirection = syncDirection,
             PeerAdmissionMode = peerAdmissionMode,
             RetentionPolicy = retentionPolicy,
+            AdmissionReviewStatus = admissionReviewStatus,
             DirectPeerTransportAllowed = directPeerTransportAllowed,
             LocalRevocationMatches = localRevocationMatches,
             AdmissionDecisionHash = admissionDecisionHash,

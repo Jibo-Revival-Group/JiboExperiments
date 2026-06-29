@@ -5193,8 +5193,8 @@ public sealed class JiboInteractionServiceTests
         {
             Snapshot = new NewsBriefingSnapshot(
                 [
-                    new NewsHeadline("Local robotics team unveils weather-ready helper"),
-                    new NewsHeadline("Community makerspace hosts weekend AI expo")
+                    new NewsHeadline("Local robotics team unveils weather-ready helper", "A local team introduced a weather-ready companion robot."),
+                    new NewsHeadline("Community makerspace hosts weekend AI expo", "The weekend expo will feature family-friendly AI demos.")
                 ],
                 "NewsAPI")
         };
@@ -5225,6 +5225,38 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(3, provider.LastRequest!.MaxHeadlines);
     }
 
+
+    [Fact]
+    public async Task BuildDecisionAsync_TellMeTheNews_WithProvider_FiltersUnsafeOrIncompleteHeadlines()
+    {
+        var provider = new CapturingNewsBriefingProvider
+        {
+            Snapshot = new NewsBriefingSnapshot(
+                [
+                    new NewsHeadline("Robotics club opens new lab", "Students can use the lab after school."),
+                    new NewsHeadline("Robotics club opens new lab", "A duplicate wire item should not be read twice."),
+                    new NewsHeadline("Photo gallery expands", null),
+                    new NewsHeadline("   ", "A blank headline should not be read.")
+                ],
+                "NewsAPI")
+        };
+        var service = CreateService(newsBriefingProvider: provider);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "tell me the news",
+            NormalizedTranscript = "tell me the news"
+        });
+
+        Assert.Equal("news", decision.IntentName);
+        Assert.Equal("provider_success", decision.SkillPayload!["news_provider_status"]);
+        Assert.Equal(1, decision.SkillPayload["news_headline_count"]);
+        Assert.Equal(1, decision.SkillPayload["news_provider_resolved_headlines"]);
+        Assert.Equal(3, decision.SkillPayload["news_provider_skipped_headlines"]);
+        Assert.Contains("Robotics club opens new lab", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Photo gallery expands", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_TellMeTheNews_WithAIAlias_UsesTechnologyCategory()
     {
@@ -5232,7 +5264,7 @@ public sealed class JiboInteractionServiceTests
         {
             Snapshot = new NewsBriefingSnapshot(
                 [
-                    new NewsHeadline("AI labs unveil new home companion behaviors")
+                    new NewsHeadline("AI labs unveil new home companion behaviors", "Researchers shared new behaviors for home companion robots.")
                 ],
                 "NewsAPI")
         };
@@ -5259,7 +5291,7 @@ public sealed class JiboInteractionServiceTests
         {
             Snapshot = new NewsBriefingSnapshot(
                 [
-                    new NewsHeadline("City soccer clubs prepare for summer playoffs")
+                    new NewsHeadline("City soccer clubs prepare for summer playoffs", "Local soccer clubs are preparing for the summer playoff schedule.")
                 ],
                 "NewsAPI")
         };

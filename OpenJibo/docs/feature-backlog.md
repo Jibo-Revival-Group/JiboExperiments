@@ -584,7 +584,7 @@ These are the carryover items that need a clean proof pass first:
 
 ### 13. Provider-Backed News
 
-- Status: `ready`
+- Status: `in progress`
 - Tags: `content`
 - Why later:
   - first protocol path is implemented, but content is synthetic
@@ -596,6 +596,7 @@ These are the carryover items that need a clean proof pass first:
   - original report-skill news tests expect default general, technology, sports, and business headlines for unidentified users
   - category counts are preference-dependent: one active category gets multiple headlines, two categories get two each, and three or more get one each
   - filter items without summaries, corrections, duplicate headlines, banned words, and adult headlines for children or unidentified speakers
+  - the first provider-hardening slice now filters blank-title, missing-summary, and duplicate-title headlines before speech or payload emission, and reports skipped headline diagnostics for capture review
   - include image view metadata with unique IDs, category labels, source image URLs, and sane scaling
 
 ### 14. Proactivity Selector And Surprise Offers

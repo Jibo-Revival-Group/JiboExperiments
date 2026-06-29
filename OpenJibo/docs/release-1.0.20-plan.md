@@ -156,6 +156,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - hardened provider-backed news selection by filtering missing-summary, blank-title, and duplicate-title items before building the spoken Nimbus payload, with skipped-headline diagnostics for capture review
 - bound retained identity graph evidence bundles to the explicit `peer-admission-retention` trust purpose and made the offline verifier reject signed bundles that try to reuse the envelope for direct replication or another trust domain before peer admission is implemented
 - hardened the grocery/to-do follow-up item state so blank follow-up turns retry once with the dedicated household-list listen context, repeated blank turns close cleanly, and low-signal filler such as `um` does not get stored as a list item
+- bound retained peer-admission evidence bundles to an explicit local revocation review status so offline artifacts remain retention-only and verifiers reject signed bundles that try to skip the required local deny-list check before admission
 
 ## Working Order
 

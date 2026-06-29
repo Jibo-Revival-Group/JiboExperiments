@@ -98,15 +98,18 @@ public sealed partial class JiboInteractionService(
     private static readonly string[] PreferenceSetMarkers =
     [
         "my favorite ",
-        "my favourite "
+        "my favourite ",
+        "my fave "
     ];
 
     private static readonly string[] PreferenceReverseMarkers =
     [
         " is my favorite ",
         " is my favourite ",
+        " is my fave ",
         " are my favorite ",
-        " are my favourite "
+        " are my favourite ",
+        " are my fave "
     ];
 
     // Imported from Pegasus birthday/birth-date parser phrasing so user memory

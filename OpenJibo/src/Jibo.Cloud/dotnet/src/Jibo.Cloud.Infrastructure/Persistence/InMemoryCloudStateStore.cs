@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Holidays;
 
@@ -1567,6 +1568,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             PeerAdmissionMode = "offline-signed-evidence",
             RetentionPolicy = "owner-retained-until-peer-admission",
             AdmissionReviewStatus = "requires-local-revocation-check",
+            ExportedByCloudVersion = OpenJiboCloudBuildInfo.Version,
+            ExportedByService = "open-jibo-cloud",
             DirectPeerTransportAllowed = false,
             PeopleCount = peopleCount,
             MemberCount = memberCount,
@@ -1642,6 +1645,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             "peer-admission-mode|offline-signed-evidence",
             "retention-policy|owner-retained-until-peer-admission",
             "admission-review-status|requires-local-revocation-check",
+            $"exported-by-cloud-version|{OpenJiboCloudBuildInfo.Version}",
+            "exported-by-service|open-jibo-cloud",
             "direct-peer-transport-allowed|false",
             $"admission-decision-hash|{admissionAssessment.DecisionHash}",
             $"admission-signature-key-id|{admissionAssessment.SignatureKeyId}",

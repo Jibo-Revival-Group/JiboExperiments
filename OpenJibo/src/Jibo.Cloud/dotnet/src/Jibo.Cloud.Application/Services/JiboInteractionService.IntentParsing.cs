@@ -1090,6 +1090,12 @@ public sealed partial class JiboInteractionService
                normalized.StartsWith("do you know my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you know my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you know my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you recall my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you recall my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you recall my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you tell me my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you tell me my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you tell me my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my fave", StringComparison.Ordinal);
@@ -1105,18 +1111,24 @@ public sealed partial class JiboInteractionService
             "what's my favorite ",
             "do you remember my favorite ",
             "do you know my favorite ",
+            "do you recall my favorite ",
+            "can you tell me my favorite ",
             "tell me my favorite ",
             "what is my favourite ",
             "what s my favourite ",
             "what's my favourite ",
             "do you remember my favourite ",
             "do you know my favourite ",
+            "do you recall my favourite ",
+            "can you tell me my favourite ",
             "tell me my favourite ",
             "what is my fave ",
             "what s my fave ",
             "what's my fave ",
             "do you remember my fave ",
             "do you know my fave ",
+            "do you recall my fave ",
+            "can you tell me my fave ",
             "tell me my fave "
         };
 
@@ -1134,6 +1146,12 @@ public sealed partial class JiboInteractionService
                TryExtractEmbeddedPreferenceCategory(normalized, "do you remember what my", "favorite") ??
                TryExtractEmbeddedPreferenceCategory(normalized, "do you remember what my", "favourite") ??
                TryExtractEmbeddedPreferenceCategory(normalized, "do you remember what my", "fave") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "do you recall what my", "favorite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "do you recall what my", "favourite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "do you recall what my", "fave") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "can you tell me what my", "favorite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "can you tell me what my", "favourite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "can you tell me what my", "fave") ??
                TryExtractTellMeWhatPreferenceCategory(normalized, "favorite") ??
                TryExtractTellMeWhatPreferenceCategory(normalized, "favourite") ??
                TryExtractTellMeWhatPreferenceCategory(normalized, "fave");

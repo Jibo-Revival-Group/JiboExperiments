@@ -402,6 +402,8 @@ These are the carryover items that need a clean proof pass first:
   - grocery follow-up listen is now emitted from the cloud path; finish hardware verification and any robot-side parity gaps rather than inventing a new capture flow
    - keep the list interaction listening for the follow-up item instead of dropping back to a passive state
    - verify long add-item phrases still reach the list engine cleanly
+   - cloud parser coverage now includes polite long-form inline adds such as `can you add ... for my grocery list`,
+     `could you please add ... in my shopping list`, and `would you add ... for my to do list`
 3. Motion and personality command parity
 - keep `go to sleep` from drifting into the wrong visible state; the legacy path is a real sleep global, the ASLEEP state is event-driven rather than timer-driven, wake is driven by `dayStarts`, `headTouch`, or `hjHeard`, and the legacy sleep behavior tree includes a sleeping-idle loop that we need to preserve so the robot stays visibly asleep
    - keep `turn around` and other motion verbs source-backed; the legacy snapshot backs the lane through `spin around` / `twirl`

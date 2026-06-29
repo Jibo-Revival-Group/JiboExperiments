@@ -542,8 +542,7 @@ public sealed class JiboCloudProtocolService(
         if (operation.Equals("Restore", StringComparison.OrdinalIgnoreCase))
         {
             var body = envelope.TryParseBody();
-            var backupId = ReadString(body, "backupId") ?? ReadString(body, "id") ??
-                ReadString(body, "etag") ?? ReadString(body, "location");
+            var backupId = ResolveBackupId(body);
             var restored = stateStore.RestoreBackup(backupId);
             return restored is null
                 ? ProtocolDispatchResult.Raw(404, "{\"error\":\"backup not found\"}", "application/json")
@@ -1229,6 +1228,38 @@ public sealed class JiboCloudProtocolService(
         return meta.TryGetValue(key, out var value)
             ? value?.ToString()
             : null;
+    }
+
+    private static string? ResolveBackupId(JsonElement? body)
+    {
+        var rawBackupId = ReadString(body, "backupId") ?? ReadString(body, "id") ?? ReadString(body, "etag");
+        if (!string.IsNullOrWhiteSpace(rawBackupId)) return ExtractBackupId(rawBackupId);
+
+        if (body is null || !body.Value.TryGetProperty("location", out var location))
+            return null;
+
+        if (location.ValueKind == JsonValueKind.Object && location.TryGetProperty("url", out var url))
+            return ExtractBackupId(url.ValueKind == JsonValueKind.String ? url.GetString() : url.ToString());
+
+        return ExtractBackupId(location.ValueKind == JsonValueKind.String ? location.GetString() : location.ToString());
+    }
+
+    private static string? ExtractBackupId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+
+        var trimmed = value.Trim();
+        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)) return trimmed;
+
+        var segments = uri.Segments
+            .Select(segment => segment.Trim('/'))
+            .Where(segment => !string.IsNullOrWhiteSpace(segment))
+            .ToArray();
+        var backupSegmentIndex = Array.FindLastIndex(segments, segment =>
+            segment.Equals("backup", StringComparison.OrdinalIgnoreCase));
+        return backupSegmentIndex >= 0 && backupSegmentIndex + 1 < segments.Length
+            ? Uri.UnescapeDataString(segments[backupSegmentIndex + 1])
+            : Uri.UnescapeDataString(segments.LastOrDefault() ?? trimmed);
     }
 
     private static string? ReadString(JsonElement? element, string propertyName)

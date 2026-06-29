@@ -24,6 +24,7 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - verify the update-related protocol shapes against the robot capture: `ListUpdates`, `ListUpdatesFrom`, `GetUpdateFrom`, `CreateUpdate`, and `RemoveUpdate`
 - keep menu truth on robot-local backup/update status, not on the compatibility bridge
 - prove the smallest live or replayable path that shows update, backup, and restore without a fabricated update announcement
+- accept restore requests that carry the mapped backup `location.url` (or the location URL as a string) so stock callers can round-trip the `Backup_20170222.List` / `Create` response without manually extracting the `etag`
 - treat the current false-positive as robot-side OTA KB state first, especially `updatesAvailable`, rather than a cloud `GetUpdateFrom` bug
 
 ### 2. Regression Carryover From The Latest Runs

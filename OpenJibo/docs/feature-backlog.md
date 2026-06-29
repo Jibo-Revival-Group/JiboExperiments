@@ -467,6 +467,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-06-25`):
   - added a local scheduler `/apply-update` proof endpoint so a staged update can advance the stored robot firmware version, require reboot, and disappear from subsequent scheduler update checks instead of remaining as a phantom pending update
   - added focused protocol coverage for staging a controlled robot update, applying it, and verifying the robot profile platform plus empty follow-up `/check-updates` response
+- Progress update (`2026-06-29`):
+  - restore now accepts a mapped backup `location.url` object or location URL string in addition to `backupId`, `id`, and `etag`, matching the shape returned by `Backup_20170222.List` / `Create` so stock restore callers can round-trip the response without a manual ID transform
+  - added focused protocol coverage proving both location restore shapes rehydrate the saved update snapshot and remove post-backup stray updates
 - Exit criteria:
   - no phantom "always has updates" behavior
   - one controlled update can be staged and delivered

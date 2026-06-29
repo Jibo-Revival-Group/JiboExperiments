@@ -564,6 +564,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-06-29`, preference shorthand guardrail slice):
   - expanded personal preference parsing for `fave` shorthand plus embedded recall forms like `do you know what my favorite ... is` and `do you remember what my favourite ... is` so Pegasus-style owner-memory phrases do not fall through to generic chat
   - added focused guardrail coverage for the new shorthand and embedded recall families
+- Progress update (`2026-06-29`, preference recall helper slice):
+  - expanded owner preference recall parsing for helper-style aliases such as `do you recall my favorite ...`, `can you tell me my favourite ...`, and embedded `can you tell me what my fave ... is` forms
+  - added targeted guardrail coverage so these recall prompts stay on the memory lookup route instead of being mistaken for incomplete preference-setting attempts
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

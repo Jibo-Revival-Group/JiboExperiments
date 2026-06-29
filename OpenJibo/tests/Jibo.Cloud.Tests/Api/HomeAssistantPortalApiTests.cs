@@ -414,6 +414,7 @@ public sealed class HomeAssistantPortalApiTests
         Assert.False(verification.GetProperty("isLocallyAdmissible").GetBoolean());
         Assert.Equal("admit", verification.GetProperty("admissionRecommendation").GetString());
         Assert.Equal("quarantine", verification.GetProperty("effectiveAdmissionRecommendation").GetString());
+        Assert.Equal("peer-admission-retention", verification.GetProperty("trustPurpose").GetString());
         Assert.Equal("not-enabled", verification.GetProperty("peerTransportStatus").GetString());
         Assert.Equal("snapshot-retention-only", verification.GetProperty("syncDirection").GetString());
         Assert.False(verification.GetProperty("directPeerTransportAllowed").GetBoolean());

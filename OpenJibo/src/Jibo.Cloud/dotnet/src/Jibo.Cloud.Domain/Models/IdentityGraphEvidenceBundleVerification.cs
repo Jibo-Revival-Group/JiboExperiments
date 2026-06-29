@@ -22,6 +22,7 @@ public sealed class IdentityGraphEvidenceBundleVerification
     public IReadOnlyList<string> RevocationChecks { get; init; } = [];
     public IReadOnlyList<string> RevocationAnchors { get; init; } = [];
     public string RevocationListHash { get; init; } = string.Empty;
+    public string TrustPurpose { get; init; } = string.Empty;
     public string PeerTransportStatus { get; init; } = string.Empty;
     public string ReplicationReadiness { get; init; } = string.Empty;
     public string SyncDirection { get; init; } = string.Empty;

@@ -87,6 +87,7 @@ public static class IdentityGraphEvidenceBundleVerifier
         var revocationChecks = SplitCsv(Get(payloadFields, "admission-revocation-checks"));
         var revocationAnchors = SplitCsv(Get(payloadFields, "admission-revocation-anchors"));
         var revocationListHash = Get(payloadFields, "admission-revocation-list-hash");
+        var trustPurpose = Get(payloadFields, "trust-purpose");
         var peerTransportStatus = Get(payloadFields, "peer-transport-status");
         var replicationReadiness = Get(payloadFields, "replication-readiness");
         var syncDirection = Get(payloadFields, "sync-direction");
@@ -125,6 +126,8 @@ public static class IdentityGraphEvidenceBundleVerifier
             errors.Add("admission-decision-hash-mismatch");
         if (!admissionSignature.Equals(computedAdmissionSignature, StringComparison.OrdinalIgnoreCase))
             errors.Add("admission-signature-mismatch");
+        if (!trustPurpose.Equals("peer-admission-retention", StringComparison.OrdinalIgnoreCase))
+            errors.Add("unexpected-trust-purpose");
         if (!peerTransportStatus.Equals("not-enabled", StringComparison.OrdinalIgnoreCase))
             errors.Add("unexpected-peer-transport-status");
         if (!replicationReadiness.Equals("ready-for-retention", StringComparison.OrdinalIgnoreCase) &&
@@ -170,6 +173,7 @@ public static class IdentityGraphEvidenceBundleVerifier
             RevocationChecks = revocationChecks,
             RevocationAnchors = revocationAnchors,
             RevocationListHash = revocationListHash,
+            TrustPurpose = trustPurpose,
             PeerTransportStatus = peerTransportStatus,
             ReplicationReadiness = replicationReadiness,
             SyncDirection = syncDirection,

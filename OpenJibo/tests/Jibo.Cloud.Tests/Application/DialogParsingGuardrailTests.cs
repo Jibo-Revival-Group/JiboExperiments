@@ -11,9 +11,15 @@ public sealed class DialogParsingGuardrailTests
     [Theory]
     [InlineData("can you dance", "robot_can_dance")]
     [InlineData("will you dance", "robot_can_dance")]
+    [InlineData("are you good at dancing", "robot_can_dance")]
+    [InlineData("can you do a dance", "robot_can_dance")]
     [InlineData("do you like to dance", "dance_question")]
+    [InlineData("what is your favorite dance", "dance_question")]
+    [InlineData("which dance do you like", "dance_question")]
     [InlineData("dance", "dance")]
     [InlineData("please dance", "dance")]
+    [InlineData("show me your dance", "dance")]
+    [InlineData("bust a move", "dance")]
     [InlineData("boogie", "dance")]
     [InlineData("tell me about dancing", "chat")]
     public async Task BuildDecisionAsync_DancePhrases_PreserveQuestionCommandSplit(
@@ -30,6 +36,24 @@ public sealed class DialogParsingGuardrailTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
+    }
+
+    [Theory]
+    [InlineData("twerk")]
+    [InlineData("can you twerk")]
+    [InlineData("show me a twerk")]
+    public async Task BuildDecisionAsync_TwerkPhrases_PreserveSpecificDanceCommand(string transcript)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal("twerk", decision.IntentName);
     }
 
 

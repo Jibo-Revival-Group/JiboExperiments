@@ -557,7 +557,7 @@ public sealed partial class JiboInteractionService
         if (IsFriendQuestion(loweredTranscript))
             return "robot_has_friends";
 
-        if (MatchesAny(loweredTranscript, "twerk")) return "twerk";
+        if (IsTwerkCommand(loweredTranscript)) return "twerk";
 
         if (IsDanceCommand(loweredTranscript)) return "dance";
 

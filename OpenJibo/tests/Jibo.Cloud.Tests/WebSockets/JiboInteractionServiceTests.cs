@@ -5308,7 +5308,10 @@ public sealed class JiboInteractionServiceTests
                     new NewsHeadline("Robotics club opens new lab", "Students can use the lab after school."),
                     new NewsHeadline("Robotics club opens new lab", "A duplicate wire item should not be read twice."),
                     new NewsHeadline("Photo gallery expands", null),
-                    new NewsHeadline("   ", "A blank headline should not be read.")
+                    new NewsHeadline("   ", "A blank headline should not be read."),
+                    new NewsHeadline("Correction: robotics club opens new lab", "The wire corrected the earlier headline."),
+                    new NewsHeadline("Police investigate homicide downtown", "Officials shared more details."),
+                    new NewsHeadline("Family event opens this weekend", "Organizers removed graphic violence from the exhibit.")
                 ],
                 "NewsAPI")
         };
@@ -5324,9 +5327,12 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("provider_success", decision.SkillPayload!["news_provider_status"]);
         Assert.Equal(1, decision.SkillPayload["news_headline_count"]);
         Assert.Equal(1, decision.SkillPayload["news_provider_resolved_headlines"]);
-        Assert.Equal(3, decision.SkillPayload["news_provider_skipped_headlines"]);
+        Assert.Equal(6, decision.SkillPayload["news_provider_skipped_headlines"]);
         Assert.Contains("Robotics club opens new lab", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Photo gallery expands", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Correction:", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("homicide", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("graphic violence", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

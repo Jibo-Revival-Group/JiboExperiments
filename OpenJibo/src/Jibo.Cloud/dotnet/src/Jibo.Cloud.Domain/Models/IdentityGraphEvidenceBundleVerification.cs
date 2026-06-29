@@ -25,6 +25,9 @@ public sealed class IdentityGraphEvidenceBundleVerification
     public string PeerTransportStatus { get; init; } = string.Empty;
     public string ReplicationReadiness { get; init; } = string.Empty;
     public string SyncDirection { get; init; } = string.Empty;
+    public string PeerAdmissionMode { get; init; } = string.Empty;
+    public string RetentionPolicy { get; init; } = string.Empty;
+    public bool DirectPeerTransportAllowed { get; init; }
     public IReadOnlyList<string> LocalRevocationMatches { get; init; } = [];
     public string AdmissionDecisionHash { get; init; } = string.Empty;
     public string ComputedAdmissionDecisionHash { get; init; } = string.Empty;

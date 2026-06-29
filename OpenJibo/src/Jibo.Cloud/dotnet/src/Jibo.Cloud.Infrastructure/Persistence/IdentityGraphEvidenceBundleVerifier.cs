@@ -90,6 +90,9 @@ public static class IdentityGraphEvidenceBundleVerifier
         var peerTransportStatus = Get(payloadFields, "peer-transport-status");
         var replicationReadiness = Get(payloadFields, "replication-readiness");
         var syncDirection = Get(payloadFields, "sync-direction");
+        var peerAdmissionMode = Get(payloadFields, "peer-admission-mode");
+        var retentionPolicy = Get(payloadFields, "retention-policy");
+        var directPeerTransportAllowed = GetBool(payloadFields, "direct-peer-transport-allowed");
         var admissionDecisionHash = Get(payloadFields, "admission-decision-hash");
         var admissionSignatureKeyId = Get(payloadFields, "admission-signature-key-id");
         var admissionSignature = Get(payloadFields, "admission-signature");
@@ -157,6 +160,9 @@ public static class IdentityGraphEvidenceBundleVerifier
             PeerTransportStatus = peerTransportStatus,
             ReplicationReadiness = replicationReadiness,
             SyncDirection = syncDirection,
+            PeerAdmissionMode = peerAdmissionMode,
+            RetentionPolicy = retentionPolicy,
+            DirectPeerTransportAllowed = directPeerTransportAllowed,
             LocalRevocationMatches = localRevocationMatches,
             AdmissionDecisionHash = admissionDecisionHash,
             ComputedAdmissionDecisionHash = computedAdmissionDecisionHash,
@@ -215,6 +221,11 @@ public static class IdentityGraphEvidenceBundleVerifier
     private static string Get(IReadOnlyDictionary<string, string> fields, string key)
     {
         return fields.TryGetValue(key, out var value) ? value : string.Empty;
+    }
+
+    private static bool GetBool(IReadOnlyDictionary<string, string> fields, string key)
+    {
+        return bool.TryParse(Get(fields, key), out var value) && value;
     }
 
     private static int GetInt(IReadOnlyDictionary<string, string> fields, string key)

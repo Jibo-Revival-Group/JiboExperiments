@@ -149,6 +149,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - bound identity graph admission decisions and offline evidence bundles to a deterministic local revocation-list hash so retained peer-admission artifacts show which deny-list state was used when the admit/quarantine decision was signed
 - expanded multi-Jibo identity graph evidence so additional robot loop members resolve to their registered device and add explicit loop `served-by` plus robot `runs-on` relationships before direct peer transport is introduced
 - added explicit peer-transport, replication-readiness, and sync-direction fields to signed identity graph evidence bundles and the owner dashboard so retained admission artifacts state that direct peer transport is still disabled and snapshots are retention-only until admission succeeds
+- expanded the signed evidence bundle handoff contract with peer admission mode, owner-retention policy, and an explicit direct-peer-transport guard so offline retained artifacts cannot be mistaken for enabled peer replication
 
 ## Working Order
 

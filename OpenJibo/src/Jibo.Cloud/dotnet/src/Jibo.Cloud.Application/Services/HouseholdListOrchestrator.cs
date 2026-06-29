@@ -19,6 +19,12 @@ internal static class HouseholdListOrchestrator
 
     private static readonly string[] ItemPrefixes =
     [
+        "can you please add ",
+        "can you add ",
+        "could you please add ",
+        "could you add ",
+        "would you please add ",
+        "would you add ",
         "add ",
         "put ",
         "buy ",
@@ -35,16 +41,24 @@ internal static class HouseholdListOrchestrator
         " to my shopping list",
         " to the shopping list",
         " on my shopping list",
+        " in my shopping list",
+        " for my shopping list",
         " to my grocery list",
         " to the grocery list",
         " on my grocery list",
+        " in my grocery list",
+        " for my grocery list",
         " my grocery list",
         " to my to do list",
         " to the to do list",
         " on my to do list",
+        " in my to do list",
+        " for my to do list",
         " to my todo list",
         " to the todo list",
-        " on my todo list"
+        " on my todo list",
+        " in my todo list",
+        " for my todo list"
     ];
 
     public static Task<JiboInteractionDecision?> TryBuildDecisionAsync(
@@ -355,7 +369,15 @@ internal static class HouseholdListOrchestrator
             "on my shopping list" or
             "on my grocery list" or
             "on my to do list" or
-            "on my todo list";
+            "on my todo list" or
+            "in my shopping list" or
+            "in my grocery list" or
+            "in my to do list" or
+            "in my todo list" or
+            "for my shopping list" or
+            "for my grocery list" or
+            "for my to do list" or
+            "for my todo list";
     }
 
     private static bool ContainsAny(string loweredTranscript, params string[] phrases)

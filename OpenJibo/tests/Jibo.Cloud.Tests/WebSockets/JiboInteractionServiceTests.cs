@@ -2817,8 +2817,14 @@ public sealed class JiboInteractionServiceTests
 
     [Theory]
     [InlineData("add milk to my grocery list", "shopping_list_add", "grocery list", "milk", "shopping", "grocery")]
+    [InlineData("can you add bananas for my grocery list", "shopping_list_add", "grocery list", "bananas", "shopping",
+        "grocery")]
+    [InlineData("could you please add bread in my shopping list", "shopping_list_add", "shopping list", "bread",
+        "shopping", "shopping")]
     [InlineData("please put eggs on my shopping list", "shopping_list_add", "shopping list", "eggs", "shopping",
         "shopping")]
+    [InlineData("would you add mail the package for my to do list", "todo_list_add", "to-do list",
+        "mail the package", "todo", "todo")]
     [InlineData("add call mom to my to do list", "todo_list_add", "to-do list", "call mom", "todo", "todo")]
     public async Task BuildDecisionAsync_ListInlineAdd_AddsItemWithoutPrompt(
         string transcript,

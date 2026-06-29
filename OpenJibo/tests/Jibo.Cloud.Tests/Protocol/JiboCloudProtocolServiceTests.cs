@@ -837,6 +837,77 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.False(string.IsNullOrWhiteSpace(location.GetProperty("expires").GetString()));
     }
 
+    [Theory]
+    [InlineData("locationString")]
+    [InlineData("locationObject")]
+    public async Task BackupRestore_AcceptsMappedLocationShapes(string locationShape)
+    {
+        await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "CreateUpdate",
+            BodyText =
+                """{"fromVersion":"12.10.0","toVersion":"12.10.1","changes":"Location restore baseline","subsystem":"robot"}"""
+        });
+
+        var backup = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Backup_20170222",
+            Operation = "Create",
+            BodyText = """{"name":"location-restore-point"}"""
+        });
+
+        using var backupPayload = JsonDocument.Parse(backup.BodyText);
+        var locationUrl = backupPayload.RootElement.GetProperty("location").GetProperty("url").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(locationUrl));
+
+        await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "CreateUpdate",
+            BodyText =
+                """{"fromVersion":"12.10.1","toVersion":"12.10.2","changes":"Location restore stray update","subsystem":"robot"}"""
+        });
+
+        var restoreBody = locationShape == "locationObject"
+            ? $$"""{"location":{"url":"{{locationUrl}}"}}"""
+            : $$"""{"location":"{{locationUrl}}"}""";
+        var restore = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Backup_20170222",
+            Operation = "Restore",
+            BodyText = restoreBody
+        });
+
+        using var restorePayload = JsonDocument.Parse(restore.BodyText);
+        Assert.Equal(200, restore.StatusCode);
+        Assert.Equal("ok", restorePayload.RootElement.GetProperty("result").GetString());
+        Assert.True(restorePayload.RootElement.GetProperty("rebootRequired").GetBoolean());
+
+        var updates = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Update_20160715",
+            Operation = "ListUpdates",
+            BodyText = """{"subsystem":"robot"}"""
+        });
+
+        using var updatesPayload = JsonDocument.Parse(updates.BodyText);
+        Assert.Contains(updatesPayload.RootElement.EnumerateArray(),
+            item => item.GetProperty("changes").GetString() == "Location restore baseline");
+        Assert.DoesNotContain(updatesPayload.RootElement.EnumerateArray(),
+            item => item.GetProperty("changes").GetString() == "Location restore stray update");
+    }
+
     [Fact]
     public async Task PutEventsAsync_ReturnsUploadUrl()
     {

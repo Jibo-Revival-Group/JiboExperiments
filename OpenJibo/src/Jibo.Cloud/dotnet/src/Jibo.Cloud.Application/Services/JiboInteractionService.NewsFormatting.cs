@@ -62,8 +62,8 @@ public sealed partial class JiboInteractionService
         IReadOnlyList<string> preferredCategories,
         int requestedHeadlineCount)
     {
-        var headlines = snapshot.Headlines
-            .Where(headline => !string.IsNullOrWhiteSpace(headline.Title))
+        var filteredHeadlines = FilterNewsHeadlinesForJibo(snapshot.Headlines);
+        var headlines = filteredHeadlines.Headlines
             .Take(MaxNewsHeadlines)
             .ToArray();
         if (headlines.Length == 0)
@@ -76,7 +76,8 @@ public sealed partial class JiboInteractionService
                     "provider_empty",
                     preferredCategories,
                     requestedHeadlineCount,
-                    0));
+                    0,
+                    skippedHeadlineCount: filteredHeadlines.SkippedCount));
 
         var leadIn = BuildNewsLeadIn(snapshot.SourceName, preferredCategories);
         var joinedHeadlines = string.Join(" ", headlines.Select(static headline => $"{headline.Title}."));
@@ -91,9 +92,47 @@ public sealed partial class JiboInteractionService
                 "provider_success",
                 preferredCategories,
                 requestedHeadlineCount,
-                headlines.Length),
+                headlines.Length,
+                skippedHeadlineCount: filteredHeadlines.SkippedCount),
             headlines);
     }
+
+    private static FilteredNewsHeadlines FilterNewsHeadlinesForJibo(IReadOnlyList<NewsHeadline> sourceHeadlines)
+    {
+        var accepted = new List<NewsHeadline>();
+        var seenTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var skipped = 0;
+
+        foreach (var headline in sourceHeadlines)
+        {
+            var title = NormalizeNewsHeadlineField(headline.Title);
+            var summary = NormalizeNewsHeadlineField(headline.Summary);
+            if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(summary))
+            {
+                skipped++;
+                continue;
+            }
+
+            var duplicateKey = Regex.Replace(title, @"\s+", " ").Trim();
+            if (!seenTitles.Add(duplicateKey))
+            {
+                skipped++;
+                continue;
+            }
+
+            accepted.Add(headline with { Title = title, Summary = summary });
+        }
+
+        return new FilteredNewsHeadlines(accepted, skipped);
+    }
+
+    private static string? NormalizeNewsHeadlineField(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        return Regex.Replace(value, @"\s+", " ").Trim();
+    }
+
+    private sealed record FilteredNewsHeadlines(IReadOnlyList<NewsHeadline> Headlines, int SkippedCount);
 
     private static IReadOnlyDictionary<string, object?> BuildNewsProviderDiagnostics(
         string status,
@@ -103,7 +142,8 @@ public sealed partial class JiboInteractionService
         string? providerMessage = null,
         int? providerHttpStatusCode = null,
         string? providerEndpoint = null,
-        string? providerErrorCode = null)
+        string? providerErrorCode = null,
+        int? skippedHeadlineCount = null)
     {
         var diagnostics = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -124,6 +164,8 @@ public sealed partial class JiboInteractionService
         if (!string.IsNullOrWhiteSpace(providerEndpoint)) diagnostics["news_provider_endpoint"] = providerEndpoint;
 
         if (!string.IsNullOrWhiteSpace(providerErrorCode)) diagnostics["news_provider_error_code"] = providerErrorCode;
+
+        if (skippedHeadlineCount is > 0) diagnostics["news_provider_skipped_headlines"] = skippedHeadlineCount.Value;
 
         return diagnostics;
     }

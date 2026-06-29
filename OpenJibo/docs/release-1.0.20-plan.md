@@ -153,6 +153,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - hardened the offline identity graph evidence bundle verifier so even a correctly signed retained artifact is rejected if it claims direct peer transport is enabled, changes the retention-only sync direction, or advertises a replication-ready transport state before peer admission is actually implemented
 - exposed the offline evidence bundle verifier through the authenticated portal API so retained peer-admission artifacts can be checked against local revocation anchors without trusting direct peer transport or enabling replication
 - expanded dialog parsing guardrails with Pegasus-backed dance, favorite-dance, dance-ability, and twerk phrase variants so command-vs-question behavior remains explicit while short dance commands route to the intended personality/action paths
+- hardened provider-backed news selection by filtering missing-summary, blank-title, and duplicate-title items before building the spoken Nimbus payload, with skipped-headline diagnostics for capture review
 
 ## Working Order
 

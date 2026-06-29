@@ -607,6 +607,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.RevocationChecks, verification.RevocationChecks);
         Assert.Equal(graph.EvidenceBundle.RevocationAnchors, verification.RevocationAnchors);
         Assert.Equal(graph.EvidenceBundle.RevocationListHash, verification.RevocationListHash);
+        Assert.Equal("peer-admission-retention", graph.EvidenceBundle.TrustPurpose);
         Assert.Equal("not-enabled", graph.EvidenceBundle.PeerTransportStatus);
         Assert.Equal("ready-for-retention", graph.EvidenceBundle.ReplicationReadiness);
         Assert.Equal("snapshot-retention-only", graph.EvidenceBundle.SyncDirection);
@@ -619,6 +620,8 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Equal(graph.EvidenceBundle.PeerAdmissionMode, verification.PeerAdmissionMode);
         Assert.Equal(graph.EvidenceBundle.RetentionPolicy, verification.RetentionPolicy);
         Assert.Equal(graph.EvidenceBundle.DirectPeerTransportAllowed, verification.DirectPeerTransportAllowed);
+        Assert.Equal(graph.EvidenceBundle.TrustPurpose, verification.TrustPurpose);
+        Assert.Contains("trust-purpose|peer-admission-retention", graph.EvidenceBundle.Payload);
         Assert.Contains("peer-transport-status|not-enabled", graph.EvidenceBundle.Payload);
         Assert.Contains("replication-readiness|ready-for-retention", graph.EvidenceBundle.Payload);
         Assert.Contains("sync-direction|snapshot-retention-only", graph.EvidenceBundle.Payload);
@@ -680,6 +683,38 @@ public sealed class IdentityGraphSnapshotTests
             verification.LocalRevocationMatches);
         Assert.True(verification.AdmissionDecisionSignatureValid);
         Assert.True(verification.SnapshotSignatureValid);
+    }
+
+
+    [Fact]
+    public void VerifyEvidenceBundleEnvelope_RejectsSignedPayloadWithUnexpectedTrustPurpose()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "Ghost-Instance-Onion-Silk",
+            ApplicationVersion = "1.0.20",
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["neo-hub.jibo.com"] = "openjibo.local"
+            }
+        });
+        var graph = store.GetIdentityGraph();
+        var payload = graph.EvidenceBundle.Payload.Replace(
+            "trust-purpose|peer-admission-retention",
+            "trust-purpose|direct-peer-replication",
+            StringComparison.Ordinal);
+        var signedEnvelope = RebuildEvidenceBundleEnvelope(payload);
+
+        var verification = IdentityGraphEvidenceBundleVerifier.Verify(signedEnvelope);
+
+        Assert.False(verification.IsValid);
+        Assert.False(verification.IsLocallyAdmissible);
+        Assert.Equal("direct-peer-replication", verification.TrustPurpose);
+        Assert.Contains("unexpected-trust-purpose", verification.Errors);
+        Assert.DoesNotContain("bundle-hash-mismatch", verification.Errors);
+        Assert.DoesNotContain("bundle-signature-mismatch", verification.Errors);
     }
 
     [Fact]

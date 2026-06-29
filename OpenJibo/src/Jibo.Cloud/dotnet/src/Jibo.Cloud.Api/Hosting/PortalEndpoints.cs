@@ -157,6 +157,7 @@ internal static class PortalEndpoints
                 verification.RevocationAnchors,
                 verification.RevocationListHash,
                 verification.LocalRevocationMatches,
+                verification.TrustPurpose,
                 verification.PeerTransportStatus,
                 verification.ReplicationReadiness,
                 verification.SyncDirection,

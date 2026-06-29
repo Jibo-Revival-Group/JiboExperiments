@@ -1557,6 +1557,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             RevocationChecks = admissionAssessment.RevocationChecks,
             RevocationAnchors = admissionAssessment.RevocationAnchors,
             RevocationListHash = admissionAssessment.RevocationListHash,
+            TrustPurpose = "peer-admission-retention",
             PeerTransportStatus = "not-enabled",
             ReplicationReadiness =
                 admissionAssessment.Recommendation.Equals("admit", StringComparison.OrdinalIgnoreCase)
@@ -1633,6 +1634,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             $"admission-revocation-checks|{string.Join(',', admissionAssessment.RevocationChecks.Order(StringComparer.Ordinal))}",
             $"admission-revocation-anchors|{string.Join(',', admissionAssessment.RevocationAnchors.Order(StringComparer.Ordinal))}",
             $"admission-revocation-list-hash|{admissionAssessment.RevocationListHash}",
+            "trust-purpose|peer-admission-retention",
             "peer-transport-status|not-enabled",
             $"replication-readiness|{(admissionAssessment.Recommendation.Equals("admit", StringComparison.OrdinalIgnoreCase) ? "ready-for-retention" : "blocked-by-admission")}",
             "sync-direction|snapshot-retention-only",

@@ -6,6 +6,14 @@ namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService
 {
+    private static readonly Regex NewsCorrectionPrefixPattern = new(
+        @"^\s*(?:correction|corrected|update|updated)\s*:",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex NewsUnsafeTermPattern = new(
+        @"\b(?:murder|homicide|suicide|porn|pornography|sex\s+crime|sexual\s+assault|graphic\s+violence|beheading|massacre)\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
     private static JiboInteractionDecision BuildNewsDecision(
         string spokenBriefing,
         string? sourceName,
@@ -113,6 +121,12 @@ public sealed partial class JiboInteractionService
                 continue;
             }
 
+            if (!IsJiboSafeNewsHeadline(title, summary))
+            {
+                skipped++;
+                continue;
+            }
+
             var duplicateKey = Regex.Replace(title, @"\s+", " ").Trim();
             if (!seenTitles.Add(duplicateKey))
             {
@@ -130,6 +144,12 @@ public sealed partial class JiboInteractionService
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
         return Regex.Replace(value, @"\s+", " ").Trim();
+    }
+
+    private static bool IsJiboSafeNewsHeadline(string title, string summary)
+    {
+        if (NewsCorrectionPrefixPattern.IsMatch(title)) return false;
+        return !NewsUnsafeTermPattern.IsMatch(title) && !NewsUnsafeTermPattern.IsMatch(summary);
     }
 
     private sealed record FilteredNewsHeadlines(IReadOnlyList<NewsHeadline> Headlines, int SkippedCount);

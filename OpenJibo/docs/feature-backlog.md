@@ -600,6 +600,7 @@ These are the carryover items that need a clean proof pass first:
   - category counts are preference-dependent: one active category gets multiple headlines, two categories get two each, and three or more get one each
   - filter items without summaries, corrections, duplicate headlines, banned words, and adult headlines for children or unidentified speakers
   - the first provider-hardening slice now filters blank-title, missing-summary, and duplicate-title headlines before speech or payload emission, and reports skipped headline diagnostics for capture review
+  - the second provider-hardening slice now also rejects correction/update headlines plus family-unsafe violent or adult terms before speech or payload emission, keeping the hosted briefing safe for unidentified or child listeners while provider preference controls are still pending
   - include image view metadata with unique IDs, category labels, source image URLs, and sane scaling
 
 ### 14. Proactivity Selector And Surprise Offers

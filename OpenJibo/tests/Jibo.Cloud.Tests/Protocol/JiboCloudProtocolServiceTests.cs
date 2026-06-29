@@ -876,8 +876,8 @@ public sealed class JiboCloudProtocolServiceTests
         });
 
         var restoreBody = locationShape == "locationObject"
-            ? $$"""{"location":{"url":"{{locationUrl}}"}}"""
-            : $$"""{"location":"{{locationUrl}}"}""";
+            ? JsonSerializer.Serialize(new { location = new { url = locationUrl } })
+            : JsonSerializer.Serialize(new { location = locationUrl });
         var restore = await _service.DispatchAsync(new ProtocolEnvelope
         {
             HostName = "api.jibo.com",

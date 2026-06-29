@@ -1074,22 +1074,25 @@ public sealed partial class JiboInteractionService
     private static bool IsPreferenceRecallAttempt(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
-        return normalized.StartsWith("what is my favorite", StringComparison.Ordinal) ||
+        return TryExtractPreferenceLookupCategory(normalized) is not null ||
+               normalized.StartsWith("what is my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("what s my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("what's my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("what is my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("what s my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("what's my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what is my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("what s my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("what's my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("do you remember my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you remember my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you remember my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("do you know my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you know my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you know my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favourite", StringComparison.Ordinal) ||
-               (normalized.StartsWith("tell me what my favorite", StringComparison.Ordinal) &&
-                normalized.EndsWith(" is", StringComparison.Ordinal)) ||
-               (normalized.StartsWith("tell me what my favourite", StringComparison.Ordinal) &&
-                normalized.EndsWith(" is", StringComparison.Ordinal));
+               normalized.StartsWith("tell me my fave", StringComparison.Ordinal);
     }
 
     private static string? TryExtractPreferenceLookupCategory(string transcript)
@@ -1108,7 +1111,13 @@ public sealed partial class JiboInteractionService
             "what's my favourite ",
             "do you remember my favourite ",
             "do you know my favourite ",
-            "tell me my favourite "
+            "tell me my favourite ",
+            "what is my fave ",
+            "what s my fave ",
+            "what's my fave ",
+            "do you remember my fave ",
+            "do you know my fave ",
+            "tell me my fave "
         };
 
         var category = (from prefix in prefixes
@@ -1119,14 +1128,26 @@ public sealed partial class JiboInteractionService
 
         if (!string.IsNullOrWhiteSpace(category)) return category;
 
-        return TryExtractTellMeWhatPreferenceCategory(normalized, "favorite") ??
-               TryExtractTellMeWhatPreferenceCategory(normalized, "favourite");
+        return TryExtractEmbeddedPreferenceCategory(normalized, "do you know what my", "favorite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "do you know what my", "favourite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "do you know what my", "fave") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "do you remember what my", "favorite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "do you remember what my", "favourite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "do you remember what my", "fave") ??
+               TryExtractTellMeWhatPreferenceCategory(normalized, "favorite") ??
+               TryExtractTellMeWhatPreferenceCategory(normalized, "favourite") ??
+               TryExtractTellMeWhatPreferenceCategory(normalized, "fave");
     }
 
 
     private static string? TryExtractTellMeWhatPreferenceCategory(string normalized, string spelling)
     {
-        var prefix = $"tell me what my {spelling} ";
+        return TryExtractEmbeddedPreferenceCategory(normalized, "tell me what my", spelling);
+    }
+
+    private static string? TryExtractEmbeddedPreferenceCategory(string normalized, string lead, string spelling)
+    {
+        var prefix = $"{lead} {spelling} ";
         const string suffix = " is";
         if (!normalized.StartsWith(prefix, StringComparison.Ordinal) ||
             !normalized.EndsWith(suffix, StringComparison.Ordinal))

@@ -920,4 +920,61 @@ public sealed class IdentityGraphSnapshotTests
             System.Text.Encoding.UTF8.GetBytes("open-jibo-local-identity-graph-development-key"));
         return Convert.ToHexString(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
     }
+
+    [Fact]
+    public void GetIdentityGraph_IncludesPersistedRecognitionObservations()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-recognition-{Guid.NewGuid():N}.json");
+        try
+        {
+            var firstStore = new InMemoryCloudStateStore(persistencePath);
+            firstStore.UpdateRobot(new DeviceRegistration
+            {
+                DeviceId = "BOJW-RECOGNITION-0001",
+                RobotId = "recognition-robot",
+                FriendlyName = "Recognition Robot",
+                FirmwareVersion = "1.9.2",
+                ApplicationVersion = "1.0.20",
+                HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["api.jibo.com"] = "openjibo.local"
+                }
+            });
+            var loopId = firstStore.GetLoops()[0].LoopId;
+            var member = firstStore.AddLoopMember(loopId, "usr-recognized", "recognized@example.com", "Ada", "Lovelace",
+                "female", null, false, "member");
+
+            var observation = firstStore.RecordRecognitionObservation(loopId, member.Id, "Face", "Recognized", 0.98,
+                "conversion-smoke");
+            firstStore.SavePersistedState();
+
+            var secondStore = new InMemoryCloudStateStore(persistencePath);
+            var observations = secondStore.GetRecognitionObservations(loopId);
+            var graph = secondStore.GetIdentityGraph(loopId);
+
+            Assert.Contains(observations, item => item.ObservationId == observation.ObservationId &&
+                                                 item.MemberId == member.Id &&
+                                                 item.Modality == "face" &&
+                                                 item.Outcome == "recognized" &&
+                                                 item.Source == "conversion-smoke");
+            Assert.Contains(graph.Relationships, relationship =>
+                relationship.SubjectId == member.Id &&
+                relationship.SubjectKind == "loop-member" &&
+                relationship.Relationship == "face-recognized-by" &&
+                relationship.ObjectId == "recognition-robot" &&
+                relationship.ObjectKind == "robot");
+            Assert.Contains(graph.EvidenceSignals, signal =>
+                signal.SignalKind == "recognition-face" &&
+                signal.SignalId == observation.ObservationId &&
+                signal.Value == $"{member.Id}:recognized:0.98");
+            Assert.Contains("face-recognized-by:1", graph.EvidenceBundle.RelationshipKinds);
+            Assert.Contains("recognition-face:1", graph.EvidenceBundle.EvidenceSignalKinds);
+            Assert.Contains("recognition-face:1", graph.EvidenceBundle.Payload);
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
 }

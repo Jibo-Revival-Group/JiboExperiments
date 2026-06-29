@@ -23,6 +23,55 @@ PII_KEYS = {"firstname", "lastname", "email", "phoneticname", "birthday", "birth
 TEXT_TYPES = {"CLIENT_ASR", "CLIENT_NLU", "TRIGGER", "LISTEN"}
 
 
+def display_name(user: dict[str, Any], show_pii: bool) -> str:
+    if not show_pii:
+        return "<redacted>"
+    first = str(user.get("firstName") or user.get("firstname") or "").strip()
+    last = str(user.get("lastName") or user.get("lastname") or "").strip()
+    return " ".join(part for part in (first, last) if part) or "<unnamed>"
+
+
+def collect_runtime_identity(payload: Any, show_pii: bool) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if not isinstance(payload, dict):
+        return [], []
+    data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+    runtime = data.get("runtime") if isinstance(data.get("runtime"), dict) else {}
+    perception = runtime.get("perception") if isinstance(runtime.get("perception"), dict) else {}
+    loop = runtime.get("loop") if isinstance(runtime.get("loop"), dict) else {}
+    users = loop.get("users") if isinstance(loop.get("users"), list) else []
+    user_by_id = {str(user.get("id")): user for user in users if isinstance(user, dict) and user.get("id")}
+
+    speaker_matches: list[dict[str, Any]] = []
+    speaker = perception.get("speaker")
+    if speaker is not None:
+        speaker_id = str(speaker)
+        user = user_by_id.get(speaker_id)
+        speaker_matches.append({
+            "speakerId": speaker_id,
+            "matchedLoopUser": user is not None,
+            "loopUserName": display_name(user, show_pii) if user else None,
+        })
+
+    people_present = perception.get("peoplePresent") if isinstance(perception.get("peoplePresent"), list) else []
+    people_matches: list[dict[str, Any]] = []
+    for person in people_present:
+        person_id = None
+        if isinstance(person, dict):
+            for key in ("id", "userId", "personId", "memberId", "looperID", "looperId"):
+                if person.get(key):
+                    person_id = str(person.get(key))
+                    break
+        elif person is not None:
+            person_id = str(person)
+        user = user_by_id.get(person_id or "")
+        people_matches.append({
+            "personId": person_id,
+            "matchedLoopUser": user is not None,
+            "loopUserName": display_name(user, show_pii) if user else None,
+        })
+    return speaker_matches, people_matches
+
+
 def iter_json_files(root: Path) -> Iterable[Path]:
     if root.is_file():
         yield root
@@ -76,6 +125,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("capture_path", nargs="?", default="captures/websocket")
     parser.add_argument("--max-examples", type=int, default=20)
+    parser.add_argument("--show-pii", action="store_true", help="Show loop member names in derived match examples. Defaults to redacted.")
     args = parser.parse_args()
 
     root = Path(args.capture_path)
@@ -87,6 +137,8 @@ def main() -> int:
     message_types: Counter[str] = Counter()
     candidate_keys: Counter[str] = Counter()
     examples: dict[str, list[str]] = defaultdict(list)
+    speaker_match_examples: list[str] = []
+    people_present_examples: list[str] = []
     files = 0
     records = 0
 
@@ -102,6 +154,13 @@ def main() -> int:
                     payloads.append(embedded)
                     if isinstance(embedded, dict):
                         message_types[str(embedded.get("type", "unknown"))] += 1
+                        speaker_matches, people_matches = collect_runtime_identity(embedded, args.show_pii)
+                        if speaker_matches and len(speaker_match_examples) < args.max_examples:
+                            event_time = record.get("TimestampUtc") or embedded.get("ts") or "<no timestamp>"
+                            speaker_match_examples.append(f"{path.relative_to(root) if path.is_relative_to(root) else path} @ {event_time}: {json.dumps(speaker_matches, sort_keys=True)}")
+                        if people_matches and len(people_present_examples) < args.max_examples:
+                            event_time = record.get("TimestampUtc") or embedded.get("ts") or "<no timestamp>"
+                            people_present_examples.append(f"{path.relative_to(root) if path.is_relative_to(root) else path} @ {event_time}: {json.dumps(people_matches, sort_keys=True)}")
             for payload in payloads:
                 for key_path, value in walk(payload):
                     key_leaf = key_path.rsplit(".", 1)[-1].lower()
@@ -126,6 +185,14 @@ def main() -> int:
         print(f" - {key}: {count}")
         for example in examples[key][: min(3, args.max_examples)]:
             print(f"   example: {example}")
+    print("\nDerived loop identity matches:")
+    if not speaker_match_examples and not people_present_examples:
+        print(" - none found")
+    for example in speaker_match_examples:
+        print(f" - speaker: {example}")
+    for example in people_present_examples:
+        print(f" - peoplePresent: {example}")
+
     print("\nMapping note:")
     print(" - A stable data.runtime.perception.speaker value that matches an entry in data.runtime.loop.users is enough to map a voice/presence observation to a loop member for demo smoke wiring.")
     print(" - Face recognition should remain manual/demo-seeded until a capture exposes face/person identity metadata, peoplePresent user ids, or a robot-local source path outside the websocket stream is identified.")

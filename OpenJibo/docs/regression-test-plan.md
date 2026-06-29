@@ -209,6 +209,31 @@ Expected:
 - short replies such as `yes`, `no`, `cancel`, and short alarm times should either map correctly or be classified as STT misses with evidence
 - when chasing a flaky `$YESNO` reply, look for the new turn telemetry categories `binary_audio_received`, `binary_audio_ignored`, `yes_no_turn_received`, `yes_no_turn_resolved`, and `yes_no_no_input`; the useful question is whether the short reply still had `AwaitingTurnCompletion = true`, active listen rules, and buffered audio when it hit the finalizer
 
+
+## Current `1.0.20` Loop / Identity Recognition Probe
+
+Goal: turn the promising websocket identity fields into repeatable evidence for the conversion demo without overstating what is live-recognition versus smoke-seeded.
+
+Run this probe at least three times in the same live session, with exact UTC/local timestamps in the operator notes:
+
+1. **Presence without speech**: stand where Jibo can see/hear you, create non-speech noise such as a clap or desk tap, and record whether Jibo turns to look at you. Do not speak until the visual response has settled.
+2. **Voice chit-chat with identity context**: say `hey Jibo, how are you doing today?` or another short social turn and capture whether `data.runtime.perception.speaker` appears near the ASR/NLU turn.
+3. **Personalized greeting probe**: say `hey Jibo, do you know who I am?` and then `hey Jibo, say hello to Jake`. The suggested demo greeting for the cloud path is: `Good to see you, Jake. I am awake, open, and still just Jibo.` Record whether the robot says `Jake`, `Erin`, no name, or a cloud-authored fallback.
+4. **Owner-name carryover check**: if captures still expose the previous owner name (`Erin`) in `data.runtime.loop.users`, classify that as preserved robot-local loop state until we have a safe replacement path. Do not claim the cloud has rewritten the robot's enrolled owner unless a robot-local file/API write proves it.
+5. **Face/presence field check**: inspect `data.runtime.perception.peoplePresent` and nearby `TRIGGER` payloads for member ids, `NOT_TRAINED`, confidence/score fields, or any comparable face/person identifier.
+
+After each pass, run:
+
+```bash
+scripts/cloud/inspect-websocket-recognition-candidates.sh captures/websocket --max-examples 5
+```
+
+Expected scoring:
+
+- A stable `data.runtime.perception.speaker` value that matches `data.runtime.loop.users[].id` is enough to record a voice/presence observation for the managed Azure conversion demo, as long as the video labels it as robot-reported speaker-to-loop-member evidence.
+- A `peoplePresent` value such as `NOT_TRAINED` is useful evidence that the face/presence channel is alive, but it is not yet recognized-person evidence.
+- If the only name in loop state is still `Erin`, use that as proof of preserved legacy robot state, and seed the portal demo with `Jake` from the Open Jibo account/loop record rather than implying the robot has renamed its local owner.
+
 ### Stop And Volume
 
 Goal: prove the added lightweight device-control slice before closing `1.0.18`.

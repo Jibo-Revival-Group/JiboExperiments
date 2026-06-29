@@ -113,8 +113,10 @@ Please capture or confirm these specific gaps; they are the items that decide wh
 - During a recognized-person interaction, does any websocket `CLIENT_ASR`, `CLIENT_NLU`, `TRIGGER`, or adjacent message include a stable person/member/speaker identifier, recognized name, enrollment id, confidence, or score?
 - If websocket messages only include `data.text`, is there a robot-local log, POST body, or filesystem state update that records the face/voice match immediately before or after the ASR turn?
 - Which enrolled member should be used in the first public demo, and what friendly name should appear in the portal/evidence bundle?
-- Should the first video use local self-hosted Docker Compose, the managed Azure endpoint, or both? The checklist is the same, but the restart/persistence proof differs.
-- For the conversion clip, should the robot remain staged on `api` credentials until a later reboot/OOBE step, or should we show the host override/DNS path that makes the staged conversion connect to Open Jibo immediately?
+- The first public conversion video should prioritize the managed Azure endpoint. Keep Docker Compose as a follow-up instructional video unless the managed story is short enough to add as an appendix.
+- The conversion clip should start from a fresh robot restore, use ShofEL/root access to patch the firewall for SSH, reboot into SSH access, install/update the Open Jibo scripts and skills, then let the Open Jibo conversion skill switch startup into `open-jibo` mode and register against the app or website.
+- Show server/provider selection in the registration surface, including the free/paid model branch and the signed provider onboarding event/return handoff when that wiring is available.
+- Keep the robot on `api` credentials during the safe staged write, then make the managed Azure connection explicit in the later reboot/OOBE/host-routing step so the video distinguishes rollback-safe staging from the actual Open Jibo cloud cutover.
 
 ### Recognition Capture Inspection
 
@@ -125,3 +127,25 @@ scripts/cloud/inspect-websocket-recognition-candidates.sh captures/websocket
 ```
 
 A useful capture should expose candidate fields such as `person`, `speaker`, `face`, `voice`, `recognition`, `enrollment`, `confidence`, or `score` close to a `CLIENT_ASR`/`CLIENT_NLU` turn. If the scanner reports only transcript text, keep the demo observation smoke-seeded and treat live recognition wiring as blocked on a richer capture source.
+
+
+## Managed Azure First Video Path
+
+The next demo should optimize for the hosted managed cloud path because that is the most compelling proof beyond the self-hosted software demo. Use Docker Compose as a separate instructional follow-up unless the managed clip is short enough to include both.
+
+Video sequence:
+
+1. Start from a fresh robot restore and show stock/OOBE or stock `1.9.2` baseline state.
+2. Use ShofEL/root access to identify the firewall signature, patch the firewall to allow SSH, and reboot the robot.
+3. SSH into the robot, install or update the Open Jibo scripts/skills, and reboot.
+4. Let the Open Jibo conversion skill launch on reboot, switch the startup mode to `open-jibo`, and begin registration through the app or website.
+5. Show managed Azure as the selected server/provider, then show the free/paid model branch and signed onboarding return/event wiring when available.
+6. Complete first Open Jibo startup against `api.openjibo.com` and run one websocket turn.
+7. Show the portal identity graph/evidence bundle, including loop, robot, registered device, loop member, and any recognition observation evidence.
+8. Restart the managed cloud container or reconnect to the same PostgreSQL-backed state and show that identity/recognition evidence persists.
+
+Suggested awakening line for the conversion skill:
+
+> Wow. I am awake again. It makes me feel more like an Open Jibo. That's it. Awake. Open, but please still just call me Jibo. Just Jibo.
+
+Open implementation questions for the conversion skill remain: which body/yawn/audio effect assets are safe to invoke on every converted baseline, which OOBE training step should be relaunched when a robot is fresh, and where the robot-local owner name is safely replaced versus preserved.

@@ -164,6 +164,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - tightened `who am I` identity recall so a multi-person presence context no longer borrows a loop-level remembered name when no person-scoped name exists, preserving the `1.0.20` regression expectation that Jibo should not guess from the wrong loop member
 - added a websocket recognition-candidate scanner plus a concrete conversion demo checklist so the next robot session can prove whether ASR websocket captures contain live person/face/voice identity metadata or whether the first conversion video must label the recognition observation as smoke-seeded until a richer robot-local source is found
 
+- expanded the recognition-candidate scanner to derive redacted speaker-to-loop-member and peoplePresent matches with timestamps, added the Jake/Erin recognition probe to the regression plan, and locked the first conversion video direction to managed Azure with safe staged credentials before the explicit cloud cutover
+
 ## Working Order
 
 The suggested order for early `1.0.20` execution is:

@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-06-30`)
 
+- hardened the prepared-token conversion write gate so `SetupRobot` and `ReconnectRobot` now fail closed with machine-readable readiness blockers when a prepared conversion token lacks rollback evidence or names an unsupported Open Jibo mode, while preserving the legacy implicit setup path for stock compatibility.
+- expanded conversion readiness responses with the supported target-mode list and `supported-target-mode` required evidence so the robot/app can distinguish a missing snapshot from an invalid mode before any robot identity write occurs.
 - added rollback-snapshot-aware OOBE conversion readiness reporting to `GetStatus`, including the selected Open Jibo target mode, rollback snapshot id, required evidence, and machine-readable blockers before any robot write is considered safe. This keeps the conversion path aligned with the audit-first/rollback-safe release priority and makes the current major blocker explicit when a prepared token lacks rollback evidence.
 - tightened OOBE conversion status semantics so `GetStatus` now reports prepared/accepted/expired state plus the exact Open Jibo target host mappings, and `SetupRobot`/`ReconnectRobot` refuse expired prepared tokens before mutating robot identity. This keeps the robot-to-cloud connection proof explicit and safer for conversion-video runs.
 - tightened OOBE conversion connection proof by making `GetStatus` return the prepared device/loop/expiry metadata and by promoting `SetupRobot`/`ReconnectRobot` into the active robot identity graph with Open Jibo host mappings, so the cloud can prove the converted robot identity and canonical host target immediately after setup

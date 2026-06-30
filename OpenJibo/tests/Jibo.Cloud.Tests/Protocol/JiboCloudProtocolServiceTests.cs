@@ -180,10 +180,18 @@ public sealed class JiboCloudProtocolServiceTests
 
         Assert.Equal(200, status.StatusCode);
         using var statusPayload = JsonDocument.Parse(status.BodyText);
+        Assert.True(statusPayload.RootElement.GetProperty("prepared").GetBoolean());
+        Assert.True(statusPayload.RootElement.GetProperty("accepted").GetBoolean());
         Assert.False(statusPayload.RootElement.GetProperty("complete").GetBoolean());
+        Assert.False(statusPayload.RootElement.GetProperty("expired").GetBoolean());
         Assert.Equal("robot-status", statusPayload.RootElement.GetProperty("deviceId").GetString());
         Assert.Equal("loop-status", statusPayload.RootElement.GetProperty("loopId").GetString());
         Assert.True(statusPayload.RootElement.GetProperty("expires").GetInt64() > 0);
+        Assert.Equal("api.openjibo.com", statusPayload.RootElement.GetProperty("targetHost").GetString());
+        var hostMappings = statusPayload.RootElement.GetProperty("hostMappings");
+        Assert.Equal("api.openjibo.com", hostMappings.GetProperty("api.jibo.com").GetString());
+        Assert.Equal("api.openjibo.com", hostMappings.GetProperty("api-socket.jibo.com").GetString());
+        Assert.Equal("api.openjibo.com", hostMappings.GetProperty("neo-hub.jibo.com").GetString());
     }
 
     [Fact]

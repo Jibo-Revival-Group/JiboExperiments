@@ -8,6 +8,7 @@ These scripts support the first OpenJibo recovery path:
 - audit a mounted robot filesystem for the conversion-relevant config files before any write helper runs
 - orchestrate the Linux conversion flow with audit, plan, and gated apply helpers
 - inspect restored/OOBE robot images for `@be/first-contact`, name-learning, pronoun, and identity-recognition hooks before porting the Open Jibo awakening flow
+- produce a video-ready conversion evidence bundle that ties the rollback-safe harness to cloud loop/member enrollment and recognition smoke evidence
 
 Windows PowerShell wrappers remain available for local staging and analysis, but the robot-facing conversion path is shell-based.
 
@@ -34,6 +35,7 @@ Entry points:
 - `Validate-OpenJiboHarnessRoundTrip.ps1`
 - `Demo-OpenJiboHarness.ps1`
 - `Recommend-OpenJiboHarnessMode.ps1`
+- `record-openjibo-conversion-demo.sh`
 - `Build-LinuxFilesystemFromCopies.ps1`
 - `Inspect-LinuxFilesystemDemo.ps1`
 - `Run-OpenJiboFilesystemDemo.ps1`
@@ -62,3 +64,22 @@ Example:
 ```bash
 ./inspect-openjibo-first-contact.sh --robot-root /path/to/harness-overlay --output-path /tmp/openjibo-first-contact.json
 ```
+
+## Conversion video evidence bundle
+
+Use `record-openjibo-conversion-demo.sh` when preparing a filmed Jibo-to-Open-Jibo conversion. The script stays on a disposable overlay, runs the rollback-validated harness, inspects first-contact and recognition hooks, optionally runs the cloud smoke against `BASE_URL`, and writes a single `conversion-video-manifest.json` plus `conversion-video-blockers.json` for the operator to review before touching a physical robot.
+
+Example:
+
+```bash
+./record-openjibo-conversion-demo.sh \
+  --source-root /path/to/jibo_full_emmc \
+  --overlay-root /tmp/openjibo-demo-overlay \
+  --target-mode open-jibo \
+  --base-url https://api.openjibo.com \
+  --strict \
+  --clean \
+  --output-directory /tmp/openjibo-conversion-video
+```
+
+If the cloud is not running yet, add `--skip-cloud-smoke`; the manifest will mark cloud evidence as skipped so the video cannot accidentally present an unverified connection.

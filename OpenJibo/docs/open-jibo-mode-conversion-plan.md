@@ -263,6 +263,36 @@ The Jibo Revival Group hardware path should be planned beside the scripts, not a
 
 Decision: the helper should be a guided owner-facing recovery appliance. Internally it can transport and run scripts, but the owner experience should be a controlled guided flow that starts on hardware and continues through the robot skill plus website/app onboarding.
 
+### OOBE OTA Bootstrap Discovery (`2026-06-30`)
+
+Maaarcna reported a working prototype that can drive a wiped/OOBE Jibo into OTA without SSH by using the setup QR's static networking fields:
+
+- the OOBE QR payload is plaintext lines in this order: `ssid`, `password`, `staticIP`, `netmask`, `gateway`, `dns1`, `dns2`, and trailing access token
+- when static networking is present, `oobe-config` writes the supplied DNS values into the robot network configuration
+- a controlled DNS server can resolve `api.jibo.com`, NTP pool names, and related stock hosts to a LAN bootstrap server
+- the bootstrap server can present the original `*.jibo.com` GoDaddy certificate and pair it with a small NTP service that answers with a 2017-era clock, letting the robot's old trust store accept the otherwise expired certificate
+- once OOBE reaches the stock update path, the server can answer `GetUpdateFrom(subsystem, fromVersion, filter)` requests and serve per-subsystem OTA tarballs
+- a Jibo release is a manifest plus subsystem tarballs; known apply targets are `os` to the inactive rootfs slot, `services` to `/usr/local`, and `skill` to `/opt/jibo/Jibo/Skills/<name>`
+- each OTA asset still needs correct SHA-1 and Content-Length metadata, and the robot may reboot several times while applying updates
+
+Impact on the conversion plan:
+
+- this becomes a high-priority parallel bootstrap lane, not a replacement for the ShofEL/firewall/SSH lane yet
+- for wiped or intentionally reset OOBE robots, OTA bootstrap may become the lowest-friction owner path because it can start from app plus QR and avoid opening SSH before the robot trusts Open Jibo
+- for non-wiped robots, broken OOBE state, older baselines, or variants where DNS is rewritten after first setup, ShofEL plus firewall/SSH remains the recovery and rollback lane
+- the first OTA package must preserve or install the future Open Jibo trust/region configuration before stock OTA cleanup erases temporary SSH or DNS-only changes
+- the plan should support a local bootstrap appliance profile that can provide QR generation, DNS override, time spoofing, HTTPS with the historical certificate chain, OTA metadata, and OTA package hosting
+- the public hosted cloud should not depend on shipping the historical private key; if the group uses that certificate for lab bootstrap, the owner-facing path needs a safer packaging and disclosure model before release
+
+Immediate questions and blockers:
+
+1. Confirm the provenance, redistribution rights, and security handling of the historical `*.jibo.com` certificate and key before placing any related material in this repository or in an owner-facing tool.
+2. Capture Maaarcna's prototype request/response traces for `PrepareRobot`, `SetupRobot`, `GetStatus`, `GetUpdateFrom`, asset downloads, NTP sync, and post-update verification.
+3. Validate whether OOBE can be launched from a normal boot without wiping owner data, and whether that path still honors QR-provided DNS long enough to run OTA.
+4. Decide how the first Open Jibo OTA package survives the reboot/apply sequence and retargets the robot to `api.openjibo.com` or the selected self-hosted server without relying on the expired stock certificate after conversion.
+5. Build package provenance rules: source packages from known stock OTA/Nexus archives where legal, avoid robot-unique files, and produce reproducible Open Jibo subsystem tarballs with manifest hashes.
+6. Confirm multi-robot behavior for a LAN bootstrap server, including access token handling, per-robot identity issuance, simultaneous OOBE sessions, and rollback if one robot fails mid-update.
+
 Planned helper-device sequence:
 
 1. Owner connects the helper device to the robot's RCM USB path.

@@ -119,6 +119,52 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("robot-configured-123", payload.RootElement.GetProperty("id").GetString());
     }
 
+
+    [Fact]
+    public async Task PlanConversion_IsNonDestructiveAndReportsSelfHostedHostBlocker()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "PlanConversion",
+            BodyText = """{"deviceId":"robot-plan","targetMode":"open-jibo-self-hosted","rollbackSnapshotId":"rollback-plan"}"""
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.True(payload.RootElement.GetProperty("ok").GetBoolean());
+        Assert.False(payload.RootElement.GetProperty("willWriteRobot").GetBoolean());
+        Assert.False(payload.RootElement.GetProperty("canPrepareRobot").GetBoolean());
+        Assert.Equal("open-jibo-self-hosted", payload.RootElement.GetProperty("targetMode").GetString());
+        var readiness = payload.RootElement.GetProperty("conversionReadiness");
+        Assert.Contains(readiness.GetProperty("blockers").EnumerateArray(),
+            blocker => blocker.GetString() == "missing-self-hosted-target-host");
+    }
+
+    [Fact]
+    public async Task PlanConversion_WithManagedModePredictsHostedMappingsWithoutIssuingToken()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "AuditConversion",
+            BodyText = """{"deviceId":"robot-plan-ready","targetMode":"open-jibo","rollbackSnapshotId":"rollback-plan-ready"}"""
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.False(payload.RootElement.GetProperty("willWriteRobot").GetBoolean());
+        Assert.True(payload.RootElement.GetProperty("canPrepareRobot").GetBoolean());
+        Assert.Equal("api.openjibo.com", payload.RootElement.GetProperty("targetHost").GetString());
+        Assert.Equal("api.openjibo.com", payload.RootElement.GetProperty("hostMappings").GetProperty("api.jibo.com").GetString());
+        Assert.Equal("api.openjibo.com", payload.RootElement.GetProperty("hostMappings").GetProperty("api-socket.jibo.com").GetString());
+        Assert.Equal("api.openjibo.com", payload.RootElement.GetProperty("hostMappings").GetProperty("neo-hub.jibo.com").GetString());
+    }
+
     [Fact]
     public async Task PrepareRobot_IssuesOobeTokenAndSetupCompletes()
     {

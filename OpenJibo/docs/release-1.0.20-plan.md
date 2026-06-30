@@ -117,6 +117,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-06-30`)
 
+- added a non-destructive OOBE `PlanConversion` / `AuditConversion` protocol path so conversion tooling can preview target mode, target host mappings, rollback evidence, and machine-readable readiness blockers before issuing a prepared token or writing robot identity. This gives the RCM/video flow an audit-first cloud contract for proving whether a robot is safe to prepare for Open Jibo.
 - tightened self-hosted conversion targeting so prepared `open-jibo-self-hosted` tokens now require an explicit owner-supplied target host before robot writes, while managed and AI modes retain deterministic hosted defaults. Successful self-hosted setup now writes the supplied host into the `api.jibo.com`, `api-socket.jibo.com`, and `neo-hub.jibo.com` mappings that the converted robot will use to connect to the cloud.
 - hardened the prepared-token conversion write gate so `SetupRobot` and `ReconnectRobot` now fail closed with machine-readable readiness blockers when a prepared conversion token lacks rollback evidence or names an unsupported Open Jibo mode, while preserving the legacy implicit setup path for stock compatibility.
 - expanded conversion readiness responses with the supported target-mode list and `supported-target-mode` required evidence so the robot/app can distinguish a missing snapshot from an invalid mode before any robot identity write occurs.

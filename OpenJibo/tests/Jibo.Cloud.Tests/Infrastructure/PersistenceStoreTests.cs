@@ -160,6 +160,11 @@ public sealed class PersistenceStoreTests
                 LastGreetingRoute = "ProactiveGreeting",
                 LastGreetingIntent = "proactive_greeting"
             });
+            var loopMember = firstStore.AddLoopMember("openjibo-default-loop", null, "family@example.com", "Family",
+                "Tester", null, null, false, "adult");
+            var enrolledMember = firstStore.SetMemberEnrollment("openjibo-default-loop", loopMember.Id, true, true);
+            var recognitionObservation = firstStore.RecordRecognitionObservation("openjibo-default-loop",
+                enrolledMember.Id, "Face", "Recognized", 0.93, "conversion-video-smoke");
             var sessionToken = firstStore.IssueRobotToken("robot-123");
             var device = firstStore.GetOrCreateDevice("robot-123", "3.2.1", "4.5.6");
             firstStore.SavePersistedState();
@@ -182,6 +187,16 @@ public sealed class PersistenceStoreTests
                 item => item.PersonId == greetingPresence.PersonId &&
                         item.PreferredName == greetingPresence.PreferredName &&
                         item.LastGreetingRoute == greetingPresence.LastGreetingRoute);
+            var persistedMember = Assert.Single(secondStore.GetLoopMembers("openjibo-default-loop"),
+                item => item.Id == enrolledMember.Id);
+            Assert.True(persistedMember.FaceEnrolled);
+            Assert.True(persistedMember.VoiceEnrolled);
+            var persistedObservation = Assert.Single(secondStore.GetRecognitionObservations("openjibo-default-loop"),
+                item => item.ObservationId == recognitionObservation.ObservationId);
+            Assert.Equal(enrolledMember.Id, persistedObservation.MemberId);
+            Assert.Equal("face", persistedObservation.Modality);
+            Assert.Equal("recognized", persistedObservation.Outcome);
+            Assert.Equal("conversion-video-smoke", persistedObservation.Source);
             Assert.NotNull(secondStore.FindSessionByToken(sessionToken));
             Assert.Equal("3.2.1", secondStore.GetOrCreateDevice(device.DeviceId, null, null).FirmwareVersion);
             Assert.NotEmpty(secondStore.GetPeople());

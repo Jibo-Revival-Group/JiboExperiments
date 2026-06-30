@@ -59,7 +59,8 @@ public sealed class OnboardingReplaySmokeTests
         var prepare = await DispatchAsync("OOBE_20161026", "PrepareRobot", new
         {
             loopId,
-            accountId
+            accountId,
+            rollbackSnapshotId = "smoke-rollback-snapshot"
         });
 
         Assert.Equal(200, prepare.StatusCode);

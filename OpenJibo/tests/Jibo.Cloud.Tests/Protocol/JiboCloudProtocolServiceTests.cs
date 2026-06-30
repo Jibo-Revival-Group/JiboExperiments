@@ -207,7 +207,7 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "OOBE_20160715",
             Operation = "PrepareRobot",
-            BodyText = """{"deviceId":"robot-ready","loopId":"loop-ready","targetMode":"open-jibo-self-hosted","rollbackSnapshotId":"rollback-20260630"}"""
+            BodyText = """{"deviceId":"robot-ready","loopId":"loop-ready","targetMode":"open-jibo-self-hosted","targetHost":"jibo.ready.home.arpa","rollbackSnapshotId":"rollback-20260630"}"""
         });
 
         using var preparePayload = JsonDocument.Parse(prepare.BodyText);
@@ -230,6 +230,72 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.True(readiness.GetProperty("canWriteRobot").GetBoolean());
         Assert.Empty(readiness.GetProperty("blockers").EnumerateArray());
         Assert.Contains(readiness.GetProperty("requiredEvidence").EnumerateArray(), evidence => evidence.GetString() == "rollback-snapshot");
+    }
+
+    [Fact]
+    public async Task GetStatus_RequiresExplicitTargetHostForSelfHostedMode()
+    {
+        var prepare = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"robot-self-hosted","targetMode":"open-jibo-self-hosted","rollbackSnapshotId":"rollback-self-hosted"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var status = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "GetStatus",
+            BodyText = $$"""{"token":"{{token}}"}"""
+        });
+
+        Assert.Equal(200, status.StatusCode);
+        using var statusPayload = JsonDocument.Parse(status.BodyText);
+        Assert.Equal("api.openjibo.com", statusPayload.RootElement.GetProperty("targetHost").GetString());
+        var readiness = statusPayload.RootElement.GetProperty("conversionReadiness");
+        Assert.False(readiness.GetProperty("canWriteRobot").GetBoolean());
+        Assert.Contains(readiness.GetProperty("blockers").EnumerateArray(), blocker => blocker.GetString() == "missing-self-hosted-target-host");
+        Assert.Contains(readiness.GetProperty("requiredEvidence").EnumerateArray(), evidence => evidence.GetString() == "self-hosted-target-host-when-self-hosted");
+    }
+
+    [Fact]
+    public async Task SetupRobot_WithSelfHostedTargetHost_WritesOwnerSuppliedMappings()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"robot-self-hosted-ready","targetMode":"open-jibo-self-hosted","targetHost":"jibo.home.arpa","rollbackSnapshotId":"rollback-self-hosted-ready"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-self-hosted-ready"}"""
+        });
+
+        Assert.Equal(200, setup.StatusCode);
+        var robot = store.GetRobot();
+        Assert.Equal("jibo.home.arpa", robot.HostMappings["api.jibo.com"]);
+        Assert.Equal("jibo.home.arpa", robot.HostMappings["api-socket.jibo.com"]);
+        Assert.Equal("jibo.home.arpa", robot.HostMappings["neo-hub.jibo.com"]);
     }
 
     [Fact]

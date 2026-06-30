@@ -49,6 +49,11 @@ public sealed class JiboCloudProtocolService(
         return string.IsNullOrWhiteSpace(robotId) ? null : robotId.Trim();
     }
 
+    private static string? ReadTargetHost(JsonElement? body)
+    {
+        return ReadString(body, "targetHost") ?? ReadString(body, "apiHost") ?? ReadString(body, "serverHost");
+    }
+
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope)
     {
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
@@ -169,6 +174,7 @@ public sealed class JiboCloudProtocolService(
                 DeviceId = ReadString(body, "deviceId") ?? envelope.DeviceId,
                 LoopId = ReadString(body, "loopId"),
                 TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
+                TargetHost = ReadTargetHost(body),
                 RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
                 ExpiresUtc = expiresUtc
             };
@@ -186,6 +192,11 @@ public sealed class JiboCloudProtocolService(
             var hasTokenState = token is not null && _oobeTokens.TryGetValue(token, out current);
             var expired = hasTokenState && current!.ExpiresUtc <= DateTimeOffset.UtcNow;
             long? expires = hasTokenState ? current!.ExpiresUtc.ToUnixTimeMilliseconds() : null;
+            var requestedTargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode"));
+            var requestedTargetHost = ReadTargetHost(body);
+            var targetMode = hasTokenState ? current!.TargetMode : requestedTargetMode;
+            var targetHost = hasTokenState ? current!.TargetHost : requestedTargetHost;
+
             return ProtocolDispatchResult.Ok(new
             {
                 prepared = hasTokenState,
@@ -194,11 +205,11 @@ public sealed class JiboCloudProtocolService(
                 expired,
                 deviceId = hasTokenState ? current!.DeviceId : null,
                 loopId = hasTokenState ? current!.LoopId : null,
-                targetMode = hasTokenState ? current!.TargetMode : ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
+                targetMode,
                 rollbackSnapshotId = hasTokenState ? current!.RollbackSnapshotId : null,
                 expires,
-                targetHost = ResolveOpenJiboTargetHost(envelope.HostName),
-                hostMappings = BuildRobotHostMappings(envelope.HostName),
+                targetHost = ResolveOpenJiboTargetHost(targetMode, targetHost, envelope.HostName),
+                hostMappings = BuildRobotHostMappings(targetMode, targetHost, envelope.HostName),
                 conversionReadiness = BuildConversionReadiness(hasTokenState ? current : null, expired, envelope.HostName)
             });
         }
@@ -216,6 +227,7 @@ public sealed class JiboCloudProtocolService(
             DeviceId = robotId,
             LoopId = ReadString(body, "loopId"),
             TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
+            TargetHost = ReadTargetHost(body),
             RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
             ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
         });
@@ -237,6 +249,7 @@ public sealed class JiboCloudProtocolService(
         state.DeviceId = robotId;
         state.LoopId ??= ReadString(body, "loopId");
         state.TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode") ?? state.TargetMode);
+        state.TargetHost ??= ReadTargetHost(body);
         state.RollbackSnapshotId ??= ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot");
 
         var registeredDevice =
@@ -253,7 +266,7 @@ public sealed class JiboCloudProtocolService(
             IssuedIdentityId = registeredDevice.IssuedIdentityId,
             BuildHash = registeredDevice.BuildHash,
             ConfigHash = registeredDevice.ConfigHash,
-            HostMappings = BuildRobotHostMappings(envelope.HostName)
+            HostMappings = BuildRobotHostMappings(state.TargetMode, state.TargetHost, envelope.HostName)
         });
 
         if (operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
@@ -268,11 +281,19 @@ public sealed class JiboCloudProtocolService(
         });
     }
 
-    private static string ResolveOpenJiboTargetHost(string hostName)
+    private static string ResolveOpenJiboTargetHost(string targetMode, string? targetHost, string hostName)
     {
-        return string.IsNullOrWhiteSpace(hostName)
-            ? "api.openjibo.com"
-            : hostName.Trim();
+        if (!string.IsNullOrWhiteSpace(targetHost))
+            return targetHost.Trim();
+
+        if (targetMode.Equals("open-jibo-ai", StringComparison.OrdinalIgnoreCase))
+            return "api.openjibo.ai";
+
+        if (targetMode.Equals("open-jibo-developer", StringComparison.OrdinalIgnoreCase) ||
+            targetMode.Equals("open-jibo-self-hosted", StringComparison.OrdinalIgnoreCase))
+            return string.IsNullOrWhiteSpace(hostName) ? string.Empty : hostName.Trim();
+
+        return "api.openjibo.com";
     }
 
     private static string ResolveOpenJiboTargetMode(string? mode)
@@ -304,7 +325,11 @@ public sealed class JiboCloudProtocolService(
             blockers.Add("missing-rollback-snapshot");
         if (state is not null && !SupportedOpenJiboTargetModes.Contains(state.TargetMode))
             blockers.Add("unsupported-target-mode");
-        if (string.IsNullOrWhiteSpace(ResolveOpenJiboTargetHost(hostName)))
+        if (state is not null &&
+            state.TargetMode.Equals("open-jibo-self-hosted", StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(state.TargetHost))
+            blockers.Add("missing-self-hosted-target-host");
+        if (string.IsNullOrWhiteSpace(ResolveOpenJiboTargetHost(state?.TargetMode ?? "open-jibo", state?.TargetHost, hostName)))
             blockers.Add("missing-target-host");
 
         return new ConversionReadiness(blockers);
@@ -326,15 +351,16 @@ public sealed class JiboCloudProtocolService(
                     "prepared-oobe-token",
                     "rollback-snapshot",
                     "target-host-mapping",
-                    "supported-target-mode"
+                    "supported-target-mode",
+                    "self-hosted-target-host-when-self-hosted"
                 }
             };
         }
     }
 
-    private static Dictionary<string, string> BuildRobotHostMappings(string hostName)
+    private static Dictionary<string, string> BuildRobotHostMappings(string targetMode, string? targetHost, string hostName)
     {
-        var resolvedHost = ResolveOpenJiboTargetHost(hostName);
+        var resolvedHost = ResolveOpenJiboTargetHost(targetMode, targetHost, hostName);
 
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -1580,6 +1606,7 @@ public sealed class JiboCloudProtocolService(
         public string? DeviceId { get; set; }
         public string? LoopId { get; set; }
         public string TargetMode { get; set; } = "open-jibo";
+        public string? TargetHost { get; set; }
         public string? RollbackSnapshotId { get; set; }
         public bool Complete { get; set; }
         public DateTimeOffset ExpiresUtc { get; init; }

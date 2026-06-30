@@ -218,7 +218,8 @@ public sealed class JiboCloudProtocolService(
         state.DeviceId = robotId;
         state.LoopId ??= ReadString(body, "loopId");
 
-        var registeredDevice = stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        var registeredDevice =
+            stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
         stateStore.UpdateRobot(new DeviceRegistration
         {
             DeviceId = registeredDevice.DeviceId,

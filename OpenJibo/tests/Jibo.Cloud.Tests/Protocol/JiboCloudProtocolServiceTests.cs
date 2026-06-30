@@ -518,7 +518,8 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "Loop_20160715",
             Operation = "InviteMember",
-            BodyText = """{"loopId":"openjibo-default-loop","email":"recognized@example.com","firstName":"Recognized"}"""
+            BodyText =
+                """{"loopId":"openjibo-default-loop","email":"recognized@example.com","firstName":"Recognized"}"""
         });
 
         using var invitePayload = JsonDocument.Parse(invite.BodyText);
@@ -536,7 +537,8 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "Loop_20160715",
             Operation = "RecordRecognitionObservation",
-            BodyText = $$"""{"loopId":"openjibo-default-loop","memberId":"{{memberId}}","modality":"face","outcome":"recognized","confidence":0.97,"source":"conversion-smoke"}"""
+            BodyText =
+                $$"""{"loopId":"openjibo-default-loop","memberId":"{{memberId}}","modality":"face","outcome":"recognized","confidence":0.97,"source":"conversion-smoke"}"""
         });
 
         Assert.Equal(200, record.StatusCode);
@@ -679,7 +681,7 @@ public sealed class JiboCloudProtocolServiceTests
             bodyText = downloading.BodyText;
             attempts++;
         } while (attempts < 10 && string.IsNullOrWhiteSpace(bodyText));
-        
+
         using var downloadingPayload = JsonDocument.Parse(bodyText);
         Assert.Equal("OK", downloadingPayload.RootElement.GetProperty("status").GetString());
         Assert.Equal(JsonValueKind.Object, downloadingPayload.RootElement.GetProperty("data").ValueKind);

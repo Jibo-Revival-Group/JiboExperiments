@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -457,10 +458,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         var recognitionObservations = GetRecognitionObservations(resolvedLoopId);
         foreach (var observation in recognitionObservations)
-        {
             AddIdentityRelationship(relationships, observation.MemberId, "loop-member",
                 $"{observation.Modality}-recognized-by", observation.RobotId, "robot", resolvedLoopId);
-        }
 
         var evidenceSignals = BuildIdentityGraphEvidenceSignals(resolvedLoopId, _robot, recognitionObservations);
         var contentHash = ComputeIdentityGraphContentHash(_account.AccountId, resolvedLoopId, _robot, people, members,
@@ -666,8 +665,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         string outcome, double? confidence = null, string? source = null)
     {
         if (string.IsNullOrWhiteSpace(loopId)) throw new ArgumentException("Loop id is required.", nameof(loopId));
-        if (string.IsNullOrWhiteSpace(memberId)) throw new ArgumentException("Member id is required.", nameof(memberId));
-        if (string.IsNullOrWhiteSpace(modality)) throw new ArgumentException("Recognition modality is required.", nameof(modality));
+        if (string.IsNullOrWhiteSpace(memberId))
+            throw new ArgumentException("Member id is required.", nameof(memberId));
+        if (string.IsNullOrWhiteSpace(modality))
+            throw new ArgumentException("Recognition modality is required.", nameof(modality));
 
         var member = GetLoopMember(loopId, memberId);
         var normalizedModality = modality.Trim().ToLowerInvariant();
@@ -1343,10 +1344,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AddIdentityEvidenceSignal(signals, "host-mapping", mapping.Key, mapping.Value, loopId);
 
         foreach (var observation in recognitionObservations ?? [])
-        {
             AddIdentityEvidenceSignal(signals, $"recognition-{observation.Modality}", observation.ObservationId,
-                $"{observation.MemberId}:{observation.Outcome}:{observation.Confidence?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unknown"}", loopId);
-        }
+                $"{observation.MemberId}:{observation.Outcome}:{observation.Confidence?.ToString(CultureInfo.InvariantCulture) ?? "unknown"}",
+                loopId);
 
         return signals;
     }

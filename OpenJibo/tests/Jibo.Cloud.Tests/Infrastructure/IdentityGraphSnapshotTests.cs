@@ -1,5 +1,7 @@
-using Jibo.Cloud.Domain.Models;
+using System.Security.Cryptography;
+using System.Text;
 using Jibo.Cloud.Application.Services;
+using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Persistence;
 
 namespace Jibo.Cloud.Tests.Infrastructure;
@@ -894,31 +896,23 @@ public sealed class IdentityGraphSnapshotTests
         var bundleHash = ComputeSha256Hex(payload);
         var signature = SignIdentityGraphPayload(payload);
 
-        return string.Join('\n',
-        [
-            "envelope-version|identity-graph-evidence-envelope-v1",
-            $"bundle-hash|{bundleHash}",
-            "bundle-signature-algorithm|HMAC-SHA256",
-            "bundle-signature-key-id|open-jibo-local-evidence-bundle-v1",
-            $"bundle-signature|{signature}",
-            "payload-begin",
-            payload,
-            "payload-end"
-        ]);
+        return string.Join('\n', "envelope-version|identity-graph-evidence-envelope-v1", $"bundle-hash|{bundleHash}",
+            "bundle-signature-algorithm|HMAC-SHA256", "bundle-signature-key-id|open-jibo-local-evidence-bundle-v1",
+            $"bundle-signature|{signature}", "payload-begin", payload, "payload-end");
     }
 
     private static string ComputeSha256Hex(string payload)
     {
         return Convert.ToHexString(
-            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(payload)))
+                SHA256.HashData(Encoding.UTF8.GetBytes(payload)))
             .ToLowerInvariant();
     }
 
     private static string SignIdentityGraphPayload(string payload)
     {
-        using var hmac = new System.Security.Cryptography.HMACSHA256(
-            System.Text.Encoding.UTF8.GetBytes("open-jibo-local-identity-graph-development-key"));
-        return Convert.ToHexString(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+        using var hmac = new HMACSHA256(
+            Encoding.UTF8.GetBytes("open-jibo-local-identity-graph-development-key"));
+        return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
     }
 
     [Fact]
@@ -953,10 +947,10 @@ public sealed class IdentityGraphSnapshotTests
             var graph = secondStore.GetIdentityGraph(loopId);
 
             Assert.Contains(observations, item => item.ObservationId == observation.ObservationId &&
-                                                 item.MemberId == member.Id &&
-                                                 item.Modality == "face" &&
-                                                 item.Outcome == "recognized" &&
-                                                 item.Source == "conversion-smoke");
+                                                  item.MemberId == member.Id &&
+                                                  item.Modality == "face" &&
+                                                  item.Outcome == "recognized" &&
+                                                  item.Source == "conversion-smoke");
             Assert.Contains(graph.Relationships, relationship =>
                 relationship.SubjectId == member.Id &&
                 relationship.SubjectKind == "loop-member" &&
@@ -976,5 +970,4 @@ public sealed class IdentityGraphSnapshotTests
             if (File.Exists(persistencePath)) File.Delete(persistencePath);
         }
     }
-
 }

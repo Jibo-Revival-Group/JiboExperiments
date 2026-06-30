@@ -5335,8 +5335,10 @@ public sealed class JiboInteractionServiceTests
         {
             Snapshot = new NewsBriefingSnapshot(
                 [
-                    new NewsHeadline("Local robotics team unveils weather-ready helper", "A local team introduced a weather-ready companion robot."),
-                    new NewsHeadline("Community makerspace hosts weekend AI expo", "The weekend expo will feature family-friendly AI demos.")
+                    new NewsHeadline("Local robotics team unveils weather-ready helper",
+                        "A local team introduced a weather-ready companion robot."),
+                    new NewsHeadline("Community makerspace hosts weekend AI expo",
+                        "The weekend expo will feature family-friendly AI demos.")
                 ],
                 "NewsAPI")
         };
@@ -5377,11 +5379,13 @@ public sealed class JiboInteractionServiceTests
                 [
                     new NewsHeadline("Robotics club opens new lab", "Students can use the lab after school."),
                     new NewsHeadline("Robotics club opens new lab", "A duplicate wire item should not be read twice."),
-                    new NewsHeadline("Photo gallery expands", null),
+                    new NewsHeadline("Photo gallery expands"),
                     new NewsHeadline("   ", "A blank headline should not be read."),
-                    new NewsHeadline("Correction: robotics club opens new lab", "The wire corrected the earlier headline."),
+                    new NewsHeadline("Correction: robotics club opens new lab",
+                        "The wire corrected the earlier headline."),
                     new NewsHeadline("Police investigate homicide downtown", "Officials shared more details."),
-                    new NewsHeadline("Family event opens this weekend", "Organizers removed graphic violence from the exhibit.")
+                    new NewsHeadline("Family event opens this weekend",
+                        "Organizers removed graphic violence from the exhibit.")
                 ],
                 "NewsAPI")
         };
@@ -5412,7 +5416,8 @@ public sealed class JiboInteractionServiceTests
         {
             Snapshot = new NewsBriefingSnapshot(
                 [
-                    new NewsHeadline("AI labs unveil new home companion behaviors", "Researchers shared new behaviors for home companion robots.")
+                    new NewsHeadline("AI labs unveil new home companion behaviors",
+                        "Researchers shared new behaviors for home companion robots.")
                 ],
                 "NewsAPI")
         };
@@ -5439,7 +5444,8 @@ public sealed class JiboInteractionServiceTests
         {
             Snapshot = new NewsBriefingSnapshot(
                 [
-                    new NewsHeadline("City soccer clubs prepare for summer playoffs", "Local soccer clubs are preparing for the summer playoff schedule.")
+                    new NewsHeadline("City soccer clubs prepare for summer playoffs",
+                        "Local soccer clubs are preparing for the summer playoff schedule.")
                 ],
                 "NewsAPI")
         };

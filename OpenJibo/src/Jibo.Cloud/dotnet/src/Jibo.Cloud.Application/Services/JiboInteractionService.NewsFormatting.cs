@@ -152,8 +152,6 @@ public sealed partial class JiboInteractionService
         return !NewsUnsafeTermPattern.IsMatch(title) && !NewsUnsafeTermPattern.IsMatch(summary);
     }
 
-    private sealed record FilteredNewsHeadlines(IReadOnlyList<NewsHeadline> Headlines, int SkippedCount);
-
     private static IReadOnlyDictionary<string, object?> BuildNewsProviderDiagnostics(
         string status,
         IReadOnlyList<string> preferredCategories,
@@ -270,4 +268,6 @@ public sealed partial class JiboInteractionService
 
         categories.Add(category);
     }
+
+    private sealed record FilteredNewsHeadlines(IReadOnlyList<NewsHeadline> Headlines, int SkippedCount);
 }

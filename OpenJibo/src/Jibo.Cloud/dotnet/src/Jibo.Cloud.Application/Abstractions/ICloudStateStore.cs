@@ -35,8 +35,10 @@ public interface ICloudStateStore
 
     bool RemoveLoopMember(string loopId, string memberId);
     LoopMemberRecord SetMemberEnrollment(string loopId, string memberId, bool? face, bool? voice);
+
     RecognitionObservationRecord RecordRecognitionObservation(string loopId, string memberId, string modality,
         string outcome, double? confidence = null, string? source = null);
+
     IReadOnlyList<RecognitionObservationRecord> GetRecognitionObservations(string loopId);
     IReadOnlyList<UpdateManifest> ListUpdates(string? subsystem = null, string? filter = null);
     UpdateManifest? GetUpdateFrom(string? subsystem, string? fromVersion, string? filter);

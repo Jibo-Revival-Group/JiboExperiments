@@ -436,6 +436,56 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LoopRecognitionObservation_CanBeListedForConversionSmokeEvidence()
+    {
+        var invite = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160715",
+            Operation = "InviteMember",
+            BodyText = """{"loopId":"openjibo-default-loop","email":"recognized@example.com","firstName":"Recognized"}"""
+        });
+
+        using var invitePayload = JsonDocument.Parse(invite.BodyText);
+        var memberId = invitePayload.RootElement
+            .GetProperty("members")
+            .EnumerateArray()
+            .Single(member =>
+                member.GetProperty("account").GetProperty("email").GetString() == "recognized@example.com")
+            .GetProperty("id")
+            .GetString();
+
+        var record = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160715",
+            Operation = "RecordRecognitionObservation",
+            BodyText = $$"""{"loopId":"openjibo-default-loop","memberId":"{{memberId}}","modality":"face","outcome":"recognized","confidence":0.97,"source":"conversion-smoke"}"""
+        });
+
+        Assert.Equal(200, record.StatusCode);
+
+        var list = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160715",
+            Operation = "ListRecognitionObservations",
+            BodyText = """{"loopId":"openjibo-default-loop"}"""
+        });
+
+        Assert.Equal(200, list.StatusCode);
+        using var listPayload = JsonDocument.Parse(list.BodyText);
+        var observation = Assert.Single(listPayload.RootElement.EnumerateArray());
+        Assert.Equal(memberId, observation.GetProperty("memberId").GetString());
+        Assert.Equal("face", observation.GetProperty("modality").GetString());
+        Assert.Equal("recognized", observation.GetProperty("outcome").GetString());
+        Assert.Equal("conversion-smoke", observation.GetProperty("source").GetString());
+    }
+
+    [Fact]
     public async Task SchedulerStatusEndpoints_DefaultToNotBackingUpAndNoDownload()
     {
         var backupStatus = await _service.DispatchAsync(new ProtocolEnvelope

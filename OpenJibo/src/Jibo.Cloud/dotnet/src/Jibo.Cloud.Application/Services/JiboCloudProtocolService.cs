@@ -165,6 +165,36 @@ public sealed class JiboCloudProtocolService(
         var body = envelope.TryParseBody();
         var token = ReadString(body, "token");
 
+        if (operation.Equals("PlanConversion", StringComparison.OrdinalIgnoreCase) ||
+            operation.Equals("AuditConversion", StringComparison.OrdinalIgnoreCase))
+        {
+            var planState = new OobeTokenState
+            {
+                DeviceId = ReadString(body, "deviceId") ?? envelope.DeviceId,
+                LoopId = ReadString(body, "loopId"),
+                TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
+                TargetHost = ReadTargetHost(body),
+                RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
+            };
+            var planReadiness = EvaluateConversionReadiness(planState, false, envelope.HostName);
+
+            return ProtocolDispatchResult.Ok(new
+            {
+                ok = true,
+                operation,
+                willWriteRobot = false,
+                canPrepareRobot = planReadiness.CanWriteRobot,
+                deviceId = planState.DeviceId,
+                loopId = planState.LoopId,
+                targetMode = planState.TargetMode,
+                targetHost = ResolveOpenJiboTargetHost(planState.TargetMode, planState.TargetHost, envelope.HostName),
+                rollbackSnapshotId = planState.RollbackSnapshotId,
+                hostMappings = BuildRobotHostMappings(planState.TargetMode, planState.TargetHost, envelope.HostName),
+                conversionReadiness = planReadiness.ToResponse()
+            });
+        }
+
         if (operation.Equals("PrepareRobot", StringComparison.OrdinalIgnoreCase))
         {
             var expiresUtc = DateTimeOffset.UtcNow.AddHours(1);

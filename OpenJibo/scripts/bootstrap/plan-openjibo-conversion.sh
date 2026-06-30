@@ -60,7 +60,7 @@ if [[ "$strict" == true ]]; then
   audit_args+=(--strict)
 fi
 
-"$audit_script" "${audit_args[@]}" >/dev/null
+bash "$audit_script" "${audit_args[@]}" >/dev/null
 
 node - "$temp_audit_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict" <<'NODE'
 const fs = require("fs");

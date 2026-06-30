@@ -5,6 +5,8 @@ source_root=""
 overlay_root=""
 target_mode="open-jibo"
 base_url="${BASE_URL:-${BASEURL:-http://localhost:5000}}"
+api_hostname=""
+hub_hostname=""
 output_directory=""
 strict=false
 clean=false
@@ -23,6 +25,8 @@ Builds a video-ready evidence bundle for an Open Jibo conversion dry run:
 Options:
   --target-mode <mode>          open-jibo, open-jibo-ai, open-jibo-self-hosted, or open-jibo-developer (default: open-jibo)
   --base-url <url>              OpenJibo cloud base URL for smoke (default: BASE_URL or http://localhost:5000)
+  --api-hostname <host>         Hostname to stage in robot conversion files (default: host parsed from --base-url)
+  --hub-hostname <host>         Neo hub hostname to stage (default: --api-hostname)
   --output-directory <path>     Evidence output directory (default: mktemp)
   --strict                      Pass strict validation into the conversion harness
   --clean                       Recreate the overlay before running the harness
@@ -36,6 +40,8 @@ while [[ $# -gt 0 ]]; do
     --overlay-root) overlay_root="${2:-}"; shift 2 ;;
     --target-mode) target_mode="${2:-open-jibo}"; shift 2 ;;
     --base-url) base_url="${2:-}"; shift 2 ;;
+    --api-hostname) api_hostname="${2:-}"; shift 2 ;;
+    --hub-hostname) hub_hostname="${2:-}"; shift 2 ;;
     --output-directory) output_directory="${2:-}"; shift 2 ;;
     --strict) strict=true; shift ;;
     --clean) clean=true; shift ;;
@@ -52,6 +58,22 @@ fi
 if [[ -z "$base_url" ]]; then
   echo "--base-url cannot be empty" >&2
   exit 2
+fi
+if [[ -z "$api_hostname" ]]; then
+  api_hostname="$(python3 - "$base_url" <<'PY_HOST'
+from urllib.parse import urlparse
+import sys
+parsed = urlparse(sys.argv[1])
+print(parsed.hostname or parsed.netloc or parsed.path.split('/')[0])
+PY_HOST
+)"
+fi
+if [[ -z "$api_hostname" ]]; then
+  echo "Could not derive --api-hostname from --base-url; pass --api-hostname explicitly" >&2
+  exit 2
+fi
+if [[ -z "$hub_hostname" ]]; then
+  hub_hostname="$api_hostname"
 fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -74,19 +96,19 @@ harness_stdout="$output_directory/harness-demo.stdout.json"
 first_contact_path="$output_directory/first-contact-inspection.json"
 cloud_smoke_path="$output_directory/cloud-smoke.json"
 
-harness_args=(--source-root "$source_root" --overlay-root "$overlay_root" --target-mode "$target_mode" --output-directory "$output_directory/harness")
+harness_args=(--source-root "$source_root" --overlay-root "$overlay_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --hub-hostname "$hub_hostname" --output-directory "$output_directory/harness")
 if [[ "$strict" == true ]]; then harness_args+=(--strict); fi
 if [[ "$clean" == true ]]; then harness_args+=(--clean); fi
 
 {
-  printf '%q ' "$demo_script" "${harness_args[@]}"; printf '\n'
+  printf '%q ' bash "$demo_script" "${harness_args[@]}"; printf '\n'
   printf '%q ' "$inspect_script" --robot-root "$overlay_root" --output-path "$first_contact_path"; printf '\n'
   if [[ "$skip_cloud_smoke" == false ]]; then
     printf 'BASE_URL=%q %q\n' "$base_url" "$cloud_smoke_script"
   fi
 } > "$commands_path"
 
-"$demo_script" "${harness_args[@]}" | tee "$harness_stdout" >/dev/null
+bash "$demo_script" "${harness_args[@]}" | tee "$harness_stdout" >/dev/null
 "$inspect_script" --robot-root "$overlay_root" --output-path "$first_contact_path" >/dev/null
 
 cloud_smoke_status="skipped"
@@ -95,13 +117,13 @@ if [[ "$skip_cloud_smoke" == false ]]; then
   cloud_smoke_status="passed"
 fi
 
-python3 - "$source_root" "$overlay_root" "$target_mode" "$base_url" "$output_directory" "$cloud_smoke_status" <<'PY'
+python3 - "$source_root" "$overlay_root" "$target_mode" "$base_url" "$api_hostname" "$hub_hostname" "$output_directory" "$cloud_smoke_status" <<'PY'
 import json
 import pathlib
 import sys
 from datetime import datetime, timezone
 
-source_root, overlay_root, target_mode, base_url, output_directory, cloud_smoke_status = sys.argv[1:7]
+source_root, overlay_root, target_mode, base_url, api_hostname, hub_hostname, output_directory, cloud_smoke_status = sys.argv[1:9]
 out = pathlib.Path(output_directory)
 
 def load_json(path):
@@ -142,6 +164,8 @@ manifest = {
     "overlayRoot": str(pathlib.Path(overlay_root).resolve()),
     "targetMode": target_mode,
     "baseUrl": base_url,
+    "apiHostname": api_hostname,
+    "hubHostname": hub_hostname,
     "outputs": {
         "commands": str(out / "demo-commands.txt"),
         "harness": str(out / "harness"),
@@ -154,6 +178,7 @@ manifest = {
         "harnessValidated": bool(harness and harness.get("Validated")),
         "firstContactCandidateCount": len(first_contact.get("CandidateSkillRoots", [])) if isinstance(first_contact, dict) else 0,
         "cloudSmokeStatus": cloud_smoke_status,
+        "conversionHostnamesMatchSmokeTarget": api_hostname in base_url or base_url.startswith("http://localhost") or base_url.startswith("https://localhost"),
         "cloudSmokeSteps": [r.get("name") for r in cloud_smoke] if isinstance(cloud_smoke, list) else [],
         "identityRecognitionSmoke": any(r.get("name") == "LoopRecordRecognitionObservation" and r.get("success") for r in cloud_smoke) if isinstance(cloud_smoke, list) else False,
     },

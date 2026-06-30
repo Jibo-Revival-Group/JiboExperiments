@@ -77,9 +77,11 @@ Example:
   --overlay-root /tmp/openjibo-demo-overlay \
   --target-mode open-jibo \
   --base-url https://api.openjibo.com \
+  --api-hostname api.openjibo.com \
+  --hub-hostname api.openjibo.com \
   --strict \
   --clean \
   --output-directory /tmp/openjibo-conversion-video
 ```
 
-If the cloud is not running yet, add `--skip-cloud-smoke`; the manifest will mark cloud evidence as skipped so the video cannot accidentally present an unverified connection.
+If the cloud is not running yet, add `--skip-cloud-smoke`; the manifest will mark cloud evidence as skipped so the video cannot accidentally present an unverified connection. For managed or self-hosted rehearsals, pass `--api-hostname` and `--hub-hostname` so the conversion harness stages the same robot-facing hostnames that the smoke run proves with `--base-url`.

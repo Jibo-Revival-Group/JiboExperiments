@@ -79,7 +79,7 @@ if [[ "$clean" == true ]]; then
   scaffold_args+=(--clean)
 fi
 
-"$scaffold_script" "${scaffold_args[@]}" >/dev/null
+bash "$scaffold_script" "${scaffold_args[@]}" >/dev/null
 
 invoke_args=(--robot-root "$overlay_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-directory "$invoke_output_directory")
 if [[ -n "$hub_hostname" ]]; then
@@ -92,7 +92,7 @@ if [[ "$strict" == true ]]; then
   invoke_args+=(--strict)
 fi
 
-"$invoke_script" "${invoke_args[@]}" >/dev/null
+bash "$invoke_script" "${invoke_args[@]}" >/dev/null
 
 node - "$source_root" "$overlay_root" "$target_mode" "$api_hostname" "${hub_hostname:-$api_hostname}" "$output_directory" "$scaffold_output" "$invoke_output_directory" <<'NODE'
 const fs = require("fs");

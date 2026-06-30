@@ -4,6 +4,8 @@ set -euo pipefail
 source_root=""
 overlay_root=""
 target_mode="open-jibo"
+api_hostname="api.openjibo.com"
+hub_hostname=""
 output_directory=""
 strict=false
 clean=false
@@ -20,6 +22,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --target-mode)
       target_mode="${2:-open-jibo}"
+      shift 2
+      ;;
+    --api-hostname)
+      api_hostname="${2:-api.openjibo.com}"
+      shift 2
+      ;;
+    --hub-hostname)
+      hub_hostname="${2:-}"
       shift 2
       ;;
     --output-directory)
@@ -63,7 +73,10 @@ rollback_output="$output_directory/rollback.json"
 apply_path="$run_output_directory/invoke/conversion-apply.json"
 
 scaffold_args=(--source-root "$source_root" --overlay-root "$overlay_root" --output-path "$scaffold_output")
-run_args=(--source-root "$source_root" --overlay-root "$overlay_root" --target-mode "$target_mode" --output-directory "$run_output_directory" --apply)
+run_args=(--source-root "$source_root" --overlay-root "$overlay_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-directory "$run_output_directory" --apply)
+if [[ -n "$hub_hostname" ]]; then
+  run_args+=(--hub-hostname "$hub_hostname")
+fi
 rollback_args=(--robot-root "$overlay_root" --apply-path "$apply_path" --output-path "$rollback_output")
 
 if [[ "$clean" == true ]]; then
@@ -75,11 +88,11 @@ if [[ "$strict" == true ]]; then
   rollback_args+=(--strict)
 fi
 
-"$scaffold_script" "${scaffold_args[@]}" >/dev/null
-"$run_script" "${run_args[@]}" >/dev/null
-"$rollback_script" "${rollback_args[@]}" >/dev/null
+bash "$scaffold_script" "${scaffold_args[@]}" >/dev/null
+bash "$run_script" "${run_args[@]}" >/dev/null
+bash "$rollback_script" "${rollback_args[@]}" >/dev/null
 
-node - "$source_root" "$overlay_root" "$target_mode" "$output_directory" "$scaffold_output" "$run_output_directory" "$apply_path" "$rollback_output" <<'NODE'
+node - "$source_root" "$overlay_root" "$target_mode" "$api_hostname" "${hub_hostname:-$api_hostname}" "$output_directory" "$scaffold_output" "$run_output_directory" "$apply_path" "$rollback_output" <<'NODE'
 const fs = require("fs");
 const path = require("path");
 
@@ -87,14 +100,16 @@ const summary = {
   SourceRoot: path.resolve(process.argv[2]),
   OverlayRoot: path.resolve(process.argv[3]),
   TargetMode: process.argv[4],
-  OutputDirectory: path.resolve(process.argv[5]),
-  ScaffoldPath: path.resolve(process.argv[6]),
-  RunOutputDirectory: path.resolve(process.argv[7]),
-  ApplyPath: path.resolve(process.argv[8]),
-  RollbackPath: path.resolve(process.argv[9]),
+  ApiHostname: process.argv[5],
+  HubHostname: process.argv[6],
+  OutputDirectory: path.resolve(process.argv[7]),
+  ScaffoldPath: path.resolve(process.argv[8]),
+  RunOutputDirectory: path.resolve(process.argv[9]),
+  ApplyPath: path.resolve(process.argv[10]),
+  RollbackPath: path.resolve(process.argv[11]),
 };
 
 const json = JSON.stringify(summary, null, 2);
-fs.writeFileSync(path.resolve(process.argv[5], "harness-roundtrip.json"), json);
+fs.writeFileSync(path.resolve(process.argv[7], "harness-roundtrip.json"), json);
 console.log(json);
 NODE

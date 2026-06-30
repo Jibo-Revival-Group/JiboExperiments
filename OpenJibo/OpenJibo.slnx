@@ -34,6 +34,7 @@
   </Folder>
   <Folder Name="/docs/architecture/">
     <File Path="docs/architecture/README.md" />
+    <File Path="docs/architecture/telemetry-production-safety.md" />
     <File Path="docs/architecture/turn-boundary-eos-parity.md" />
   </Folder>
   <Folder Name="/docs/DesignDoc/">

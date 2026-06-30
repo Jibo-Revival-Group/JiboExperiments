@@ -187,6 +187,72 @@ add_result(members)
 if not members.success:
     raise SystemExit(f"Loop members failed with status code {members.status_code}: {members.error}")
 
+identity_member_id = None
+if isinstance(members.body, list) and members.body and isinstance(members.body[0], dict):
+    identity_member_id = str(members.body[0].get("id") or "")
+
+if not identity_member_id:
+    invite_member = request_json(
+        "LoopInviteMember",
+        "POST",
+        f"{base_url.rstrip('/')}/",
+        {
+            "X-Amz-Target": "Loop_20160324.InviteMember",
+            "Host": base_host,
+        },
+        {
+            "loopId": loop_id,
+            "email": "openjibo-loop-member@example.com",
+            "firstName": "Loop",
+            "lastName": "Member",
+        },
+    )
+    add_result(invite_member)
+    if not invite_member.success:
+        raise SystemExit(f"Loop invite member failed with status code {invite_member.status_code}: {invite_member.error}")
+    if isinstance(invite_member.body, dict):
+        loop_members = invite_member.body.get("members")
+        if isinstance(loop_members, list) and loop_members and isinstance(loop_members[-1], dict):
+            identity_member_id = str(loop_members[-1].get("id") or "")
+
+if identity_member_id:
+    enrollment = request_json(
+        "LoopSetEnrollment",
+        "POST",
+        f"{base_url.rstrip('/')}/",
+        {
+            "X-Amz-Target": "Loop_20160324.SetEnrollment",
+            "Host": base_host,
+        },
+        {"loopId": loop_id, "id": identity_member_id, "face": True, "voice": True},
+    )
+    add_result(enrollment)
+    if not enrollment.success:
+        raise SystemExit(f"Loop set enrollment failed with status code {enrollment.status_code}: {enrollment.error}")
+
+    recognition = request_json(
+        "LoopRecordRecognitionObservation",
+        "POST",
+        f"{base_url.rstrip('/')}/",
+        {
+            "X-Amz-Target": "Loop_20160324.RecordRecognitionObservation",
+            "Host": base_host,
+        },
+        {
+            "loopId": loop_id,
+            "memberId": identity_member_id,
+            "modality": "face",
+            "outcome": "recognized",
+            "confidence": 0.97,
+            "source": "conversion-smoke",
+        },
+    )
+    add_result(recognition)
+    if not recognition.success:
+        raise SystemExit(
+            f"Loop recognition observation failed with status code {recognition.status_code}: {recognition.error}"
+        )
+
 prepare_body = {"loopId": loop_id}
 if account_id:
     prepare_body["accountId"] = account_id

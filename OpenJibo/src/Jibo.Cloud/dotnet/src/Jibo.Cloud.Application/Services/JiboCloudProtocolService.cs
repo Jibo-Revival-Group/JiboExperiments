@@ -320,6 +320,32 @@ public sealed class JiboCloudProtocolService(
                     ? new { result = "ok" }
                     : MapLoopRecord(loop, stateStore.GetLoopMembers(loopIdForMutation)));
             }
+            case "RecordRecognitionObservation" or "RecordRecognition":
+            {
+                var memberId = ReadString(body, "memberId") ?? ReadString(body, "id") ?? string.Empty;
+                try
+                {
+                    var observation = stateStore.RecordRecognitionObservation(
+                        loopIdForMutation,
+                        memberId,
+                        ReadString(body, "modality") ?? "face",
+                        ReadString(body, "outcome") ?? "recognized",
+                        ReadDouble(body, "confidence"),
+                        ReadString(body, "source") ?? "loop-protocol");
+
+                    return ProtocolDispatchResult.Ok(new
+                    {
+                        result = "ok",
+                        observation = MapRecognitionObservation(observation)
+                    });
+                }
+                catch (InvalidOperationException)
+                {
+                    // Member not found - keep protocol flow moving while surfacing a soft failure
+                    // that conversion smoke clients can display without breaking stock callers.
+                    return ProtocolDispatchResult.Ok(new { result = "member-not-found" });
+                }
+            }
             case "UpdateNickname" or "UpdatePhoneticName":
             {
                 var memberId = ReadString(body, "id") ?? string.Empty;
@@ -374,6 +400,22 @@ public sealed class JiboCloudProtocolService(
             legalGuardianId = member.LegalGuardianId,
             agreementId = member.AgreementId,
             created = member.CreatedUtc.ToUnixTimeMilliseconds()
+        };
+    }
+
+    private static object MapRecognitionObservation(RecognitionObservationRecord observation)
+    {
+        return new
+        {
+            id = observation.ObservationId,
+            loopId = observation.LoopId,
+            memberId = observation.MemberId,
+            robotId = observation.RobotId,
+            modality = observation.Modality,
+            outcome = observation.Outcome,
+            confidence = observation.Confidence,
+            source = observation.Source,
+            observed = observation.ObservedUtc.ToUnixTimeMilliseconds()
         };
     }
 
@@ -1278,6 +1320,15 @@ public sealed class JiboCloudProtocolService(
         if (property.ValueKind == JsonValueKind.Number && property.TryGetInt64(out var number)) return number;
 
         return long.TryParse(property.ToString(), out var parsed) ? parsed : null;
+    }
+
+    private static double? ReadDouble(JsonElement? element, string propertyName)
+    {
+        if (element is null || !element.Value.TryGetProperty(propertyName, out var property)) return null;
+
+        if (property.ValueKind == JsonValueKind.Number && property.TryGetDouble(out var number)) return number;
+
+        return double.TryParse(property.ToString(), out var parsed) ? parsed : null;
     }
 
     private static bool ReadBool(JsonElement? element, string propertyName)

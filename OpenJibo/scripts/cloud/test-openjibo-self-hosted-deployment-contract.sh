@@ -63,6 +63,7 @@ required_smoke_markers=(
   "OOBE_20161026.PrepareRobot"
   "OOBE_20161026.GetStatus"
   "OOBE_20161026.SetupRobot"
+  "rollbackSnapshotId"
 )
 
 required_workflow_markers=(

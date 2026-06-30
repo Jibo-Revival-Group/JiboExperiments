@@ -280,7 +280,7 @@ if identity_member_id:
     ):
         raise SystemExit("Loop recognition observation list did not include the conversion-smoke evidence.")
 
-prepare_body = {"loopId": loop_id}
+prepare_body = {"loopId": loop_id, "rollbackSnapshotId": f"smoke-rollback-{test_robot_id}"}
 if account_id:
     prepare_body["accountId"] = account_id
 

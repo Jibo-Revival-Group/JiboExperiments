@@ -61,7 +61,8 @@ $requiredSmokeMarkers = @(
     "Loop_20160324.ListLoops",
     "OOBE_20161026.PrepareRobot",
     "OOBE_20161026.GetStatus",
-    "OOBE_20161026.SetupRobot"
+    "OOBE_20161026.SetupRobot",
+    "rollbackSnapshotId"
 )
 
 $requiredWorkflowMarkers = @(

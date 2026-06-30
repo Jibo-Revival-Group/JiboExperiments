@@ -80,8 +80,8 @@ if [[ "$strict" == true ]]; then
   plan_args+=(--strict)
 fi
 
-"$audit_script" "${audit_args[@]}" >/dev/null
-"$plan_script" "${plan_args[@]}" >/dev/null
+bash "$audit_script" "${audit_args[@]}" >/dev/null
+bash "$plan_script" "${plan_args[@]}" >/dev/null
 
 applied=false
 if [[ "$apply" == true ]]; then
@@ -92,7 +92,7 @@ if [[ "$apply" == true ]]; then
   if [[ "$strict" == true ]]; then
     apply_args+=(--strict)
   fi
-  "$apply_script" "${apply_args[@]}" >/dev/null
+  bash "$apply_script" "${apply_args[@]}" >/dev/null
   applied=true
 fi
 

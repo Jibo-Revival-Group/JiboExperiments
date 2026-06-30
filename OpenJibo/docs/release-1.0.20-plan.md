@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-06-30`)
 
+- extended the robot-facing loop protocol with a conversion-smoke-safe recognition observation operation so scripts can seed a loop member, mark face/voice enrollment, and record a face-recognition event before checking OOBE setup against the cloud
+- expanded the cloud smoke script to exercise loop/member identity persistence and recognition observation capture before `PrepareRobot`/`SetupRobot`, giving the conversion video a single repeatable path for cloud connection plus identity evidence instead of a separate manual portal step
 - added a non-destructive first-contact/OOBE inspection helper for conversion-video prep so restored/OOBE and stock `1.9.2` images can be scanned for `@be/first-contact`, awakening scene manifests, `name_learning`, `pronoun_`, `WhoAmI`, and recognition hook candidates before any asset or behavior is ported into Open Jibo onboarding
 - connected the first-contact filesystem report to the existing websocket recognition-candidate inspector so loop/member identity persistence can be demonstrated as seeded or speaker-to-loop-member evidence until a live capture proves a stable face/person identifier
 - kept the major blocker explicit: safe body/yawn/audio awakening assets and exact owner-name replacement points still require image-specific review of the reported skill roots plus live regression logs before the conversion video claims full OOBE parity

@@ -179,12 +179,18 @@ public sealed class JiboCloudProtocolService(
         }
 
         if (operation.Equals("GetStatus", StringComparison.OrdinalIgnoreCase))
+        {
+            OobeTokenState? current = null;
+            var hasTokenState = token is not null && _oobeTokens.TryGetValue(token, out current);
+            long? expires = hasTokenState ? current!.ExpiresUtc.ToUnixTimeMilliseconds() : null;
             return ProtocolDispatchResult.Ok(new
             {
-                complete = token is not null &&
-                           _oobeTokens.TryGetValue(token, out var current) &&
-                           current.Complete
+                complete = hasTokenState && current!.Complete,
+                deviceId = hasTokenState ? current!.DeviceId : null,
+                loopId = hasTokenState ? current!.LoopId : null,
+                expires
             });
+        }
 
         if (!operation.Equals("SetupRobot", StringComparison.OrdinalIgnoreCase) &&
             !operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
@@ -197,12 +203,28 @@ public sealed class JiboCloudProtocolService(
         var state = _oobeTokens.GetOrAdd(token ?? "oobe-implicit", _ => new OobeTokenState
         {
             DeviceId = robotId,
+            LoopId = ReadString(body, "loopId"),
             ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
         });
         state.Complete = true;
         state.DeviceId = robotId;
+        state.LoopId ??= ReadString(body, "loopId");
 
-        stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        var registeredDevice = stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        stateStore.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = registeredDevice.DeviceId,
+            RobotId = registeredDevice.RobotId,
+            FriendlyName = registeredDevice.FriendlyName,
+            FirmwareVersion = registeredDevice.FirmwareVersion,
+            ApplicationVersion = registeredDevice.ApplicationVersion,
+            IsActive = registeredDevice.IsActive,
+            CertificateThumbprint = registeredDevice.CertificateThumbprint,
+            IssuedIdentityId = registeredDevice.IssuedIdentityId,
+            BuildHash = registeredDevice.BuildHash,
+            ConfigHash = registeredDevice.ConfigHash,
+            HostMappings = BuildRobotHostMappings(envelope.HostName)
+        });
 
         if (operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new { result = "ok" });
@@ -214,6 +236,20 @@ public sealed class JiboCloudProtocolService(
             secretAccessKey = account.SecretAccessKey,
             serviceMode = false
         });
+    }
+
+    private static Dictionary<string, string> BuildRobotHostMappings(string hostName)
+    {
+        var resolvedHost = string.IsNullOrWhiteSpace(hostName)
+            ? "api.openjibo.com"
+            : hostName.Trim();
+
+        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["api.jibo.com"] = resolvedHost,
+            ["api-socket.jibo.com"] = resolvedHost,
+            ["neo-hub.jibo.com"] = resolvedHost
+        };
     }
 
     private ProtocolDispatchResult HandleLoop(string operation, ProtocolEnvelope envelope)
@@ -1450,7 +1486,7 @@ public sealed class JiboCloudProtocolService(
     private sealed class OobeTokenState
     {
         public string? DeviceId { get; set; }
-        public string? LoopId { get; init; }
+        public string? LoopId { get; set; }
         public bool Complete { get; set; }
         public DateTimeOffset ExpiresUtc { get; init; }
     }

@@ -155,6 +155,72 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task GetStatus_ReturnsPreparedConversionMetadata()
+    {
+        var prepare = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"robot-status","loopId":"loop-status"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var status = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "GetStatus",
+            BodyText = $$"""{"token":"{{token}}"}"""
+        });
+
+        Assert.Equal(200, status.StatusCode);
+        using var statusPayload = JsonDocument.Parse(status.BodyText);
+        Assert.False(statusPayload.RootElement.GetProperty("complete").GetBoolean());
+        Assert.Equal("robot-status", statusPayload.RootElement.GetProperty("deviceId").GetString());
+        Assert.Equal("loop-status", statusPayload.RootElement.GetProperty("loopId").GetString());
+        Assert.True(statusPayload.RootElement.GetProperty("expires").GetInt64() > 0);
+    }
+
+    [Fact]
+    public async Task SetupRobot_UpdatesIdentityGraphRobotAndOpenJiboHostMappings()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            FirmwareVersion = "1.9.2",
+            ApplicationVersion = "1.0.20",
+            BodyText = """{"id":"robot-converted"}"""
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        var robot = store.GetRobot();
+        Assert.Equal("robot-converted", robot.DeviceId);
+        Assert.Equal("robot-robot-converted", robot.RobotId);
+        Assert.Equal("1.9.2", robot.FirmwareVersion);
+        Assert.Equal("1.0.20", robot.ApplicationVersion);
+        Assert.Equal("api.openjibo.com", robot.HostMappings["api.jibo.com"]);
+        Assert.Equal("api.openjibo.com", robot.HostMappings["api-socket.jibo.com"]);
+        Assert.Equal("api.openjibo.com", robot.HostMappings["neo-hub.jibo.com"]);
+
+        var snapshot = store.GetIdentityGraph();
+        Assert.Contains(snapshot.EvidenceSignals, signal =>
+            signal.SignalKind == "host-mapping" &&
+            signal.SignalId == "api.jibo.com" &&
+            signal.Value == "api.openjibo.com");
+    }
+
+    [Fact]
     public async Task ReconnectRobot_WithPreparedToken_ReturnsOk()
     {
         var prepare = await _service.DispatchAsync(new ProtocolEnvelope

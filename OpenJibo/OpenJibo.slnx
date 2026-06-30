@@ -79,6 +79,7 @@
     <File Path="scripts/bootstrap/Plan-OpenJiboConversion.ps1" />
     <File Path="scripts/bootstrap/README.md" />
     <File Path="scripts/bootstrap/recommend-openjibo-harness-mode.sh" />
+    <File Path="scripts/bootstrap/record-openjibo-conversion-demo.sh" />
     <File Path="scripts/bootstrap/Recommend-OpenJiboHarnessMode.ps1" />
     <File Path="scripts/bootstrap/rollback-openjibo-conversion.sh" />
     <File Path="scripts/bootstrap/Rollback-OpenJiboConversion.ps1" />

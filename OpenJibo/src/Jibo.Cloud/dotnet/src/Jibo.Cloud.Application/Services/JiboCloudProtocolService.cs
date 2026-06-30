@@ -221,6 +221,18 @@ public sealed class JiboCloudProtocolService(
         });
         if (state.ExpiresUtc <= DateTimeOffset.UtcNow)
             return ProtocolDispatchResult.Raw(410, "{\"error\":\"oobe token expired\"}", "application/json");
+
+        var hasPreparedToken = token is not null && _oobeTokens.ContainsKey(token);
+        var readiness = EvaluateConversionReadiness(hasPreparedToken ? state : null, false, envelope.HostName);
+        if (hasPreparedToken && !readiness.CanWriteRobot)
+        {
+            return ProtocolDispatchResult.Raw(409, JsonSerializer.Serialize(new
+            {
+                error = "conversion readiness blocked",
+                conversionReadiness = readiness.ToResponse()
+            }), "application/json");
+        }
+
         state.Complete = true;
         state.DeviceId = robotId;
         state.LoopId ??= ReadString(body, "loopId");
@@ -268,7 +280,20 @@ public sealed class JiboCloudProtocolService(
         return string.IsNullOrWhiteSpace(mode) ? "open-jibo" : mode.Trim().ToLowerInvariant();
     }
 
+    private static readonly HashSet<string> SupportedOpenJiboTargetModes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "open-jibo",
+        "open-jibo-ai",
+        "open-jibo-self-hosted",
+        "open-jibo-developer"
+    };
+
     private static object BuildConversionReadiness(OobeTokenState? state, bool expired, string hostName)
+    {
+        return EvaluateConversionReadiness(state, expired, hostName).ToResponse();
+    }
+
+    private static ConversionReadiness EvaluateConversionReadiness(OobeTokenState? state, bool expired, string hostName)
     {
         var blockers = new List<string>();
         if (state is null)
@@ -277,20 +302,34 @@ public sealed class JiboCloudProtocolService(
             blockers.Add("expired-prepared-oobe-token");
         if (state is not null && string.IsNullOrWhiteSpace(state.RollbackSnapshotId))
             blockers.Add("missing-rollback-snapshot");
+        if (state is not null && !SupportedOpenJiboTargetModes.Contains(state.TargetMode))
+            blockers.Add("unsupported-target-mode");
         if (string.IsNullOrWhiteSpace(ResolveOpenJiboTargetHost(hostName)))
             blockers.Add("missing-target-host");
 
-        return new
+        return new ConversionReadiness(blockers);
+    }
+
+    private sealed record ConversionReadiness(IReadOnlyList<string> Blockers)
+    {
+        public bool CanWriteRobot => Blockers.Count == 0;
+
+        public object ToResponse()
         {
-            canWriteRobot = blockers.Count == 0,
-            blockers,
-            requiredEvidence = new[]
+            return new
             {
-                "prepared-oobe-token",
-                "rollback-snapshot",
-                "target-host-mapping"
-            }
-        };
+                canWriteRobot = CanWriteRobot,
+                blockers = Blockers,
+                supportedTargetModes = SupportedOpenJiboTargetModes.Order(StringComparer.OrdinalIgnoreCase).ToArray(),
+                requiredEvidence = new[]
+                {
+                    "prepared-oobe-token",
+                    "rollback-snapshot",
+                    "target-host-mapping",
+                    "supported-target-mode"
+                }
+            };
+        }
     }
 
     private static Dictionary<string, string> BuildRobotHostMappings(string hostName)

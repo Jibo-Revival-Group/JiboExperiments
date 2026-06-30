@@ -253,6 +253,33 @@ if identity_member_id:
             f"Loop recognition observation failed with status code {recognition.status_code}: {recognition.error}"
         )
 
+    recognition_list = request_json(
+        "LoopListRecognitionObservations",
+        "POST",
+        f"{base_url.rstrip('/')}/",
+        {
+            "X-Amz-Target": "Loop_20160324.ListRecognitionObservations",
+            "Host": base_host,
+        },
+        {"loopId": loop_id},
+    )
+    add_result(recognition_list)
+    if not recognition_list.success:
+        raise SystemExit(
+            f"Loop recognition observation list failed with status code {recognition_list.status_code}: "
+            f"{recognition_list.error}"
+        )
+    if not (
+        isinstance(recognition_list.body, list)
+        and any(
+            isinstance(observation, dict)
+            and str(observation.get("memberId") or "") == identity_member_id
+            and str(observation.get("source") or "") == "conversion-smoke"
+            for observation in recognition_list.body
+        )
+    ):
+        raise SystemExit("Loop recognition observation list did not include the conversion-smoke evidence.")
+
 prepare_body = {"loopId": loop_id}
 if account_id:
     prepare_body["accountId"] = account_id

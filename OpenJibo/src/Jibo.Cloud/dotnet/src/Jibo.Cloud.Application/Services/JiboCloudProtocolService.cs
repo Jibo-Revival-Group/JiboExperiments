@@ -233,6 +233,20 @@ public sealed class JiboCloudProtocolService(
             return ProtocolDispatchResult.Ok(members);
         }
 
+        if (operation is "ListRecognitionObservations" or "ListRecognitions")
+        {
+            var listBody = envelope.TryParseBody();
+            var loopId = ReadString(listBody, "loopId") ??
+                         ReadString(listBody, "id") ??
+                         stateStore.GetLoops().FirstOrDefault()?.LoopId;
+
+            var observations = stateStore.GetRecognitionObservations(loopId ?? string.Empty)
+                .Select(MapRecognitionObservation)
+                .ToArray();
+
+            return ProtocolDispatchResult.Ok(observations);
+        }
+
         var body = envelope.TryParseBody();
         var loopIdForMutation = ReadString(body, "loopId") ??
                                 ReadString(body, "id") ??

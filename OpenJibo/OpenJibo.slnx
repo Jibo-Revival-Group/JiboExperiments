@@ -71,6 +71,7 @@
     <File Path="scripts/bootstrap/Discover-JiboHosts.ps1" />
     <File Path="scripts/bootstrap/Generate-JiboDnsOverrides.ps1" />
     <File Path="scripts/bootstrap/inspect-linux-filesystem-demo.sh" />
+    <File Path="scripts/bootstrap/inspect-openjibo-first-contact.sh" />
     <File Path="scripts/bootstrap/Inspect-LinuxFilesystemDemo.ps1" />
     <File Path="scripts/bootstrap/invoke-openjibo-conversion.sh" />
     <File Path="scripts/bootstrap/Invoke-OpenJiboConversion.ps1" />

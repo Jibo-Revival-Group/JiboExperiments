@@ -7,6 +7,7 @@ These scripts support the first OpenJibo recovery path:
 - verify that the robot-facing domains resolve and answer as expected
 - audit a mounted robot filesystem for the conversion-relevant config files before any write helper runs
 - orchestrate the Linux conversion flow with audit, plan, and gated apply helpers
+- inspect restored/OOBE robot images for `@be/first-contact`, name-learning, pronoun, and identity-recognition hooks before porting the Open Jibo awakening flow
 
 Windows PowerShell wrappers remain available for local staging and analysis, but the robot-facing conversion path is shell-based.
 
@@ -50,4 +51,14 @@ Example:
 .\Build-LinuxFilesystemFromCopies.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OutputRoot C:\Projects\JiboExperiments\artifacts\linux-fs-demo -Clean
 .\Inspect-LinuxFilesystemDemo.ps1 -OutputRoot C:\Projects\JiboExperiments\artifacts\linux-fs-demo5
 .\Run-OpenJiboFilesystemDemo.ps1 -DemoRoot C:\Projects\JiboExperiments\artifacts\linux-fs-demo5\demo-root -Strict
+```
+
+## First-contact / identity inspection
+
+Use `inspect-openjibo-first-contact.sh` against a mounted or scaffolded robot root before scripting the conversion video. It does not modify the image; it reports candidate `@be/first-contact`/OOBE skill roots plus targeted matches for `name_learning`, `pronoun_`, `WhoAmI`, and recognition-related payloads. Pair the output with `scripts/cloud/inspect-websocket-recognition-candidates.py` from a live capture before labeling a demo as stable face/person recognition.
+
+Example:
+
+```bash
+./inspect-openjibo-first-contact.sh --robot-root /path/to/harness-overlay --output-path /tmp/openjibo-first-contact.json
 ```

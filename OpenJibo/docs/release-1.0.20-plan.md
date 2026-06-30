@@ -114,6 +114,13 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - keep Loop advancement, family/friend recognition, and multiple Jibo support in the same platform track so the network and identity model stays future-proof
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 
+
+### Progress Update (`2026-06-30`)
+
+- added a non-destructive first-contact/OOBE inspection helper for conversion-video prep so restored/OOBE and stock `1.9.2` images can be scanned for `@be/first-contact`, awakening scene manifests, `name_learning`, `pronoun_`, `WhoAmI`, and recognition hook candidates before any asset or behavior is ported into Open Jibo onboarding
+- connected the first-contact filesystem report to the existing websocket recognition-candidate inspector so loop/member identity persistence can be demonstrated as seeded or speaker-to-loop-member evidence until a live capture proves a stable face/person identifier
+- kept the major blocker explicit: safe body/yawn/audio awakening assets and exact owner-name replacement points still require image-specific review of the reported skill roots plus live regression logs before the conversion video claims full OOBE parity
+
 ### Progress Update (`2026-06-24`)
 
 - kept loop/identity recognition advancement in the platform track by persisting robot recognition observations, projecting them into signed identity graph relationships, and carrying recognition evidence summaries into offline retention bundles so conversion smoke runs can prove enrollment plus recognition state survives a cloud restart before peer replication exists

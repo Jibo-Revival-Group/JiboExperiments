@@ -182,13 +182,19 @@ public sealed class JiboCloudProtocolService(
         {
             OobeTokenState? current = null;
             var hasTokenState = token is not null && _oobeTokens.TryGetValue(token, out current);
+            var expired = hasTokenState && current!.ExpiresUtc <= DateTimeOffset.UtcNow;
             long? expires = hasTokenState ? current!.ExpiresUtc.ToUnixTimeMilliseconds() : null;
             return ProtocolDispatchResult.Ok(new
             {
-                complete = hasTokenState && current!.Complete,
+                prepared = hasTokenState,
+                accepted = hasTokenState && !expired,
+                complete = hasTokenState && !expired && current!.Complete,
+                expired,
                 deviceId = hasTokenState ? current!.DeviceId : null,
                 loopId = hasTokenState ? current!.LoopId : null,
-                expires
+                expires,
+                targetHost = ResolveOpenJiboTargetHost(envelope.HostName),
+                hostMappings = BuildRobotHostMappings(envelope.HostName)
             });
         }
 
@@ -206,6 +212,8 @@ public sealed class JiboCloudProtocolService(
             LoopId = ReadString(body, "loopId"),
             ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
         });
+        if (state.ExpiresUtc <= DateTimeOffset.UtcNow)
+            return ProtocolDispatchResult.Raw(410, "{\"error\":\"oobe token expired\"}", "application/json");
         state.Complete = true;
         state.DeviceId = robotId;
         state.LoopId ??= ReadString(body, "loopId");
@@ -238,11 +246,16 @@ public sealed class JiboCloudProtocolService(
         });
     }
 
-    private static Dictionary<string, string> BuildRobotHostMappings(string hostName)
+    private static string ResolveOpenJiboTargetHost(string hostName)
     {
-        var resolvedHost = string.IsNullOrWhiteSpace(hostName)
+        return string.IsNullOrWhiteSpace(hostName)
             ? "api.openjibo.com"
             : hostName.Trim();
+    }
+
+    private static Dictionary<string, string> BuildRobotHostMappings(string hostName)
+    {
+        var resolvedHost = ResolveOpenJiboTargetHost(hostName);
 
         return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {

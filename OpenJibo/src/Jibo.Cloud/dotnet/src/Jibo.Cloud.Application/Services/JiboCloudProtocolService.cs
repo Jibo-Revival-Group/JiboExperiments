@@ -168,6 +168,8 @@ public sealed class JiboCloudProtocolService(
             {
                 DeviceId = ReadString(body, "deviceId") ?? envelope.DeviceId,
                 LoopId = ReadString(body, "loopId"),
+                TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
+                RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
                 ExpiresUtc = expiresUtc
             };
 
@@ -192,9 +194,12 @@ public sealed class JiboCloudProtocolService(
                 expired,
                 deviceId = hasTokenState ? current!.DeviceId : null,
                 loopId = hasTokenState ? current!.LoopId : null,
+                targetMode = hasTokenState ? current!.TargetMode : ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
+                rollbackSnapshotId = hasTokenState ? current!.RollbackSnapshotId : null,
                 expires,
                 targetHost = ResolveOpenJiboTargetHost(envelope.HostName),
-                hostMappings = BuildRobotHostMappings(envelope.HostName)
+                hostMappings = BuildRobotHostMappings(envelope.HostName),
+                conversionReadiness = BuildConversionReadiness(hasTokenState ? current : null, expired, envelope.HostName)
             });
         }
 
@@ -210,6 +215,8 @@ public sealed class JiboCloudProtocolService(
         {
             DeviceId = robotId,
             LoopId = ReadString(body, "loopId"),
+            TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
+            RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
             ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
         });
         if (state.ExpiresUtc <= DateTimeOffset.UtcNow)
@@ -217,6 +224,8 @@ public sealed class JiboCloudProtocolService(
         state.Complete = true;
         state.DeviceId = robotId;
         state.LoopId ??= ReadString(body, "loopId");
+        state.TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode") ?? state.TargetMode);
+        state.RollbackSnapshotId ??= ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot");
 
         var registeredDevice =
             stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
@@ -252,6 +261,36 @@ public sealed class JiboCloudProtocolService(
         return string.IsNullOrWhiteSpace(hostName)
             ? "api.openjibo.com"
             : hostName.Trim();
+    }
+
+    private static string ResolveOpenJiboTargetMode(string? mode)
+    {
+        return string.IsNullOrWhiteSpace(mode) ? "open-jibo" : mode.Trim().ToLowerInvariant();
+    }
+
+    private static object BuildConversionReadiness(OobeTokenState? state, bool expired, string hostName)
+    {
+        var blockers = new List<string>();
+        if (state is null)
+            blockers.Add("missing-prepared-oobe-token");
+        else if (expired)
+            blockers.Add("expired-prepared-oobe-token");
+        if (state is not null && string.IsNullOrWhiteSpace(state.RollbackSnapshotId))
+            blockers.Add("missing-rollback-snapshot");
+        if (string.IsNullOrWhiteSpace(ResolveOpenJiboTargetHost(hostName)))
+            blockers.Add("missing-target-host");
+
+        return new
+        {
+            canWriteRobot = blockers.Count == 0,
+            blockers,
+            requiredEvidence = new[]
+            {
+                "prepared-oobe-token",
+                "rollback-snapshot",
+                "target-host-mapping"
+            }
+        };
     }
 
     private static Dictionary<string, string> BuildRobotHostMappings(string hostName)
@@ -1501,6 +1540,8 @@ public sealed class JiboCloudProtocolService(
     {
         public string? DeviceId { get; set; }
         public string? LoopId { get; set; }
+        public string TargetMode { get; set; } = "open-jibo";
+        public string? RollbackSnapshotId { get; set; }
         public bool Complete { get; set; }
         public DateTimeOffset ExpiresUtc { get; init; }
     }

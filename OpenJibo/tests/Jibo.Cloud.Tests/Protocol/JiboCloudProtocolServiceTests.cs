@@ -186,12 +186,50 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.False(statusPayload.RootElement.GetProperty("expired").GetBoolean());
         Assert.Equal("robot-status", statusPayload.RootElement.GetProperty("deviceId").GetString());
         Assert.Equal("loop-status", statusPayload.RootElement.GetProperty("loopId").GetString());
+        Assert.Equal("open-jibo", statusPayload.RootElement.GetProperty("targetMode").GetString());
         Assert.True(statusPayload.RootElement.GetProperty("expires").GetInt64() > 0);
         Assert.Equal("api.openjibo.com", statusPayload.RootElement.GetProperty("targetHost").GetString());
+        var readiness = statusPayload.RootElement.GetProperty("conversionReadiness");
+        Assert.False(readiness.GetProperty("canWriteRobot").GetBoolean());
+        Assert.Contains(readiness.GetProperty("blockers").EnumerateArray(), blocker => blocker.GetString() == "missing-rollback-snapshot");
         var hostMappings = statusPayload.RootElement.GetProperty("hostMappings");
         Assert.Equal("api.openjibo.com", hostMappings.GetProperty("api.jibo.com").GetString());
         Assert.Equal("api.openjibo.com", hostMappings.GetProperty("api-socket.jibo.com").GetString());
         Assert.Equal("api.openjibo.com", hostMappings.GetProperty("neo-hub.jibo.com").GetString());
+    }
+
+    [Fact]
+    public async Task GetStatus_ReturnsReadyWhenPreparedWithRollbackSnapshotAndMode()
+    {
+        var prepare = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"robot-ready","loopId":"loop-ready","targetMode":"open-jibo-self-hosted","rollbackSnapshotId":"rollback-20260630"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var status = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "GetStatus",
+            BodyText = $$"""{"token":"{{token}}"}"""
+        });
+
+        Assert.Equal(200, status.StatusCode);
+        using var statusPayload = JsonDocument.Parse(status.BodyText);
+        Assert.Equal("open-jibo-self-hosted", statusPayload.RootElement.GetProperty("targetMode").GetString());
+        Assert.Equal("rollback-20260630", statusPayload.RootElement.GetProperty("rollbackSnapshotId").GetString());
+        var readiness = statusPayload.RootElement.GetProperty("conversionReadiness");
+        Assert.True(readiness.GetProperty("canWriteRobot").GetBoolean());
+        Assert.Empty(readiness.GetProperty("blockers").EnumerateArray());
+        Assert.Contains(readiness.GetProperty("requiredEvidence").EnumerateArray(), evidence => evidence.GetString() == "rollback-snapshot");
     }
 
     [Fact]

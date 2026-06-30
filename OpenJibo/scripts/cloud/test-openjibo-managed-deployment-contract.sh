@@ -189,7 +189,7 @@ if [[ "$smoke_script_text" == *'Host = "api.jibo.com"'* ]]; then
   exit 1
 fi
 
-for marker in "request_json_with_retry"; do
+for marker in "request_json_with_retry" "rollbackSnapshotId"; do
   if [[ "$linux_smoke_script_text" != *"$marker"* ]]; then
     echo "Linux smoke script is missing retry marker: $marker" >&2
     exit 1

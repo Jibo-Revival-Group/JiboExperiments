@@ -156,7 +156,7 @@ if ($smokeScriptText -match [regex]::Escape('Host = "api.jibo.com"')) {
     throw "Managed smoke script still hardcodes the api.jibo.com host header."
 }
 
-foreach ($marker in @("Invoke-JsonRequestWithRetry")) {
+foreach ($marker in @("Invoke-JsonRequestWithRetry", "rollbackSnapshotId")) {
     Assert-ContainsMarker -Text $smokeScriptText -Marker $marker -FailurePrefix "Managed smoke script is missing retry marker"
 }
 

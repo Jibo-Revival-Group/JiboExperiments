@@ -167,7 +167,7 @@ if (-not $members.Success) {
     throw "Loop members failed with status code $($members.StatusCode): $($members.Error)"
 }
 
-$prepareBody = @{ loopId = $loopId }
+$prepareBody = @{ loopId = $loopId; rollbackSnapshotId = "smoke-rollback-$TestRobotId" }
 if ($accountId) {
     $prepareBody.accountId = $accountId
 }

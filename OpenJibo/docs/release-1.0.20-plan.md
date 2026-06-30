@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-06-30`)
 
+- tightened the conversion-video persistence proof by extending the cloud-state round-trip regression to include loop member creation, face/voice enrollment flags, and a recognition observation with source evidence, so a smoke run can survive process restart instead of only proving in-memory state
+
 - added a video-ready conversion evidence bundle script that records the exact harness, first-contact inspection, and cloud-smoke commands, emits a manifest with loop/member recognition smoke evidence, and surfaces unresolved physical-device, awakening-asset, and face-recognition blockers before a real robot is written
 - extended the robot-facing loop protocol with a conversion-smoke-safe recognition observation operation so scripts can seed a loop member, mark face/voice enrollment, and record a face-recognition event before checking OOBE setup against the cloud
 - expanded the cloud smoke script to exercise loop/member identity persistence and recognition observation capture before `PrepareRobot`/`SetupRobot`, giving the conversion video a single repeatable path for cloud connection plus identity evidence instead of a separate manual portal step

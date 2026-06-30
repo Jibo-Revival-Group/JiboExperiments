@@ -1095,6 +1095,8 @@ For `1.0.20` and beyond:
 3. Hardware-assisted "easy button" conversion
    - work with the Jibo Revival Group on a USB/RCM-based helper path
    - keep the file-system modification flow repeatable and safe for owners or testers
+   - add Maaarcna's OOBE OTA bootstrap as a parallel candidate mode: QR-provided DNS, controlled LAN DNS/NTP/HTTPS, and stock OTA metadata may convert wiped/OOBE robots without SSH, while ShofEL/firewall/SSH remains required for rescue, rollback, non-wipe, and unproven variants
+   - open blockers: certificate/key provenance and safe handling, repeatable request traces, legal stock package sourcing, first Open Jibo OTA package shape, multi-robot session handling, and whether normal-boot OOBE can run without wiping owner data
    - status: `discovery`
 4. Cloud deployment and CI/CD
    - set up the hosted cloud for deployment into the Azure environment

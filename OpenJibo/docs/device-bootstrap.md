@@ -21,6 +21,27 @@ The extracted-image file map lives in [robot-image-script-map.md](robot-image-sc
 - it keeps the hosted cloud work grounded in real device traffic
 - it avoids blocking the entire revival on OTA before cloud compatibility exists
 
+## Parallel OOBE OTA Bootstrap Candidate
+
+The Jibo Revival Group now has a promising OOBE-first OTA path under test. It does not replace the supported path above yet, but it changes the planning priority because it may let a wiped or OOBE-started robot reach Open Jibo with app plus QR setup instead of ShofEL/firewall/SSH first.
+
+Candidate sequence:
+
+1. Generate the OOBE setup QR with Wi-Fi plus static network fields, placing the bootstrap appliance IP in `dns1`.
+2. Use appliance DNS to resolve stock Jibo hosts, especially `api.jibo.com`, to the LAN bootstrap server.
+3. Serve NTP responses with a 2017-era time so the robot accepts the historical `*.jibo.com` GoDaddy certificate chain.
+4. Emulate enough OOBE and update endpoints for the robot to complete setup and ask for subsystem updates.
+5. Serve signed-by-manifest OTA assets with correct SHA-1 and Content-Length values.
+6. Apply an Open Jibo conversion/update payload that installs durable trust and region targeting before any temporary bootstrap state is lost.
+7. Reboot into Open Jibo and verify cloud connectivity against the managed or selected self-hosted target.
+
+Planning consequence:
+
+- keep ShofEL plus firewall/SSH as the universal recovery, backup, non-OOBE, and rollback path
+- promote OOBE OTA bootstrap to the lowest-friction candidate for fresh/wiped robots if Maaarcna's traces prove repeatable
+- design the "easy button" appliance so it can eventually offer both modes: OTA-over-OOBE for owner-friendly setup and ShofEL/SSH for rescue or non-wipe conversion
+- do not store historical certificate private keys or stock OTA packages in this repository until legal/provenance and security handling are resolved
+
 ## Bootstrap Checklist
 
 1. Connect the robot to a controlled Wi-Fi network.

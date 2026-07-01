@@ -205,6 +205,12 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.False(string.IsNullOrWhiteSpace(setupPayload.RootElement.GetProperty("accessKeyId").GetString()));
         Assert.False(string.IsNullOrWhiteSpace(setupPayload.RootElement.GetProperty("secretAccessKey").GetString()));
         Assert.False(setupPayload.RootElement.GetProperty("serviceMode").GetBoolean());
+        Assert.Equal("open-jibo-abc", setupPayload.RootElement.GetProperty("robotId").GetString());
+        Assert.Equal("open-jibo", setupPayload.RootElement.GetProperty("targetMode").GetString());
+        Assert.Equal("api.openjibo.com", setupPayload.RootElement.GetProperty("targetHost").GetString());
+        Assert.Equal("rollback-abc", setupPayload.RootElement.GetProperty("rollbackSnapshotId").GetString());
+        Assert.Equal("api.openjibo.com", setupPayload.RootElement.GetProperty("hostMappings").GetProperty("api.jibo.com").GetString());
+        Assert.True(setupPayload.RootElement.GetProperty("conversionReadiness").GetProperty("canWriteRobot").GetBoolean());
     }
 
     [Fact]
@@ -415,6 +421,12 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal(200, reconnect.StatusCode);
         using var reconnectPayload = JsonDocument.Parse(reconnect.BodyText);
         Assert.Equal("ok", reconnectPayload.RootElement.GetProperty("result").GetString());
+        Assert.Equal("open-jibo-reconnect", reconnectPayload.RootElement.GetProperty("robotId").GetString());
+        Assert.Equal("open-jibo", reconnectPayload.RootElement.GetProperty("targetMode").GetString());
+        Assert.Equal("api.openjibo.com", reconnectPayload.RootElement.GetProperty("targetHost").GetString());
+        Assert.Equal("rollback-reconnect", reconnectPayload.RootElement.GetProperty("rollbackSnapshotId").GetString());
+        Assert.Equal("api.openjibo.com", reconnectPayload.RootElement.GetProperty("hostMappings").GetProperty("api.jibo.com").GetString());
+        Assert.True(reconnectPayload.RootElement.GetProperty("conversionReadiness").GetProperty("canWriteRobot").GetBoolean());
     }
 
 

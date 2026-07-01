@@ -54,6 +54,18 @@ public sealed class JiboCloudProtocolService(
         return ReadString(body, "targetHost") ?? ReadString(body, "apiHost") ?? ReadString(body, "serverHost");
     }
 
+    private static OobeBaselineEvidence ReadBaselineEvidence(JsonElement? body, ProtocolEnvelope envelope)
+    {
+        return new OobeBaselineEvidence
+        {
+            FirmwareVersion = ReadString(body, "firmwareVersion") ?? envelope.FirmwareVersion,
+            ApplicationVersion = ReadString(body, "applicationVersion") ?? envelope.ApplicationVersion,
+            Distribution = ReadString(body, "distribution") ?? ReadString(body, "distro"),
+            StockMode = ReadString(body, "stockMode") ?? ReadString(body, "currentMode") ?? ReadString(body, "sourceMode"),
+            RequireBaselineAudit = ReadBool(body, "requireBaselineAudit") || ReadBool(body, "requireBaselineEvidence")
+        };
+    }
+
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope)
     {
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
@@ -175,6 +187,7 @@ public sealed class JiboCloudProtocolService(
                 TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
                 TargetHost = ReadTargetHost(body),
                 RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
+                BaselineEvidence = ReadBaselineEvidence(body, envelope),
                 ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
             };
             var planReadiness = EvaluateConversionReadiness(planState, false, envelope.HostName);
@@ -190,6 +203,7 @@ public sealed class JiboCloudProtocolService(
                 targetMode = planState.TargetMode,
                 targetHost = ResolveOpenJiboTargetHost(planState.TargetMode, planState.TargetHost, envelope.HostName),
                 rollbackSnapshotId = planState.RollbackSnapshotId,
+                baselineEvidence = planState.BaselineEvidence.ToResponse(),
                 hostMappings = BuildRobotHostMappings(planState.TargetMode, planState.TargetHost, envelope.HostName),
                 conversionReadiness = planReadiness.ToResponse()
             });
@@ -206,6 +220,7 @@ public sealed class JiboCloudProtocolService(
                 TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
                 TargetHost = ReadTargetHost(body),
                 RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
+                BaselineEvidence = ReadBaselineEvidence(body, envelope),
                 ExpiresUtc = expiresUtc
             };
             _oobeTokens[issuedToken] = preparedState;
@@ -220,6 +235,7 @@ public sealed class JiboCloudProtocolService(
                 targetMode = preparedState.TargetMode,
                 targetHost = ResolveOpenJiboTargetHost(preparedState.TargetMode, preparedState.TargetHost, envelope.HostName),
                 rollbackSnapshotId = preparedState.RollbackSnapshotId,
+                baselineEvidence = preparedState.BaselineEvidence.ToResponse(),
                 hostMappings = BuildRobotHostMappings(preparedState.TargetMode, preparedState.TargetHost, envelope.HostName),
                 conversionReadiness = readiness.ToResponse()
             });
@@ -246,6 +262,7 @@ public sealed class JiboCloudProtocolService(
                 loopId = hasTokenState ? current!.LoopId : null,
                 targetMode,
                 rollbackSnapshotId = hasTokenState ? current!.RollbackSnapshotId : null,
+                baselineEvidence = hasTokenState ? current!.BaselineEvidence.ToResponse() : new OobeBaselineEvidence().ToResponse(),
                 expires,
                 targetHost = ResolveOpenJiboTargetHost(targetMode, targetHost, envelope.HostName),
                 hostMappings = BuildRobotHostMappings(targetMode, targetHost, envelope.HostName),
@@ -268,6 +285,7 @@ public sealed class JiboCloudProtocolService(
             TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode")),
             TargetHost = ReadTargetHost(body),
             RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
+            BaselineEvidence = ReadBaselineEvidence(body, envelope),
             ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
         });
         if (state.ExpiresUtc <= DateTimeOffset.UtcNow)
@@ -290,6 +308,7 @@ public sealed class JiboCloudProtocolService(
         state.TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode") ?? state.TargetMode);
         state.TargetHost ??= ReadTargetHost(body);
         state.RollbackSnapshotId ??= ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot");
+        state.BaselineEvidence = state.BaselineEvidence.Merge(ReadBaselineEvidence(body, envelope));
 
         var registeredDevice =
             stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
@@ -322,6 +341,7 @@ public sealed class JiboCloudProtocolService(
                 targetMode = state.TargetMode,
                 targetHost = acceptedTargetHost,
                 rollbackSnapshotId = state.RollbackSnapshotId,
+                baselineEvidence = state.BaselineEvidence.ToResponse(),
                 hostMappings = acceptedHostMappings,
                 conversionReadiness = acceptedReadiness.ToResponse()
             });
@@ -338,6 +358,7 @@ public sealed class JiboCloudProtocolService(
             targetMode = state.TargetMode,
             targetHost = acceptedTargetHost,
             rollbackSnapshotId = state.RollbackSnapshotId,
+            baselineEvidence = state.BaselineEvidence.ToResponse(),
             hostMappings = acceptedHostMappings,
             conversionReadiness = acceptedReadiness.ToResponse()
         });
@@ -391,6 +412,8 @@ public sealed class JiboCloudProtocolService(
             state.TargetMode.Equals("open-jibo-self-hosted", StringComparison.OrdinalIgnoreCase) &&
             string.IsNullOrWhiteSpace(state.TargetHost))
             blockers.Add("missing-self-hosted-target-host");
+        if (state?.BaselineEvidence.RequireBaselineAudit == true && !state.BaselineEvidence.HasMinimumBaseline)
+            blockers.Add("missing-baseline-audit");
         if (string.IsNullOrWhiteSpace(ResolveOpenJiboTargetHost(state?.TargetMode ?? "open-jibo", state?.TargetHost, hostName)))
             blockers.Add("missing-target-host");
 
@@ -414,7 +437,8 @@ public sealed class JiboCloudProtocolService(
                     "rollback-snapshot",
                     "target-host-mapping",
                     "supported-target-mode",
-                    "self-hosted-target-host-when-self-hosted"
+                    "self-hosted-target-host-when-self-hosted",
+                    "baseline-audit-when-required"
                 }
             };
         }
@@ -1663,6 +1687,44 @@ public sealed class JiboCloudProtocolService(
         public string? Error { get; set; }
     }
 
+    private sealed class OobeBaselineEvidence
+    {
+        public string? FirmwareVersion { get; init; }
+        public string? ApplicationVersion { get; init; }
+        public string? Distribution { get; init; }
+        public string? StockMode { get; init; }
+        public bool RequireBaselineAudit { get; init; }
+
+        public bool HasMinimumBaseline =>
+            !string.IsNullOrWhiteSpace(FirmwareVersion) &&
+            !string.IsNullOrWhiteSpace(StockMode);
+
+        public OobeBaselineEvidence Merge(OobeBaselineEvidence next)
+        {
+            return new OobeBaselineEvidence
+            {
+                FirmwareVersion = next.FirmwareVersion ?? FirmwareVersion,
+                ApplicationVersion = next.ApplicationVersion ?? ApplicationVersion,
+                Distribution = next.Distribution ?? Distribution,
+                StockMode = next.StockMode ?? StockMode,
+                RequireBaselineAudit = RequireBaselineAudit || next.RequireBaselineAudit
+            };
+        }
+
+        public object ToResponse()
+        {
+            return new
+            {
+                firmwareVersion = FirmwareVersion,
+                applicationVersion = ApplicationVersion,
+                distribution = Distribution,
+                stockMode = StockMode,
+                requireBaselineAudit = RequireBaselineAudit,
+                hasMinimumBaseline = HasMinimumBaseline
+            };
+        }
+    }
+
     private sealed class OobeTokenState
     {
         public string? DeviceId { get; set; }
@@ -1670,6 +1732,7 @@ public sealed class JiboCloudProtocolService(
         public string TargetMode { get; set; } = "open-jibo";
         public string? TargetHost { get; set; }
         public string? RollbackSnapshotId { get; set; }
+        public OobeBaselineEvidence BaselineEvidence { get; set; } = new();
         public bool Complete { get; set; }
         public DateTimeOffset ExpiresUtc { get; init; }
     }

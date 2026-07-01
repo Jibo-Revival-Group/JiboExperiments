@@ -199,7 +199,7 @@ public sealed class JiboCloudProtocolService(
         {
             var expiresUtc = DateTimeOffset.UtcNow.AddHours(1);
             var issuedToken = CreateOobeToken();
-            _oobeTokens[issuedToken] = new OobeTokenState
+            var preparedState = new OobeTokenState
             {
                 DeviceId = ReadString(body, "deviceId") ?? envelope.DeviceId,
                 LoopId = ReadString(body, "loopId"),
@@ -208,11 +208,20 @@ public sealed class JiboCloudProtocolService(
                 RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
                 ExpiresUtc = expiresUtc
             };
+            _oobeTokens[issuedToken] = preparedState;
+            var readiness = EvaluateConversionReadiness(preparedState, false, envelope.HostName);
 
             return ProtocolDispatchResult.Ok(new
             {
                 token = issuedToken,
-                expires = expiresUtc.ToUnixTimeMilliseconds()
+                expires = expiresUtc.ToUnixTimeMilliseconds(),
+                deviceId = preparedState.DeviceId,
+                loopId = preparedState.LoopId,
+                targetMode = preparedState.TargetMode,
+                targetHost = ResolveOpenJiboTargetHost(preparedState.TargetMode, preparedState.TargetHost, envelope.HostName),
+                rollbackSnapshotId = preparedState.RollbackSnapshotId,
+                hostMappings = BuildRobotHostMappings(preparedState.TargetMode, preparedState.TargetHost, envelope.HostName),
+                conversionReadiness = readiness.ToResponse()
             });
         }
 

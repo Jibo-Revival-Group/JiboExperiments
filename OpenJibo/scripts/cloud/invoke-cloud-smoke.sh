@@ -346,5 +346,40 @@ add_result(status_after)
 if not status_after.success:
     raise SystemExit(f"GetStatus after setup failed with status code {status_after.status_code}: {status_after.error}")
 
+connection_proof = request_json(
+    "VerifyConnection",
+    "POST",
+    f"{base_url.rstrip('/')}/",
+    {
+        "X-Amz-Target": "OOBE_20161026.VerifyConnection",
+        "Host": base_host,
+    },
+    {"token": token},
+)
+add_result(connection_proof)
+if not connection_proof.success:
+    raise SystemExit(
+        f"VerifyConnection failed with status code {connection_proof.status_code}: {connection_proof.error}"
+    )
+
+proof_body = connection_proof.body if isinstance(connection_proof.body, dict) else {}
+if not proof_body.get("connected"):
+    raise SystemExit("VerifyConnection did not report the prepared robot as connected.")
+if not proof_body.get("complete"):
+    raise SystemExit("VerifyConnection did not report the prepared robot setup as complete.")
+if proof_body.get("robotId") != f"robot-{test_robot_id}":
+    raise SystemExit("VerifyConnection returned an unexpected robot identity.")
+if proof_body.get("targetHost") != "api.openjibo.com":
+    raise SystemExit("VerifyConnection returned an unexpected managed Open Jibo target host.")
+
+host_mappings = proof_body.get("hostMappings") if isinstance(proof_body.get("hostMappings"), dict) else {}
+for legacy_host in ("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com"):
+    if host_mappings.get(legacy_host) != "api.openjibo.com":
+        raise SystemExit(f"VerifyConnection did not map {legacy_host} to api.openjibo.com.")
+
+readiness = proof_body.get("conversionReadiness") if isinstance(proof_body.get("conversionReadiness"), dict) else {}
+if not readiness.get("canWriteRobot"):
+    raise SystemExit("VerifyConnection readiness is not write-safe after setup.")
+
 print(json.dumps([result.__dict__ for result in results], indent=2))
 PY

@@ -278,6 +278,57 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task PrepareAndStatus_ReturnSignedOnboardingSessionForProviderReturnBinding()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"robot-signed-session","loopId":"loop-signed-session","rollbackSnapshotId":"rollback-signed-session"}"""
+        });
+
+        Assert.Equal(200, prepare.StatusCode);
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+        var onboardingSession = preparePayload.RootElement.GetProperty("onboardingSession");
+        Assert.Equal(token, onboardingSession.GetProperty("token").GetString());
+        Assert.Equal("robot-signed-session", onboardingSession.GetProperty("deviceId").GetString());
+        Assert.Equal("loop-signed-session", onboardingSession.GetProperty("loopId").GetString());
+        Assert.Equal("open-jibo", onboardingSession.GetProperty("targetMode").GetString());
+        Assert.Equal("api.openjibo.com", onboardingSession.GetProperty("targetHost").GetString());
+        Assert.Equal("rollback-signed-session", onboardingSession.GetProperty("rollbackSnapshotId").GetString());
+        Assert.Equal("HMAC-SHA256", onboardingSession.GetProperty("signatureAlgorithm").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(onboardingSession.GetProperty("nonce").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(onboardingSession.GetProperty("state").GetString()));
+        Assert.True(onboardingSession.GetProperty("expires").GetInt64() > 0);
+
+        var payload = onboardingSession.GetProperty("signaturePayload").GetString()!;
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(store.GetAccount().SecretAccessKey));
+        var expectedSignature = Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+        Assert.Equal(expectedSignature, onboardingSession.GetProperty("signature").GetString());
+
+        var status = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "GetStatus",
+            BodyText = $$"""{"token":"{{token}}"}"""
+        });
+
+        using var statusPayload = JsonDocument.Parse(status.BodyText);
+        var statusSession = statusPayload.RootElement.GetProperty("onboardingSession");
+        Assert.Equal(onboardingSession.GetProperty("nonce").GetString(), statusSession.GetProperty("nonce").GetString());
+        Assert.Equal(onboardingSession.GetProperty("state").GetString(), statusSession.GetProperty("state").GetString());
+        Assert.Equal(onboardingSession.GetProperty("signature").GetString(), statusSession.GetProperty("signature").GetString());
+    }
+
+    [Fact]
     public async Task GetStatus_ReturnsPreparedConversionMetadata()
     {
         var prepare = await _service.DispatchAsync(new ProtocolEnvelope

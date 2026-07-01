@@ -503,6 +503,62 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task VerifyConnection_AfterPreparedSetupReturnsConversionProof()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText =
+                """{"deviceId":"robot-proof","loopId":"loop-proof","targetMode":"open-jibo-self-hosted","targetHost":"jibo.proof.home.arpa","rollbackSnapshotId":"rollback-proof"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-proof"}"""
+        });
+
+        Assert.Equal(200, setup.StatusCode);
+
+        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "VerifyConnection",
+            BodyText = $$"""{"token":"{{token}}"}"""
+        });
+
+        Assert.Equal(200, proof.StatusCode);
+        using var proofPayload = JsonDocument.Parse(proof.BodyText);
+        Assert.True(proofPayload.RootElement.GetProperty("connected").GetBoolean());
+        Assert.True(proofPayload.RootElement.GetProperty("prepared").GetBoolean());
+        Assert.True(proofPayload.RootElement.GetProperty("complete").GetBoolean());
+        Assert.Equal(OpenJiboCloudBuildInfo.Version, proofPayload.RootElement.GetProperty("cloudVersion").GetString());
+        Assert.Equal("robot-robot-proof", proofPayload.RootElement.GetProperty("robotId").GetString());
+        Assert.Equal("robot-proof", proofPayload.RootElement.GetProperty("deviceId").GetString());
+        Assert.Equal("loop-proof", proofPayload.RootElement.GetProperty("loopId").GetString());
+        Assert.Equal("open-jibo-self-hosted", proofPayload.RootElement.GetProperty("targetMode").GetString());
+        Assert.Equal("jibo.proof.home.arpa", proofPayload.RootElement.GetProperty("targetHost").GetString());
+        Assert.Equal("rollback-proof", proofPayload.RootElement.GetProperty("rollbackSnapshotId").GetString());
+        Assert.Equal("jibo.proof.home.arpa",
+            proofPayload.RootElement.GetProperty("hostMappings").GetProperty("api.jibo.com").GetString());
+        Assert.True(proofPayload.RootElement.GetProperty("conversionReadiness").GetProperty("canWriteRobot")
+            .GetBoolean());
+    }
+
+    [Fact]
     public async Task SetupRobot_UpdatesIdentityGraphRobotAndOpenJiboHostMappings()
     {
         var store = new InMemoryCloudStateStore();

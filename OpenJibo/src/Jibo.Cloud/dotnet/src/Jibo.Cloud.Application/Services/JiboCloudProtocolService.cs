@@ -289,6 +289,45 @@ public sealed class JiboCloudProtocolService(
             });
         }
 
+        if (operation.Equals("VerifyConnection", StringComparison.OrdinalIgnoreCase) ||
+            operation.Equals("ConnectionProof", StringComparison.OrdinalIgnoreCase))
+        {
+            OobeTokenState? current = null;
+            var hasTokenState = token is not null && _oobeTokens.TryGetValue(token, out current);
+            var expired = hasTokenState && current!.ExpiresUtc <= DateTimeOffset.UtcNow;
+            var robot = stateStore.GetRobot();
+            var targetMode = hasTokenState ? current!.TargetMode : "open-jibo";
+            var targetHost = hasTokenState
+                ? ResolveOpenJiboTargetHost(current!.TargetMode, current.TargetHost, envelope.HostName)
+                : ResolveOpenJiboTargetHost("open-jibo", null, envelope.HostName);
+            var hostMappings = hasTokenState
+                ? BuildRobotHostMappings(current!.TargetMode, current.TargetHost, envelope.HostName)
+                : robot.HostMappings;
+            var readiness = EvaluateConversionReadiness(hasTokenState ? current : null, expired, envelope.HostName);
+
+            return ProtocolDispatchResult.Ok(new
+            {
+                ok = true,
+                operation,
+                connected = !expired && (!hasTokenState || current!.Complete),
+                prepared = hasTokenState,
+                complete = hasTokenState ? current!.Complete : robot.IsActive,
+                expired,
+                cloudVersion = OpenJiboCloudBuildInfo.Version,
+                robotId = robot.RobotId,
+                deviceId = hasTokenState ? current!.DeviceId : robot.DeviceId,
+                loopId = hasTokenState ? current!.LoopId : stateStore.GetLoops().FirstOrDefault()?.LoopId,
+                targetMode,
+                targetHost,
+                rollbackSnapshotId = hasTokenState ? current!.RollbackSnapshotId : null,
+                baselineEvidence = hasTokenState
+                    ? current!.BaselineEvidence.ToResponse()
+                    : new OobeBaselineEvidence().ToResponse(),
+                hostMappings,
+                conversionReadiness = readiness.ToResponse()
+            });
+        }
+
         if (!operation.Equals("SetupRobot", StringComparison.OrdinalIgnoreCase) &&
             !operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new { ok = true, operation });

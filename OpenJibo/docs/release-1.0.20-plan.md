@@ -135,6 +135,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added a non-destructive first-contact/OOBE inspection helper for conversion-video prep so restored/OOBE and stock `1.9.2` images can be scanned for `@be/first-contact`, awakening scene manifests, `name_learning`, `pronoun_`, `WhoAmI`, and recognition hook candidates before any asset or behavior is ported into Open Jibo onboarding
 - connected the first-contact filesystem report to the existing websocket recognition-candidate inspector so loop/member identity persistence can be demonstrated as seeded or speaker-to-loop-member evidence until a live capture proves a stable face/person identifier
 - kept the major blocker explicit: safe body/yawn/audio awakening assets and exact owner-name replacement points still require image-specific review of the reported skill roots plus live regression logs before the conversion video claims full OOBE parity
+- made `PrepareRobot` return the same conversion readiness, target-mode, target-host, rollback snapshot, and host-mapping evidence that `GetStatus` exposes, so the app/video path can surface blockers immediately after token issuance instead of waiting until the robot attempts `SetupRobot`.
 
 ### Progress Update (`2026-06-24`)
 

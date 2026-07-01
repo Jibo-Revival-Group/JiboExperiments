@@ -183,6 +183,13 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal(200, prepare.StatusCode);
         Assert.False(string.IsNullOrWhiteSpace(token));
         Assert.StartsWith("oobe-", token);
+        Assert.Equal("robot-abc", preparePayload.RootElement.GetProperty("deviceId").GetString());
+        Assert.Equal("loop-123", preparePayload.RootElement.GetProperty("loopId").GetString());
+        Assert.Equal("open-jibo", preparePayload.RootElement.GetProperty("targetMode").GetString());
+        Assert.Equal("api.openjibo.com", preparePayload.RootElement.GetProperty("targetHost").GetString());
+        Assert.Equal("rollback-abc", preparePayload.RootElement.GetProperty("rollbackSnapshotId").GetString());
+        Assert.Equal("api.openjibo.com", preparePayload.RootElement.GetProperty("hostMappings").GetProperty("api.jibo.com").GetString());
+        Assert.True(preparePayload.RootElement.GetProperty("conversionReadiness").GetProperty("canWriteRobot").GetBoolean());
 
         var setup = await _service.DispatchAsync(new ProtocolEnvelope
         {
@@ -214,6 +221,9 @@ public sealed class JiboCloudProtocolServiceTests
 
         using var preparePayload = JsonDocument.Parse(prepare.BodyText);
         var token = preparePayload.RootElement.GetProperty("token").GetString();
+        var prepareReadiness = preparePayload.RootElement.GetProperty("conversionReadiness");
+        Assert.False(prepareReadiness.GetProperty("canWriteRobot").GetBoolean());
+        Assert.Contains(prepareReadiness.GetProperty("blockers").EnumerateArray(), blocker => blocker.GetString() == "missing-rollback-snapshot");
 
         var status = await _service.DispatchAsync(new ProtocolEnvelope
         {

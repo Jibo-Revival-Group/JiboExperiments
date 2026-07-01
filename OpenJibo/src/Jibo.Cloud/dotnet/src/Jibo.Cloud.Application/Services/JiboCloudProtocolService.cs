@@ -308,15 +308,38 @@ public sealed class JiboCloudProtocolService(
             HostMappings = BuildRobotHostMappings(state.TargetMode, state.TargetHost, envelope.HostName)
         });
 
+        var acceptedReadiness = EvaluateConversionReadiness(state, false, envelope.HostName);
+        var acceptedTargetHost = ResolveOpenJiboTargetHost(state.TargetMode, state.TargetHost, envelope.HostName);
+        var acceptedHostMappings = BuildRobotHostMappings(state.TargetMode, state.TargetHost, envelope.HostName);
+
         if (operation.Equals("ReconnectRobot", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(new { result = "ok" });
+            return ProtocolDispatchResult.Ok(new
+            {
+                result = "ok",
+                robotId = robotId,
+                deviceId = state.DeviceId,
+                loopId = state.LoopId,
+                targetMode = state.TargetMode,
+                targetHost = acceptedTargetHost,
+                rollbackSnapshotId = state.RollbackSnapshotId,
+                hostMappings = acceptedHostMappings,
+                conversionReadiness = acceptedReadiness.ToResponse()
+            });
 
         var account = stateStore.GetAccount();
         return ProtocolDispatchResult.Ok(new
         {
             accessKeyId = account.AccessKeyId,
             secretAccessKey = account.SecretAccessKey,
-            serviceMode = false
+            serviceMode = false,
+            robotId = robotId,
+            deviceId = state.DeviceId,
+            loopId = state.LoopId,
+            targetMode = state.TargetMode,
+            targetHost = acceptedTargetHost,
+            rollbackSnapshotId = state.RollbackSnapshotId,
+            hostMappings = acceptedHostMappings,
+            conversionReadiness = acceptedReadiness.ToResponse()
         });
     }
 

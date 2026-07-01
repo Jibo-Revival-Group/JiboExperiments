@@ -224,7 +224,7 @@ public sealed class JiboCloudProtocolService(
                 ExpiresUtc = expiresUtc
             };
             _oobeTokens[issuedToken] = preparedState;
-            var readiness = EvaluateConversionReadiness(preparedState, false, envelope.HostName);
+            var prepareReadiness = EvaluateConversionReadiness(preparedState, false, envelope.HostName);
 
             return ProtocolDispatchResult.Ok(new
             {
@@ -237,7 +237,7 @@ public sealed class JiboCloudProtocolService(
                 rollbackSnapshotId = preparedState.RollbackSnapshotId,
                 baselineEvidence = preparedState.BaselineEvidence.ToResponse(),
                 hostMappings = BuildRobotHostMappings(preparedState.TargetMode, preparedState.TargetHost, envelope.HostName),
-                conversionReadiness = readiness.ToResponse()
+                conversionReadiness = prepareReadiness.ToResponse()
             });
         }
 

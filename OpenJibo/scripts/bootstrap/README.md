@@ -9,6 +9,7 @@ These scripts support the first OpenJibo recovery path:
 - orchestrate the Linux conversion flow with audit, plan, and gated apply helpers
 - inspect restored/OOBE robot images for `@be/first-contact`, name-learning, pronoun, and identity-recognition hooks before porting the Open Jibo awakening flow
 - produce a video-ready conversion evidence bundle that ties the rollback-safe harness to cloud loop/member enrollment and recognition smoke evidence
+- plan the OOBE static-DNS OTA bootstrap lane without checking historical certificate material into the repository
 
 Windows PowerShell wrappers remain available for local staging and analysis, but the robot-facing conversion path is shell-based.
 
@@ -54,6 +55,23 @@ Example:
 .\Inspect-LinuxFilesystemDemo.ps1 -OutputRoot C:\Projects\JiboExperiments\artifacts\linux-fs-demo5
 .\Run-OpenJiboFilesystemDemo.ps1 -DemoRoot C:\Projects\JiboExperiments\artifacts\linux-fs-demo5\demo-root -Strict
 ```
+
+
+## OOBE OTA bootstrap planning
+
+Use `plan-oobe-ota-bootstrap.sh` before attempting the static-DNS OOBE OTA path described in the release plan. The helper is intentionally planning-only: it records DNS/NTP/HTTPS/OTA metadata expectations, names the request traces that must be captured, and fails closed in `--strict` mode while certificate provenance or trace evidence is missing.
+
+Example:
+
+```bash
+./plan-oobe-ota-bootstrap.sh \
+  --api-hostname api.openjibo.com \
+  --trace-bundle /path/to/oobe-ota-traces \
+  --certificate-mode external \
+  --output-path /tmp/openjibo-oobe-ota-plan.json
+```
+
+Keep `--certificate-mode external` for any owner-facing or repository-backed flow. `lab-only` is only a blocker-marked planning state for private research environments and must not be used to commit historical `*.jibo.com` certificate or private-key material.
 
 ## First-contact / identity inspection
 

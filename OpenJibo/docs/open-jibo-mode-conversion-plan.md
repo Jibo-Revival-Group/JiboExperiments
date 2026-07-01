@@ -286,6 +286,8 @@ Impact on the conversion plan:
 
 Immediate questions and blockers:
 
+Use `scripts/bootstrap/plan-oobe-ota-bootstrap.sh` to produce a machine-readable plan for this lane before touching a physical robot. The helper keeps the path planning-only, records DNS/NTP/HTTPS/OTA assumptions, and fails closed in strict mode while certificate provenance or trace evidence is missing.
+
 1. Confirm the provenance, redistribution rights, and security handling of the historical `*.jibo.com` certificate and key before placing any related material in this repository or in an owner-facing tool.
 2. Capture Maaarcna's prototype request/response traces for `PrepareRobot`, `SetupRobot`, `GetStatus`, `GetUpdateFrom`, asset downloads, NTP sync, and post-update verification.
 3. Validate whether OOBE can be launched from a normal boot without wiping owner data, and whether that path still honors QR-provided DNS long enough to run OTA.

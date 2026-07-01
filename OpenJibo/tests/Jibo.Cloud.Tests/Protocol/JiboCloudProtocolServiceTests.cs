@@ -165,6 +165,70 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("api.openjibo.com", payload.RootElement.GetProperty("hostMappings").GetProperty("neo-hub.jibo.com").GetString());
     }
 
+
+    [Fact]
+    public async Task AuditConversion_WhenBaselineAuditRequiredReportsMissingBaselineBlocker()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "AuditConversion",
+            BodyText = """{"deviceId":"robot-baseline-blocked","targetMode":"open-jibo","rollbackSnapshotId":"rollback-baseline","requireBaselineAudit":true}"""
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.False(payload.RootElement.GetProperty("canPrepareRobot").GetBoolean());
+        var baseline = payload.RootElement.GetProperty("baselineEvidence");
+        Assert.True(baseline.GetProperty("requireBaselineAudit").GetBoolean());
+        Assert.False(baseline.GetProperty("hasMinimumBaseline").GetBoolean());
+        var readiness = payload.RootElement.GetProperty("conversionReadiness");
+        Assert.Contains(readiness.GetProperty("blockers").EnumerateArray(), blocker => blocker.GetString() == "missing-baseline-audit");
+        Assert.Contains(readiness.GetProperty("requiredEvidence").EnumerateArray(), evidence => evidence.GetString() == "baseline-audit-when-required");
+    }
+
+    [Fact]
+    public async Task PrepareAndSetupRobot_CarriesBaselineEvidenceIntoConnectionProof()
+    {
+        var prepare = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "PrepareRobot",
+            FirmwareVersion = "1.9.2",
+            ApplicationVersion = "1.0.20",
+            BodyText = """{"deviceId":"robot-baseline-ready","targetMode":"open-jibo","rollbackSnapshotId":"rollback-baseline-ready","stockMode":"oobe","distribution":"stock-us","requireBaselineAudit":true}"""
+        });
+
+        Assert.Equal(200, prepare.StatusCode);
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+        var prepareBaseline = preparePayload.RootElement.GetProperty("baselineEvidence");
+        Assert.True(prepareBaseline.GetProperty("hasMinimumBaseline").GetBoolean());
+        Assert.Equal("1.9.2", prepareBaseline.GetProperty("firmwareVersion").GetString());
+        Assert.Equal("oobe", prepareBaseline.GetProperty("stockMode").GetString());
+        Assert.True(preparePayload.RootElement.GetProperty("conversionReadiness").GetProperty("canWriteRobot").GetBoolean());
+
+        var setup = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-baseline-ready"}"""
+        });
+
+        Assert.Equal(200, setup.StatusCode);
+        using var setupPayload = JsonDocument.Parse(setup.BodyText);
+        var setupBaseline = setupPayload.RootElement.GetProperty("baselineEvidence");
+        Assert.True(setupBaseline.GetProperty("hasMinimumBaseline").GetBoolean());
+        Assert.Equal("stock-us", setupBaseline.GetProperty("distribution").GetString());
+        Assert.Equal("oobe", setupBaseline.GetProperty("stockMode").GetString());
+    }
+
     [Fact]
     public async Task PrepareRobot_IssuesOobeTokenAndSetupCompletes()
     {

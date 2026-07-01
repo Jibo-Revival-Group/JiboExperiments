@@ -117,6 +117,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-06-30`)
 
+- tightened the managed cloud smoke gate so both Bash and PowerShell smoke clients now call robot-facing `OOBE VerifyConnection` after `SetupRobot` and fail if the prepared robot is not connected, complete, mapped to `api.openjibo.com`, or write-safe. This makes the deployment gate prove the exact post-conversion robot-to-cloud connection target instead of stopping at setup/status responses.
 - added a robot-facing OOBE `VerifyConnection` / `ConnectionProof` operation for the conversion-video path: after `SetupRobot`, a prepared token can now return connected/complete state, cloud version, robot/device/loop ids, target mode/host, rollback snapshot, host mappings, baseline evidence, and conversion readiness in one proof payload.
 - added signed onboarding-session evidence to the OOBE conversion plan/prepare/status/setup responses: each prepared token now carries a nonce, provider-return state, canonical target host, expiry, signature payload, and HMAC-SHA256 signature so account/provider onboarding can be bound to the exact robot conversion target before the robot writes identity.
 - added a planning-only OOBE OTA bootstrap manifest helper so the static-DNS/NTP/HTTPS update lane can be reviewed without repository-bundled historical certificate material; strict mode now keeps certificate provenance and missing trace captures as explicit blockers before any physical robot attempt.

@@ -222,4 +222,40 @@ if (-not $statusAfter.Success) {
     throw "GetStatus after setup failed with status code $($statusAfter.StatusCode): $($statusAfter.Error)"
 }
 
+$connectionProof = Invoke-JsonRequest -Name "VerifyConnection" -Method "POST" -Url "$BaseUrl/" -Headers @{
+    "X-Amz-Target" = "OOBE_20161026.VerifyConnection"
+    Host = $baseHost
+} -Body (@{ token = $token } | ConvertTo-Json)
+Add-Result $connectionProof
+
+if (-not $connectionProof.Success) {
+    throw "VerifyConnection failed with status code $($connectionProof.StatusCode): $($connectionProof.Error)"
+}
+
+if (-not $connectionProof.Body.connected) {
+    throw "VerifyConnection did not report the prepared robot as connected."
+}
+
+if (-not $connectionProof.Body.complete) {
+    throw "VerifyConnection did not report the prepared robot setup as complete."
+}
+
+if ($connectionProof.Body.robotId -ne "robot-$TestRobotId") {
+    throw "VerifyConnection returned an unexpected robot identity."
+}
+
+if ($connectionProof.Body.targetHost -ne "api.openjibo.com") {
+    throw "VerifyConnection returned an unexpected managed Open Jibo target host."
+}
+
+foreach ($legacyHost in @("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com")) {
+    if ($connectionProof.Body.hostMappings.$legacyHost -ne "api.openjibo.com") {
+        throw "VerifyConnection did not map $legacyHost to api.openjibo.com."
+    }
+}
+
+if (-not $connectionProof.Body.conversionReadiness.canWriteRobot) {
+    throw "VerifyConnection readiness is not write-safe after setup."
+}
+
 $results

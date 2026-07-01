@@ -138,6 +138,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - made `PrepareRobot` return the same conversion readiness, target-mode, target-host, rollback snapshot, and host-mapping evidence that `GetStatus` exposes, so the app/video path can surface blockers immediately after token issuance instead of waiting until the robot attempts `SetupRobot`.
 - made successful `SetupRobot` and `ReconnectRobot` responses echo the accepted robot id, target mode, target host, rollback snapshot, host mappings, and conversion readiness so conversion-video tooling can prove the robot identity write and cloud connection target in the same response that hands back access credentials.
 - carried baseline-audit evidence into the OOBE conversion audit/prepare/status/setup path so conversion-video tooling can prove firmware/application version, source distribution, and stock/source mode alongside rollback snapshot and host mappings; when a caller explicitly requires baseline evidence, readiness now fails closed with `missing-baseline-audit` before any robot write.
+- hardened the prepared-token setup gate against unsafe setup-time overrides: `SetupRobot` / `ReconnectRobot` now evaluate the final requested target mode, host, rollback, and baseline evidence before mutating robot identity, so a prepared managed token cannot be turned into an incomplete self-hosted write during the robot handoff.
 
 ### Progress Update (`2026-06-24`)
 

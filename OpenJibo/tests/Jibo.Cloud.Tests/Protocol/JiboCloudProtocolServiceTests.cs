@@ -458,6 +458,43 @@ public sealed class JiboCloudProtocolServiceTests
             signal.Value == "api.openjibo.com");
     }
 
+
+    [Fact]
+    public async Task SetupRobot_WithPreparedTokenRejectsUnsafeBodyOverridesBeforeIdentityWrite()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var originalRobot = store.GetRobot();
+
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"robot-safe-override","targetMode":"open-jibo","rollbackSnapshotId":"rollback-safe-override"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-should-not-write","targetMode":"open-jibo-self-hosted","targetHost":""}"""
+        });
+
+        Assert.Equal(409, setup.StatusCode);
+        using var setupPayload = JsonDocument.Parse(setup.BodyText);
+        var readiness = setupPayload.RootElement.GetProperty("conversionReadiness");
+        Assert.False(readiness.GetProperty("canWriteRobot").GetBoolean());
+        Assert.Contains(readiness.GetProperty("blockers").EnumerateArray(), blocker => blocker.GetString() == "missing-self-hosted-target-host");
+        Assert.Equal(originalRobot.DeviceId, store.GetRobot().DeviceId);
+    }
+
     [Fact]
     public async Task ReconnectRobot_WithPreparedToken_ReturnsOk()
     {

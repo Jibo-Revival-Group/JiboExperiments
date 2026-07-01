@@ -292,23 +292,24 @@ public sealed class JiboCloudProtocolService(
             return ProtocolDispatchResult.Raw(410, "{\"error\":\"oobe token expired\"}", "application/json");
 
         var hasPreparedToken = token is not null && _oobeTokens.ContainsKey(token);
-        var readiness = EvaluateConversionReadiness(hasPreparedToken ? state : null, false, envelope.HostName);
-        if (hasPreparedToken && !readiness.CanWriteRobot)
+        var setupState = BuildTentativeSetupState(state, body, envelope, robotId);
+        var setupReadiness = EvaluateConversionReadiness(hasPreparedToken ? setupState : null, false, envelope.HostName);
+        if (hasPreparedToken && !setupReadiness.CanWriteRobot)
         {
             return ProtocolDispatchResult.Raw(409, JsonSerializer.Serialize(new
             {
                 error = "conversion readiness blocked",
-                conversionReadiness = readiness.ToResponse()
+                conversionReadiness = setupReadiness.ToResponse()
             }), "application/json");
         }
 
         state.Complete = true;
-        state.DeviceId = robotId;
-        state.LoopId ??= ReadString(body, "loopId");
-        state.TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode") ?? state.TargetMode);
-        state.TargetHost ??= ReadTargetHost(body);
-        state.RollbackSnapshotId ??= ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot");
-        state.BaselineEvidence = state.BaselineEvidence.Merge(ReadBaselineEvidence(body, envelope));
+        state.DeviceId = setupState.DeviceId;
+        state.LoopId = setupState.LoopId;
+        state.TargetMode = setupState.TargetMode;
+        state.TargetHost = setupState.TargetHost;
+        state.RollbackSnapshotId = setupState.RollbackSnapshotId;
+        state.BaselineEvidence = setupState.BaselineEvidence;
 
         var registeredDevice =
             stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
@@ -362,6 +363,26 @@ public sealed class JiboCloudProtocolService(
             hostMappings = acceptedHostMappings,
             conversionReadiness = acceptedReadiness.ToResponse()
         });
+    }
+
+
+    private static OobeTokenState BuildTentativeSetupState(
+        OobeTokenState current,
+        JsonElement? body,
+        ProtocolEnvelope envelope,
+        string robotId)
+    {
+        return new OobeTokenState
+        {
+            DeviceId = robotId,
+            LoopId = ReadString(body, "loopId") ?? current.LoopId,
+            TargetMode = ResolveOpenJiboTargetMode(ReadString(body, "targetMode") ?? ReadString(body, "mode") ?? current.TargetMode),
+            TargetHost = ReadTargetHost(body) ?? current.TargetHost,
+            RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot") ?? current.RollbackSnapshotId,
+            BaselineEvidence = current.BaselineEvidence.Merge(ReadBaselineEvidence(body, envelope)),
+            Complete = current.Complete,
+            ExpiresUtc = current.ExpiresUtc
+        };
     }
 
     private static string ResolveOpenJiboTargetHost(string targetMode, string? targetHost, string hostName)

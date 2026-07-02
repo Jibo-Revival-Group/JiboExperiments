@@ -26,8 +26,20 @@ $fixtureDirectory = Join-Path $resolvedDirectory "fixtures"
 if (Test-Path -LiteralPath $fixtureDirectory) {
     Write-Host ""
     Write-Host "Exported websocket fixtures:"
-    Get-ChildItem -LiteralPath $fixtureDirectory -Filter *.flow.json -File |
-        Sort-Object LastWriteTimeUtc |
+    $fixtureFiles = Get-ChildItem -LiteralPath $fixtureDirectory -Filter *.flow.json -File |
+        Sort-Object LastWriteTimeUtc
+
+    $fixtureFiles |
         Select-Object LastWriteTimeUtc, Name |
         Format-Table -AutoSize
+
+    $sttReplayFixtures = $fixtureFiles | Where-Object {
+        $_.Name -like '*buffered-audio*' -or $_.Name -like '*short-burst*'
+    }
+
+    if ($sttReplayFixtures) {
+        Write-Host ""
+        Write-Host "STT replay fixtures to check first:"
+        $sttReplayFixtures | Select-Object Name | Format-Table -AutoSize
+    }
 }

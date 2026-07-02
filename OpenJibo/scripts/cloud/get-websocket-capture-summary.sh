@@ -43,7 +43,14 @@ fixture_dir = os.path.join(capture_dir, "fixtures")
 if os.path.isdir(fixture_dir):
     print("")
     print("Exported websocket fixtures:")
-    for name in sorted(os.listdir(fixture_dir)):
-        if name.endswith(".flow.json"):
+    fixture_names = sorted(name for name in os.listdir(fixture_dir) if name.endswith(".flow.json"))
+    for name in fixture_names:
+        print(f" - {name}")
+
+    short_burst_names = [name for name in fixture_names if "buffered-audio" in name or "short-burst" in name]
+    if short_burst_names:
+        print("")
+        print("STT replay fixtures to check first:")
+        for name in short_burst_names:
             print(f" - {name}")
 PY

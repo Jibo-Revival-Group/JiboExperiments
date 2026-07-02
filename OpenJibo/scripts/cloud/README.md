@@ -47,7 +47,7 @@ These scripts help exercise the new .NET hosted cloud locally.
 - `Invoke-ProtocolFixture.ps1`
   Replays a sanitized HTTP fixture against a running local instance.
 - `Get-WebSocketCaptureSummary.ps1`
-  Summarizes captured websocket telemetry events and exported live-run fixtures from the .NET cloud.
+  Summarizes captured websocket telemetry events and exported live-run fixtures from the .NET cloud, and highlights the buffered-audio replay fixtures that are most useful when debugging STT regressions.
 - repo-root `captures/http/`
   Structured HTTP request/response telemetry for live robot startup comparison.
 - repo-root `captures/websocket/`
@@ -57,7 +57,7 @@ These scripts help exercise the new .NET hosted cloud locally.
 - `Import-WebSocketCaptureFixture.ps1`
   Sanitizes an exported websocket capture fixture and copies it into the checked-in websocket fixture set.
 - `New-CaptureBundle.ps1`
-  Packages the capture root, capture index, and exported fixtures into a single zip bundle for group testing handoff.
+  Packages the capture root, capture index, and exported fixtures into a single zip bundle for group testing handoff, including the fixture name list in the manifest for quicker STT replay triage.
 - `start-dotnet-with-node-cert.sh`
   Starts the .NET API on Linux using the same PEM certificate material already used by the Node server.
 - `invoke-live-jibo-prep.sh`

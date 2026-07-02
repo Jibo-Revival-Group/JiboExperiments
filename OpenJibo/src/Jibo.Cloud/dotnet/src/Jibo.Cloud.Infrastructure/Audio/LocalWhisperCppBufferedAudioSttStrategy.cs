@@ -50,6 +50,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategy(
                IsConfiguredPathAvailable(_options.WhisperCliPath, true) &&
                IsConfiguredPathAvailable(_options.WhisperModelPath, true) &&
                frames.Any(ContainsOpusIdentificationHeader) &&
+               audioBearingPageCount > 0 &&
                !IsBelowNoiseFloor(turn, ReadBufferedAudioBytes(turn));
     }
 

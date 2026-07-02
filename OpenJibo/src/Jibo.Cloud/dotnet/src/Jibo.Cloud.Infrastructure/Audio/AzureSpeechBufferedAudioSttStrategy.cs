@@ -47,6 +47,7 @@ public sealed class AzureSpeechBufferedAudioSttStrategy(
                !string.IsNullOrWhiteSpace(_options.AzureSpeechSubscriptionKey) &&
                IsConfiguredPathAvailable(_options.FfmpegPath, false) &&
                frames.Any(ContainsOpusIdentificationHeader) &&
+               audioBearingPageCount > 0 &&
                !IsBelowNoiseFloor(turn, ReadBufferedAudioBytes(turn));
     }
 

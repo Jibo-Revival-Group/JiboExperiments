@@ -29,7 +29,7 @@ public sealed class AzureSpeechBufferedAudioSttStrategyTests
         {
             Attributes = new Dictionary<string, object?>
             {
-                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() }
             }
         };
 
@@ -56,11 +56,37 @@ public sealed class AzureSpeechBufferedAudioSttStrategyTests
             Attributes = new Dictionary<string, object?>
             {
                 ["bufferedAudioBytes"] = 147,
-                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() }
             }
         };
 
         Assert.True(strategy.CanHandle(turn));
+    }
+
+    [Fact]
+    public void CanHandle_ReturnsFalse_WhenBufferedAudioHasOnlyMetadataPages()
+    {
+        var strategy = new AzureSpeechBufferedAudioSttStrategy(
+            new BufferedAudioSttOptions
+            {
+                EnableAzureSpeech = true,
+                FfmpegPath = "ffmpeg",
+                AzureSpeechRegion = "eastus",
+                AzureSpeechSubscriptionKey = "secret"
+            },
+            new FakeExternalProcessRunner(),
+            new HttpClient(new StubHttpMessageHandler()),
+            NullLogger<AzureSpeechBufferedAudioSttStrategy>.Instance);
+
+        var turn = new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+            }
+        };
+
+        Assert.False(strategy.CanHandle(turn));
     }
 
     [Fact]
@@ -110,7 +136,7 @@ public sealed class AzureSpeechBufferedAudioSttStrategyTests
                 Attributes = new Dictionary<string, object?>
                 {
                     ["bufferedAudioBytes"] = 147,
-                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() }
                 }
             };
 
@@ -170,7 +196,7 @@ public sealed class AzureSpeechBufferedAudioSttStrategyTests
                 Attributes = new Dictionary<string, object?>
                 {
                     ["bufferedAudioBytes"] = 147,
-                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() },
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() },
                     ["audioTranscriptHint"] = "What's your cloud version?"
                 }
             };
@@ -201,6 +227,23 @@ public sealed class AzureSpeechBufferedAudioSttStrategyTests
             0x13,
             0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64, 0x01, 0x01, 0x38, 0x01, 0x80, 0xBB, 0x00, 0x00, 0x00, 0x00,
             0x00
+        ];
+    }
+
+    private static byte[] BuildAudioBearingPage()
+    {
+        return
+        [
+            0x4F, 0x67, 0x67, 0x53,
+            0x00,
+            0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x01,
+            0x0A,
+            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A
         ];
     }
 

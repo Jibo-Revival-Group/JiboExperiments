@@ -326,13 +326,17 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             session.LastMessageType = "BINARY_AUDIO";
-            turnState.FirstAudioReceivedUtc ??= DateTimeOffset.UtcNow;
             turnState.BufferedAudioChunkCount += 1;
             turnState.BufferedAudioBytes += envelope.Binary?.Length ?? 0;
             if (envelope.Binary is { Length: > 0 }) turnState.BufferedAudioFrames.Add([.. envelope.Binary]);
             turnState.AwaitingTurnCompletion = true;
             session.Metadata["lastAudioBytes"] = envelope.Binary?.Length ?? 0;
             pageCounts = DescribeBufferedAudioPages(turnState);
+            if (pageCounts.AudioBearingPageCount > 0)
+            {
+                turnState.FirstAudioReceivedUtc ??= DateTimeOffset.UtcNow;
+                turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
+            }
             await sink.RecordTurnDiagnosticAsync("binary_audio_received", BuildTurnDiagnosticSnapshot(session, envelope,
                 new Dictionary<string, object?>
                 {
@@ -379,7 +383,6 @@ public sealed class WebSocketTurnFinalizationService(
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
             }
 
-            turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
             logger.LogDebug(
                 "Turn binary audio exit without finalization session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
                 session.SessionId,

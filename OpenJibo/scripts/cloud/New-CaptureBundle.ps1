@@ -75,6 +75,9 @@ try {
     $captureIndexFiles = @($sourceFiles | Where-Object { $_.Name -eq "capture-index.ndjson" })
     $eventFiles = @($sourceFiles | Where-Object { $_.Name -like "*.events.ndjson" })
     $fixtureFiles = @($sourceFiles | Where-Object { $_.Name -like "*.flow.json" })
+    $fixtureNames = @($fixtureFiles | Sort-Object FullName | ForEach-Object {
+        Get-RelativePath -BasePath $resolvedCaptureRoot -FullPath $_.FullName
+    })
 
     $manifest = [ordered]@{
         createdUtc = (Get-Date).ToUniversalTime().ToString("O")
@@ -83,6 +86,7 @@ try {
         captureIndexCount = $captureIndexFiles.Count
         eventFileCount = $eventFiles.Count
         fixtureCount = $fixtureFiles.Count
+        fixtureNames = $fixtureNames
     }
 
     $manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $stagingDirectory "bundle-manifest.json") -Encoding utf8

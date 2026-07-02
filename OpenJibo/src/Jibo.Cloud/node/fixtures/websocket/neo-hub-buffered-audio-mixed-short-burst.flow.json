@@ -1,0 +1,58 @@
+{
+  "name": "neo-hub buffered audio mixed short burst flow",
+  "session": {
+    "hostName": "neo-hub.jibo.com",
+    "path": "/listen",
+    "kind": "neo-hub-listen",
+    "token": "fixture-mixed-short-burst-token"
+  },
+  "steps": [
+    {
+      "text": {
+        "type": "LISTEN",
+        "transID": "fixture-trans-mixed-short-burst",
+        "data": {
+          "rules": [
+            "wake-word"
+          ]
+        }
+      },
+      "expectedReplyTypes": []
+    },
+    {
+      "text": {
+        "type": "CONTEXT",
+        "transID": "fixture-trans-mixed-short-burst",
+        "data": {
+          "topic": "conversation",
+          "audioTranscriptHint": "tell me a joke"
+        }
+      },
+      "expectedReplyTypes": []
+    },
+    {
+      "binary": [79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 112, 117, 115, 72, 101, 97, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "expectedReplyTypes": []
+    },
+    {
+      "binary": [79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 112, 117, 115, 84, 97, 103, 115, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "expectedReplyTypes": []
+    },
+    {
+      "binary": [1, 2, 3, 4, 5, 6],
+      "expectedReplyTypes": []
+    },
+    {
+      "text": {
+        "type": "CLIENT_ASR",
+        "transID": "fixture-trans-mixed-short-burst",
+        "data": { }
+      },
+      "expectedReplyTypes": [
+        "LISTEN",
+        "EOS",
+        "SKILL_ACTION"
+      ]
+    }
+  ]
+}

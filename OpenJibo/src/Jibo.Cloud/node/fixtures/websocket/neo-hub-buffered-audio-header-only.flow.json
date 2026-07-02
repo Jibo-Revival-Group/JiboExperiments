@@ -1,0 +1,58 @@
+{
+  "name": "neo-hub buffered audio header-only flow",
+  "session": {
+    "hostName": "neo-hub.jibo.com",
+    "path": "/listen",
+    "kind": "neo-hub-listen",
+    "token": "fixture-header-only-token"
+  },
+  "steps": [
+    {
+      "text": {
+        "type": "LISTEN",
+        "transID": "fixture-trans-header-only",
+        "data": {
+          "rules": [
+            "wake-word"
+          ]
+        }
+      },
+      "expectedReplyTypes": []
+    },
+    {
+      "text": {
+        "type": "CONTEXT",
+        "transID": "fixture-trans-header-only",
+        "data": {
+          "topic": "conversation",
+          "audioTranscriptHint": "tell me a joke"
+        }
+      },
+      "expectedReplyTypes": []
+    },
+    {
+      "binary": [79, 103, 103, 83, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 112, 117, 115, 72, 101, 97, 100],
+      "expectedReplyTypes": []
+    },
+    {
+      "binary": [79, 103, 103, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 112, 117, 115, 84, 97, 103, 115],
+      "expectedReplyTypes": []
+    },
+    {
+      "binary": [1, 2, 3, 4, 5, 6],
+      "expectedReplyTypes": []
+    },
+    {
+      "text": {
+        "type": "CLIENT_ASR",
+        "transID": "fixture-trans-header-only",
+        "data": { }
+      },
+      "expectedReplyTypes": [
+        "LISTEN",
+        "EOS",
+        "SKILL_ACTION"
+      ]
+    }
+  ]
+}

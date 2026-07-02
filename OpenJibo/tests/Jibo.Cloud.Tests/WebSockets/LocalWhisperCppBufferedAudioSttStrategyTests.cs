@@ -23,7 +23,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         {
             Attributes = new Dictionary<string, object?>
             {
-                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() }
             }
         };
 
@@ -47,7 +47,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         {
             Attributes = new Dictionary<string, object?>
             {
-                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() }
             }
         };
 
@@ -79,6 +79,30 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
     }
 
     [Fact]
+    public void CanHandle_ReturnsFalse_WhenBufferedAudioHasOnlyMetadataPages()
+    {
+        var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "ffmpeg",
+                WhisperCliPath = "whisper-cli",
+                WhisperModelPath = "model.bin"
+            },
+            new FakeExternalProcessRunner());
+
+        var turn = new TurnContext
+        {
+            Attributes = new Dictionary<string, object?>
+            {
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+            }
+        };
+
+        Assert.False(strategy.CanHandle(turn));
+    }
+
+    [Fact]
     public void CanHandle_ReturnsFalse_WhenBufferedAudioIsBelowNoiseFloor()
     {
         var strategy = new LocalWhisperCppBufferedAudioSttStrategy(
@@ -96,7 +120,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             Attributes = new Dictionary<string, object?>
             {
                 ["bufferedAudioBytes"] = 47,
-                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() }
             }
         };
 
@@ -209,7 +233,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             Attributes = new Dictionary<string, object?>
             {
                 ["bufferedAudioBytes"] = 47,
-                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() },
+                ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() },
                 ["listenRules"] = new[] { listenRule }
             }
         };
@@ -606,7 +630,7 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
                 Attributes = new Dictionary<string, object?>
                 {
                     ["bufferedAudioBytes"] = 47,
-                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage() }
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() }
                 }
             };
 
@@ -635,6 +659,23 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
             0x13,
             0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64, 0x01, 0x01, 0x38, 0x01, 0x80, 0xBB, 0x00, 0x00, 0x00, 0x00,
             0x00
+        ];
+    }
+
+    private static byte[] BuildAudioBearingPage()
+    {
+        return
+        [
+            0x4F, 0x67, 0x67, 0x53,
+            0x00,
+            0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x01,
+            0x0A,
+            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A
         ];
     }
 

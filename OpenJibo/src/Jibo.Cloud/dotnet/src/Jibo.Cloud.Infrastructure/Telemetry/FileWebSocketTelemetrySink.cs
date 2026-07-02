@@ -176,7 +176,9 @@ public sealed class FileWebSocketTelemetrySink(
             {
                 ["fixturePath"] = fixturePath,
                 ["stepCount"] = fixture.Steps.Count,
-                ["fixtureName"] = fixtureName
+                ["fixtureName"] = fixtureName,
+                ["tags"] = BuildFixtureTags(fixtureName),
+                ["note"] = BuildFixtureNote(fixtureName)
             }, cancellationToken);
 
             logger.LogInformation("Exported websocket fixture {FixturePath}", fixturePath);
@@ -333,6 +335,22 @@ public sealed class FileWebSocketTelemetrySink(
         var kind = SanitizeName(fixture.Session.Kind);
         var transId = SanitizeName(session.TurnState.TransId ?? session.LastTransId ?? session.SessionId);
         return $"{host}-{kind}-{transId}";
+    }
+
+    private static string[] BuildFixtureTags(string fixtureName)
+    {
+        return fixtureName.Contains("bufferedaudio", StringComparison.OrdinalIgnoreCase) ||
+               fixtureName.Contains("shortburst", StringComparison.OrdinalIgnoreCase)
+            ? ["stt", "replay", "buffered-audio"]
+            : [];
+    }
+
+    private static string? BuildFixtureNote(string fixtureName)
+    {
+        return fixtureName.Contains("bufferedaudio", StringComparison.OrdinalIgnoreCase) ||
+               fixtureName.Contains("shortburst", StringComparison.OrdinalIgnoreCase)
+            ? "Header-only and mixed short-burst STT replay fixture."
+            : null;
     }
 
     private static string SanitizeName(string value)

@@ -56,6 +56,7 @@ Artifacts:
 - `*.events.ndjson`
 - `websocket/fixtures/*.flow.json`
 - `capture-index.ndjson` entries include an `eventFilePath` detail for HTTP, websocket, and turn records when a raw daily event file backs the index entry
+- STT replay fixtures exported from websocket sessions are tagged in the capture index as `stt`, `replay`, and `buffered-audio`, with a short note that they are the header-only or mixed short-burst regression cases to check first
 
 ## Suggested First Hookup Plan
 

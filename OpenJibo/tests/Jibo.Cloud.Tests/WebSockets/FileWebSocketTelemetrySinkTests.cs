@@ -80,6 +80,46 @@ public sealed class FileWebSocketTelemetrySinkTests : IDisposable
     }
 
     [Fact]
+    public async Task RecordsSttReplayFixtureTagAndNoteForBufferedAudioSessions()
+    {
+        var sink = CreateSink();
+        var envelope = new WebSocketMessageEnvelope
+        {
+            ConnectionId = "conn-stt-replay",
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "token-stt-replay",
+            Text = """{"type":"LISTEN","transID":"buffered-audio-short-burst","data":{"text":"hello jibo"}}"""
+        };
+        var session = new CloudSession
+        {
+            Token = "token-stt-replay",
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            TurnState =
+            {
+                TransId = "buffered-audio-short-burst"
+            }
+        };
+
+        await sink.RecordConnectionOpenedAsync(envelope, session);
+        await sink.RecordOutboundAsync(envelope, session, [new WebSocketReply { Text = """{"type":"LISTEN"}""" }]);
+        await sink.RecordConnectionClosedAsync(envelope, session, "test");
+
+        var indexPath = Path.Combine(_directoryPath, "capture-index.ndjson");
+        var indexEntries = await ReadNdjsonAsync(indexPath);
+        var fixtureExport = Assert.Single(indexEntries, entry => entry.GetProperty("eventType").GetString() == "fixture_export");
+        var details = fixtureExport.GetProperty("details").GetProperty("details");
+
+        Assert.Equal("stt", details.GetProperty("tags")[0].GetString());
+        Assert.Equal("replay", details.GetProperty("tags")[1].GetString());
+        Assert.Equal("buffered-audio", details.GetProperty("tags")[2].GetString());
+        Assert.Equal("Header-only and mixed short-burst STT replay fixture.",
+            details.GetProperty("note").GetString());
+    }
+
+    [Fact]
     public async Task RecordTurnEventAsync_AddsTurnDiagnosticsToCaptureIndex()
     {
         var sink = CreateSink();

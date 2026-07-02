@@ -13,6 +13,7 @@ Current websocket fixture depth is uneven on purpose:
 
 - `neo-hub-client-asr-joke.flow.json` now asserts a richer vertical slice than reply types alone. It captures the observed Node-oriented `CLIENT_ASR -> LISTEN -> EOS -> delayed SKILL_ACTION` joke turn with payload-shape expectations for `EOS` and joke `SKILL_ACTION`.
 - `neo-hub-client-nlu-clock-ask-time.flow.json` captures a real menu-style `CLIENT_NLU` turn from the latest live captures and asserts that `.NET` preserves the observed NLU intent/rules/entities in the synthetic websocket reply instead of flattening everything into generic chat.
+- `neo-hub-buffered-audio-header-only.flow.json` and `neo-hub-buffered-audio-mixed-short-burst.flow.json` cover the STT regression where `OpusHead` / `OpusTags` bursts should not start the speech timer, but the next real audio page should.
 - The other websocket fixtures are still mainly sequencing fixtures. They are useful for replay and guardrails, but they should not be read as proof of broader payload parity.
 
 Expand this folder whenever new robot traffic is captured and cleaned.

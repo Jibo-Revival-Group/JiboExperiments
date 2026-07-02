@@ -6,7 +6,8 @@ param(
     [string]$TestLastName = "Jibo",
     [string]$TestRobotId = "open-jibo-smoke-robot",
     [string]$TargetMode = "open-jibo",
-    [string]$TargetHost = ""
+    [string]$TargetHost = "",
+    [string]$ReportedConnectionHost = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,6 +18,9 @@ if ([string]::IsNullOrWhiteSpace($TargetHost)) {
     } else {
         $TargetHost = "api.openjibo.com"
     }
+}
+if ([string]::IsNullOrWhiteSpace($ReportedConnectionHost)) {
+    $ReportedConnectionHost = $TargetHost
 }
 
 function Invoke-JsonRequest {
@@ -260,7 +264,7 @@ if (-not $statusAfter.Success) {
 $connectionProof = Invoke-JsonRequest -Name "VerifyConnection" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "OOBE_20161026.VerifyConnection"
     Host = $baseHost
-} -Body (@{ token = $token } | ConvertTo-Json)
+} -Body (@{ token = $token; reportedConnectionHost = $ReportedConnectionHost } | ConvertTo-Json)
 Add-Result $connectionProof
 
 if (-not $connectionProof.Success) {
@@ -285,6 +289,12 @@ if ($connectionProof.Body.targetMode -ne $TargetMode) {
 
 if ($connectionProof.Body.targetHost -ne $TargetHost) {
     throw "VerifyConnection returned an unexpected Open Jibo target host."
+}
+if ($connectionProof.Body.reportedConnectionHost -ne $ReportedConnectionHost) {
+    throw "VerifyConnection did not echo the normalized reported connection host."
+}
+if (-not $connectionProof.Body.reportedConnectionHostMatches) {
+    throw "VerifyConnection did not confirm the reported connection host matched the target host."
 }
 
 foreach ($legacyHost in @("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com")) {

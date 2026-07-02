@@ -130,6 +130,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-06-30`)
 
+- tightened the conversion smoke clients so `VerifyConnection` now sends a robot-reported connection host and fails if the proof does not echo a matching normalized host. This moves the managed/self-hosted gate closer to the physical converted-robot requirement: the cloud must prove both stored DNS mappings and the host the robot says it reached.
+
 - tightened the self-hosted smoke path so Bash and PowerShell smoke clients can carry an explicit conversion target mode/host through `PlanConversion`, `PrepareRobot`, `SetupRobot`, and `VerifyConnection`, defaulting managed runs to `api.openjibo.com` while making self-hosted runs prove their own host mappings.
 - expanded the self-hosted deployment contract to require `VerifyConnection`, `targetMode`, and `targetHost` evidence in the shared smoke client so Docker Compose packaging now gates the same robot-to-cloud connection proof as managed Azure smoke.
 

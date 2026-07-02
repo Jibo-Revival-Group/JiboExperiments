@@ -419,6 +419,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             var subjectId = string.IsNullOrWhiteSpace(member.AccountId) ? member.Id : member.AccountId;
             AddIdentityRelationship(relationships, subjectId, member.Type, "member-of", resolvedLoopId, "loop",
                 resolvedLoopId);
+            AddLoopMemberRelationshipModel(relationships, member, members, resolvedLoopId);
 
             if (string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
             {
@@ -1260,6 +1261,38 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         }
 
         return null;
+    }
+
+    private static void AddLoopMemberRelationshipModel(ICollection<IdentityGraphRelationship> relationships,
+        LoopMemberRecord member, IReadOnlyCollection<LoopMemberRecord> members, string loopId)
+    {
+        if (string.Equals(member.Type, "owner", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var owner = members.FirstOrDefault(candidate =>
+            string.Equals(candidate.Type, "owner", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(candidate.Status, "active", StringComparison.OrdinalIgnoreCase));
+        if (owner is null || string.Equals(owner.Id, member.Id, StringComparison.OrdinalIgnoreCase)) return;
+
+        var (memberToOwner, ownerToMember) = NormalizeLoopMemberRelationship(member.Type);
+        if (string.IsNullOrWhiteSpace(memberToOwner) || string.IsNullOrWhiteSpace(ownerToMember)) return;
+
+        AddIdentityRelationship(relationships, member.Id, "loop-member", memberToOwner, owner.Id, "loop-member",
+            loopId);
+        AddIdentityRelationship(relationships, owner.Id, "loop-member", ownerToMember, member.Id, "loop-member",
+            loopId);
+    }
+
+    private static (string MemberToOwner, string OwnerToMember) NormalizeLoopMemberRelationship(string? memberType)
+    {
+        return memberType?.Trim().ToLowerInvariant() switch
+        {
+            "family" or "household" => ("family-member-of", "has-family-member"),
+            "friend" => ("friend-of", "has-friend"),
+            "caregiver" or "guardian" => ("caregiver-for", "has-caregiver"),
+            _ => ("loopmate-of", "has-loopmate")
+        };
     }
 
     private static string ComputeIdentityGraphContentHash(string accountId, string loopId, DeviceRegistration robot,

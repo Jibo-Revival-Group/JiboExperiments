@@ -249,6 +249,46 @@ public sealed class IdentityGraphSnapshotTests
     }
 
     [Fact]
+    public void GetIdentityGraph_ModelsFamilyAndFriendRelationshipsAgainstOwnerMember()
+    {
+        var store = new InMemoryCloudStateStore();
+        var loopId = store.GetLoops()[0].LoopId;
+        var owner = Assert.Single(store.GetLoopMembers(loopId), member =>
+            member.Type.Equals("owner", StringComparison.OrdinalIgnoreCase));
+        var family = store.AddLoopMember(loopId, "usr-family", "family@example.com", "Mae", "Jemison",
+            "unknown", null, false, "family");
+        var friend = store.AddLoopMember(loopId, "usr-friend", "friend@example.com", "Sally", "Ride",
+            "unknown", null, false, "friend");
+
+        var graph = store.GetIdentityGraph(loopId);
+
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == family.Id &&
+            relationship.SubjectKind == "loop-member" &&
+            relationship.Relationship == "family-member-of" &&
+            relationship.ObjectId == owner.Id &&
+            relationship.ObjectKind == "loop-member");
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == owner.Id &&
+            relationship.SubjectKind == "loop-member" &&
+            relationship.Relationship == "has-family-member" &&
+            relationship.ObjectId == family.Id &&
+            relationship.ObjectKind == "loop-member");
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == friend.Id &&
+            relationship.SubjectKind == "loop-member" &&
+            relationship.Relationship == "friend-of" &&
+            relationship.ObjectId == owner.Id &&
+            relationship.ObjectKind == "loop-member");
+        Assert.Contains(graph.Relationships, relationship =>
+            relationship.SubjectId == owner.Id &&
+            relationship.SubjectKind == "loop-member" &&
+            relationship.Relationship == "has-friend" &&
+            relationship.ObjectId == friend.Id &&
+            relationship.ObjectKind == "loop-member");
+    }
+
+    [Fact]
     public void GetIdentityGraph_ContentHashIsStableAndChangesWithEnrollmentEvidence()
     {
         var store = new InMemoryCloudStateStore();

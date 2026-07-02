@@ -304,12 +304,13 @@ public sealed class JiboCloudProtocolService(
                 ? BuildRobotHostMappings(current!.TargetMode, current.TargetHost, envelope.HostName)
                 : robot.HostMappings;
             var readiness = EvaluateConversionReadiness(hasTokenState ? current : null, expired, envelope.HostName);
+            var connectionBlockers = BuildConnectionBlockers(hasTokenState, current, expired, robot, hostMappings);
 
             return ProtocolDispatchResult.Ok(new
             {
                 ok = true,
                 operation,
-                connected = !expired && (!hasTokenState || current!.Complete),
+                connected = connectionBlockers.Count == 0,
                 prepared = hasTokenState,
                 complete = hasTokenState ? current!.Complete : robot.IsActive,
                 expired,
@@ -324,6 +325,9 @@ public sealed class JiboCloudProtocolService(
                     ? current!.BaselineEvidence.ToResponse()
                     : new OobeBaselineEvidence().ToResponse(),
                 hostMappings,
+                storedHostMappings = robot.HostMappings,
+                hostMappingsMatch = connectionBlockers.All(blocker => blocker != "host-mapping-mismatch"),
+                connectionBlockers,
                 conversionReadiness = readiness.ToResponse()
             });
         }
@@ -422,6 +426,40 @@ public sealed class JiboCloudProtocolService(
             onboardingSession = hasPreparedToken ? BuildOnboardingSession(token!, state, envelope.HostName) : null,
             conversionReadiness = acceptedReadiness.ToResponse()
         });
+    }
+
+    private static List<string> BuildConnectionBlockers(
+        bool hasTokenState,
+        OobeTokenState? state,
+        bool expired,
+        DeviceRegistration robot,
+        IDictionary<string, string> expectedHostMappings)
+    {
+        var blockers = new List<string>();
+        if (expired)
+            blockers.Add("expired-prepared-oobe-token");
+        if (hasTokenState && state?.Complete != true)
+            blockers.Add("setup-incomplete");
+        if (!hasTokenState && !robot.IsActive)
+            blockers.Add("robot-inactive");
+        if (!HostMappingsMatch(robot.HostMappings, expectedHostMappings))
+            blockers.Add("host-mapping-mismatch");
+
+        return blockers;
+    }
+
+    private static bool HostMappingsMatch(
+        IDictionary<string, string> actual,
+        IDictionary<string, string> expected)
+    {
+        foreach (var (host, expectedTarget) in expected)
+        {
+            if (!actual.TryGetValue(host, out var actualTarget) ||
+                !string.Equals(actualTarget, expectedTarget, StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
+
+        return true;
     }
 
 

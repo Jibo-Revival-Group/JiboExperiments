@@ -12,15 +12,56 @@
     <div>
       <p class="eyebrow">OpenJibo 1.0.20</p>
       <h1>Fake Jibo robot harness</h1>
-      <p class="lede">Execute robot-facing protocol calls against this cloud before a physical conversion run.</p>
+      <p class="lede">Execute robot-facing protocol calls and a guided conversion smoke before a physical conversion run.</p>
     </div>
     <a class="link-button" href="/portal">Portal</a>
   </header>
 
   <section class="card grid">
-    <label>Host header
+    <label>Harness host header
       <input id="hostName" value="api.openjibo.com">
     </label>
+    <label>Target mode
+      <select id="targetMode">
+        <option value="open-jibo">open-jibo</option>
+        <option value="open-jibo-self-hosted" selected>open-jibo-self-hosted</option>
+        <option value="open-jibo-ai">open-jibo-ai</option>
+        <option value="open-jibo-developer">open-jibo-developer</option>
+      </select>
+    </label>
+    <label>Target host
+      <input id="targetHost" value="jibo.local.test">
+    </label>
+    <label>Device ID
+      <input id="deviceId" value="fake-jibo-001">
+    </label>
+    <label>Loop ID
+      <input id="loopId" value="loop-fake-jibo">
+    </label>
+    <label>Rollback snapshot
+      <input id="rollbackSnapshotId" value="rollback-smoke-001">
+    </label>
+    <label>Firmware version
+      <input id="firmwareVersion" value="1.9.2">
+    </label>
+    <label>Application version
+      <input id="applicationVersion" value="1.0.20">
+    </label>
+    <label>Stock mode
+      <input id="stockMode" value="oobe">
+    </label>
+    <label>Distribution
+      <input id="distribution" value="stock-us">
+    </label>
+    <label class="checkbox">Require baseline audit
+      <input id="requireBaselineAudit" type="checkbox" checked>
+    </label>
+    <label>Prepared token
+      <input id="preparedToken" placeholder="Filled after PrepareRobot">
+    </label>
+  </section>
+
+  <section class="card grid compact">
     <label>Service
       <input id="servicePrefix" value="OOBE_20161026">
     </label>
@@ -38,19 +79,16 @@
         <p class="eyebrow">Request body</p>
         <h2>Conversion smoke payload</h2>
       </div>
-      <button id="loadVerifyConnection" class="secondary" type="button">Load VerifyConnection proof</button>
+      <button id="runConversionSmoke" class="primary" type="button">Run audit → setup → proof</button>
     </div>
-    <textarea id="bodyText" spellcheck="false">{
-  "deviceId": "fake-jibo-001",
-  "targetMode": "open-jibo-self-hosted",
-  "targetHost": "jibo.local.test",
-  "rollbackSnapshotId": "rollback-smoke-001",
-  "stockMode": "oobe",
-  "distribution": "stock-us",
-  "requireBaselineAudit": true
-}</textarea>
+    <textarea id="bodyText" spellcheck="false"></textarea>
     <div class="actions">
       <button id="sendButton" class="primary" type="button">Send robot call</button>
+      <button id="loadAudit" class="secondary" type="button">Load Audit</button>
+      <button id="loadPlan" class="secondary" type="button">Load Plan</button>
+      <button id="loadPrepare" class="secondary" type="button">Load Prepare</button>
+      <button id="loadSetup" class="secondary" type="button">Load Setup</button>
+      <button id="loadVerifyConnection" class="secondary" type="button">Load VerifyConnection</button>
       <button id="loadStatus" class="secondary" type="button">Load GetStatus</button>
       <button id="loadRobot" class="secondary" type="button">Load GetRobot</button>
     </div>

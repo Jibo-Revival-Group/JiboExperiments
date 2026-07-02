@@ -765,6 +765,15 @@ public sealed class WebSocketTurnFinalizationService(
         session.Metadata.Remove("audioTranscriptHint");
     }
 
+    private static void ResetHotphraseOnlyBufferedAudio(CloudSession session)
+    {
+        var turnState = session.TurnState;
+        ResetBufferedAudio(session);
+        turnState.AwaitingTurnCompletion = true;
+        turnState.SawListen = true;
+        turnState.SawContext = true;
+    }
+
     private static void ResetTurnState(WebSocketTurnState turnState, string? transId)
     {
         turnState.TransId = transId;
@@ -1210,7 +1219,11 @@ public sealed class WebSocketTurnFinalizationService(
                     }), cancellationToken);
 
                 var noInputAge = ResolveHotphraseOnlyNoInputAge(turnState);
-                if (turnAge < noInputAge) return [];
+                if (turnAge < noInputAge)
+                {
+                    ResetHotphraseOnlyBufferedAudio(session);
+                    return [];
+                }
 
                 turnState.AwaitingTurnCompletion = false;
                 session.LastTranscript = string.Empty;

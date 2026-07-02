@@ -117,6 +117,10 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-02`)
 
+- tightened the live connection proof freshness contract so `OOBE VerifyConnection` now reports the accepted proof age window, accepted future clock skew, and computed `freshUntil` timestamp in `reportedConnectionProof`. Conversion clients can also send `connectionProofMaxAgeSeconds` / `proofMaxAgeSeconds` / `freshnessMaxAgeSeconds` when a release/video gate needs a stricter live-capture window; the cloud clamps that policy to a safe 60-second to 1-hour range and returns `stale-proof-observed-at` when the observed proof falls outside it.
+
+- expanded the identity graph relationship model for the `1.0.20` platform track: non-robot loop members now carry explicit owner-scoped relationship edges for family, friend, caregiver/guardian, or generic loopmate roles, with reciprocal owner edges. This keeps the signed snapshot useful for family/friend recognition and multiple-member planning without enabling direct Jibo-to-Jibo transport yet.
+
 - added operator-facing `connectionProofGuidance` to robot-facing `OOBE VerifyConnection` / `ConnectionProof` responses. Each active blocker now includes a severity (`release-gate`, `setup-gate`, or `needs-review`) and a concrete owner action, so the conversion video/runbook can fail closed while telling the operator whether to refresh setup, complete robot setup, capture live reported host evidence, fix DNS/static host rewrites, or gather a fresh proof timestamp.
 
 - added a fresh live-proof option to robot-facing `OOBE VerifyConnection`: conversion clients can now set `requireFreshConnectionProof` / `requireFreshLiveRobotProof` and include `connectionProofObservedAt` plus optional `connectionProofSource` and `connectionProofId`. The proof response now returns a `reportedConnectionProof` envelope with freshness, observation age, source, and capture id, and blocks with `missing-proof-observed-at` or `stale-proof-observed-at` when the release/video gate asks for fresh robot-observed evidence.
@@ -227,6 +231,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded the recognition-candidate scanner to derive redacted speaker-to-loop-member and peoplePresent matches with timestamps, added the Jake/Erin recognition probe to the regression plan, and locked the first conversion video direction to managed Azure with safe staged credentials before the explicit cloud cutover
 
 ### Progress Update (`2026-07-02`)
+
+- expanded the identity graph relationship model for the `1.0.20` platform track: non-robot loop members now carry explicit owner-scoped relationship edges for family, friend, caregiver/guardian, or generic loopmate roles, with reciprocal owner edges. This keeps the signed snapshot useful for family/friend recognition and multiple-member planning without enabling direct Jibo-to-Jibo transport yet.
 
 - tightened the shared managed/self-hosted cloud smoke clients so `VerifyConnection` now sends robot-reported legacy host mapping evidence for `api.jibo.com`, `api-socket.jibo.com`, and `neo-hub.jibo.com`, then fails if the proof does not echo those mappings or mark them as matching the selected target host. This moves the conversion gate from a single connected-host assertion to the same DNS-retargeting evidence expected from the physical robot run.
 

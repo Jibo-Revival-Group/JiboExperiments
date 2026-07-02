@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-02`)
 
+- added a fresh live-proof option to robot-facing `OOBE VerifyConnection`: conversion clients can now set `requireFreshConnectionProof` / `requireFreshLiveRobotProof` and include `connectionProofObservedAt` plus optional `connectionProofSource` and `connectionProofId`. The proof response now returns a `reportedConnectionProof` envelope with freshness, observation age, source, and capture id, and blocks with `missing-proof-observed-at` or `stale-proof-observed-at` when the release/video gate asks for fresh robot-observed evidence.
+
 - added an explicit live-robot proof gate to `OOBE VerifyConnection`: conversion clients can now set `requireReportedConnectionProof`, `requirePhysicalConnectionProof`, or `requireLiveRobotProof` to require both a robot-reported connected host and robot-observed legacy host mappings before the cloud marks the proof as connected. Missing evidence returns `missing-reported-connection-host` and/or `missing-reported-host-mappings`, keeping scripted smoke compatibility while giving the physical conversion run a fail-closed gate.
 
 - tightened the shared managed/self-hosted cloud smoke clients so `VerifyConnection` now sends robot-reported legacy host mapping evidence for `api.jibo.com`, `api-socket.jibo.com`, and `neo-hub.jibo.com`, then fails if the proof does not echo those mappings or mark them as matching the selected target host. This moves the conversion gate from a single connected-host assertion to the same DNS-retargeting evidence expected from the physical robot run.

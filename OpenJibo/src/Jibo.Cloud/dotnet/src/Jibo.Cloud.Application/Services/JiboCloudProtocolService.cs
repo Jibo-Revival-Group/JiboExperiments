@@ -309,8 +309,21 @@ public sealed class JiboCloudProtocolService(
             var requiresReportedConnectionProof = ReadBool(body, "requireReportedConnectionProof") ||
                                                   ReadBool(body, "requirePhysicalConnectionProof") ||
                                                   ReadBool(body, "requireLiveRobotProof");
+            var requiresFreshConnectionProof = ReadBool(body, "requireFreshConnectionProof") ||
+                                               ReadBool(body, "requireFreshLiveRobotProof");
+            var proofObservedAt = ReadProofObservedAt(body);
+            var proofObservedAgeSeconds = proofObservedAt is null
+                ? null
+                : (long?)Math.Max(0, (long)(DateTimeOffset.UtcNow - proofObservedAt.Value).TotalSeconds);
+            var proofSource = ReadString(body, "connectionProofSource") ??
+                              ReadString(body, "proofSource") ??
+                              ReadString(body, "reportedProofSource");
+            var proofId = ReadString(body, "connectionProofId") ??
+                          ReadString(body, "proofId") ??
+                          ReadString(body, "captureId");
             var connectionBlockers = BuildConnectionBlockers(hasTokenState, current, expired, robot, hostMappings,
-                targetHost, reportedConnectionHost, reportedHostMappings, requiresReportedConnectionProof);
+                targetHost, reportedConnectionHost, reportedHostMappings, requiresReportedConnectionProof,
+                requiresFreshConnectionProof, proofObservedAt);
 
             return ProtocolDispatchResult.Ok(new
             {
@@ -341,8 +354,19 @@ public sealed class JiboCloudProtocolService(
                                            HostMappingsMatch(reportedHostMappings, hostMappings),
                 reportedHostMappingCompleteness = BuildReportedHostMappingCompleteness(hostMappings, reportedHostMappings),
                 requiresReportedConnectionProof,
+                requiresFreshConnectionProof,
                 reportedConnectionProofComplete = !string.IsNullOrWhiteSpace(reportedConnectionHost) &&
                                                   RequiredHostMappingsPresent(hostMappings, reportedHostMappings),
+                reportedConnectionProof = new
+                {
+                    complete = !string.IsNullOrWhiteSpace(reportedConnectionHost) &&
+                               RequiredHostMappingsPresent(hostMappings, reportedHostMappings),
+                    fresh = !requiresFreshConnectionProof || IsFreshProofObservation(proofObservedAt),
+                    observedAt = proofObservedAt?.ToUnixTimeMilliseconds(),
+                    observedAgeSeconds = proofObservedAgeSeconds,
+                    source = proofSource,
+                    id = proofId
+                },
                 hostMappingsMatch = connectionBlockers.All(blocker => blocker != "host-mapping-mismatch"),
                 connectionBlockers,
                 conversionReadiness = readiness.ToResponse()
@@ -454,7 +478,9 @@ public sealed class JiboCloudProtocolService(
         string expectedConnectionHost,
         string? reportedConnectionHost,
         IDictionary<string, string> reportedHostMappings,
-        bool requiresReportedConnectionProof)
+        bool requiresReportedConnectionProof,
+        bool requiresFreshConnectionProof,
+        DateTimeOffset? proofObservedAt)
     {
         var blockers = new List<string>();
         if (expired)
@@ -476,9 +502,36 @@ public sealed class JiboCloudProtocolService(
             blockers.Add("reported-connection-host-mismatch");
         if (reportedHostMappings.Count > 0 && !HostMappingsMatch(reportedHostMappings, expectedHostMappings))
             blockers.Add("reported-host-mapping-mismatch");
+        if (requiresFreshConnectionProof && proofObservedAt is null)
+            blockers.Add("missing-proof-observed-at");
+        else if (requiresFreshConnectionProof && !IsFreshProofObservation(proofObservedAt))
+            blockers.Add("stale-proof-observed-at");
 
         return blockers;
     }
+
+    private static DateTimeOffset? ReadProofObservedAt(JsonElement? body)
+    {
+        var value = ReadString(body, "connectionProofObservedAt") ??
+                    ReadString(body, "proofObservedAt") ??
+                    ReadString(body, "observedAt");
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var epoch))
+            return epoch > 9_999_999_999
+                ? DateTimeOffset.FromUnixTimeMilliseconds(epoch)
+                : DateTimeOffset.FromUnixTimeSeconds(epoch);
+
+        return DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed)
+            ? parsed.ToUniversalTime()
+            : null;
+    }
+
+    private static bool IsFreshProofObservation(DateTimeOffset? observedAt) =>
+        observedAt is not null && observedAt.Value >= DateTimeOffset.UtcNow.AddMinutes(-15) &&
+        observedAt.Value <= DateTimeOffset.UtcNow.AddMinutes(2);
+
 
     private static Dictionary<string, string> ReadReportedHostMappings(JsonElement? body)
     {

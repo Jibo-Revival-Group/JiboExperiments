@@ -10,6 +10,9 @@ public sealed class DialogParsingGuardrailTests
 {
     [Theory]
     [InlineData("can you dance", "robot_can_dance")]
+    [InlineData("can you please dance", "robot_can_dance")]
+    [InlineData("could you please dance", "robot_can_dance")]
+    [InlineData("would you please do a dance", "robot_can_dance")]
     [InlineData("will you dance", "robot_can_dance")]
     [InlineData("are you good at dancing", "robot_can_dance")]
     [InlineData("can you do a dance", "robot_can_dance")]
@@ -41,6 +44,8 @@ public sealed class DialogParsingGuardrailTests
     [Theory]
     [InlineData("twerk")]
     [InlineData("can you twerk")]
+    [InlineData("could you please twerk")]
+    [InlineData("would you please twerk")]
     [InlineData("show me a twerk")]
     public async Task BuildDecisionAsync_TwerkPhrases_PreserveSpecificDanceCommand(string transcript)
     {

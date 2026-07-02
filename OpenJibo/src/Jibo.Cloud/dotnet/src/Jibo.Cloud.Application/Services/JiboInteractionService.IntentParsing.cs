@@ -859,15 +859,31 @@ public sealed partial class JiboInteractionService
                    "can you dance" or
                    "could you dance" or
                    "would you dance" or
+                   "would you please dance" or
+                   "could you please dance" or
                    "will you dance" or
+                   "will you please dance" or
                    "do you dance" or
                    "are you able to dance" or
                    "do you know how to dance" or
                    "are you good at dancing" or
                    "are you good at dance" or
+                   "can you please dance" or
                    "can you do a dance" or
-                   "can you do the dance" ||
+                   "can you do the dance" or
+                   "can you please do a dance" or
+                   "could you do a dance" or
+                   "could you please do a dance" or
+                   "would you do a dance" or
+                   "would you please do a dance" ||
                normalized.StartsWith("can you dance ", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you please dance ", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you dance ", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you please dance ", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you dance ", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you please dance ", StringComparison.Ordinal) ||
+               normalized.StartsWith("will you dance ", StringComparison.Ordinal) ||
+               normalized.StartsWith("will you please dance ", StringComparison.Ordinal) ||
                normalized.StartsWith("do you know how to dance ", StringComparison.Ordinal);
     }
 
@@ -907,9 +923,13 @@ public sealed partial class JiboInteractionService
                    "show me a twerk" or
                    "show us a twerk" or
                    "can you twerk" or
+                   "can you please twerk" or
                    "will you twerk" or
+                   "will you please twerk" or
                    "would you twerk" or
-                   "could you twerk" ||
+                   "would you please twerk" or
+                   "could you twerk" or
+                   "could you please twerk" ||
                normalized.StartsWith("twerk ", StringComparison.Ordinal);
     }
 

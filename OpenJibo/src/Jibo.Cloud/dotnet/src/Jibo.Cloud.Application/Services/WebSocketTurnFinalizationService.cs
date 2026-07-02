@@ -768,10 +768,14 @@ public sealed class WebSocketTurnFinalizationService(
     private static void ResetHotphraseOnlyBufferedAudio(CloudSession session)
     {
         var turnState = session.TurnState;
-        ResetBufferedAudio(session);
+        turnState.AudioTranscriptHint = null;
+        turnState.LastSttError = null;
+        turnState.LastSttErrorUtc = null;
+        turnState.AutoFinalizeBlockedUntilUtc = null;
         turnState.AwaitingTurnCompletion = true;
         turnState.SawListen = true;
         turnState.SawContext = true;
+        session.Metadata.Remove("audioTranscriptHint");
     }
 
     private static void ResetTurnState(WebSocketTurnState turnState, string? transId)

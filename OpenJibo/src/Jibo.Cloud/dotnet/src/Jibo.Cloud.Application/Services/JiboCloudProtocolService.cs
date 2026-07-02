@@ -305,8 +305,9 @@ public sealed class JiboCloudProtocolService(
                 : robot.HostMappings;
             var readiness = EvaluateConversionReadiness(hasTokenState ? current : null, expired, envelope.HostName);
             var reportedConnectionHost = ReadReportedConnectionHost(body);
+            var reportedHostMappings = ReadReportedHostMappings(body);
             var connectionBlockers = BuildConnectionBlockers(hasTokenState, current, expired, robot, hostMappings,
-                targetHost, reportedConnectionHost);
+                targetHost, reportedConnectionHost, reportedHostMappings);
 
             return ProtocolDispatchResult.Ok(new
             {
@@ -332,6 +333,9 @@ public sealed class JiboCloudProtocolService(
                 reportedConnectionHostMatches = string.IsNullOrWhiteSpace(reportedConnectionHost) ||
                                                 string.Equals(reportedConnectionHost, targetHost,
                                                     StringComparison.OrdinalIgnoreCase),
+                reportedHostMappings,
+                reportedHostMappingsMatch = reportedHostMappings.Count == 0 ||
+                                           HostMappingsMatch(reportedHostMappings, hostMappings),
                 hostMappingsMatch = connectionBlockers.All(blocker => blocker != "host-mapping-mismatch"),
                 connectionBlockers,
                 conversionReadiness = readiness.ToResponse()
@@ -441,7 +445,8 @@ public sealed class JiboCloudProtocolService(
         DeviceRegistration robot,
         IDictionary<string, string> expectedHostMappings,
         string expectedConnectionHost,
-        string? reportedConnectionHost)
+        string? reportedConnectionHost,
+        IDictionary<string, string> reportedHostMappings)
     {
         var blockers = new List<string>();
         if (expired)
@@ -455,8 +460,35 @@ public sealed class JiboCloudProtocolService(
         if (!string.IsNullOrWhiteSpace(reportedConnectionHost) &&
             !string.Equals(reportedConnectionHost, expectedConnectionHost, StringComparison.OrdinalIgnoreCase))
             blockers.Add("reported-connection-host-mismatch");
+        if (reportedHostMappings.Count > 0 && !HostMappingsMatch(reportedHostMappings, expectedHostMappings))
+            blockers.Add("reported-host-mapping-mismatch");
 
         return blockers;
+    }
+
+    private static Dictionary<string, string> ReadReportedHostMappings(JsonElement? body)
+    {
+        var mappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (body is null)
+            return mappings;
+
+        var source = ReadObject(body, "reportedHostMappings") ??
+                     ReadObject(body, "reportedDnsMappings") ??
+                     ReadObject(body, "resolvedHostMappings");
+        if (source is null)
+            return mappings;
+
+        foreach (var (host, target) in source)
+        {
+            if (target is null)
+                continue;
+
+            var normalized = NormalizeHostName(Convert.ToString(target, CultureInfo.InvariantCulture) ?? string.Empty);
+            if (!string.IsNullOrWhiteSpace(host) && !string.IsNullOrWhiteSpace(normalized))
+                mappings[host] = normalized;
+        }
+
+        return mappings;
     }
 
     private static string? ReadReportedConnectionHost(JsonElement? body)

@@ -92,6 +92,7 @@
       .token-badge.server  { background: #1a4a2e; color: #4ade80; }
       .token-badge.fallback { background: #3a2a0e; color: #fbbf24; }
       .token-badge.error   { background: #3a0e0e; color: #f87171; }
+      .hint { color: #778; font-size: 0.72rem; line-height: 1.35; margin-top: 6px; }
 
       button {
         margin-top: 20px;
@@ -222,6 +223,18 @@
 		<p class="section-label">OpenJibo Cloud</p>
 		<label>Server URL <span style="color:#556;font-weight:400">(optional — leave empty to use static token)</span></label>
 		<input id="serverUrl" type="url" placeholder="http://192.168.1.X:24605"/>
+		<label>Target Mode</label>
+		<select id="targetMode">
+			<option value="open-jibo" selected>open-jibo — managed cloud</option>
+			<option value="open-jibo-ai">open-jibo-ai — managed AI cloud</option>
+			<option value="open-jibo-self-hosted">open-jibo-self-hosted — private server</option>
+			<option value="open-jibo-developer">open-jibo-developer — development server</option>
+		</select>
+		<label>Target Host <span style="color:#556;font-weight:400">(required for self-hosted; optional for managed)</span></label>
+		<input id="targetHost" type="text" placeholder="api.openjibo.com or LAN host"/>
+		<label>Rollback Snapshot ID <span style="color:#556;font-weight:400">(required for write-safe conversion)</span></label>
+		<input id="rollbackSnapshotId" type="text" placeholder="snapshot recorded by RCM/conversion helper"/>
+		<div class="hint">When a server URL is supplied, this page asks the cloud for a non-writing conversion plan before preparing the QR token. If readiness is blocked, QR generation stops instead of giving the robot an unsafe token.</div>
 		<div id="tokenBadge"></div>
 	</div>
 
@@ -278,18 +291,40 @@
     return codes;
   }
 
-  async function prepareRobot(serverUrl) {
+  async function callOobe(serverUrl, operation, body) {
     const url = serverUrl.endsWith('/') ? serverUrl : serverUrl + '/';
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-amz-json-1.1',
-        'X-Amz-Target': 'OOBE_20161026.PrepareRobot',
+        'X-Amz-Target': `OOBE_20161026.${operation}`,
       },
-      body: JSON.stringify({ loopId: 'openjibo-default-loop' }),
+      body: JSON.stringify(body),
     });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
+    if (!resp.ok) throw new Error(`${operation} HTTP ${resp.status}`);
+    return await resp.json();
+  }
+
+  function buildConversionBody() {
+    const targetMode = document.getElementById('targetMode').value;
+    const targetHost = document.getElementById('targetHost').value.trim();
+    const rollbackSnapshotId = document.getElementById('rollbackSnapshotId').value.trim();
+    const body = { loopId: 'openjibo-default-loop', targetMode };
+    if (targetHost) body.targetHost = targetHost;
+    if (rollbackSnapshotId) body.rollbackSnapshotId = rollbackSnapshotId;
+    return body;
+  }
+
+  async function prepareRobot(serverUrl) {
+    const body = buildConversionBody();
+    const plan = await callOobe(serverUrl, 'PlanConversion', body);
+    const readiness = plan.conversionReadiness || {};
+    if (!readiness.canWriteRobot) {
+      const blockers = Array.isArray(readiness.blockers) ? readiness.blockers.join(', ') : 'unknown blocker';
+      throw new Error(`conversion readiness blocked: ${blockers}`);
+    }
+
+    const data = await callOobe(serverUrl, 'PrepareRobot', body);
     if (!data.token) throw new Error('no token in response');
     return data.token;
   }
@@ -323,9 +358,11 @@
       try {
         token = await prepareRobot(serverUrl);
         setBadge('server', '✓ Token from OpenJibo server');
-      } catch {
-        setBadge('error', '⚠ Server unreachable — using fallback token');
-        token = STATIC_TOKEN;
+      } catch (err) {
+        setBadge('error', `⚠ ${err.message || 'Server unreachable'}`);
+        btn.textContent = 'Generate QR Codes';
+        btn.disabled = false;
+        return;
       }
     } else {
       setBadge('fallback', '⚠ No server URL — using static token');

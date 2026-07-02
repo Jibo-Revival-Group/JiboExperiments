@@ -709,7 +709,7 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "OOBE_20160715",
             Operation = "VerifyConnection",
-            BodyText = $$"""{"token":"{{token}}","reportedHostMappings":{"api.jibo.com":"https://jibo.expected.home.arpa:443","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+            BodyText = $$$"""{"token":"{{{token}}}","reportedHostMappings":{"api.jibo.com":"https://jibo.expected.home.arpa:443","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
         });
 
         using var proofPayload = JsonDocument.Parse(proof.BodyText);
@@ -754,7 +754,7 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "OOBE_20160715",
             Operation = "VerifyConnection",
-            BodyText = $$"""{"token":"{{token}}","reportedDnsMappings":{"api.jibo.com":"wrong.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+            BodyText = $$$"""{"token":"{{{token}}}","reportedDnsMappings":{"api.jibo.com":"wrong.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
         });
 
         using var proofPayload = JsonDocument.Parse(proof.BodyText);

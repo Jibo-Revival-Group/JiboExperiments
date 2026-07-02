@@ -21,7 +21,7 @@ internal static class ApiRequestEnvelopeFactory
             RequestId = Guid.NewGuid().ToString("N"),
             Transport = "http",
             Method = context.Request.Method,
-            HostName = context.Request.Host.Host,
+            HostName = ResolveHostName(context),
             Path = context.Request.Path.Value ?? "/",
             ServicePrefix = targetParts.Length > 0 ? targetParts[0] : null,
             Operation = targetParts.Length > 1 ? targetParts[1] : null,
@@ -33,5 +33,11 @@ internal static class ApiRequestEnvelopeFactory
             Headers = context.Request.Headers.ToDictionary(pair => pair.Key, pair => pair.Value.ToString(),
                 StringComparer.OrdinalIgnoreCase)
         };
+    }
+
+    private static string ResolveHostName(HttpContext context)
+    {
+        var harnessHost = context.Request.Headers["X-OpenJibo-Harness-Host"].ToString();
+        return string.IsNullOrWhiteSpace(harnessHost) ? context.Request.Host.Host : harnessHost.Trim();
     }
 }

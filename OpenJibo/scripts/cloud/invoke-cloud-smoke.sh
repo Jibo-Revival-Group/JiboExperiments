@@ -284,6 +284,30 @@ prepare_body = {"loopId": loop_id, "rollbackSnapshotId": f"smoke-rollback-{test_
 if account_id:
     prepare_body["accountId"] = account_id
 
+plan_conversion = request_json(
+    "PlanConversion",
+    "POST",
+    f"{base_url.rstrip('/')}/",
+    {
+        "X-Amz-Target": "OOBE_20161026.PlanConversion",
+        "Host": base_host,
+    },
+    prepare_body,
+)
+add_result(plan_conversion)
+if not plan_conversion.success:
+    raise SystemExit(
+        f"PlanConversion failed with status code {plan_conversion.status_code}: {plan_conversion.error}"
+    )
+plan_body = plan_conversion.body if isinstance(plan_conversion.body, dict) else {}
+plan_readiness = plan_body.get("conversionReadiness") if isinstance(plan_body.get("conversionReadiness"), dict) else {}
+if plan_body.get("willWriteRobot"):
+    raise SystemExit("PlanConversion unexpectedly reported that it would write the robot.")
+if not plan_body.get("canPrepareRobot") or not plan_readiness.get("canWriteRobot"):
+    raise SystemExit("PlanConversion did not report a write-safe prepared conversion path.")
+if plan_body.get("targetHost") != "api.openjibo.com":
+    raise SystemExit("PlanConversion returned an unexpected managed Open Jibo target host.")
+
 prepare = request_json(
     "PrepareRobot",
     "POST",

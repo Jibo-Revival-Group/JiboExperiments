@@ -722,6 +722,55 @@ public sealed class JiboCloudProtocolServiceTests
             blocker => blocker.GetString() == "missing-reported-host-mappings");
     }
 
+
+    [Fact]
+    public async Task VerifyConnection_WhenLiveRobotProofRequiresPartialDnsMappingsReportsIncompleteBlocker()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText =
+                """{"deviceId":"robot-partial-dns-proof","targetMode":"open-jibo-self-hosted","targetHost":"jibo.expected.home.arpa","rollbackSnapshotId":"rollback-partial-dns-proof"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-partial-dns-proof"}"""
+        });
+        Assert.Equal(200, setup.StatusCode);
+
+        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "VerifyConnection",
+            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa"}}"""
+        });
+
+        using var proofPayload = JsonDocument.Parse(proof.BodyText);
+        Assert.False(proofPayload.RootElement.GetProperty("connected").GetBoolean());
+        Assert.False(proofPayload.RootElement.GetProperty("reportedHostMappingsMatch").GetBoolean());
+        Assert.False(proofPayload.RootElement.GetProperty("reportedConnectionProofComplete").GetBoolean());
+        Assert.False(proofPayload.RootElement.GetProperty("reportedHostMappingCompleteness").GetProperty("complete").GetBoolean());
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray(),
+            blocker => blocker.GetString() == "incomplete-reported-host-mappings");
+        Assert.Contains(proofPayload.RootElement.GetProperty("reportedHostMappingCompleteness").GetProperty("missingHosts").EnumerateArray(),
+            host => host.GetString() == "api-socket.jibo.com");
+    }
+
     [Fact]
     public async Task VerifyConnection_WhenRobotReportsLegacyHostMappingsEchoesDnsProof()
     {

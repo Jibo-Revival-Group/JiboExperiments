@@ -1303,6 +1303,20 @@ public sealed class WebSocketTurnFinalizationService(
                 return [];
             }
 
+            if (TryExtractTrailingYesNoReply(finalizedTurn, out var trailingYesNoReply))
+            {
+                await sink.RecordTurnDiagnosticAsync("yes_no_prompt_echo_trimmed",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["messageType"] = messageType,
+                        ["transcript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript,
+                        ["trimmedTranscript"] = trailingYesNoReply,
+                        ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                        ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount
+                    }), cancellationToken);
+                finalizedTurn = WithSanitizedTranscript(finalizedTurn, trailingYesNoReply);
+            }
+
             if (ShouldDeferForLikelyContinuation(finalizedTurn, turnState, messageType,
                     allowFallbackOnMissingTranscript, out var deferralReason))
             {
@@ -2822,6 +2836,61 @@ public sealed class WebSocketTurnFinalizationService(
             : NormalizeUsableTranscript(command);
 
         return commandTranscript is "stop" or "cancel" or "never mind" or "nevermind";
+    }
+
+    private static bool TryExtractTrailingYesNoReply(TurnContext turn, out string replyTranscript)
+    {
+        replyTranscript = string.Empty;
+        if (!IsYesNoTurn(turn)) return false;
+
+        var normalizedTranscript = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
+        if (string.IsNullOrWhiteSpace(normalizedTranscript)) return false;
+
+        var wholeReply = TryClassifyYesNoReply(normalizedTranscript);
+        if (wholeReply is YesNoReply.Affirmative or YesNoReply.Negative &&
+            normalizedTranscript.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Length <= 3)
+            return false;
+
+        if (TryFindTrailingYesNoPhrase(normalizedTranscript, out replyTranscript))
+            return true;
+
+        return false;
+    }
+
+    private static bool TryFindTrailingYesNoPhrase(string normalizedTranscript, out string replyTranscript)
+    {
+        replyTranscript = string.Empty;
+        var tokens = normalizedTranscript.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length < 2) return false;
+
+        for (var tokenCount = Math.Min(3, tokens.Length); tokenCount >= 1; tokenCount -= 1)
+        {
+            var candidateTokens = tokens[^tokenCount..];
+            var candidate = string.Join(' ', candidateTokens);
+            var reply = TryClassifyYesNoReply(candidate);
+            if (reply is not (YesNoReply.Affirmative or YesNoReply.Negative)) continue;
+
+            var prefix = string.Join(' ', tokens[..^tokenCount]);
+            if (!LooksLikeYesNoPromptEchoPrefix(prefix)) continue;
+
+            replyTranscript = candidate;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool LooksLikeYesNoPromptEchoPrefix(string prefix)
+    {
+        if (string.IsNullOrWhiteSpace(prefix)) return false;
+        if (TranscriptHeuristics.IsLikelyPromptEchoTranscript(prefix)) return true;
+
+        return prefix.Contains("do you want", StringComparison.Ordinal) ||
+               prefix.Contains("would you like", StringComparison.Ordinal) ||
+               prefix.Contains("want to hear", StringComparison.Ordinal) ||
+               prefix.Contains("hear something", StringComparison.Ordinal) ||
+               prefix.Contains("yes or no", StringComparison.Ordinal);
     }
 
     private static bool LooksLikeCloudVersionSelfAudioOnly(string normalized)

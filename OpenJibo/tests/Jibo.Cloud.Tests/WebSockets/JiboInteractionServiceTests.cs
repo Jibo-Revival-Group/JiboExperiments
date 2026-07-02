@@ -5509,15 +5509,18 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("sports", provider.LastRequest!.PreferredCategories, StringComparer.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public async Task BuildDecisionAsync_CloudVersion_UsesSharedBuildInfo()
+    [Theory]
+    [InlineData("what's the cloud version")]
+    [InlineData("what's your cloud version")]
+    [InlineData("what's your closet")]
+    public async Task BuildDecisionAsync_CloudVersion_UsesSharedBuildInfo(string transcript)
     {
         var service = CreateService();
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "what's the cloud version",
-            NormalizedTranscript = "what's the cloud version"
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
         });
 
         Assert.Equal("cloud_version", decision.IntentName);

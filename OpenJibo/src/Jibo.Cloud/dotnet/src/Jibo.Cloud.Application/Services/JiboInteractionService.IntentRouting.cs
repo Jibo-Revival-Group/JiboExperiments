@@ -211,7 +211,11 @@ public sealed partial class JiboInteractionService
                 "cloud version",
                 "open jibo cloud version",
                 "openjibo cloud version",
+                "what s your closet",
+                "what's your closet",
                 "what version is the cloud",
+                "what s your cloud version",
+                "what's your cloud version",
                 "what s the cloud version",
                 "what's the cloud version"))
             return "cloud_version";

@@ -189,6 +189,12 @@ deployment_args=(
 
 if [[ "$enable_azure_speech" == true ]]; then
   deployment_args+=(--parameters "enableAzureSpeech=true")
+  azure_speech_subscription_key="$(az keyvault secret show --vault-name "$key_vault_name" --name azure-speech-subscription-key --query value -o tsv)"
+  if [[ -z "$azure_speech_subscription_key" ]]; then
+    echo "Could not read azure-speech-subscription-key from Key Vault '$key_vault_name'." >&2
+    exit 1
+  fi
+  deployment_args+=(--parameters "azureSpeechSubscriptionKey=${azure_speech_subscription_key}")
   if [[ -n "$azure_speech_region" ]]; then
     deployment_args+=(--parameters "azureSpeechRegion=${azure_speech_region}")
   fi

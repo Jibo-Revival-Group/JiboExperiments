@@ -120,6 +120,11 @@ if ($DisableAzureSpeech) {
 
 if ($EnableAzureSpeech) {
     $arguments += @("--parameters", "enableAzureSpeech=true")
+    $azureSpeechSubscriptionKey = az keyvault secret show --vault-name $KeyVaultName --name azure-speech-subscription-key --query value -o tsv
+    if ([string]::IsNullOrWhiteSpace($azureSpeechSubscriptionKey)) {
+        throw "Could not read azure-speech-subscription-key from Key Vault '$KeyVaultName'."
+    }
+    $arguments += @("--parameters", "azureSpeechSubscriptionKey=$azureSpeechSubscriptionKey")
     if (-not [string]::IsNullOrWhiteSpace($AzureSpeechRegion)) {
         $arguments += @("--parameters", "azureSpeechRegion=$AzureSpeechRegion")
     }

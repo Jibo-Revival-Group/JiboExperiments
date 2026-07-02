@@ -9,6 +9,7 @@ test_last_name="${TEST_LAST_NAME:-Jibo}"
 test_robot_id="${TEST_ROBOT_ID:-open-jibo-smoke-robot}"
 target_mode="${OPENJIBO_SMOKE_TARGET_MODE:-open-jibo}"
 target_host="${OPENJIBO_SMOKE_TARGET_HOST:-}"
+reported_connection_host="${OPENJIBO_SMOKE_REPORTED_CONNECTION_HOST:-}"
 if [[ -z "$target_host" ]]; then
   if [[ "$target_mode" == "open-jibo-self-hosted" ]]; then
     target_host="$(python3 - "$base_url" <<'PYHOST'
@@ -22,6 +23,9 @@ PYHOST
     target_host="api.openjibo.com"
   fi
 fi
+if [[ -z "$reported_connection_host" ]]; then
+  reported_connection_host="$target_host"
+fi
 base_host="$(python3 - "$base_url" <<'PY'
 from urllib.parse import urlparse
 import sys
@@ -31,7 +35,7 @@ print(parsed.netloc or parsed.path)
 PY
 )"
 
-python3 - "$base_url" "$base_host" "$test_email" "$test_password" "$test_first_name" "$test_last_name" "$test_robot_id" "$target_mode" "$target_host" <<'PY'
+python3 - "$base_url" "$base_host" "$test_email" "$test_password" "$test_first_name" "$test_last_name" "$test_robot_id" "$target_mode" "$target_host" "$reported_connection_host" <<'PY'
 import json
 import sys
 from dataclasses import dataclass
@@ -39,7 +43,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from typing import Any, Dict, List, Optional
 
-base_url, base_host, test_email, test_password, test_first_name, test_last_name, test_robot_id, target_mode, target_host = sys.argv[1:10]
+base_url, base_host, test_email, test_password, test_first_name, test_last_name, test_robot_id, target_mode, target_host, reported_connection_host = sys.argv[1:11]
 
 
 @dataclass
@@ -395,7 +399,7 @@ connection_proof = request_json(
         "X-Amz-Target": "OOBE_20161026.VerifyConnection",
         "Host": base_host,
     },
-    {"token": token},
+    {"token": token, "reportedConnectionHost": reported_connection_host},
 )
 add_result(connection_proof)
 if not connection_proof.success:
@@ -414,6 +418,10 @@ if proof_body.get("targetMode") != target_mode:
     raise SystemExit("VerifyConnection returned an unexpected Open Jibo target mode.")
 if proof_body.get("targetHost") != target_host:
     raise SystemExit("VerifyConnection returned an unexpected Open Jibo target host.")
+if proof_body.get("reportedConnectionHost") != reported_connection_host:
+    raise SystemExit("VerifyConnection did not echo the normalized reported connection host.")
+if not proof_body.get("reportedConnectionHostMatches"):
+    raise SystemExit("VerifyConnection did not confirm the reported connection host matched the target host.")
 
 host_mappings = proof_body.get("hostMappings") if isinstance(proof_body.get("hostMappings"), dict) else {}
 for legacy_host in ("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com"):

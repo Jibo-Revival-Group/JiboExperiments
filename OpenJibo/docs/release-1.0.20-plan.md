@@ -225,6 +225,9 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - tightened the conversion-video evidence recorder so its cloud smoke now uses the same selected Open Jibo target mode and target host that the filesystem harness stages on the robot overlay; this prevents a self-hosted/developer conversion demo from accidentally proving only the default managed `open-jibo` cloud path.
 - expanded the conversion-video manifest with the robot-facing `VerifyConnection` proof from smoke output, including connected/complete state, accepted target mode/host, legacy host mappings, and write-safe readiness, so the filmed conversion bundle can show that the converted robot is pointed at the intended cloud before any physical write.
 - kept the remaining physical-device blockers unchanged: first real-device variant selection, backup confirmation, safe awakening asset reuse, and live face/person identifier capture still need operator review before moving from overlay proof to a physical robot.
+- added an authenticated admin summary API and dashboard panel so operators can review cloud version, persistence state, robot host mappings, identity/admission counts, Home Assistant connectivity, suggested smoke operations, and the current conversion blockers/questions without digging through raw snapshots.
+- added a browser-based fake Jibo robot harness at `/harness` that can issue `X-Amz-Target` robot protocol calls with a selectable simulated host, starting with conversion audit/status/connection proof and robot profile presets so cloud endpoints can be exercised while waiting on physical robot proof.
+- added a harness-only host override header for local browser smoke runs so self-hosted/developer conversion targets can be verified without needing DNS or browser-forbidden `Host` header mutation.
 
 ## Working Order
 

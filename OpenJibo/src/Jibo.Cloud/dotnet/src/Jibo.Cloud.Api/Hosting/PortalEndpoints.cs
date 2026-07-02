@@ -250,6 +250,86 @@ internal static class PortalEndpoints
             });
         });
 
+
+        app.MapGet("/api/portal/admin/summary", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore,
+            IUserIntegrationStore integrationStore,
+            HomeAssistantConnectionRegistry registry) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var robot = cloudStateStore.GetRobot();
+            var persistence = cloudStateStore.GetPersistenceStateInfo();
+            var graph = cloudStateStore.GetIdentityGraph();
+            var backups = cloudStateStore.GetBackups();
+            var updates = cloudStateStore.ListUpdates();
+            var media = cloudStateStore.ListMedia();
+            var loops = cloudStateStore.GetLoops();
+            var people = cloudStateStore.GetPeople();
+            var haLinks = integrationStore.GetHomeAssistantLinks();
+
+            return Results.Json(new
+            {
+                cloudVersion = OpenJiboCloudBuildInfo.Version,
+                persistence,
+                robot = new
+                {
+                    robot.DeviceId,
+                    robot.RobotId,
+                    robot.FriendlyName,
+                    robot.FirmwareVersion,
+                    robot.ApplicationVersion,
+                    robot.IsActive,
+                    robot.HostMappings
+                },
+                counts = new
+                {
+                    loops = loops.Count,
+                    people = people.Count,
+                    updates = updates.Count,
+                    backups = backups.Count,
+                    media = media.Count,
+                    homeAssistantLinks = haLinks.Count,
+                    homeAssistantConnected = haLinks.Count(link => registry.IsInstanceConnected(link.HaInstanceId)),
+                    identityRelationships = graph.Relationships.Count,
+                    identityEvidenceSignals = graph.EvidenceSignals.Count
+                },
+                conversion = new
+                {
+                    targetMode = robot.HostMappings.TryGetValue("api.jibo.com", out var apiHost) &&
+                                 apiHost.Contains("openjibo", StringComparison.OrdinalIgnoreCase)
+                        ? "open-jibo"
+                        : "unconfirmed",
+                    hostMappings = robot.HostMappings,
+                    blockers = BuildAdminConversionBlockers(robot, graph),
+                    operatorQuestions = new[]
+                    {
+                        "Which physical robot variant should be the first conversion target?",
+                        "Has the latest non-destructive backup/rollback snapshot been filmed and approved?",
+                        "Which safe awakening assets are approved for first-boot reuse?",
+                        "Do live websocket captures expose stable face/person identifiers, or should the demo stay smoke-seeded?"
+                    }
+                },
+                harness = new
+                {
+                    url = "/harness",
+                    suggestedOperations = new[]
+                    {
+                        "OOBE_20161026.AuditConversion",
+                        "OOBE_20161026.PrepareRobot",
+                        "OOBE_20161026.GetStatus",
+                        "OOBE_20161026.VerifyConnection",
+                        "Robot_20160225.GetRobot",
+                        "Update_20160225.ListUpdates"
+                    }
+                }
+            });
+        });
+
         app.MapPost("/api/portal/logout", (
             [FromBody] PortalLogoutRequest request,
             HttpRequest httpRequest,
@@ -282,6 +362,29 @@ internal static class PortalEndpoints
                 .Select(link => BuildHomeAssistantPayload(link, registry));
             return Results.Json(new { links });
         });
+    }
+
+
+    private static IReadOnlyList<string> BuildAdminConversionBlockers(
+        DeviceRegistration robot,
+        IdentityGraphSnapshot graph)
+    {
+        var blockers = new List<string>();
+
+        if (!robot.IsActive)
+            blockers.Add("robot-not-active");
+
+        if (robot.HostMappings.Count == 0)
+            blockers.Add("missing-host-mappings");
+
+        if (graph.AdmissionAssessment.BlockingEvidence.Count > 0)
+            blockers.AddRange(graph.AdmissionAssessment.BlockingEvidence.Select(evidence => $"identity-{evidence}"));
+
+        if (!robot.HostMappings.TryGetValue("api.jibo.com", out var apiHost) ||
+            string.IsNullOrWhiteSpace(apiHost))
+            blockers.Add("missing-api-host-mapping");
+
+        return blockers.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
     private static PortalSessionService.PortalSession? ResolvePortalSession(

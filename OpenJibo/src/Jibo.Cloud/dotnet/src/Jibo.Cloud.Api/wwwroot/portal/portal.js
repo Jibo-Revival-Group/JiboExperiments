@@ -171,6 +171,54 @@ async function renderIdentityGraphPanel() {
   }
 }
 
+
+async function renderAdminPanel() {
+  try {
+    const admin = await apiFetch("/api/portal/admin/summary");
+    const blockers = admin.conversion?.blockers || [];
+    const questions = admin.conversion?.operatorQuestions || [];
+    const operations = admin.harness?.suggestedOperations || [];
+    return `
+      <section class="card panel wide-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Admin readiness</p>
+            <h2>Cloud, conversion, and smoke harness</h2>
+          </div>
+          <span class="badge ${blockers.length ? "warning" : "success"}">${blockers.length ? "Needs review" : "Ready"}</span>
+        </div>
+        <p class="muted">Operator summary for getting a robot converted to Open Jibo and proving it can connect to this cloud.</p>
+        <div class="meta-list compact">
+          <div class="meta-item"><span>Cloud version</span><span>${escapeHtml(admin.cloudVersion || "—")}</span></div>
+          <div class="meta-item"><span>Persistence</span><span>${escapeHtml(admin.persistence?.backend || admin.persistence?.kind || "configured")}</span></div>
+          <div class="meta-item"><span>Robot active</span><span>${admin.robot?.isActive ? "Yes" : "No"}</span></div>
+          <div class="meta-item"><span>Target mode</span><span>${escapeHtml(admin.conversion?.targetMode || "unconfirmed")}</span></div>
+          <div class="meta-item"><span>Loops / people</span><span>${admin.counts?.loops || 0} / ${admin.counts?.people || 0}</span></div>
+          <div class="meta-item"><span>Updates / backups</span><span>${admin.counts?.updates || 0} / ${admin.counts?.backups || 0}</span></div>
+          <div class="meta-item"><span>Identity evidence</span><span>${admin.counts?.identityRelationships || 0} rels, ${admin.counts?.identityEvidenceSignals || 0} signals</span></div>
+          <div class="meta-item"><span>Home Assistant</span><span>${admin.counts?.homeAssistantConnected || 0}/${admin.counts?.homeAssistantLinks || 0} connected</span></div>
+        </div>
+        <div class="meta-list compact">
+          <div class="meta-item"><span>Blockers</span><span>${escapeHtml(blockers.join(", ") || "None from stored cloud state")}</span></div>
+          <div class="meta-item"><span>Smoke operations</span><span>${escapeHtml(operations.join(", ") || "—")}</span></div>
+        </div>
+        <ul class="steps">${questions.map((question) => `<li>${escapeHtml(question)}</li>`).join("")}</ul>
+        <div class="actions-row">
+          <a class="secondary-button" href="${escapeHtml(admin.harness?.url || "/harness")}">Open fake robot harness</a>
+        </div>
+      </section>
+    `;
+  } catch (error) {
+    return `
+      <section class="card panel wide-panel">
+        <p class="eyebrow">Admin readiness</p>
+        <h2>Cloud, conversion, and smoke harness</h2>
+        <p class="status error">${escapeHtml(error.message)}</p>
+      </section>
+    `;
+  }
+}
+
 function haStatusBadge(homeAssistant) {
   if (!homeAssistant?.linked) {
     return `<span class="badge neutral">Not paired</span>`;
@@ -256,6 +304,7 @@ async function renderDashboard(message = "", tone = "success") {
   }
 
   const identityGraphPanel = await renderIdentityGraphPanel();
+  const adminPanel = await renderAdminPanel();
 
   app.innerHTML = `
     <div class="shell">
@@ -283,6 +332,8 @@ async function renderDashboard(message = "", tone = "success") {
 
         ${renderHomeAssistantPanel(dashboard)}
       </div>
+
+      ${adminPanel}
 
       ${identityGraphPanel}
 

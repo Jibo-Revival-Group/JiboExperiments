@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenJibo Fake Robot Harness</title>
+  <link rel="stylesheet" href="/harness/harness.css">
+</head>
+<body>
+<main class="shell">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">OpenJibo 1.0.20</p>
+      <h1>Fake Jibo robot harness</h1>
+      <p class="lede">Execute robot-facing protocol calls against this cloud before a physical conversion run.</p>
+    </div>
+    <a class="link-button" href="/portal">Portal</a>
+  </header>
+
+  <section class="card grid">
+    <label>Host header
+      <input id="hostName" value="api.openjibo.com">
+    </label>
+    <label>Service
+      <input id="servicePrefix" value="OOBE_20161026">
+    </label>
+    <label>Operation
+      <input id="operation" value="AuditConversion">
+    </label>
+    <label>Method
+      <select id="method"><option>POST</option><option>GET</option><option>PUT</option></select>
+    </label>
+  </section>
+
+  <section class="card">
+    <div class="panel-header">
+      <div>
+        <p class="eyebrow">Request body</p>
+        <h2>Conversion smoke payload</h2>
+      </div>
+      <button id="loadVerifyConnection" class="secondary" type="button">Load VerifyConnection proof</button>
+    </div>
+    <textarea id="bodyText" spellcheck="false">{
+  "deviceId": "fake-jibo-001",
+  "targetMode": "open-jibo-self-hosted",
+  "targetHost": "jibo.local.test",
+  "rollbackSnapshotId": "rollback-smoke-001",
+  "stockMode": "oobe",
+  "distribution": "stock-us",
+  "requireBaselineAudit": true
+}</textarea>
+    <div class="actions">
+      <button id="sendButton" class="primary" type="button">Send robot call</button>
+      <button id="loadStatus" class="secondary" type="button">Load GetStatus</button>
+      <button id="loadRobot" class="secondary" type="button">Load GetRobot</button>
+    </div>
+    <p id="status" class="status hidden"></p>
+  </section>
+
+  <section class="card">
+    <p class="eyebrow">Response</p>
+    <pre id="response">No request sent yet.</pre>
+  </section>
+</main>
+<script src="/harness/harness.js"></script>
+</body>
+</html>

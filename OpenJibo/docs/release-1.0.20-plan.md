@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-02`)
 
+- expanded the robot-facing `OOBE VerifyConnection` proof so a conversion client can send robot-observed legacy DNS/host mappings via `reportedHostMappings`, `reportedDnsMappings`, or `resolvedHostMappings`; the cloud normalizes URL/host:port values, echoes the reported mapping evidence, and reports `reported-host-mapping-mismatch` when the robot-observed `api.jibo.com`, `api-socket.jibo.com`, or `neo-hub.jibo.com` target does not match the selected Open Jibo cloud. This gives the conversion video a stronger DNS retargeting proof before physical writes.
+
 - strengthened the robot-facing `OOBE VerifyConnection` proof again so a conversion client can send `reportedConnectionHost` / `connectedHost` / `resolvedHost` / `currentHost`; the cloud normalizes URLs or host:port values, echoes the normalized reported host, and reports `reported-connection-host-mismatch` when the robot says it reached a different host than the selected Open Jibo target. This keeps the final conversion proof from relying only on stored setup mappings.
 
 - tightened the robot-facing `OOBE VerifyConnection` proof so it now compares the expected Open Jibo host mappings against the persisted robot identity graph, returns the stored mappings beside the expected mappings, and reports `host-mapping-mismatch` in `connectionBlockers` instead of claiming the robot is connected when DNS/API mapping state has drifted. This keeps the conversion-video and deployment gates focused on a real robot-to-cloud connection proof, not just a completed setup token.

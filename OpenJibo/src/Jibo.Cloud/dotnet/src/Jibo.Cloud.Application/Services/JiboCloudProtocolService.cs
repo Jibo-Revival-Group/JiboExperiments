@@ -304,7 +304,9 @@ public sealed class JiboCloudProtocolService(
                 ? BuildRobotHostMappings(current!.TargetMode, current.TargetHost, envelope.HostName)
                 : robot.HostMappings;
             var readiness = EvaluateConversionReadiness(hasTokenState ? current : null, expired, envelope.HostName);
-            var connectionBlockers = BuildConnectionBlockers(hasTokenState, current, expired, robot, hostMappings);
+            var reportedConnectionHost = ReadReportedConnectionHost(body);
+            var connectionBlockers = BuildConnectionBlockers(hasTokenState, current, expired, robot, hostMappings,
+                targetHost, reportedConnectionHost);
 
             return ProtocolDispatchResult.Ok(new
             {
@@ -326,6 +328,10 @@ public sealed class JiboCloudProtocolService(
                     : new OobeBaselineEvidence().ToResponse(),
                 hostMappings,
                 storedHostMappings = robot.HostMappings,
+                reportedConnectionHost,
+                reportedConnectionHostMatches = string.IsNullOrWhiteSpace(reportedConnectionHost) ||
+                                                string.Equals(reportedConnectionHost, targetHost,
+                                                    StringComparison.OrdinalIgnoreCase),
                 hostMappingsMatch = connectionBlockers.All(blocker => blocker != "host-mapping-mismatch"),
                 connectionBlockers,
                 conversionReadiness = readiness.ToResponse()
@@ -433,7 +439,9 @@ public sealed class JiboCloudProtocolService(
         OobeTokenState? state,
         bool expired,
         DeviceRegistration robot,
-        IDictionary<string, string> expectedHostMappings)
+        IDictionary<string, string> expectedHostMappings,
+        string expectedConnectionHost,
+        string? reportedConnectionHost)
     {
         var blockers = new List<string>();
         if (expired)
@@ -444,8 +452,40 @@ public sealed class JiboCloudProtocolService(
             blockers.Add("robot-inactive");
         if (!HostMappingsMatch(robot.HostMappings, expectedHostMappings))
             blockers.Add("host-mapping-mismatch");
+        if (!string.IsNullOrWhiteSpace(reportedConnectionHost) &&
+            !string.Equals(reportedConnectionHost, expectedConnectionHost, StringComparison.OrdinalIgnoreCase))
+            blockers.Add("reported-connection-host-mismatch");
 
         return blockers;
+    }
+
+    private static string? ReadReportedConnectionHost(JsonElement? body)
+    {
+        var reportedHost = ReadString(body, "reportedConnectionHost") ??
+                           ReadString(body, "connectedHost") ??
+                           ReadString(body, "resolvedHost") ??
+                           ReadString(body, "currentHost");
+        if (!string.IsNullOrWhiteSpace(reportedHost))
+            return NormalizeHostName(reportedHost);
+
+        return null;
+    }
+
+    private static string NormalizeHostName(string hostName)
+    {
+        var trimmed = hostName.Trim();
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri) && !string.IsNullOrWhiteSpace(uri.Host))
+            return uri.Host;
+
+        var slashIndex = trimmed.IndexOf('/', StringComparison.Ordinal);
+        if (slashIndex >= 0)
+            trimmed = trimmed[..slashIndex];
+
+        var portIndex = trimmed.LastIndexOf(':');
+        if (portIndex > 0 && trimmed.IndexOf(':') == portIndex)
+            trimmed = trimmed[..portIndex];
+
+        return trimmed;
     }
 
     private static bool HostMappingsMatch(

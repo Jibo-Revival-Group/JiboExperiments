@@ -630,6 +630,51 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task VerifyConnection_WhenRobotReportsDifferentConnectedHostReportsBlocker()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText =
+                """{"deviceId":"robot-host-proof","targetMode":"open-jibo-self-hosted","targetHost":"jibo.expected.home.arpa","rollbackSnapshotId":"rollback-host-proof"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-host-proof"}"""
+        });
+        Assert.Equal(200, setup.StatusCode);
+
+        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "VerifyConnection",
+            BodyText = $$"""{"token":"{{token}}","reportedConnectionHost":"https://wrong.home.arpa:443/v1/oobe"}"""
+        });
+
+        using var proofPayload = JsonDocument.Parse(proof.BodyText);
+        Assert.False(proofPayload.RootElement.GetProperty("connected").GetBoolean());
+        Assert.Equal("wrong.home.arpa", proofPayload.RootElement.GetProperty("reportedConnectionHost").GetString());
+        Assert.False(proofPayload.RootElement.GetProperty("reportedConnectionHostMatches").GetBoolean());
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray(),
+            blocker => blocker.GetString() == "reported-connection-host-mismatch");
+    }
+
+    [Fact]
     public async Task SetupRobot_UpdatesIdentityGraphRobotAndOpenJiboHostMappings()
     {
         var store = new InMemoryCloudStateStore();

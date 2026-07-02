@@ -16,6 +16,7 @@ var resolvedContainerRegistryName = empty(containerRegistryName) ? 'cr${compactN
 var resolvedKeyVaultName = empty(keyVaultName) ? 'kv-${take(workloadName, 7)}-${take(environmentName, 5)}-${take(uniqueSuffix, 6)}' : keyVaultName
 var resolvedStorageAccountName = empty(storageAccountName) ? 'st${take(compactName, 11)}${take(uniqueSuffix, 11)}' : storageAccountName
 var resolvedPostgresServerName = empty(postgresServerName) ? 'psql-${take(workloadName, 12)}-${take(environmentName, 8)}-${take(uniqueSuffix, 8)}' : postgresServerName
+var resolvedSpeechServicesAccountName = empty(speechServicesAccountName) ? 'sp-${take(workloadName, 7)}-${take(environmentName, 5)}-${take(uniqueSuffix, 6)}' : speechServicesAccountName
 
 @description('Name of the Log Analytics workspace. Leave blank to use the standard Open Jibo generated name.')
 param logAnalyticsWorkspaceName string = ''
@@ -31,6 +32,9 @@ param storageAccountName string = ''
 
 @description('Name of the Azure Database for PostgreSQL flexible server. Leave blank to use the standard Open Jibo generated name.')
 param postgresServerName string = ''
+
+@description('Name of the Azure Speech resource used by Open Jibo managed. Leave blank to use the standard Open Jibo generated name.')
+param speechServicesAccountName string = ''
 
 @description('Administrator login name for the managed PostgreSQL server.')
 param postgresAdministratorLogin string = 'openjiboadmin'
@@ -139,6 +143,18 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
 }
 
+resource speechServicesAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
+  name: resolvedSpeechServicesAccountName
+  location: location
+  kind: 'SpeechServices'
+  sku: {
+    name: 'S0'
+  }
+  properties: {
+    publicNetworkAccess: 'Enabled'
+  }
+}
+
 resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-preview' = {
   name: resolvedPostgresServerName
   location: location
@@ -211,6 +227,7 @@ output keyVaultUri string = keyVault.properties.vaultUri
 output registryName string = registry.name
 output registryLoginServer string = registry.properties.loginServer
 output storageAccountName string = storageAccount.name
+output speechServicesAccountName string = speechServicesAccount.name
 output postgresServerName string = postgresServer.name
 output postgresFullyQualifiedDomainName string = postgresServer.properties.fullyQualifiedDomainName
 output postgresStateDatabaseName string = postgresStateDatabase.name

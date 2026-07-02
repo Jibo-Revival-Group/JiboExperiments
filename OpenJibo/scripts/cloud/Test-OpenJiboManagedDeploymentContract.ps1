@@ -56,6 +56,9 @@ $requiredFoundationMarkers = @(
     "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'",
     "param storageAccountName string = ''",
     "var resolvedStorageAccountName",
+    "resource speechServicesAccount 'Microsoft.CognitiveServices/accounts@2023-05-01'",
+    "param speechServicesAccountName string = ''",
+    "output speechServicesAccountName string",
     "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'",
     "publicNetworkAccess: 'Enabled'",
     "accessPolicies: []",
@@ -76,11 +79,16 @@ $requiredManagedMarkers = @(
     "param registryLoginServer string",
     "param keyVaultName string",
     "param apiHostname string = 'api.openjibo.com'",
+    "param enableAzureSpeech bool = true",
+    "param azureSpeechRegion string = location",
     "OpenJibo__CanonicalApiHostname",
     "OpenJibo__CanonicalApiBaseUrl",
     "output canonicalApiHostname string",
     "output containerAppName string",
     "output managedEnvironmentName string",
+    "OpenJibo__Stt__EnableAzureSpeech",
+    "azure-speech-subscription-key",
+    "OpenJibo__Stt__AzureSpeechSubscriptionKey",
     "secretRef: 'media-connection-string'",
     "OPENJIBO_STATE_STORAGE_CONNECTION_STRING",
     "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING",
@@ -105,6 +113,8 @@ $requiredWorkflowMarkers = @(
     "api_hostname",
     "api.openjibo.com",
     "--api-hostname",
+    "enable_azure_speech",
+    "azure_speech_region",
     "--run-migration",
     "--run-smoke"
 )
@@ -121,11 +131,11 @@ foreach ($marker in $requiredWorkflowMarkers) {
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing expected marker"
 }
 
-foreach ($marker in @("openjibo-media-connection-string", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
+foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscription-key", "cognitiveservices account keys list", "speechServicesAccountName", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
     Assert-ContainsMarker -Text $foundationScriptText -Marker $marker -FailurePrefix "Foundation script is missing expected marker"
 }
 
-foreach ($marker in @("RegistryName", "ApiHostname", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding")) {
+foreach ($marker in @("RegistryName", "ApiHostname", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
 }
 
@@ -176,7 +186,9 @@ $forbiddenMarkers = @(
     "-MediaConnectionString",
     "output storageConnectionString",
     "listKeys(storageAccount",
-    "keyvault set-policy"
+    "keyvault set-policy",
+    "AZURE_SPEECH_SUBSCRIPTION_KEY",
+    "--azure-speech-subscription-key"
 )
 
 foreach ($marker in $forbiddenMarkers) {

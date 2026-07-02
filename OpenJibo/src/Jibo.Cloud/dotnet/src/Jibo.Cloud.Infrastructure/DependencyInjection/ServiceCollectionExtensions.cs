@@ -174,6 +174,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IConversationBroker, DemoConversationBroker>();
         services.AddSingleton<IExternalProcessRunner, ExternalProcessRunner>();
         services.AddSingleton<ISttStrategy, SyntheticBufferedAudioSttStrategy>();
+        services.AddHttpClient<AzureSpeechBufferedAudioSttStrategy>();
+        services.AddSingleton<ISttStrategy>(provider =>
+            provider.GetRequiredService<AzureSpeechBufferedAudioSttStrategy>());
         services.AddSingleton<ISttStrategy, LocalWhisperCppBufferedAudioSttStrategy>();
         services.AddSingleton<ISttStrategySelector, DefaultSttStrategySelector>();
         services.AddSingleton<IWebSocketTelemetrySink, FileWebSocketTelemetrySink>();

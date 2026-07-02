@@ -28,6 +28,7 @@ public static class BufferedAudioSttPathResolver
         return new BufferedAudioSttOptions
         {
             EnableLocalWhisperCpp = source.EnableLocalWhisperCpp,
+            EnableAzureSpeech = source.EnableAzureSpeech,
             FfmpegPath = ResolveExecutable(
                 source.FfmpegPath,
                 ["OPENJIBO_STT_FFMPEG_PATH", "FFMPEG_PATH"],
@@ -49,6 +50,9 @@ public static class BufferedAudioSttPathResolver
                 BuildWhisperModelCandidates(platform, homeDirectory),
                 getEnvironmentVariable,
                 fileExists),
+            AzureSpeechRegion = source.AzureSpeechRegion,
+            AzureSpeechSubscriptionKey = source.AzureSpeechSubscriptionKey,
+            AzureSpeechEndpoint = source.AzureSpeechEndpoint,
             WhisperLanguage = source.WhisperLanguage,
             TempDirectory = source.TempDirectory,
             CleanupTempFiles = source.CleanupTempFiles

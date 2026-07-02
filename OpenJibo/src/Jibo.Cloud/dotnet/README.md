@@ -150,6 +150,10 @@ That enables two distinct STT paths:
 - fixture-oriented synthetic transcript hints for replay and parity tests
 - an opt-in local tool-based path that can normalize the buffered Ogg pages, call `ffmpeg`, and then call `whisper.cpp`
 
+A third path is now available for hosted deployments:
+
+- an opt-in Azure Speech path that reuses the same buffered-audio normalization and `ffmpeg` decode step, then calls Azure Speech over HTTP for the transcript
+
 The local tool path is intentionally off by default. It exists to help map real robot audio behavior while the stable hosted cloud remains the primary goal.
 
 The checked-in API host config enables that path by default, but it no longer
@@ -181,18 +185,27 @@ robot turns as the parity source.
 Configuration lives under `OpenJibo:Stt`:
 
 - `EnableLocalWhisperCpp`
+- `EnableAzureSpeech`
 - `FfmpegPath`
 - `WhisperCliPath`
 - `WhisperModelPath`
+- `AzureSpeechRegion`
+- `AzureSpeechSubscriptionKey`
+- `AzureSpeechEndpoint`
 - `WhisperLanguage`
 - `TempDirectory`
 
-This is not yet a claim of production-ready onboard ASR. It is a `.NET` discovery seam that keeps us compatible with the Node oracle while we evaluate longer-term options such as Azure-hosted STT or a managed decode/transcribe stack.
+`OPENJIBO_STT_*` path overrides still apply to the local decode chain.
+
+The Azure path is disabled unless `EnableAzureSpeech` is true and both the region and subscription key are present. It is intended for hosted deployments such as `api.openjibo.com`, while self-hosted setups can remain on HTTP or continue using the local whisper discovery path.
+
+This is not yet a claim of production-ready onboard ASR. It is a `.NET` discovery seam that keeps us compatible with the Node oracle while we evaluate the hosted Azure STT path alongside the local whisper discovery path.
 
 Latest live-capture guidance after the `2026-04-18` round:
 
 - prefer synthetic transcript hints when they are present in the observed turn
 - only use local `whisper.cpp` when the configured tool paths are real and the decode chain is behaving
+- use Azure Speech only when the hosted deployment explicitly opts in with a real subscription key and region
 - treat `ffmpeg` decode failures on normalized Ogg captures as evidence that the local audio path still needs more hardening before it can be the default live-test expectation
 - keep the Node implementation as the oracle for yes/no turn semantics and audio preprocessing details until the `.NET` port catches up
 

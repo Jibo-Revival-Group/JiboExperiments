@@ -27,6 +27,16 @@ param imageTag string = 'managed'
 @description('Canonical robot-facing hosted API hostname. This should match the hostname written by the robot conversion helpers.')
 param apiHostname string = 'api.openjibo.com'
 
+@description('Enables Azure Speech STT for hosted deployments.')
+param enableAzureSpeech bool = true
+
+@description('Azure Speech region used when Azure Speech STT is enabled.')
+param azureSpeechRegion string = location
+
+@description('Azure Speech subscription key used when Azure Speech STT is enabled.')
+@secure()
+param azureSpeechSubscriptionKey string = ''
+
 @description('Minimum number of replicas for the runtime container.')
 param minReplicas int = 1
 
@@ -99,6 +109,10 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'acr-password'
           value: registryCredentials.passwords[0].value
+        }
+        if (enableAzureSpeech) {
+          name: 'azure-speech-subscription-key'
+          value: azureSpeechSubscriptionKey
         }
         {
           name: 'state-connection-string'
@@ -208,6 +222,18 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'NEWSAPI_KEY'
               secretRef: 'news-api-key'
+            }
+            if (enableAzureSpeech) {
+              name: 'OpenJibo__Stt__EnableAzureSpeech'
+              value: 'true'
+            }
+            if (enableAzureSpeech) {
+              name: 'OpenJibo__Stt__AzureSpeechRegion'
+              value: azureSpeechRegion
+            }
+            if (enableAzureSpeech) {
+              name: 'OpenJibo__Stt__AzureSpeechSubscriptionKey'
+              secretRef: 'azure-speech-subscription-key'
             }
           ]
           resources: {

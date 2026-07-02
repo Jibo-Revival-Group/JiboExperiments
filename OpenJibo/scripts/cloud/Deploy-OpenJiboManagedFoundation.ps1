@@ -142,6 +142,11 @@ $storageConnectionString = Invoke-OpenJiboAzWithRetry `
     -Arguments @("storage", "account", "show-connection-string", "--resource-group", $ResourceGroupName, "--name", $outputs.storageAccountName.value, "--query", "connectionString", "--output", "tsv") `
     -Description "Storage connection string lookup"
 
+ # az cognitiveservices account keys list
+$speechSubscriptionKey = Invoke-OpenJiboAzWithRetry `
+    -Arguments @("cognitiveservices", "account", "keys", "list", "--resource-group", $ResourceGroupName, "--name", $outputs.speechServicesAccountName.value, "--query", "key1", "--output", "tsv") `
+    -Description "Azure Speech subscription key lookup"
+
 function New-OpenJiboPostgresConnectionString {
     param(
         [string]$DatabaseName
@@ -175,6 +180,8 @@ Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name
 Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-personal-memory-connection-string -Value $resolvedPersonalMemoryConnectionString
 
 Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-media-connection-string -Value $storageConnectionString
+
+Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name azure-speech-subscription-key -Value $speechSubscriptionKey
 
 Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-postgres-admin-password -Value $PostgresAdminPassword
 

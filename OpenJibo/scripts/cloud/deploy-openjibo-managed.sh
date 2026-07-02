@@ -7,6 +7,8 @@ registry_name=""
 image_tag="managed"
 location=""
 api_hostname="api.openjibo.com"
+enable_azure_speech=true
+azure_speech_region=""
 template_path="infra/azure/container-apps/openjibo-managed.bicep"
 parameters_path="infra/azure/container-apps/openjibo-managed.parameters.json"
 run_migration=false
@@ -37,6 +39,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     --api-hostname)
       api_hostname="${2:-api.openjibo.com}"
+      shift 2
+      ;;
+    --enable-azure-speech)
+      enable_azure_speech=true
+      shift
+      ;;
+    --disable-azure-speech)
+      enable_azure_speech=false
+      shift
+      ;;
+    --azure-speech-region)
+      azure_speech_region="${2:-eastus}"
       shift 2
       ;;
     --template-path)
@@ -172,6 +186,13 @@ deployment_args=(
   --parameters "imageTag=${image_tag}"
   --parameters "apiHostname=${api_hostname}"
 )
+
+if [[ "$enable_azure_speech" == true ]]; then
+  deployment_args+=(--parameters "enableAzureSpeech=true")
+  if [[ -n "$azure_speech_region" ]]; then
+    deployment_args+=(--parameters "azureSpeechRegion=${azure_speech_region}")
+  fi
+fi
 
 if [[ -n "$location" ]]; then
   deployment_args+=(--parameters "location=${location}")

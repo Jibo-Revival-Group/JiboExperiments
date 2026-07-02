@@ -161,6 +161,7 @@ postgres_admin_password = sys.argv[8]
 outputs = deployment_json["properties"]["outputs"]
 key_vault_name = outputs["keyVaultName"]["value"]
 storage_account_name = outputs["storageAccountName"]["value"]
+speech_services_account_name = outputs["speechServicesAccountName"]["value"]
 postgres_host = outputs["postgresFullyQualifiedDomainName"]["value"]
 postgres_login = outputs["postgresAdministratorLogin"]["value"]
 state_database_name = outputs["postgresStateDatabaseName"]["value"]
@@ -224,9 +225,22 @@ storage_connection_string = run_command_with_retry(
     "Storage connection string lookup",
 )
 
+speech_subscription_key = run_command_with_retry(
+    [
+        # az cognitiveservices account keys list
+        "az", "cognitiveservices", "account", "keys", "list",
+        "--resource-group", resource_group_name,
+        "--name", speech_services_account_name,
+        "--query", "key1",
+        "--output", "tsv",
+    ],
+    "Azure Speech subscription key lookup",
+)
+
 set_secret("openjibo-state-connection-string", state_connection_string or postgres_connection_string(state_database_name))
 set_secret("openjibo-personal-memory-connection-string", personal_memory_connection_string or postgres_connection_string(personal_memory_database_name))
 set_secret("openjibo-media-connection-string", storage_connection_string)
+set_secret("azure-speech-subscription-key", speech_subscription_key)
 set_secret("openjibo-postgres-admin-password", postgres_admin_password)
 set_secret("openjibo-openweather-api-key", open_weather_api_key)
 set_secret("openjibo-newsapi-key", news_api_key)

@@ -10,6 +10,9 @@ param(
     [string]$ApiHostname = "api.openjibo.com",
     [Parameter(Mandatory = $true)]
     [string]$RegistryName,
+    [bool]$EnableAzureSpeech = $true,
+    [switch]$DisableAzureSpeech,
+    [string]$AzureSpeechRegion = "",
     [string]$TemplatePath = "infra/azure/container-apps/openjibo-managed.bicep",
     [string]$ParametersPath = "infra/azure/container-apps/openjibo-managed.parameters.json",
     [switch]$RunMigration,
@@ -109,6 +112,17 @@ $arguments = @(
 
 if (-not [string]::IsNullOrWhiteSpace($Location)) {
     $arguments += @("--parameters", "location=$Location")
+}
+
+if ($DisableAzureSpeech) {
+    $EnableAzureSpeech = $false
+}
+
+if ($EnableAzureSpeech) {
+    $arguments += @("--parameters", "enableAzureSpeech=true")
+    if (-not [string]::IsNullOrWhiteSpace($AzureSpeechRegion)) {
+        $arguments += @("--parameters", "azureSpeechRegion=$AzureSpeechRegion")
+    }
 }
 
 $arguments += @("--output", "json")

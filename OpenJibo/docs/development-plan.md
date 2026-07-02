@@ -79,6 +79,7 @@ Current websocket scope:
 - buffered Ogg/Opus audio preservation per turn
 - synthetic transcript hint support for fixture-driven parity
 - opt-in local `ffmpeg` plus `whisper.cpp` STT path for discovery
+- opt-in hosted Azure Speech STT for managed deployments, using the same buffered-audio decode chain but skipping the local whisper tool dependency
 - local whisper only attempts external decoding when buffered audio contains an Opus identification header
 - auto-finalize thresholds for buffered audio after a real listen phase
 - late-audio ignore windows after completed turns

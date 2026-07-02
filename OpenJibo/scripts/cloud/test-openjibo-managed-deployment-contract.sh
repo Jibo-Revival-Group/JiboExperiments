@@ -45,6 +45,9 @@ required_foundation_markers=(
   "resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01'"
   "param storageAccountName string = ''"
   "var resolvedStorageAccountName"
+  "resource speechServicesAccount 'Microsoft.CognitiveServices/accounts@2023-05-01'"
+  "param speechServicesAccountName string = ''"
+  "output speechServicesAccountName string"
   "resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01'"
   "publicNetworkAccess: 'Enabled'"
   "accessPolicies: []"
@@ -65,11 +68,16 @@ required_managed_markers=(
   "param registryLoginServer string"
   "param keyVaultName string"
   "param apiHostname string = 'api.openjibo.com'"
+  "param enableAzureSpeech bool = true"
+  "param azureSpeechRegion string = location"
   "OpenJibo__CanonicalApiHostname"
   "OpenJibo__CanonicalApiBaseUrl"
   "output canonicalApiHostname string"
   "output containerAppName string"
   "output managedEnvironmentName string"
+  "OpenJibo__Stt__EnableAzureSpeech"
+  "azure-speech-subscription-key"
+  "OpenJibo__Stt__AzureSpeechSubscriptionKey"
   "secretRef: 'media-connection-string'"
   "OPENJIBO_STATE_STORAGE_CONNECTION_STRING"
   "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING"
@@ -94,6 +102,8 @@ required_workflow_markers=(
   "api_hostname"
   "api.openjibo.com"
   "--api-hostname"
+  "enable_azure_speech"
+  "azure_speech_region"
   "--run-migration"
   "--run-smoke"
 )
@@ -119,7 +129,7 @@ for marker in "${required_workflow_markers[@]}"; do
   fi
 done
 
-for marker in "openjibo-media-connection-string" "openjibo-postgres-admin-password" "postgresFullyQualifiedDomainName" "Invoke-OpenJiboAzWithRetry"; do
+for marker in "openjibo-media-connection-string" "azure-speech-subscription-key" "cognitiveservices account keys list" "speechServicesAccountName" "openjibo-postgres-admin-password" "postgresFullyQualifiedDomainName" "Invoke-OpenJiboAzWithRetry"; do
   if [[ "$foundation_script_text" != *"$marker"* ]]; then
     echo "Foundation script is missing expected marker: $marker" >&2
     exit 1
@@ -131,7 +141,7 @@ if [[ "$foundation_script_text" != *"seedPrincipalObjectId"* ]]; then
   exit 1
 fi
 
-for marker in "RegistryName" "ApiHostname" "containerapp hostname add" "containerapp hostname bind" "SkipHostnameBinding"; do
+for marker in "RegistryName" "ApiHostname" "containerapp hostname add" "containerapp hostname bind" "SkipHostnameBinding" "EnableAzureSpeech" "AzureSpeechRegion"; do
   if [[ "$managed_script_text" != *"$marker"* ]]; then
     echo "Managed deploy script is missing expected marker: $marker" >&2
     exit 1
@@ -211,7 +221,7 @@ if [[ "$managed_script_text" != *"Location"* ]]; then
   exit 1
 fi
 
-for forbidden_marker in "OPENJIBO_MEDIA_CONNECTION_STRING" "OPENJIBO_STATE_CONNECTION_STRING" "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING" "openjiboacr" "openjibokv" "-MediaConnectionString" "output storageConnectionString" "listKeys(storageAccount" "keyvault set-policy"; do
+for forbidden_marker in "OPENJIBO_MEDIA_CONNECTION_STRING" "OPENJIBO_STATE_CONNECTION_STRING" "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING" "openjiboacr" "openjibokv" "-MediaConnectionString" "output storageConnectionString" "listKeys(storageAccount" "keyvault set-policy" "AZURE_SPEECH_SUBSCRIPTION_KEY" "--azure-speech-subscription-key"; do
   if [[ "$workflow_text" == *"$forbidden_marker"* ]]; then
     echo "Workflow still references forbidden marker: $forbidden_marker" >&2
     exit 1

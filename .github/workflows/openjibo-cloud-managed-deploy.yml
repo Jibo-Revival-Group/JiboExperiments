@@ -15,6 +15,14 @@ on:
         description: Canonical robot-facing hosted API hostname
         required: false
         default: api.openjibo.com
+      enable_azure_speech:
+        description: Enable Azure Speech STT on the managed hosted deployment
+        required: false
+        default: "true"
+      azure_speech_region:
+        description: Azure Speech region used when Azure Speech STT is enabled
+        required: false
+        default: ""
 
 jobs:
   deploy:
@@ -88,6 +96,8 @@ jobs:
           --registry-name "${{ steps.foundation.outputs.registryName }}"
           --image-tag "${{ inputs.image_tag }}"
           --api-hostname "${{ inputs.api_hostname }}"
+          ${{ inputs.enable_azure_speech == 'false' && '--disable-azure-speech' || '' }}
+          ${{ inputs.enable_azure_speech == 'true' && inputs.azure_speech_region != '' && format('--azure-speech-region {0}', inputs.azure_speech_region) || '' }}
           ${{ inputs.location != '' && format('--location {0}', inputs.location) || '' }}
           --run-migration
           --run-smoke

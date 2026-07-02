@@ -1090,6 +1090,7 @@ For `1.0.20` and beyond:
    - planning anchor: [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md)
    - status: `ready`
    - note: the app-side onboarding sequence is now mapped, and the existing bootstrap / cloud contract scripts give us enough structure to start implementation rather than only discovery
+   - current progress: required physical/harness `VerifyConnection` proof now distinguishes missing, partial, mismatched, and complete legacy DNS mapping evidence for the three stock Jibo hosts before the conversion path is considered connected
 2. Device compatibility matrix
    - prove the conversion path on the newest OOBE-capable devices
    - prove it on older stock devices such as the `1.9.2` baseline

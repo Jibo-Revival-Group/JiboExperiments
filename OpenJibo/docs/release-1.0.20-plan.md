@@ -235,6 +235,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - added a browser-based fake Jibo robot harness at `/harness` that can issue `X-Amz-Target` robot protocol calls with a selectable simulated host, starting with conversion audit/status/connection proof and robot profile presets so cloud endpoints can be exercised while waiting on physical robot proof.
 - added a harness-only host override header for local browser smoke runs so self-hosted/developer conversion targets can be verified without needing DNS or browser-forbidden `Host` header mutation.
 - expanded the browser fake robot harness into a guided conversion smoke surface: operators can now edit target mode/host, rollback snapshot, baseline evidence, and device identity once, load each OOBE request shape, cache the prepared token, or run an audit → prepare → setup → live connection proof sequence that requires reported host and legacy DNS mapping evidence before moving to physical robot writes.
+- tightened live `VerifyConnection` proof completeness so a physical/harness run that requires reported evidence must report all three legacy host mappings (`api.jibo.com`, `api-socket.jibo.com`, and `neo-hub.jibo.com`); partial DNS evidence now returns `incomplete-reported-host-mappings` plus a machine-readable missing-host list instead of looking like a complete conversion proof.
 
 ## Working Order
 

@@ -339,9 +339,10 @@ public sealed class JiboCloudProtocolService(
                 reportedHostMappings,
                 reportedHostMappingsMatch = reportedHostMappings.Count == 0 ||
                                            HostMappingsMatch(reportedHostMappings, hostMappings),
+                reportedHostMappingCompleteness = BuildReportedHostMappingCompleteness(hostMappings, reportedHostMappings),
                 requiresReportedConnectionProof,
                 reportedConnectionProofComplete = !string.IsNullOrWhiteSpace(reportedConnectionHost) &&
-                                                  reportedHostMappings.Count > 0,
+                                                  RequiredHostMappingsPresent(hostMappings, reportedHostMappings),
                 hostMappingsMatch = connectionBlockers.All(blocker => blocker != "host-mapping-mismatch"),
                 connectionBlockers,
                 conversionReadiness = readiness.ToResponse()
@@ -468,6 +469,8 @@ public sealed class JiboCloudProtocolService(
             blockers.Add("missing-reported-connection-host");
         if (requiresReportedConnectionProof && reportedHostMappings.Count == 0)
             blockers.Add("missing-reported-host-mappings");
+        else if (requiresReportedConnectionProof && !RequiredHostMappingsPresent(expectedHostMappings, reportedHostMappings))
+            blockers.Add("incomplete-reported-host-mappings");
         if (!string.IsNullOrWhiteSpace(reportedConnectionHost) &&
             !string.Equals(reportedConnectionHost, expectedConnectionHost, StringComparison.OrdinalIgnoreCase))
             blockers.Add("reported-connection-host-mismatch");
@@ -543,6 +546,28 @@ public sealed class JiboCloudProtocolService(
         }
 
         return true;
+    }
+
+    private static bool RequiredHostMappingsPresent(
+        IDictionary<string, string> expected,
+        IDictionary<string, string> actual) =>
+        expected.Keys.All(actual.ContainsKey);
+
+    private static object BuildReportedHostMappingCompleteness(
+        IDictionary<string, string> expected,
+        IDictionary<string, string> reported)
+    {
+        var missing = expected.Keys
+            .Where(host => !reported.ContainsKey(host))
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return new
+        {
+            complete = missing.Length == 0,
+            requiredHosts = expected.Keys.Order(StringComparer.OrdinalIgnoreCase).ToArray(),
+            missingHosts = missing
+        };
     }
 
 

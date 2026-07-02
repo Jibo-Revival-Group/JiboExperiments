@@ -62,6 +62,137 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
 
+var azureSpeechSecretEntries = enableAzureSpeech ? [
+  {
+    name: 'azure-speech-subscription-key'
+    value: azureSpeechSubscriptionKey
+  }
+] : []
+var managedSecrets = concat([
+  {
+    name: 'acr-password'
+    value: registryCredentials.passwords[0].value
+  }
+], azureSpeechSecretEntries, [
+  {
+    name: 'state-connection-string'
+    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-state-connection-string'
+    identity: 'system'
+  }
+  {
+    name: 'personal-memory-connection-string'
+    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-personal-memory-connection-string'
+    identity: 'system'
+  }
+  {
+    name: 'media-connection-string'
+    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-media-connection-string'
+    identity: 'system'
+  }
+  {
+    name: 'open-weather-api-key'
+    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-openweather-api-key'
+    identity: 'system'
+  }
+  {
+    name: 'news-api-key'
+    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-newsapi-key'
+    identity: 'system'
+  }
+])
+var azureSpeechEnvEntries = enableAzureSpeech ? [
+  {
+    name: 'OpenJibo__Stt__EnableAzureSpeech'
+    value: 'true'
+  }
+  {
+    name: 'OpenJibo__Stt__AzureSpeechRegion'
+    value: azureSpeechRegion
+  }
+  {
+    name: 'OpenJibo__Stt__AzureSpeechSubscriptionKey'
+    secretRef: 'azure-speech-subscription-key'
+  }
+] : []
+var managedEnvVars = concat([
+  {
+    name: 'ASPNETCORE_ENVIRONMENT'
+    value: 'Production'
+  }
+  {
+    name: 'OpenJibo__Telemetry__Enabled'
+    value: 'false'
+  }
+  {
+    name: 'OpenJibo__Telemetry__ExportFixtures'
+    value: 'false'
+  }
+  {
+    name: 'OpenJibo__ProtocolTelemetry__Enabled'
+    value: 'false'
+  }
+  {
+    name: 'OpenJibo__TurnTelemetry__Enabled'
+    value: 'false'
+  }
+  {
+    name: 'ASPNETCORE_URLS'
+    value: 'http://+:8080'
+  }
+  {
+    name: 'OpenJibo__CanonicalApiHostname'
+    value: apiHostname
+  }
+  {
+    name: 'OpenJibo__CanonicalApiBaseUrl'
+    value: canonicalApiBaseUrl
+  }
+  {
+    name: 'OpenJibo__State__Backend'
+    value: 'PostgreSql'
+  }
+  {
+    name: 'OpenJibo__PersonalMemory__Backend'
+    value: 'PostgreSql'
+  }
+  {
+    name: 'OpenJibo__Media__Backend'
+    value: 'AzureBlob'
+  }
+  {
+    name: 'OpenJibo__State__ConnectionString'
+    secretRef: 'state-connection-string'
+  }
+  {
+    name: 'OPENJIBO_STATE_STORAGE_CONNECTION_STRING'
+    secretRef: 'state-connection-string'
+  }
+  {
+    name: 'OpenJibo__PersonalMemory__ConnectionString'
+    secretRef: 'personal-memory-connection-string'
+  }
+  {
+    name: 'OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING'
+    secretRef: 'personal-memory-connection-string'
+  }
+  {
+    name: 'OpenJibo__Media__ConnectionString'
+    secretRef: 'media-connection-string'
+  }
+  {
+    name: 'OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING'
+    secretRef: 'media-connection-string'
+  }
+  {
+    name: 'OPENWEATHER_API_KEY'
+    secretRef: 'open-weather-api-key'
+  }
+  {
+    name: 'NEWSAPI_KEY'
+    secretRef: 'news-api-key'
+  }
+], azureSpeechEnvEntries)
+
 resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: managedEnvironmentName
   location: location
@@ -105,137 +236,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           passwordSecretRef: 'acr-password'
         }
       ]
-      secrets: [
-        {
-          name: 'acr-password'
-          value: registryCredentials.passwords[0].value
-        }
-        if (enableAzureSpeech) {
-          name: 'azure-speech-subscription-key'
-          value: azureSpeechSubscriptionKey
-        }
-        {
-          name: 'state-connection-string'
-          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-state-connection-string'
-          identity: 'system'
-        }
-        {
-          name: 'personal-memory-connection-string'
-          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-personal-memory-connection-string'
-          identity: 'system'
-        }
-        {
-          name: 'media-connection-string'
-          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-media-connection-string'
-          identity: 'system'
-        }
-        {
-          name: 'open-weather-api-key'
-          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-openweather-api-key'
-          identity: 'system'
-        }
-        {
-          name: 'news-api-key'
-          keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-newsapi-key'
-          identity: 'system'
-        }
-      ]
+      secrets: managedSecrets
     }
     template: {
       containers: [
         {
           name: 'openjibo-cloud'
           image: '${registryLoginServer}/openjibo-cloud:${imageTag}'
-          env: [
-            {
-              name: 'ASPNETCORE_ENVIRONMENT'
-              value: 'Production'
-            }
-            {
-              name: 'OpenJibo__Telemetry__Enabled'
-              value: 'false'
-            }
-            {
-              name: 'OpenJibo__Telemetry__ExportFixtures'
-              value: 'false'
-            }
-            {
-              name: 'OpenJibo__ProtocolTelemetry__Enabled'
-              value: 'false'
-            }
-            {
-              name: 'OpenJibo__TurnTelemetry__Enabled'
-              value: 'false'
-            }
-            {
-              name: 'ASPNETCORE_URLS'
-              value: 'http://+:8080'
-            }
-            {
-              name: 'OpenJibo__CanonicalApiHostname'
-              value: apiHostname
-            }
-            {
-              name: 'OpenJibo__CanonicalApiBaseUrl'
-              value: canonicalApiBaseUrl
-            }
-            {
-              name: 'OpenJibo__State__Backend'
-              value: 'PostgreSql'
-            }
-            {
-              name: 'OpenJibo__PersonalMemory__Backend'
-              value: 'PostgreSql'
-            }
-            {
-              name: 'OpenJibo__Media__Backend'
-              value: 'AzureBlob'
-            }
-            {
-              name: 'OpenJibo__State__ConnectionString'
-              secretRef: 'state-connection-string'
-            }
-            {
-              name: 'OPENJIBO_STATE_STORAGE_CONNECTION_STRING'
-              secretRef: 'state-connection-string'
-            }
-            {
-              name: 'OpenJibo__PersonalMemory__ConnectionString'
-              secretRef: 'personal-memory-connection-string'
-            }
-            {
-              name: 'OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING'
-              secretRef: 'personal-memory-connection-string'
-            }
-            {
-              name: 'OpenJibo__Media__ConnectionString'
-              secretRef: 'media-connection-string'
-            }
-            {
-              name: 'OPENJIBO_MEDIA_STORAGE_CONNECTION_STRING'
-              secretRef: 'media-connection-string'
-            }
-            {
-              name: 'OPENWEATHER_API_KEY'
-              secretRef: 'open-weather-api-key'
-            }
-            {
-              name: 'NEWSAPI_KEY'
-              secretRef: 'news-api-key'
-            }
-            if (enableAzureSpeech) {
-              name: 'OpenJibo__Stt__EnableAzureSpeech'
-              value: 'true'
-            }
-            if (enableAzureSpeech) {
-              name: 'OpenJibo__Stt__AzureSpeechRegion'
-              value: azureSpeechRegion
-            }
-            if (enableAzureSpeech) {
-              name: 'OpenJibo__Stt__AzureSpeechSubscriptionKey'
-              secretRef: 'azure-speech-subscription-key'
-            }
-          ]
+          env: managedEnvVars
           resources: {
             cpu: 1
             memory: '2Gi'

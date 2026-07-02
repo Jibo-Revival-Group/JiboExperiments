@@ -705,7 +705,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         return ListUpdates(subsystem, filter)
             .FirstOrDefault(update =>
-                fromVersion is null || update.FromVersion.Equals(fromVersion, StringComparison.OrdinalIgnoreCase));
+                IsUpdateNewerThanRequest(update.ToVersion, fromVersion));
     }
 
     public UpdateManifest CreateUpdate(string? fromVersion, string? toVersion, string? changes, string? shaHash,

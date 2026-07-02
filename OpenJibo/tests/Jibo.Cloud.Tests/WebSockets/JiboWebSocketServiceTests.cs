@@ -5079,6 +5079,45 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_CanYouTwerk_IsPreservedAndRoutesToDanceIntent()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-can-twerk-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-can-twerk","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-can-twerk-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-can-twerk","data":{"text":"can you twerk"}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("twerk",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("can you twerk",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+
+        var session = _store.FindSessionByToken("hub-can-twerk-token");
+        Assert.NotNull(session);
+        Assert.Equal("twerk", session.LastIntent);
+        Assert.Equal("can you twerk", session.LastTranscript);
+    }
+
+    [Fact]
     public async Task BufferedAudio_WithSyntheticTranscriptHint_FinalizesThroughSttSeam()
     {
         var listenReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope

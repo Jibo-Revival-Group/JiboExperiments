@@ -3176,6 +3176,35 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_GroceryList_FollowUpListLabelRetriesWithoutAddingItem()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "grocery list",
+            NormalizedTranscript = "grocery list",
+            DeviceId = "device-list-label",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-list-label",
+                ["loopId"] = "loop-list-label",
+                [HouseholdListStateKey] = "awaiting_item",
+                [HouseholdListTypeKey] = "shopping",
+                [HouseholdListDisplayTypeKey] = "grocery"
+            }
+        });
+
+        Assert.Equal("shopping_list_no_match", decision.IntentName);
+        Assert.Equal("awaiting_item", decision.ContextUpdates![HouseholdListStateKey]);
+        Assert.Equal(1, decision.ContextUpdates[HouseholdListNoMatchCountKey]);
+        Assert.Empty(memoryStore.GetListItems(
+            new PersonalMemoryTenantScope("acct-list-label", "loop-list-label", "device-list-label"),
+            "shopping"));
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_TodoList_FollowUpFlow_AddsItemAndCanBeCompleted()
     {
         var memoryStore = new InMemoryPersonalMemoryStore();

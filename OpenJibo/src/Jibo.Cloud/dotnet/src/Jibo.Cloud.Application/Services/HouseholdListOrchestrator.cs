@@ -128,6 +128,13 @@ internal static class HouseholdListOrchestrator
                     noMatchCount + 1,
                     noInputCount));
 
+            if (IsListOnlyRemainder(loweredTranscript))
+                return Task.FromResult<JiboInteractionDecision?>(BuildNoMatchDecision(
+                    resolvedListType,
+                    resolvedDisplayType,
+                    noMatchCount + 1,
+                    noInputCount));
+
             directItem = NormalizeItem(transcript);
         }
 

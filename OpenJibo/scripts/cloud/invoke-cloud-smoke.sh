@@ -7,6 +7,21 @@ test_password="${TEST_PASSWORD:-OpenJiboSmokePass!42}"
 test_first_name="${TEST_FIRST_NAME:-Open}"
 test_last_name="${TEST_LAST_NAME:-Jibo}"
 test_robot_id="${TEST_ROBOT_ID:-open-jibo-smoke-robot}"
+target_mode="${OPENJIBO_SMOKE_TARGET_MODE:-open-jibo}"
+target_host="${OPENJIBO_SMOKE_TARGET_HOST:-}"
+if [[ -z "$target_host" ]]; then
+  if [[ "$target_mode" == "open-jibo-self-hosted" ]]; then
+    target_host="$(python3 - "$base_url" <<'PYHOST'
+from urllib.parse import urlparse
+import sys
+parsed = urlparse(sys.argv[1])
+print(parsed.netloc or parsed.path)
+PYHOST
+)"
+  else
+    target_host="api.openjibo.com"
+  fi
+fi
 base_host="$(python3 - "$base_url" <<'PY'
 from urllib.parse import urlparse
 import sys
@@ -16,7 +31,7 @@ print(parsed.netloc or parsed.path)
 PY
 )"
 
-python3 - "$base_url" "$base_host" "$test_email" "$test_password" "$test_first_name" "$test_last_name" "$test_robot_id" <<'PY'
+python3 - "$base_url" "$base_host" "$test_email" "$test_password" "$test_first_name" "$test_last_name" "$test_robot_id" "$target_mode" "$target_host" <<'PY'
 import json
 import sys
 from dataclasses import dataclass
@@ -24,7 +39,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from typing import Any, Dict, List, Optional
 
-base_url, base_host, test_email, test_password, test_first_name, test_last_name, test_robot_id = sys.argv[1:8]
+base_url, base_host, test_email, test_password, test_first_name, test_last_name, test_robot_id, target_mode, target_host = sys.argv[1:10]
 
 
 @dataclass
@@ -280,7 +295,7 @@ if identity_member_id:
     ):
         raise SystemExit("Loop recognition observation list did not include the conversion-smoke evidence.")
 
-prepare_body = {"loopId": loop_id, "rollbackSnapshotId": f"smoke-rollback-{test_robot_id}"}
+prepare_body = {"loopId": loop_id, "rollbackSnapshotId": f"smoke-rollback-{test_robot_id}", "targetMode": target_mode, "targetHost": target_host}
 if account_id:
     prepare_body["accountId"] = account_id
 
@@ -305,8 +320,10 @@ if plan_body.get("willWriteRobot"):
     raise SystemExit("PlanConversion unexpectedly reported that it would write the robot.")
 if not plan_body.get("canPrepareRobot") or not plan_readiness.get("canWriteRobot"):
     raise SystemExit("PlanConversion did not report a write-safe prepared conversion path.")
-if plan_body.get("targetHost") != "api.openjibo.com":
-    raise SystemExit("PlanConversion returned an unexpected managed Open Jibo target host.")
+if plan_body.get("targetMode") != target_mode:
+    raise SystemExit("PlanConversion returned an unexpected Open Jibo target mode.")
+if plan_body.get("targetHost") != target_host:
+    raise SystemExit("PlanConversion returned an unexpected Open Jibo target host.")
 
 prepare = request_json(
     "PrepareRobot",
@@ -393,13 +410,15 @@ if not proof_body.get("complete"):
     raise SystemExit("VerifyConnection did not report the prepared robot setup as complete.")
 if proof_body.get("robotId") != f"robot-{test_robot_id}":
     raise SystemExit("VerifyConnection returned an unexpected robot identity.")
-if proof_body.get("targetHost") != "api.openjibo.com":
-    raise SystemExit("VerifyConnection returned an unexpected managed Open Jibo target host.")
+if proof_body.get("targetMode") != target_mode:
+    raise SystemExit("VerifyConnection returned an unexpected Open Jibo target mode.")
+if proof_body.get("targetHost") != target_host:
+    raise SystemExit("VerifyConnection returned an unexpected Open Jibo target host.")
 
 host_mappings = proof_body.get("hostMappings") if isinstance(proof_body.get("hostMappings"), dict) else {}
 for legacy_host in ("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com"):
-    if host_mappings.get(legacy_host) != "api.openjibo.com":
-        raise SystemExit(f"VerifyConnection did not map {legacy_host} to api.openjibo.com.")
+    if host_mappings.get(legacy_host) != target_host:
+        raise SystemExit(f"VerifyConnection did not map {legacy_host} to {target_host}.")
 
 readiness = proof_body.get("conversionReadiness") if isinstance(proof_body.get("conversionReadiness"), dict) else {}
 if not readiness.get("canWriteRobot"):

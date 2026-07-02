@@ -62,7 +62,10 @@ $requiredSmokeMarkers = @(
     "OOBE_20161026.PrepareRobot",
     "OOBE_20161026.GetStatus",
     "OOBE_20161026.SetupRobot",
-    "rollbackSnapshotId"
+    "OOBE_20161026.VerifyConnection",
+    "rollbackSnapshotId",
+    "targetMode",
+    "targetHost"
 )
 
 $requiredWorkflowMarkers = @(

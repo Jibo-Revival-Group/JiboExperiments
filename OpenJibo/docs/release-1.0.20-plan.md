@@ -117,6 +117,9 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-06-30`)
 
+- tightened the self-hosted smoke path so Bash and PowerShell smoke clients can carry an explicit conversion target mode/host through `PlanConversion`, `PrepareRobot`, `SetupRobot`, and `VerifyConnection`, defaulting managed runs to `api.openjibo.com` while making self-hosted runs prove their own host mappings.
+- expanded the self-hosted deployment contract to require `VerifyConnection`, `targetMode`, and `targetHost` evidence in the shared smoke client so Docker Compose packaging now gates the same robot-to-cloud connection proof as managed Azure smoke.
+
 - tightened the Wi-Fi QR conversion path so a server-backed QR now collects target mode, optional target host, and required rollback snapshot evidence, runs non-writing `OOBE PlanConversion`, and refuses to mint a robot token when readiness is blocked instead of falling back to an unsafe static token.
 - expanded the managed cloud smoke gate to exercise `OOBE PlanConversion` before `PrepareRobot`, asserting that the plan is non-writing, write-safe, and resolves the managed target host to `api.openjibo.com` before the robot setup token is issued.
 - tightened the managed cloud smoke gate so both Bash and PowerShell smoke clients now call robot-facing `OOBE VerifyConnection` after `SetupRobot` and fail if the prepared robot is not connected, complete, mapped to `api.openjibo.com`, or write-safe. This makes the deployment gate prove the exact post-conversion robot-to-cloud connection target instead of stopping at setup/status responses.

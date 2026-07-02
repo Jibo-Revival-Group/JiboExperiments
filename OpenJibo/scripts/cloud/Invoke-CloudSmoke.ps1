@@ -4,11 +4,20 @@ param(
     [string]$TestPassword = "OpenJiboSmokePass!42",
     [string]$TestFirstName = "Open",
     [string]$TestLastName = "Jibo",
-    [string]$TestRobotId = "open-jibo-smoke-robot"
+    [string]$TestRobotId = "open-jibo-smoke-robot",
+    [string]$TargetMode = "open-jibo",
+    [string]$TargetHost = ""
 )
 
 $ErrorActionPreference = "Stop"
 $baseHost = ([System.Uri]::new($BaseUrl)).Authority
+if ([string]::IsNullOrWhiteSpace($TargetHost)) {
+    if ($TargetMode -eq "open-jibo-self-hosted") {
+        $TargetHost = $baseHost
+    } else {
+        $TargetHost = "api.openjibo.com"
+    }
+}
 
 function Invoke-JsonRequest {
     param(
@@ -167,9 +176,35 @@ if (-not $members.Success) {
     throw "Loop members failed with status code $($members.StatusCode): $($members.Error)"
 }
 
-$prepareBody = @{ loopId = $loopId; rollbackSnapshotId = "smoke-rollback-$TestRobotId" }
+$prepareBody = @{ loopId = $loopId; rollbackSnapshotId = "smoke-rollback-$TestRobotId"; targetMode = $TargetMode; targetHost = $TargetHost }
 if ($accountId) {
     $prepareBody.accountId = $accountId
+}
+
+$planConversion = Invoke-JsonRequest -Name "PlanConversion" -Method "POST" -Url "$BaseUrl/" -Headers @{
+    "X-Amz-Target" = "OOBE_20161026.PlanConversion"
+    Host = $baseHost
+} -Body ($prepareBody | ConvertTo-Json)
+Add-Result $planConversion
+
+if (-not $planConversion.Success) {
+    throw "PlanConversion failed with status code $($planConversion.StatusCode): $($planConversion.Error)"
+}
+
+if ($planConversion.Body.willWriteRobot) {
+    throw "PlanConversion unexpectedly reported that it would write the robot."
+}
+
+if (-not $planConversion.Body.canPrepareRobot -or -not $planConversion.Body.conversionReadiness.canWriteRobot) {
+    throw "PlanConversion did not report a write-safe prepared conversion path."
+}
+
+if ($planConversion.Body.targetMode -ne $TargetMode) {
+    throw "PlanConversion returned an unexpected Open Jibo target mode."
+}
+
+if ($planConversion.Body.targetHost -ne $TargetHost) {
+    throw "PlanConversion returned an unexpected Open Jibo target host."
 }
 
 $prepare = Invoke-JsonRequest -Name "PrepareRobot" -Method "POST" -Url "$BaseUrl/" -Headers @{
@@ -244,13 +279,17 @@ if ($connectionProof.Body.robotId -ne "robot-$TestRobotId") {
     throw "VerifyConnection returned an unexpected robot identity."
 }
 
-if ($connectionProof.Body.targetHost -ne "api.openjibo.com") {
-    throw "VerifyConnection returned an unexpected managed Open Jibo target host."
+if ($connectionProof.Body.targetMode -ne $TargetMode) {
+    throw "VerifyConnection returned an unexpected Open Jibo target mode."
+}
+
+if ($connectionProof.Body.targetHost -ne $TargetHost) {
+    throw "VerifyConnection returned an unexpected Open Jibo target host."
 }
 
 foreach ($legacyHost in @("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com")) {
-    if ($connectionProof.Body.hostMappings.$legacyHost -ne "api.openjibo.com") {
-        throw "VerifyConnection did not map $legacyHost to api.openjibo.com."
+    if ($connectionProof.Body.hostMappings.$legacyHost -ne $TargetHost) {
+        throw "VerifyConnection did not map $legacyHost to $TargetHost."
     }
 }
 

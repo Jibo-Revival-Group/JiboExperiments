@@ -554,8 +554,79 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("rollback-proof", proofPayload.RootElement.GetProperty("rollbackSnapshotId").GetString());
         Assert.Equal("jibo.proof.home.arpa",
             proofPayload.RootElement.GetProperty("hostMappings").GetProperty("api.jibo.com").GetString());
+        Assert.Equal("jibo.proof.home.arpa",
+            proofPayload.RootElement.GetProperty("storedHostMappings").GetProperty("api.jibo.com").GetString());
+        Assert.True(proofPayload.RootElement.GetProperty("hostMappingsMatch").GetBoolean());
+        Assert.Empty(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray());
         Assert.True(proofPayload.RootElement.GetProperty("conversionReadiness").GetProperty("canWriteRobot")
             .GetBoolean());
+    }
+
+    [Fact]
+    public async Task VerifyConnection_WhenStoredHostMappingsDriftReportsConnectionBlocker()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText =
+                """{"deviceId":"robot-drift","targetMode":"open-jibo-self-hosted","targetHost":"jibo.expected.home.arpa","rollbackSnapshotId":"rollback-drift"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-drift"}"""
+        });
+        Assert.Equal(200, setup.StatusCode);
+
+        var robot = store.GetRobot();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = robot.DeviceId,
+            RobotId = robot.RobotId,
+            FriendlyName = robot.FriendlyName,
+            FirmwareVersion = robot.FirmwareVersion,
+            ApplicationVersion = robot.ApplicationVersion,
+            IsActive = robot.IsActive,
+            CertificateThumbprint = robot.CertificateThumbprint,
+            IssuedIdentityId = robot.IssuedIdentityId,
+            BuildHash = robot.BuildHash,
+            ConfigHash = robot.ConfigHash,
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["api.jibo.com"] = "wrong.home.arpa",
+                ["api-socket.jibo.com"] = "jibo.expected.home.arpa",
+                ["neo-hub.jibo.com"] = "jibo.expected.home.arpa"
+            }
+        });
+
+        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "VerifyConnection",
+            BodyText = $$"""{"token":"{{token}}"}"""
+        });
+
+        using var proofPayload = JsonDocument.Parse(proof.BodyText);
+        Assert.False(proofPayload.RootElement.GetProperty("connected").GetBoolean());
+        Assert.False(proofPayload.RootElement.GetProperty("hostMappingsMatch").GetBoolean());
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray(),
+            blocker => blocker.GetString() == "host-mapping-mismatch");
+        Assert.Equal("wrong.home.arpa",
+            proofPayload.RootElement.GetProperty("storedHostMappings").GetProperty("api.jibo.com").GetString());
     }
 
     [Fact]

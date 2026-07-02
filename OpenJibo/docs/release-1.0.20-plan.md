@@ -115,6 +115,17 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 
 
+### Progress Update (`2026-07-02`)
+
+- tightened the robot-facing `OOBE VerifyConnection` proof so it now compares the expected Open Jibo host mappings against the persisted robot identity graph, returns the stored mappings beside the expected mappings, and reports `host-mapping-mismatch` in `connectionBlockers` instead of claiming the robot is connected when DNS/API mapping state has drifted. This keeps the conversion-video and deployment gates focused on a real robot-to-cloud connection proof, not just a completed setup token.
+
+#### Major blockers / questions
+
+- physical-device proof is still the release blocker: the cloud can now detect mapping drift, but we still need a live converted robot run that shows the robot resolving the selected target host and reaching `VerifyConnection` after setup.
+- safe awakening/OOBE parity remains blocked on image-specific review of owner-name replacement points plus safe body/yawn/audio asset provenance before the conversion video should claim full first-boot parity.
+- self-hosted owner-facing HTTPS remains unresolved: developer HTTP smoke paths are acceptable, but a real owner path still needs a trust/certificate decision before we promote self-hosted conversion beyond controlled tests.
+
+
 ### Progress Update (`2026-06-30`)
 
 - tightened the self-hosted smoke path so Bash and PowerShell smoke clients can carry an explicit conversion target mode/host through `PlanConversion`, `PrepareRobot`, `SetupRobot`, and `VerifyConnection`, defaulting managed runs to `api.openjibo.com` while making self-hosted runs prove their own host mappings.

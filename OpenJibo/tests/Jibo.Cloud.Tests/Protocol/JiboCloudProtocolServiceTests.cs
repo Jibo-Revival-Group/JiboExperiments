@@ -720,6 +720,14 @@ public sealed class JiboCloudProtocolServiceTests
             blocker => blocker.GetString() == "missing-reported-connection-host");
         Assert.Contains(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray(),
             blocker => blocker.GetString() == "missing-reported-host-mappings");
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionProofGuidance").EnumerateArray(),
+            guidance => guidance.GetProperty("blocker").GetString() == "missing-reported-connection-host" &&
+                        guidance.GetProperty("severity").GetString() == "release-gate" &&
+                        guidance.GetProperty("ownerAction").GetString()!.Contains("reportedConnectionHost", StringComparison.Ordinal));
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionProofGuidance").EnumerateArray(),
+            guidance => guidance.GetProperty("blocker").GetString() == "missing-reported-host-mappings" &&
+                        guidance.GetProperty("severity").GetString() == "release-gate" &&
+                        guidance.GetProperty("ownerAction").GetString()!.Contains("api-socket.jibo.com", StringComparison.Ordinal));
     }
 
 

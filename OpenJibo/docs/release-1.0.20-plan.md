@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-02`)
 
+- added operator-facing `connectionProofGuidance` to robot-facing `OOBE VerifyConnection` / `ConnectionProof` responses. Each active blocker now includes a severity (`release-gate`, `setup-gate`, or `needs-review`) and a concrete owner action, so the conversion video/runbook can fail closed while telling the operator whether to refresh setup, complete robot setup, capture live reported host evidence, fix DNS/static host rewrites, or gather a fresh proof timestamp.
+
 - added a fresh live-proof option to robot-facing `OOBE VerifyConnection`: conversion clients can now set `requireFreshConnectionProof` / `requireFreshLiveRobotProof` and include `connectionProofObservedAt` plus optional `connectionProofSource` and `connectionProofId`. The proof response now returns a `reportedConnectionProof` envelope with freshness, observation age, source, and capture id, and blocks with `missing-proof-observed-at` or `stale-proof-observed-at` when the release/video gate asks for fresh robot-observed evidence.
 
 - added an explicit live-robot proof gate to `OOBE VerifyConnection`: conversion clients can now set `requireReportedConnectionProof`, `requirePhysicalConnectionProof`, or `requireLiveRobotProof` to require both a robot-reported connected host and robot-observed legacy host mappings before the cloud marks the proof as connected. Missing evidence returns `missing-reported-connection-host` and/or `missing-reported-host-mappings`, keeping scripted smoke compatibility while giving the physical conversion run a fail-closed gate.

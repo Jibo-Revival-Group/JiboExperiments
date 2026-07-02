@@ -65,7 +65,8 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
 var azureSpeechSecretEntries = enableAzureSpeech ? [
   {
     name: 'azure-speech-subscription-key'
-    value: azureSpeechSubscriptionKey
+    keyVaultUrl: '${keyVaultSecretBaseUrl}/azure-speech-subscription-key'
+    identity: 'system'
   }
 ] : []
 var managedSecrets = concat([

@@ -104,7 +104,8 @@ if [[ "$clean" == true ]]; then harness_args+=(--clean); fi
   printf '%q ' bash "$demo_script" "${harness_args[@]}"; printf '\n'
   printf '%q ' "$inspect_script" --robot-root "$overlay_root" --output-path "$first_contact_path"; printf '\n'
   if [[ "$skip_cloud_smoke" == false ]]; then
-    printf 'BASE_URL=%q %q\n' "$base_url" "$cloud_smoke_script"
+    printf 'BASE_URL=%q OPENJIBO_SMOKE_TARGET_MODE=%q OPENJIBO_SMOKE_TARGET_HOST=%q %q\n' \
+      "$base_url" "$target_mode" "$api_hostname" "$cloud_smoke_script"
   fi
 } > "$commands_path"
 
@@ -113,7 +114,10 @@ bash "$demo_script" "${harness_args[@]}" | tee "$harness_stdout" >/dev/null
 
 cloud_smoke_status="skipped"
 if [[ "$skip_cloud_smoke" == false ]]; then
-  BASE_URL="$base_url" "$cloud_smoke_script" | tee "$cloud_smoke_path" >/dev/null
+  BASE_URL="$base_url" \
+    OPENJIBO_SMOKE_TARGET_MODE="$target_mode" \
+    OPENJIBO_SMOKE_TARGET_HOST="$api_hostname" \
+    "$cloud_smoke_script" | tee "$cloud_smoke_path" >/dev/null
   cloud_smoke_status="passed"
 fi
 
@@ -135,6 +139,12 @@ def load_json(path):
 harness = load_json("harness-demo.stdout.json")
 first_contact = load_json("first-contact-inspection.json")
 cloud_smoke = load_json("cloud-smoke.json") if cloud_smoke_status == "passed" else None
+cloud_smoke_steps = [r.get("name") for r in cloud_smoke] if isinstance(cloud_smoke, list) else []
+verify_connection = None
+if isinstance(cloud_smoke, list):
+    verify_connection = next((r.get("body") for r in cloud_smoke if r.get("name") == "VerifyConnection" and r.get("success")), None)
+verify_host_mappings = verify_connection.get("hostMappings", {}) if isinstance(verify_connection, dict) else {}
+verify_readiness = verify_connection.get("conversionReadiness", {}) if isinstance(verify_connection, dict) else {}
 
 blockers = [
     {
@@ -179,8 +189,17 @@ manifest = {
         "firstContactCandidateCount": len(first_contact.get("CandidateSkillRoots", [])) if isinstance(first_contact, dict) else 0,
         "cloudSmokeStatus": cloud_smoke_status,
         "conversionHostnamesMatchSmokeTarget": api_hostname in base_url or base_url.startswith("http://localhost") or base_url.startswith("https://localhost"),
-        "cloudSmokeSteps": [r.get("name") for r in cloud_smoke] if isinstance(cloud_smoke, list) else [],
+        "cloudSmokeSteps": cloud_smoke_steps,
         "identityRecognitionSmoke": any(r.get("name") == "LoopRecordRecognitionObservation" and r.get("success") for r in cloud_smoke) if isinstance(cloud_smoke, list) else False,
+        "connectionProofSmoke": {
+            "present": isinstance(verify_connection, dict),
+            "connected": bool(verify_connection.get("connected")) if isinstance(verify_connection, dict) else False,
+            "complete": bool(verify_connection.get("complete")) if isinstance(verify_connection, dict) else False,
+            "targetMode": verify_connection.get("targetMode") if isinstance(verify_connection, dict) else None,
+            "targetHost": verify_connection.get("targetHost") if isinstance(verify_connection, dict) else None,
+            "hostMappings": verify_host_mappings,
+            "writeSafe": bool(verify_readiness.get("canWriteRobot")) if isinstance(verify_readiness, dict) else False,
+        },
     },
     "videoChecklist": [
         "Show source snapshot and writable overlay paths, not a live robot root.",

@@ -201,6 +201,12 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 - expanded the recognition-candidate scanner to derive redacted speaker-to-loop-member and peoplePresent matches with timestamps, added the Jake/Erin recognition probe to the regression plan, and locked the first conversion video direction to managed Azure with safe staged credentials before the explicit cloud cutover
 
+### Progress Update (`2026-07-02`)
+
+- tightened the conversion-video evidence recorder so its cloud smoke now uses the same selected Open Jibo target mode and target host that the filesystem harness stages on the robot overlay; this prevents a self-hosted/developer conversion demo from accidentally proving only the default managed `open-jibo` cloud path.
+- expanded the conversion-video manifest with the robot-facing `VerifyConnection` proof from smoke output, including connected/complete state, accepted target mode/host, legacy host mappings, and write-safe readiness, so the filmed conversion bundle can show that the converted robot is pointed at the intended cloud before any physical write.
+- kept the remaining physical-device blockers unchanged: first real-device variant selection, backup confirmation, safe awakening asset reuse, and live face/person identifier capture still need operator review before moving from overlay proof to a physical robot.
+
 ## Working Order
 
 The suggested order for early `1.0.20` execution is:

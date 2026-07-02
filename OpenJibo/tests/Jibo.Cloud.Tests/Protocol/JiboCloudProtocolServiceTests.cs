@@ -771,6 +771,100 @@ public sealed class JiboCloudProtocolServiceTests
             host => host.GetString() == "api-socket.jibo.com");
     }
 
+
+    [Fact]
+    public async Task VerifyConnection_WhenFreshProofRequiredWithoutObservationReportsBlocker()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText =
+                """{"deviceId":"robot-fresh-proof-missing","targetMode":"open-jibo-self-hosted","targetHost":"jibo.expected.home.arpa","rollbackSnapshotId":"rollback-fresh-proof-missing"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-fresh-proof-missing"}"""
+        });
+        Assert.Equal(200, setup.StatusCode);
+
+        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "VerifyConnection",
+            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"requireFreshConnectionProof":true,"reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+        });
+
+        using var proofPayload = JsonDocument.Parse(proof.BodyText);
+        Assert.False(proofPayload.RootElement.GetProperty("connected").GetBoolean());
+        Assert.True(proofPayload.RootElement.GetProperty("requiresFreshConnectionProof").GetBoolean());
+        Assert.False(proofPayload.RootElement.GetProperty("reportedConnectionProof").GetProperty("fresh").GetBoolean());
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray(),
+            blocker => blocker.GetString() == "missing-proof-observed-at");
+    }
+
+    [Fact]
+    public async Task VerifyConnection_WhenFreshObservedProofMatchesReturnsProofMetadata()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText =
+                """{"deviceId":"robot-fresh-proof","targetMode":"open-jibo-self-hosted","targetHost":"jibo.expected.home.arpa","rollbackSnapshotId":"rollback-fresh-proof"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-fresh-proof"}"""
+        });
+        Assert.Equal(200, setup.StatusCode);
+
+        var observedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "VerifyConnection",
+            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"requireFreshConnectionProof":true,"connectionProofObservedAt":"{{{observedAt}}}","connectionProofSource":"robot-conversion-harness","connectionProofId":"capture-42","reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+        });
+
+        using var proofPayload = JsonDocument.Parse(proof.BodyText);
+        var proofMetadata = proofPayload.RootElement.GetProperty("reportedConnectionProof");
+        Assert.True(proofPayload.RootElement.GetProperty("connected").GetBoolean());
+        Assert.True(proofMetadata.GetProperty("complete").GetBoolean());
+        Assert.True(proofMetadata.GetProperty("fresh").GetBoolean());
+        Assert.Equal(observedAt, proofMetadata.GetProperty("observedAt").GetInt64());
+        Assert.Equal("robot-conversion-harness", proofMetadata.GetProperty("source").GetString());
+        Assert.Equal("capture-42", proofMetadata.GetProperty("id").GetString());
+    }
+
     [Fact]
     public async Task VerifyConnection_WhenRobotReportsLegacyHostMappingsEchoesDnsProof()
     {

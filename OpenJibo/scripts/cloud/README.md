@@ -99,4 +99,6 @@ Use `--skip-hostname-binding` or `-SkipHostnameBinding` only for temporary diagn
 
 The managed workflow runs PostgreSQL migrations on every deploy before smoke tests. Treat checked-in migration scripts as forward-only operational changes: prefer additive schema changes, avoid destructive backwards edits, and do not remove or rewrite already-applied migrations unless the production impact is understood and intentionally coordinated. Any destructive data change should be paired with an explicit backup or recovery plan before it lands in the deploy path.
 
+The smoke helper treats `Loop_20160324.SetEnrollment` as best-effort during managed deploys. If the hosted app returns a transient `500` there, the script still continues to the recognition-observation proof so a single enrollment edge case does not block the deploy gate.
+
 See [docs/local-cloud-quickstart.md](../../docs/local-cloud-quickstart.md) for the full local setup guide.

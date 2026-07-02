@@ -261,10 +261,20 @@ if (-not $statusAfter.Success) {
     throw "GetStatus after setup failed with status code $($statusAfter.StatusCode): $($statusAfter.Error)"
 }
 
+$reportedHostMappings = @{
+    "api.jibo.com" = $TargetHost
+    "api-socket.jibo.com" = $TargetHost
+    "neo-hub.jibo.com" = $TargetHost
+}
+
 $connectionProof = Invoke-JsonRequest -Name "VerifyConnection" -Method "POST" -Url "$BaseUrl/" -Headers @{
     "X-Amz-Target" = "OOBE_20161026.VerifyConnection"
     Host = $baseHost
-} -Body (@{ token = $token; reportedConnectionHost = $ReportedConnectionHost } | ConvertTo-Json)
+} -Body (@{
+    token = $token
+    reportedConnectionHost = $ReportedConnectionHost
+    reportedHostMappings = $reportedHostMappings
+} | ConvertTo-Json)
 Add-Result $connectionProof
 
 if (-not $connectionProof.Success) {
@@ -295,6 +305,15 @@ if ($connectionProof.Body.reportedConnectionHost -ne $ReportedConnectionHost) {
 }
 if (-not $connectionProof.Body.reportedConnectionHostMatches) {
     throw "VerifyConnection did not confirm the reported connection host matched the target host."
+}
+if (-not $connectionProof.Body.reportedHostMappingsMatch) {
+    throw "VerifyConnection did not confirm the robot-reported legacy host mappings matched the target host."
+}
+
+foreach ($legacyHost in @("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com")) {
+    if ($connectionProof.Body.reportedHostMappings.$legacyHost -ne $TargetHost) {
+        throw "VerifyConnection did not echo the robot-reported $legacyHost mapping to $TargetHost."
+    }
 }
 
 foreach ($legacyHost in @("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com")) {

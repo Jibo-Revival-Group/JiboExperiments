@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-02`)
 
+- tightened the shared managed/self-hosted cloud smoke clients so `VerifyConnection` now sends robot-reported legacy host mapping evidence for `api.jibo.com`, `api-socket.jibo.com`, and `neo-hub.jibo.com`, then fails if the proof does not echo those mappings or mark them as matching the selected target host. This moves the conversion gate from a single connected-host assertion to the same DNS-retargeting evidence expected from the physical robot run.
+
 - expanded the robot-facing `OOBE VerifyConnection` proof so a conversion client can send robot-observed legacy DNS/host mappings via `reportedHostMappings`, `reportedDnsMappings`, or `resolvedHostMappings`; the cloud normalizes URL/host:port values, echoes the reported mapping evidence, and reports `reported-host-mapping-mismatch` when the robot-observed `api.jibo.com`, `api-socket.jibo.com`, or `neo-hub.jibo.com` target does not match the selected Open Jibo cloud. This gives the conversion video a stronger DNS retargeting proof before physical writes.
 
 - strengthened the robot-facing `OOBE VerifyConnection` proof again so a conversion client can send `reportedConnectionHost` / `connectedHost` / `resolvedHost` / `currentHost`; the cloud normalizes URLs or host:port values, echoes the normalized reported host, and reports `reported-connection-host-mismatch` when the robot says it reached a different host than the selected Open Jibo target. This keeps the final conversion proof from relying only on stored setup mappings.
@@ -219,6 +221,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded the recognition-candidate scanner to derive redacted speaker-to-loop-member and peoplePresent matches with timestamps, added the Jake/Erin recognition probe to the regression plan, and locked the first conversion video direction to managed Azure with safe staged credentials before the explicit cloud cutover
 
 ### Progress Update (`2026-07-02`)
+
+- tightened the shared managed/self-hosted cloud smoke clients so `VerifyConnection` now sends robot-reported legacy host mapping evidence for `api.jibo.com`, `api-socket.jibo.com`, and `neo-hub.jibo.com`, then fails if the proof does not echo those mappings or mark them as matching the selected target host. This moves the conversion gate from a single connected-host assertion to the same DNS-retargeting evidence expected from the physical robot run.
 
 - strengthened the robot-facing `OOBE VerifyConnection` proof again so a conversion client can send `reportedConnectionHost` / `connectedHost` / `resolvedHost` / `currentHost`; the cloud normalizes URLs or host:port values, echoes the normalized reported host, and reports `reported-connection-host-mismatch` when the robot says it reached a different host than the selected Open Jibo target. This keeps the final conversion proof from relying only on stored setup mappings.
 

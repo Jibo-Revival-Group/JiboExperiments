@@ -391,6 +391,12 @@ add_result(status_after)
 if not status_after.success:
     raise SystemExit(f"GetStatus after setup failed with status code {status_after.status_code}: {status_after.error}")
 
+reported_host_mappings = {
+    "api.jibo.com": target_host,
+    "api-socket.jibo.com": target_host,
+    "neo-hub.jibo.com": target_host,
+}
+
 connection_proof = request_json(
     "VerifyConnection",
     "POST",
@@ -399,7 +405,11 @@ connection_proof = request_json(
         "X-Amz-Target": "OOBE_20161026.VerifyConnection",
         "Host": base_host,
     },
-    {"token": token, "reportedConnectionHost": reported_connection_host},
+    {
+        "token": token,
+        "reportedConnectionHost": reported_connection_host,
+        "reportedHostMappings": reported_host_mappings,
+    },
 )
 add_result(connection_proof)
 if not connection_proof.success:
@@ -422,6 +432,15 @@ if proof_body.get("reportedConnectionHost") != reported_connection_host:
     raise SystemExit("VerifyConnection did not echo the normalized reported connection host.")
 if not proof_body.get("reportedConnectionHostMatches"):
     raise SystemExit("VerifyConnection did not confirm the reported connection host matched the target host.")
+if not proof_body.get("reportedHostMappingsMatch"):
+    raise SystemExit("VerifyConnection did not confirm the robot-reported legacy host mappings matched the target host.")
+
+reported_host_mappings_body = (
+    proof_body.get("reportedHostMappings") if isinstance(proof_body.get("reportedHostMappings"), dict) else {}
+)
+for legacy_host, expected_host in reported_host_mappings.items():
+    if reported_host_mappings_body.get(legacy_host) != expected_host:
+        raise SystemExit(f"VerifyConnection did not echo the robot-reported {legacy_host} mapping to {expected_host}.")
 
 host_mappings = proof_body.get("hostMappings") if isinstance(proof_body.get("hostMappings"), dict) else {}
 for legacy_host in ("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com"):

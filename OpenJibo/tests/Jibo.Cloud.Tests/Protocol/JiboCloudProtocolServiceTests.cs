@@ -676,6 +676,53 @@ public sealed class JiboCloudProtocolServiceTests
 
 
     [Fact]
+    public async Task VerifyConnection_WhenLiveRobotProofRequiredWithoutReportedEvidenceReportsBlockers()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText =
+                """{"deviceId":"robot-live-proof","targetMode":"open-jibo-self-hosted","targetHost":"jibo.expected.home.arpa","rollbackSnapshotId":"rollback-live-proof"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-live-proof"}"""
+        });
+        Assert.Equal(200, setup.StatusCode);
+
+        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "VerifyConnection",
+            BodyText = $$"""{"token":"{{token}}","requireReportedConnectionProof":true}"""
+        });
+
+        using var proofPayload = JsonDocument.Parse(proof.BodyText);
+        Assert.False(proofPayload.RootElement.GetProperty("connected").GetBoolean());
+        Assert.True(proofPayload.RootElement.GetProperty("requiresReportedConnectionProof").GetBoolean());
+        Assert.False(proofPayload.RootElement.GetProperty("reportedConnectionProofComplete").GetBoolean());
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray(),
+            blocker => blocker.GetString() == "missing-reported-connection-host");
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray(),
+            blocker => blocker.GetString() == "missing-reported-host-mappings");
+    }
+
+    [Fact]
     public async Task VerifyConnection_WhenRobotReportsLegacyHostMappingsEchoesDnsProof()
     {
         var store = new InMemoryCloudStateStore();

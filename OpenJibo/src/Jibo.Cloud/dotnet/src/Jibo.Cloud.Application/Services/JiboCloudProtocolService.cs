@@ -306,8 +306,11 @@ public sealed class JiboCloudProtocolService(
             var readiness = EvaluateConversionReadiness(hasTokenState ? current : null, expired, envelope.HostName);
             var reportedConnectionHost = ReadReportedConnectionHost(body);
             var reportedHostMappings = ReadReportedHostMappings(body);
+            var requiresReportedConnectionProof = ReadBool(body, "requireReportedConnectionProof") ||
+                                                  ReadBool(body, "requirePhysicalConnectionProof") ||
+                                                  ReadBool(body, "requireLiveRobotProof");
             var connectionBlockers = BuildConnectionBlockers(hasTokenState, current, expired, robot, hostMappings,
-                targetHost, reportedConnectionHost, reportedHostMappings);
+                targetHost, reportedConnectionHost, reportedHostMappings, requiresReportedConnectionProof);
 
             return ProtocolDispatchResult.Ok(new
             {
@@ -336,6 +339,9 @@ public sealed class JiboCloudProtocolService(
                 reportedHostMappings,
                 reportedHostMappingsMatch = reportedHostMappings.Count == 0 ||
                                            HostMappingsMatch(reportedHostMappings, hostMappings),
+                requiresReportedConnectionProof,
+                reportedConnectionProofComplete = !string.IsNullOrWhiteSpace(reportedConnectionHost) &&
+                                                  reportedHostMappings.Count > 0,
                 hostMappingsMatch = connectionBlockers.All(blocker => blocker != "host-mapping-mismatch"),
                 connectionBlockers,
                 conversionReadiness = readiness.ToResponse()
@@ -446,7 +452,8 @@ public sealed class JiboCloudProtocolService(
         IDictionary<string, string> expectedHostMappings,
         string expectedConnectionHost,
         string? reportedConnectionHost,
-        IDictionary<string, string> reportedHostMappings)
+        IDictionary<string, string> reportedHostMappings,
+        bool requiresReportedConnectionProof)
     {
         var blockers = new List<string>();
         if (expired)
@@ -457,6 +464,10 @@ public sealed class JiboCloudProtocolService(
             blockers.Add("robot-inactive");
         if (!HostMappingsMatch(robot.HostMappings, expectedHostMappings))
             blockers.Add("host-mapping-mismatch");
+        if (requiresReportedConnectionProof && string.IsNullOrWhiteSpace(reportedConnectionHost))
+            blockers.Add("missing-reported-connection-host");
+        if (requiresReportedConnectionProof && reportedHostMappings.Count == 0)
+            blockers.Add("missing-reported-host-mappings");
         if (!string.IsNullOrWhiteSpace(reportedConnectionHost) &&
             !string.Equals(reportedConnectionHost, expectedConnectionHost, StringComparison.OrdinalIgnoreCase))
             blockers.Add("reported-connection-host-mismatch");

@@ -312,9 +312,12 @@ public sealed class JiboCloudProtocolService(
             var requiresFreshConnectionProof = ReadBool(body, "requireFreshConnectionProof") ||
                                                ReadBool(body, "requireFreshLiveRobotProof");
             var proofObservedAt = ReadProofObservedAt(body);
+            var proofFreshnessPolicy = ReadProofFreshnessPolicy(body);
             var proofObservedAgeSeconds = proofObservedAt is null
                 ? null
                 : (long?)Math.Max(0, (long)(DateTimeOffset.UtcNow - proofObservedAt.Value).TotalSeconds);
+            var proofFreshUntil = proofObservedAt?.AddSeconds(proofFreshnessPolicy.MaxAgeSeconds)
+                .ToUnixTimeMilliseconds();
             var proofSource = ReadString(body, "connectionProofSource") ??
                               ReadString(body, "proofSource") ??
                               ReadString(body, "reportedProofSource");
@@ -323,7 +326,7 @@ public sealed class JiboCloudProtocolService(
                           ReadString(body, "captureId");
             var connectionBlockers = BuildConnectionBlockers(hasTokenState, current, expired, robot, hostMappings,
                 targetHost, reportedConnectionHost, reportedHostMappings, requiresReportedConnectionProof,
-                requiresFreshConnectionProof, proofObservedAt);
+                requiresFreshConnectionProof, proofObservedAt, proofFreshnessPolicy);
 
             return ProtocolDispatchResult.Ok(new
             {
@@ -361,9 +364,12 @@ public sealed class JiboCloudProtocolService(
                 {
                     complete = !string.IsNullOrWhiteSpace(reportedConnectionHost) &&
                                RequiredHostMappingsPresent(hostMappings, reportedHostMappings),
-                    fresh = !requiresFreshConnectionProof || IsFreshProofObservation(proofObservedAt),
+                    fresh = !requiresFreshConnectionProof || IsFreshProofObservation(proofObservedAt, proofFreshnessPolicy),
                     observedAt = proofObservedAt?.ToUnixTimeMilliseconds(),
                     observedAgeSeconds = proofObservedAgeSeconds,
+                    maxAgeSeconds = proofFreshnessPolicy.MaxAgeSeconds,
+                    acceptedFutureClockSkewSeconds = proofFreshnessPolicy.AcceptedFutureClockSkewSeconds,
+                    freshUntil = proofFreshUntil,
                     source = proofSource,
                     id = proofId
                 },
@@ -520,7 +526,8 @@ public sealed class JiboCloudProtocolService(
         IDictionary<string, string> reportedHostMappings,
         bool requiresReportedConnectionProof,
         bool requiresFreshConnectionProof,
-        DateTimeOffset? proofObservedAt)
+        DateTimeOffset? proofObservedAt,
+        ProofFreshnessPolicy proofFreshnessPolicy)
     {
         var blockers = new List<string>();
         if (expired)
@@ -544,10 +551,27 @@ public sealed class JiboCloudProtocolService(
             blockers.Add("reported-host-mapping-mismatch");
         if (requiresFreshConnectionProof && proofObservedAt is null)
             blockers.Add("missing-proof-observed-at");
-        else if (requiresFreshConnectionProof && !IsFreshProofObservation(proofObservedAt))
+        else if (requiresFreshConnectionProof && !IsFreshProofObservation(proofObservedAt, proofFreshnessPolicy))
             blockers.Add("stale-proof-observed-at");
 
         return blockers;
+    }
+
+    private static ProofFreshnessPolicy ReadProofFreshnessPolicy(JsonElement? body)
+    {
+        const long defaultMaxAgeSeconds = 15 * 60;
+        const long minMaxAgeSeconds = 60;
+        const long maxMaxAgeSeconds = 60 * 60;
+        const long acceptedFutureClockSkewSeconds = 2 * 60;
+
+        var requestedMaxAgeSeconds = ReadLong(body, "connectionProofMaxAgeSeconds") ??
+                                     ReadLong(body, "proofMaxAgeSeconds") ??
+                                     ReadLong(body, "freshnessMaxAgeSeconds");
+        var maxAgeSeconds = requestedMaxAgeSeconds is null
+            ? defaultMaxAgeSeconds
+            : Math.Clamp(requestedMaxAgeSeconds.Value, minMaxAgeSeconds, maxMaxAgeSeconds);
+
+        return new ProofFreshnessPolicy(maxAgeSeconds, acceptedFutureClockSkewSeconds);
     }
 
     private static DateTimeOffset? ReadProofObservedAt(JsonElement? body)
@@ -568,9 +592,11 @@ public sealed class JiboCloudProtocolService(
             : null;
     }
 
-    private static bool IsFreshProofObservation(DateTimeOffset? observedAt) =>
-        observedAt is not null && observedAt.Value >= DateTimeOffset.UtcNow.AddMinutes(-15) &&
-        observedAt.Value <= DateTimeOffset.UtcNow.AddMinutes(2);
+    private static bool IsFreshProofObservation(DateTimeOffset? observedAt, ProofFreshnessPolicy policy) =>
+        observedAt is not null && observedAt.Value >= DateTimeOffset.UtcNow.AddSeconds(-policy.MaxAgeSeconds) &&
+        observedAt.Value <= DateTimeOffset.UtcNow.AddSeconds(policy.AcceptedFutureClockSkewSeconds);
+
+    private sealed record ProofFreshnessPolicy(long MaxAgeSeconds, long AcceptedFutureClockSkewSeconds);
 
 
     private static Dictionary<string, string> ReadReportedHostMappings(JsonElement? body)

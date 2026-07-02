@@ -869,8 +869,63 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.True(proofMetadata.GetProperty("complete").GetBoolean());
         Assert.True(proofMetadata.GetProperty("fresh").GetBoolean());
         Assert.Equal(observedAt, proofMetadata.GetProperty("observedAt").GetInt64());
+        Assert.Equal(900, proofMetadata.GetProperty("maxAgeSeconds").GetInt64());
+        Assert.Equal(120, proofMetadata.GetProperty("acceptedFutureClockSkewSeconds").GetInt64());
+        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(observedAt).AddMinutes(15).ToUnixTimeMilliseconds(),
+            proofMetadata.GetProperty("freshUntil").GetInt64());
         Assert.Equal("robot-conversion-harness", proofMetadata.GetProperty("source").GetString());
         Assert.Equal("capture-42", proofMetadata.GetProperty("id").GetString());
+    }
+
+
+    [Fact]
+    public async Task VerifyConnection_WhenFreshProofUsesCustomMaxAgeReportsStaleBlockerAndPolicy()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText =
+                """{"deviceId":"robot-custom-proof-window","targetMode":"open-jibo-self-hosted","targetHost":"jibo.expected.home.arpa","rollbackSnapshotId":"rollback-custom-proof-window"}"""
+        });
+
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"robot-custom-proof-window"}"""
+        });
+        Assert.Equal(200, setup.StatusCode);
+
+        var observedAt = DateTimeOffset.UtcNow.AddSeconds(-125).ToUnixTimeMilliseconds();
+        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "VerifyConnection",
+            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"requireFreshConnectionProof":true,"connectionProofMaxAgeSeconds":60,"connectionProofObservedAt":"{{{observedAt}}}","reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+        });
+
+        using var proofPayload = JsonDocument.Parse(proof.BodyText);
+        var proofMetadata = proofPayload.RootElement.GetProperty("reportedConnectionProof");
+        Assert.False(proofPayload.RootElement.GetProperty("connected").GetBoolean());
+        Assert.False(proofMetadata.GetProperty("fresh").GetBoolean());
+        Assert.Equal(60, proofMetadata.GetProperty("maxAgeSeconds").GetInt64());
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray(),
+            blocker => blocker.GetString() == "stale-proof-observed-at");
+        Assert.Contains(proofPayload.RootElement.GetProperty("connectionProofGuidance").EnumerateArray(),
+            guidance => guidance.GetProperty("blocker").GetString() == "stale-proof-observed-at" &&
+                        guidance.GetProperty("severity").GetString() == "release-gate");
     }
 
     [Fact]

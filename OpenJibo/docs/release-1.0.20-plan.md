@@ -117,11 +117,13 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-02`)
 
+- strengthened the robot-facing `OOBE VerifyConnection` proof again so a conversion client can send `reportedConnectionHost` / `connectedHost` / `resolvedHost` / `currentHost`; the cloud normalizes URLs or host:port values, echoes the normalized reported host, and reports `reported-connection-host-mismatch` when the robot says it reached a different host than the selected Open Jibo target. This keeps the final conversion proof from relying only on stored setup mappings.
+
 - tightened the robot-facing `OOBE VerifyConnection` proof so it now compares the expected Open Jibo host mappings against the persisted robot identity graph, returns the stored mappings beside the expected mappings, and reports `host-mapping-mismatch` in `connectionBlockers` instead of claiming the robot is connected when DNS/API mapping state has drifted. This keeps the conversion-video and deployment gates focused on a real robot-to-cloud connection proof, not just a completed setup token.
 
 #### Major blockers / questions
 
-- physical-device proof is still the release blocker: the cloud can now detect mapping drift, but we still need a live converted robot run that shows the robot resolving the selected target host and reaching `VerifyConnection` after setup.
+- physical-device proof is still the release blocker: the cloud can now detect mapping drift and reported-host drift, but we still need a live converted robot run that shows the robot resolving the selected target host and reaching `VerifyConnection` after setup with a matching reported connection host.
 - safe awakening/OOBE parity remains blocked on image-specific review of owner-name replacement points plus safe body/yawn/audio asset provenance before the conversion video should claim full first-boot parity.
 - self-hosted owner-facing HTTPS remains unresolved: developer HTTP smoke paths are acceptable, but a real owner path still needs a trust/certificate decision before we promote self-hosted conversion beyond controlled tests.
 
@@ -213,6 +215,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded the recognition-candidate scanner to derive redacted speaker-to-loop-member and peoplePresent matches with timestamps, added the Jake/Erin recognition probe to the regression plan, and locked the first conversion video direction to managed Azure with safe staged credentials before the explicit cloud cutover
 
 ### Progress Update (`2026-07-02`)
+
+- strengthened the robot-facing `OOBE VerifyConnection` proof again so a conversion client can send `reportedConnectionHost` / `connectedHost` / `resolvedHost` / `currentHost`; the cloud normalizes URLs or host:port values, echoes the normalized reported host, and reports `reported-connection-host-mismatch` when the robot says it reached a different host than the selected Open Jibo target. This keeps the final conversion proof from relying only on stored setup mappings.
 
 - tightened the conversion-video evidence recorder so its cloud smoke now uses the same selected Open Jibo target mode and target host that the filesystem harness stages on the robot overlay; this prevents a self-hosted/developer conversion demo from accidentally proving only the default managed `open-jibo` cloud path.
 - expanded the conversion-video manifest with the robot-facing `VerifyConnection` proof from smoke output, including connected/complete state, accepted target mode/host, legacy host mappings, and write-safe readiness, so the filmed conversion bundle can show that the converted robot is pointed at the intended cloud before any physical write.

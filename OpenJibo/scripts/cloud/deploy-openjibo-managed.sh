@@ -315,9 +315,19 @@ PY
   sleep 30
 fi
 
+state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
+personal_memory_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-personal-memory-connection-string --query value -o tsv)"
+if [[ -n "${container_app_name:-}" ]]; then
+  echo "Refreshing Container App '${container_app_name}' PostgreSQL secrets from Key Vault to force the latest database credentials into the revision." >&2
+  az containerapp secret set \
+    --resource-group "$resource_group_name" \
+    --name "$container_app_name" \
+    --secrets "state-connection-string=${state_connection_string}" "personal-memory-connection-string=${personal_memory_connection_string}" \
+    --output none
+  echo "Container App PostgreSQL secrets refreshed for '${container_app_name}'." >&2
+fi
+
 if [[ "$run_migration" == true ]]; then
-  state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
-  personal_memory_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-personal-memory-connection-string --query value -o tsv)"
   bash "${script_dir}/invoke-openjibo-migration.sh" \
     --target all \
     --state-connection "$state_connection_string" \

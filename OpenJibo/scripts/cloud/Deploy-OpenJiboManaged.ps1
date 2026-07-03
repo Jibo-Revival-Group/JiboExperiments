@@ -118,6 +118,36 @@ function Remove-PostgresFirewallRule {
     }
 }
 
+function Set-ContainerAppSecretsFromKeyVault {
+    param(
+        [string]$ContainerAppName,
+        [string]$StateConnectionString,
+        [string]$PersonalMemoryConnectionString
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ContainerAppName)) {
+        return
+    }
+
+    if ([string]::IsNullOrWhiteSpace($StateConnectionString) -or [string]::IsNullOrWhiteSpace($PersonalMemoryConnectionString)) {
+        throw "Managed Container App secret refresh requires both PostgreSQL connection strings."
+    }
+
+    Write-Host "Refreshing Container App '$ContainerAppName' PostgreSQL secrets from Key Vault to force the latest database credentials into the revision."
+    Invoke-OpenJiboAzWithRetry `
+        -Arguments @(
+            "containerapp", "secret", "set",
+            "--resource-group", $ResourceGroupName,
+            "--name", $ContainerAppName,
+            "--secrets", "state-connection-string=$StateConnectionString",
+            "personal-memory-connection-string=$PersonalMemoryConnectionString",
+            "--output", "none"
+        ) `
+        -Description "Container App secret refresh for '$ContainerAppName'" `
+        -Attempts 6 | Out-Null
+    Write-Host "Container App PostgreSQL secrets refreshed for '$ContainerAppName'."
+}
+
 $arguments = @(
     "deployment", "group", "create",
     "--resource-group", $ResourceGroupName,
@@ -248,9 +278,11 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
     Start-Sleep -Seconds 30
 }
 
+$stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
+$personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
+Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString
+
 if ($RunMigration) {
-    $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
-    $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
     $migrationScript = Join-Path $repoRoot "scripts/cloud/Invoke-OpenJiboMigration.ps1"
     & $migrationScript `
         -Target all `

@@ -37,6 +37,26 @@ param azureSpeechRegion string = location
 @secure()
 param azureSpeechSubscriptionKey string = ''
 
+@description('Managed PostgreSQL state connection string used by the runtime.')
+@secure()
+param stateConnectionString string = ''
+
+@description('Managed PostgreSQL personal memory connection string used by the runtime.')
+@secure()
+param personalMemoryConnectionString string = ''
+
+@description('Managed storage connection string used by the runtime media store.')
+@secure()
+param mediaConnectionString string = ''
+
+@description('OpenWeather API key used by the runtime.')
+@secure()
+param openWeatherApiKey string = ''
+
+@description('NewsAPI key used by the runtime.')
+@secure()
+param newsApiKey string = ''
+
 @description('Minimum number of replicas for the runtime container.')
 param minReplicas int = 1
 
@@ -48,7 +68,6 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 }
 
 var registryName = split(registryLoginServer, '.')[0]
-var keyVaultSecretBaseUrl = 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets'
 var canonicalApiBaseUrl = 'https://${apiHostname}'
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
@@ -76,28 +95,23 @@ var managedSecrets = concat([
 ], azureSpeechSecretEntries, [
   {
     name: 'state-connection-string'
-    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-state-connection-string'
-    identity: 'system'
+    value: stateConnectionString
   }
   {
     name: 'personal-memory-connection-string'
-    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-personal-memory-connection-string'
-    identity: 'system'
+    value: personalMemoryConnectionString
   }
   {
     name: 'media-connection-string'
-    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-media-connection-string'
-    identity: 'system'
+    value: mediaConnectionString
   }
   {
     name: 'open-weather-api-key'
-    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-openweather-api-key'
-    identity: 'system'
+    value: openWeatherApiKey
   }
   {
     name: 'news-api-key'
-    keyVaultUrl: '${keyVaultSecretBaseUrl}/openjibo-newsapi-key'
-    identity: 'system'
+    value: newsApiKey
   }
 ])
 var azureSpeechEnvEntries = enableAzureSpeech ? [

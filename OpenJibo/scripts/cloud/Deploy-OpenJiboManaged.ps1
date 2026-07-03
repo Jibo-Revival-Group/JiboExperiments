@@ -45,6 +45,12 @@ if ([string]::IsNullOrWhiteSpace($RegistryName)) {
 $RegistryLoginServer = "$RegistryName.azurecr.io"
 $deploymentName = "openjibo-managed-{0}" -f ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
 
+$stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
+$personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
+$mediaConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-media-connection-string --query value -o tsv
+$openWeatherApiKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-openweather-api-key --query value -o tsv
+$newsApiKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-newsapi-key --query value -o tsv
+
 function Get-PostgresServerNameFromConnectionString {
     param([string]$ConnectionString)
 
@@ -148,6 +154,50 @@ function Set-ContainerAppSecretsFromKeyVault {
     Write-Host "Container App PostgreSQL secrets refreshed for '$ContainerAppName'."
 }
 
+function Restart-ContainerAppRevision {
+    param(
+        [string]$ContainerAppName
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ContainerAppName)) {
+        return
+    }
+
+    $latestRevisionName = ""
+    try {
+        $latestRevisionName = Invoke-OpenJiboAzWithRetry `
+            -Arguments @(
+                "containerapp", "show",
+                "--resource-group", $ResourceGroupName,
+                "--name", $ContainerAppName,
+                "--query", "properties.latestRevisionName",
+                "--output", "tsv"
+            ) `
+            -Description "Container App latest revision lookup for '$ContainerAppName'" `
+            -Attempts 4
+    }
+    catch {
+        throw "Could not resolve the latest revision name for Container App '$ContainerAppName' to restart it after secret changes. $_"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($latestRevisionName)) {
+        throw "Container App '$ContainerAppName' did not report a latest revision name."
+    }
+
+    Write-Host "Restarting Container App revision '$latestRevisionName' so the refreshed secrets take effect."
+    Invoke-OpenJiboAzWithRetry `
+        -Arguments @(
+            "containerapp", "revision", "restart",
+            "--resource-group", $ResourceGroupName,
+            "--name", $ContainerAppName,
+            "--revision", $latestRevisionName,
+            "--output", "none"
+        ) `
+        -Description "Container App revision restart for '$ContainerAppName'" `
+        -Attempts 4 | Out-Null
+    Write-Host "Container App revision '$latestRevisionName' restarted."
+}
+
 $arguments = @(
     "deployment", "group", "create",
     "--resource-group", $ResourceGroupName,
@@ -157,7 +207,12 @@ $arguments = @(
     "--parameters", "registryLoginServer=$RegistryLoginServer",
     "--parameters", "keyVaultName=$KeyVaultName",
     "--parameters", "imageTag=$ImageTag",
-    "--parameters", "apiHostname=$ApiHostname"
+    "--parameters", "apiHostname=$ApiHostname",
+    "--parameters", "stateConnectionString=$stateConnectionString",
+    "--parameters", "personalMemoryConnectionString=$personalMemoryConnectionString",
+    "--parameters", "mediaConnectionString=$mediaConnectionString",
+    "--parameters", "openWeatherApiKey=$openWeatherApiKey",
+    "--parameters", "newsApiKey=$newsApiKey"
 )
 
 if (-not [string]::IsNullOrWhiteSpace($Location)) {
@@ -281,6 +336,8 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
 $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
 Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString
+Restart-ContainerAppRevision -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value
+Start-Sleep -Seconds 20
 
 if ($RunMigration) {
     $migrationScript = Join-Path $repoRoot "scripts/cloud/Invoke-OpenJiboMigration.ps1"

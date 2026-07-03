@@ -189,6 +189,12 @@ fi
 registry_login_server="${registry_name}.azurecr.io"
 deployment_name="openjibo-managed-$(date -u +%s)"
 
+state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
+personal_memory_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-personal-memory-connection-string --query value -o tsv)"
+media_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-media-connection-string --query value -o tsv)"
+open_weather_api_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-openweather-api-key --query value -o tsv)"
+news_api_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-newsapi-key --query value -o tsv)"
+
 echo "Deploying Open Jibo managed Container Apps stack to resource group '${resource_group_name}'"
 deployment_args=(
   az deployment group create
@@ -200,6 +206,11 @@ deployment_args=(
   --parameters "keyVaultName=${key_vault_name}"
   --parameters "imageTag=${image_tag}"
   --parameters "apiHostname=${api_hostname}"
+  --parameters "stateConnectionString=${state_connection_string}"
+  --parameters "personalMemoryConnectionString=${personal_memory_connection_string}"
+  --parameters "mediaConnectionString=${media_connection_string}"
+  --parameters "openWeatherApiKey=${open_weather_api_key}"
+  --parameters "newsApiKey=${news_api_key}"
 )
 
 if [[ "$enable_azure_speech" == true ]]; then
@@ -325,7 +336,27 @@ if [[ -n "${container_app_name:-}" ]]; then
     --secrets "state-connection-string=${state_connection_string}" "personal-memory-connection-string=${personal_memory_connection_string}" \
     --output none
   echo "Container App PostgreSQL secrets refreshed for '${container_app_name}'." >&2
+
+  latest_revision_name="$(az containerapp show \
+    --resource-group "$resource_group_name" \
+    --name "$container_app_name" \
+    --query properties.latestRevisionName \
+    --output tsv)"
+  if [[ -z "$latest_revision_name" ]]; then
+    echo "Container App '${container_app_name}' did not report a latest revision name." >&2
+    exit 1
+  fi
+
+  echo "Restarting Container App revision '${latest_revision_name}' so the refreshed secrets take effect." >&2
+  az containerapp revision restart \
+    --resource-group "$resource_group_name" \
+    --name "$container_app_name" \
+    --revision "$latest_revision_name" \
+    --output none
+  echo "Container App revision '${latest_revision_name}' restarted." >&2
 fi
+
+sleep 20
 
 if [[ "$run_migration" == true ]]; then
   bash "${script_dir}/invoke-openjibo-migration.sh" \

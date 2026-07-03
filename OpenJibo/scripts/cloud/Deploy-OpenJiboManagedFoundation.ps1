@@ -107,6 +107,30 @@ function Invoke-OpenJiboAzWithRetry {
     }
 }
 
+function Sync-OpenJiboPostgresAdminPassword {
+    param(
+        [string]$ServerName,
+        [string]$AdminPassword
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ServerName) -or [string]::IsNullOrWhiteSpace($AdminPassword)) {
+        return
+    }
+
+    Write-Host "Synchronizing PostgreSQL server admin password for '$ServerName' with the selected foundation password."
+    Invoke-OpenJiboAzWithRetry `
+        -Arguments @(
+            "postgres", "flexible-server", "update",
+            "--resource-group", $ResourceGroupName,
+            "--name", $ServerName,
+            "--admin-password", $AdminPassword,
+            "--output", "none"
+        ) `
+        -Description "PostgreSQL admin password synchronization for '$ServerName'" `
+        -Attempts 6 | Out-Null
+    Write-Host "PostgreSQL server admin password synchronized for '$ServerName'."
+}
+
 $existingManagedKeyVaultName = Get-OpenJiboManagedKeyVaultName
 
 if ([string]::IsNullOrWhiteSpace($PostgresAdminPassword) -and -not [string]::IsNullOrWhiteSpace($existingManagedKeyVaultName)) {
@@ -186,6 +210,8 @@ $arguments += @(
 Write-Host "Deploying Open Jibo managed foundation to resource group '$ResourceGroupName'"
 $deploymentJson = az @arguments | ConvertFrom-Json
 $outputs = $deploymentJson.properties.outputs
+
+Sync-OpenJiboPostgresAdminPassword -ServerName $outputs.postgresServerName.value -AdminPassword $PostgresAdminPassword
 
 $storageConnectionString = Invoke-OpenJiboAzWithRetry `
     -Arguments @("storage", "account", "show-connection-string", "--resource-group", $ResourceGroupName, "--name", $outputs.storageAccountName.value, "--query", "connectionString", "--output", "tsv") `

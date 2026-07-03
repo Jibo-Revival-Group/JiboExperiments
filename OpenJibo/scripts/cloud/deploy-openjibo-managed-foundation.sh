@@ -192,6 +192,7 @@ key_vault_name = outputs["keyVaultName"]["value"]
 storage_account_name = outputs["storageAccountName"]["value"]
 speech_services_account_name = outputs["speechServicesAccountName"]["value"]
 postgres_host = outputs["postgresFullyQualifiedDomainName"]["value"]
+postgres_server_name = outputs["postgresServerName"]["value"]
 postgres_login = outputs["postgresAdministratorLogin"]["value"]
 state_database_name = outputs["postgresStateDatabaseName"]["value"]
 personal_memory_database_name = outputs["postgresPersonalMemoryDatabaseName"]["value"]
@@ -271,6 +272,28 @@ def postgres_connection_string(database_name: str) -> str:
     )
 
 
+def sync_postgres_admin_password() -> None:
+    if not postgres_server_name.strip() or not postgres_admin_password.strip():
+        return
+
+    print(
+        f"Synchronizing PostgreSQL server admin password for '{postgres_server_name}' with the selected foundation password.",
+        file=sys.stderr,
+    )
+    run_command_with_retry(
+        [
+            "az", "postgres", "flexible-server", "update",
+            "--resource-group", resource_group_name,
+            "--name", postgres_server_name,
+            "--admin-password", postgres_admin_password,
+            "--output", "none",
+        ],
+        f"PostgreSQL admin password synchronization for '{postgres_server_name}'",
+        attempts=6,
+    )
+    print(f"PostgreSQL server admin password synchronized for '{postgres_server_name}'.", file=sys.stderr)
+
+
 storage_connection_string = run_command_with_retry(
     [
         "az", "storage", "account", "show-connection-string",
@@ -293,6 +316,8 @@ speech_subscription_key = run_command_with_retry(
     ],
     "Azure Speech subscription key lookup",
 )
+
+sync_postgres_admin_password()
 
 set_secret_if_changed("openjibo-state-connection-string", state_connection_string or postgres_connection_string(state_database_name))
 set_secret_if_changed("openjibo-personal-memory-connection-string", personal_memory_connection_string or postgres_connection_string(personal_memory_database_name))

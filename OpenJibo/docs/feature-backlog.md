@@ -1078,6 +1078,7 @@ For `1.0.19`:
 16. Lasso, identity, and onboarding as larger discovery-driven tracks
 17. Legacy MIM personality import ladder and first declarative prompt packs
 18. Longer authored persona variants for the same prompt families
+   - progress: favorite drink and favorite sport now route through source-backed persona replies with focused tests; live robot playback is still needed before marking the broader persona ladder closed.
 19. Dialog joining/composition as a post-release enhancement, kept separate from the 1.0.19 ladder
 
 For `1.0.20` and beyond:

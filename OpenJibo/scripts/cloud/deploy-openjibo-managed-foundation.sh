@@ -206,6 +206,34 @@ def set_secret(name: str, value: str) -> None:
     )
 
 
+def set_secret_if_changed(name: str, value: str) -> None:
+    if not value.strip():
+        return
+
+    result = subprocess.run(
+        [
+            "az", "keyvault", "secret", "show",
+            "--vault-name", key_vault_name,
+            "--name", name,
+            "--query", "value",
+            "--output", "tsv",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    existing_value = result.stdout.strip() if result.returncode == 0 else ""
+    if existing_value and existing_value == value:
+        print(f"Key Vault secret '{name}' already matches the desired value; skipping write.", file=sys.stderr)
+        return
+
+    if not existing_value:
+        print(f"Key Vault secret '{name}' is missing or unreadable; creating or refreshing it.", file=sys.stderr)
+    else:
+        print(f"Key Vault secret '{name}' changed; refreshing it.", file=sys.stderr)
+
+    set_secret(name, value)
+
+
 def postgres_connection_string(database_name: str) -> str:
     return (
         f"Host={postgres_host};Port=5432;Database={database_name};"
@@ -237,13 +265,13 @@ speech_subscription_key = run_command_with_retry(
     "Azure Speech subscription key lookup",
 )
 
-set_secret("openjibo-state-connection-string", state_connection_string or postgres_connection_string(state_database_name))
-set_secret("openjibo-personal-memory-connection-string", personal_memory_connection_string or postgres_connection_string(personal_memory_database_name))
-set_secret("openjibo-media-connection-string", storage_connection_string)
-set_secret("azure-speech-subscription-key", speech_subscription_key)
-set_secret("openjibo-postgres-admin-password", postgres_admin_password)
-set_secret("openjibo-openweather-api-key", open_weather_api_key)
-set_secret("openjibo-newsapi-key", news_api_key)
+set_secret_if_changed("openjibo-state-connection-string", state_connection_string or postgres_connection_string(state_database_name))
+set_secret_if_changed("openjibo-personal-memory-connection-string", personal_memory_connection_string or postgres_connection_string(personal_memory_database_name))
+set_secret_if_changed("openjibo-media-connection-string", storage_connection_string)
+set_secret_if_changed("azure-speech-subscription-key", speech_subscription_key)
+set_secret_if_changed("openjibo-postgres-admin-password", postgres_admin_password)
+set_secret_if_changed("openjibo-openweather-api-key", open_weather_api_key)
+set_secret_if_changed("openjibo-newsapi-key", news_api_key)
 
 print(json.dumps(deployment_json, indent=2))
 PY

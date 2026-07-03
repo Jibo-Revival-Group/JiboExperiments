@@ -85,7 +85,7 @@ The managed Azure path separates persistent storage from the application contain
 
 `deploy-openjibo-managed-foundation.sh` and `Deploy-OpenJiboManagedFoundation.ps1` create the PostgreSQL server and databases, generate a PostgreSQL administrator password when one is not supplied, and seed the state, personal-memory, media, and API-provider secrets into Key Vault. The scripts still accept explicit state and personal-memory connection string overrides for emergency or external-database cases, but the default managed deployment is PostgreSQL-backed.
 
-The foundation adds a PostgreSQL firewall rule for Azure services and, when the deployment runner public IP can be detected, a narrow firewall rule for that runner so deploy-time migrations can connect. If migrations fail with a PostgreSQL network error, confirm the runner IP was detected and that the database firewall allows the current deploy runner.
+The foundation adds a PostgreSQL firewall rule for Azure services and, when the deployment runner public IP can be detected, a narrow firewall rule for that runner so deploy-time migrations can connect. The managed deploy path removes that runner rule again after a successful deploy so it does not linger longer than needed. If migrations fail with a PostgreSQL network error, confirm the runner IP was detected and that the database firewall allows the current deploy runner.
 
 `deploy-openjibo-managed.sh` and `Deploy-OpenJiboManaged.ps1` also query the Container Apps environment outbound IPs and create matching PostgreSQL firewall rules before migrations and smoke checks run. That keeps the managed runtime on PostgreSQL while giving the deployed container its own firewall path.
 

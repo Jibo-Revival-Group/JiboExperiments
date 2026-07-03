@@ -143,6 +143,7 @@ ensure_postgres_firewall_rule() {
     "$server_flag" "$postgres_server_name" \
     "$rule_flag" "$rule_name" \
     --output none >/dev/null 2>&1; then
+    echo "Refreshing PostgreSQL firewall rule '${rule_name}' for server '${postgres_server_name}'." >&2
     az postgres flexible-server firewall-rule update \
       --resource-group "$resource_group_name" \
       "$server_flag" "$postgres_server_name" \
@@ -151,6 +152,7 @@ ensure_postgres_firewall_rule() {
       --end-ip-address "$ip_address" \
       --output none
   else
+    echo "Creating PostgreSQL firewall rule '${rule_name}' for server '${postgres_server_name}'." >&2
     az postgres flexible-server firewall-rule create \
       --resource-group "$resource_group_name" \
       "$server_flag" "$postgres_server_name" \
@@ -159,6 +161,19 @@ ensure_postgres_firewall_rule() {
       --end-ip-address "$ip_address" \
       --output none
   fi
+}
+
+remove_postgres_firewall_rule() {
+  local postgres_server_name="$1"
+  local rule_name="$2"
+
+  echo "Removing temporary deployment runner firewall rule '${rule_name}' from server '${postgres_server_name}'." >&2
+  az postgres flexible-server firewall-rule delete \
+    --resource-group "$resource_group_name" \
+    --name "$postgres_server_name" \
+    --rule-name "$rule_name" \
+    --yes \
+    --output none >/dev/null 2>&1 || true
 }
 
 if [[ ! -f "$resolved_template_path" ]]; then
@@ -226,12 +241,13 @@ print(deployment_json["properties"]["outputs"]["managedEnvironmentName"]["value"
 PY
 )"
 
-  echo "Binding '${api_hostname}' to Container App '${container_app_name}'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate." >&2
+  echo "Adding hostname '${api_hostname}' to Container App '${container_app_name}'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate." >&2
   az containerapp hostname add \
     --resource-group "$resource_group_name" \
     --name "$container_app_name" \
     --hostname "$api_hostname" \
     --output none
+  echo "Hostname '${api_hostname}' added. Binding the managed certificate for Container App '${container_app_name}'." >&2
   az containerapp hostname bind \
     --resource-group "$resource_group_name" \
     --name "$container_app_name" \
@@ -239,6 +255,7 @@ PY
     --environment "$managed_environment_name" \
     --validation-method CNAME \
     --output none
+  echo "Managed certificate binding completed for hostname '${api_hostname}'." >&2
 
   state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
   postgres_server_name="$(parse_postgres_server_name "$state_connection_string")"
@@ -256,6 +273,7 @@ PY
     fi
 
     rule_name="AllowContainerApps-${outbound_ip//./-}"
+    echo "Ensuring PostgreSQL firewall rule '${rule_name}' for Container Apps outbound IP '${outbound_ip}'." >&2
     ensure_postgres_firewall_rule "$postgres_server_name" "$rule_name" "$outbound_ip"
   done < <(
     python3 - "$environment_json" <<'PY'
@@ -328,6 +346,10 @@ PY
   fi
 
   BASE_URL="$smoke_base_url" bash "${script_dir}/invoke-cloud-smoke.sh"
+fi
+
+if [[ -n "${postgres_server_name:-}" ]]; then
+  remove_postgres_firewall_rule "$postgres_server_name" "AllowDeploymentRunner"
 fi
 
 printf '%s\n' "$deployment_json"

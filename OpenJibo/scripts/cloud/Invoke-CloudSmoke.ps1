@@ -39,7 +39,7 @@ function Invoke-JsonRequest {
         ErrorAction = "Stop"
     }
 
-    if ($null -ne $Body) {
+    if (-not [string]::IsNullOrWhiteSpace($Body)) {
         $request.Body = $Body
         $request.ContentType = "application/json"
     }
@@ -135,7 +135,8 @@ $account = Invoke-JsonRequestWithRetry -Name "AccountCreate" -Method "POST" -Url
 Add-Result $account
 
 if (-not $account.Success -and $account.StatusCode -ne 409) {
-    throw "Account create failed with status code $($account.StatusCode): $($account.Error). Body: $($account.BodyText ?? $account.Body)"
+    $accountBody = if ($null -ne $account.BodyText) { $account.BodyText } else { $account.Body }
+    throw "Account create failed with status code $($account.StatusCode): $($account.Error). Body: $accountBody"
 }
 
 if (-not $account.Success) {
@@ -145,7 +146,8 @@ if (-not $account.Success) {
     } -Body (@{ email = $TestEmail; password = $TestPassword } | ConvertTo-Json)
     Add-Result $login
     if (-not $login.Success) {
-        throw "Account login failed with status code $($login.StatusCode): $($login.Error). Body: $($login.BodyText ?? $login.Body)"
+        $loginBody = if ($null -ne $login.BodyText) { $login.BodyText } else { $login.Body }
+        throw "Account login failed with status code $($login.StatusCode): $($login.Error). Body: $loginBody"
     }
     $account = $login
 }

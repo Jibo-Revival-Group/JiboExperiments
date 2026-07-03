@@ -175,18 +175,55 @@ function Set-OpenJiboKeyVaultSecretWithRetry {
         -Attempts 6 | Out-Null
 }
 
-Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-state-connection-string -Value $resolvedStateConnectionString
+function Set-OpenJiboKeyVaultSecretIfChanged {
+    param(
+        [string]$VaultName,
+        [string]$Name,
+        [string]$Value
+    )
 
-Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-personal-memory-connection-string -Value $resolvedPersonalMemoryConnectionString
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return
+    }
 
-Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-media-connection-string -Value $storageConnectionString
+    $existingValue = ""
+    try {
+        $existingValue = Invoke-OpenJiboAzWithRetry `
+            -Arguments @("keyvault", "secret", "show", "--vault-name", $VaultName, "--name", $Name, "--query", "value", "--output", "tsv") `
+            -Description "Key Vault secret lookup for '$Name'" `
+            -Attempts 4
+    }
+    catch {
+        $existingValue = ""
+    }
 
-Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name azure-speech-subscription-key -Value $speechSubscriptionKey
+    if (-not [string]::IsNullOrWhiteSpace($existingValue) -and $existingValue -ceq $Value) {
+        Write-Host "Key Vault secret '$Name' already matches the desired value; skipping write."
+        return
+    }
 
-Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-postgres-admin-password -Value $PostgresAdminPassword
+    if ([string]::IsNullOrWhiteSpace($existingValue)) {
+        Write-Host "Key Vault secret '$Name' is missing or unreadable; creating or refreshing it."
+    }
+    else {
+        Write-Host "Key Vault secret '$Name' changed; refreshing it."
+    }
 
-Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-openweather-api-key -Value $OpenWeatherApiKey
+    Set-OpenJiboKeyVaultSecretWithRetry -VaultName $VaultName -Name $Name -Value $Value
+}
 
-Set-OpenJiboKeyVaultSecretWithRetry -VaultName $outputs.keyVaultName.value -Name openjibo-newsapi-key -Value $NewsApiKey
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-state-connection-string -Value $resolvedStateConnectionString
+
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-personal-memory-connection-string -Value $resolvedPersonalMemoryConnectionString
+
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-media-connection-string -Value $storageConnectionString
+
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name azure-speech-subscription-key -Value $speechSubscriptionKey
+
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-postgres-admin-password -Value $PostgresAdminPassword
+
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-openweather-api-key -Value $OpenWeatherApiKey
+
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-newsapi-key -Value $NewsApiKey
 
 $deploymentJson

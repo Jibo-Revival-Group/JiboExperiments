@@ -79,6 +79,7 @@ function Ensure-PostgresFirewallRule {
 
     & az @showArgs *> $null
     if ($LASTEXITCODE -eq 0) {
+        Write-Host "Refreshing PostgreSQL firewall rule '$RuleName' for server '$ServerName'."
         & az postgres flexible-server firewall-rule update `
             --resource-group $ResourceGroupName `
             $serverFlag $ServerName `
@@ -89,6 +90,7 @@ function Ensure-PostgresFirewallRule {
         return
     }
 
+    Write-Host "Creating PostgreSQL firewall rule '$RuleName' for server '$ServerName'."
     & az postgres flexible-server firewall-rule create `
         --resource-group $ResourceGroupName `
         $serverFlag $ServerName `
@@ -96,6 +98,24 @@ function Ensure-PostgresFirewallRule {
         --start-ip-address $IpAddress `
         --end-ip-address $IpAddress `
         --output none | Out-Null
+}
+
+function Remove-PostgresFirewallRule {
+    param(
+        [string]$ServerName,
+        [string]$RuleName
+    )
+
+    & az postgres flexible-server firewall-rule delete `
+        --resource-group $ResourceGroupName `
+        --name $ServerName `
+        --rule-name $RuleName `
+        --yes `
+        --output none *> $null
+
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Removed PostgreSQL firewall rule '$RuleName' from server '$ServerName'."
+    }
 }
 
 $arguments = @(
@@ -145,12 +165,13 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
         throw "Managed environment name was not returned from the deployment."
     }
 
-    Write-Host "Binding '$ApiHostname' to Container App '$containerAppName'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate."
+    Write-Host "Adding hostname '$ApiHostname' to Container App '$containerAppName'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate."
     az containerapp hostname add `
         --resource-group $ResourceGroupName `
         --name $containerAppName `
         --hostname $ApiHostname `
         --output none
+    Write-Host "Hostname '$ApiHostname' added. Binding the managed certificate for Container App '$containerAppName'."
     az containerapp hostname bind `
         --resource-group $ResourceGroupName `
         --name $containerAppName `
@@ -158,6 +179,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
         --environment $managedEnvironmentName `
         --validation-method CNAME `
         --output none
+    Write-Host "Managed certificate binding completed for hostname '$ApiHostname'."
 
     $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
     $postgresServerName = Get-PostgresServerNameFromConnectionString -ConnectionString $stateConnectionString
@@ -219,6 +241,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 
     foreach ($outboundIpAddress in ($outboundIpAddresses | Select-Object -Unique)) {
         $ruleName = "AllowContainerApps-{0}" -f $outboundIpAddress.Replace(".", "-")
+        Write-Host "Ensuring PostgreSQL firewall rule '$ruleName' for Container Apps outbound IP '$outboundIpAddress'."
         Ensure-PostgresFirewallRule -ServerName $postgresServerName -RuleName $ruleName -IpAddress $outboundIpAddress
     }
 
@@ -249,6 +272,13 @@ if ($RunSmoke) {
 
     $smokeScript = Join-Path $repoRoot "scripts/cloud/Invoke-CloudSmoke.ps1"
     & $smokeScript -BaseUrl $smokeBaseUrl
+}
+
+$stateConnectionStringForCleanup = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
+if (-not [string]::IsNullOrWhiteSpace($stateConnectionStringForCleanup)) {
+    $postgresServerName = Get-PostgresServerNameFromConnectionString -ConnectionString $stateConnectionStringForCleanup
+    Write-Host "Removing temporary deployment runner firewall rule 'AllowDeploymentRunner' from server '$postgresServerName'."
+    Remove-PostgresFirewallRule -ServerName $postgresServerName -RuleName "AllowDeploymentRunner"
 }
 
 $deploymentJson

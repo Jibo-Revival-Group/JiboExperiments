@@ -385,6 +385,18 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_season",
                 "special feeling for winter",
                 "more dance parties"),
+            "robot_favorite_drink" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_drink",
+                "too scared of liquids",
+                "too liquidy",
+                "No favorite drink"),
+            "robot_favorite_sport" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_sport",
+                "favorite sport to play is mini golf",
+                "favorite sport is miniature golf",
+                "mini golf is my favorite sport"),
             "robot_likes_being_jibo" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_being_jibo",

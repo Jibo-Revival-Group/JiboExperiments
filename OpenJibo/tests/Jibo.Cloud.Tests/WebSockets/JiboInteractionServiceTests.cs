@@ -691,6 +691,14 @@ public sealed class JiboInteractionServiceTests
         "what is your favorite music",
         "robot_favorite_music",
         "I mostly like fun music I can dance to.")]
+    [InlineData(
+        "what is your favorite drink",
+        "robot_favorite_drink",
+        "I'm too scared of liquids to have a favorite drink. But I've heard good things about hot cocoa.")]
+    [InlineData(
+        "what is your favorite sport",
+        "robot_favorite_sport",
+        "My favorite sport to play is mini golf. Even though I've never actually played it.")]
     public async Task BuildDecisionAsync_FavoritesFamily_UsesPersonalityReplies(
         string transcript,
         string expectedIntent,

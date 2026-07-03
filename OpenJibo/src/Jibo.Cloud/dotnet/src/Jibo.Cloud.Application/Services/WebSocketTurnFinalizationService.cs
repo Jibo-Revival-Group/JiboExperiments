@@ -285,7 +285,9 @@ public sealed class WebSocketTurnFinalizationService(
         try
         {
             var turnState = session.TurnState;
+            var receivedAtUtc = DateTimeOffset.UtcNow;
             var pageCounts = DescribeBufferedAudioPages(turnState);
+            var hasAudioBearingPage = false;
             logger.LogDebug(
                 "Turn binary audio entered session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages} metadataPages={MetadataPages} awaiting={Awaiting} sawListen={SawListen} sawContext={SawContext}",
                 session.SessionId,
@@ -332,10 +334,10 @@ public sealed class WebSocketTurnFinalizationService(
             turnState.AwaitingTurnCompletion = true;
             session.Metadata["lastAudioBytes"] = envelope.Binary?.Length ?? 0;
             pageCounts = DescribeBufferedAudioPages(turnState);
-            if (pageCounts.AudioBearingPageCount > 0)
+            hasAudioBearingPage = pageCounts.AudioBearingPageCount > 0;
+            if (hasAudioBearingPage)
             {
-                turnState.FirstAudioReceivedUtc ??= DateTimeOffset.UtcNow;
-                turnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow;
+                turnState.FirstAudioReceivedUtc ??= receivedAtUtc;
             }
             await sink.RecordTurnDiagnosticAsync("binary_audio_received", BuildTurnDiagnosticSnapshot(session, envelope,
                 new Dictionary<string, object?>
@@ -383,6 +385,8 @@ public sealed class WebSocketTurnFinalizationService(
                 return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
             }
 
+            if (hasAudioBearingPage)
+                turnState.LastAudioReceivedUtc = receivedAtUtc;
             logger.LogDebug(
                 "Turn binary audio exit without finalization session={SessionId} transId={TransId} bytes={Bytes} rawFrames={RawFrames} audioPages={AudioPages}",
                 session.SessionId,
@@ -1003,7 +1007,7 @@ public sealed class WebSocketTurnFinalizationService(
                         allowFallbackOnMissingTranscript, turnAge))
                 {
                     turnState.AwaitingTurnCompletion = true;
-                    if (turnState.BufferedAudioBytes > 0) turnState.FinalizeAttemptCount += 1;
+                    turnState.FinalizeAttemptCount += 1;
                     await sink.RecordTurnDiagnosticAsync("auto_finalize_deferred_for_yes_no_blank_ogg",
                         BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
                         {
@@ -1084,7 +1088,7 @@ public sealed class WebSocketTurnFinalizationService(
                 string.IsNullOrWhiteSpace(finalizedTurn.RawTranscript))
             {
                 turnState.AwaitingTurnCompletion = true;
-                if (turnState.BufferedAudioBytes > 0) turnState.FinalizeAttemptCount += 1;
+                turnState.FinalizeAttemptCount += 1;
 
                 var turnAge = turnState.FirstAudioReceivedUtc.HasValue
                     ? DateTimeOffset.UtcNow - turnState.FirstAudioReceivedUtc.Value

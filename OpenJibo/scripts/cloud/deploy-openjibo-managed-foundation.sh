@@ -80,6 +80,28 @@ if [[ ! -f "$resolved_template_path" ]]; then
   exit 1
 fi
 
+existing_managed_key_vault_name=""
+if command -v az >/dev/null 2>&1; then
+  existing_managed_key_vault_name="$(az keyvault list \
+    --resource-group "$resource_group_name" \
+    --query "[?starts_with(name, 'kv-')].name | [0]" \
+    --output tsv 2>/dev/null || true)"
+fi
+
+if [[ -z "$postgres_admin_password" ]]; then
+  if [[ -n "$existing_managed_key_vault_name" ]]; then
+    echo "Found existing managed Key Vault '${existing_managed_key_vault_name}'; checking for a stored PostgreSQL admin password." >&2
+    postgres_admin_password="$(az keyvault secret show \
+      --vault-name "$existing_managed_key_vault_name" \
+      --name openjibo-postgres-admin-password \
+      --query value \
+      --output tsv 2>/dev/null || true)"
+    if [[ -n "$postgres_admin_password" ]]; then
+      echo "Reusing existing PostgreSQL admin password from Key Vault." >&2
+    fi
+  fi
+fi
+
 if [[ -z "$postgres_admin_password" ]]; then
   postgres_admin_password="$(python3 - <<'PY'
 import secrets
@@ -97,6 +119,13 @@ secrets.SystemRandom().shuffle(password)
 print("".join(password))
 PY
 )"
+  if [[ -z "$existing_managed_key_vault_name" ]]; then
+    echo "No existing managed Key Vault was found; generating the initial PostgreSQL admin password." >&2
+    echo "Generated a new PostgreSQL admin password for the initial foundation deployment." >&2
+  else
+    echo "Existing managed Key Vault '${existing_managed_key_vault_name}' did not return a stored PostgreSQL admin password." >&2
+    echo "Managed Key Vault did not return a stored PostgreSQL password; generated a replacement for the foundation deployment." >&2
+  fi
 fi
 
 deployment_runner_ip=""

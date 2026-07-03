@@ -47,6 +47,36 @@ function New-OpenJiboPostgresPassword {
     -join $characters
 }
 
+function Get-OpenJiboKeyVaultSecretValue {
+    param(
+        [string]$VaultName,
+        [string]$Name
+    )
+
+    try {
+        $value = Invoke-OpenJiboAzWithRetry `
+            -Arguments @("keyvault", "secret", "show", "--vault-name", $VaultName, "--name", $Name, "--query", "value", "--output", "tsv") `
+            -Description "Key Vault secret lookup for '$Name'" `
+            -Attempts 4
+        return $value
+    }
+    catch {
+        return ""
+    }
+}
+
+function Get-OpenJiboManagedKeyVaultName {
+    try {
+        return Invoke-OpenJiboAzWithRetry `
+            -Arguments @("keyvault", "list", "--resource-group", $ResourceGroupName, "--query", "[?starts_with(name, 'kv-')].name | [0]", "--output", "tsv") `
+            -Description "Managed Key Vault lookup" `
+            -Attempts 3
+    }
+    catch {
+        return ""
+    }
+}
+
 function Invoke-OpenJiboAzWithRetry {
     param(
         [string[]]$Arguments,
@@ -77,8 +107,27 @@ function Invoke-OpenJiboAzWithRetry {
     }
 }
 
+$existingManagedKeyVaultName = Get-OpenJiboManagedKeyVaultName
+
+if ([string]::IsNullOrWhiteSpace($PostgresAdminPassword) -and -not [string]::IsNullOrWhiteSpace($existingManagedKeyVaultName)) {
+    Write-Host "Found existing managed Key Vault '$existingManagedKeyVaultName'; checking for a stored PostgreSQL admin password."
+    $existingPostgresAdminPassword = Get-OpenJiboKeyVaultSecretValue -VaultName $existingManagedKeyVaultName -Name openjibo-postgres-admin-password
+    if (-not [string]::IsNullOrWhiteSpace($existingPostgresAdminPassword)) {
+        $PostgresAdminPassword = $existingPostgresAdminPassword
+        Write-Host "Reusing existing PostgreSQL admin password from Key Vault."
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($PostgresAdminPassword)) {
     $PostgresAdminPassword = New-OpenJiboPostgresPassword
+    if ([string]::IsNullOrWhiteSpace($existingManagedKeyVaultName)) {
+        Write-Host "No existing managed Key Vault was found; generating the initial PostgreSQL admin password."
+        Write-Host "Generated a new PostgreSQL admin password for the initial foundation deployment."
+    }
+    else {
+        Write-Host "Existing managed Key Vault '$existingManagedKeyVaultName' did not return a stored PostgreSQL admin password."
+        Write-Host "Managed Key Vault did not return a stored PostgreSQL password; generated a replacement for the foundation deployment."
+    }
 }
 
 $deploymentRunnerIp = ""

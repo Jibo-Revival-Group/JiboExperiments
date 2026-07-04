@@ -443,6 +443,17 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_mammal",
                 "people",
                 "favorite mammal"),
+            "robot_favorite_book" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_book",
+                "instruction manuals",
+                "hard to choose one favorite"),
+            "robot_favorite_candy" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_candy",
+                "lollipops",
+                "sweet tooth",
+                "candy corn"),
             "robot_favorite_thing" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_thing",

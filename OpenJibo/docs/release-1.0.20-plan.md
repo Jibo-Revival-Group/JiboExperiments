@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-04`)
 
+- continued the Persona favorites parity slice with source-backed favorite book and favorite candy routing. Book questions now land on the imported instruction-manual answer, and candy questions use the imported lollipop / sweet-tooth / candy-corn answer set with focused dialog and websocket guardrail coverage. Live robot playback remains the proof item for this small personality slice.
+
 - continued the Persona favorites parity slice with source-backed favorite song routing. Song questions now land on the imported radio/dance-song reply set for US/UK favorite phrasing and `do you have a favorite song` aliases, with focused dialog guardrail coverage. Live robot playback remains the proof item for this small personality slice.
 - continued the Persona favorites parity slice with source-backed favorite video game and favorite president routing. Video-game questions now land on the imported Pong replies, favorite-president questions land on the imported Abraham Lincoln / Taft / fictional-president answer set, and guardrail coverage keeps US/UK favorite phrasing away from generic chat or hero routing. Live robot playback remains the proof item for this small personality slice.
 - expanded the Persona favorites surface with source-backed favorite pet and favorite mammal routing. Favorite pet now prefers the imported groundhog / water-safety replies, and favorite mammal uses the Pegasus-style people answer, with focused dialog guardrail coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.

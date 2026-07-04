@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-04`)
 
+- continued the seasonal/persona favorites parity slice by splitting direct favorite-holiday questions away from generic holiday-season chat. Favorite holiday prompts now use the source-backed Halloween answer set, with US/UK favorite phrasing covered in focused dialog tests. Live robot playback remains the proof item for this small personality slice.
+
 - continued the Persona favorites parity slice with source-backed favorite vegetable, favorite place, and favorite superhero routing. Vegetable questions now land on the imported artichoke / broccoli / cauliflower answer set, place questions land on the imported right-here/Mars reply, and superhero questions land on the imported Optimus Prime answer set with focused dialog and websocket guardrail coverage. Live robot playback remains the proof item for this small personality slice.
 
 - continued the Persona favorites parity slice with source-backed favorite book and favorite candy routing. Book questions now land on the imported instruction-manual answer, and candy questions use the imported lollipop / sweet-tooth / candy-corn answer set with focused dialog and websocket guardrail coverage. Live robot playback remains the proof item for this small personality slice.

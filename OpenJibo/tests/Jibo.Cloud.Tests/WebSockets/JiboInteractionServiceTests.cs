@@ -1240,6 +1240,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what should I get for holiday", "seasonal_holiday_gift", "pet elephant")]
     [InlineData("show santa tracker", "seasonal_santa_tracker", "spot him")]
     [InlineData("do you like halloween", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
+    [InlineData("what is your favorite holiday", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
+    [InlineData("do you have a favourite holiday", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
     [InlineData("do you like holiday music", "seasonal_likes_holiday_music", "holiday music")]
     [InlineData("do you like holiday parties", "seasonal_likes_holiday_parties", "holiday fun can be extra fun")]
     [InlineData("do you celebrate black history month", "seasonal_black_history_month_celebrate",

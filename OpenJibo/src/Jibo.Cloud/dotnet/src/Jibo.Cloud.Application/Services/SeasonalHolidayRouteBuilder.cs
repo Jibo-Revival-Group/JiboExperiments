@@ -131,13 +131,27 @@ internal static class SeasonalHolidayRouteBuilder
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite holiday",
+                "what's your favorite holiday",
+                "what s your favorite holiday",
+                "what is your favourite holiday",
+                "what's your favourite holiday",
+                "what s your favourite holiday",
+                "what holiday do you like best",
+                "do you have a favorite holiday",
+                "do you have a favourite holiday"))
+        {
+            semanticIntent = "seasonal_likes_halloween";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
                 "how is holiday season",
                 "how's holiday season",
                 "how is the holiday season",
                 "do you like holiday season",
                 "do you like the holiday season",
-                "what is your favorite holiday",
-                "what's your favorite holiday",
                 "what holiday do you like",
                 "what is holiday season like"))
         {

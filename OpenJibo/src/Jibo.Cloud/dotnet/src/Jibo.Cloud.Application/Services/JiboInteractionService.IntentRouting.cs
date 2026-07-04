@@ -906,8 +906,51 @@ public sealed partial class JiboInteractionService
                 "what s your favorite flower",
                 "what is your favourite flower",
                 "what's your favourite flower",
-                "what s your favourite flower"))
+                "what s your favourite flower",
+                "do you have a favorite flower",
+                "do you have a favourite flower",
+                "what kind of flower do you like",
+                "what flower do you like"))
             return "robot_favorite_flower";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite tv show",
+                "what's your favorite tv show",
+                "what s your favorite tv show",
+                "what is your favourite tv show",
+                "what's your favourite tv show",
+                "what s your favourite tv show",
+                "do you have a favorite tv show",
+                "do you have a favourite tv show",
+                "what tv show do you like"))
+            return "robot_favorite_tv_show";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite shape",
+                "what's your favorite shape",
+                "what s your favorite shape",
+                "what is your favourite shape",
+                "what's your favourite shape",
+                "what s your favourite shape",
+                "do you have a favorite shape",
+                "do you have a favourite shape",
+                "what shape do you like"))
+            return "robot_favorite_shape";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite word",
+                "what's your favorite word",
+                "what s your favorite word",
+                "what is your favourite word",
+                "what's your favourite word",
+                "what s your favourite word",
+                "do you have a favorite word",
+                "do you have a favourite word",
+                "what word do you like"))
+            return "robot_favorite_word";
 
         if (MatchesAny(
                 loweredTranscript,

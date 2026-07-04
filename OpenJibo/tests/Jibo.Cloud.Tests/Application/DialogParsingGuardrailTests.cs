@@ -76,6 +76,11 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("do you have a favourite video game", "robot_favorite_video_game", "pong")]
     [InlineData("who is your favorite president", "robot_favorite_president", "Abraham Lincoln")]
     [InlineData("do you have a favourite president", "robot_favorite_president", "Abraham Lincoln")]
+    [InlineData("do you have a favorite flower", "robot_favorite_flower", "sunflower")]
+    [InlineData("what kind of flower do you like", "robot_favorite_flower", "sunflower")]
+    [InlineData("what is your favorite tv show", "robot_favorite_tv_show", "TV shows")]
+    [InlineData("do you have a favourite shape", "robot_favorite_shape", "sphere")]
+    [InlineData("what word do you like", "robot_favorite_word", "turtle")]
     public async Task BuildDecisionAsync_SourceBackedFavoritePersonaAliases_UsePersonalityRoute(
         string transcript,
         string expectedIntent,

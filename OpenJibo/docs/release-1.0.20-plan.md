@@ -122,6 +122,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded the Persona favorites surface with source-backed favorite pet and favorite mammal routing. Favorite pet now prefers the imported groundhog / water-safety replies, and favorite mammal uses the Pegasus-style people answer, with focused dialog guardrail coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
 - continued that Persona favorites slice with favorite fruit routing. Favorite fruit now uses the imported blueberry / blue-and-roundness replies for US/UK favorite phrasing plus "what kind of fruit" aliases, with focused dialog guardrail coverage. Live robot playback remains the proof item for this small personality slice.
 - continued the Persona favorites parity slice with source-backed favorite flower alias hardening plus favorite TV show, shape, and word routing. These now use the imported sunflower, TV-learning, sphere/circle, and word-play replies with focused guardrail coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
+- continued the Persona favorites parity slice with favorite thing routing. Generic favorite-thing questions now land on the imported people/electricity answer set instead of drifting into the favorite-thing-to-do branch or generic chat, with focused guardrail coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
 
 #### Major blockers / questions
 

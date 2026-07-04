@@ -901,6 +901,20 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite thing",
+                "what's your favorite thing",
+                "what s your favorite thing",
+                "what is your favourite thing",
+                "what's your favourite thing",
+                "what s your favourite thing",
+                "do you have a favorite thing",
+                "do you have a favourite thing",
+                "what thing do you like",
+                "what thing do you like best"))
+            return "robot_favorite_thing";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite flower",
                 "what's your favorite flower",
                 "what s your favorite flower",

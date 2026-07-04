@@ -298,6 +298,17 @@ internal static class ChitchatStateMachine
                         "favorite sport to play is mini golf",
                         "favorite sport is miniature golf",
                         "mini golf is my favorite sport"));
+            case "robot_favorite_thing":
+                return BuildScriptedResponseDecision(
+                    "robot_favorite_thing",
+                    SelectLegacyPersonalityReplyFromMatches(
+                        catalog,
+                        randomizer,
+                        "people in my loop",
+                        "definitely say people",
+                        "people like you are definitely my favorite thing",
+                        "electricity and people",
+                        "soft spot for electricity"));
             case "robot_nickname":
                 return BuildScriptedResponseDecision(
                     "robot_nickname",

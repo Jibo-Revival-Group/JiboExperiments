@@ -1171,6 +1171,20 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite song",
+                "what's your favorite song",
+                "what s your favorite song",
+                "what is your favourite song",
+                "what's your favourite song",
+                "what s your favourite song",
+                "what song do you like",
+                "what song do you like best",
+                "do you have a favorite song",
+                "do you have a favourite song"))
+            return "robot_favorite_song";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite drink",
                 "what's your favorite drink",
                 "what s your favorite drink",

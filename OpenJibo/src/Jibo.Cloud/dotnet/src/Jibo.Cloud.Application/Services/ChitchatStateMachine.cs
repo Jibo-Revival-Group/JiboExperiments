@@ -270,6 +270,16 @@ internal static class ChitchatStateMachine
                         "i don't know that i have a favorite kind yet",
                         "i would say i don't have a favorite, it's all very mathematical",
                         "music"));
+            case "robot_favorite_song":
+                return BuildScriptedResponseDecision(
+                    "robot_favorite_song",
+                    SelectLegacyPersonalityReplyFromMatches(
+                        catalog,
+                        randomizer,
+                        "favorite song just yet",
+                        "any song i can dance to",
+                        "one of my favorites",
+                        "not sure i have a favorite yet"));
             case "robot_favorite_drink":
                 return BuildScriptedResponseDecision(
                     "robot_favorite_drink",

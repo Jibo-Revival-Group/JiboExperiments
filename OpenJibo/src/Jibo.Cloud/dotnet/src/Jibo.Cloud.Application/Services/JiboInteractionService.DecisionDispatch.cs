@@ -426,6 +426,13 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_mammal",
                 "people",
                 "favorite mammal"),
+            "robot_favorite_song" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_song",
+                "favorite song just yet",
+                "any song I can dance to",
+                "one of my favorites",
+                "not sure I have a favorite yet"),
             "robot_likes_being_jibo" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_being_jibo",

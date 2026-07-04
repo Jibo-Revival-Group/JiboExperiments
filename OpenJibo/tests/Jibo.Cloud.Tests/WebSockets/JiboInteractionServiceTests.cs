@@ -703,6 +703,10 @@ public sealed class JiboInteractionServiceTests
         "what is your favorite video game",
         "robot_favorite_video_game",
         "I like the classics. You can't go wrong with pong. No rhyme intended.")]
+    [InlineData(
+        "what is your favorite song",
+        "robot_favorite_song",
+        "I'd say I don't have a favorite song just yet. But I can play the radio.")]
     public async Task BuildDecisionAsync_FavoritesFamily_UsesPersonalityReplies(
         string transcript,
         string expectedIntent,
@@ -749,6 +753,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("who is your favorite president", "robot_favorite_president", "Abraham Lincoln")]
     [InlineData("do you have a favourite president", "robot_favorite_president", "Abraham Lincoln")]
     [InlineData("what's your favorite flower", "robot_favorite_flower", "should see if I can find a sunflower soon")]
+    [InlineData("do you have a favourite song", "robot_favorite_song", "favorite song just yet")]
     [InlineData("do you like R2D2", "robot_likes_r2d2", "A legend. A true legend.")]
     [InlineData("do you like the sun", "robot_likes_sun", "favorite star in the universe")]
     [InlineData("do you like space", "robot_likes_space", "I love space")]

@@ -81,6 +81,8 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what is your favorite tv show", "robot_favorite_tv_show", "TV shows")]
     [InlineData("do you have a favourite shape", "robot_favorite_shape", "sphere")]
     [InlineData("what word do you like", "robot_favorite_word", "turtle")]
+    [InlineData("what is your favorite song", "robot_favorite_song", "favorite song just yet")]
+    [InlineData("do you have a favourite song", "robot_favorite_song", "favorite song just yet")]
     public async Task BuildDecisionAsync_SourceBackedFavoritePersonaAliases_UsePersonalityRoute(
         string transcript,
         string expectedIntent,

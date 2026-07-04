@@ -1247,64 +1247,42 @@ public sealed partial class JiboInteractionService
 
         if (!string.IsNullOrWhiteSpace(category)) return category;
 
-        return TryExtractEmbeddedPreferenceCategory(normalized, "do you know what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you know what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you know what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you remember what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you remember what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you remember what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you still remember what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you still remember what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you still remember what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you recall what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you recall what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "do you recall what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "can you tell me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "can you tell me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "can you tell me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "can you please tell me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "can you please tell me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "can you please tell me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "could you tell me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "could you tell me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "could you tell me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "could you please tell me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "could you please tell me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "could you please tell me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "would you tell me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "would you tell me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "would you tell me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "would you please tell me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "would you please tell me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "would you please tell me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "please tell me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "please tell me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "please tell me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "remind me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "please remind me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "can you remind me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "could you remind me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "remind me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "please remind me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "can you remind me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "could you remind me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "remind me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "please remind me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "can you remind me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "could you remind me what my", "fave") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "would you remind me what my", "favorite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "would you remind me what my", "favourite") ??
-               TryExtractEmbeddedPreferenceCategory(normalized, "would you remind me what my", "fave") ??
-               TryExtractTellMeWhatPreferenceCategory(normalized, "favorite") ??
-               TryExtractTellMeWhatPreferenceCategory(normalized, "favourite") ??
-               TryExtractTellMeWhatPreferenceCategory(normalized, "fave");
+        var embeddedLeads = new[]
+        {
+            "do you know what my",
+            "do you remember what my",
+            "do you still remember what my",
+            "can you still remember what my",
+            "could you still remember what my",
+            "would you still remember what my",
+            "do you recall what my",
+            "can you tell me what my",
+            "can you please tell me what my",
+            "could you tell me what my",
+            "could you please tell me what my",
+            "would you tell me what my",
+            "would you please tell me what my",
+            "please tell me what my",
+            "remind me what my",
+            "please remind me what my",
+            "can you remind me what my",
+            "could you remind me what my",
+            "would you remind me what my",
+            "tell me what my"
+        };
+
+        foreach (var lead in embeddedLeads)
+        {
+            foreach (var spelling in new[] { "favorite", "favourite", "fave" })
+            {
+                var embeddedCategory = TryExtractEmbeddedPreferenceCategory(normalized, lead, spelling);
+                if (!string.IsNullOrWhiteSpace(embeddedCategory)) return embeddedCategory;
+            }
+        }
+
+        return null;
     }
 
-
-    private static string? TryExtractTellMeWhatPreferenceCategory(string normalized, string spelling)
-    {
-        return TryExtractEmbeddedPreferenceCategory(normalized, "tell me what my", spelling);
-    }
 
     private static string? TryExtractEmbeddedPreferenceCategory(string normalized, string lead, string spelling)
     {

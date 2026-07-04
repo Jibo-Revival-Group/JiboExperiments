@@ -576,6 +576,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-07-03`, preference reminder / past-tense recall slice):
   - expanded owner preference recall parsing for direct `please tell me ...`, reminder-style `could/would you remind me ...`, and past-tense `what was my favorite/favourite/fave ...` aliases so natural memory checks keep landing on the lookup route
   - added focused guardrail coverage for the new reminder and past-tense recall families
+- Progress update (`2026-07-04`, preference reminder helper expansion):
+  - expanded owner preference recall parsing for direct `remind me ...` and `can you remind me ...` aliases, including embedded `what my favorite/favourite/fave ... is` forms, so reminder-style memory checks keep routing to owner-memory lookup instead of generic reminders
+  - added focused guardrail coverage for the new direct and can-you reminder families
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

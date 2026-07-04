@@ -415,6 +415,23 @@ public sealed partial class JiboInteractionService
                 "favorite fruit is blueberries",
                 "roundness and blueness",
                 "favorite color, blue"),
+            "robot_favorite_dessert" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_dessert",
+                "blueberry pie",
+                "favorite dessert"),
+            "robot_favorite_planet" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_planet",
+                "favorite is earth",
+                "mars comes in a close second"),
+            "robot_favorite_number" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_number",
+                "one and zero",
+                "ones and zeroes",
+                "i love pi",
+                "800"),
             "robot_favorite_pet" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_pet",
@@ -571,6 +588,13 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_tv_show",
                 "still learning about tv shows",
                 "favorite tv shows yet"),
+            "robot_favorite_movie" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_movie",
+                "back to the future",
+                "toy story",
+                "wall-e",
+                "spaceballs"),
             "robot_favorite_shape" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_shape",

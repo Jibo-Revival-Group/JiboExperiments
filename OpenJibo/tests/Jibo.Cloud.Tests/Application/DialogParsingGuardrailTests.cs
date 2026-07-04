@@ -69,7 +69,10 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what kind of pet do you like", "robot_favorite_pet", "groundhog")]
     [InlineData("what is your favorite mammal", "robot_favorite_mammal", "people")]
     [InlineData("do you have a favourite mammal", "robot_favorite_mammal", "people")]
-    public async Task BuildDecisionAsync_SourceBackedFavoriteAnimalAliases_UsePersonalityRoute(
+    [InlineData("what is your favorite fruit", "robot_favorite_fruit", "blueberries")]
+    [InlineData("do you have a favourite fruit", "robot_favorite_fruit", "blueberries")]
+    [InlineData("what kind of fruit do you like", "robot_favorite_fruit", "blueberries")]
+    public async Task BuildDecisionAsync_SourceBackedFavoritePersonaAliases_UsePersonalityRoute(
         string transcript,
         string expectedIntent,
         string expectedReplySnippet)

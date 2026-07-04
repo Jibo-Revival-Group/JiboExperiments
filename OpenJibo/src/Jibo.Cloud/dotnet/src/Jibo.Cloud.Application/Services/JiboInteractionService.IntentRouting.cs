@@ -942,6 +942,20 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite movie",
+                "what's your favorite movie",
+                "what s your favorite movie",
+                "what is your favourite movie",
+                "what's your favourite movie",
+                "what s your favourite movie",
+                "do you have a favorite movie",
+                "do you have a favourite movie",
+                "what movie do you like",
+                "what movie do you like best"))
+            return "robot_favorite_movie";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite shape",
                 "what's your favorite shape",
                 "what s your favorite shape",
@@ -1251,6 +1265,48 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite fruit",
                 "do you have a favourite fruit"))
             return "robot_favorite_fruit";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite dessert",
+                "what's your favorite dessert",
+                "what s your favorite dessert",
+                "what is your favourite dessert",
+                "what's your favourite dessert",
+                "what s your favourite dessert",
+                "what dessert do you like",
+                "what kind of dessert do you like",
+                "do you have a favorite dessert",
+                "do you have a favourite dessert"))
+            return "robot_favorite_dessert";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite planet",
+                "what's your favorite planet",
+                "what s your favorite planet",
+                "what is your favourite planet",
+                "what's your favourite planet",
+                "what s your favourite planet",
+                "what planet do you like",
+                "what planet do you like best",
+                "do you have a favorite planet",
+                "do you have a favourite planet"))
+            return "robot_favorite_planet";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite number",
+                "what's your favorite number",
+                "what s your favorite number",
+                "what is your favourite number",
+                "what's your favourite number",
+                "what s your favourite number",
+                "what number do you like",
+                "what number do you like best",
+                "do you have a favorite number",
+                "do you have a favourite number"))
+            return "robot_favorite_number";
 
         if (MatchesAny(
                 loweredTranscript,

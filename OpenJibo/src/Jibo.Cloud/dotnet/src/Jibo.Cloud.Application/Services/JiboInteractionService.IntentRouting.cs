@@ -1010,6 +1010,49 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite vegetable",
+                "what's your favorite vegetable",
+                "what s your favorite vegetable",
+                "what is your favourite vegetable",
+                "what's your favourite vegetable",
+                "what s your favourite vegetable",
+                "do you have a favorite vegetable",
+                "do you have a favourite vegetable",
+                "what vegetable do you like",
+                "what kind of vegetable do you like"))
+            return "robot_favorite_vegetable";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite place",
+                "what's your favorite place",
+                "what s your favorite place",
+                "what is your favourite place",
+                "what's your favourite place",
+                "what s your favourite place",
+                "do you have a favorite place",
+                "do you have a favourite place",
+                "what place do you like",
+                "where is your favorite place",
+                "where is your favourite place"))
+            return "robot_favorite_place";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite superhero",
+                "what's your favorite superhero",
+                "what s your favorite superhero",
+                "what is your favourite superhero",
+                "what's your favourite superhero",
+                "what s your favourite superhero",
+                "do you have a favorite superhero",
+                "do you have a favourite superhero",
+                "who is your favorite superhero",
+                "who is your favourite superhero"))
+            return "robot_favorite_superhero";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "do you like r2d2",
                 "do you know r2d2",
                 "what do you think about r2d2",

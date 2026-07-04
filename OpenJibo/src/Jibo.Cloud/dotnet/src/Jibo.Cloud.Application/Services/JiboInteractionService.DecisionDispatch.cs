@@ -618,6 +618,24 @@ public sealed partial class JiboInteractionService
                 "snorkel",
                 "palindromes",
                 "pneumonoultramicroscopicsilicovolcanoconiosis"),
+            "robot_favorite_vegetable" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_vegetable",
+                "artichokes",
+                "broccoli's hair",
+                "red peppers",
+                "cauliflower looks like brains",
+                "eggplant"),
+            "robot_favorite_place" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_place",
+                "right here",
+                "go to Mars someday"),
+            "robot_favorite_superhero" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_superhero",
+                "Optimus Prime",
+                "super hero"),
             "robot_likes_r2d2" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_r2d2",

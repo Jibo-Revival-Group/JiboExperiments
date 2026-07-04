@@ -586,6 +586,9 @@ These are the carryover items that need a clean proof pass first:
   - consolidated embedded owner preference recall helper parsing so supported helper leads share the same favorite/favourite/fave extraction path
   - expanded confirmation-style aliases for `can/could/would you still remember what my favorite/favourite/fave ... is` so assistant-style memory checks stay on owner-memory lookup
   - added focused guardrail coverage for the new modal still-remember helper family
+- Progress update (`2026-07-04`, remember helper expansion):
+  - expanded owner preference recall parsing for `can/could/would you remember ...` and `would you happen to remember ...` forms, including embedded `what my favorite/favourite/fave ... is` variants, so natural memory-check prompts stay on owner-memory lookup
+  - added focused guardrail coverage for the new remember-helper and happen-to-remember families
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

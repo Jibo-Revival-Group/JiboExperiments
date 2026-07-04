@@ -1107,6 +1107,18 @@ public sealed partial class JiboInteractionService
                normalized.StartsWith("do you remember my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you remember my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you remember my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you remember my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you remember my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you remember my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you remember my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you remember my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you remember my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you remember my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you remember my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you remember my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you happen to remember my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you happen to remember my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you happen to remember my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("do you still remember my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you still remember my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you still remember my fave", StringComparison.Ordinal) ||
@@ -1178,6 +1190,10 @@ public sealed partial class JiboInteractionService
             "what s my favorite ",
             "what's my favorite ",
             "do you remember my favorite ",
+            "can you remember my favorite ",
+            "could you remember my favorite ",
+            "would you remember my favorite ",
+            "would you happen to remember my favorite ",
             "do you still remember my favorite ",
             "do you know my favorite ",
             "do you recall my favorite ",
@@ -1199,6 +1215,10 @@ public sealed partial class JiboInteractionService
             "what s my favourite ",
             "what's my favourite ",
             "do you remember my favourite ",
+            "can you remember my favourite ",
+            "could you remember my favourite ",
+            "would you remember my favourite ",
+            "would you happen to remember my favourite ",
             "do you still remember my favourite ",
             "do you know my favourite ",
             "do you recall my favourite ",
@@ -1220,6 +1240,10 @@ public sealed partial class JiboInteractionService
             "what s my fave ",
             "what's my fave ",
             "do you remember my fave ",
+            "can you remember my fave ",
+            "could you remember my fave ",
+            "would you remember my fave ",
+            "would you happen to remember my fave ",
             "do you still remember my fave ",
             "do you know my fave ",
             "do you recall my fave ",
@@ -1251,6 +1275,10 @@ public sealed partial class JiboInteractionService
         {
             "do you know what my",
             "do you remember what my",
+            "can you remember what my",
+            "could you remember what my",
+            "would you remember what my",
+            "would you happen to remember what my",
             "do you still remember what my",
             "can you still remember what my",
             "could you still remember what my",

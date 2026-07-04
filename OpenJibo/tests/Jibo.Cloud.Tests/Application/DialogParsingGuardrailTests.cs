@@ -107,9 +107,13 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("remind me my favorite color", "color")]
     [InlineData("remind me what my favourite food is", "food")]
     [InlineData("can you remind me what my fave sport is", "sport")]
+    [InlineData("please remind me my favorite color", "color")]
+    [InlineData("please remind me what my favourite food is", "food")]
     [InlineData("could you remind me my favourite food", "food")]
     [InlineData("would you remind me what my fave sport is", "sport")]
     [InlineData("what was my favorite color", "color")]
+    [InlineData("do you still remember my favorite color", "color")]
+    [InlineData("do you still remember what my fave sport is", "sport")]
     public async Task BuildDecisionAsync_PreferenceRecallAliases_StayOnMemoryRoute(
         string transcript,
         string expectedCategory)

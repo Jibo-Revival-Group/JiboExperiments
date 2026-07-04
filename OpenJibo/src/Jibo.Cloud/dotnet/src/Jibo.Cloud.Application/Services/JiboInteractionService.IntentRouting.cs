@@ -835,6 +835,21 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite president",
+                "what's your favorite president",
+                "what s your favorite president",
+                "what is your favourite president",
+                "what's your favourite president",
+                "what s your favourite president",
+                "who is your favorite president",
+                "who's your favorite president",
+                "who is your favourite president",
+                "do you have a favorite president",
+                "do you have a favourite president"))
+            return "robot_favorite_president";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "who is your hero",
                 "who's your hero",
                 "who is a hero of yours"))
@@ -1134,6 +1149,23 @@ public sealed partial class JiboInteractionService
                 "what sport do you like",
                 "what sport do you like best"))
             return "robot_favorite_sport";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite video game",
+                "what's your favorite video game",
+                "what s your favorite video game",
+                "what is your favourite video game",
+                "what's your favourite video game",
+                "what s your favourite video game",
+                "what video game do you like",
+                "what video game do you like best",
+                "do you have a favorite video game",
+                "do you have a favourite video game",
+                "what is your favorite game",
+                "what's your favorite game",
+                "what game do you like best"))
+            return "robot_favorite_video_game";
 
         if (MatchesAny(
                 loweredTranscript,

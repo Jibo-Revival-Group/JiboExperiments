@@ -582,6 +582,10 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-07-04`, preference recall confirmation slice):
   - expanded owner preference recall parsing for `please remind me ...` and `do you still remember ...` aliases, including embedded `what my favorite/favourite/fave ... is` forms, so polite reminder and confirmation-style memory checks keep routing to owner-memory lookup
   - added focused guardrail coverage for the new polite reminder and still-remember families
+- Progress update (`2026-07-04`, still-remember helper expansion):
+  - consolidated embedded owner preference recall helper parsing so supported helper leads share the same favorite/favourite/fave extraction path
+  - expanded confirmation-style aliases for `can/could/would you still remember what my favorite/favourite/fave ... is` so assistant-style memory checks stay on owner-memory lookup
+  - added focused guardrail coverage for the new modal still-remember helper family
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

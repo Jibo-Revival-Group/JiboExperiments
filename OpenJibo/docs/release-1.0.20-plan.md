@@ -115,6 +115,16 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 
 
+### Progress Update (`2026-07-04`)
+
+- expanded the Persona favorites surface with source-backed favorite pet and favorite mammal routing. Favorite pet now prefers the imported groundhog / water-safety replies, and favorite mammal uses the Pegasus-style people answer, with focused dialog guardrail coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
+
+#### Major blockers / questions
+
+- physical-device proof is still the release blocker: the cloud can detect connection-host, DNS mapping, and freshness drift, but we still need a live converted robot run that reaches `VerifyConnection` with matching reported host and host mappings.
+- safe awakening/OOBE parity remains blocked on image-specific review of owner-name replacement points plus safe body/yawn/audio asset provenance before the conversion video should claim full first-boot parity.
+- self-hosted owner-facing HTTPS remains unresolved: developer HTTP smoke paths are acceptable, but a real owner path still needs a trust/certificate decision before self-hosted conversion is promoted beyond controlled tests.
+
 ### Progress Update (`2026-07-02`)
 
 - expanded the Persona favorites surface with source-backed favorite drink and favorite sport routing. These now use the imported Pegasus-style liquid-safety and mini-golf replies with focused regression coverage, leaving live robot playback as the remaining proof item for this small persona slice.

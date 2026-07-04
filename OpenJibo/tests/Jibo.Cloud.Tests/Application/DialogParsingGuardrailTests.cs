@@ -62,6 +62,31 @@ public sealed class DialogParsingGuardrailTests
     }
 
 
+
+    [Theory]
+    [InlineData("what is your favorite pet", "robot_favorite_pet", "groundhog")]
+    [InlineData("do you have a favorite pet", "robot_favorite_pet", "groundhog")]
+    [InlineData("what kind of pet do you like", "robot_favorite_pet", "groundhog")]
+    [InlineData("what is your favorite mammal", "robot_favorite_mammal", "people")]
+    [InlineData("do you have a favourite mammal", "robot_favorite_mammal", "people")]
+    public async Task BuildDecisionAsync_SourceBackedFavoriteAnimalAliases_UsePersonalityRoute(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [InlineData("do you know my favorite color", "color")]
     [InlineData("tell me my favorite colour", "colour")]

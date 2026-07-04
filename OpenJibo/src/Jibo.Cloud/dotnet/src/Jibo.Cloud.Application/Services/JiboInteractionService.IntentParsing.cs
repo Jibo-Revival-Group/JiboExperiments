@@ -1131,6 +1131,18 @@ public sealed partial class JiboInteractionService
                normalized.StartsWith("would you please tell me my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("would you please tell me my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("would you please tell me my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("please tell me my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("please tell me my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("please tell me my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you remind me my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you remind me my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you remind me my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you remind me my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you remind me my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you remind me my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("what was my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what was my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what was my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my fave", StringComparison.Ordinal);
@@ -1153,6 +1165,10 @@ public sealed partial class JiboInteractionService
             "could you please tell me my favorite ",
             "would you tell me my favorite ",
             "would you please tell me my favorite ",
+            "please tell me my favorite ",
+            "could you remind me my favorite ",
+            "would you remind me my favorite ",
+            "what was my favorite ",
             "tell me my favorite ",
             "what is my favourite ",
             "what s my favourite ",
@@ -1166,6 +1182,10 @@ public sealed partial class JiboInteractionService
             "could you please tell me my favourite ",
             "would you tell me my favourite ",
             "would you please tell me my favourite ",
+            "please tell me my favourite ",
+            "could you remind me my favourite ",
+            "would you remind me my favourite ",
+            "what was my favourite ",
             "tell me my favourite ",
             "what is my fave ",
             "what s my fave ",
@@ -1179,6 +1199,10 @@ public sealed partial class JiboInteractionService
             "could you please tell me my fave ",
             "would you tell me my fave ",
             "would you please tell me my fave ",
+            "please tell me my fave ",
+            "could you remind me my fave ",
+            "would you remind me my fave ",
+            "what was my fave ",
             "tell me my fave "
         };
 
@@ -1217,6 +1241,15 @@ public sealed partial class JiboInteractionService
                TryExtractEmbeddedPreferenceCategory(normalized, "would you please tell me what my", "favorite") ??
                TryExtractEmbeddedPreferenceCategory(normalized, "would you please tell me what my", "favourite") ??
                TryExtractEmbeddedPreferenceCategory(normalized, "would you please tell me what my", "fave") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "please tell me what my", "favorite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "please tell me what my", "favourite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "please tell me what my", "fave") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "could you remind me what my", "favorite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "could you remind me what my", "favourite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "could you remind me what my", "fave") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "would you remind me what my", "favorite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "would you remind me what my", "favourite") ??
+               TryExtractEmbeddedPreferenceCategory(normalized, "would you remind me what my", "fave") ??
                TryExtractTellMeWhatPreferenceCategory(normalized, "favorite") ??
                TryExtractTellMeWhatPreferenceCategory(normalized, "favourite") ??
                TryExtractTellMeWhatPreferenceCategory(normalized, "fave");

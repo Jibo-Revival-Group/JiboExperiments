@@ -573,6 +573,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-07-01`, polite please preference helper slice):
   - expanded owner preference recall parsing for polite `can/could/would you please tell me ...` helper forms, including embedded `what my favorite/favourite/fave ... is` variants
   - added focused guardrail coverage so please-prefixed helper prompts stay on the memory lookup route instead of being treated as incomplete preference-setting attempts
+- Progress update (`2026-07-03`, preference reminder / past-tense recall slice):
+  - expanded owner preference recall parsing for direct `please tell me ...`, reminder-style `could/would you remind me ...`, and past-tense `what was my favorite/favourite/fave ...` aliases so natural memory checks keep landing on the lookup route
+  - added focused guardrail coverage for the new reminder and past-tense recall families
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

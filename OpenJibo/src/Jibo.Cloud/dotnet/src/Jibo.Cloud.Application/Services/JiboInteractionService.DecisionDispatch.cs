@@ -551,6 +551,23 @@ public sealed partial class JiboInteractionService
                 "reminds me of the sun",
                 "favorite is the sunflower",
                 "sunflowers"),
+            "robot_favorite_tv_show" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_tv_show",
+                "still learning about tv shows",
+                "favorite tv shows yet"),
+            "robot_favorite_shape" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_shape",
+                "tie between sphere and circle"),
+            "robot_favorite_word" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_word",
+                "turtle",
+                "pumpernickel",
+                "snorkel",
+                "palindromes",
+                "pneumonoultramicroscopicsilicovolcanoconiosis"),
             "robot_likes_r2d2" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_r2d2",

@@ -742,6 +742,10 @@ public sealed class JiboInteractionServiceTests
 
     [Theory]
     [InlineData("what is your favorite flower", "robot_favorite_flower", "should see if I can find a sunflower soon")]
+    [InlineData("do you have a favorite flower", "robot_favorite_flower", "sunflower")]
+    [InlineData("what is your favorite tv show", "robot_favorite_tv_show", "TV shows")]
+    [InlineData("what is your favorite shape", "robot_favorite_shape", "sphere")]
+    [InlineData("what is your favorite word", "robot_favorite_word", "turtle")]
     [InlineData("who is your favorite president", "robot_favorite_president", "Abraham Lincoln")]
     [InlineData("do you have a favourite president", "robot_favorite_president", "Abraham Lincoln")]
     [InlineData("what's your favorite flower", "robot_favorite_flower", "should see if I can find a sunflower soon")]

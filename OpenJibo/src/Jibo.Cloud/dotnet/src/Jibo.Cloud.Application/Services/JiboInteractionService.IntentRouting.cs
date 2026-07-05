@@ -997,6 +997,18 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your least favorite word",
+                "what's your least favorite word",
+                "what s your least favorite word",
+                "what is your least favourite word",
+                "what's your least favourite word",
+                "what s your least favourite word",
+                "what word do you like least",
+                "what word do you dislike"))
+            return "robot_least_favorite_word";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite word",
                 "what's your favorite word",
                 "what s your favorite word",
@@ -1033,6 +1045,18 @@ public sealed partial class JiboInteractionService
                 "what place do you like least",
                 "where do you like least"))
             return "robot_least_favorite_place";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite animal",
+                "what's your least favorite animal",
+                "what s your least favorite animal",
+                "what is your least favourite animal",
+                "what's your least favourite animal",
+                "what s your least favourite animal",
+                "what animal do you like least",
+                "what animal do you dislike"))
+            return "robot_least_favorite_animal";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -1327,6 +1351,23 @@ public sealed partial class JiboInteractionService
                 "what color do you like",
                 "what colour do you like"))
             return "robot_favorite_color";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite color",
+                "what's your least favorite color",
+                "what s your least favorite color",
+                "what is your least favourite color",
+                "what's your least favourite color",
+                "what s your least favourite color",
+                "what is your least favorite colour",
+                "what's your least favorite colour",
+                "what is your least favourite colour",
+                "what color do you like least",
+                "what colour do you like least",
+                "what color do you dislike",
+                "what colour do you dislike"))
+            return "robot_least_favorite_color";
 
         if (MatchesAny(
                 loweredTranscript,

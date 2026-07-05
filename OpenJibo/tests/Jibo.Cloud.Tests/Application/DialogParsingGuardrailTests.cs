@@ -74,6 +74,8 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what kind of fruit do you like", "robot_favorite_fruit", "blueberries")]
     [InlineData("what is your favorite video game", "robot_favorite_video_game", "pong")]
     [InlineData("do you have a favourite video game", "robot_favorite_video_game", "pong")]
+    [InlineData("what is your favorite joke", "robot_favorite_joke", "all jokes")]
+    [InlineData("do you have a favourite joke", "robot_favorite_joke", "all jokes")]
     [InlineData("who is your favorite president", "robot_favorite_president", "Abraham Lincoln")]
     [InlineData("do you have a favourite president", "robot_favorite_president", "Abraham Lincoln")]
     [InlineData("do you have a favorite flower", "robot_favorite_flower", "sunflower")]

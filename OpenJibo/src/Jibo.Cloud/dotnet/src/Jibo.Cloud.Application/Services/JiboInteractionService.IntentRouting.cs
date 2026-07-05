@@ -1503,6 +1503,56 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite hockey team",
+                "what's your favorite hockey team",
+                "what s your favorite hockey team",
+                "what is your favourite hockey team",
+                "what's your favourite hockey team",
+                "what hockey team do you like",
+                "do you have a favorite hockey team",
+                "do you have a favourite hockey team"))
+            return "robot_favorite_hockey_team";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite basketball team",
+                "what's your favorite basketball team",
+                "what s your favorite basketball team",
+                "what is your favourite basketball team",
+                "what's your favourite basketball team",
+                "what basketball team do you like",
+                "do you have a favorite basketball team",
+                "do you have a favourite basketball team"))
+            return "robot_favorite_basketball_team";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite pizza topping",
+                "what's your favorite pizza topping",
+                "what s your favorite pizza topping",
+                "what is your favourite pizza topping",
+                "what's your favourite pizza topping",
+                "what pizza topping do you like",
+                "what kind of pizza topping do you like",
+                "do you have a favorite pizza topping",
+                "do you have a favourite pizza topping"))
+            return "robot_favorite_pizza_topping";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite olympic event",
+                "what's your favorite olympic event",
+                "what s your favorite olympic event",
+                "what is your favourite olympic event",
+                "what's your favourite olympic event",
+                "what olympic event do you like",
+                "what olympic event do you like best",
+                "do you have a favorite olympic event",
+                "do you have a favourite olympic event"))
+            return "robot_favorite_olympic_event";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite video game",
                 "what's your favorite video game",
                 "what s your favorite video game",

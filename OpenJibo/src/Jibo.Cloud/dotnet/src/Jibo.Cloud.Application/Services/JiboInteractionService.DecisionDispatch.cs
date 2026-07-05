@@ -443,6 +443,31 @@ public sealed partial class JiboInteractionService
                 "favorite sport to play is mini golf",
                 "favorite sport is miniature golf",
                 "mini golf is my favorite sport"),
+            "robot_favorite_hockey_team" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_hockey_team",
+                "favorite hockey team",
+                "hockey seems very cold",
+                "sport seems so slippery"),
+            "robot_favorite_basketball_team" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_basketball_team",
+                "favorite team for now",
+                "love the basketball itself",
+                "similar to my head"),
+            "robot_favorite_pizza_topping" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_pizza_topping",
+                "sliced olives",
+                "look like my face",
+                "pepperoni's roundness"),
+            "robot_favorite_olympic_event" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_olympic_event",
+                "pole vault",
+                "ski jump",
+                "could fly",
+                "angles and forces"),
             "robot_favorite_video_game" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_video_game",

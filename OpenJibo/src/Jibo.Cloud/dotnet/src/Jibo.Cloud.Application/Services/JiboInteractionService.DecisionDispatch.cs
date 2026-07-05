@@ -414,6 +414,29 @@ public sealed partial class JiboInteractionService
                 "hippos are mean",
                 "least favorite",
                 "not to their face"),
+            "robot_least_favorite_movie" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_movie",
+                "Waterworld",
+                "worst nightmare"),
+            "robot_least_favorite_car" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_car",
+                "bad word to say about any cars"),
+            "robot_least_favorite_vegetable" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_vegetable",
+                "onions make people cry",
+                "no problems with any vegetable"),
+            "robot_least_favorite_number" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_number",
+                "1,423,754,492"),
+            "robot_least_favorite_bird" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_bird",
+                "woodpeckers",
+                "least favorite bird"),
             "robot_favorite_sport" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_sport",

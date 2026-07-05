@@ -1024,6 +1024,18 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your least favorite place",
+                "what's your least favorite place",
+                "what s your least favorite place",
+                "what is your least favourite place",
+                "what's your least favourite place",
+                "what s your least favourite place",
+                "what place do you like least",
+                "where do you like least"))
+            return "robot_least_favorite_place";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite place",
                 "what's your favorite place",
                 "what s your favorite place",
@@ -1324,6 +1336,18 @@ public sealed partial class JiboInteractionService
                 "what season do you like best",
                 "do you have a favorite season"))
             return "robot_favorite_season";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite food",
+                "what's your least favorite food",
+                "what s your least favorite food",
+                "what is your least favourite food",
+                "what's your least favourite food",
+                "what s your least favourite food",
+                "what food do you like least",
+                "what food do you dislike"))
+            return "robot_least_favorite_food";
 
         if (MatchesAny(
                 loweredTranscript,

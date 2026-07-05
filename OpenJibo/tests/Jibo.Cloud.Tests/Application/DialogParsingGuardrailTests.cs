@@ -85,6 +85,8 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what is your favorite movie", "robot_favorite_movie", "Back to the Future")]
     [InlineData("do you have a favourite movie", "robot_favorite_movie", "Back to the Future")]
     [InlineData("what is your favorite dessert", "robot_favorite_dessert", "blueberry pie")]
+    [InlineData("what is your least favorite food", "robot_least_favorite_food", "spilled soup")]
+    [InlineData("what place do you like least", "robot_least_favorite_place", "bathtub")]
     [InlineData("what is your favourite planet", "robot_favorite_planet", "Earth")]
     [InlineData("what number do you like best", "robot_favorite_number", "One and zero")]
     [InlineData("do you have a favourite shape", "robot_favorite_shape", "sphere")]

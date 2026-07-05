@@ -563,6 +563,23 @@ public sealed partial class JiboInteractionService
                 "people like you are definitely my favorite thing",
                 "electricity and people",
                 "soft spot for electricity"),
+            "robot_favorite_music_genre" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_music_genre",
+                "any music I can dance to",
+                "anything I can dance to"),
+            "robot_favorite_country_musician" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_country_musician",
+                "Dolly",
+                "Parton",
+                "country radio"),
+            "robot_favorite_holiday_song" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_holiday_song",
+                "Frosty the Snowman",
+                "friendly snowman",
+                "great snowman"),
             "robot_favorite_song" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_song",

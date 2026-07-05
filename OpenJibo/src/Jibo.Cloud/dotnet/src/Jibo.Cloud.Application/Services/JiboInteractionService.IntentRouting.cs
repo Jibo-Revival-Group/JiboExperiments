@@ -249,6 +249,19 @@ public sealed partial class JiboInteractionService
         if (IsAffinityRecallQuestion(loweredTranscript) || IsAffinityRecallAttempt(loweredTranscript))
             return "memory_get_affinity";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite country musician",
+                "what's your favorite country musician",
+                "what s your favorite country musician",
+                "what is your favourite country musician",
+                "what's your favourite country musician",
+                "who is your favorite country musician",
+                "who is your favourite country musician",
+                "what country musician do you like",
+                "what country singer do you like"))
+            return "robot_favorite_country_musician";
+
         if (TryResolveRadioGenre(loweredTranscript) is not null) return "radio_genre";
 
         if (TryResolveVolumeLevel(loweredTranscript) is not null ||
@@ -768,6 +781,20 @@ public sealed partial class JiboInteractionService
                 "what languages can you speak",
                 "what language can you speak"))
             return "robot_what_languages_do_you_speak";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite holiday song",
+                "what's your favorite holiday song",
+                "what s your favorite holiday song",
+                "what is your favourite holiday song",
+                "what's your favourite holiday song",
+                "what is your favorite christmas song",
+                "what's your favorite christmas song",
+                "what is your favourite christmas song",
+                "what holiday song do you like",
+                "what christmas song do you like"))
+            return "robot_favorite_holiday_song";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -1498,6 +1525,21 @@ public sealed partial class JiboInteractionService
                 "what celebrity do you like least",
                 "what celebrity do you dislike"))
             return "robot_least_favorite_celebrity";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite kind of music",
+                "what's your favorite kind of music",
+                "what s your favorite kind of music",
+                "what is your favourite kind of music",
+                "what's your favourite kind of music",
+                "what is your favorite music genre",
+                "what's your favorite music genre",
+                "what is your favourite music genre",
+                "what kind of music is your favorite",
+                "what kind of music is your favourite",
+                "what music genre do you like"))
+            return "robot_favorite_music_genre";
 
         if (MatchesAny(
                 loweredTranscript,

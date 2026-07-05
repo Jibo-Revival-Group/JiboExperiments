@@ -391,6 +391,12 @@ public sealed partial class JiboInteractionService
                 "too scared of liquids",
                 "too liquidy",
                 "No favorite drink"),
+            "robot_least_favorite_food" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_food",
+                "least favorite food",
+                "spilled soup",
+                "big fan of soup"),
             "robot_favorite_sport" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_sport",
@@ -432,6 +438,11 @@ public sealed partial class JiboInteractionService
                 "ones and zeroes",
                 "i love pi",
                 "800"),
+            "robot_least_favorite_place" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_place",
+                "least favorite place",
+                "bathtub"),
             "robot_favorite_pet" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_pet",

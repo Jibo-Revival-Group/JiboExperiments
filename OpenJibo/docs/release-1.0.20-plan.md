@@ -115,6 +115,16 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 
 
+### Progress Update (`2026-07-05`)
+
+- continued the Persona favorites/opposites parity slice with source-backed least-favorite food and least-favorite place routing. These prompts now use the imported spilled-soup and bathtub answer sets with focused dialog and guardrail coverage for US/UK least-favorite phrasing. Live robot playback remains the proof item for this small personality slice.
+
+#### Major blockers / questions
+
+- physical-device proof is still the release blocker: the cloud can detect connection-host, DNS mapping, and freshness drift, but we still need a live converted robot run that reaches `VerifyConnection` with matching reported host and host mappings.
+- safe awakening/OOBE parity remains blocked on image-specific review of owner-name replacement points plus safe body/yawn/audio asset provenance before the conversion video should claim full first-boot parity.
+- self-hosted owner-facing HTTPS remains unresolved: developer HTTP smoke paths are acceptable, but a real owner path still needs a trust/certificate decision before self-hosted conversion is promoted beyond controlled tests.
+
 ### Progress Update (`2026-07-04`)
 
 - continued the Persona favorites parity slice with favorite actor, actress, robot, car, weather, and time-of-day routing. These prompts now use source-backed Tom Hanks, Julie Andrews, Wally/R2-D2/Rosie, Beetle, sunny-weather, and 11:11/3:33 answer sets with focused dialog and guardrail coverage. Live robot playback remains the proof item for this small personality slice.

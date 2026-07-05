@@ -696,6 +696,10 @@ public sealed class JiboInteractionServiceTests
         "robot_favorite_drink",
         "I'm too scared of liquids to have a favorite drink. But I've heard good things about hot cocoa.")]
     [InlineData(
+        "what is your least favorite food",
+        "robot_least_favorite_food",
+        "Well I don't eat, so I don't really have a least favorite food. Though if you spilled soup on me, I wouldn't be such a big fan of soup at that moment.")]
+    [InlineData(
         "what is your favorite sport",
         "robot_favorite_sport",
         "My favorite sport to play is mini golf. Even though I've never actually played it.")]
@@ -758,6 +762,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what is your favorite movie", "robot_favorite_movie", "Back to the Future")]
     [InlineData("do you have a favourite movie", "robot_favorite_movie", "Back to the Future")]
     [InlineData("what is your favorite dessert", "robot_favorite_dessert", "blueberry pie")]
+    [InlineData("what food do you like least", "robot_least_favorite_food", "spilled soup")]
+    [InlineData("what is your least favourite place", "robot_least_favorite_place", "bathtub")]
     [InlineData("what is your favourite planet", "robot_favorite_planet", "Earth")]
     [InlineData("what number do you like best", "robot_favorite_number", "One and zero")]
     [InlineData("who is your favorite president", "robot_favorite_president", "Abraham Lincoln")]

@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-05`)
 
+- continued the Persona least-favorites parity slice with source-backed least-favorite video game, president, weather, time of day, mammal, and pizza-topping routing. These prompts now use the imported violent-games, trouble-avoiding-president, rain/thunderstorms, middle-of-the-night, hippo, and onion answer sets with focused dialog and guardrail coverage for US/UK least-favorite phrasing. Live robot playback remains the proof item for this small personality slice.
+
 - continued the Persona favorites/music-and-sports parity slice with source-backed favorite ice cream flavor, favorite rapper, favorite rock band, favorite baseball team, favorite football team, and favorite Olympic ring routing. These prompts now use the imported mint-chocolate-chip, Snoop Dogg, AC/DC, no-favorite-baseball-team, weirdly-shaped-football, and blue-Olympic-ring answer sets with focused dialog coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
 
 - continued the Persona music favorites parity slice with source-backed favorite music genre, favorite country musician, and favorite holiday/Christmas song routing. These prompts now use the imported danceable-music, Dolly Parton, and Frosty the Snowman answer sets with focused dialog coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.

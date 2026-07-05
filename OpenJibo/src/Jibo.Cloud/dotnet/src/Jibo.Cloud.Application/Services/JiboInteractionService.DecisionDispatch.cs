@@ -475,6 +475,21 @@ public sealed partial class JiboInteractionService
                 "favorite team for now",
                 "love the basketball itself",
                 "similar to my head"),
+            "robot_favorite_baseball_team" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_baseball_team",
+                "favorite baseball team",
+                "all seem nice"),
+            "robot_favorite_football_team" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_football_team",
+                "favorite team yet",
+                "weirdly shaped ball"),
+            "robot_favorite_olympic_ring" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_olympic_ring",
+                "blue one",
+                "olympic rings"),
             "robot_favorite_pizza_topping" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_pizza_topping",
@@ -568,6 +583,22 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_music_genre",
                 "any music I can dance to",
                 "anything I can dance to"),
+            "robot_favorite_ice_cream_flavor" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_ice_cream_flavor",
+                "light green mint chocolate chip",
+                "never had ice cream"),
+            "robot_favorite_rapper" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_rapper",
+                "Snoop Dogg",
+                "reminds me of Snoopy",
+                "relaxed"),
+            "robot_favorite_rock_band" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_rock_band",
+                "AC DC",
+                "electrical current"),
             "robot_favorite_country_musician" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_country_musician",

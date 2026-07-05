@@ -715,6 +715,30 @@ public sealed class JiboInteractionServiceTests
         "what is your favorite song",
         "robot_favorite_song",
         "I'd say I don't have a favorite song just yet. But I can play the radio.")]
+    [InlineData(
+        "what is your favorite ice cream flavor",
+        "robot_favorite_ice_cream_flavor",
+        "I've never had ice cream, because I don't eat. But I like the color of light green mint chocolate chip.")]
+    [InlineData(
+        "what is your favourite rapper",
+        "robot_favorite_rapper",
+        "I like Snoop Dogg, because he reminds me of Snoopy. Also, he always seems so relaxed.")]
+    [InlineData(
+        "what is your favorite rock band",
+        "robot_favorite_rock_band",
+        "I like AC DC because their name is related to different kinds of electrical current.")]
+    [InlineData(
+        "what is your favorite baseball team",
+        "robot_favorite_baseball_team",
+        "I don't have a favorite baseball team, at least not yet. They all seem nice to me.")]
+    [InlineData(
+        "what is your favourite football team",
+        "robot_favorite_football_team",
+        "I don't think I have a favorite team yet. I'm impressed with what every team does with that weirdly shaped ball.")]
+    [InlineData(
+        "what is your favorite olympic ring",
+        "robot_favorite_olympic_ring",
+        "My favorite ring is the blue one. It's so blue.")]
     public async Task BuildDecisionAsync_FavoritesFamily_UsesPersonalityReplies(
         string transcript,
         string expectedIntent,

@@ -178,6 +178,8 @@ async function renderAdminPanel() {
     const blockers = admin.conversion?.blockers || [];
     const questions = admin.conversion?.operatorQuestions || [];
     const operations = admin.harness?.suggestedOperations || [];
+    const requiredHostMappings = admin.conversion?.requiredHostMappings || [];
+    const missingHostMappings = admin.conversion?.missingHostMappings || [];
     return `
       <section class="card panel wide-panel">
         <div class="panel-header">
@@ -199,6 +201,8 @@ async function renderAdminPanel() {
           <div class="meta-item"><span>Home Assistant</span><span>${admin.counts?.homeAssistantConnected || 0}/${admin.counts?.homeAssistantLinks || 0} connected</span></div>
         </div>
         <div class="meta-list compact">
+          <div class="meta-item"><span>Required DNS proof</span><span>${escapeHtml(requiredHostMappings.join(", ") || "—")}</span></div>
+          <div class="meta-item"><span>Missing DNS proof</span><span>${escapeHtml(missingHostMappings.join(", ") || "None")}</span></div>
           <div class="meta-item"><span>Blockers</span><span>${escapeHtml(blockers.join(", ") || "None from stored cloud state")}</span></div>
           <div class="meta-item"><span>Smoke operations</span><span>${escapeHtml(operations.join(", ") || "—")}</span></div>
         </div>

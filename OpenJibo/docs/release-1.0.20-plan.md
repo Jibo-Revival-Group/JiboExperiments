@@ -276,6 +276,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded the browser fake robot harness into a guided conversion smoke surface: operators can now edit target mode/host, rollback snapshot, baseline evidence, and device identity once, load each OOBE request shape, cache the prepared token, or run an audit → prepare → setup → live connection proof sequence that requires reported host and legacy DNS mapping evidence before moving to physical robot writes.
 - expanded the dialog parsing guardrail slice with polite modal Pegasus-style dance/twerk requests (`can/could/would/will you please ...`) so ability-style questions stay on source-backed personality replies and specific twerk commands keep their motion route instead of falling through to generic chat.
 - tightened live `VerifyConnection` proof completeness so a physical/harness run that requires reported evidence must report all three legacy host mappings (`api.jibo.com`, `api-socket.jibo.com`, and `neo-hub.jibo.com`); partial DNS evidence now returns `incomplete-reported-host-mappings` plus a machine-readable missing-host list instead of looking like a complete conversion proof.
+- aligned the authenticated admin summary and dashboard with that three-host conversion gate by publishing the required legacy DNS proof set, machine-readable missing host mappings, and per-host blocker labels so operators can see incomplete `neo-hub`/socket/API evidence before relying on the browser harness or physical conversion run.
 
 ## Working Order
 

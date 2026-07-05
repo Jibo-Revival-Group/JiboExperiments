@@ -426,6 +426,11 @@ public sealed partial class JiboInteractionService
                 "can't go wrong with pong",
                 "favorite is pong",
                 "favorite video game has to be pong"),
+            "robot_favorite_joke" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_joke",
+                "i like all jokes",
+                "especially funny ones"),
             "robot_favorite_president" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_president",

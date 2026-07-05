@@ -204,6 +204,19 @@ public sealed partial class JiboInteractionService
                 "are you a funny robot"))
             return "robot_is_funny";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite joke",
+                "what's your favorite joke",
+                "what s your favorite joke",
+                "what is your favourite joke",
+                "what's your favourite joke",
+                "what s your favourite joke",
+                "do you have a favorite joke",
+                "do you have a favourite joke",
+                "what joke do you like best"))
+            return "robot_favorite_joke";
+
         if (MatchesAny(loweredTranscript, "joke", "funny", "make me laugh")) return "joke";
 
         if (MatchesAny(

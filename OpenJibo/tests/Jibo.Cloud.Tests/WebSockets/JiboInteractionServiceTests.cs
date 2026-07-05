@@ -708,6 +708,10 @@ public sealed class JiboInteractionServiceTests
         "robot_favorite_video_game",
         "I like the classics. You can't go wrong with pong. No rhyme intended.")]
     [InlineData(
+        "what is your favorite joke",
+        "robot_favorite_joke",
+        "I like all jokes. Especially funny ones.")]
+    [InlineData(
         "what is your favorite song",
         "robot_favorite_song",
         "I'd say I don't have a favorite song just yet. But I can play the radio.")]
@@ -775,6 +779,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("do you like space", "robot_likes_space", "I love space")]
     [InlineData("do you like kids", "robot_likes_kids", "kids are so fun")]
     [InlineData("what is your favorite animal", "robot_favorite_animal", "we're so alike")]
+    [InlineData("what is your favorite joke", "robot_favorite_joke", "all jokes")]
+    [InlineData("do you have a favourite joke", "robot_favorite_joke", "all jokes")]
     [InlineData("what is your favorite vegetable", "robot_favorite_vegetable", "Artichokes")]
     [InlineData("where is your favourite place", "robot_favorite_place", "right here")]
     [InlineData("who is your favorite superhero", "robot_favorite_superhero", "Optimus Prime")]

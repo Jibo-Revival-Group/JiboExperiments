@@ -1541,6 +1541,43 @@ public sealed partial class JiboInteractionService
                 "what music genre do you like"))
             return "robot_favorite_music_genre";
 
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite ice cream flavor",
+                "what's your favorite ice cream flavor",
+                "what s your favorite ice cream flavor",
+                "what is your favourite ice cream flavor",
+                "what's your favourite ice cream flavor",
+                "what is your favourite ice cream flavour",
+                "what ice cream flavor do you like",
+                "what ice cream flavour do you like",
+                "do you have a favorite ice cream flavor",
+                "do you have a favourite ice cream flavour"))
+            return "robot_favorite_ice_cream_flavor";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite rapper",
+                "what's your favorite rapper",
+                "what s your favorite rapper",
+                "what is your favourite rapper",
+                "what rapper do you like",
+                "do you have a favorite rapper",
+                "do you have a favourite rapper"))
+            return "robot_favorite_rapper";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite rock band",
+                "what's your favorite rock band",
+                "what s your favorite rock band",
+                "what is your favourite rock band",
+                "what rock band do you like",
+                "do you have a favorite rock band",
+                "do you have a favourite rock band"))
+            return "robot_favorite_rock_band";
+
         if (MatchesAny(
                 loweredTranscript,
                 "what is your favorite music",
@@ -1627,6 +1664,40 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite pizza topping",
                 "do you have a favourite pizza topping"))
             return "robot_favorite_pizza_topping";
+
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite baseball team",
+                "what's your favorite baseball team",
+                "what s your favorite baseball team",
+                "what is your favourite baseball team",
+                "what baseball team do you like",
+                "do you have a favorite baseball team",
+                "do you have a favourite baseball team"))
+            return "robot_favorite_baseball_team";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite football team",
+                "what's your favorite football team",
+                "what s your favorite football team",
+                "what is your favourite football team",
+                "what football team do you like",
+                "do you have a favorite football team",
+                "do you have a favourite football team"))
+            return "robot_favorite_football_team";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite olympic ring",
+                "what's your favorite olympic ring",
+                "what s your favorite olympic ring",
+                "what is your favourite olympic ring",
+                "what olympic ring do you like",
+                "do you have a favorite olympic ring",
+                "do you have a favourite olympic ring"))
+            return "robot_favorite_olympic_ring";
 
         if (MatchesAny(
                 loweredTranscript,

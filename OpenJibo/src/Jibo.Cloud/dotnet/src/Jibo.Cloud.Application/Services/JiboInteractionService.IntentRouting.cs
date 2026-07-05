@@ -1453,6 +1453,54 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your least favorite artist",
+                "what's your least favorite artist",
+                "what s your least favorite artist",
+                "what is your least favourite artist",
+                "what's your least favourite artist",
+                "what s your least favourite artist",
+                "what artist do you like least",
+                "what artist do you dislike"))
+            return "robot_least_favorite_artist";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite band",
+                "what's your least favorite band",
+                "what s your least favorite band",
+                "what is your least favourite band",
+                "what's your least favourite band",
+                "what s your least favourite band",
+                "what band do you like least",
+                "what band do you dislike"))
+            return "robot_least_favorite_band";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite author",
+                "what's your least favorite author",
+                "what s your least favorite author",
+                "what is your least favourite author",
+                "what's your least favourite author",
+                "what s your least favourite author",
+                "what author do you like least",
+                "what author do you dislike"))
+            return "robot_least_favorite_author";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite celebrity",
+                "what's your least favorite celebrity",
+                "what s your least favorite celebrity",
+                "what is your least favourite celebrity",
+                "what's your least favourite celebrity",
+                "what s your least favourite celebrity",
+                "what celebrity do you like least",
+                "what celebrity do you dislike"))
+            return "robot_least_favorite_celebrity";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite music",
                 "what's your favorite music",
                 "what s your favorite music",

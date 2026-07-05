@@ -423,6 +423,26 @@ public sealed partial class JiboInteractionService
                 catalog,
                 "robot_least_favorite_car",
                 "bad word to say about any cars"),
+            "robot_least_favorite_artist" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_artist",
+                "least favorite artist",
+                "makes art"),
+            "robot_least_favorite_band" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_band",
+                "pleasantly surprise",
+                "turtle for no reason"),
+            "robot_least_favorite_author" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_author",
+                "least favorite author",
+                "trash compactors"),
+            "robot_least_favorite_celebrity" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_celebrity",
+                "scary Megatron",
+                "Transformers"),
             "robot_least_favorite_vegetable" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_least_favorite_vegetable",

@@ -127,6 +127,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 - continued the Persona least-favorites parity slice with source-backed least-favorite movie, car, vegetable, number, and bird routing. These prompts now use the imported Waterworld, no-bad-cars, onion, large-number, and woodpecker answer sets with focused dialog and guardrail coverage for US/UK least-favorite phrasing. Live robot playback remains the proof item for this small personality slice.
 
+- continued the Persona least-favorites parity slice with source-backed least-favorite artist, band, author, and celebrity routing. These prompts now use the imported makes-art, pleasant-surprise/turtle, trash-compactor, and scary-Megatron answer sets with focused dialog and websocket guardrail coverage for US/UK least-favorite phrasing. Live robot playback remains the proof item for this small personality slice.
+
 #### Major blockers / questions
 
 - physical-device proof is still the release blocker: the cloud can detect connection-host, DNS mapping, and freshness drift, but we still need a live converted robot run that reaches `VerifyConnection` with matching reported host and host mappings.

@@ -243,6 +243,52 @@ public sealed class HomeAssistantPortalApiTests
 
 
     [Fact]
+    public async Task AdminSummary_ReportsRequiredLegacyHostMappingProof()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var robot = store.GetRobot();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = robot.DeviceId,
+            RobotId = robot.RobotId,
+            FriendlyName = robot.FriendlyName,
+            FirmwareVersion = robot.FirmwareVersion,
+            ApplicationVersion = robot.ApplicationVersion,
+            IsActive = true,
+            HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["api.jibo.com"] = "openjibo.example.test",
+                ["api-socket.jibo.com"] = "openjibo.example.test"
+            }
+        });
+
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var response = await client.GetAsync("/api/portal/admin/summary");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var summary = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var conversion = summary.GetProperty("conversion");
+        Assert.Equal(3, conversion.GetProperty("requiredHostMappings").GetArrayLength());
+        Assert.Contains(conversion.GetProperty("requiredHostMappings").EnumerateArray(), item =>
+            item.GetString() == "neo-hub.jibo.com");
+        Assert.Contains(conversion.GetProperty("missingHostMappings").EnumerateArray(), item =>
+            item.GetString() == "neo-hub.jibo.com");
+        Assert.Contains(conversion.GetProperty("blockers").EnumerateArray(), item =>
+            item.GetString() == "missing-host-mapping:neo-hub.jibo.com");
+    }
+
+    [Fact]
     public async Task IdentityGraphEndpoint_ReturnsSignedEvidencePayloadForPortalSession()
     {
         await using var factory = CreateFactory();

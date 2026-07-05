@@ -9,6 +9,13 @@ namespace Jibo.Cloud.Api.Hosting;
 
 internal static class PortalEndpoints
 {
+    private static readonly string[] RequiredLegacyHostMappings =
+    [
+        "api.jibo.com",
+        "api-socket.jibo.com",
+        "neo-hub.jibo.com"
+    ];
+
     internal static void MapPortalEndpoints(this WebApplication app)
     {
         app.MapPost("/api/portal/jibo-verification/confirm", (
@@ -305,6 +312,8 @@ internal static class PortalEndpoints
                         ? "open-jibo"
                         : "unconfirmed",
                     hostMappings = robot.HostMappings,
+                    requiredHostMappings = RequiredLegacyHostMappings,
+                    missingHostMappings = GetMissingRequiredHostMappings(robot),
                     blockers = BuildAdminConversionBlockers(robot, graph),
                     operatorQuestions = new[]
                     {
@@ -380,11 +389,18 @@ internal static class PortalEndpoints
         if (graph.AdmissionAssessment.BlockingEvidence.Count > 0)
             blockers.AddRange(graph.AdmissionAssessment.BlockingEvidence.Select(evidence => $"identity-{evidence}"));
 
-        if (!robot.HostMappings.TryGetValue("api.jibo.com", out var apiHost) ||
-            string.IsNullOrWhiteSpace(apiHost))
-            blockers.Add("missing-api-host-mapping");
+        foreach (var missingHost in GetMissingRequiredHostMappings(robot))
+            blockers.Add($"missing-host-mapping:{missingHost}");
 
         return blockers.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    private static IReadOnlyList<string> GetMissingRequiredHostMappings(DeviceRegistration robot)
+    {
+        return RequiredLegacyHostMappings
+            .Where(host => !robot.HostMappings.TryGetValue(host, out var mappedHost) ||
+                           string.IsNullOrWhiteSpace(mappedHost))
+            .ToArray();
     }
 
     private static PortalSessionService.PortalSession? ResolvePortalSession(

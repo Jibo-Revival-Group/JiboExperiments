@@ -457,6 +457,35 @@ public sealed partial class JiboInteractionService
                 "robot_least_favorite_bird",
                 "woodpeckers",
                 "least favorite bird"),
+            "robot_least_favorite_video_game" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_video_game",
+                "really violent games",
+                "peace, and cheery music"),
+            "robot_least_favorite_president" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_president",
+                "get me in trouble"),
+            "robot_least_favorite_weather" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_weather",
+                "rain and thunderstorms",
+                "Water and power outages"),
+            "robot_least_favorite_time_of_day" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_time_of_day",
+                "middle of the night",
+                "ghosts come out"),
+            "robot_least_favorite_mammal" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_mammal",
+                "hippos are mean",
+                "least favorite"),
+            "robot_least_favorite_pizza_topping" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_pizza_topping",
+                "least favorite is onions",
+                "onions, because they make people cry"),
             "robot_favorite_sport" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_sport",

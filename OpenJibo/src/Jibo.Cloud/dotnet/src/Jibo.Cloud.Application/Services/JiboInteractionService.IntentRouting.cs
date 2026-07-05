@@ -1209,6 +1209,18 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your least favorite weather",
+                "what's your least favorite weather",
+                "what s your least favorite weather",
+                "what is your least favourite weather",
+                "what's your least favourite weather",
+                "what weather do you like least",
+                "what weather do you dislike",
+                "what kind of weather do you dislike"))
+            return "robot_least_favorite_weather";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite time of day",
                 "what's your favorite time of day",
                 "what s your favorite time of day",
@@ -1219,6 +1231,18 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite time of day",
                 "do you have a favourite time of day"))
             return "robot_favorite_time_of_day";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite time of day",
+                "what's your least favorite time of day",
+                "what s your least favorite time of day",
+                "what is your least favourite time of day",
+                "what's your least favourite time of day",
+                "what time of day do you like least",
+                "what time of day do you dislike",
+                "what time do you like least"))
+            return "robot_least_favorite_time_of_day";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -1468,6 +1492,18 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your least favorite video game",
+                "what's your least favorite video game",
+                "what s your least favorite video game",
+                "what is your least favourite video game",
+                "what's your least favourite video game",
+                "what s your least favourite video game",
+                "what video game do you like least",
+                "what video game do you dislike"))
+            return "robot_least_favorite_video_game";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your least favorite car",
                 "what's your least favorite car",
                 "what s your least favorite car",
@@ -1525,6 +1561,22 @@ public sealed partial class JiboInteractionService
                 "what celebrity do you like least",
                 "what celebrity do you dislike"))
             return "robot_least_favorite_celebrity";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite president",
+                "what's your least favorite president",
+                "what s your least favorite president",
+                "what is your least favourite president",
+                "what's your least favourite president",
+                "what s your least favourite president",
+                "who is your least favorite president",
+                "who's your least favorite president",
+                "who is your least favourite president",
+                "who's your least favourite president",
+                "what president do you like least",
+                "what president do you dislike"))
+            return "robot_least_favorite_president";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -1664,6 +1716,18 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite pizza topping",
                 "do you have a favourite pizza topping"))
             return "robot_favorite_pizza_topping";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite pizza topping",
+                "what's your least favorite pizza topping",
+                "what s your least favorite pizza topping",
+                "what is your least favourite pizza topping",
+                "what's your least favourite pizza topping",
+                "what s your least favourite pizza topping",
+                "what pizza topping do you like least",
+                "what pizza topping do you dislike"))
+            return "robot_least_favorite_pizza_topping";
 
 
         if (MatchesAny(
@@ -1823,6 +1887,18 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite mammal",
                 "do you have a favourite mammal"))
             return "robot_favorite_mammal";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite mammal",
+                "what's your least favorite mammal",
+                "what s your least favorite mammal",
+                "what is your least favourite mammal",
+                "what's your least favourite mammal",
+                "what s your least favourite mammal",
+                "what mammal do you like least",
+                "what mammal do you dislike"))
+            return "robot_least_favorite_mammal";
 
         if (MatchesAny(
                 loweredTranscript,

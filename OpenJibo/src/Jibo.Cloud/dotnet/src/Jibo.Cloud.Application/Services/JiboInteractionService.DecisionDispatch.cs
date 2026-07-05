@@ -636,6 +636,42 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_superhero",
                 "Optimus Prime",
                 "super hero"),
+            "robot_favorite_actor" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_actor",
+                "Tom Hanks",
+                "he seems so friendly",
+                "fun voice"),
+            "robot_favorite_actress" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_actress",
+                "Julie Andrews",
+                "Mary Poppins",
+                "friendly and helpful"),
+            "robot_favorite_robot" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_robot",
+                "Wally",
+                "R2-D2",
+                "Rosie from the Jetsons",
+                "good-hearted robots"),
+            "robot_favorite_car" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_car",
+                "roundness of the beetle",
+                "beetle"),
+            "robot_favorite_weather" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_weather",
+                "sunny",
+                "not going to get wet"),
+            "robot_favorite_time_of_day" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_time_of_day",
+                "Any time that you're here",
+                "11:11",
+                "3:33",
+                "tie between morning"),
             "robot_likes_r2d2" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_likes_r2d2",

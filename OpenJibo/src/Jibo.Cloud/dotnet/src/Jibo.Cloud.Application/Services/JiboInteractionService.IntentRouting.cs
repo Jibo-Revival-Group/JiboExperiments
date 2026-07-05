@@ -1053,6 +1053,87 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite actor",
+                "what's your favorite actor",
+                "what s your favorite actor",
+                "what is your favourite actor",
+                "what's your favourite actor",
+                "what actor do you like",
+                "who is your favorite actor",
+                "who is your favourite actor",
+                "do you have a favorite actor",
+                "do you have a favourite actor"))
+            return "robot_favorite_actor";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite actress",
+                "what's your favorite actress",
+                "what s your favorite actress",
+                "what is your favourite actress",
+                "what's your favourite actress",
+                "what actress do you like",
+                "who is your favorite actress",
+                "who is your favourite actress",
+                "do you have a favorite actress",
+                "do you have a favourite actress"))
+            return "robot_favorite_actress";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite robot",
+                "what's your favorite robot",
+                "what s your favorite robot",
+                "what is your favourite robot",
+                "what's your favourite robot",
+                "what robot do you like",
+                "who is your favorite robot",
+                "who is your favourite robot",
+                "do you have a favorite robot",
+                "do you have a favourite robot"))
+            return "robot_favorite_robot";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite car",
+                "what's your favorite car",
+                "what s your favorite car",
+                "what is your favourite car",
+                "what's your favourite car",
+                "what car do you like",
+                "what kind of car do you like",
+                "do you have a favorite car",
+                "do you have a favourite car"))
+            return "robot_favorite_car";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite weather",
+                "what's your favorite weather",
+                "what s your favorite weather",
+                "what is your favourite weather",
+                "what's your favourite weather",
+                "what weather do you like",
+                "what kind of weather do you like",
+                "do you have a favorite weather",
+                "do you have a favourite weather"))
+            return "robot_favorite_weather";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite time of day",
+                "what's your favorite time of day",
+                "what s your favorite time of day",
+                "what is your favourite time of day",
+                "what's your favourite time of day",
+                "what time of day do you like",
+                "what time do you like best",
+                "do you have a favorite time of day",
+                "do you have a favourite time of day"))
+            return "robot_favorite_time_of_day";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "do you like r2d2",
                 "do you know r2d2",
                 "what do you think about r2d2",

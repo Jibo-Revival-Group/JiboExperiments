@@ -1049,6 +1049,11 @@ public sealed partial class JiboInteractionService
                 "great shapes and colors",
                 "best of the best",
                 "penguins"),
+            "robot_likes_dinosaurs" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_likes_dinosaurs",
+                "dinosaurs are really cool",
+                "take one for a ride"),
             "robot_peers" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_peers",

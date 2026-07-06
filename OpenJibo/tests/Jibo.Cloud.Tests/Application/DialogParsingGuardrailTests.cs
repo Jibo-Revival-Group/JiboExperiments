@@ -208,6 +208,8 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what is your favourite fish", "robot_favorite_fish", "blowfish")]
     [InlineData("what is your favorite winter olympics event", "robot_favorite_winter_olympics_event", "ski")]
     [InlineData("what winter x games event do you like", "robot_favorite_winter_x_games_event", "snowboard")]
+    [InlineData("do you like animals", "robot_likes_animals", "Animals are great")]
+    [InlineData("do you like astronomy", "robot_likes_space", "astronomy")]
     public async Task BuildDecisionAsync_SourceBackedFavoritePersonaAliases_UsePersonalityRoute(
         string transcript,
         string expectedIntent,

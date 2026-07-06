@@ -6,7 +6,7 @@ test_email="${TEST_EMAIL:-openjibo-smoke@example.com}"
 test_password="${TEST_PASSWORD:-OpenJiboSmokePass!42}"
 test_first_name="${TEST_FIRST_NAME:-Open}"
 test_last_name="${TEST_LAST_NAME:-Jibo}"
-test_robot_id="${TEST_ROBOT_ID:-open-jibo-smoke-robot}"
+test_robot_id="${TEST_ROBOT_ID:-open-jibo-smoke-robot-$(date -u +%Y%m%d%H%M%S)-$$}"
 target_mode="${OPENJIBO_SMOKE_TARGET_MODE:-open-jibo}"
 target_host="${OPENJIBO_SMOKE_TARGET_HOST:-}"
 reported_connection_host="${OPENJIBO_SMOKE_REPORTED_CONNECTION_HOST:-}"
@@ -435,8 +435,15 @@ if not proof_body.get("connected"):
     raise SystemExit("VerifyConnection did not report the prepared robot as connected.")
 if not proof_body.get("complete"):
     raise SystemExit("VerifyConnection did not report the prepared robot setup as complete.")
-if proof_body.get("robotId") != f"robot-{test_robot_id}":
-    raise SystemExit("VerifyConnection returned an unexpected robot identity.")
+expected_robot_id = f"robot-{test_robot_id}"
+actual_robot_id = proof_body.get("robotId")
+actual_device_id = proof_body.get("deviceId")
+if actual_robot_id != expected_robot_id or actual_device_id != test_robot_id:
+    raise SystemExit(
+        "VerifyConnection returned an unexpected robot identity "
+        f"(expected robotId {expected_robot_id!r} and deviceId {test_robot_id!r}, "
+        f"got robotId {actual_robot_id!r} and deviceId {actual_device_id!r})."
+    )
 if proof_body.get("targetMode") != target_mode:
     raise SystemExit("VerifyConnection returned an unexpected Open Jibo target mode.")
 if proof_body.get("targetHost") != target_host:

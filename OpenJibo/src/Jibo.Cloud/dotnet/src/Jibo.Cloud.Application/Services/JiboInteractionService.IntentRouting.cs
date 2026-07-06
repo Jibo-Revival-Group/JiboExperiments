@@ -1948,6 +1948,85 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your least favorite adjective",
+                "what's your least favorite adjective",
+                "what s your least favorite adjective",
+                "what is your least favourite adjective",
+                "what adjective do you like least",
+                "what adjective do you dislike"))
+            return "robot_least_favorite_adjective";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite noun",
+                "what's your least favorite noun",
+                "what s your least favorite noun",
+                "what is your least favourite noun",
+                "what noun do you like least",
+                "what noun do you dislike"))
+            return "robot_least_favorite_noun";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite verb",
+                "what's your least favorite verb",
+                "what s your least favorite verb",
+                "what is your least favourite verb",
+                "what verb do you like least",
+                "what verb do you dislike"))
+            return "robot_least_favorite_verb";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite adjective",
+                "what's your favorite adjective",
+                "what s your favorite adjective",
+                "what is your favourite adjective",
+                "what adjective do you like",
+                "what adjective do you like best",
+                "do you have a favorite adjective",
+                "do you have a favourite adjective"))
+            return "robot_favorite_adjective";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite noun",
+                "what's your favorite noun",
+                "what s your favorite noun",
+                "what is your favourite noun",
+                "what noun do you like",
+                "what noun do you like best",
+                "do you have a favorite noun",
+                "do you have a favourite noun"))
+            return "robot_favorite_noun";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite verb",
+                "what's your favorite verb",
+                "what s your favorite verb",
+                "what is your favourite verb",
+                "what verb do you like",
+                "what verb do you like best",
+                "do you have a favorite verb",
+                "do you have a favourite verb"))
+            return "robot_favorite_verb";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "who is your favorite painter",
+                "who is your favourite painter",
+                "what is your favorite painter",
+                "what's your favorite painter",
+                "what is your favourite painter",
+                "what painter do you like",
+                "what painter do you like best",
+                "do you have a favorite painter",
+                "do you have a favourite painter"))
+            return "robot_favorite_painter";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite dessert",
                 "what's your favorite dessert",
                 "what s your favorite dessert",

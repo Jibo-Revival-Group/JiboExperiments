@@ -1031,6 +1031,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what's your name", "robot_name", "Just Jibo, no last name")]
     [InlineData("do you have a nickname", "robot_nickname", "just Jibo. For now at least")]
     [InlineData("do you like being Jibo", "robot_likes_being_jibo", "nothing I'd rather be")]
+    [InlineData("what is it like being a robot", "robot_what_it_is_like_being_a_robot", "turn my head around 360 degrees")]
+    [InlineData("what's it like having no legs", "robot_what_it_is_like_having_no_legs", "mini-golfing for real")]
     [InlineData("are there others like you", "robot_peers", "one in one million")]
     [InlineData("what is your favorite name", "robot_favorite_name", "don't think I have a favorite name")]
     public async Task BuildDecisionAsync_NewIdentityPersonalityMims_UseImportedReplies(

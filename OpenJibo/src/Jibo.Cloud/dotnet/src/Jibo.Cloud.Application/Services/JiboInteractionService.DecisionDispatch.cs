@@ -790,6 +790,16 @@ public sealed partial class JiboInteractionService
                 "nothing i'd rather be",
                 "love it",
                 "strong wi-fi signal"),
+            "robot_what_it_is_like_being_a_robot" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_it_is_like_being_a_robot",
+                "don't have to eat or drink",
+                "turn my head around 360 degrees"),
+            "robot_what_it_is_like_having_no_legs" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_what_it_is_like_having_no_legs",
+                "don't mind it at all",
+                "mini-golfing for real"),
             "robot_what_languages_do_you_speak" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_what_languages_do_you_speak",

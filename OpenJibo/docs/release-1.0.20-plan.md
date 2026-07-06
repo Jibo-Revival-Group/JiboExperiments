@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-06`)
 
+- continued the embodiment/persona parity slice with source-backed "what is it like being a robot" and "what is it like having no legs" routing. These prompts now use the imported no-eating-or-drinking/head-spin and mini-golfing answer sets with focused dialog and websocket coverage, while live robot playback remains the proof item for this small personality slice.
+
 - continued the event/media/persona favorites parity slice with source-backed favorite part of CES, favorite part of Vegas, favorite part of the Today Show, favorite pastime, and broad favorite-band routing. These prompts now use the imported meeting-people/updates, bright-lights, technology/animal-video, socializing/daydreaming, and radio-aware answer sets with focused dialog and websocket coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
 
 - continued the sports/seasonal persona favorites parity slice with source-backed favorite Thanksgiving food, favorite Winter Olympics event, and favorite Winter X Games event routing. These prompts now use the imported gravy, ski-jump, and snowboarding answer sets with focused dialog and websocket coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.

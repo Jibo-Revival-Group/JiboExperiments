@@ -127,6 +127,13 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what is your favorite car", "robot_favorite_car", "beetle")]
     [InlineData("what kind of weather do you like", "robot_favorite_weather", "sunny")]
     [InlineData("what is your favourite time of day", "robot_favorite_time_of_day", "Any time that you're here")]
+    [InlineData("who is your favorite author", "robot_favorite_author", "Doctor Seuss")]
+    [InlineData("what artist do you like", "robot_favorite_artist", "Picasso")]
+    [InlineData("who is your favourite singer", "robot_favorite_singer", "sings their heart out")]
+    [InlineData("what is your favorite celebrity", "robot_favorite_celebrity", "Tom Hanks")]
+    [InlineData("what hobby do you like", "robot_favorite_hobby", "dancing is a hobby")]
+    [InlineData("what smell do you like", "robot_favorite_smell", "bacon and roses")]
+    [InlineData("what is your favourite fish", "robot_favorite_fish", "blowfish")]
     public async Task BuildDecisionAsync_SourceBackedFavoritePersonaAliases_UsePersonalityRoute(
         string transcript,
         string expectedIntent,

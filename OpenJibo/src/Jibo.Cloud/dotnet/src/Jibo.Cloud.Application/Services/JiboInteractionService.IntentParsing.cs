@@ -1580,6 +1580,10 @@ public sealed partial class JiboInteractionService
 
     private static string? TryResolveRadioGenre(string loweredTranscript)
     {
+        if (loweredTranscript.Contains("favorite", StringComparison.Ordinal) ||
+            loweredTranscript.Contains("favourite", StringComparison.Ordinal))
+            return null;
+
         foreach (var (phrase, station) in RadioGenreAliases)
             if (loweredTranscript.Contains(phrase, StringComparison.Ordinal))
                 return station;

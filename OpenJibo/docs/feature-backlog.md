@@ -589,6 +589,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-07-04`, remember helper expansion):
   - expanded owner preference recall parsing for `can/could/would you remember ...` and `would you happen to remember ...` forms, including embedded `what my favorite/favourite/fave ... is` variants, so natural memory-check prompts stay on owner-memory lookup
   - added focused guardrail coverage for the new remember-helper and happen-to-remember families
+- Progress update (`2026-07-05`, happen-to-know / recall expansion):
+  - expanded owner preference recall parsing for `do you happen to know ...` and `do/can/could/would you happen to recall ...` forms, including embedded `what my favorite/favourite/fave ... is` variants, so hesitant memory-check prompts keep routing to owner-memory lookup instead of generic chat
+  - added focused guardrail coverage for the new happen-to-know and happen-to-recall families
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

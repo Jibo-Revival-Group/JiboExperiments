@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-06`)
 
+- continued the seasonal/persona favorites parity slice with source-backed favorite reindeer, Christmas movie, Halloween candy, and favorite human/person routing. These prompts now use the imported Rudolph, Frosty the Snowman, candy-corn, and people/Loop answer sets with focused dialog and websocket coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
+
 - continued the Persona favorites/creative-preferences parity slice with source-backed favorite author, artist, singer, celebrity, hobby, smell, and fish routing. These prompts now use the imported Dr. Seuss, Picasso, sings-their-heart-out, Tom Hanks, dancing-hobby, bacon-and-roses, and blowfish answer sets with focused dialog and websocket coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
 - tightened favorites-vs-opposites routing so broad favorite time-of-day and author aliases no longer steal least-favorite prompts that include `least` after the shared prefix.
 

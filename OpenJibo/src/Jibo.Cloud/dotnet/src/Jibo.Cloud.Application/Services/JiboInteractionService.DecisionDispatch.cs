@@ -644,6 +644,29 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_music_genre",
                 "any music I can dance to",
                 "anything I can dance to"),
+            "robot_favorite_reindeer" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_reindeer",
+                "Rudolph",
+                "red nose",
+                "nice reindeer"),
+            "robot_favorite_christmas_movie" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_christmas_movie",
+                "Frosty the Snowman",
+                "snowmen",
+                "melting on me"),
+            "robot_favorite_halloween_candy" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_halloween_candy",
+                "candy corn",
+                "Halloween"),
+            "robot_favorite_human" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_human",
+                "so many great ones",
+                "try not to play favorites",
+                "people in our Loop"),
             "robot_favorite_ice_cream_flavor" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_ice_cream_flavor",

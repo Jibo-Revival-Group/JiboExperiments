@@ -1676,6 +1676,56 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite reindeer",
+                "what's your favorite reindeer",
+                "what s your favorite reindeer",
+                "what is your favourite reindeer",
+                "who is your favorite reindeer",
+                "who is your favourite reindeer",
+                "what reindeer do you like",
+                "do you have a favorite reindeer",
+                "do you have a favourite reindeer"))
+            return "robot_favorite_reindeer";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite christmas movie",
+                "what's your favorite christmas movie",
+                "what s your favorite christmas movie",
+                "what is your favourite christmas movie",
+                "what christmas movie do you like",
+                "what holiday movie do you like",
+                "do you have a favorite christmas movie",
+                "do you have a favourite christmas movie"))
+            return "robot_favorite_christmas_movie";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite halloween candy",
+                "what's your favorite halloween candy",
+                "what s your favorite halloween candy",
+                "what is your favourite halloween candy",
+                "what halloween candy do you like",
+                "do you have a favorite halloween candy",
+                "do you have a favourite halloween candy"))
+            return "robot_favorite_halloween_candy";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite human",
+                "what's your favorite human",
+                "what s your favorite human",
+                "what is your favourite human",
+                "who is your favorite human",
+                "who is your favourite human",
+                "what human do you like",
+                "who is your favorite person",
+                "who is your favourite person",
+                "what person do you like"))
+            return "robot_favorite_human";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite ice cream flavor",
                 "what's your favorite ice cream flavor",
                 "what s your favorite ice cream flavor",

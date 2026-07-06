@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-06`)
 
+- continued the source-backed likes/persona parity slice by adding direct animal-liking prompts (`do you like animals`, `do you enjoy animals`, and related variants) to the legacy personality route instead of generic chat. Added focused dialog guardrail coverage for animal-liking replies and locked the already-source-backed astronomy liking prompt to the existing space/astronomy answer set. Live robot playback remains the proof item for this small personality slice.
+
 - continued the embodiment/persona parity slice with source-backed "what is it like being a robot" and "what is it like having no legs" routing. These prompts now use the imported no-eating-or-drinking/head-spin and mini-golfing answer sets with focused dialog and websocket coverage, while live robot playback remains the proof item for this small personality slice.
 
 - continued the event/media/persona favorites parity slice with source-backed favorite part of CES, favorite part of Vegas, favorite part of the Today Show, favorite pastime, and broad favorite-band routing. These prompts now use the imported meeting-people/updates, bright-lights, technology/animal-video, socializing/daydreaming, and radio-aware answer sets with focused dialog and websocket coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.

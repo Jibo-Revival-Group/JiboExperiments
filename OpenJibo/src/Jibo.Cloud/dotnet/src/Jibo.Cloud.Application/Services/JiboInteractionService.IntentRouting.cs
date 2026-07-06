@@ -354,25 +354,9 @@ public sealed partial class JiboInteractionService
                 "how do i make you go to sleep"))
             return "robot_can_sleep";
 
-        if (MatchesAny(
-                loweredTranscript,
-                "turn around",
-                "turn all the way around",
-                "turn back around",
-                "spin around",
-                "twirl",
-                "look back over there",
-                "look again"))
-            return "turn_around";
+        if (IsTurnAroundCommand(loweredTranscript)) return "turn_around";
 
-        if (MatchesAny(
-                loweredTranscript,
-                "go to sleep",
-                "take a nap",
-                "go to bed",
-                "bedtime",
-                "sleep"))
-            return "sleep";
+        if (IsSleepCommand(loweredTranscript)) return "sleep";
 
         if (MatchesAny(
                 loweredTranscript,

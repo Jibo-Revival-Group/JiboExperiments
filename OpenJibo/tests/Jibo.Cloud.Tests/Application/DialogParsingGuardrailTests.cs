@@ -61,7 +61,53 @@ public sealed class DialogParsingGuardrailTests
         Assert.Equal("twerk", decision.IntentName);
     }
 
+    [Theory]
+    [InlineData("turn around")]
+    [InlineData("please turn around")]
+    [InlineData("can you turn around")]
+    [InlineData("could you please turn around")]
+    [InlineData("spin around")]
+    [InlineData("can you spin around")]
+    [InlineData("twirl")]
+    [InlineData("can you please twirl")]
+    public async Task BuildDecisionAsync_TurnAroundAliases_StayOnMotionRoute(string transcript)
+    {
+        var service = CreateService();
 
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal("turn_around", decision.IntentName);
+    }
+
+    [Theory]
+    [InlineData("go to sleep", "sleep")]
+    [InlineData("please go to sleep", "sleep")]
+    [InlineData("take a nap", "sleep")]
+    [InlineData("please take a nap", "sleep")]
+    [InlineData("go to bed", "sleep")]
+    [InlineData("time for bed", "sleep")]
+    [InlineData("can you go to sleep", "robot_can_sleep")]
+    [InlineData("do you sleep", "robot_can_sleep")]
+    public async Task BuildDecisionAsync_SleepAliases_PreserveAbilityQuestionSplit(
+        string transcript,
+        string expectedIntent)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+    }
 
     [Theory]
     [InlineData("what is your favorite pet", "robot_favorite_pet", "groundhog")]

@@ -829,6 +829,58 @@ public sealed partial class JiboInteractionService
             "night, jibo");
     }
 
+    private static bool IsTurnAroundCommand(string loweredTranscript)
+    {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        return normalized is
+                   "turn around" or
+                   "turn all the way around" or
+                   "turn back around" or
+                   "spin around" or
+                   "spin" or
+                   "twirl" or
+                   "look back over there" or
+                   "look again" or
+                   "please turn around" or
+                   "please spin around" or
+                   "please twirl" or
+                   "can you turn around" or
+                   "can you please turn around" or
+                   "could you turn around" or
+                   "could you please turn around" or
+                   "would you turn around" or
+                   "would you please turn around" or
+                   "will you turn around" or
+                   "will you please turn around" or
+                   "can you spin around" or
+                   "can you please spin around" or
+                   "can you twirl" or
+                   "can you please twirl" ||
+               normalized.StartsWith("turn around ", StringComparison.Ordinal) ||
+               normalized.StartsWith("spin around ", StringComparison.Ordinal) ||
+               normalized.StartsWith("twirl ", StringComparison.Ordinal);
+    }
+
+    private static bool IsSleepCommand(string loweredTranscript)
+    {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        return normalized is
+                   "go to sleep" or
+                   "please go to sleep" or
+                   "go sleep" or
+                   "please go sleep" or
+                   "take a nap" or
+                   "please take a nap" or
+                   "go to bed" or
+                   "please go to bed" or
+                   "bedtime" or
+                   "it is bedtime" or
+                   "it's bedtime" or
+                   "time for bed" or
+                   "sleep" or
+                   "please sleep";
+    }
+
     private static bool IsDanceQuestion(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);

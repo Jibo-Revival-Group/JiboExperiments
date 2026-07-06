@@ -1436,6 +1436,27 @@ public sealed partial class JiboInteractionService
                 "are you happy being jibo"))
             return "robot_likes_being_jibo";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "what is it like being a robot",
+                "what's it like being a robot",
+                "what s it like being a robot",
+                "what is it like to be a robot",
+                "what's it like to be a robot",
+                "what is it like being robot",
+                "what is being a robot like"))
+            return "robot_what_it_is_like_being_a_robot";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is it like having no legs",
+                "what's it like having no legs",
+                "what s it like having no legs",
+                "what is it like to have no legs",
+                "what's it like to have no legs",
+                "what is having no legs like"))
+            return "robot_what_it_is_like_having_no_legs";
+
         if (SeasonalHolidayRouteBuilder.TryResolveSemanticIntent(loweredTranscript, out var seasonalHolidayIntent))
             return seasonalHolidayIntent!;
 

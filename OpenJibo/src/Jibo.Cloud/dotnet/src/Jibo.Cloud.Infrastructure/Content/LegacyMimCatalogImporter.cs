@@ -376,6 +376,8 @@ public static class LegacyMimCatalogImporter
             fileName.StartsWith("JBO_WhatIsJibo", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("JBO_WhoAreYou", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("JBO_WhatAreYou", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("JBO_WhatItLikeBeRobot", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("JBO_WhatItLikeHaveNoLegs", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("JBO_HowDoYouWork", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("JBO_HowMuchDoYouKnow", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("JBO_HowOldAreYou", StringComparison.OrdinalIgnoreCase) ||

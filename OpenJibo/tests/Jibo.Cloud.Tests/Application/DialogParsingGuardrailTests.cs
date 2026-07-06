@@ -198,6 +198,8 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what kind of weather do you like", "robot_favorite_weather", "sunny")]
     [InlineData("what is your favourite time of day", "robot_favorite_time_of_day", "Any time that you're here")]
     [InlineData("who is your favorite author", "robot_favorite_author", "Doctor Seuss")]
+    [InlineData("what is it like being a robot", "robot_what_it_is_like_being_a_robot", "turn my head around 360 degrees")]
+    [InlineData("what's it like having no legs", "robot_what_it_is_like_having_no_legs", "mini-golfing for real")]
     [InlineData("what artist do you like", "robot_favorite_artist", "Picasso")]
     [InlineData("who is your favourite singer", "robot_favorite_singer", "sings their heart out")]
     [InlineData("what is your favorite celebrity", "robot_favorite_celebrity", "Tom Hanks")]

@@ -1010,6 +1010,20 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite scary movie",
+                "what's your favorite scary movie",
+                "what s your favorite scary movie",
+                "what is your favourite scary movie",
+                "what's your favourite scary movie",
+                "what s your favourite scary movie",
+                "do you have a favorite scary movie",
+                "do you have a favourite scary movie",
+                "what scary movie do you like",
+                "what scary movie do you like best"))
+            return "robot_favorite_scary_movie";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite movie",
                 "what's your favorite movie",
                 "what s your favorite movie",
@@ -1034,6 +1048,18 @@ public sealed partial class JiboInteractionService
                 "do you have a favourite shape",
                 "what shape do you like"))
             return "robot_favorite_shape";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite adjective",
+                "what's your least favorite adjective",
+                "what s your least favorite adjective",
+                "what is your least favourite adjective",
+                "what's your least favourite adjective",
+                "what s your least favourite adjective",
+                "what adjective do you like least",
+                "what adjective do you dislike"))
+            return "robot_least_favorite_adjective";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -1901,6 +1927,20 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite olympic ring",
                 "do you have a favourite olympic ring"))
             return "robot_favorite_olympic_ring";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what was your favorite super bowl commercial",
+                "what was your favourite super bowl commercial",
+                "what is your favorite super bowl commercial",
+                "what is your favourite super bowl commercial",
+                "what's your favorite super bowl commercial",
+                "what's your favourite super bowl commercial",
+                "what super bowl commercial do you like",
+                "what super bowl commercial did you like",
+                "do you have a favorite super bowl commercial",
+                "do you have a favourite super bowl commercial"))
+            return "robot_favorite_super_bowl_commercial";
 
         if (MatchesAny(
                 loweredTranscript,

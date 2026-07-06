@@ -1555,7 +1555,10 @@ public sealed partial class JiboInteractionService
                 "what's your favourite food",
                 "what s your favourite food",
                 "what food do you like",
-                "what kind of food do you like"))
+                "what kind of food do you like",
+                "do you like macaroni",
+                "do you like mac and cheese",
+                "do you like macaroni and cheese"))
             return "robot_favorite_food";
 
         if (MatchesAny(
@@ -1795,7 +1798,9 @@ public sealed partial class JiboInteractionService
                 "what's your favourite drink",
                 "what s your favourite drink",
                 "what drink do you like",
-                "what kind of drink do you like"))
+                "what kind of drink do you like",
+                "do you like hot cocoa",
+                "do you like iced tea"))
             return "robot_favorite_drink";
 
         if (MatchesAny(
@@ -1807,7 +1812,11 @@ public sealed partial class JiboInteractionService
                 "what's your favourite sport",
                 "what s your favourite sport",
                 "what sport do you like",
-                "what sport do you like best"))
+                "what sport do you like best",
+                "do you like golf",
+                "do you like mini golf",
+                "do you like miniature golf",
+                "do you like the masters"))
             return "robot_favorite_sport";
 
         if (MatchesAny(
@@ -1962,7 +1971,10 @@ public sealed partial class JiboInteractionService
                 "what planet do you like",
                 "what planet do you like best",
                 "do you have a favorite planet",
-                "do you have a favourite planet"))
+                "do you have a favourite planet",
+                "do you like earth",
+                "do you like the earth",
+                "do you like globes"))
             return "robot_favorite_planet";
 
         if (MatchesAny(

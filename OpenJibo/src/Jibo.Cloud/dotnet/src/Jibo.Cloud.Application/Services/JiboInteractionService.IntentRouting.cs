@@ -221,6 +221,14 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "do you like dinosaurs",
+                "do you like dinosaur",
+                "do you enjoy dinosaurs",
+                "what do you think about dinosaurs"))
+            return "robot_likes_dinosaurs";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "do you like animals",
                 "do you enjoy animals",
                 "are you into animals",

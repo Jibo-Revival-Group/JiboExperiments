@@ -431,6 +431,10 @@ public sealed partial class JiboInteractionService
                 "least favorite food",
                 "spilled soup",
                 "big fan of soup"),
+            "robot_least_favorite_adjective" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_adjective",
+                "putrid"),
             "robot_least_favorite_word" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_least_favorite_word",
@@ -482,10 +486,6 @@ public sealed partial class JiboInteractionService
                 "robot_least_favorite_vegetable",
                 "onions make people cry",
                 "no problems with any vegetable"),
-            "robot_least_favorite_adjective" => BuildScriptedPersonalityDecision(
-                catalog,
-                "robot_least_favorite_adjective",
-                "putrid"),
             "robot_least_favorite_noun" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_least_favorite_noun",
@@ -569,6 +569,12 @@ public sealed partial class JiboInteractionService
                 "sliced olives",
                 "look like my face",
                 "pepperoni's roundness"),
+            "robot_favorite_super_bowl_commercial" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_super_bowl_commercial",
+                "ones with a dog",
+                "one with the dog",
+                "heart warming one"),
             "robot_favorite_olympic_event" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_olympic_event",
@@ -867,6 +873,12 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_tv_show",
                 "still learning about tv shows",
                 "favorite tv shows yet"),
+            "robot_favorite_scary_movie" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_scary_movie",
+                "very very scary",
+                "Singin in the Rain",
+                "Titanic"),
             "robot_favorite_movie" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_movie",

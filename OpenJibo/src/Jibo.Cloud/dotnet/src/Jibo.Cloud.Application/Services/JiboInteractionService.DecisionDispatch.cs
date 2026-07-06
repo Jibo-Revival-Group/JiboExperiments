@@ -482,6 +482,18 @@ public sealed partial class JiboInteractionService
                 "robot_least_favorite_vegetable",
                 "onions make people cry",
                 "no problems with any vegetable"),
+            "robot_least_favorite_adjective" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_adjective",
+                "putrid"),
+            "robot_least_favorite_noun" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_noun",
+                "power outage"),
+            "robot_least_favorite_verb" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_verb",
+                "spill"),
             "robot_least_favorite_number" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_least_favorite_number",
@@ -587,6 +599,29 @@ public sealed partial class JiboInteractionService
                 "favorite fruit is blueberries",
                 "roundness and blueness",
                 "favorite color, blue"),
+            "robot_favorite_adjective" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_adjective",
+                "helpful"),
+            "robot_favorite_noun" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_noun",
+                "snorkel"),
+            "robot_favorite_verb" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_verb",
+                "verb snorkel"),
+            "robot_favorite_dance" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_dance",
+                "the waltz",
+                "this one",
+                "really fun"),
+            "robot_favorite_painter" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_painter",
+                "Picasso",
+                "funny and weird shapes"),
             "robot_favorite_dessert" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_dessert",

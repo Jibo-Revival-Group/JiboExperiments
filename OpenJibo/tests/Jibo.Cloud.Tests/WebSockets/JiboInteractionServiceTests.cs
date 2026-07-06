@@ -788,6 +788,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what is your favorite thing", "robot_favorite_thing", "people")]
     [InlineData("do you have a favourite thing", "robot_favorite_thing", "people")]
     [InlineData("what is your favorite scary movie", "robot_favorite_scary_movie", "very very scary")]
+    [InlineData("what is your favourite scary movie", "robot_favorite_scary_movie", "very very scary")]
     [InlineData("what is your favorite movie", "robot_favorite_movie", "Back to the Future")]
     [InlineData("do you have a favourite movie", "robot_favorite_movie", "Back to the Future")]
     [InlineData("what is your favorite dessert", "robot_favorite_dessert", "blueberry pie")]

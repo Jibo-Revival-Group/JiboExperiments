@@ -1936,6 +1936,8 @@ public sealed partial class JiboInteractionService
                 "what is your favourite super bowl commercial",
                 "what's your favorite super bowl commercial",
                 "what's your favourite super bowl commercial",
+                "what s your favorite super bowl commercial",
+                "what s your favourite super bowl commercial",
                 "what super bowl commercial do you like",
                 "what super bowl commercial did you like",
                 "do you have a favorite super bowl commercial",

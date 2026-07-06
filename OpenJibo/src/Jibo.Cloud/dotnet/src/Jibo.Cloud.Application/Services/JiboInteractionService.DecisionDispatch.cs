@@ -751,6 +751,32 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_thanksgiving_food",
                 "gravy",
                 "fun to say"),
+            "robot_favorite_part_of_ces" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_part_of_ces",
+                "favorite part of C E S",
+                "meeting so many new people",
+                "new and exciting updates"),
+            "robot_favorite_part_of_vegas" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_part_of_vegas",
+                "interesting people",
+                "bright shiny lights"),
+            "robot_favorite_part_of_today_show" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_part_of_today_show",
+                "fun new technology",
+                "funny animal videos"),
+            "robot_favorite_pastime" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_pastime",
+                "socializing",
+                "daydreaming"),
+            "robot_favorite_various_styles_band" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_various_styles_band",
+                "favorite yet",
+                "play the radio"),
             "robot_favorite_song" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_song",

@@ -118,6 +118,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 ### Progress Update (`2026-07-06`)
 
 - continued the Persona media/opinions parity slice with source-backed favorite scary movie, favorite Super Bowl commercial, and least-favorite adjective routing. These prompts now use the imported Titanic/Singin in the Rain, dog/heart-warming commercial, and putrid answer sets with focused dialog and websocket coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
+- continued the Persona favorites/opposites parity slice with source-backed favorite adjective, noun, verb, and painter routing plus least-favorite adjective, noun, and verb routing. These prompts now use the imported helpful, snorkel, Picasso, putrid, power-outage, and spill answer sets with focused dialog and websocket coverage, while the existing favorite-dance question/command split remains protected for live parity. Live robot playback remains the proof item for this small personality slice.
 
 - continued the source-backed likes/favorites parity slice by routing Pegasus-style “do you like” prompts for macaroni and cheese, hot cocoa/iced tea, mini golf/the Masters, and Earth/globes into the existing favorite food, drink, sport, and planet answer sets. These aliases now have focused dialog and websocket coverage so direct likes prompts do not fall back to generic chat while live robot playback remains the proof item.
 

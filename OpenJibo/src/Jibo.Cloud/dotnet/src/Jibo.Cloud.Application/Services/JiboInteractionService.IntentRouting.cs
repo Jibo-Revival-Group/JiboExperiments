@@ -1798,6 +1798,59 @@ public sealed partial class JiboInteractionService
                 "what kind of music do you like"))
             return "robot_favorite_music";
 
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite part of ces",
+                "what's your favorite part of ces",
+                "what s your favorite part of ces",
+                "what is your favourite part of ces",
+                "what do you like about ces",
+                "what do you like best about ces"))
+            return "robot_favorite_part_of_ces";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite part of vegas",
+                "what's your favorite part of vegas",
+                "what s your favorite part of vegas",
+                "what is your favourite part of vegas",
+                "what do you like about vegas",
+                "what do you like best about vegas",
+                "what do you like about las vegas"))
+            return "robot_favorite_part_of_vegas";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite part of the today show",
+                "what's your favorite part of the today show",
+                "what s your favorite part of the today show",
+                "what is your favourite part of the today show",
+                "what do you like about the today show",
+                "what do you like best about the today show"))
+            return "robot_favorite_part_of_today_show";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite pastime",
+                "what's your favorite pastime",
+                "what s your favorite pastime",
+                "what is your favourite pastime",
+                "what pastime do you like",
+                "what do you like to do for fun"))
+            return "robot_favorite_pastime";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite band",
+                "what's your favorite band",
+                "what s your favorite band",
+                "what is your favourite band",
+                "what band do you like",
+                "do you have a favorite band",
+                "do you have a favourite band"))
+            return "robot_favorite_various_styles_band";
+
         if (MatchesAny(
                 loweredTranscript,
                 "what is your favorite song",

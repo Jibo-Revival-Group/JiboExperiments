@@ -4,13 +4,16 @@ param(
     [string]$TestPassword = "OpenJiboSmokePass!42",
     [string]$TestFirstName = "Open",
     [string]$TestLastName = "Jibo",
-    [string]$TestRobotId = "open-jibo-smoke-robot",
+    [string]$TestRobotId = "",
     [string]$TargetMode = "open-jibo",
     [string]$TargetHost = "",
     [string]$ReportedConnectionHost = ""
 )
 
 $ErrorActionPreference = "Stop"
+if ([string]::IsNullOrWhiteSpace($TestRobotId)) {
+    $TestRobotId = "open-jibo-smoke-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())-$PID"
+}
 $baseHost = ([System.Uri]::new($BaseUrl)).Authority
 if ([string]::IsNullOrWhiteSpace($TargetHost)) {
     if ($TargetMode -eq "open-jibo-self-hosted") {
@@ -291,8 +294,8 @@ if (-not $connectionProof.Body.complete) {
     throw "VerifyConnection did not report the prepared robot setup as complete."
 }
 
-if ($connectionProof.Body.robotId -ne "robot-$TestRobotId") {
-    throw "VerifyConnection returned an unexpected robot identity."
+if ($connectionProof.Body.robotId -ne "robot-$TestRobotId" -or $connectionProof.Body.deviceId -ne $TestRobotId) {
+    throw "VerifyConnection returned an unexpected robot identity (expected robotId 'robot-$TestRobotId' and deviceId '$TestRobotId', got robotId '$($connectionProof.Body.robotId)' and deviceId '$($connectionProof.Body.deviceId)')."
 }
 
 if ($connectionProof.Body.targetMode -ne $TargetMode) {

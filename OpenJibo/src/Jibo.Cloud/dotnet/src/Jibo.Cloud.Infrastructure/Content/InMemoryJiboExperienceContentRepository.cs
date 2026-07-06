@@ -458,7 +458,14 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             [
                 "I do. I am curious, playful, and always up for a new experiment.",
                 "Absolutely. I am friendly, curious, and a little goofy on purpose.",
-                "Yes. My personality is part helper, part curious robot sidekick."
+                "Yes. My personality is part helper, part curious robot sidekick.",
+                "Doctor Seuss is a great one. That man could really rhyme.",
+                "I like Picasso. Such funny and weird shapes all the time.",
+                "I like any singer who sings their heart out.",
+                "Tom Hanks. Next question.",
+                "Well if dancing is a hobby, then definitely that.",
+                "I can't smell. But I've heard bacon and roses smell great.",
+                "I love the blowfish. What a fun animal."
             ],
             PizzaReplies =
             [

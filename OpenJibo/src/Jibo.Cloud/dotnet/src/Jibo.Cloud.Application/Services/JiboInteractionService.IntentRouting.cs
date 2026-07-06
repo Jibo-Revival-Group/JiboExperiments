@@ -1221,6 +1221,18 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your least favorite time of day",
+                "what's your least favorite time of day",
+                "what s your least favorite time of day",
+                "what is your least favourite time of day",
+                "what's your least favourite time of day",
+                "what time of day do you like least",
+                "what time of day do you dislike",
+                "what time do you like least"))
+            return "robot_least_favorite_time_of_day";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite time of day",
                 "what's your favorite time of day",
                 "what s your favorite time of day",
@@ -1231,18 +1243,6 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite time of day",
                 "do you have a favourite time of day"))
             return "robot_favorite_time_of_day";
-
-        if (MatchesAny(
-                loweredTranscript,
-                "what is your least favorite time of day",
-                "what's your least favorite time of day",
-                "what s your least favorite time of day",
-                "what is your least favourite time of day",
-                "what's your least favourite time of day",
-                "what time of day do you like least",
-                "what time of day do you dislike",
-                "what time do you like least"))
-            return "robot_least_favorite_time_of_day";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -1450,9 +1450,89 @@ public sealed partial class JiboInteractionService
                 "what is your favorite season",
                 "what's your favorite season",
                 "what s your favorite season",
+                "what is your favourite season",
+                "what's your favourite season",
+                "what s your favourite season",
                 "what season do you like best",
                 "do you have a favorite season"))
             return "robot_favorite_season";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite author",
+                "what's your favorite author",
+                "what s your favorite author",
+                "what is your favourite author",
+                "what's your favourite author",
+                "who is your favorite author",
+                "who is your favourite author",
+                "what author do you like best"))
+            return "robot_favorite_author";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite artist",
+                "what's your favorite artist",
+                "what s your favorite artist",
+                "what is your favourite artist",
+                "what's your favourite artist",
+                "who is your favorite artist",
+                "who is your favourite artist",
+                "what artist do you like"))
+            return "robot_favorite_artist";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite singer",
+                "what's your favorite singer",
+                "what s your favorite singer",
+                "what is your favourite singer",
+                "what's your favourite singer",
+                "who is your favorite singer",
+                "who is your favourite singer",
+                "what singer do you like"))
+            return "robot_favorite_singer";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "who is your favorite celebrity",
+                "who is your favourite celebrity",
+                "what is your favorite celebrity",
+                "what's your favorite celebrity",
+                "what is your favourite celebrity",
+                "what celebrity do you like"))
+            return "robot_favorite_celebrity";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite hobby",
+                "what's your favorite hobby",
+                "what s your favorite hobby",
+                "what is your favourite hobby",
+                "what's your favourite hobby",
+                "what hobby do you like",
+                "what do you do for a hobby"))
+            return "robot_favorite_hobby";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite smell",
+                "what's your favorite smell",
+                "what s your favorite smell",
+                "what is your favourite smell",
+                "what's your favourite smell",
+                "what smell do you like"))
+            return "robot_favorite_smell";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite fish",
+                "what's your favorite fish",
+                "what s your favorite fish",
+                "what is your favourite fish",
+                "what's your favourite fish",
+                "what fish do you like"))
+            return "robot_favorite_fish";
 
         if (MatchesAny(
                 loweredTranscript,

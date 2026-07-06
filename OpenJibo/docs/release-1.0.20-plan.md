@@ -115,6 +115,17 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 
 
+### Progress Update (`2026-07-06`)
+
+- continued the Persona favorites/creative-preferences parity slice with source-backed favorite author, artist, singer, celebrity, hobby, smell, and fish routing. These prompts now use the imported Dr. Seuss, Picasso, sings-their-heart-out, Tom Hanks, dancing-hobby, bacon-and-roses, and blowfish answer sets with focused dialog and websocket coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
+- tightened favorites-vs-opposites routing so broad favorite time-of-day and author aliases no longer steal least-favorite prompts that include `least` after the shared prefix.
+
+#### Major blockers / questions
+
+- physical-device proof is still the release blocker: the cloud can detect connection-host, DNS mapping, and freshness drift, but we still need a live converted robot run that reaches `VerifyConnection` with matching reported host and host mappings.
+- safe awakening/OOBE parity remains blocked on image-specific review of owner-name replacement points plus safe body/yawn/audio asset provenance before the conversion video should claim full first-boot parity.
+- self-hosted owner-facing HTTPS remains unresolved: developer HTTP smoke paths are acceptable, but a real owner path still needs a trust/certificate decision before self-hosted conversion is promoted beyond controlled tests.
+
 ### Progress Update (`2026-07-05`)
 
 - continued the Persona least-favorites parity slice with source-backed least-favorite video game, president, weather, time of day, mammal, and pizza-topping routing. These prompts now use the imported violent-games, trouble-avoiding-president, rain/thunderstorms, middle-of-the-night, hippo, and onion answer sets with focused dialog and guardrail coverage for US/UK least-favorite phrasing. Live robot playback remains the proof item for this small personality slice.

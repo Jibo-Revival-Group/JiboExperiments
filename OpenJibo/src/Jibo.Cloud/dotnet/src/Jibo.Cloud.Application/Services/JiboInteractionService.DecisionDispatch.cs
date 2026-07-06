@@ -385,6 +385,40 @@ public sealed partial class JiboInteractionService
                 "robot_favorite_season",
                 "special feeling for winter",
                 "more dance parties"),
+            "robot_favorite_author" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_author",
+                "Doctor Seuss",
+                "really rhyme"),
+            "robot_favorite_artist" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_artist",
+                "Picasso",
+                "funny and weird shapes"),
+            "robot_favorite_singer" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_singer",
+                "sings their heart out",
+                "Twinkle"),
+            "robot_favorite_celebrity" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_celebrity",
+                "Tom Hanks"),
+            "robot_favorite_hobby" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_hobby",
+                "dancing is a hobby",
+                "definitely that"),
+            "robot_favorite_smell" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_smell",
+                "can't smell",
+                "bacon and roses"),
+            "robot_favorite_fish" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_fish",
+                "blowfish",
+                "fun animal"),
             "robot_favorite_drink" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_drink",
@@ -512,13 +546,11 @@ public sealed partial class JiboInteractionService
             "robot_favorite_football_team" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_football_team",
-                "favorite team yet",
                 "weirdly shaped ball"),
             "robot_favorite_olympic_ring" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_olympic_ring",
-                "blue one",
-                "olympic rings"),
+                "My favorite ring is the blue one"),
             "robot_favorite_pizza_topping" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_pizza_topping",

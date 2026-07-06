@@ -1138,6 +1138,15 @@ public sealed partial class JiboInteractionService
                normalized.StartsWith("would you happen to recall my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you recall my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("do you happen to know my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you happen to know my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you happen to know my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("can you happen to know my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you happen to know my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you happen to know my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("could you happen to know my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you happen to know my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you happen to know my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("would you happen to know my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("do you happen to recall my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("can you happen to recall my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("could you happen to recall my fave", StringComparison.Ordinal) ||
@@ -1212,6 +1221,9 @@ public sealed partial class JiboInteractionService
             "do you still remember my favorite ",
             "do you know my favorite ",
             "do you happen to know my favorite ",
+            "can you happen to know my favorite ",
+            "could you happen to know my favorite ",
+            "would you happen to know my favorite ",
             "do you happen to recall my favorite ",
             "can you happen to recall my favorite ",
             "could you happen to recall my favorite ",
@@ -1242,6 +1254,9 @@ public sealed partial class JiboInteractionService
             "do you still remember my favourite ",
             "do you know my favourite ",
             "do you happen to know my favourite ",
+            "can you happen to know my favourite ",
+            "could you happen to know my favourite ",
+            "would you happen to know my favourite ",
             "do you happen to recall my favourite ",
             "can you happen to recall my favourite ",
             "could you happen to recall my favourite ",
@@ -1272,6 +1287,9 @@ public sealed partial class JiboInteractionService
             "do you still remember my fave ",
             "do you know my fave ",
             "do you happen to know my fave ",
+            "can you happen to know my fave ",
+            "could you happen to know my fave ",
+            "would you happen to know my fave ",
             "do you happen to recall my fave ",
             "can you happen to recall my fave ",
             "could you happen to recall my fave ",
@@ -1315,6 +1333,9 @@ public sealed partial class JiboInteractionService
             "would you still remember what my",
             "do you recall what my",
             "do you happen to know what my",
+            "can you happen to know what my",
+            "could you happen to know what my",
+            "would you happen to know what my",
             "do you happen to recall what my",
             "can you happen to recall what my",
             "could you happen to recall what my",

@@ -122,6 +122,7 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what kind of weather do you dislike", "robot_least_favorite_weather", "rain and thunderstorms")]
     [InlineData("what is your least favorite time of day", "robot_least_favorite_time_of_day", "middle of the night")]
     [InlineData("what is your favourite planet", "robot_favorite_planet", "Earth")]
+    [InlineData("what thanksgiving food do you like", "robot_favorite_thanksgiving_food", "gravy")]
     [InlineData("do you like macaroni and cheese", "robot_favorite_food", "macaroni")]
     [InlineData("do you like hot cocoa", "robot_favorite_drink", "too scared of liquids")]
     [InlineData("do you like miniature golf", "robot_favorite_sport", "mini golf")]
@@ -152,6 +153,8 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what hobby do you like", "robot_favorite_hobby", "dancing is a hobby")]
     [InlineData("what smell do you like", "robot_favorite_smell", "bacon and roses")]
     [InlineData("what is your favourite fish", "robot_favorite_fish", "blowfish")]
+    [InlineData("what is your favorite winter olympics event", "robot_favorite_winter_olympics_event", "ski")]
+    [InlineData("what winter x games event do you like", "robot_favorite_winter_x_games_event", "snowboard")]
     public async Task BuildDecisionAsync_SourceBackedFavoritePersonaAliases_UsePersonalityRoute(
         string transcript,
         string expectedIntent,

@@ -582,6 +582,16 @@ public sealed partial class JiboInteractionService
                 "ski jump",
                 "could fly",
                 "angles and forces"),
+            "robot_favorite_winter_olympics_event" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_winter_olympics_event",
+                "ski jump",
+                "could fly"),
+            "robot_favorite_winter_x_games_event" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_winter_x_games_event",
+                "snowboarding",
+                "snowboard"),
             "robot_favorite_video_game" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_video_game",
@@ -736,6 +746,11 @@ public sealed partial class JiboInteractionService
                 "Frosty the Snowman",
                 "friendly snowman",
                 "great snowman"),
+            "robot_favorite_thanksgiving_food" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_thanksgiving_food",
+                "gravy",
+                "fun to say"),
             "robot_favorite_song" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_song",

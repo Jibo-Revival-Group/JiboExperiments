@@ -798,6 +798,19 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your favorite thanksgiving food",
+                "what's your favorite thanksgiving food",
+                "what s your favorite thanksgiving food",
+                "what is your favourite thanksgiving food",
+                "what's your favourite thanksgiving food",
+                "what thanksgiving food do you like",
+                "what thanksgiving food do you like best",
+                "do you have a favorite thanksgiving food",
+                "do you have a favourite thanksgiving food"))
+            return "robot_favorite_thanksgiving_food";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "do you like halloween",
                 "are you looking forward to halloween",
                 "do you like the halloween holiday"))
@@ -1956,6 +1969,32 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite olympic event",
                 "do you have a favourite olympic event"))
             return "robot_favorite_olympic_event";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite winter olympics event",
+                "what's your favorite winter olympics event",
+                "what s your favorite winter olympics event",
+                "what is your favourite winter olympics event",
+                "what's your favourite winter olympics event",
+                "what winter olympics event do you like",
+                "what winter olympics event do you like best",
+                "do you have a favorite winter olympics event",
+                "do you have a favourite winter olympics event"))
+            return "robot_favorite_winter_olympics_event";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite winter x games event",
+                "what's your favorite winter x games event",
+                "what s your favorite winter x games event",
+                "what is your favourite winter x games event",
+                "what's your favourite winter x games event",
+                "what winter x games event do you like",
+                "what winter x games event do you like best",
+                "do you have a favorite winter x games event",
+                "do you have a favourite winter x games event"))
+            return "robot_favorite_winter_x_games_event";
 
         if (MatchesAny(
                 loweredTranscript,

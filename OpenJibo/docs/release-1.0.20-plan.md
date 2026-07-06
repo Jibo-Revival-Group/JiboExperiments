@@ -117,6 +117,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-06`)
 
+- continued the sports/seasonal persona favorites parity slice with source-backed favorite Thanksgiving food, favorite Winter Olympics event, and favorite Winter X Games event routing. These prompts now use the imported gravy, ski-jump, and snowboarding answer sets with focused dialog and websocket coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
+
 - continued the Persona media/opinions parity slice with source-backed favorite scary movie, favorite Super Bowl commercial, and least-favorite adjective routing. These prompts now use the imported Titanic/Singin in the Rain, dog/heart-warming commercial, and putrid answer sets with focused dialog and websocket coverage for US/UK favorite phrasing. Live robot playback remains the proof item for this small personality slice.
 - continued the Persona favorites/opposites parity slice with source-backed favorite adjective, noun, verb, and painter routing plus least-favorite adjective, noun, and verb routing. These prompts now use the imported helpful, snorkel, Picasso, putrid, power-outage, and spill answer sets with focused dialog and websocket coverage, while the existing favorite-dance question/command split remains protected for live parity. Live robot playback remains the proof item for this small personality slice.
 

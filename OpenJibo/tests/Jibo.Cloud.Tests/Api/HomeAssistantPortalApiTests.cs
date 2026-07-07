@@ -672,6 +672,81 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal(HttpStatusCode.BadRequest, revokeResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task TrustedServerAdmissionCreatesSignedAuditRecord()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var registerResponse = await client.PostAsJsonAsync(
+            "/api/portal/trusted-servers",
+            new
+            {
+                canonicalHost = "audit.example.openjibo.com",
+                displayName = "Audit Example",
+                serverKind = "managed",
+                reason = "Operator-approved hosted server.",
+                requiresHttps = true,
+                isActive = true,
+                description = "Signed admission audit test."
+            });
+
+        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+        var payload = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var admission = payload.GetProperty("admissionRecord");
+        Assert.Equal("admit", admission.GetProperty("action").GetString());
+        Assert.Equal("audit.example.openjibo.com", admission.GetProperty("canonicalHost").GetString());
+        Assert.Equal("HMAC-SHA256", admission.GetProperty("signatureAlgorithm").GetString());
+        Assert.Equal("open-jibo-local-trusted-server-admission-v1", admission.GetProperty("signatureKeyId").GetString());
+        Assert.Matches("^[a-f0-9]{64}$", admission.GetProperty("signature").GetString());
+        Assert.Contains("action|admit", admission.GetProperty("payload").GetString());
+    }
+
+    [Fact]
+    public async Task SelfHostedValidationEndpoint_ReturnsModeSpecificGuidance()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var localResponse = await client.PostAsJsonAsync(
+            "/api/onboarding/self-hosted/validate",
+            new
+            {
+                serverMode = "self-hosted",
+                serverHost = "localhost:8080"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, localResponse.StatusCode);
+        var localPayload = await localResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(localPayload.GetProperty("allowsHttp").GetBoolean());
+        Assert.False(localPayload.GetProperty("requiresHttps").GetBoolean());
+        Assert.Equal("self-hosted", localPayload.GetProperty("serverMode").GetString());
+
+        var hybridResponse = await client.PostAsJsonAsync(
+            "/api/onboarding/self-hosted/validate",
+            new
+            {
+                serverMode = "self-hosted-hybrid",
+                serverHost = "hybrid.example.openjibo.com"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, hybridResponse.StatusCode);
+        var hybridPayload = await hybridResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(hybridPayload.GetProperty("allowsHttp").GetBoolean());
+        Assert.True(hybridPayload.GetProperty("requiresHttps").GetBoolean());
+        Assert.Equal("self-hosted-hybrid", hybridPayload.GetProperty("serverMode").GetString());
+    }
+
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)
     {
         var buffer = new byte[4096];

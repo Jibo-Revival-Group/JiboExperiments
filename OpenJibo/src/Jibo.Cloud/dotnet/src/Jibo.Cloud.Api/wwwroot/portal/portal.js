@@ -123,12 +123,20 @@ async function renderTrustedServerRegistryPanel() {
           <div class="meta-item"><span>Trusted root</span><span>${escapeHtml(directory.trustedRootHost || "api.openjibo.com")}</span></div>
           <div class="meta-item"><span>Registry source</span><span>Cloud state</span></div>
         </div>
+        <div class="meta-list compact">
+          <div class="meta-item"><span>Managed</span><span>Public, listed, HTTPS</span></div>
+          <div class="meta-item"><span>Hybrid</span><span>Private, cloud-synced, HTTPS</span></div>
+        </div>
         <ul class="steps">
           ${servers.map((server) => `
             <li>
               <strong>${escapeHtml(server.displayName || server.canonicalHost)}</strong>
               <span>${escapeHtml(server.canonicalHost)} · ${escapeHtml(server.serverKind || "managed")}</span>
               ${server.isTrustRoot ? `<span class="badge success">Trust root</span>` : ``}
+              <div class="muted">
+                ${server.acceptsPublicConnections ? "Public connections enabled." : "Public connections disabled."}
+                ${server.participatesInCloudSync ? "Cloud sync enabled." : "Cloud sync disabled."}
+              </div>
               <div class="button-row">
                 ${server.isTrustRoot ? "" : `
                   <button class="button secondary trusted-server-action" data-host="${escapeHtml(server.canonicalHost)}" data-action="${server.isActive ? "revoke" : "reactivate"}" type="button">
@@ -149,6 +157,8 @@ async function renderTrustedServerRegistryPanel() {
           <input id="trustedServerName" type="text" placeholder="Example hosted server">
           <label for="trustedServerKind">Server kind</label>
           <input id="trustedServerKind" type="text" value="managed">
+          <label for="trustedServerReason">Reason</label>
+          <input id="trustedServerReason" type="text" placeholder="Operator-approved server">
           <button class="button primary" id="addTrustedServerButton" type="button">Register trusted server</button>
         </div>
         <p id="trustedServerActionStatus" class="status hidden"></p>
@@ -165,8 +175,41 @@ async function renderTrustedServerRegistryPanel() {
   }
 }
 
+async function renderSelfHostedOnboardingPanel() {
+  try {
+    return `
+      <section class="card panel">
+        <p class="eyebrow">Onboarding</p>
+        <h2>Self-hosted entry</h2>
+        <p class="muted">Self-hosted runs stay out of the trusted registry. Local self-hosted mode can use HTTP. Self-hosted hybrid stays private but must use HTTPS.</p>
+        <div class="meta-list compact">
+          <div class="meta-item"><span>Local self-hosted</span><span>HTTP allowed, no registry</span></div>
+          <div class="meta-item"><span>Self-hosted hybrid</span><span>HTTPS required, no public access</span></div>
+        </div>
+        <div class="inline-form">
+          <label for="selfHostedMode">Mode</label>
+          <input id="selfHostedMode" type="text" value="self-hosted" placeholder="self-hosted or self-hosted-hybrid">
+          <label for="selfHostedHost">Host or URL</label>
+          <input id="selfHostedHost" type="text" placeholder="localhost:8080 or https://server.example">
+          <button class="button primary" id="validateSelfHostedButton" type="button">Validate self-hosted path</button>
+        </div>
+        <p id="selfHostedActionStatus" class="status hidden"></p>
+      </section>
+    `;
+  } catch (error) {
+    return `
+      <section class="card panel">
+        <p class="eyebrow">Onboarding</p>
+        <h2>Self-hosted entry</h2>
+        <p class="status error">${escapeHtml(error.message)}</p>
+      </section>
+    `;
+  }
+}
+
 async function renderLogin(message = "", isError = false) {
   const trustedServersPanel = await renderTrustedServerDirectoryPanel();
+  const selfHostedPanel = await renderSelfHostedOnboardingPanel();
   app.innerHTML = `
     <div class="center-shell">
       <section class="card login-card">
@@ -184,7 +227,10 @@ async function renderLogin(message = "", isError = false) {
         ${message ? `<p class="status ${isError ? "error" : "success"}">${escapeHtml(message)}</p>` : ""}
       </section>
 
-      ${trustedServersPanel}
+      <div class="grid two">
+        ${trustedServersPanel}
+        ${selfHostedPanel}
+      </div>
     </div>
   `;
 
@@ -296,6 +342,7 @@ async function renderAdminPanel() {
     const operations = admin.harness?.suggestedOperations || [];
     const requiredHostMappings = admin.conversion?.requiredHostMappings || [];
     const missingHostMappings = admin.conversion?.missingHostMappings || [];
+    const trustedServerAdmissions = admin.conversion?.trustedServerAdmissions || [];
     return `
       <section class="card panel wide-panel">
         <div class="panel-header">
@@ -314,6 +361,7 @@ async function renderAdminPanel() {
           <div class="meta-item"><span>Loops / people</span><span>${admin.counts?.loops || 0} / ${admin.counts?.people || 0}</span></div>
           <div class="meta-item"><span>Updates / backups</span><span>${admin.counts?.updates || 0} / ${admin.counts?.backups || 0}</span></div>
           <div class="meta-item"><span>Identity evidence</span><span>${admin.counts?.identityRelationships || 0} rels, ${admin.counts?.identityEvidenceSignals || 0} signals</span></div>
+          <div class="meta-item"><span>Trusted admissions</span><span>${admin.counts?.trustedServerAdmissions || 0} signed records</span></div>
           <div class="meta-item"><span>Home Assistant</span><span>${admin.counts?.homeAssistantConnected || 0}/${admin.counts?.homeAssistantLinks || 0} connected</span></div>
         </div>
         <div class="meta-list compact">
@@ -322,6 +370,15 @@ async function renderAdminPanel() {
           <div class="meta-item"><span>Blockers</span><span>${escapeHtml(blockers.join(", ") || "None from stored cloud state")}</span></div>
           <div class="meta-item"><span>Smoke operations</span><span>${escapeHtml(operations.join(", ") || "—")}</span></div>
         </div>
+        <ul class="steps">
+          ${trustedServerAdmissions.length ? trustedServerAdmissions.map((admission) => `
+            <li>
+              <strong>${escapeHtml(admission.canonicalHost || "—")}</strong>
+              <span>${escapeHtml(admission.serverKind || "managed")} · ${escapeHtml(admission.action || "admit")}</span>
+              <div class="muted">${escapeHtml(admission.actorFriendlyId || "system")} · ${formatDate(admission.createdUtc)}</div>
+            </li>
+          `).join("") : `<li>No signed server admissions recorded yet.</li>`}
+        </ul>
         <ul class="steps">${questions.map((question) => `<li>${escapeHtml(question)}</li>`).join("")}</ul>
         <div class="actions-row">
           <a class="secondary-button" href="${escapeHtml(admin.harness?.url || "/harness")}">Open fake robot harness</a>
@@ -552,6 +609,7 @@ async function renderDashboard(message = "", tone = "success") {
       const canonicalHost = document.getElementById("trustedServerHost").value.trim();
       const displayName = document.getElementById("trustedServerName").value.trim();
       const serverKind = document.getElementById("trustedServerKind").value.trim();
+      const reason = document.getElementById("trustedServerReason").value.trim();
 
       try {
         await apiFetch("/api/portal/trusted-servers", {
@@ -560,9 +618,34 @@ async function renderDashboard(message = "", tone = "success") {
             canonicalHost,
             displayName,
             serverKind,
+            reason,
           }),
         });
         await renderDashboard("Trusted server registered.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  }
+
+  const validateSelfHostedButton = document.getElementById("validateSelfHostedButton");
+  if (validateSelfHostedButton) {
+    validateSelfHostedButton.addEventListener("click", async () => {
+      const status = document.getElementById("selfHostedActionStatus");
+      const serverMode = document.getElementById("selfHostedMode").value.trim();
+      const serverHost = document.getElementById("selfHostedHost").value.trim();
+
+      try {
+        const validation = await apiFetch("/api/onboarding/self-hosted/validate", {
+          method: "POST",
+          body: JSON.stringify({
+            serverMode,
+            serverHost,
+          }),
+        });
+        status.textContent = `${validation.trustGuidance} ${validation.requiresHttps ? "HTTPS required." : "HTTP allowed."}`;
+        status.className = "status success";
       } catch (error) {
         status.textContent = error.message;
         status.className = "status error";

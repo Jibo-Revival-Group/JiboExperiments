@@ -19,6 +19,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private const string IdentityGraphSigningKey = "open-jibo-local-identity-graph-development-key";
     private const string IdentityGraphAdmissionSignatureKeyId = "open-jibo-local-admission-v1";
     private const string IdentityGraphEvidenceBundleSignatureKeyId = "open-jibo-local-evidence-bundle-v1";
+    private const string TrustedServerAdmissionSignatureKeyId = "open-jibo-local-trusted-server-admission-v1";
+    private const string TrustedServerAdmissionSigningKey = "open-jibo-local-trusted-server-admission-development-key";
     private static long _nextUpdateIdSeed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
     private static readonly JsonSerializerOptions PersistenceJsonOptions = new()
@@ -48,6 +50,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly List<PersonRecord> _people;
     private readonly List<RecognitionObservationRecord> _recognitionObservations = [];
     private readonly HashSet<string> _revokedIdentityGraphAnchors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<TrustedServerAdmissionRecord> _trustedServerAdmissions = [];
     private readonly List<TrustedServerRecord> _trustedServers = [];
 
     private readonly ConcurrentDictionary<string, CloudSession>
@@ -246,6 +249,25 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         }
     }
 
+    public IReadOnlyList<TrustedServerAdmissionRecord> GetTrustedServerAdmissions(string? canonicalHost = null)
+    {
+        lock (_syncRoot)
+        {
+            var records = _trustedServerAdmissions.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(canonicalHost))
+            {
+                var normalizedHost = NormalizeTrustedServerHost(canonicalHost);
+                records = records.Where(record =>
+                    record.CanonicalHost.Equals(normalizedHost, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return records
+                .OrderByDescending(record => record.CreatedUtc)
+                .Select(CloneTrustedServerAdmission)
+                .ToArray();
+        }
+    }
+
     public TrustedServerRecord? FindTrustedServer(string canonicalHost)
     {
         if (string.IsNullOrWhiteSpace(canonicalHost)) return null;
@@ -297,10 +319,41 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 _trustedServers[existingIndex] = merged;
             else
                 _trustedServers.Add(merged);
-
             TouchState();
             return CloneTrustedServer(merged);
         }
+    }
+
+    public TrustedServerAdmissionRecord RecordTrustedServerAdmission(TrustedServerRecord trustedServer, string action,
+        string? actorDeviceId, string? actorFriendlyId, string? reason = null)
+    {
+        ArgumentNullException.ThrowIfNull(trustedServer);
+
+        var normalizedAction = NormalizeTrustedServerAction(action);
+        var now = DateTimeOffset.UtcNow;
+        var payload = BuildTrustedServerAdmissionPayload(trustedServer, normalizedAction, actorDeviceId,
+            actorFriendlyId, reason, now);
+        var record = new TrustedServerAdmissionRecord
+        {
+            ServerId = trustedServer.ServerId,
+            CanonicalHost = trustedServer.CanonicalHost,
+            ServerKind = trustedServer.ServerKind,
+            Action = normalizedAction,
+            ActorDeviceId = actorDeviceId?.Trim() ?? string.Empty,
+            ActorFriendlyId = actorFriendlyId?.Trim() ?? string.Empty,
+            Reason = reason?.Trim(),
+            Payload = payload,
+            Signature = SignTrustedServerAdmissionPayload(payload),
+            CreatedUtc = now
+        };
+
+        lock (_syncRoot)
+        {
+            _trustedServerAdmissions.Add(record);
+            TouchState();
+        }
+
+        return CloneTrustedServerAdmission(record);
     }
 
     public UserRecord? CreateUser(string email, string password, string? firstName, string? lastName)
@@ -1945,6 +1998,26 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         };
     }
 
+    private static TrustedServerAdmissionRecord CloneTrustedServerAdmission(TrustedServerAdmissionRecord admission)
+    {
+        return new TrustedServerAdmissionRecord
+        {
+            AdmissionId = admission.AdmissionId,
+            ServerId = admission.ServerId,
+            CanonicalHost = admission.CanonicalHost,
+            ServerKind = admission.ServerKind,
+            Action = admission.Action,
+            ActorDeviceId = admission.ActorDeviceId,
+            ActorFriendlyId = admission.ActorFriendlyId,
+            Reason = admission.Reason,
+            SignatureAlgorithm = admission.SignatureAlgorithm,
+            SignatureKeyId = admission.SignatureKeyId,
+            Payload = admission.Payload,
+            Signature = admission.Signature,
+            CreatedUtc = admission.CreatedUtc
+        };
+    }
+
     private static string NormalizeServerKind(string? serverKind, string? fallbackServerKind = null)
     {
         var normalized = string.IsNullOrWhiteSpace(serverKind) ? fallbackServerKind : serverKind;
@@ -1952,6 +2025,50 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return normalized.Equals("hosted", StringComparison.OrdinalIgnoreCase)
             ? "managed"
             : normalized.ToLowerInvariant();
+    }
+
+    private static string NormalizeTrustedServerAction(string action)
+    {
+        return action.Trim().ToLowerInvariant() switch
+        {
+            "admit" or "revoke" or "reactivate" or "mark-seen" => action.Trim().ToLowerInvariant(),
+            _ => throw new ArgumentException("Invalid trusted server action.", nameof(action))
+        };
+    }
+
+    private static string BuildTrustedServerAdmissionPayload(
+        TrustedServerRecord trustedServer,
+        string action,
+        string? actorDeviceId,
+        string? actorFriendlyId,
+        string? reason,
+        DateTimeOffset createdUtc)
+    {
+        var lines = new[]
+        {
+            $"action|{action}",
+            $"server-id|{trustedServer.ServerId}",
+            $"canonical-host|{trustedServer.CanonicalHost}",
+            $"server-kind|{trustedServer.ServerKind}",
+            $"listed|{trustedServer.IsListed}",
+            $"accepts-public-connections|{trustedServer.AcceptsPublicConnections}",
+            $"participates-in-cloud-sync|{trustedServer.ParticipatesInCloudSync}",
+            $"requires-https|{trustedServer.RequiresHttps}",
+            $"trust-root|{trustedServer.IsTrustRoot}",
+            $"active|{trustedServer.IsActive}",
+            $"actor-device-id|{actorDeviceId?.Trim() ?? string.Empty}",
+            $"actor-friendly-id|{actorFriendlyId?.Trim() ?? string.Empty}",
+            $"reason|{reason?.Trim() ?? string.Empty}",
+            $"created-utc|{createdUtc:O}"
+        };
+
+        return string.Join('\n', lines);
+    }
+
+    private static string SignTrustedServerAdmissionPayload(string payload)
+    {
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(TrustedServerAdmissionSigningKey));
+        return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
     }
 
     private void ApplyConfiguredOwnerName()
@@ -2241,6 +2358,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Users = _users.ToArray(),
             RecognitionObservations = _recognitionObservations.ToArray(),
             RevokedIdentityGraphAnchors = _revokedIdentityGraphAnchors.ToArray(),
+            TrustedServerAdmissions = _trustedServerAdmissions.ToArray(),
             TrustedServers = _trustedServers.ToArray()
         };
     }
@@ -2308,6 +2426,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         foreach (var anchor in snapshot.RevokedIdentityGraphAnchors ?? [])
             _revokedIdentityGraphAnchors.Add(anchor);
 
+        _trustedServerAdmissions.Clear();
+        foreach (var admission in snapshot.TrustedServerAdmissions ?? [])
+            _trustedServerAdmissions.Add(admission);
+
         _trustedServers.Clear();
         foreach (var trustedServer in snapshot.TrustedServers ?? [])
             _trustedServers.Add(trustedServer);
@@ -2362,6 +2484,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public UserRecord[]? Users { get; init; }
         public RecognitionObservationRecord[]? RecognitionObservations { get; init; }
         public string[]? RevokedIdentityGraphAnchors { get; init; }
+        public TrustedServerAdmissionRecord[]? TrustedServerAdmissions { get; init; }
         public TrustedServerRecord[]? TrustedServers { get; init; }
     }
 

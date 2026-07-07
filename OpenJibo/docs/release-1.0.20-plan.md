@@ -73,7 +73,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
   - stay visible in the menu after toggling so owners can re-enable it later
   - trigger first-boot/OOBE setup behavior when the robot is converted
   - preserve any on-robot persisted state and data such as holidays, Jibo birthdate, pictures and videos, person voice and face training and recognition, and favorites lists
-- add a data-driven trusted-server registry endpoint for onboarding so the app can present approved Open Jibo hosted targets from cloud state, distinguish managed versus self-hosted hybrid server modes, support admission/revocation/reactivation lifecycle updates, and let the user enter a separate custom self-hosted server name/IP with validation before the robot commits to a server choice
+- add a data-driven trusted-server registry endpoint for onboarding so the app can present approved Open Jibo hosted targets from cloud state, distinguish managed versus self-hosted hybrid server modes, write signed admission/revocation/reactivation audit records, and let the user enter a separate custom self-hosted server name/IP with a local-vs-hybrid trust validator before the robot commits to a server choice
 - prove the conversion path against the real device variants we care about:
   - newer OOBE devices
   - older stock devices such as the `1.9.2` baseline

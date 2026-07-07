@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
@@ -103,9 +104,17 @@ internal static class PortalEndpoints
                 Description = request.Description?.Trim() ?? string.Empty
             });
 
+            var admission = cloudStateStore.RecordTrustedServerAdmission(
+                server,
+                "admit",
+                session.DeviceId,
+                session.FriendlyId,
+                request.Reason);
+
             return Results.Json(new
             {
-                trustedServer = server
+                trustedServer = server,
+                admissionRecord = admission
             });
         });
 
@@ -172,10 +181,53 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "action must be admit, revoke, reactivate, or mark-seen." });
 
             var updated = cloudStateStore.UpsertTrustedServer(lifecycleUpdate);
+            var admission = cloudStateStore.RecordTrustedServerAdmission(
+                updated,
+                action,
+                session.DeviceId,
+                session.FriendlyId,
+                request.Reason);
 
             return Results.Json(new
             {
-                trustedServer = updated
+                trustedServer = updated,
+                admissionRecord = admission
+            });
+        });
+
+        app.MapPost("/api/onboarding/self-hosted/validate", (
+            [FromBody] ValidateSelfHostedRequest request) =>
+        {
+            var mode = NormalizeSelfHostedMode(request.ServerMode);
+            var hostname = NormalizeOnboardingHost(request.ServerHost ?? request.ServerUrl);
+            var isLocal = IsLocalSelfHostedTarget(hostname);
+            var requiresHttps = mode == "self-hosted-hybrid";
+            var allowsHttp = mode == "self-hosted" && isLocal;
+
+            return Results.Json(new
+            {
+                serverMode = mode,
+                registryBacked = false,
+                canonicalHost = hostname,
+                isLocalTarget = isLocal,
+                requiresHttps,
+                allowsHttp,
+                acceptsPublicConnections = false,
+                participatesInCloudSync = mode == "self-hosted-hybrid",
+                trustGuidance = allowsHttp
+                    ? "Use HTTP for local self-hosted operation."
+                    : "Use HTTPS for self-hosted hybrid operation and keep it private from public connections.",
+                notes = allowsHttp
+                    ? new[]
+                    {
+                        "This path stays outside the trusted server registry.",
+                        "Use a local hostname or IP address for the robot/app setup."
+                    }
+                    : new[]
+                    {
+                        "This path stays outside the trusted server registry.",
+                        "Use a trusted HTTPS certificate even though the server is not publicly listed."
+                    }
             });
         });
 
@@ -439,6 +491,7 @@ internal static class PortalEndpoints
             var loops = cloudStateStore.GetLoops();
             var people = cloudStateStore.GetPeople();
             var haLinks = integrationStore.GetHomeAssistantLinks();
+            var trustedServerAdmissions = cloudStateStore.GetTrustedServerAdmissions();
 
             return Results.Json(new
             {
@@ -464,7 +517,8 @@ internal static class PortalEndpoints
                     homeAssistantLinks = haLinks.Count,
                     homeAssistantConnected = haLinks.Count(link => registry.IsInstanceConnected(link.HaInstanceId)),
                     identityRelationships = graph.Relationships.Count,
-                    identityEvidenceSignals = graph.EvidenceSignals.Count
+                    identityEvidenceSignals = graph.EvidenceSignals.Count,
+                    trustedServerAdmissions = trustedServerAdmissions.Count
                 },
                 conversion = new
                 {
@@ -475,6 +529,16 @@ internal static class PortalEndpoints
                     hostMappings = robot.HostMappings,
                     requiredHostMappings = RequiredLegacyHostMappings,
                     missingHostMappings = GetMissingRequiredHostMappings(robot),
+                    trustedServerAdmissions = trustedServerAdmissions.Take(5).Select(admission => new
+                    {
+                        admission.CanonicalHost,
+                        admission.ServerKind,
+                        admission.Action,
+                        admission.ActorFriendlyId,
+                        admission.CreatedUtc,
+                        admission.SignatureKeyId,
+                        admission.Signature
+                    }),
                     blockers = BuildAdminConversionBlockers(robot, graph),
                     operatorQuestions = new[]
                     {
@@ -661,6 +725,7 @@ internal static class PortalEndpoints
         bool? ParticipatesInCloudSync,
         bool? RequiresHttps,
         bool? IsActive,
+        string? Reason,
         string? Description);
 
     private sealed record TrustedServerLifecycleRequest(
@@ -674,8 +739,14 @@ internal static class PortalEndpoints
         bool? ParticipatesInCloudSync,
         bool? RequiresHttps,
         bool? IsActive,
+        string? Reason,
         string? Description,
         DateTimeOffset? LastSeenAtUtc);
+
+    private sealed record ValidateSelfHostedRequest(
+        string? ServerMode,
+        string? ServerHost,
+        string? ServerUrl);
 
     private sealed record VerifyIdentityGraphEvidenceBundleRequest(
         string? Envelope,
@@ -686,8 +757,42 @@ internal static class PortalEndpoints
     {
         var normalized = string.IsNullOrWhiteSpace(serverKind) ? "managed" : serverKind.Trim();
         normalized = normalized.Equals("hosted", StringComparison.OrdinalIgnoreCase) ? "managed" : normalized;
+        normalized = normalized.Equals("self-hosted-hybrid", StringComparison.OrdinalIgnoreCase) ? "hybrid" : normalized;
         normalized = normalized.ToLowerInvariant();
         return normalized is "managed" or "hybrid" or "self-hosted" ? normalized : "managed";
+    }
+
+    private static string NormalizeSelfHostedMode(string? serverMode)
+    {
+        var normalized = string.IsNullOrWhiteSpace(serverMode) ? "self-hosted" : serverMode.Trim();
+        normalized = normalized.Equals("local", StringComparison.OrdinalIgnoreCase) ? "self-hosted" : normalized;
+        normalized = normalized.Equals("self-hosted-hybrid", StringComparison.OrdinalIgnoreCase)
+            ? "self-hosted-hybrid"
+            : normalized;
+        normalized = normalized.ToLowerInvariant();
+        return normalized is "self-hosted" or "self-hosted-hybrid" ? normalized : "self-hosted";
+    }
+
+    private static string NormalizeOnboardingHost(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        var trimmed = value.Trim();
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+            return uri.Host;
+
+        return trimmed.TrimEnd('/');
+    }
+
+    private static bool IsLocalSelfHostedTarget(string host)
+    {
+        if (string.IsNullOrWhiteSpace(host)) return true;
+
+        return host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+               host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+               host.Equals("::1", StringComparison.OrdinalIgnoreCase) ||
+               host.EndsWith(".local", StringComparison.OrdinalIgnoreCase) ||
+               IPAddress.TryParse(host, out _);
     }
 
     private static TrustedServerRecord UpsertLifecycleServer(

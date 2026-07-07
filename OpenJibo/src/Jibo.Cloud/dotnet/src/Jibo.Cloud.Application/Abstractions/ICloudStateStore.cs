@@ -25,7 +25,10 @@ public interface ICloudStateStore
     IReadOnlyList<PersonRecord> GetPeople();
     IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
     IReadOnlyList<TrustedServerRecord> GetTrustedServers();
+    IReadOnlyList<TrustedServerAdmissionRecord> GetTrustedServerAdmissions(string? canonicalHost = null);
     TrustedServerRecord UpsertTrustedServer(TrustedServerRecord trustedServer);
+    TrustedServerAdmissionRecord RecordTrustedServerAdmission(TrustedServerRecord trustedServer, string action,
+        string? actorDeviceId, string? actorFriendlyId, string? reason = null);
     TrustedServerRecord? FindTrustedServer(string canonicalHost);
     IdentityGraphSnapshot GetIdentityGraph(string? loopId = null);
     void RevokeIdentityGraphAnchor(string anchor);

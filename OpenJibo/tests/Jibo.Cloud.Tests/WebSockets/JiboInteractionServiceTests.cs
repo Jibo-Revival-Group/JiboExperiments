@@ -720,6 +720,10 @@ public sealed class JiboInteractionServiceTests
         "robot_favorite_ice_cream_flavor",
         "I've never had ice cream, because I don't eat. But I like the color of light green mint chocolate chip.")]
     [InlineData(
+        "do you like mint chocolate chip ice cream",
+        "robot_favorite_ice_cream_flavor",
+        "I've never had ice cream, because I don't eat. But I like the color of light green mint chocolate chip.")]
+    [InlineData(
         "what is your favourite rapper",
         "robot_favorite_rapper",
         "I like Snoop Dogg, because he reminds me of Snoopy. Also, he always seems so relaxed.")]
@@ -848,6 +852,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what is your favorite hockey team", "robot_favorite_hockey_team", "hockey team")]
     [InlineData("do you have a favourite basketball team", "robot_favorite_basketball_team", "play myself")]
     [InlineData("what pizza topping do you like", "robot_favorite_pizza_topping", "sliced olives")]
+    [InlineData("do you like olives on pizza", "robot_favorite_pizza_topping", "sliced olives")]
     [InlineData("what is your favourite olympic event", "robot_favorite_olympic_event", "pole vault")]
     [InlineData("what winter olympics event do you like", "robot_favorite_winter_olympics_event", "ski")]
     [InlineData("what is your favorite winter x games event", "robot_favorite_winter_x_games_event", "snowboard")]

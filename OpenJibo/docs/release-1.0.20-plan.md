@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-07`)
 
+- continued the source-backed likes/favorites parity slice by routing direct "do you like" prompts for ice cream, mint chocolate chip, and olives-on-pizza into the existing favorite ice cream flavor and favorite pizza topping answer sets instead of generic chat. Added focused dialog and websocket coverage so these food preference prompts preserve the authored personality replies while live robot playback remains the proof item for this small slice.
+
 - continued the identity / knowledge persona parity slice by keeping "are you smart" and "do you know everything" on the source-backed knowledge route, and by routing "what are your superpowers" / compressed "superpowers" variants ahead of the broad identity matcher. Added focused dialog guardrail coverage so these low-signal capability questions do not collapse into generic identity or chat while live robot playback remains the proof item for this small slice.
 
 - continued the source-backed likes/favorites parity slice by routing direct "do you like" prompts for lollipops, sunflowers, and blueberries into the existing favorite candy, flower, and fruit answer sets instead of generic chat. Added focused dialog and websocket coverage so these low-signal likes prompts preserve the authored personality replies while live robot playback remains the proof item for this small slice.

@@ -207,6 +207,138 @@ async function renderSelfHostedOnboardingPanel() {
   }
 }
 
+function bindPortalControls() {
+  const pairButton = document.getElementById("pairButton");
+  if (pairButton) {
+    pairButton.addEventListener("click", async () => {
+      const haCode = document.getElementById("haCode").value.trim();
+      const status = document.getElementById("haActionStatus");
+      try {
+        await apiFetch("/api/portal/home-assistant/link", {
+          method: "POST",
+          body: JSON.stringify({ haCode }),
+        });
+        await renderDashboard("Home Assistant paired successfully.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  }
+
+  const unpairButton = document.getElementById("unpairButton");
+  if (unpairButton) {
+    unpairButton.addEventListener("click", async () => {
+      const status = document.getElementById("haActionStatus");
+      if (!window.confirm("Unpair Home Assistant from this Jibo?")) return;
+
+      try {
+        await apiFetch("/api/portal/home-assistant/link", { method: "DELETE" });
+        await renderDashboard("Home Assistant unpaired.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  }
+
+  const revokeIdentityAnchorButton = document.getElementById("revokeIdentityAnchorButton");
+  if (revokeIdentityAnchorButton) {
+    revokeIdentityAnchorButton.addEventListener("click", async () => {
+      const anchor = document.getElementById("revocationAnchor").value.trim();
+      const status = document.getElementById("identityGraphActionStatus");
+      try {
+        await apiFetch("/api/portal/identity-graph/revocations", {
+          method: "POST",
+          body: JSON.stringify({ anchor }),
+        });
+        await renderDashboard("Identity graph revocation recorded; the signed admission bundle is now quarantined.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  }
+
+  const refreshButton = document.getElementById("refreshButton");
+  if (refreshButton) {
+    refreshButton.addEventListener("click", () => renderDashboard());
+  }
+
+  document.querySelectorAll(".trusted-server-action").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const status = document.getElementById("trustedServerActionStatus");
+      const canonicalHost = button.getAttribute("data-host");
+      const action = button.getAttribute("data-action");
+
+      try {
+        await apiFetch("/api/portal/trusted-servers/lifecycle", {
+          method: "POST",
+          body: JSON.stringify({
+            canonicalHost,
+            action,
+          }),
+        });
+        await renderDashboard(`Trusted server ${action} completed.`);
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  });
+
+  const addTrustedServerButton = document.getElementById("addTrustedServerButton");
+  if (addTrustedServerButton) {
+    addTrustedServerButton.addEventListener("click", async () => {
+      const status = document.getElementById("trustedServerActionStatus");
+      const canonicalHost = document.getElementById("trustedServerHost").value.trim();
+      const displayName = document.getElementById("trustedServerName").value.trim();
+      const serverKind = document.getElementById("trustedServerKind").value.trim();
+      const reason = document.getElementById("trustedServerReason").value.trim();
+
+      try {
+        await apiFetch("/api/portal/trusted-servers", {
+          method: "POST",
+          body: JSON.stringify({
+            canonicalHost,
+            displayName,
+            serverKind,
+            reason,
+          }),
+        });
+        await renderDashboard("Trusted server registered.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  }
+
+  const validateSelfHostedButton = document.getElementById("validateSelfHostedButton");
+  if (validateSelfHostedButton) {
+    validateSelfHostedButton.addEventListener("click", async () => {
+      const status = document.getElementById("selfHostedActionStatus");
+      const serverMode = document.getElementById("selfHostedMode").value.trim();
+      const serverHost = document.getElementById("selfHostedHost").value.trim();
+
+      try {
+        const validation = await apiFetch("/api/onboarding/self-hosted/validate", {
+          method: "POST",
+          body: JSON.stringify({
+            serverMode,
+            serverHost,
+          }),
+        });
+        status.textContent = `${validation.trustGuidance} ${validation.requiresHttps ? "HTTPS required." : "HTTP allowed."}`;
+        status.className = "status success";
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  }
+}
+
 async function renderLogin(message = "", isError = false) {
   const trustedServersPanel = await renderTrustedServerDirectoryPanel();
   const selfHostedPanel = await renderSelfHostedOnboardingPanel();
@@ -242,6 +374,7 @@ async function renderLogin(message = "", isError = false) {
     if (event.key === "Enter") login(input.value.trim());
   });
   input.focus();
+  bindPortalControls();
 }
 
 async function login(code) {
@@ -523,136 +656,7 @@ async function renderDashboard(message = "", tone = "success") {
   `;
 
   document.getElementById("logoutButton").addEventListener("click", logout);
-
-  const pairButton = document.getElementById("pairButton");
-  if (pairButton) {
-    pairButton.addEventListener("click", async () => {
-      const haCode = document.getElementById("haCode").value.trim();
-      const status = document.getElementById("haActionStatus");
-      try {
-        await apiFetch("/api/portal/home-assistant/link", {
-          method: "POST",
-          body: JSON.stringify({ haCode }),
-        });
-        await renderDashboard("Home Assistant paired successfully.");
-      } catch (error) {
-        status.textContent = error.message;
-        status.className = "status error";
-      }
-    });
-  }
-
-  const unpairButton = document.getElementById("unpairButton");
-  if (unpairButton) {
-    unpairButton.addEventListener("click", async () => {
-      const status = document.getElementById("haActionStatus");
-      if (!window.confirm("Unpair Home Assistant from this Jibo?")) return;
-
-      try {
-        await apiFetch("/api/portal/home-assistant/link", { method: "DELETE" });
-        await renderDashboard("Home Assistant unpaired.");
-      } catch (error) {
-        status.textContent = error.message;
-        status.className = "status error";
-      }
-    });
-  }
-
-  const revokeIdentityAnchorButton = document.getElementById("revokeIdentityAnchorButton");
-  if (revokeIdentityAnchorButton) {
-    revokeIdentityAnchorButton.addEventListener("click", async () => {
-      const anchor = document.getElementById("revocationAnchor").value.trim();
-      const status = document.getElementById("identityGraphActionStatus");
-      try {
-        await apiFetch("/api/portal/identity-graph/revocations", {
-          method: "POST",
-          body: JSON.stringify({ anchor }),
-        });
-        await renderDashboard("Identity graph revocation recorded; the signed admission bundle is now quarantined.");
-      } catch (error) {
-        status.textContent = error.message;
-        status.className = "status error";
-      }
-    });
-  }
-
-  const refreshButton = document.getElementById("refreshButton");
-  if (refreshButton) {
-    refreshButton.addEventListener("click", () => renderDashboard());
-  }
-
-  document.querySelectorAll(".trusted-server-action").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const status = document.getElementById("trustedServerActionStatus");
-      const canonicalHost = button.getAttribute("data-host");
-      const action = button.getAttribute("data-action");
-
-      try {
-        await apiFetch("/api/portal/trusted-servers/lifecycle", {
-          method: "POST",
-          body: JSON.stringify({
-            canonicalHost,
-            action,
-          }),
-        });
-        await renderDashboard(`Trusted server ${action} completed.`);
-      } catch (error) {
-        status.textContent = error.message;
-        status.className = "status error";
-      }
-    });
-  });
-
-  const addTrustedServerButton = document.getElementById("addTrustedServerButton");
-  if (addTrustedServerButton) {
-    addTrustedServerButton.addEventListener("click", async () => {
-      const status = document.getElementById("trustedServerActionStatus");
-      const canonicalHost = document.getElementById("trustedServerHost").value.trim();
-      const displayName = document.getElementById("trustedServerName").value.trim();
-      const serverKind = document.getElementById("trustedServerKind").value.trim();
-      const reason = document.getElementById("trustedServerReason").value.trim();
-
-      try {
-        await apiFetch("/api/portal/trusted-servers", {
-          method: "POST",
-          body: JSON.stringify({
-            canonicalHost,
-            displayName,
-            serverKind,
-            reason,
-          }),
-        });
-        await renderDashboard("Trusted server registered.");
-      } catch (error) {
-        status.textContent = error.message;
-        status.className = "status error";
-      }
-    });
-  }
-
-  const validateSelfHostedButton = document.getElementById("validateSelfHostedButton");
-  if (validateSelfHostedButton) {
-    validateSelfHostedButton.addEventListener("click", async () => {
-      const status = document.getElementById("selfHostedActionStatus");
-      const serverMode = document.getElementById("selfHostedMode").value.trim();
-      const serverHost = document.getElementById("selfHostedHost").value.trim();
-
-      try {
-        const validation = await apiFetch("/api/onboarding/self-hosted/validate", {
-          method: "POST",
-          body: JSON.stringify({
-            serverMode,
-            serverHost,
-          }),
-        });
-        status.textContent = `${validation.trustGuidance} ${validation.requiresHttps ? "HTTPS required." : "HTTP allowed."}`;
-        status.className = "status success";
-      } catch (error) {
-        status.textContent = error.message;
-        status.className = "status error";
-      }
-    });
-  }
+  bindPortalControls();
 }
 
 async function logout() {

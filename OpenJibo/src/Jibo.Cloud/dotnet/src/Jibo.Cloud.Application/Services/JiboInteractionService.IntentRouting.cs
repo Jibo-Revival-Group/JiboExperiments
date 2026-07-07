@@ -1178,6 +1178,8 @@ public sealed partial class JiboInteractionService
                 "what s your favourite superhero",
                 "do you have a favorite superhero",
                 "do you have a favourite superhero",
+                "do you like superheroes",
+                "do you like super heroes",
                 "who is your favorite superhero",
                 "who is your favourite superhero"))
             return "robot_favorite_superhero";
@@ -1218,6 +1220,7 @@ public sealed partial class JiboInteractionService
                 "what is your favourite robot",
                 "what's your favourite robot",
                 "what robot do you like",
+                "do you like robots",
                 "who is your favorite robot",
                 "who is your favourite robot",
                 "do you have a favorite robot",
@@ -1233,6 +1236,9 @@ public sealed partial class JiboInteractionService
                 "what's your favourite car",
                 "what car do you like",
                 "what kind of car do you like",
+                "do you like cars",
+                "do you like beetles",
+                "do you like beetle cars",
                 "do you have a favorite car",
                 "do you have a favourite car"))
             return "robot_favorite_car";
@@ -2247,6 +2253,10 @@ public sealed partial class JiboInteractionService
                 "what s your favourite dessert",
                 "what dessert do you like",
                 "what kind of dessert do you like",
+                "do you like dessert",
+                "do you like desserts",
+                "do you like pie",
+                "do you like blueberry pie",
                 "do you have a favorite dessert",
                 "do you have a favourite dessert"))
             return "robot_favorite_dessert";
@@ -2304,7 +2314,10 @@ public sealed partial class JiboInteractionService
                 "what s your favourite pet",
                 "what pet do you like",
                 "what kind of pet do you like",
-                "do you have a favorite pet"))
+                "do you like pets",
+                "do you like groundhogs",
+                "do you have a favorite pet",
+                "do you have a favourite pet"))
             return "robot_favorite_pet";
 
         if (MatchesAny(

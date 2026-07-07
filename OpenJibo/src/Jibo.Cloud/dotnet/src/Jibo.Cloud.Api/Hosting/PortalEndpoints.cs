@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
@@ -227,8 +228,32 @@ internal static class PortalEndpoints
                     {
                         "This path stays outside the trusted server registry.",
                         "Use a trusted HTTPS certificate even though the server is not publicly listed."
-                    }
+                }
             });
+        });
+
+        app.MapGet("/api/portal/trusted-servers/admissions/export", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var admissions = cloudStateStore.GetTrustedServerAdmissions();
+            var payload = JsonSerializer.Serialize(new
+            {
+                exportedAtUtc = DateTimeOffset.UtcNow,
+                exportedBy = session.FriendlyId,
+                admissions
+            }, new JsonSerializerOptions { WriteIndented = true });
+
+            var fileName = $"openjibo-trusted-server-admissions-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.json";
+            return Results.File(
+                Encoding.UTF8.GetBytes(payload),
+                "application/json; charset=utf-8",
+                fileName);
         });
 
         app.MapPost("/api/portal/jibo-verification/confirm", (

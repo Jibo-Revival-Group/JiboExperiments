@@ -382,6 +382,7 @@ async function renderAdminPanel() {
         <ul class="steps">${questions.map((question) => `<li>${escapeHtml(question)}</li>`).join("")}</ul>
         <div class="actions-row">
           <a class="secondary-button" href="${escapeHtml(admin.harness?.url || "/harness")}">Open fake robot harness</a>
+          <a class="secondary-button" href="/api/portal/trusted-servers/admissions/export?portalSessionToken=${encodeURIComponent(getSessionToken() || "")}">Export signed admissions</a>
         </div>
       </section>
     `;

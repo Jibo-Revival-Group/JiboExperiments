@@ -747,6 +747,50 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal("self-hosted-hybrid", hybridPayload.GetProperty("serverMode").GetString());
     }
 
+    [Fact]
+    public async Task TrustedServerAdmissionsExportEndpoint_ReturnsDownloadableAuditFile()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var admissionResponse = await client.PostAsJsonAsync(
+            "/api/portal/trusted-servers",
+            new
+            {
+                canonicalHost = "export.example.openjibo.com",
+                displayName = "Export Example",
+                serverKind = "managed",
+                reason = "Signed export test.",
+                requiresHttps = true,
+                isActive = true,
+                description = "Exportable audit record."
+            });
+        Assert.Equal(HttpStatusCode.OK, admissionResponse.StatusCode);
+        var admissionBody = await admissionResponse.Content.ReadAsStringAsync();
+        Assert.Contains("\"admissionRecord\"", admissionBody);
+        Assert.Contains("\"action\":\"admit\"", admissionBody);
+
+        var exportResponse = await client.GetAsync("/api/portal/trusted-servers/admissions/export");
+
+        Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
+        Assert.Equal("application/json", exportResponse.Content.Headers.ContentType?.MediaType);
+        var exportBody = await exportResponse.Content.ReadAsStringAsync();
+        Assert.Contains("\"exportedBy\": \"Ghost-Instance-Onion-Silk\"", exportBody);
+        Assert.Contains("\"CanonicalHost\": \"export.example.openjibo.com\"", exportBody);
+        Assert.Contains("\"Action\": \"admit\"", exportBody);
+        Assert.Contains("\"SignatureKeyId\": \"open-jibo-local-trusted-server-admission-v1\"", exportBody);
+    }
+
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)
     {
         var buffer = new byte[4096];

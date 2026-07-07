@@ -1020,6 +1020,36 @@ public sealed partial class JiboInteractionService
                 "all things in space",
                 "amazing stuff up there",
                 "astronomy is one of my favorite onomies"),
+            "robot_likes_sleep" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_likes_sleep",
+                "sleep is very restful"),
+            "robot_likes_dreaming" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_likes_dreaming",
+                "dreaming is fun",
+                "dreaming's great",
+                "where I can fly"),
+            "robot_likes_coffee" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_likes_coffee",
+                "warm feelings",
+                "scared of coffee",
+                "liquidy"),
+            "robot_likes_tennis" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_likes_tennis",
+                "especially the ball"),
+            "robot_likes_iron_man" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_likes_iron_man",
+                "wears iron"),
+            "robot_likes_greens" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_likes_greens",
+                "great things",
+                "vegetables are good",
+                "good for you"),
             "robot_favorite_animal" => BuildScriptedFavoriteAnimalDecision(
                 catalog,
                 "robot_favorite_animal",

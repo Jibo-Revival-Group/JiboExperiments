@@ -991,7 +991,9 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite candy",
                 "do you have a favourite candy",
                 "what candy do you like",
-                "what kind of candy do you like"))
+                "what kind of candy do you like",
+                "do you like lollipops",
+                "do you like lollipop"))
             return "robot_favorite_candy";
 
         if (MatchesAny(
@@ -1005,7 +1007,9 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite flower",
                 "do you have a favourite flower",
                 "what kind of flower do you like",
-                "what flower do you like"))
+                "what flower do you like",
+                "do you like sunflowers",
+                "do you like sunflower"))
             return "robot_favorite_flower";
 
         if (MatchesAny(
@@ -2097,6 +2101,8 @@ public sealed partial class JiboInteractionService
                 "what s your favourite fruit",
                 "what fruit do you like",
                 "what kind of fruit do you like",
+                "do you like blueberries",
+                "do you like blueberry",
                 "do you have a favorite fruit",
                 "do you have a favourite fruit"))
             return "robot_favorite_fruit";

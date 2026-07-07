@@ -116,6 +116,16 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 
 
+### Progress Update (`2026-07-07`)
+
+- continued the source-backed likes/favorites parity slice by routing direct "do you like" prompts for lollipops, sunflowers, and blueberries into the existing favorite candy, flower, and fruit answer sets instead of generic chat. Added focused dialog and websocket coverage so these low-signal likes prompts preserve the authored personality replies while live robot playback remains the proof item for this small slice.
+
+#### Major blockers / questions
+
+- physical-device proof is still the release blocker: the cloud can detect connection-host, DNS mapping, and freshness drift, but we still need a live converted robot run that reaches `VerifyConnection` with matching reported host and host mappings.
+- safe awakening/OOBE parity remains blocked on image-specific review of owner-name replacement points plus safe body/yawn/audio asset provenance before the conversion video should claim full first-boot parity.
+- self-hosted owner-facing HTTPS remains unresolved: developer HTTP smoke paths are acceptable, but a real owner path still needs a trust/certificate decision before self-hosted conversion is promoted beyond controlled tests.
+
 ### Progress Update (`2026-07-06`)
 
 - continued the owner-memory dialog guardrail slice by routing natural "what did I say my favorite ..." and "what have I told you my favorite ..." recall prompts, including favourite/fave and embedded "... is" forms, to the persisted preference lookup route instead of treating them as incomplete preference-setting attempts. Added focused parser coverage so these memory-check prompts preserve the existing owner preference reply contract.

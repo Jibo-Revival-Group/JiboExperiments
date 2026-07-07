@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-07`)
 
+- continued the source-backed compact likes/favorites parity slice by routing direct shape and word liking prompts (`do you like circles/spheres`, `do you like turtles/pumpernickel`) into the already-imported favorite shape and favorite word answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal prompts preserve the authored sphere/circle and turtle/pumpernickel personality replies while live robot playback remains the proof item for this small slice.
+
 - continued the source-backed low-signal favorites parity slice by routing direct book, video-game/Pong, and Abraham Lincoln liking prompts into the imported favorite book, favorite video game, and favorite president answer sets instead of generic chat. Added focused dialog guardrail coverage so these compact preference prompts preserve the authored instruction-manuals, Pong, and Lincoln replies while live robot playback remains the proof item for this small slice.
 
 - continued the source-backed likes/persona parity slice by routing direct `do you like` prompts for sleep, dreaming, coffee, tennis, Iron Man, and greens into the imported Pegasus response sets instead of generic chat or nearby ability prompts. Added focused dialog guardrail coverage so these compact preference turns preserve the authored restful-sleep, dreaming, coffee/liquid, tennis-ball, iron-person, and greens replies while live robot playback remains the proof item for this small slice.

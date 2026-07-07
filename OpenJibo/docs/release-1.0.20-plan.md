@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-07`)
 
+- continued the source-backed music/holiday favorites parity slice by routing favorite country musician and favorite holiday/Christmas song prompts into the already-imported Dolly Parton and Frosty the Snowman answer sets instead of generic chat. Added focused dialog coverage so these Pegasus-style favorites stay on authored personality replies while live robot playback remains the proof item for this small slice.
+
 - continued the source-backed likes/favorites parity slice by routing direct "do you like" prompts for ice cream, mint chocolate chip, and olives-on-pizza into the existing favorite ice cream flavor and favorite pizza topping answer sets instead of generic chat. Added focused dialog and websocket coverage so these food preference prompts preserve the authored personality replies while live robot playback remains the proof item for this small slice.
 
 - continued the source-backed creative/persona likes parity slice by routing direct "do you like music" and "do you like art/painting" prompts into the existing favorite music genre and favorite artist answer sets instead of generic chat. Added focused dialog coverage so these low-signal creative preference prompts keep the authored Picasso and danceable-music replies while live robot playback remains the proof item for this small slice.

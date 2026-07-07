@@ -2436,6 +2436,27 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "do you like dogs",
+                "do you enjoy dogs",
+                "are you into dogs"))
+            return "robot_likes_dogs";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like cats",
+                "do you enjoy cats",
+                "are you into cats"))
+            return "robot_likes_cats";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like whales",
+                "do you enjoy whales",
+                "are you into whales"))
+            return "robot_likes_whales";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "do you like birds"))
             return "robot_favorite_bird";
 

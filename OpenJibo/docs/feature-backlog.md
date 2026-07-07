@@ -595,6 +595,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-07-06`, modal happen-to-know expansion):
   - expanded owner preference recall parsing for `can/could/would you happen to know ...` forms, including embedded `what my favorite/favourite/fave ... is` variants, so polite hesitant memory-check prompts stay on owner-memory lookup
   - added focused guardrail coverage for the new modal happen-to-know family
+- Progress update (`2026-07-07`, owner-memory recall wording slice):
+  - expanded owner preference recall parsing for `what did I say my favorite ...` and `what have I told you my favorite ...` variants, including favourite/fave spellings and trailing `... is` forms, so natural memory-check prompts stay on owner-memory lookup instead of incomplete preference-setting handling
+  - added focused guardrail coverage for the new owner-memory recall wording family
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

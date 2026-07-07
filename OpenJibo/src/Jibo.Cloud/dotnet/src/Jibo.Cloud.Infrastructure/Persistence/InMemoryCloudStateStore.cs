@@ -48,6 +48,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly List<PersonRecord> _people;
     private readonly List<RecognitionObservationRecord> _recognitionObservations = [];
     private readonly HashSet<string> _revokedIdentityGraphAnchors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<TrustedServerRecord> _trustedServers = [];
 
     private readonly ConcurrentDictionary<string, CloudSession>
         _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
@@ -145,6 +146,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         _updates = [];
         ApplyConfiguredOwnerName();
+        EnsureDefaultTrustedServers();
         EnsureDefaultTopology();
         LoadPersistedState();
     }
@@ -229,6 +231,73 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _devices.Values.FirstOrDefault(device =>
             device.RobotId.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
             device.DeviceId.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public IReadOnlyList<TrustedServerRecord> GetTrustedServers()
+    {
+        lock (_syncRoot)
+        {
+            return _trustedServers
+                .OrderBy(server => server.IsTrustRoot ? 0 : 1)
+                .ThenBy(server => server.DisplayName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(server => server.CanonicalHost, StringComparer.OrdinalIgnoreCase)
+                .Select(CloneTrustedServer)
+                .ToArray();
+        }
+    }
+
+    public TrustedServerRecord? FindTrustedServer(string canonicalHost)
+    {
+        if (string.IsNullOrWhiteSpace(canonicalHost)) return null;
+
+        var normalizedHost = NormalizeTrustedServerHost(canonicalHost);
+        lock (_syncRoot)
+        {
+            var trustedServer = _trustedServers.FirstOrDefault(server =>
+                server.CanonicalHost.Equals(normalizedHost, StringComparison.OrdinalIgnoreCase));
+            return trustedServer is null ? null : CloneTrustedServer(trustedServer);
+        }
+    }
+
+    public TrustedServerRecord UpsertTrustedServer(TrustedServerRecord trustedServer)
+    {
+        ArgumentNullException.ThrowIfNull(trustedServer);
+
+        if (string.IsNullOrWhiteSpace(trustedServer.CanonicalHost))
+            throw new ArgumentException("Canonical host is required.", nameof(trustedServer));
+
+        lock (_syncRoot)
+        {
+            var normalizedHost = NormalizeTrustedServerHost(trustedServer.CanonicalHost);
+            var now = DateTimeOffset.UtcNow;
+            var existingIndex = _trustedServers.FindIndex(server =>
+                server.CanonicalHost.Equals(normalizedHost, StringComparison.OrdinalIgnoreCase));
+            var current = existingIndex >= 0 ? _trustedServers[existingIndex] : null;
+            var merged = new TrustedServerRecord
+            {
+                ServerId = current?.ServerId ?? trustedServer.ServerId,
+                CanonicalHost = normalizedHost,
+                DisplayName = string.IsNullOrWhiteSpace(trustedServer.DisplayName)
+                    ? normalizedHost
+                    : trustedServer.DisplayName.Trim(),
+                Category = string.IsNullOrWhiteSpace(trustedServer.Category) ? "hosted" : trustedServer.Category.Trim(),
+                RequiresHttps = trustedServer.RequiresHttps,
+                IsTrustRoot = current?.IsTrustRoot == true || trustedServer.IsTrustRoot,
+                IsActive = trustedServer.IsActive,
+                Description = trustedServer.Description?.Trim() ?? string.Empty,
+                RegisteredAtUtc = current?.RegisteredAtUtc ?? now,
+                UpdatedAtUtc = now,
+                LastSeenAtUtc = trustedServer.LastSeenAtUtc ?? current?.LastSeenAtUtc
+            };
+
+            if (existingIndex >= 0)
+                _trustedServers[existingIndex] = merged;
+            else
+                _trustedServers.Add(merged);
+
+            TouchState();
+            return CloneTrustedServer(merged);
+        }
     }
 
     public UserRecord? CreateUser(string email, string password, string? firstName, string? lastName)
@@ -1821,6 +1890,52 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         SavePersistedState();
     }
 
+    private void EnsureDefaultTrustedServers()
+    {
+        if (_trustedServers.Any(server =>
+                server.IsTrustRoot &&
+                server.CanonicalHost.Equals("api.openjibo.com", StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        _trustedServers.Add(new TrustedServerRecord
+        {
+            CanonicalHost = "api.openjibo.com",
+            DisplayName = "Open Jibo trust root API",
+            Category = "hosted",
+            RequiresHttps = true,
+            IsTrustRoot = true,
+            IsActive = true,
+            Description = "Primary robot-facing hosted trust root for onboarding and managed cloud targets."
+        });
+    }
+
+    private static string NormalizeTrustedServerHost(string value)
+    {
+        var trimmed = value.Trim();
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+            return uri.Host;
+
+        return trimmed.TrimEnd('/');
+    }
+
+    private static TrustedServerRecord CloneTrustedServer(TrustedServerRecord trustedServer)
+    {
+        return new TrustedServerRecord
+        {
+            ServerId = trustedServer.ServerId,
+            CanonicalHost = trustedServer.CanonicalHost,
+            DisplayName = trustedServer.DisplayName,
+            Category = trustedServer.Category,
+            RequiresHttps = trustedServer.RequiresHttps,
+            IsTrustRoot = trustedServer.IsTrustRoot,
+            IsActive = trustedServer.IsActive,
+            Description = trustedServer.Description,
+            RegisteredAtUtc = trustedServer.RegisteredAtUtc,
+            UpdatedAtUtc = trustedServer.UpdatedAtUtc,
+            LastSeenAtUtc = trustedServer.LastSeenAtUtc
+        };
+    }
+
     private void ApplyConfiguredOwnerName()
     {
         if (string.IsNullOrWhiteSpace(_ownerFirstName) && string.IsNullOrWhiteSpace(_ownerLastName))
@@ -2107,7 +2222,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             People = _people.ToArray(),
             Users = _users.ToArray(),
             RecognitionObservations = _recognitionObservations.ToArray(),
-            RevokedIdentityGraphAnchors = _revokedIdentityGraphAnchors.ToArray()
+            RevokedIdentityGraphAnchors = _revokedIdentityGraphAnchors.ToArray(),
+            TrustedServers = _trustedServers.ToArray()
         };
     }
 
@@ -2174,7 +2290,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         foreach (var anchor in snapshot.RevokedIdentityGraphAnchors ?? [])
             _revokedIdentityGraphAnchors.Add(anchor);
 
+        _trustedServers.Clear();
+        foreach (var trustedServer in snapshot.TrustedServers ?? [])
+            _trustedServers.Add(trustedServer);
+
         ApplyConfiguredOwnerName();
+        EnsureDefaultTrustedServers();
         EnsureDefaultTopology();
 
         if (_robotProfile is null ||
@@ -2223,6 +2344,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public UserRecord[]? Users { get; init; }
         public RecognitionObservationRecord[]? RecognitionObservations { get; init; }
         public string[]? RevokedIdentityGraphAnchors { get; init; }
+        public TrustedServerRecord[]? TrustedServers { get; init; }
     }
 
     private sealed class CloudSessionSnapshot

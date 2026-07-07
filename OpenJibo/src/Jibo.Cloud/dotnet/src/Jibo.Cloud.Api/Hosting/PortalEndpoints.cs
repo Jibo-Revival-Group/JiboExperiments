@@ -16,36 +16,64 @@ internal static class PortalEndpoints
         "neo-hub.jibo.com"
     ];
 
-    private static readonly TrustedServerDirectoryEntry[] TrustedServerDirectory =
-    [
-        new("api.openjibo.com", "Managed Open Jibo API", "Hosted", true, "Primary robot-facing hosted API."),
-        new("openjibo.com", "Open Jibo owner site", "Hosted", true, "Owner entry surface and onboarding handoff."),
-        new("api.jibo.com", "Legacy Jibo API", "Trusted legacy", true, "Historical trusted root preserved for conversion evidence."),
-        new("api-socket.jibo.com", "Legacy Jibo socket API", "Trusted legacy", true, "Historical socket endpoint preserved for conversion evidence."),
-        new("neo-hub.jibo.com", "Legacy Jibo hub API", "Trusted legacy", true, "Historical listen/proactive endpoint preserved for conversion evidence."),
-        new("self-hosted", "Custom self-hosted server", "Self-hosted", false, "Use a typed hostname or IP for local or self-hosted deployment.")
-    ];
-
     internal static void MapPortalEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/onboarding/trusted-servers", () =>
+        app.MapGet("/api/onboarding/trusted-servers", (
+            ICloudStateStore cloudStateStore) =>
         {
+            var servers = cloudStateStore.GetTrustedServers();
             return Results.Json(new
             {
                 directoryVersion = "1",
-                allowCustomEntry = true,
                 hostedHttpsRequired = true,
-                selfHostedHttpAllowed = true,
-                trustedRootHost = "openjibo.com",
-                servers = TrustedServerDirectory.Select(server => new
+                trustedRootHost = "api.openjibo.com",
+                allowCustomEntry = true,
+                customEntryMode = "self-hosted",
+                servers = servers.Select(server => new
                 {
-                    server.Id,
+                    server.ServerId,
+                    server.CanonicalHost,
                     server.DisplayName,
                     server.Category,
                     server.RequiresHttps,
-                    server.AllowsHttp,
-                    server.Description
+                    server.IsTrustRoot,
+                    server.IsActive,
+                    server.Description,
+                    server.RegisteredAtUtc,
+                    server.UpdatedAtUtc,
+                    server.LastSeenAtUtc
                 })
+            });
+        });
+
+        app.MapPost("/api/portal/trusted-servers", (
+            [FromBody] UpsertTrustedServerRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(request.CanonicalHost))
+                return Results.BadRequest(new { error = "canonicalHost is required." });
+
+            var server = cloudStateStore.UpsertTrustedServer(new TrustedServerRecord
+            {
+                CanonicalHost = request.CanonicalHost.Trim(),
+                DisplayName = string.IsNullOrWhiteSpace(request.DisplayName)
+                    ? request.CanonicalHost.Trim()
+                    : request.DisplayName.Trim(),
+                Category = string.IsNullOrWhiteSpace(request.Category) ? "hosted" : request.Category.Trim(),
+                RequiresHttps = request.RequiresHttps ?? true,
+                IsActive = request.IsActive ?? true,
+                Description = request.Description?.Trim() ?? string.Empty
+            });
+
+            return Results.Json(new
+            {
+                trustedServer = server
             });
         });
 
@@ -521,18 +549,17 @@ internal static class PortalEndpoints
 
     private sealed record RevokeIdentityGraphAnchorRequest(string? Anchor, string? PortalSessionToken);
 
+    private sealed record UpsertTrustedServerRequest(
+        string? PortalSessionToken,
+        string? CanonicalHost,
+        string? DisplayName,
+        string? Category,
+        bool? RequiresHttps,
+        bool? IsActive,
+        string? Description);
+
     private sealed record VerifyIdentityGraphEvidenceBundleRequest(
         string? Envelope,
         string? PortalSessionToken,
         string[]? LocalRevokedAnchors);
-
-    private sealed record TrustedServerDirectoryEntry(
-        string Id,
-        string DisplayName,
-        string Category,
-        bool RequiresHttps,
-        string Description)
-    {
-        public bool AllowsHttp => !RequiresHttps;
-    }
 }

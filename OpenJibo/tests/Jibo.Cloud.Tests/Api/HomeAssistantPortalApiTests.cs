@@ -473,7 +473,7 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
-    public async Task TrustedServerDirectoryEndpoint_ReturnsHostedAndSelfHostedOptions()
+    public async Task TrustedServerDirectoryEndpoint_ReturnsRegistryBackedHostedOptions()
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
@@ -484,15 +484,52 @@ public sealed class HomeAssistantPortalApiTests
         var directory = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(directory.GetProperty("allowCustomEntry").GetBoolean());
         Assert.True(directory.GetProperty("hostedHttpsRequired").GetBoolean());
-        Assert.True(directory.GetProperty("selfHostedHttpAllowed").GetBoolean());
+        Assert.Equal("api.openjibo.com", directory.GetProperty("trustedRootHost").GetString());
 
         var servers = directory.GetProperty("servers");
         Assert.Contains(servers.EnumerateArray(), server =>
-            server.GetProperty("id").GetString() == "api.openjibo.com" &&
+            server.GetProperty("canonicalHost").GetString() == "api.openjibo.com" &&
+            server.GetProperty("isTrustRoot").GetBoolean() &&
             server.GetProperty("requiresHttps").GetBoolean());
-        Assert.Contains(servers.EnumerateArray(), server =>
-            server.GetProperty("id").GetString() == "self-hosted" &&
-            !server.GetProperty("requiresHttps").GetBoolean());
+    }
+
+    [Fact]
+    public async Task TrustedServerRegistryPersistsNewHostedServers()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var registerResponse = await client.PostAsJsonAsync(
+            "/api/portal/trusted-servers",
+            new
+            {
+                canonicalHost = "api.example.openjibo.com",
+                displayName = "Example Open Jibo Server",
+                category = "hosted",
+                requiresHttps = true,
+                isActive = true,
+                description = "Operator-added hosted server."
+            });
+
+        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+        Assert.NotNull(store.FindTrustedServer("api.example.openjibo.com"));
+
+        var directoryResponse = await client.GetAsync("/api/onboarding/trusted-servers");
+        var directory = await directoryResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains(directory.GetProperty("servers").EnumerateArray(), server =>
+            server.GetProperty("canonicalHost").GetString() == "api.example.openjibo.com" &&
+            server.GetProperty("displayName").GetString() == "Example Open Jibo Server");
     }
 
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)

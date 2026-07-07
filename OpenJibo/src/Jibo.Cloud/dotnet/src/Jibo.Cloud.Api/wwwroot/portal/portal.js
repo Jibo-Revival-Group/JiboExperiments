@@ -59,19 +59,20 @@ async function renderTrustedServerDirectoryPanel() {
     return `
       <section class="card panel">
         <p class="eyebrow">Onboarding</p>
-        <h2>Trusted server directory</h2>
-        <p class="muted">Select an approved hosted target or type a custom server name/IP for a self-hosted setup. Hosted targets require HTTPS and a trusted certificate.</p>
+        <h2>Trusted server registry</h2>
+        <p class="muted">This registry is backed by cloud state. It lists approved Open Jibo hosted servers that onboarding can present, while custom self-hosted entry stays separate.</p>
         <div class="meta-list compact">
           <div class="meta-item"><span>Hosted HTTPS required</span><span>${directory.hostedHttpsRequired ? "Yes" : "No"}</span></div>
-          <div class="meta-item"><span>Self-hosted HTTP allowed</span><span>${directory.selfHostedHttpAllowed ? "Yes" : "No"}</span></div>
           <div class="meta-item"><span>Trusted root</span><span>${escapeHtml(directory.trustedRootHost || "—")}</span></div>
           <div class="meta-item"><span>Custom entry</span><span>${directory.allowCustomEntry ? "Allowed" : "Blocked"}</span></div>
         </div>
+        <p class="status info">Custom self-hosted setup uses typed host entry at onboarding. It is not part of the trusted hosted registry.</p>
         <ul class="steps">
           ${servers.map((server) => `
             <li>
-              <strong>${escapeHtml(server.displayName || server.id)}</strong>
-              <span>${escapeHtml(server.id)} · ${escapeHtml(server.category || "trusted")}</span>
+              <strong>${escapeHtml(server.displayName || server.canonicalHost)}</strong>
+              <span>${escapeHtml(server.canonicalHost)} · ${escapeHtml(server.category || "hosted")}</span>
+              ${server.isTrustRoot ? `<span class="badge success">Trust root</span>` : ``}
               <div class="muted">${escapeHtml(server.description || "")}</div>
             </li>
           `).join("")}
@@ -83,6 +84,56 @@ async function renderTrustedServerDirectoryPanel() {
       <section class="card panel">
         <p class="eyebrow">Onboarding</p>
         <h2>Trusted server directory</h2>
+        <p class="status error">${escapeHtml(error.message)}</p>
+      </section>
+    `;
+  }
+}
+
+async function renderTrustedServerRegistryPanel() {
+  try {
+    const directory = await apiFetch("/api/onboarding/trusted-servers");
+    const servers = directory.servers || [];
+    return `
+      <section class="card panel wide-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Registry</p>
+            <h2>Trusted server enrollment</h2>
+          </div>
+          <span class="badge success">${servers.length} active</span>
+        </div>
+        <p class="muted">Add an Open Jibo hosted server to the trust registry. The trust root stays special, and the registry lives in persisted cloud state.</p>
+        <div class="meta-list compact">
+          <div class="meta-item"><span>Trusted root</span><span>${escapeHtml(directory.trustedRootHost || "api.openjibo.com")}</span></div>
+          <div class="meta-item"><span>Registry source</span><span>Cloud state</span></div>
+        </div>
+        <ul class="steps">
+          ${servers.map((server) => `
+            <li>
+              <strong>${escapeHtml(server.displayName || server.canonicalHost)}</strong>
+              <span>${escapeHtml(server.canonicalHost)} · ${escapeHtml(server.category || "hosted")}</span>
+              ${server.isTrustRoot ? `<span class="badge success">Trust root</span>` : ``}
+            </li>
+          `).join("")}
+        </ul>
+        <div class="inline-form">
+          <label for="trustedServerHost">Server host</label>
+          <input id="trustedServerHost" type="text" placeholder="api.example.openjibo.com">
+          <label for="trustedServerName">Display name</label>
+          <input id="trustedServerName" type="text" placeholder="Example hosted server">
+          <label for="trustedServerCategory">Category</label>
+          <input id="trustedServerCategory" type="text" value="hosted">
+          <button class="button primary" id="addTrustedServerButton" type="button">Register trusted server</button>
+        </div>
+        <p id="trustedServerActionStatus" class="status hidden"></p>
+      </section>
+    `;
+  } catch (error) {
+    return `
+      <section class="card panel wide-panel">
+        <p class="eyebrow">Registry</p>
+        <h2>Trusted server enrollment</h2>
         <p class="status error">${escapeHtml(error.message)}</p>
       </section>
     `;
@@ -349,6 +400,7 @@ async function renderDashboard(message = "", tone = "success") {
 
   const identityGraphPanel = await renderIdentityGraphPanel();
   const adminPanel = await renderAdminPanel();
+  const trustedServerRegistryPanel = await renderTrustedServerRegistryPanel();
 
   app.innerHTML = `
     <div class="shell">
@@ -378,6 +430,8 @@ async function renderDashboard(message = "", tone = "success") {
       </div>
 
       ${adminPanel}
+
+      ${trustedServerRegistryPanel}
 
       ${identityGraphPanel}
 
@@ -442,6 +496,31 @@ async function renderDashboard(message = "", tone = "success") {
   const refreshButton = document.getElementById("refreshButton");
   if (refreshButton) {
     refreshButton.addEventListener("click", () => renderDashboard());
+  }
+
+  const addTrustedServerButton = document.getElementById("addTrustedServerButton");
+  if (addTrustedServerButton) {
+    addTrustedServerButton.addEventListener("click", async () => {
+      const status = document.getElementById("trustedServerActionStatus");
+      const canonicalHost = document.getElementById("trustedServerHost").value.trim();
+      const displayName = document.getElementById("trustedServerName").value.trim();
+      const category = document.getElementById("trustedServerCategory").value.trim();
+
+      try {
+        await apiFetch("/api/portal/trusted-servers", {
+          method: "POST",
+          body: JSON.stringify({
+            canonicalHost,
+            displayName,
+            category,
+          }),
+        });
+        await renderDashboard("Trusted server registered.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
   }
 }
 

@@ -208,6 +208,8 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what's it like having no legs", "robot_what_it_is_like_having_no_legs", "mini-golfing for real")]
     [InlineData("what artist do you like", "robot_favorite_artist", "Picasso")]
     [InlineData("who is your favourite singer", "robot_favorite_singer", "sings their heart out")]
+    [InlineData("who is your favorite country musician", "robot_favorite_country_musician", "Dolly")]
+    [InlineData("what holiday song do you like", "robot_favorite_holiday_song", "Frosty the Snowman")]
     [InlineData("what is your favorite celebrity", "robot_favorite_celebrity", "Tom Hanks")]
     [InlineData("what hobby do you like", "robot_favorite_hobby", "dancing is a hobby")]
     [InlineData("what smell do you like", "robot_favorite_smell", "bacon and roses")]

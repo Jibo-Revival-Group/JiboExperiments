@@ -1553,7 +1553,7 @@ public sealed partial class JiboInteractionService
                 "do you like art",
                 "do you enjoy art",
                 "do you like painting",
-                "do you like paintings")))
+                "do you like paintings"))
             return "robot_favorite_artist";
 
         if (MatchesAny(
@@ -1751,7 +1751,7 @@ public sealed partial class JiboInteractionService
                 "what music genre do you like",
                 "do you like music",
                 "do you enjoy music",
-                "are you into music")))
+                "are you into music"))
             return "robot_favorite_music_genre";
 
 
@@ -1845,6 +1845,35 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite rock band",
                 "do you have a favourite rock band"))
             return "robot_favorite_rock_band";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite country musician",
+                "what's your favorite country musician",
+                "what s your favorite country musician",
+                "what is your favourite country musician",
+                "who is your favorite country musician",
+                "who is your favourite country musician",
+                "what country musician do you like",
+                "what country singer do you like",
+                "do you have a favorite country musician",
+                "do you have a favourite country musician"))
+            return "robot_favorite_country_musician";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite holiday song",
+                "what's your favorite holiday song",
+                "what s your favorite holiday song",
+                "what is your favourite holiday song",
+                "what is your favorite christmas song",
+                "what's your favorite christmas song",
+                "what s your favorite christmas song",
+                "what christmas song do you like",
+                "what holiday song do you like",
+                "do you have a favorite holiday song",
+                "do you have a favourite holiday song"))
+            return "robot_favorite_holiday_song";
 
         if (MatchesAny(
                 loweredTranscript,

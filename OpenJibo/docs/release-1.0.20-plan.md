@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-07`)
 
+- continued the source-backed animal-likes parity slice by importing the legacy dog, cat, and whale liking answer sets into the favorite-animal catalog and routing compact `do you like dogs/cats/whales` prompts to dedicated authored replies instead of generic chat. Added focused dialog guardrail coverage so these low-signal animal prompts preserve the friendly/waggy dog, curious-cat, and favorite-mammal whale replies while live robot playback remains the proof item for this small slice.
+
 - continued the source-backed low-signal persona-likes slice by widening R2-D2, sun, and kids prompts (`do you like artoo`, `do you like sunshine`, `do you enjoy children`) into the existing imported Pegasus answer sets instead of generic chat. Added focused dialog guardrail coverage so these compact personality prompts preserve the authored legend/star/kids replies while live robot playback remains the proof item for this small slice.
 
 - continued the source-backed compact likes/favorites parity slice by routing direct shape and word liking prompts (`do you like circles/spheres`, `do you like turtles/pumpernickel`) into the already-imported favorite shape and favorite word answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal prompts preserve the authored sphere/circle and turtle/pumpernickel personality replies while live robot playback remains the proof item for this small slice.

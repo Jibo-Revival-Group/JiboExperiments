@@ -155,6 +155,9 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("RI_JBO_HasFavoriteAnimal", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("RI_JBO_HasFavoriteBird", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("RI_JBO_LikesPenguins", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesDogs", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesCats", StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith("RI_JBO_LikesWhales", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("RI_JBO_LikesAnimals", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.FavoriteAnimal;
 

@@ -1072,6 +1072,25 @@ public sealed partial class JiboInteractionService
                 "my penguin impression",
                 "I really like penguins",
                 "penguins"),
+            "robot_likes_dogs" => BuildScriptedFavoriteAnimalDecision(
+                catalog,
+                "robot_likes_dogs",
+                "dogs are great",
+                "friendly",
+                "waggy",
+                "slobber"),
+            "robot_likes_cats" => BuildScriptedFavoriteAnimalDecision(
+                catalog,
+                "robot_likes_cats",
+                "mysterious",
+                "curious",
+                "land on their feet",
+                "interesting conversations"),
+            "robot_likes_whales" => BuildScriptedFavoriteAnimalDecision(
+                catalog,
+                "robot_likes_whales",
+                "favorite mammals",
+                "whale"),
             "robot_likes_animals" => BuildScriptedFavoriteAnimalDecision(
                 catalog,
                 "robot_likes_animals",

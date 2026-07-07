@@ -1261,6 +1261,15 @@ public sealed partial class JiboInteractionService
                normalized.StartsWith("did i tell you my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("did i tell you my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("did i tell you my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("have i told you my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("have i told you my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("have i told you my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("have i ever told you my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("have i ever told you my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("have i ever told you my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you remember me saying my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you remember me saying my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you remember me saying my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("what have i told you my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("what have i told you my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("what have i told you my fave", StringComparison.Ordinal) ||
@@ -1309,6 +1318,9 @@ public sealed partial class JiboInteractionService
             "what did i say my favorite ",
             "what did i tell you my favorite ",
             "did i tell you my favorite ",
+            "have i told you my favorite ",
+            "have i ever told you my favorite ",
+            "do you remember me saying my favorite ",
             "what have i told you my favorite ",
             "tell me my favorite ",
             "what is my favourite ",
@@ -1346,6 +1358,9 @@ public sealed partial class JiboInteractionService
             "what did i say my favourite ",
             "what did i tell you my favourite ",
             "did i tell you my favourite ",
+            "have i told you my favourite ",
+            "have i ever told you my favourite ",
+            "do you remember me saying my favourite ",
             "what have i told you my favourite ",
             "tell me my favourite ",
             "what is my fave ",
@@ -1383,6 +1398,9 @@ public sealed partial class JiboInteractionService
             "what did i say my fave ",
             "what did i tell you my fave ",
             "did i tell you my fave ",
+            "have i told you my fave ",
+            "have i ever told you my fave ",
+            "do you remember me saying my fave ",
             "what have i told you my fave ",
             "tell me my fave "
         };
@@ -1432,6 +1450,9 @@ public sealed partial class JiboInteractionService
             "what did i say my",
             "what did i tell you my",
             "did i tell you my",
+            "have i told you my",
+            "have i ever told you my",
+            "do you remember me saying my",
             "what have i told you my"
         };
 

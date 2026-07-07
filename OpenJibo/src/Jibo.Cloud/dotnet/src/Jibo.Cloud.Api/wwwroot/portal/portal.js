@@ -52,7 +52,45 @@ function formatDate(value) {
   return new Date(value).toLocaleString();
 }
 
-function renderLogin(message = "", isError = false) {
+async function renderTrustedServerDirectoryPanel() {
+  try {
+    const directory = await apiFetch("/api/onboarding/trusted-servers");
+    const servers = directory.servers || [];
+    return `
+      <section class="card panel">
+        <p class="eyebrow">Onboarding</p>
+        <h2>Trusted server directory</h2>
+        <p class="muted">Select an approved hosted target or type a custom server name/IP for a self-hosted setup. Hosted targets require HTTPS and a trusted certificate.</p>
+        <div class="meta-list compact">
+          <div class="meta-item"><span>Hosted HTTPS required</span><span>${directory.hostedHttpsRequired ? "Yes" : "No"}</span></div>
+          <div class="meta-item"><span>Self-hosted HTTP allowed</span><span>${directory.selfHostedHttpAllowed ? "Yes" : "No"}</span></div>
+          <div class="meta-item"><span>Trusted root</span><span>${escapeHtml(directory.trustedRootHost || "—")}</span></div>
+          <div class="meta-item"><span>Custom entry</span><span>${directory.allowCustomEntry ? "Allowed" : "Blocked"}</span></div>
+        </div>
+        <ul class="steps">
+          ${servers.map((server) => `
+            <li>
+              <strong>${escapeHtml(server.displayName || server.id)}</strong>
+              <span>${escapeHtml(server.id)} · ${escapeHtml(server.category || "trusted")}</span>
+              <div class="muted">${escapeHtml(server.description || "")}</div>
+            </li>
+          `).join("")}
+        </ul>
+      </section>
+    `;
+  } catch (error) {
+    return `
+      <section class="card panel">
+        <p class="eyebrow">Onboarding</p>
+        <h2>Trusted server directory</h2>
+        <p class="status error">${escapeHtml(error.message)}</p>
+      </section>
+    `;
+  }
+}
+
+async function renderLogin(message = "", isError = false) {
+  const trustedServersPanel = await renderTrustedServerDirectoryPanel();
   app.innerHTML = `
     <div class="center-shell">
       <section class="card login-card">
@@ -69,6 +107,8 @@ function renderLogin(message = "", isError = false) {
 
         ${message ? `<p class="status ${isError ? "error" : "success"}">${escapeHtml(message)}</p>` : ""}
       </section>
+
+      ${trustedServersPanel}
     </div>
   `;
 
@@ -84,7 +124,7 @@ function renderLogin(message = "", isError = false) {
 
 async function login(code) {
   if (!code) {
-    renderLogin("Enter the verification code Jibo spoke.", true);
+    await renderLogin("Enter the verification code Jibo spoke.", true);
     return;
   }
 
@@ -97,7 +137,7 @@ async function login(code) {
     setSessionToken(payload.portalSessionToken);
     await renderDashboard();
   } catch (error) {
-    renderLogin(error.message, true);
+    await renderLogin(error.message, true);
   }
 }
 
@@ -420,7 +460,7 @@ async function logout() {
     }
   }
 
-  renderLogin();
+  await renderLogin();
 }
 
 async function bootstrap() {
@@ -429,7 +469,7 @@ async function bootstrap() {
     return;
   }
 
-  renderLogin();
+  await renderLogin();
 }
 
 bootstrap();

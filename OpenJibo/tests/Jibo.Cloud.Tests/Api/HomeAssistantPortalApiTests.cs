@@ -472,6 +472,29 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Empty(verification.GetProperty("errors").EnumerateArray());
     }
 
+    [Fact]
+    public async Task TrustedServerDirectoryEndpoint_ReturnsHostedAndSelfHostedOptions()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/onboarding/trusted-servers");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var directory = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(directory.GetProperty("allowCustomEntry").GetBoolean());
+        Assert.True(directory.GetProperty("hostedHttpsRequired").GetBoolean());
+        Assert.True(directory.GetProperty("selfHostedHttpAllowed").GetBoolean());
+
+        var servers = directory.GetProperty("servers");
+        Assert.Contains(servers.EnumerateArray(), server =>
+            server.GetProperty("id").GetString() == "api.openjibo.com" &&
+            server.GetProperty("requiresHttps").GetBoolean());
+        Assert.Contains(servers.EnumerateArray(), server =>
+            server.GetProperty("id").GetString() == "self-hosted" &&
+            !server.GetProperty("requiresHttps").GetBoolean());
+    }
+
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)
     {
         var buffer = new byte[4096];

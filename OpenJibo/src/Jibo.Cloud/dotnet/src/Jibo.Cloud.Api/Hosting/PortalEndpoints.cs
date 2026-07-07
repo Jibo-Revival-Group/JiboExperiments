@@ -16,8 +16,39 @@ internal static class PortalEndpoints
         "neo-hub.jibo.com"
     ];
 
+    private static readonly TrustedServerDirectoryEntry[] TrustedServerDirectory =
+    [
+        new("api.openjibo.com", "Managed Open Jibo API", "Hosted", true, "Primary robot-facing hosted API."),
+        new("openjibo.com", "Open Jibo owner site", "Hosted", true, "Owner entry surface and onboarding handoff."),
+        new("api.jibo.com", "Legacy Jibo API", "Trusted legacy", true, "Historical trusted root preserved for conversion evidence."),
+        new("api-socket.jibo.com", "Legacy Jibo socket API", "Trusted legacy", true, "Historical socket endpoint preserved for conversion evidence."),
+        new("neo-hub.jibo.com", "Legacy Jibo hub API", "Trusted legacy", true, "Historical listen/proactive endpoint preserved for conversion evidence."),
+        new("self-hosted", "Custom self-hosted server", "Self-hosted", false, "Use a typed hostname or IP for local or self-hosted deployment.")
+    ];
+
     internal static void MapPortalEndpoints(this WebApplication app)
     {
+        app.MapGet("/api/onboarding/trusted-servers", () =>
+        {
+            return Results.Json(new
+            {
+                directoryVersion = "1",
+                allowCustomEntry = true,
+                hostedHttpsRequired = true,
+                selfHostedHttpAllowed = true,
+                trustedRootHost = "openjibo.com",
+                servers = TrustedServerDirectory.Select(server => new
+                {
+                    server.Id,
+                    server.DisplayName,
+                    server.Category,
+                    server.RequiresHttps,
+                    server.AllowsHttp,
+                    server.Description
+                })
+            });
+        });
+
         app.MapPost("/api/portal/jibo-verification/confirm", (
             [FromBody] ConfirmJiboVerificationRequest request,
             JiboVerificationService verificationService,
@@ -494,4 +525,14 @@ internal static class PortalEndpoints
         string? Envelope,
         string? PortalSessionToken,
         string[]? LocalRevokedAnchors);
+
+    private sealed record TrustedServerDirectoryEntry(
+        string Id,
+        string DisplayName,
+        string Category,
+        bool RequiresHttps,
+        string Description)
+    {
+        public bool AllowsHttp => !RequiresHttps;
+    }
 }

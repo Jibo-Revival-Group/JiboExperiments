@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-06`)
 
+- continued the owner-memory dialog guardrail slice by routing natural "what did I say my favorite ..." and "what have I told you my favorite ..." recall prompts, including favourite/fave and embedded "... is" forms, to the persisted preference lookup route instead of treating them as incomplete preference-setting attempts. Added focused parser coverage so these memory-check prompts preserve the existing owner preference reply contract.
+
 - continued the source-backed likes/persona parity inventory with a dinosaur-liking route that uses the imported dinosaur answer set instead of leaving that Pegasus-style topic in generic chat. Focused live proof is still needed because the current guardrail suite does not yet exercise this low-signal `do you like ...` branch reliably.
 
 - continued the source-backed likes/persona parity slice by adding direct animal-liking prompts (`do you like animals`, `do you enjoy animals`, and related variants) to the legacy personality route instead of generic chat. Added focused dialog guardrail coverage for animal-liking replies and locked the already-source-backed astronomy liking prompt to the existing space/astronomy answer set. Live robot playback remains the proof item for this small personality slice.

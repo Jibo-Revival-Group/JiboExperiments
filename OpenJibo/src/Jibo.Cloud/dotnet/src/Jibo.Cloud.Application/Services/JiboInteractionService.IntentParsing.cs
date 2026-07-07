@@ -1252,6 +1252,12 @@ public sealed partial class JiboInteractionService
                normalized.StartsWith("what was my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("what was my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("what was my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("what did i say my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what did i say my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what did i say my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("what have i told you my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what have i told you my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what have i told you my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my fave", StringComparison.Ordinal);
@@ -1294,6 +1300,8 @@ public sealed partial class JiboInteractionService
             "could you remind me my favorite ",
             "would you remind me my favorite ",
             "what was my favorite ",
+            "what did i say my favorite ",
+            "what have i told you my favorite ",
             "tell me my favorite ",
             "what is my favourite ",
             "what s my favourite ",
@@ -1327,6 +1335,8 @@ public sealed partial class JiboInteractionService
             "could you remind me my favourite ",
             "would you remind me my favourite ",
             "what was my favourite ",
+            "what did i say my favourite ",
+            "what have i told you my favourite ",
             "tell me my favourite ",
             "what is my fave ",
             "what s my fave ",
@@ -1360,12 +1370,14 @@ public sealed partial class JiboInteractionService
             "could you remind me my fave ",
             "would you remind me my fave ",
             "what was my fave ",
+            "what did i say my fave ",
+            "what have i told you my fave ",
             "tell me my fave "
         };
 
         var category = (from prefix in prefixes
             where normalized.StartsWith(prefix, StringComparison.Ordinal)
-            select normalized[prefix.Length..].Trim()
+            select TrimPreferenceLookupCategory(normalized[prefix.Length..].Trim())
             into candidate
             select string.IsNullOrWhiteSpace(candidate) ? null : candidate).FirstOrDefault();
 
@@ -1404,7 +1416,9 @@ public sealed partial class JiboInteractionService
             "can you remind me what my",
             "could you remind me what my",
             "would you remind me what my",
-            "tell me what my"
+            "tell me what my",
+            "what did i say my",
+            "what have i told you my"
         };
 
         foreach (var lead in embeddedLeads)
@@ -1419,6 +1433,16 @@ public sealed partial class JiboInteractionService
         return null;
     }
 
+
+    private static string? TrimPreferenceLookupCategory(string category)
+    {
+        if (string.IsNullOrWhiteSpace(category)) return null;
+
+        var trimmed = category.Trim();
+        return trimmed.EndsWith(" is", StringComparison.Ordinal)
+            ? trimmed[..^3].Trim()
+            : trimmed;
+    }
 
     private static string? TryExtractEmbeddedPreferenceCategory(string normalized, string lead, string spelling)
     {

@@ -1965,6 +1965,10 @@ public sealed class JiboInteractionServiceTests
     [InlineData("would you tell me my favourite music")]
     [InlineData("could you tell me what my fave music is")]
     [InlineData("would you tell me what my favorite music is")]
+    [InlineData("have I told you my favorite music")]
+    [InlineData("have I ever told you my favourite music")]
+    [InlineData("do you remember me saying my fave music")]
+    [InlineData("do you remember me saying what my favorite music is")]
     public async Task BuildDecisionAsync_PreferenceMemory_PoliteHelperRecallAliasesStayOnMemoryRoute(
         string recallTranscript)
     {

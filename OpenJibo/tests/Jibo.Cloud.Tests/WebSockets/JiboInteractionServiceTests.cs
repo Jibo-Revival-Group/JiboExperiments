@@ -667,6 +667,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what is your favorite color")]
     [InlineData("what's your favorite color")]
     [InlineData("what color do you like")]
+    [InlineData("do you like blue")]
+    [InlineData("do you like the colour blue")]
     public async Task BuildDecisionAsync_FavoriteColor_UsesPersonalityReply(string transcript)
     {
         var service = CreateService();
@@ -743,6 +745,18 @@ public sealed class JiboInteractionServiceTests
         "what is your favorite olympic ring",
         "robot_favorite_olympic_ring",
         "My favorite ring is the blue one. It's so blue.")]
+    [InlineData(
+        "do you like zero",
+        "robot_favorite_number",
+        "One. No wait zero. One and zero.")]
+    [InlineData(
+        "do you like the number one",
+        "robot_favorite_number",
+        "One. No wait zero. One and zero.")]
+    [InlineData(
+        "do you like pi",
+        "robot_favorite_number",
+        "One. No wait zero. One and zero.")]
     public async Task BuildDecisionAsync_FavoritesFamily_UsesPersonalityReplies(
         string transcript,
         string expectedIntent,

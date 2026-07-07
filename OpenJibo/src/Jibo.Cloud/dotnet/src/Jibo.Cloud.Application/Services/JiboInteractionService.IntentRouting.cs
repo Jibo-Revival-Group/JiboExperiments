@@ -1502,7 +1502,13 @@ public sealed partial class JiboInteractionService
                 "what's your favourite color",
                 "what s your favourite color",
                 "what color do you like",
-                "what colour do you like"))
+                "what colour do you like") ||
+            NormalizeCommandPhrase(loweredTranscript) is
+                "do you like blue" or
+                "do you like the color blue" or
+                "do you like the colour blue" or
+                "do you like blue color" or
+                "do you like blue colour")
             return "robot_favorite_color";
 
         if (MatchesAny(
@@ -2301,7 +2307,13 @@ public sealed partial class JiboInteractionService
                 "what number do you like",
                 "what number do you like best",
                 "do you have a favorite number",
-                "do you have a favourite number"))
+                "do you have a favourite number",
+                "do you like zero",
+                "do you like the number zero",
+                "do you like one",
+                "do you like the number one",
+                "do you like pi",
+                "do you like the number pi"))
             return "robot_favorite_number";
 
         if (MatchesAny(

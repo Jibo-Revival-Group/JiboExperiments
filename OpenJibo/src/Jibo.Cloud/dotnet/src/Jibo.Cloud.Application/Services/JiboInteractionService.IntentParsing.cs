@@ -1452,6 +1452,7 @@ public sealed partial class JiboInteractionService
             "did i tell you my",
             "have i told you my",
             "have i ever told you my",
+            "do you remember me saying what my",
             "do you remember me saying my",
             "what have i told you my"
         };

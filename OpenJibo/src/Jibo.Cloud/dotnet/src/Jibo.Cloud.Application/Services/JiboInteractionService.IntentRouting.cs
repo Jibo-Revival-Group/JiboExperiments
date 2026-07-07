@@ -65,6 +65,9 @@ public sealed partial class JiboInteractionService
             }
         }
 
+        if (IsPreferenceRecallQuestion(loweredTranscript) || IsPreferenceRecallAttempt(loweredTranscript))
+            return "memory_get_preference";
+
         if (IsNameSetStatement(loweredTranscript)) return "memory_set_name";
 
         if (IsNameRecallQuestion(loweredTranscript)) return "memory_get_name";
@@ -251,9 +254,6 @@ public sealed partial class JiboInteractionService
 
         if (IsPreferenceSetStatement(loweredTranscript) || IsPreferenceSetAttempt(loweredTranscript))
             return "memory_set_preference";
-
-        if (IsPreferenceRecallQuestion(loweredTranscript) || IsPreferenceRecallAttempt(loweredTranscript))
-            return "memory_get_preference";
 
         if (IsImportantDateSetStatement(loweredTranscript)) return "memory_set_important_date";
 

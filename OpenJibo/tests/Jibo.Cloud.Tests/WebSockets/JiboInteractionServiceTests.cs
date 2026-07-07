@@ -3263,6 +3263,39 @@ public sealed class JiboInteractionServiceTests
             memoryStore.GetListItems(new PersonalMemoryTenantScope("acct-c", "loop-c", "device-c"), "shopping"));
     }
 
+    [Theory]
+    [InlineData("also bananas", "bananas")]
+    [InlineData("and add orange juice", "orange juice")]
+    [InlineData("plus put cereal", "cereal")]
+    public async Task BuildDecisionAsync_GroceryList_FollowUpStripsContinuationPhrases(string transcript,
+        string expectedItem)
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            DeviceId = "device-continuation",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-continuation",
+                ["loopId"] = "loop-continuation",
+                [HouseholdListStateKey] = "awaiting_item",
+                [HouseholdListTypeKey] = "shopping",
+                [HouseholdListDisplayTypeKey] = "grocery"
+            }
+        });
+
+        Assert.Equal("shopping_list_add", decision.IntentName);
+        Assert.Contains($"Added {expectedItem} to your grocery list.", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Equal([expectedItem], memoryStore.GetListItems(
+            new PersonalMemoryTenantScope("acct-continuation", "loop-continuation", "device-continuation"),
+            "shopping"));
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_GroceryList_FollowUpBlankRetriesOnceThenCloses()
     {

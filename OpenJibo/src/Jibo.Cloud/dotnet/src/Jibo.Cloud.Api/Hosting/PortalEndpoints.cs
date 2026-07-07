@@ -109,6 +109,76 @@ internal static class PortalEndpoints
             });
         });
 
+        app.MapPost("/api/portal/trusted-servers/lifecycle", (
+            [FromBody] TrustedServerLifecycleRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(request.CanonicalHost))
+                return Results.BadRequest(new { error = "canonicalHost is required." });
+
+            if (string.IsNullOrWhiteSpace(request.Action))
+                return Results.BadRequest(new { error = "action is required." });
+
+            var action = request.Action.Trim().ToLowerInvariant();
+            var normalizedKind = NormalizeTrustedServerKind(request.ServerKind);
+            if (normalizedKind == "self-hosted")
+                return Results.BadRequest(new { error = "self-hosted entries are separate from the trusted registry." });
+
+            var host = request.CanonicalHost.Trim();
+            var existing = cloudStateStore.FindTrustedServer(host);
+
+            if (action is "revoke" or "reactivate" or "mark-seen" && existing is null)
+                return Results.NotFound(new { error = "trusted server not found." });
+
+            if (existing is not null && existing.IsTrustRoot && action == "revoke")
+                return Results.BadRequest(new { error = "the trust root cannot be revoked." });
+
+            TrustedServerRecord lifecycleUpdate = action switch
+            {
+                "admit" => UpsertLifecycleServer(existing, request, normalizedKind, host, isActive: true,
+                    isListed: request.IsListed ?? true,
+                    acceptsPublicConnections: request.AcceptsPublicConnections ?? normalizedKind != "hybrid",
+                    participatesInCloudSync: request.ParticipatesInCloudSync ?? normalizedKind != "self-hosted",
+                    requiresHttps: request.RequiresHttps ?? true,
+                    lastSeenAtUtc: request.LastSeenAtUtc),
+                "revoke" => UpsertLifecycleServer(existing!, request, existing!.ServerKind, host, isActive: false,
+                    isListed: false,
+                    acceptsPublicConnections: false,
+                    participatesInCloudSync: false,
+                    requiresHttps: existing!.RequiresHttps,
+                    lastSeenAtUtc: existing!.LastSeenAtUtc),
+                "reactivate" => UpsertLifecycleServer(existing!, request, existing!.ServerKind, host, isActive: true,
+                    isListed: true,
+                    acceptsPublicConnections: request.AcceptsPublicConnections ?? existing!.AcceptsPublicConnections,
+                    participatesInCloudSync: request.ParticipatesInCloudSync ?? existing!.ParticipatesInCloudSync,
+                    requiresHttps: request.RequiresHttps ?? existing!.RequiresHttps,
+                    lastSeenAtUtc: request.LastSeenAtUtc ?? existing!.LastSeenAtUtc),
+                "mark-seen" => UpsertLifecycleServer(existing!, request, existing!.ServerKind, host, isActive: existing!.IsActive,
+                    isListed: existing!.IsListed,
+                    acceptsPublicConnections: existing!.AcceptsPublicConnections,
+                    participatesInCloudSync: existing!.ParticipatesInCloudSync,
+                    requiresHttps: existing!.RequiresHttps,
+                    lastSeenAtUtc: request.LastSeenAtUtc ?? DateTimeOffset.UtcNow),
+                _ => null!
+            };
+
+            if (lifecycleUpdate is null)
+                return Results.BadRequest(new { error = "action must be admit, revoke, reactivate, or mark-seen." });
+
+            var updated = cloudStateStore.UpsertTrustedServer(lifecycleUpdate);
+
+            return Results.Json(new
+            {
+                trustedServer = updated
+            });
+        });
+
         app.MapPost("/api/portal/jibo-verification/confirm", (
             [FromBody] ConfirmJiboVerificationRequest request,
             JiboVerificationService verificationService,
@@ -593,6 +663,20 @@ internal static class PortalEndpoints
         bool? IsActive,
         string? Description);
 
+    private sealed record TrustedServerLifecycleRequest(
+        string? PortalSessionToken,
+        string? CanonicalHost,
+        string? Action,
+        string? ServerKind,
+        string? DisplayName,
+        bool? IsListed,
+        bool? AcceptsPublicConnections,
+        bool? ParticipatesInCloudSync,
+        bool? RequiresHttps,
+        bool? IsActive,
+        string? Description,
+        DateTimeOffset? LastSeenAtUtc);
+
     private sealed record VerifyIdentityGraphEvidenceBundleRequest(
         string? Envelope,
         string? PortalSessionToken,
@@ -604,5 +688,38 @@ internal static class PortalEndpoints
         normalized = normalized.Equals("hosted", StringComparison.OrdinalIgnoreCase) ? "managed" : normalized;
         normalized = normalized.ToLowerInvariant();
         return normalized is "managed" or "hybrid" or "self-hosted" ? normalized : "managed";
+    }
+
+    private static TrustedServerRecord UpsertLifecycleServer(
+        TrustedServerRecord? current,
+        TrustedServerLifecycleRequest request,
+        string serverKind,
+        string canonicalHost,
+        bool isActive,
+        bool isListed,
+        bool acceptsPublicConnections,
+        bool participatesInCloudSync,
+        bool requiresHttps,
+        DateTimeOffset? lastSeenAtUtc)
+    {
+        return new TrustedServerRecord
+        {
+            ServerId = current?.ServerId ?? Guid.NewGuid().ToString("N"),
+            CanonicalHost = canonicalHost,
+            DisplayName = string.IsNullOrWhiteSpace(request.DisplayName)
+                ? current?.DisplayName ?? canonicalHost
+                : request.DisplayName.Trim(),
+            ServerKind = serverKind,
+            IsListed = isListed,
+            AcceptsPublicConnections = acceptsPublicConnections,
+            ParticipatesInCloudSync = participatesInCloudSync,
+            RequiresHttps = requiresHttps,
+            IsTrustRoot = current?.IsTrustRoot == true,
+            IsActive = isActive,
+            Description = request.Description?.Trim() ?? current?.Description ?? string.Empty,
+            RegisteredAtUtc = current?.RegisteredAtUtc ?? DateTimeOffset.UtcNow,
+            UpdatedAtUtc = DateTimeOffset.UtcNow,
+            LastSeenAtUtc = lastSeenAtUtc ?? current?.LastSeenAtUtc
+        };
     }
 }

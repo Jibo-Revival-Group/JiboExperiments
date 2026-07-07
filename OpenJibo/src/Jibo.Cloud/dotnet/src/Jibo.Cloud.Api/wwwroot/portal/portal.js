@@ -79,6 +79,16 @@ async function renderTrustedServerDirectoryPanel() {
               <span>${escapeHtml(server.canonicalHost)} · ${escapeHtml(server.serverKind || "managed")}</span>
               ${server.isTrustRoot ? `<span class="badge success">Trust root</span>` : ``}
               <div class="muted">${escapeHtml(server.description || "")}</div>
+              <div class="button-row">
+                ${server.isTrustRoot ? "" : `
+                  <button class="button secondary trusted-server-action" data-host="${escapeHtml(server.canonicalHost)}" data-action="${server.isActive ? "revoke" : "reactivate"}" type="button">
+                    ${server.isActive ? "Revoke" : "Reactivate"}
+                  </button>
+                  <button class="button secondary trusted-server-action" data-host="${escapeHtml(server.canonicalHost)}" data-action="mark-seen" type="button">
+                    Mark seen
+                  </button>
+                `}
+              </div>
             </li>
           `).join("")}
         </ul>
@@ -119,6 +129,16 @@ async function renderTrustedServerRegistryPanel() {
               <strong>${escapeHtml(server.displayName || server.canonicalHost)}</strong>
               <span>${escapeHtml(server.canonicalHost)} · ${escapeHtml(server.serverKind || "managed")}</span>
               ${server.isTrustRoot ? `<span class="badge success">Trust root</span>` : ``}
+              <div class="button-row">
+                ${server.isTrustRoot ? "" : `
+                  <button class="button secondary trusted-server-action" data-host="${escapeHtml(server.canonicalHost)}" data-action="${server.isActive ? "revoke" : "reactivate"}" type="button">
+                    ${server.isActive ? "Revoke" : "Reactivate"}
+                  </button>
+                  <button class="button secondary trusted-server-action" data-host="${escapeHtml(server.canonicalHost)}" data-action="mark-seen" type="button">
+                    Mark seen
+                  </button>
+                `}
+              </div>
             </li>
           `).join("")}
         </ul>
@@ -502,6 +522,28 @@ async function renderDashboard(message = "", tone = "success") {
   if (refreshButton) {
     refreshButton.addEventListener("click", () => renderDashboard());
   }
+
+  document.querySelectorAll(".trusted-server-action").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const status = document.getElementById("trustedServerActionStatus");
+      const canonicalHost = button.getAttribute("data-host");
+      const action = button.getAttribute("data-action");
+
+      try {
+        await apiFetch("/api/portal/trusted-servers/lifecycle", {
+          method: "POST",
+          body: JSON.stringify({
+            canonicalHost,
+            action,
+          }),
+        });
+        await renderDashboard(`Trusted server ${action} completed.`);
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  });
 
   const addTrustedServerButton = document.getElementById("addTrustedServerButton");
   if (addTrustedServerButton) {

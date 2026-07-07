@@ -1162,7 +1162,7 @@ For `1.0.20` and beyond:
    - auth starts as a separate deployable under the Open Jibo domain family
    - auth can live in the shared repo/solution initially, but must be its own project
    - onboarding needs provider-specific extension points for signup/payment, free community clouds, and self-hosted servers
-   - onboarding should expose a data-driven trusted-server registry API backed by cloud state so the app can present approved managed options, distinguish self-hosted hybrid servers that stay synced but private, and let the user enter a separate custom self-hosted server name/IP for validation
+   - onboarding should expose a data-driven trusted-server registry API backed by cloud state so the app can present approved managed options, distinguish self-hosted hybrid servers that stay synced but private, support admission/revocation/reactivation, and let the user enter a separate custom self-hosted server name/IP for validation
    - provider-specific onboarding must use signed event callbacks and signed returns
    - provider onboarding should use short-lived signed session tokens plus provider-signed callbacks/returns with nonce/state binding
    - later boots should prefer the selected provider cloud first and enter explicit recovery instead of silently switching clouds

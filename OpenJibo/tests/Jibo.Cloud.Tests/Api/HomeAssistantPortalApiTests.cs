@@ -585,6 +585,93 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal(HttpStatusCode.BadRequest, selfHostedResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task TrustedServerLifecycleEndpoint_RevokeAndReactivateManagedServer()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        await client.PostAsJsonAsync(
+            "/api/portal/trusted-servers",
+            new
+            {
+                canonicalHost = "managed.example.openjibo.com",
+                displayName = "Managed Example",
+                serverKind = "managed",
+                requiresHttps = true,
+                isActive = true,
+                description = "Managed hosted server."
+            });
+
+        var revokeResponse = await client.PostAsJsonAsync(
+            "/api/portal/trusted-servers/lifecycle",
+            new
+            {
+                canonicalHost = "managed.example.openjibo.com",
+                action = "revoke"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, revokeResponse.StatusCode);
+        var revokedPayload = await revokeResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(revokedPayload.GetProperty("trustedServer").GetProperty("isActive").GetBoolean());
+        Assert.False(revokedPayload.GetProperty("trustedServer").GetProperty("isListed").GetBoolean());
+
+        var storedRevoked = store.FindTrustedServer("managed.example.openjibo.com");
+        Assert.NotNull(storedRevoked);
+        Assert.False(storedRevoked!.IsActive);
+
+        var reactivateResponse = await client.PostAsJsonAsync(
+            "/api/portal/trusted-servers/lifecycle",
+            new
+            {
+                canonicalHost = "managed.example.openjibo.com",
+                action = "reactivate"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, reactivateResponse.StatusCode);
+        var reactivatedPayload = await reactivateResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(reactivatedPayload.GetProperty("trustedServer").GetProperty("isActive").GetBoolean());
+        Assert.True(reactivatedPayload.GetProperty("trustedServer").GetProperty("isListed").GetBoolean());
+    }
+
+    [Fact]
+    public async Task TrustedServerLifecycleEndpoint_RejectsTrustRootRevocation()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var revokeResponse = await client.PostAsJsonAsync(
+            "/api/portal/trusted-servers/lifecycle",
+            new
+            {
+                canonicalHost = "api.openjibo.com",
+                action = "revoke"
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, revokeResponse.StatusCode);
+    }
+
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)
     {
         var buffer = new byte[4096];

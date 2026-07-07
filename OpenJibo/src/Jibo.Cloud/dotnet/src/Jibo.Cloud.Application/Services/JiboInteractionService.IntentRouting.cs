@@ -1402,6 +1402,13 @@ public sealed partial class JiboInteractionService
                 "what are you worried about"))
             return "robot_what_are_you_afraid_of";
 
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what are your super powers",
+                "what are your superpowers"))
+            return "robot_do_you_have_super_powers";
+
         if (MatchesAny(
                 loweredTranscript,
                 "what are you",
@@ -2342,7 +2349,9 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "how much do you know",
                 "what do you know",
-                "how smart are you"))
+                "how smart are you",
+                "are you smart",
+                "do you know everything"))
             return "robot_knowledge";
 
         if (MatchesAny(loweredTranscript, "are you god", "are you a god"))
@@ -2358,8 +2367,12 @@ public sealed partial class JiboInteractionService
         if (MatchesAny(
                 loweredTranscript,
                 "do you have super powers",
+                "do you have superpowers",
                 "do you have superpower",
-                "do you have any super powers"))
+                "do you have any super powers",
+                "do you have any superpowers",
+                "what are your super powers",
+                "what are your superpowers"))
             return "robot_do_you_have_super_powers";
 
         if (MatchesAny(

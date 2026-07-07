@@ -1255,6 +1255,12 @@ public sealed partial class JiboInteractionService
                normalized.StartsWith("what did i say my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("what did i say my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("what did i say my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("what did i tell you my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what did i tell you my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("what did i tell you my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("did i tell you my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("did i tell you my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("did i tell you my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("what have i told you my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("what have i told you my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("what have i told you my fave", StringComparison.Ordinal) ||
@@ -1301,6 +1307,8 @@ public sealed partial class JiboInteractionService
             "would you remind me my favorite ",
             "what was my favorite ",
             "what did i say my favorite ",
+            "what did i tell you my favorite ",
+            "did i tell you my favorite ",
             "what have i told you my favorite ",
             "tell me my favorite ",
             "what is my favourite ",
@@ -1336,6 +1344,8 @@ public sealed partial class JiboInteractionService
             "would you remind me my favourite ",
             "what was my favourite ",
             "what did i say my favourite ",
+            "what did i tell you my favourite ",
+            "did i tell you my favourite ",
             "what have i told you my favourite ",
             "tell me my favourite ",
             "what is my fave ",
@@ -1371,6 +1381,8 @@ public sealed partial class JiboInteractionService
             "would you remind me my fave ",
             "what was my fave ",
             "what did i say my fave ",
+            "what did i tell you my fave ",
+            "did i tell you my fave ",
             "what have i told you my fave ",
             "tell me my fave "
         };
@@ -1418,6 +1430,8 @@ public sealed partial class JiboInteractionService
             "would you remind me what my",
             "tell me what my",
             "what did i say my",
+            "what did i tell you my",
+            "did i tell you my",
             "what have i told you my"
         };
 

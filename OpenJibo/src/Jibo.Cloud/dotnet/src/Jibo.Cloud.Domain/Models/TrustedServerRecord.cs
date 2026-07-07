@@ -5,7 +5,10 @@ public sealed class TrustedServerRecord
     public string ServerId { get; init; } = Guid.NewGuid().ToString("N");
     public string CanonicalHost { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
-    public string Category { get; init; } = "hosted";
+    public string ServerKind { get; init; } = "managed";
+    public bool IsListed { get; init; } = true;
+    public bool AcceptsPublicConnections { get; init; } = true;
+    public bool ParticipatesInCloudSync { get; init; } = true;
     public bool RequiresHttps { get; init; } = true;
     public bool IsTrustRoot { get; init; }
     public bool IsActive { get; init; } = true;

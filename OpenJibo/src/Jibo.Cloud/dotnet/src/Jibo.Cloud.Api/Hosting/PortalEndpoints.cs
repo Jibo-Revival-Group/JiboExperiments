@@ -29,12 +29,36 @@ internal static class PortalEndpoints
                 trustedRootHost = "api.openjibo.com",
                 allowCustomEntry = true,
                 customEntryMode = "self-hosted",
+                serverTypes = new
+                {
+                    managed = new
+                    {
+                        listed = true,
+                        acceptsPublicConnections = true,
+                        requiresHttps = true
+                    },
+                    hybrid = new
+                    {
+                        listed = true,
+                        acceptsPublicConnections = false,
+                        requiresHttps = true
+                    },
+                    selfHosted = new
+                    {
+                        listed = false,
+                        acceptsPublicConnections = false,
+                        requiresHttps = false
+                    }
+                },
                 servers = servers.Select(server => new
                 {
                     server.ServerId,
                     server.CanonicalHost,
                     server.DisplayName,
-                    server.Category,
+                    server.ServerKind,
+                    server.IsListed,
+                    server.AcceptsPublicConnections,
+                    server.ParticipatesInCloudSync,
                     server.RequiresHttps,
                     server.IsTrustRoot,
                     server.IsActive,
@@ -43,6 +67,7 @@ internal static class PortalEndpoints
                     server.UpdatedAtUtc,
                     server.LastSeenAtUtc
                 })
+                .Where(server => !server.IsTrustRoot || server.ServerKind is "managed" or "hybrid")
             });
         });
 
@@ -59,13 +84,20 @@ internal static class PortalEndpoints
             if (string.IsNullOrWhiteSpace(request.CanonicalHost))
                 return Results.BadRequest(new { error = "canonicalHost is required." });
 
+            var serverKind = NormalizeTrustedServerKind(request.ServerKind);
+            if (serverKind == "self-hosted")
+                return Results.BadRequest(new { error = "self-hosted entries are separate from the trusted registry." });
+
             var server = cloudStateStore.UpsertTrustedServer(new TrustedServerRecord
             {
                 CanonicalHost = request.CanonicalHost.Trim(),
                 DisplayName = string.IsNullOrWhiteSpace(request.DisplayName)
                     ? request.CanonicalHost.Trim()
                     : request.DisplayName.Trim(),
-                Category = string.IsNullOrWhiteSpace(request.Category) ? "hosted" : request.Category.Trim(),
+                ServerKind = serverKind,
+                IsListed = request.IsListed ?? true,
+                AcceptsPublicConnections = request.AcceptsPublicConnections ?? serverKind != "hybrid",
+                ParticipatesInCloudSync = request.ParticipatesInCloudSync ?? true,
                 RequiresHttps = request.RequiresHttps ?? true,
                 IsActive = request.IsActive ?? true,
                 Description = request.Description?.Trim() ?? string.Empty
@@ -553,7 +585,10 @@ internal static class PortalEndpoints
         string? PortalSessionToken,
         string? CanonicalHost,
         string? DisplayName,
-        string? Category,
+        string? ServerKind,
+        bool? IsListed,
+        bool? AcceptsPublicConnections,
+        bool? ParticipatesInCloudSync,
         bool? RequiresHttps,
         bool? IsActive,
         string? Description);
@@ -562,4 +597,12 @@ internal static class PortalEndpoints
         string? Envelope,
         string? PortalSessionToken,
         string[]? LocalRevokedAnchors);
+
+    private static string NormalizeTrustedServerKind(string? serverKind)
+    {
+        var normalized = string.IsNullOrWhiteSpace(serverKind) ? "managed" : serverKind.Trim();
+        normalized = normalized.Equals("hosted", StringComparison.OrdinalIgnoreCase) ? "managed" : normalized;
+        normalized = normalized.ToLowerInvariant();
+        return normalized is "managed" or "hybrid" or "self-hosted" ? normalized : "managed";
+    }
 }

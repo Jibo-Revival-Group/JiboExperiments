@@ -66,12 +66,17 @@ async function renderTrustedServerDirectoryPanel() {
           <div class="meta-item"><span>Trusted root</span><span>${escapeHtml(directory.trustedRootHost || "—")}</span></div>
           <div class="meta-item"><span>Custom entry</span><span>${directory.allowCustomEntry ? "Allowed" : "Blocked"}</span></div>
         </div>
+        <div class="meta-list compact">
+          <div class="meta-item"><span>Managed</span><span>Listed, public, HTTPS</span></div>
+          <div class="meta-item"><span>Hybrid</span><span>Listed, cloud-synced, private</span></div>
+          <div class="meta-item"><span>Self-hosted</span><span>Separate local HTTP path</span></div>
+        </div>
         <p class="status info">Custom self-hosted setup uses typed host entry at onboarding. It is not part of the trusted hosted registry.</p>
         <ul class="steps">
           ${servers.map((server) => `
             <li>
               <strong>${escapeHtml(server.displayName || server.canonicalHost)}</strong>
-              <span>${escapeHtml(server.canonicalHost)} · ${escapeHtml(server.category || "hosted")}</span>
+              <span>${escapeHtml(server.canonicalHost)} · ${escapeHtml(server.serverKind || "managed")}</span>
               ${server.isTrustRoot ? `<span class="badge success">Trust root</span>` : ``}
               <div class="muted">${escapeHtml(server.description || "")}</div>
             </li>
@@ -112,7 +117,7 @@ async function renderTrustedServerRegistryPanel() {
           ${servers.map((server) => `
             <li>
               <strong>${escapeHtml(server.displayName || server.canonicalHost)}</strong>
-              <span>${escapeHtml(server.canonicalHost)} · ${escapeHtml(server.category || "hosted")}</span>
+              <span>${escapeHtml(server.canonicalHost)} · ${escapeHtml(server.serverKind || "managed")}</span>
               ${server.isTrustRoot ? `<span class="badge success">Trust root</span>` : ``}
             </li>
           `).join("")}
@@ -122,8 +127,8 @@ async function renderTrustedServerRegistryPanel() {
           <input id="trustedServerHost" type="text" placeholder="api.example.openjibo.com">
           <label for="trustedServerName">Display name</label>
           <input id="trustedServerName" type="text" placeholder="Example hosted server">
-          <label for="trustedServerCategory">Category</label>
-          <input id="trustedServerCategory" type="text" value="hosted">
+          <label for="trustedServerKind">Server kind</label>
+          <input id="trustedServerKind" type="text" value="managed">
           <button class="button primary" id="addTrustedServerButton" type="button">Register trusted server</button>
         </div>
         <p id="trustedServerActionStatus" class="status hidden"></p>
@@ -504,7 +509,7 @@ async function renderDashboard(message = "", tone = "success") {
       const status = document.getElementById("trustedServerActionStatus");
       const canonicalHost = document.getElementById("trustedServerHost").value.trim();
       const displayName = document.getElementById("trustedServerName").value.trim();
-      const category = document.getElementById("trustedServerCategory").value.trim();
+      const serverKind = document.getElementById("trustedServerKind").value.trim();
 
       try {
         await apiFetch("/api/portal/trusted-servers", {
@@ -512,7 +517,7 @@ async function renderDashboard(message = "", tone = "success") {
           body: JSON.stringify({
             canonicalHost,
             displayName,
-            category,
+            serverKind,
           }),
         });
         await renderDashboard("Trusted server registered.");

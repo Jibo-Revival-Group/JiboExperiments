@@ -280,7 +280,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 DisplayName = string.IsNullOrWhiteSpace(trustedServer.DisplayName)
                     ? normalizedHost
                     : trustedServer.DisplayName.Trim(),
-                Category = string.IsNullOrWhiteSpace(trustedServer.Category) ? "hosted" : trustedServer.Category.Trim(),
+                ServerKind = NormalizeServerKind(trustedServer.ServerKind, current?.ServerKind),
+                IsListed = trustedServer.IsListed,
+                AcceptsPublicConnections = trustedServer.AcceptsPublicConnections,
+                ParticipatesInCloudSync = trustedServer.ParticipatesInCloudSync,
                 RequiresHttps = trustedServer.RequiresHttps,
                 IsTrustRoot = current?.IsTrustRoot == true || trustedServer.IsTrustRoot,
                 IsActive = trustedServer.IsActive,
@@ -1901,7 +1904,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         {
             CanonicalHost = "api.openjibo.com",
             DisplayName = "Open Jibo trust root API",
-            Category = "hosted",
+            ServerKind = "managed",
+            IsListed = true,
+            AcceptsPublicConnections = true,
+            ParticipatesInCloudSync = true,
             RequiresHttps = true,
             IsTrustRoot = true,
             IsActive = true,
@@ -1925,7 +1931,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             ServerId = trustedServer.ServerId,
             CanonicalHost = trustedServer.CanonicalHost,
             DisplayName = trustedServer.DisplayName,
-            Category = trustedServer.Category,
+            ServerKind = trustedServer.ServerKind,
+            IsListed = trustedServer.IsListed,
+            AcceptsPublicConnections = trustedServer.AcceptsPublicConnections,
+            ParticipatesInCloudSync = trustedServer.ParticipatesInCloudSync,
             RequiresHttps = trustedServer.RequiresHttps,
             IsTrustRoot = trustedServer.IsTrustRoot,
             IsActive = trustedServer.IsActive,
@@ -1934,6 +1943,15 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             UpdatedAtUtc = trustedServer.UpdatedAtUtc,
             LastSeenAtUtc = trustedServer.LastSeenAtUtc
         };
+    }
+
+    private static string NormalizeServerKind(string? serverKind, string? fallbackServerKind = null)
+    {
+        var normalized = string.IsNullOrWhiteSpace(serverKind) ? fallbackServerKind : serverKind;
+        normalized = string.IsNullOrWhiteSpace(normalized) ? "managed" : normalized.Trim();
+        return normalized.Equals("hosted", StringComparison.OrdinalIgnoreCase)
+            ? "managed"
+            : normalized.ToLowerInvariant();
     }
 
     private void ApplyConfiguredOwnerName()

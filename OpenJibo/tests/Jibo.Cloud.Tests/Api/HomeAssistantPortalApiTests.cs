@@ -516,7 +516,7 @@ public sealed class HomeAssistantPortalApiTests
             {
                 canonicalHost = "api.example.openjibo.com",
                 displayName = "Example Open Jibo Server",
-                category = "hosted",
+                serverKind = "managed",
                 requiresHttps = true,
                 isActive = true,
                 description = "Operator-added hosted server."
@@ -529,7 +529,60 @@ public sealed class HomeAssistantPortalApiTests
         var directory = await directoryResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Contains(directory.GetProperty("servers").EnumerateArray(), server =>
             server.GetProperty("canonicalHost").GetString() == "api.example.openjibo.com" &&
-            server.GetProperty("displayName").GetString() == "Example Open Jibo Server");
+            server.GetProperty("displayName").GetString() == "Example Open Jibo Server" &&
+            server.GetProperty("serverKind").GetString() == "managed");
+    }
+
+    [Fact]
+    public async Task TrustedServerRegistryAllowsHybridServersButRejectsSelfHosted()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var spokenCode =
+            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+
+        var confirmPayload = await (await client.PostAsJsonAsync(
+            "/api/portal/jibo-verification/confirm",
+            new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+
+        var hybridResponse = await client.PostAsJsonAsync(
+            "/api/portal/trusted-servers",
+            new
+            {
+                canonicalHost = "hybrid.example.openjibo.com",
+                displayName = "Hybrid Open Jibo Server",
+                serverKind = "hybrid",
+                requiresHttps = true,
+                isListed = true,
+                acceptsPublicConnections = false,
+                participatesInCloudSync = true,
+                isActive = true,
+                description = "Private cloud-synced hosted server."
+            });
+
+        Assert.Equal(HttpStatusCode.OK, hybridResponse.StatusCode);
+
+        var hybridPayload = await hybridResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("hybrid", hybridPayload.GetProperty("trustedServer").GetProperty("serverKind").GetString());
+        Assert.False(hybridPayload.GetProperty("trustedServer").GetProperty("acceptsPublicConnections").GetBoolean());
+
+        var selfHostedResponse = await client.PostAsJsonAsync(
+            "/api/portal/trusted-servers",
+            new
+            {
+                canonicalHost = "selfhosted.example.local",
+                displayName = "Local Self-Hosted",
+                serverKind = "self-hosted",
+                requiresHttps = false,
+                isActive = true,
+                description = "Should not enter the trusted registry."
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, selfHostedResponse.StatusCode);
     }
 
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)

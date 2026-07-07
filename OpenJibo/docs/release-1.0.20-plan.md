@@ -218,6 +218,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-02`)
 
+- tightened grocery-list follow-up reliability by stripping continuation lead-ins such as `also`, `and add`, and `plus put` before storing the item, so multi-item grocery sessions do not save spoken glue words as list content.
+
 - expanded the Persona favorites surface with source-backed favorite drink and favorite sport routing. These now use the imported Pegasus-style liquid-safety and mini-golf replies with focused regression coverage, leaving live robot playback as the remaining proof item for this small persona slice.
 
 - tightened the live connection proof freshness contract so `OOBE VerifyConnection` now reports the accepted proof age window, accepted future clock skew, and computed `freshUntil` timestamp in `reportedConnectionProof`. Conversion clients can also send `connectionProofMaxAgeSeconds` / `proofMaxAgeSeconds` / `freshnessMaxAgeSeconds` when a release/video gate needs a stricter live-capture window; the cloud clamps that policy to a safe 60-second to 1-hour range and returns `stale-proof-observed-at` when the observed proof falls outside it.
@@ -339,6 +341,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded the recognition-candidate scanner to derive redacted speaker-to-loop-member and peoplePresent matches with timestamps, added the Jake/Erin recognition probe to the regression plan, and locked the first conversion video direction to managed Azure with safe staged credentials before the explicit cloud cutover
 
 ### Progress Update (`2026-07-02`)
+
+- tightened grocery-list follow-up reliability by stripping continuation lead-ins such as `also`, `and add`, and `plus put` before storing the item, so multi-item grocery sessions do not save spoken glue words as list content.
 
 - expanded the identity graph relationship model for the `1.0.20` platform track: non-robot loop members now carry explicit owner-scoped relationship edges for family, friend, caregiver/guardian, or generic loopmate roles, with reciprocal owner edges. This keeps the signed snapshot useful for family/friend recognition and multiple-member planning without enabling direct Jibo-to-Jibo transport yet.
 

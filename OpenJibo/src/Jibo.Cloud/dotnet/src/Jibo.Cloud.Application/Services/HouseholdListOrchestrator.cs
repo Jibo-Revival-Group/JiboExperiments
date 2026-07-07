@@ -135,7 +135,7 @@ internal static class HouseholdListOrchestrator
                     noMatchCount + 1,
                     noInputCount));
 
-            directItem = NormalizeItem(transcript);
+            directItem = NormalizeFollowUpItem(transcript);
         }
 
         if (!string.IsNullOrWhiteSpace(directItem))
@@ -337,6 +337,30 @@ internal static class HouseholdListOrchestrator
     private static string NormalizeItem(string value)
     {
         return value.Trim().TrimEnd('.', ',', '!', '?');
+    }
+
+    private static string NormalizeFollowUpItem(string value)
+    {
+        var normalized = NormalizeItem(value);
+
+        foreach (var prefix in new[]
+                 {
+                     "also add ",
+                     "also put ",
+                     "and add ",
+                     "and put ",
+                     "plus add ",
+                     "plus put ",
+                     "also ",
+                     "and ",
+                     "plus "
+                 })
+        {
+            if (normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return NormalizeItem(normalized[prefix.Length..]);
+        }
+
+        return normalized;
     }
 
     private static string NormalizeListType(string? listType)

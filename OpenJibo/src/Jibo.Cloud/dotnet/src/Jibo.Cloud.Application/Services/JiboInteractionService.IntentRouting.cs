@@ -1337,6 +1337,8 @@ public sealed partial class JiboInteractionService
         if (MatchesAny(
                 loweredTranscript,
                 "do you like r2d2",
+                "do you like r 2 d 2",
+                "do you like artoo",
                 "do you know r2d2",
                 "what do you think about r2d2",
                 "are you a fan of r2d2"))
@@ -1346,6 +1348,7 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "do you like the sun",
                 "do you like sun",
+                "do you like sunshine",
                 "what do you think about the sun"))
             return "robot_likes_sun";
 
@@ -1361,6 +1364,7 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "do you like kids",
                 "do you like children",
+                "do you enjoy children",
                 "what do you think about kids"))
             return "robot_likes_kids";
 

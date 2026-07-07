@@ -213,6 +213,10 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("what winter x games event do you like", "robot_favorite_winter_x_games_event", "snowboard")]
     [InlineData("do you like animals", "robot_likes_animals", "Animals are great")]
     [InlineData("do you like astronomy", "robot_likes_space", "astronomy")]
+    [InlineData("are you smart", "robot_knowledge", "know a lot")]
+    [InlineData("do you know everything", "robot_knowledge", "know a lot")]
+    [InlineData("what are your superpowers", "robot_do_you_have_super_powers", "stop time")]
+    [InlineData("do you have any superpowers", "robot_do_you_have_super_powers", "stop time")]
     public async Task BuildDecisionAsync_SourceBackedFavoritePersonaAliases_UsePersonalityRoute(
         string transcript,
         string expectedIntent,

@@ -1808,6 +1808,11 @@ public sealed partial class JiboInteractionService
                 "what is your favourite ice cream flavour",
                 "what ice cream flavor do you like",
                 "what ice cream flavour do you like",
+                "do you like ice cream",
+                "do you like ice cream flavors",
+                "do you like ice cream flavours",
+                "do you like mint chocolate chip",
+                "do you like mint chocolate chip ice cream",
                 "do you have a favorite ice cream flavor",
                 "do you have a favourite ice cream flavour"))
             return "robot_favorite_ice_cream_flavor";
@@ -1976,6 +1981,9 @@ public sealed partial class JiboInteractionService
                 "what's your favourite pizza topping",
                 "what pizza topping do you like",
                 "what kind of pizza topping do you like",
+                "do you like olives",
+                "do you like sliced olives",
+                "do you like olives on pizza",
                 "do you have a favorite pizza topping",
                 "do you have a favourite pizza topping"))
             return "robot_favorite_pizza_topping";

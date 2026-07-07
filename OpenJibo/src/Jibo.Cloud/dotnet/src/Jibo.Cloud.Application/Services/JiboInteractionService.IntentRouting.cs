@@ -1091,7 +1091,13 @@ public sealed partial class JiboInteractionService
                 "what s your favourite shape",
                 "do you have a favorite shape",
                 "do you have a favourite shape",
-                "what shape do you like"))
+                "what shape do you like",
+                "what kind of shape do you like",
+                "do you like shapes",
+                "do you like circles",
+                "do you like circle",
+                "do you like spheres",
+                "do you like sphere"))
             return "robot_favorite_shape";
 
         if (MatchesAny(
@@ -1128,7 +1134,14 @@ public sealed partial class JiboInteractionService
                 "what s your favourite word",
                 "do you have a favorite word",
                 "do you have a favourite word",
-                "what word do you like"))
+                "what word do you like",
+                "what word do you like best",
+                "do you like words",
+                "do you like turtle",
+                "do you like turtles",
+                "do you like pumpernickel",
+                "do you like snorkel",
+                "do you like palindromes"))
             return "robot_favorite_word";
 
         if (MatchesAny(

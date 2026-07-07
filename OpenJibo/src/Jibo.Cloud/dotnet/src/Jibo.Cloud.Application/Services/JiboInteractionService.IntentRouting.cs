@@ -361,6 +361,14 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "do you like sleep",
+                "do you like sleeping",
+                "do you enjoy sleep",
+                "do you enjoy sleeping"))
+            return "robot_likes_sleep";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "can you go to sleep",
                 "can you sleep",
                 "do you ever sleep",
@@ -465,6 +473,14 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "do you like dreaming",
+                "do you like dreams",
+                "do you enjoy dreaming",
+                "do you enjoy dreams"))
+            return "robot_likes_dreaming";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "can you exercise",
                 "do you exercise"))
             return "robot_can_exercise";
@@ -565,6 +581,13 @@ public sealed partial class JiboInteractionService
                 "can you make coffee",
                 "do you make coffee"))
             return "robot_can_make_coffee";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like coffee",
+                "do you enjoy coffee",
+                "what do you think about coffee"))
+            return "robot_likes_coffee";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -1322,6 +1345,29 @@ public sealed partial class JiboInteractionService
                 "do you like children",
                 "what do you think about kids"))
             return "robot_likes_kids";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like tennis",
+                "do you enjoy tennis",
+                "what do you think about tennis"))
+            return "robot_likes_tennis";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like iron man",
+                "do you like ironman",
+                "what do you think about iron man",
+                "are you a fan of iron man"))
+            return "robot_likes_iron_man";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "do you like greens",
+                "do you like eating greens",
+                "do you like collard greens",
+                "what do you think about greens"))
+            return "robot_likes_greens";
 
         if (MatchesAny(
                 loweredTranscript,

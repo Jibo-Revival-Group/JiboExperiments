@@ -1549,7 +1549,11 @@ public sealed partial class JiboInteractionService
                 "what's your favourite artist",
                 "who is your favorite artist",
                 "who is your favourite artist",
-                "what artist do you like"))
+                "what artist do you like",
+                "do you like art",
+                "do you enjoy art",
+                "do you like painting",
+                "do you like paintings")))
             return "robot_favorite_artist";
 
         if (MatchesAny(
@@ -1744,7 +1748,10 @@ public sealed partial class JiboInteractionService
                 "what is your favourite music genre",
                 "what kind of music is your favorite",
                 "what kind of music is your favourite",
-                "what music genre do you like"))
+                "what music genre do you like",
+                "do you like music",
+                "do you enjoy music",
+                "are you into music")))
             return "robot_favorite_music_genre";
 
 

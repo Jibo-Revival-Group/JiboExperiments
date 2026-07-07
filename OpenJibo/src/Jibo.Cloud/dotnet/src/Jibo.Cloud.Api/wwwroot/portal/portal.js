@@ -329,7 +329,11 @@ function bindPortalControls() {
             serverHost,
           }),
         });
-        status.textContent = `${validation.trustGuidance} ${validation.requiresHttps ? "HTTPS required." : "HTTP allowed."}`;
+        const modeLabel = validation.serverMode === "self-hosted-hybrid"
+          ? "Self-hosted hybrid"
+          : "Local self-hosted";
+        const hostLabel = validation.canonicalHost || serverHost || "unspecified host";
+        status.textContent = `${modeLabel} validated for ${hostLabel}. ${validation.trustGuidance} ${validation.requiresHttps ? "Use HTTPS." : "Use HTTP."}`;
         status.className = "status success";
       } catch (error) {
         status.textContent = error.message;

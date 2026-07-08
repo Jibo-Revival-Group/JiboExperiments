@@ -1210,7 +1210,9 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite vegetable",
                 "do you have a favourite vegetable",
                 "what vegetable do you like",
-                "what kind of vegetable do you like"))
+                "what kind of vegetable do you like",
+                "do you like artichokes",
+                "do you like artichoke"))
             return "robot_favorite_vegetable";
 
         if (MatchesAny(
@@ -1252,7 +1254,9 @@ public sealed partial class JiboInteractionService
                 "do you have a favourite place",
                 "what place do you like",
                 "where is your favorite place",
-                "where is your favourite place"))
+                "where is your favourite place",
+                "do you like it here",
+                "do you like right here"))
             return "robot_favorite_place";
 
         if (MatchesAny(
@@ -1346,7 +1350,9 @@ public sealed partial class JiboInteractionService
                 "what weather do you like",
                 "what kind of weather do you like",
                 "do you have a favorite weather",
-                "do you have a favourite weather"))
+                "do you have a favourite weather",
+                "do you like sunny weather",
+                "do you like sunshine weather"))
             return "robot_favorite_weather";
 
         if (MatchesAny(
@@ -1389,7 +1395,10 @@ public sealed partial class JiboInteractionService
                 "what time of day do you like",
                 "what time do you like best",
                 "do you have a favorite time of day",
-                "do you have a favourite time of day"))
+                "do you have a favourite time of day",
+                "do you like daytime",
+                "do you like night time",
+                "do you like nighttime"))
             return "robot_favorite_time_of_day";
 
         if (MatchesAny(

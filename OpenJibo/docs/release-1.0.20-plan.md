@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-08`)
 
+- continued the source-backed least-favorite persona parity slice by routing compact violent-games, artist/band dislike, trash-compactor, Megatron, any-president, onions-on-pizza, least-favorite-number, and woodpecker prompts into the existing imported least-favorite answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal dislike prompts preserve the authored violent-games, art, pleasantly-surprised band, trash-compactor, scary-Megatron, president, onion, number, and woodpecker replies while live robot playback remains the proof item for this small slice.
+
 - continued the source-backed compact favorite-persona parity slice by routing direct season, author, smell, and fish liking prompts (`do you like winter`, `do you like Doctor Seuss`, `do you like bacon/roses`, `do you like blowfish`) into the already-imported favorite season, author, smell, and fish answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal preference prompts preserve authored winter, Doctor Seuss, bacon-and-roses, and blowfish replies while live robot playback remains the proof item for this small slice.
 
 - continued the source-backed compact animal-likes parity slice by adding `do you enjoy` / `are you into` forms for penguins, birds, and animals to the already-imported favorite-animal answer routes instead of generic chat. Added focused dialog guardrail coverage so these low-signal animal preference prompts preserve authored penguin and animals replies while live robot playback remains the proof item for this small slice.

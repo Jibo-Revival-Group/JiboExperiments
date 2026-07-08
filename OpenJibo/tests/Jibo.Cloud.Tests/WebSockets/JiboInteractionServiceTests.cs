@@ -1997,6 +1997,9 @@ public sealed class JiboInteractionServiceTests
     [InlineData("have I ever told you my favourite music")]
     [InlineData("do you remember me saying my fave music")]
     [InlineData("do you remember me saying what my favorite music is")]
+    [InlineData("do you recall me saying my favorite music")]
+    [InlineData("do you recall me telling you what my favourite music is")]
+    [InlineData("do you remember when I mentioned my fave music")]
     public async Task BuildDecisionAsync_PreferenceMemory_PoliteHelperRecallAliasesStayOnMemoryRoute(
         string recallTranscript)
     {

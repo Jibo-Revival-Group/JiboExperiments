@@ -1291,6 +1291,15 @@ public sealed partial class JiboInteractionService
                normalized.StartsWith("could you recall that i mentioned my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("could you recall that i mentioned my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("could you recall that i mentioned my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you recall me saying my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you recall me saying my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you recall me saying my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you recall me telling you my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you recall me telling you my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you recall me telling you my fave", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you remember when i mentioned my favorite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you remember when i mentioned my favourite", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you remember when i mentioned my fave", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favorite", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my favourite", StringComparison.Ordinal) ||
                normalized.StartsWith("tell me my fave", StringComparison.Ordinal);
@@ -1351,6 +1360,9 @@ public sealed partial class JiboInteractionService
             "do you remember that i said my favorite ",
             "can you remember that i told you my favorite ",
             "could you recall that i mentioned my favorite ",
+            "do you recall me saying my favorite ",
+            "do you recall me telling you my favorite ",
+            "do you remember when i mentioned my favorite ",
             "tell me my favorite ",
             "what is my favourite ",
             "what s my favourite ",
@@ -1402,6 +1414,9 @@ public sealed partial class JiboInteractionService
             "do you remember that i said my favourite ",
             "can you remember that i told you my favourite ",
             "could you recall that i mentioned my favourite ",
+            "do you recall me saying my favourite ",
+            "do you recall me telling you my favourite ",
+            "do you remember when i mentioned my favourite ",
             "tell me my favourite ",
             "what is my fave ",
             "what s my fave ",
@@ -1453,6 +1468,9 @@ public sealed partial class JiboInteractionService
             "do you remember that i said my fave ",
             "can you remember that i told you my fave ",
             "could you recall that i mentioned my fave ",
+            "do you recall me saying my fave ",
+            "do you recall me telling you my fave ",
+            "do you remember when i mentioned my fave ",
             "tell me my fave "
         };
 
@@ -1522,7 +1540,13 @@ public sealed partial class JiboInteractionService
             "do you remember that i said my",
             "do you remember that i told you my",
             "can you remember that i told you my",
-            "could you recall that i mentioned my"
+            "could you recall that i mentioned my",
+            "do you recall me saying what my",
+            "do you recall me saying my",
+            "do you recall me telling you what my",
+            "do you recall me telling you my",
+            "do you remember when i mentioned what my",
+            "do you remember when i mentioned my"
         };
 
         foreach (var lead in embeddedLeads)

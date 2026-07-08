@@ -1600,6 +1600,16 @@ public sealed partial class JiboInteractionService
                 "what is your favourite color",
                 "what's your favourite color",
                 "what s your favourite color",
+                "what is your favorite colour",
+                "what's your favorite colour",
+                "what s your favorite colour",
+                "what is your favourite colour",
+                "what's your favourite colour",
+                "what s your favourite colour",
+                "do you have a favorite color",
+                "do you have a favourite color",
+                "do you have a favorite colour",
+                "do you have a favourite colour",
                 "what color do you like",
                 "what colour do you like") ||
             NormalizeCommandPhrase(loweredTranscript) is

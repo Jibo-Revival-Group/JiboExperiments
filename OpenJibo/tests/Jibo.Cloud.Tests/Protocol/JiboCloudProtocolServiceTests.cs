@@ -1488,6 +1488,57 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LoopAddLoop_CreatesOwnerAndRobotScopedLoop()
+    {
+        var result = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160715",
+            Operation = "AddLoop",
+            BodyText = """{"name":"Kitchen Loop","robotId":"robot-kitchen","robotFriendlyId":"kitchen-jibo"}"""
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal("loop-kitchen-jibo", payload.RootElement.GetProperty("id").GetString());
+        Assert.Equal("Kitchen Loop", payload.RootElement.GetProperty("name").GetString());
+        Assert.Contains(payload.RootElement.GetProperty("members").EnumerateArray(),
+            member => member.GetProperty("type").GetString() == "owner");
+    }
+
+    [Fact]
+    public async Task SetupRobot_WithoutLoopId_CreatesRobotScopedLoop()
+    {
+        var first = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "SetupRobot",
+            BodyText = """{"id":"robot-onboard-1"}"""
+        });
+        var second = await _service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20161026",
+            Operation = "SetupRobot",
+            BodyText = """{"id":"robot-onboard-2"}"""
+        });
+
+        Assert.Equal(200, first.StatusCode);
+        Assert.Equal(200, second.StatusCode);
+        using var firstPayload = JsonDocument.Parse(first.BodyText);
+        using var secondPayload = JsonDocument.Parse(second.BodyText);
+        var firstLoopId = firstPayload.RootElement.GetProperty("loopId").GetString();
+        var secondLoopId = secondPayload.RootElement.GetProperty("loopId").GetString();
+        Assert.Equal("loop-robot-onboard-1", firstLoopId);
+        Assert.Equal("loop-robot-onboard-2", secondLoopId);
+        Assert.NotEqual(firstLoopId, secondLoopId);
+    }
+
+    [Fact]
     public async Task LoopListMembers_ReturnsSeededMembersForDefaultLoop()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope

@@ -22,6 +22,7 @@ public interface ICloudStateStore
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
     CloudSession? FindSessionByToken(string token);
     IReadOnlyList<LoopRecord> GetLoops();
+    LoopRecord AddLoop(string? name, string? ownerAccountId, string? robotId, string? robotFriendlyId);
     IReadOnlyList<PersonRecord> GetPeople();
     IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
     IReadOnlyList<TrustedServerRecord> GetTrustedServers();

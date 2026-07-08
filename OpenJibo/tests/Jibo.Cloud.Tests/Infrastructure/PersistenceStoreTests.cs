@@ -209,6 +209,49 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void CloudStateStore_AllowsMultipleRobotsForSingleAccount()
+    {
+        var persistencePath =
+            Path.Combine(Path.GetTempPath(), $"openjibo-cloud-multiple-robots-{Guid.NewGuid():N}.json");
+
+        try
+        {
+            var firstStore = new InMemoryCloudStateStore(persistencePath);
+            var account = firstStore.GetAccount();
+            var loop = Assert.Single(firstStore.GetLoops(),
+                candidate => candidate.OwnerAccountId == account.AccountId);
+
+            var kitchenRobot = firstStore.GetOrCreateDevice("BOJW-KITCHEN-0001", "1.9.2", "1.0.20");
+            var officeRobot = firstStore.GetOrCreateDevice("BOJW-OFFICE-0002", "1.9.2", "1.0.20");
+
+            firstStore.AddLoopMember(loop.LoopId, kitchenRobot.RobotId, null, "Kitchen", "Jibo", null, null,
+                false, "robot");
+            firstStore.AddLoopMember(loop.LoopId, officeRobot.RobotId, null, "Office", "Jibo", null, null,
+                false, "robot");
+            firstStore.SavePersistedState();
+
+            var secondStore = new InMemoryCloudStateStore(persistencePath);
+            var persistedAccount = secondStore.GetAccount();
+            var persistedLoop = Assert.Single(secondStore.GetLoops(),
+                candidate => candidate.OwnerAccountId == persistedAccount.AccountId);
+            var robotMembers = secondStore.GetLoopMembers(persistedLoop.LoopId)
+                .Where(member => member.Type == "robot")
+                .ToArray();
+
+            Assert.Equal(account.AccountId, persistedAccount.AccountId);
+            Assert.NotNull(secondStore.FindDeviceByFriendlyId(kitchenRobot.DeviceId));
+            Assert.NotNull(secondStore.FindDeviceByFriendlyId(officeRobot.DeviceId));
+            Assert.Contains(robotMembers, member => member.AccountId == kitchenRobot.RobotId);
+            Assert.Contains(robotMembers, member => member.AccountId == officeRobot.RobotId);
+            Assert.True(robotMembers.Select(member => member.AccountId).Distinct().Count() >= 2);
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
+    [Fact]
     public void CloudStateStore_RehydratesDefaultLoopWhenSnapshotLoopsAreMissing()
     {
         var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-cloud-empty-loops-{Guid.NewGuid():N}.json");

@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-08`)
 
+- continued the source-backed entertainment and sports likes parity slice by routing compact TV, scary-movie/movie-title, and hockey/basketball/baseball/football liking prompts into the existing imported favorite TV/movie/team answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal preference prompts preserve authored Back to the Future, Toy Story, Star Wars, TV-show, scary-movie, and sports-team replies while live robot playback remains the proof item for this small slice.
+
 - continued the source-backed celebrity/persona favorites parity slice by routing compact Tom Hanks, Julie Andrews, and Mary Poppins liking prompts into the imported favorite actor/actress answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal celebrity prompts preserve the authored Tom Hanks and Julie Andrews/Mary Poppins replies while live robot playback remains the proof item for this small slice.
 
 - continued the source-backed least-favorite persona parity slice by adding compact smell, movie, color, car, and verb prompts (`do you like sour milk`, `do you like Waterworld`, `do you like all colors`, `do you like all cars`, `do you like spilling`) to the existing imported least-favorite answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal dislike prompts preserve the authored sour-milk, Waterworld, all-colors, cars, and spill replies while live robot playback remains the proof item for this small slice.

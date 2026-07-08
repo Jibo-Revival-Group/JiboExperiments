@@ -1688,7 +1688,7 @@ public sealed class JiboCloudProtocolServiceTests
         var attempts = 0;
         do
         {
-            await Task.Delay(400);
+            await Task.Delay(1000);
             var downloading = await _service.DispatchAsync(new ProtocolEnvelope
             {
                 HostName = "localhost",

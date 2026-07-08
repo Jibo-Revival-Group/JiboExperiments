@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-08`)
 
+- continued the source-backed physical-self and mission parity slice by widening compact weight, height, price, unplugged, mission/purpose, prime-directive, Commander app, and body-material prompts into the existing imported Pegasus answer sets instead of generic chat. Added focused dialog guardrail coverage for those aliases, and moved the compact `do you like football` preference prompt ahead of radio genre matching so it stays on the authored sports-team reply path. Live robot playback remains the proof item for this small slice.
+
 - continued the source-backed entertainment and sports likes parity slice by routing compact TV, scary-movie/movie-title, and hockey/basketball/baseball/football liking prompts into the existing imported favorite TV/movie/team answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal preference prompts preserve authored Back to the Future, Toy Story, Star Wars, TV-show, scary-movie, and sports-team replies while live robot playback remains the proof item for this small slice.
 
 - continued the source-backed celebrity/persona favorites parity slice by routing compact Tom Hanks, Julie Andrews, and Mary Poppins liking prompts into the imported favorite actor/actress answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal celebrity prompts preserve the authored Tom Hanks and Julie Andrews/Mary Poppins replies while live robot playback remains the proof item for this small slice.

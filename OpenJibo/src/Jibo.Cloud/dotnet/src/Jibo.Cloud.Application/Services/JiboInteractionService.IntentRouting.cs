@@ -252,6 +252,9 @@ public sealed partial class JiboInteractionService
                 "what's the cloud version"))
             return "cloud_version";
 
+        if (MatchesAny(loweredTranscript, "do you like football", "do you like football teams"))
+            return "robot_favorite_football_team";
+
         if (IsPreferenceSetStatement(loweredTranscript) || IsPreferenceSetAttempt(loweredTranscript))
             return "memory_set_preference";
 
@@ -702,13 +705,18 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "how much do you weigh",
                 "what do you weigh",
-                "how heavy are you"))
+                "how heavy are you",
+                "what is your weight",
+                "what's your weight",
+                "what s your weight"))
             return "robot_how_much_do_you_weigh";
 
         if (MatchesAny(
                 loweredTranscript,
                 "how tall are you",
                 "what is your height",
+                "what's your height",
+                "what s your height",
                 "how high are you"))
             return "robot_how_tall_are_you";
 
@@ -716,13 +724,20 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "how much do you cost",
                 "what do you cost",
-                "how much are you"))
+                "how much are you",
+                "how expensive are you",
+                "what is your price",
+                "what's your price",
+                "what s your price"))
             return "robot_how_much_you_cost";
 
         if (MatchesAny(
                 loweredTranscript,
                 "what if i unplug you",
                 "what happens if i unplug you",
+                "what happens when i unplug you",
+                "what happens when you are unplugged",
+                "what happens if you are unplugged",
                 "if i unplug you"))
             return "robot_what_if_i_unplug_you";
 
@@ -730,15 +745,22 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "what is your purpose",
                 "what's your purpose",
+                "what s your purpose",
                 "what are you here for",
-                "why are you here"))
+                "why are you here",
+                "what is your mission",
+                "what's your mission",
+                "what s your mission"))
             return "robot_what_is_your_purpose";
 
         if (MatchesAny(
                 loweredTranscript,
                 "what is your prime directive",
                 "what's your prime directive",
-                "what is prime directive"))
+                "what s your prime directive",
+                "what is prime directive",
+                "what's prime directive",
+                "what s prime directive"))
             return "robot_what_is_prime_directive";
 
         if (MatchesAny(
@@ -746,13 +768,18 @@ public sealed partial class JiboInteractionService
                 "what is jibo commander",
                 "what is the commander app",
                 "what is commander app",
-                "what's jibo commander"))
+                "what's jibo commander",
+                "what s jibo commander",
+                "what does jibo commander do",
+                "what does the commander app do"))
             return "robot_what_is_jibo_commander";
 
         if (MatchesAny(
                 loweredTranscript,
                 "do you like commander app",
                 "do you like the commander app",
+                "do you enjoy commander app",
+                "do you enjoy the commander app",
                 "are you a fan of commander app"))
             return "robot_likes_commander_app";
 
@@ -1432,7 +1459,9 @@ public sealed partial class JiboInteractionService
         if (MatchesAny(
                 loweredTranscript,
                 "what are you made of",
+                "what are you made out of",
                 "what are you built from",
+                "what are you built out of",
                 "what are you constructed from"))
             return "robot_what_are_you_made_of";
 

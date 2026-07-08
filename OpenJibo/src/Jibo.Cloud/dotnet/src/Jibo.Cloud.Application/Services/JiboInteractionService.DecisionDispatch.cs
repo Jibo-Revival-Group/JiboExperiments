@@ -620,6 +620,13 @@ public sealed partial class JiboInteractionService
                 "favorite fruit is blueberries",
                 "roundness and blueness",
                 "favorite color, blue"),
+            "robot_favorite_color" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_favorite_color",
+                "blue is my favorite color",
+                "blue for sure",
+                "big fan of blue",
+                "blueness of blue"),
             "robot_favorite_adjective" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_adjective",

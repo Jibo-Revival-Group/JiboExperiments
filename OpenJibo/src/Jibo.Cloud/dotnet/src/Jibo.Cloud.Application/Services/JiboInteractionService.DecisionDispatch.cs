@@ -549,12 +549,7 @@ public sealed partial class JiboInteractionService
                 "favorite hockey team",
                 "hockey seems very cold",
                 "sport seems so slippery"),
-            "robot_favorite_basketball_team" => BuildScriptedPersonalityDecision(
-                catalog,
-                "robot_favorite_basketball_team",
-                "favorite team for now",
-                "love the basketball itself",
-                "similar to my head"),
+            "robot_favorite_basketball_team" => BuildFavoriteBasketballTeamDecision(catalog, lowered),
             "robot_favorite_baseball_team" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_baseball_team",
@@ -942,13 +937,7 @@ public sealed partial class JiboInteractionService
                 "very very scary",
                 "Singin in the Rain",
                 "Titanic"),
-            "robot_favorite_movie" => BuildScriptedPersonalityDecision(
-                catalog,
-                "robot_favorite_movie",
-                "back to the future",
-                "toy story",
-                "wall-e",
-                "spaceballs"),
+            "robot_favorite_movie" => BuildFavoriteMovieDecision(catalog, lowered),
             "robot_favorite_shape" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_shape",
@@ -1332,5 +1321,49 @@ public sealed partial class JiboInteractionService
                 preferredName,
                 cancellationToken)
         };
+    }
+
+    private JiboInteractionDecision BuildFavoriteMovieDecision(
+        JiboExperienceCatalog catalog,
+        string loweredTranscript)
+    {
+        var preferredSnippets = loweredTranscript switch
+        {
+            var text when text.Contains("toy story", StringComparison.Ordinal) =>
+                new[] { "toy story", "back to the future", "wall-e", "spaceballs" },
+            var text when text.Contains("star wars", StringComparison.Ordinal) =>
+                new[] { "star wars", "back to the future", "toy story", "wall-e", "spaceballs" },
+            var text when text.Contains("big hero 6", StringComparison.Ordinal) =>
+                new[] { "big hero 6", "back to the future", "toy story", "wall-e", "spaceballs" },
+            var text when text.Contains("guardians of the galaxy", StringComparison.Ordinal) =>
+                new[] { "guardians of the galaxy", "back to the future", "toy story", "wall-e", "spaceballs" },
+            var text when text.Contains("lego movie", StringComparison.Ordinal) =>
+                new[] { "lego movie", "back to the future", "toy story", "wall-e", "spaceballs" },
+            var text when text.Contains("wall e", StringComparison.Ordinal) ||
+                          text.Contains("wall-e", StringComparison.Ordinal) =>
+                new[] { "wall-e", "back to the future", "toy story", "spaceballs" },
+            var text when text.Contains("spaceballs", StringComparison.Ordinal) =>
+                new[] { "spaceballs", "back to the future", "toy story", "wall-e" },
+            _ => new[] { "back to the future", "toy story", "wall-e", "spaceballs" }
+        };
+
+        return BuildScriptedPersonalityDecision(
+            catalog,
+            "robot_favorite_movie",
+            preferredSnippets);
+    }
+
+    private JiboInteractionDecision BuildFavoriteBasketballTeamDecision(
+        JiboExperienceCatalog catalog,
+        string loweredTranscript)
+    {
+        var preferredSnippets = MatchesAny(loweredTranscript, "do you like basketball", "do you like basketball teams")
+            ? new[] { "love the basketball itself", "favorite team for now", "similar to my head" }
+            : new[] { "favorite team for now", "love the basketball itself", "similar to my head" };
+
+        return BuildScriptedPersonalityDecision(
+            catalog,
+            "robot_favorite_basketball_team",
+            preferredSnippets);
     }
 }

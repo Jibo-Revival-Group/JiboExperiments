@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-08`)
 
+- continued the source-backed compact music/name persona parity slice by routing direct rapper, Snoop Dogg, rock-band, AC/DC, own-name, and nickname liking prompts into the already-imported favorite rapper, favorite rock band, favorite name, and nickname answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal prompts preserve the authored Snoop Dogg, AC/DC, favorite-name, and just-Jibo nickname replies while live robot playback remains the proof item for this small slice.
+
 - continued the source-backed compact favorites parity slice by routing direct artichoke, right-here/place, sunny-weather, and daytime liking prompts into the already-imported favorite vegetable, place, weather, and time-of-day answer sets instead of generic chat. Added focused dialog guardrail coverage so these short preference prompts preserve the authored artichoke, right-here, sunny-weather, and any-time-you-are-here replies while live robot playback remains the proof item for this small slice.
 
 - continued the source-backed least-favorite persona parity slice by routing compact violent-games, artist/band dislike, trash-compactor, Megatron, any-president, onions-on-pizza, least-favorite-number, and woodpecker prompts into the existing imported least-favorite answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal dislike prompts preserve the authored violent-games, art, pleasantly-surprised band, trash-compactor, scary-Megatron, president, onion, number, and woodpecker replies while live robot playback remains the proof item for this small slice.

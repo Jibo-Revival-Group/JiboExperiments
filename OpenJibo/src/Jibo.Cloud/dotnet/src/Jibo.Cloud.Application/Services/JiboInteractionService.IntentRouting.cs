@@ -1589,14 +1589,18 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "what's your favorite name",
                 "what is your favorite name",
-                "do you have a favorite name"))
+                "do you have a favorite name",
+                "do you like your name",
+                "do you like the name jibo"))
             return "robot_favorite_name";
 
         if (MatchesAny(
                 loweredTranscript,
                 "do you have a nickname",
                 "what is your nickname",
-                "what's your nickname"))
+                "what's your nickname",
+                "do you like nicknames",
+                "do you want a nickname"))
             return "robot_nickname";
 
         if (MatchesAny(
@@ -2056,7 +2060,10 @@ public sealed partial class JiboInteractionService
                 "what is your favourite rapper",
                 "what rapper do you like",
                 "do you have a favorite rapper",
-                "do you have a favourite rapper"))
+                "do you have a favourite rapper",
+                "do you like rap",
+                "do you like rappers",
+                "do you like snoop dogg"))
             return "robot_favorite_rapper";
 
         if (MatchesAny(
@@ -2067,7 +2074,10 @@ public sealed partial class JiboInteractionService
                 "what is your favourite rock band",
                 "what rock band do you like",
                 "do you have a favorite rock band",
-                "do you have a favourite rock band"))
+                "do you have a favourite rock band",
+                "do you like rock bands",
+                "do you like ac dc",
+                "do you like acdc"))
             return "robot_favorite_rock_band";
 
         if (MatchesAny(

@@ -1153,7 +1153,10 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite vegetable",
                 "what s your least favourite vegetable",
                 "what vegetable do you like least",
-                "what vegetable do you dislike"))
+                "what vegetable do you dislike",
+                "do you dislike onions",
+                "do you hate onions",
+                "do you like onions"))
             return "robot_least_favorite_vegetable";
 
         if (MatchesAny(
@@ -1191,7 +1194,10 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite animal",
                 "what s your least favourite animal",
                 "what animal do you like least",
-                "what animal do you dislike"))
+                "what animal do you dislike",
+                "do you dislike hippos",
+                "do you hate hippos",
+                "do you like hippos"))
             return "robot_least_favorite_animal";
 
         if (MatchesAny(
@@ -1306,7 +1312,13 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite weather",
                 "what weather do you like least",
                 "what weather do you dislike",
-                "what kind of weather do you dislike"))
+                "what kind of weather do you dislike",
+                "do you dislike rain",
+                "do you hate rain",
+                "do you like rain",
+                "do you dislike thunderstorms",
+                "do you hate thunderstorms",
+                "do you like thunderstorms"))
             return "robot_least_favorite_weather";
 
         if (MatchesAny(

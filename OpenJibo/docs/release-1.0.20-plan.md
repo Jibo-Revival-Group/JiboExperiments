@@ -116,6 +116,16 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 
 
+### Progress Update (`2026-07-08`)
+
+- continued the source-backed least-favorite persona parity slice by routing compact onion, hippo, rain, and thunderstorm prompts (`do you like onions`, `do you dislike hippos`, `do you like rain`) into the existing imported least-favorite vegetable, animal, and weather answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal dislike prompts preserve the authored onions/hippos/rain-and-thunderstorms replies while live robot playback remains the proof item for this small slice.
+
+#### Major blockers / questions
+
+- physical-device proof remains the release blocker: a live converted robot still needs to reach `VerifyConnection` with matching reported host and host mappings before conversion readiness can be called proven.
+- safe awakening/OOBE parity still needs image-specific review of owner-name replacement points plus safe body/yawn/audio asset provenance before the conversion video should claim first-boot parity.
+- self-hosted owner-facing HTTPS remains unresolved; developer HTTP smoke paths are acceptable, but promoted owner conversion still needs a trust/certificate decision.
+
 ### Progress Update (`2026-07-07`)
 
 - continued the source-backed animal-likes parity slice by importing the legacy dog, cat, and whale liking answer sets into the favorite-animal catalog and routing compact `do you like dogs/cats/whales` prompts to dedicated authored replies instead of generic chat. Added focused dialog guardrail coverage so these low-signal animal prompts preserve the friendly/waggy dog, curious-cat, and favorite-mammal whale replies while live robot playback remains the proof item for this small slice.

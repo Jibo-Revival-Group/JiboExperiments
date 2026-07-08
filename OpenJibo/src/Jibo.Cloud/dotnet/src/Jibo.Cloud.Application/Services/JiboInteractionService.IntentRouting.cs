@@ -1382,7 +1382,9 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite time of day",
                 "what time of day do you like least",
                 "what time of day do you dislike",
-                "what time do you like least"))
+                "what time do you like least",
+                "do you like midnight",
+                "do you like the middle of the night"))
             return "robot_least_favorite_time_of_day";
 
         if (MatchesAny(
@@ -2160,7 +2162,9 @@ public sealed partial class JiboInteractionService
                 "what s your favorite pastime",
                 "what is your favourite pastime",
                 "what pastime do you like",
-                "what do you like to do for fun"))
+                "what do you like to do for fun",
+                "do you like socializing",
+                "do you like daydreaming"))
             return "robot_favorite_pastime";
 
         if (MatchesAny(
@@ -2185,7 +2189,9 @@ public sealed partial class JiboInteractionService
                 "what song do you like",
                 "what song do you like best",
                 "do you have a favorite song",
-                "do you have a favourite song"))
+                "do you have a favourite song",
+                "do you like dancing songs",
+                "do you like songs you can dance to"))
             return "robot_favorite_song";
 
         if (MatchesAny(
@@ -2213,6 +2219,7 @@ public sealed partial class JiboInteractionService
                 "what sport do you like",
                 "what sport do you like best",
                 "do you like golf",
+                "do you like putt putt",
                 "do you like mini golf",
                 "do you like miniature golf",
                 "do you like the masters"))
@@ -2337,7 +2344,9 @@ public sealed partial class JiboInteractionService
                 "what is your favourite olympic ring",
                 "what olympic ring do you like",
                 "do you have a favorite olympic ring",
-                "do you have a favourite olympic ring"))
+                "do you have a favourite olympic ring",
+                "do you like the blue olympic ring",
+                "do you like blue olympic rings"))
             return "robot_favorite_olympic_ring";
 
         if (MatchesAny(

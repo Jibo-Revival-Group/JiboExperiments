@@ -604,6 +604,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-07-07`, owner-memory saying wording slice):
   - expanded owner preference recall parsing for `have I told you my favorite ...`, `have I ever told you my favorite ...`, and `do you remember me saying my favorite ...` variants, including favourite/fave spellings and embedded `what my favorite ... is` forms, so quoted self-memory checks keep routing to owner-memory lookup
   - added focused guardrail coverage for the new have-I-told-you and remember-me-saying recall families
+- Progress update (`2026-07-08`, owner-memory mention wording slice):
+  - expanded owner preference recall parsing for `have I mentioned my favorite ...`, `did I mention my favorite ...`, and `what did I mention my favorite ...` variants, including favourite/fave spellings and trailing `... is` forms, so mention-style self-memory checks stay on owner-memory lookup
+  - added focused guardrail coverage for the new mention recall family
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

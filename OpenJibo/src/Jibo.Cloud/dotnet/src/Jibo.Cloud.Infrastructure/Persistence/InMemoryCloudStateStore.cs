@@ -495,6 +495,55 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _loops.ToArray();
     }
 
+
+    public LoopRecord AddLoop(string? name, string? ownerAccountId, string? robotId, string? robotFriendlyId)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var resolvedOwnerAccountId = string.IsNullOrWhiteSpace(ownerAccountId) ? _account.AccountId : ownerAccountId.Trim();
+        var resolvedRobotId = robotId?.Trim() ?? string.Empty;
+        var resolvedRobotFriendlyId = robotFriendlyId?.Trim() ?? string.Empty;
+        var baseName = string.IsNullOrWhiteSpace(name)
+            ? string.IsNullOrWhiteSpace(resolvedRobotFriendlyId)
+                ? "OpenJibo Loop"
+                : $"{resolvedRobotFriendlyId} Loop"
+            : name.Trim();
+        var baseLoopId = $"loop-{Slugify(string.IsNullOrWhiteSpace(resolvedRobotFriendlyId) ? baseName : resolvedRobotFriendlyId)}";
+        if (string.IsNullOrWhiteSpace(baseLoopId) || string.Equals(baseLoopId, "loop", StringComparison.OrdinalIgnoreCase))
+            baseLoopId = $"loop-{Guid.NewGuid():N}";
+
+        lock (_syncRoot)
+        {
+            if (!string.IsNullOrWhiteSpace(resolvedRobotId))
+            {
+                var existing = _loops.FirstOrDefault(loop =>
+                    string.Equals(loop.OwnerAccountId, resolvedOwnerAccountId, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(loop.RobotId, resolvedRobotId, StringComparison.OrdinalIgnoreCase));
+                if (existing is not null) return existing;
+            }
+
+            var candidateLoopId = baseLoopId;
+            var suffix = 2;
+            while (_loops.Any(loop => string.Equals(loop.LoopId, candidateLoopId, StringComparison.OrdinalIgnoreCase)))
+                candidateLoopId = $"{baseLoopId}-{suffix++}";
+
+            var loop = new LoopRecord
+            {
+                LoopId = candidateLoopId,
+                Name = baseName,
+                OwnerAccountId = resolvedOwnerAccountId,
+                RobotId = resolvedRobotId,
+                RobotFriendlyId = resolvedRobotFriendlyId,
+                CreatedUtc = now,
+                UpdatedUtc = now
+            };
+            _loops.Add(loop);
+            EnsureOwnerLoopMember(loop.LoopId);
+            EnsureRobotLoopMember(loop.LoopId, resolvedRobotId);
+            TouchState();
+            return loop;
+        }
+    }
+
     public IReadOnlyList<PersonRecord> GetPeople()
     {
         return _people.ToArray();

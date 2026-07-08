@@ -388,7 +388,7 @@ public sealed class JiboCloudProtocolService(
                       ReadString(body, "robotId") ??
                       (string.IsNullOrWhiteSpace(envelope.DeviceId) ? "unknown-robot" : envelope.DeviceId!);
 
-        var state = _oobeTokens.GetOrAdd(token ?? "oobe-implicit", _ => new OobeTokenState
+        var state = _oobeTokens.GetOrAdd(token ?? $"oobe-implicit-{robotId}", _ => new OobeTokenState
         {
             DeviceId = robotId,
             LoopId = ReadString(body, "loopId"),
@@ -422,6 +422,13 @@ public sealed class JiboCloudProtocolService(
 
         var registeredDevice =
             stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        if (string.IsNullOrWhiteSpace(state.LoopId))
+        {
+            var robotLoop = stateStore.AddLoop(null, stateStore.GetAccount().AccountId, registeredDevice.RobotId,
+                registeredDevice.DeviceId);
+            state.LoopId = robotLoop.LoopId;
+        }
+
         stateStore.UpdateRobot(new DeviceRegistration
         {
             DeviceId = registeredDevice.DeviceId,
@@ -857,6 +864,15 @@ public sealed class JiboCloudProtocolService(
 
         switch (operation)
         {
+            case "AddLoop" or "CreateLoop":
+            {
+                var loop = stateStore.AddLoop(
+                    ReadString(body, "name") ?? ReadString(body, "loopName"),
+                    ReadString(body, "ownerAccountId") ?? stateStore.GetAccount().AccountId,
+                    ReadString(body, "robotId") ?? ReadString(body, "deviceId"),
+                    ReadString(body, "robotFriendlyId") ?? ReadString(body, "friendlyId") ?? ReadString(body, "deviceId"));
+                return ProtocolDispatchResult.Ok(MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId)));
+            }
             case "InviteMember" or "InviteLoopMember":
             {
                 stateStore.AddLoopMember(

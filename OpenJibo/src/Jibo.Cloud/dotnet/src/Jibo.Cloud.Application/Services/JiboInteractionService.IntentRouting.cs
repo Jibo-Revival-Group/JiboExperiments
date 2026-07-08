@@ -1849,7 +1849,11 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite video game",
                 "what s your least favourite video game",
                 "what video game do you like least",
-                "what video game do you dislike"))
+                "what video game do you dislike",
+                "do you dislike violent games",
+                "do you hate violent games",
+                "do you like violent games",
+                "do you like really violent games"))
             return "robot_least_favorite_video_game";
 
         if (MatchesAny(
@@ -1877,7 +1881,11 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite artist",
                 "what s your least favourite artist",
                 "what artist do you like least",
-                "what artist do you dislike"))
+                "what artist do you dislike",
+                "do you dislike art",
+                "do you hate art",
+                "do you dislike artists",
+                "do you hate artists"))
             return "robot_least_favorite_artist";
 
         if (MatchesAny(
@@ -1889,7 +1897,9 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite band",
                 "what s your least favourite band",
                 "what band do you like least",
-                "what band do you dislike"))
+                "what band do you dislike",
+                "do you dislike bands",
+                "do you hate bands"))
             return "robot_least_favorite_band";
 
         if (MatchesAny(
@@ -1901,7 +1911,10 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite author",
                 "what s your least favourite author",
                 "what author do you like least",
-                "what author do you dislike"))
+                "what author do you dislike",
+                "do you dislike trash compactors",
+                "do you hate trash compactors",
+                "do you like trash compactors"))
             return "robot_least_favorite_author";
 
         if (MatchesAny(
@@ -1913,7 +1926,11 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite celebrity",
                 "what s your least favourite celebrity",
                 "what celebrity do you like least",
-                "what celebrity do you dislike"))
+                "what celebrity do you dislike",
+                "do you dislike megatron",
+                "do you hate megatron",
+                "do you like megatron",
+                "do you like scary megatron"))
             return "robot_least_favorite_celebrity";
 
         if (MatchesAny(
@@ -1929,7 +1946,9 @@ public sealed partial class JiboInteractionService
                 "who is your least favourite president",
                 "who's your least favourite president",
                 "what president do you like least",
-                "what president do you dislike"))
+                "what president do you dislike",
+                "do you dislike any president",
+                "do you hate any president"))
             return "robot_least_favorite_president";
 
         if (MatchesAny(
@@ -2233,7 +2252,10 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite pizza topping",
                 "what s your least favourite pizza topping",
                 "what pizza topping do you like least",
-                "what pizza topping do you dislike"))
+                "what pizza topping do you dislike",
+                "do you dislike onions on pizza",
+                "do you hate onions on pizza",
+                "do you like onions on pizza"))
             return "robot_least_favorite_pizza_topping";
 
 
@@ -2262,6 +2284,31 @@ public sealed partial class JiboInteractionService
                 "do you like football",
                 "do you like football teams"))
             return "robot_favorite_football_team";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite number",
+                "what's your least favorite number",
+                "what s your least favorite number",
+                "what is your least favourite number",
+                "what number do you like least",
+                "what number do you dislike",
+                "do you like 1423754492",
+                "do you like one billion four hundred twenty three million seven hundred fifty four thousand four hundred ninety two"))
+            return "robot_least_favorite_number";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your least favorite bird",
+                "what's your least favorite bird",
+                "what s your least favorite bird",
+                "what is your least favourite bird",
+                "what bird do you like least",
+                "what bird do you dislike",
+                "do you dislike woodpeckers",
+                "do you hate woodpeckers",
+                "do you like woodpeckers"))
+            return "robot_least_favorite_bird";
 
         if (MatchesAny(
                 loweredTranscript,

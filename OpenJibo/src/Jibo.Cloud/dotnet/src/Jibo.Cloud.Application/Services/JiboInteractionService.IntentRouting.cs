@@ -1684,7 +1684,13 @@ public sealed partial class JiboInteractionService
                 "what's your favourite season",
                 "what s your favourite season",
                 "what season do you like best",
-                "do you have a favorite season"))
+                "do you have a favorite season",
+                "do you have a favourite season",
+                "do you like winter",
+                "do you like summer",
+                "do you like spring",
+                "do you like fall",
+                "do you like autumn"))
             return "robot_favorite_season";
 
         if (MatchesAny(
@@ -1696,7 +1702,9 @@ public sealed partial class JiboInteractionService
                 "what's your favourite author",
                 "who is your favorite author",
                 "who is your favourite author",
-                "what author do you like best"))
+                "what author do you like best",
+                "do you like doctor seuss",
+                "do you like dr seuss"))
             return "robot_favorite_author";
 
         if (MatchesAny(
@@ -1755,7 +1763,10 @@ public sealed partial class JiboInteractionService
                 "what s your favorite smell",
                 "what is your favourite smell",
                 "what's your favourite smell",
-                "what smell do you like"))
+                "what smell do you like",
+                "do you like bacon",
+                "do you like roses",
+                "do you like bacon and roses"))
             return "robot_favorite_smell";
 
         if (MatchesAny(
@@ -1782,7 +1793,9 @@ public sealed partial class JiboInteractionService
                 "what s your favorite fish",
                 "what is your favourite fish",
                 "what's your favourite fish",
-                "what fish do you like"))
+                "what fish do you like",
+                "do you like fish",
+                "do you like blowfish"))
             return "robot_favorite_fish";
 
         if (MatchesAny(

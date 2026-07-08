@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-08`)
 
+- continued the source-backed compact favorite-persona parity slice by routing direct season, author, smell, and fish liking prompts (`do you like winter`, `do you like Doctor Seuss`, `do you like bacon/roses`, `do you like blowfish`) into the already-imported favorite season, author, smell, and fish answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal preference prompts preserve authored winter, Doctor Seuss, bacon-and-roses, and blowfish replies while live robot playback remains the proof item for this small slice.
+
 - continued the source-backed compact animal-likes parity slice by adding `do you enjoy` / `are you into` forms for penguins, birds, and animals to the already-imported favorite-animal answer routes instead of generic chat. Added focused dialog guardrail coverage so these low-signal animal preference prompts preserve authored penguin and animals replies while live robot playback remains the proof item for this small slice.
 
 - continued the source-backed physical-self and mission parity slice by widening compact weight, height, price, unplugged, mission/purpose, prime-directive, Commander app, and body-material prompts into the existing imported Pegasus answer sets instead of generic chat. Added focused dialog guardrail coverage for those aliases, and moved the compact `do you like football` preference prompt ahead of radio genre matching so it stays on the authored sports-team reply path. Live robot playback remains the proof item for this small slice.

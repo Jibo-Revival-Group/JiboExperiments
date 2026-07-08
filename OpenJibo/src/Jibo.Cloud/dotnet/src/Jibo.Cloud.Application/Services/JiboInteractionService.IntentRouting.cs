@@ -1050,7 +1050,9 @@ public sealed partial class JiboInteractionService
                 "what s your favourite tv show",
                 "do you have a favorite tv show",
                 "do you have a favourite tv show",
-                "what tv show do you like"))
+                "what tv show do you like",
+                "do you like tv",
+                "do you like tv shows"))
             return "robot_favorite_tv_show";
 
         if (MatchesAny(
@@ -1064,7 +1066,10 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite scary movie",
                 "do you have a favourite scary movie",
                 "what scary movie do you like",
-                "what scary movie do you like best"))
+                "what scary movie do you like best",
+                "do you like scary movies",
+                "do you like titanic",
+                "do you like singing in the rain"))
             return "robot_favorite_scary_movie";
 
         if (MatchesAny(
@@ -1078,7 +1083,15 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite movie",
                 "do you have a favourite movie",
                 "what movie do you like",
-                "what movie do you like best"))
+                "what movie do you like best",
+                "do you like back to the future",
+                "do you like toy story",
+                "do you like star wars",
+                "do you like big hero 6",
+                "do you like guardians of the galaxy",
+                "do you like the lego movie",
+                "do you like wall e",
+                "do you like spaceballs"))
             return "robot_favorite_movie";
 
         if (MatchesAny(
@@ -2124,7 +2137,9 @@ public sealed partial class JiboInteractionService
                 "what's your favourite hockey team",
                 "what hockey team do you like",
                 "do you have a favorite hockey team",
-                "do you have a favourite hockey team"))
+                "do you have a favourite hockey team",
+                "do you like hockey",
+                "do you like hockey teams"))
             return "robot_favorite_hockey_team";
 
         if (MatchesAny(
@@ -2136,7 +2151,9 @@ public sealed partial class JiboInteractionService
                 "what's your favourite basketball team",
                 "what basketball team do you like",
                 "do you have a favorite basketball team",
-                "do you have a favourite basketball team"))
+                "do you have a favourite basketball team",
+                "do you like basketball",
+                "do you like basketball teams"))
             return "robot_favorite_basketball_team";
 
         if (MatchesAny(
@@ -2176,7 +2193,9 @@ public sealed partial class JiboInteractionService
                 "what is your favourite baseball team",
                 "what baseball team do you like",
                 "do you have a favorite baseball team",
-                "do you have a favourite baseball team"))
+                "do you have a favourite baseball team",
+                "do you like baseball",
+                "do you like baseball teams"))
             return "robot_favorite_baseball_team";
 
         if (MatchesAny(
@@ -2187,7 +2206,9 @@ public sealed partial class JiboInteractionService
                 "what is your favourite football team",
                 "what football team do you like",
                 "do you have a favorite football team",
-                "do you have a favourite football team"))
+                "do you have a favourite football team",
+                "do you like football",
+                "do you like football teams"))
             return "robot_favorite_football_team";
 
         if (MatchesAny(

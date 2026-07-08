@@ -610,6 +610,9 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-07-08`, owner-memory remembered-speech wording slice):
   - expanded owner preference recall parsing for `do you remember when I said my favorite ...`, `do you remember when I told you what my favorite ... is`, and `can/could/would you remember me telling you ...` variants, including favourite/fave spellings, so remembered-speech memory checks stay on owner-memory lookup instead of being treated as new preference statements
   - added focused guardrail coverage for the new remembered-speech recall family
+- Progress update (`2026-07-08`, owner-memory quoted-recall wording slice):
+  - expanded owner preference recall parsing for `do you remember that I said my favorite ...`, `can you remember that I told you ...`, and `could you recall that I mentioned ...` variants, including favourite/fave spellings and embedded `... is` endings, so quoted self-memory checks stay on owner-memory lookup
+  - added focused guardrail coverage for the new quoted-recall family
 - Exit criteria:
   - ambiguous phrase handling is improved without regressions in existing `1.0.20` features
   - phrase imports are documented and traceable to Pegasus parser sources

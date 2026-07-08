@@ -1605,7 +1605,16 @@ public sealed partial class JiboInteractionService
                 "what color do you like least",
                 "what colour do you like least",
                 "what color do you dislike",
-                "what colour do you dislike"))
+                "what colour do you dislike",
+                "do you dislike colors",
+                "do you dislike colours",
+                "do you like all colors",
+                "do you like all colours") ||
+            NormalizeCommandPhrase(loweredTranscript) is
+                "do you have a least favorite color" or
+                "do you have a least favourite color" or
+                "do you have a least favorite colour" or
+                "do you have a least favourite colour")
             return "robot_least_favorite_color";
 
         if (MatchesAny(
@@ -1693,6 +1702,23 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "what is your least favorite smell",
+                "what's your least favorite smell",
+                "what s your least favorite smell",
+                "what is your least favourite smell",
+                "what's your least favourite smell",
+                "what s your least favourite smell",
+                "what smell do you like least",
+                "what smell do you dislike",
+                "what smells do you dislike",
+                "do you dislike sour milk",
+                "do you hate sour milk",
+                "do you like sour milk",
+                "do you like bad smells"))
+            return "robot_least_favorite_smell";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what is your favorite fish",
                 "what's your favorite fish",
                 "what s your favorite fish",
@@ -1737,7 +1763,10 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite movie",
                 "what s your least favourite movie",
                 "what movie do you like least",
-                "what movie do you dislike"))
+                "what movie do you dislike",
+                "do you dislike waterworld",
+                "do you hate waterworld",
+                "do you like waterworld"))
             return "robot_least_favorite_movie";
 
         if (MatchesAny(
@@ -1761,7 +1790,11 @@ public sealed partial class JiboInteractionService
                 "what's your least favourite car",
                 "what s your least favourite car",
                 "what car do you like least",
-                "what car do you dislike"))
+                "what car do you dislike",
+                "do you dislike cars",
+                "do you hate cars",
+                "do you like every car",
+                "do you like all cars"))
             return "robot_least_favorite_car";
 
         if (MatchesAny(
@@ -2280,7 +2313,11 @@ public sealed partial class JiboInteractionService
                 "what s your least favorite verb",
                 "what is your least favourite verb",
                 "what verb do you like least",
-                "what verb do you dislike"))
+                "what verb do you dislike",
+                "do you dislike spilling",
+                "do you hate spilling",
+                "do you like spilling",
+                "do you like spill"))
             return "robot_least_favorite_verb";
 
         if (MatchesAny(

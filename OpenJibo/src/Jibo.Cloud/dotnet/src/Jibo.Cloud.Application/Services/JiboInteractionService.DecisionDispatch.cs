@@ -431,6 +431,11 @@ public sealed partial class JiboInteractionService
                 "least favorite food",
                 "spilled soup",
                 "big fan of soup"),
+            "robot_least_favorite_smell" => BuildScriptedPersonalityDecision(
+                catalog,
+                "robot_least_favorite_smell",
+                "sour milk",
+                "bad smells"),
             "robot_least_favorite_adjective" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_least_favorite_adjective",

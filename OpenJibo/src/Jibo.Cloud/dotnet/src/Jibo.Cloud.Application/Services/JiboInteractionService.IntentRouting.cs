@@ -1220,6 +1220,8 @@ public sealed partial class JiboInteractionService
                 "what vegetable do you like",
                 "what kind of vegetable do you like",
                 "do you like artichokes",
+                "do you enjoy artichokes",
+                "are you into artichokes",
                 "do you like artichoke"))
             return "robot_favorite_vegetable";
 
@@ -1264,6 +1266,8 @@ public sealed partial class JiboInteractionService
                 "where is your favorite place",
                 "where is your favourite place",
                 "do you like it here",
+                "do you enjoy it here",
+                "are you into being here",
                 "do you like right here"))
             return "robot_favorite_place";
 
@@ -1278,6 +1282,8 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite superhero",
                 "do you have a favourite superhero",
                 "do you like superheroes",
+                "do you enjoy superheroes",
+                "are you into superheroes",
                 "do you like super heroes",
                 "who is your favorite superhero",
                 "who is your favourite superhero"))
@@ -1326,6 +1332,8 @@ public sealed partial class JiboInteractionService
                 "what's your favourite robot",
                 "what robot do you like",
                 "do you like robots",
+                "do you enjoy robots",
+                "are you into robots",
                 "who is your favorite robot",
                 "who is your favourite robot",
                 "do you have a favorite robot",
@@ -1342,6 +1350,8 @@ public sealed partial class JiboInteractionService
                 "what car do you like",
                 "what kind of car do you like",
                 "do you like cars",
+                "do you enjoy cars",
+                "are you into cars",
                 "do you like beetles",
                 "do you like beetle cars",
                 "do you have a favorite car",
@@ -1360,6 +1370,8 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite weather",
                 "do you have a favourite weather",
                 "do you like sunny weather",
+                "do you enjoy sunny weather",
+                "are you into sunny weather",
                 "do you like sunshine weather"))
             return "robot_favorite_weather";
 
@@ -1407,6 +1419,8 @@ public sealed partial class JiboInteractionService
                 "do you have a favorite time of day",
                 "do you have a favourite time of day",
                 "do you like daytime",
+                "do you enjoy daytime",
+                "are you into daytime",
                 "do you like night time",
                 "do you like nighttime"))
             return "robot_favorite_time_of_day";
@@ -1426,6 +1440,8 @@ public sealed partial class JiboInteractionService
                 "do you like the sun",
                 "do you like sun",
                 "do you like sunshine",
+                "do you enjoy sunshine",
+                "are you into sunshine",
                 "what do you think about the sun"))
             return "robot_likes_sun";
 
@@ -1434,6 +1450,8 @@ public sealed partial class JiboInteractionService
                 "do you like space",
                 "do you love space",
                 "do you like astronomy",
+                "do you enjoy astronomy",
+                "are you into astronomy",
                 "what do you think about space"))
             return "robot_likes_space";
 

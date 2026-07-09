@@ -116,6 +116,16 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 
 
+### Progress Update (`2026-07-09`)
+
+- continued the source-backed compact dessert/fruit/pet/candy parity slice by widening `do you enjoy` / `are you into` forms for blueberries, blueberry pie, groundhogs, mint chocolate chip, lollipops, and candy corn into the already-imported favorite fruit, dessert, pet, ice cream, and candy answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal preference prompts preserve the authored blueberry, blueberry-pie, groundhog, mint-chocolate-chip, and candy-corn/lollipop replies while live robot playback remains the proof item for this small slice.
+
+#### Major blockers / questions
+
+- physical-device proof remains the release blocker: a live converted robot still needs to reach `VerifyConnection` with matching reported host and host mappings before conversion readiness can be called proven.
+- safe awakening/OOBE parity still needs image-specific review of owner-name replacement points plus safe body/yawn/audio asset provenance before the conversion video should claim first-boot parity.
+- self-hosted owner-facing HTTPS remains unresolved; developer HTTP smoke paths are acceptable, but promoted owner conversion still needs a trust/certificate decision.
+
 ### Progress Update (`2026-07-08`)
 
 - continued the source-backed compact pastime/sports/music preference parity slice by routing direct midnight, socializing/daydreaming, danceable-song, putt-putt, and blue Olympic ring liking prompts into the already-imported least-favorite time-of-day, favorite pastime, favorite song, favorite sport, and favorite Olympic ring answer sets instead of generic chat. Added focused dialog guardrail coverage so these short preference prompts preserve the authored middle-of-night, socializing/daydreaming, dance-song, mini-golf, and blue-ring replies while live robot playback remains the proof item for this small slice.

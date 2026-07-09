@@ -1135,8 +1135,12 @@ public sealed partial class JiboInteractionService
                 "what kind of shape do you like",
                 "do you like shapes",
                 "do you like circles",
+                "do you enjoy circles",
+                "are you into circles",
                 "do you like circle",
                 "do you like spheres",
+                "do you enjoy spheres",
+                "are you into spheres",
                 "do you like sphere"))
             return "robot_favorite_shape";
 
@@ -1179,7 +1183,11 @@ public sealed partial class JiboInteractionService
                 "do you like words",
                 "do you like turtle",
                 "do you like turtles",
+                "do you enjoy turtles",
+                "are you into turtles",
                 "do you like pumpernickel",
+                "do you enjoy pumpernickel",
+                "are you into pumpernickel",
                 "do you like snorkel",
                 "do you like palindromes"))
             return "robot_favorite_word";
@@ -1836,8 +1844,12 @@ public sealed partial class JiboInteractionService
                 "what food do you like",
                 "what kind of food do you like",
                 "do you like macaroni",
+                "do you enjoy macaroni",
+                "are you into macaroni",
                 "do you like mac and cheese",
-                "do you like macaroni and cheese"))
+                "do you like macaroni and cheese",
+                "do you enjoy macaroni and cheese",
+                "are you into macaroni and cheese"))
             return "robot_favorite_food";
 
         if (MatchesAny(
@@ -2213,7 +2225,11 @@ public sealed partial class JiboInteractionService
                 "what drink do you like",
                 "what kind of drink do you like",
                 "do you like hot cocoa",
-                "do you like iced tea"))
+                "do you enjoy hot cocoa",
+                "are you into hot cocoa",
+                "do you like iced tea",
+                "do you enjoy iced tea",
+                "are you into iced tea"))
             return "robot_favorite_drink";
 
         if (MatchesAny(
@@ -2227,9 +2243,17 @@ public sealed partial class JiboInteractionService
                 "what sport do you like",
                 "what sport do you like best",
                 "do you like golf",
+                "do you enjoy golf",
+                "are you into golf",
                 "do you like putt putt",
+                "do you enjoy putt putt",
+                "are you into putt putt",
                 "do you like mini golf",
+                "do you enjoy mini golf",
+                "are you into mini golf",
                 "do you like miniature golf",
+                "do you enjoy miniature golf",
+                "are you into miniature golf",
                 "do you like the masters"))
             return "robot_favorite_sport";
 

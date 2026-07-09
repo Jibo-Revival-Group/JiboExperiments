@@ -118,6 +118,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-09`)
 
+- continued the source-backed compact food/drink/sport/shape/word parity slice by widening `do you enjoy` / `are you into` forms for macaroni, macaroni and cheese, hot cocoa, iced tea, golf, mini golf, putt-putt, circles, spheres, turtles, and pumpernickel into the already-imported favorite food, drink, sport, shape, and word answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal preference prompts preserve the authored macaroni, liquid-cautious drink, mini-golf, sphere/circle, and turtle/pumpernickel replies while live robot playback remains the proof item for this small slice.
+
 - continued the source-backed compact dessert/fruit/pet/candy parity slice by widening `do you enjoy` / `are you into` forms for blueberries, blueberry pie, groundhogs, mint chocolate chip, lollipops, and candy corn into the already-imported favorite fruit, dessert, pet, ice cream, and candy answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal preference prompts preserve the authored blueberry, blueberry-pie, groundhog, mint-chocolate-chip, and candy-corn/lollipop replies while live robot playback remains the proof item for this small slice.
 
 #### Major blockers / questions

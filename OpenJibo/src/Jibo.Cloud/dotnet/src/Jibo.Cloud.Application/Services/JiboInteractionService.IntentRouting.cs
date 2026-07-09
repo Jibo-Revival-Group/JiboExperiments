@@ -2017,6 +2017,12 @@ public sealed partial class JiboInteractionService
                 "what s your favorite halloween candy",
                 "what is your favourite halloween candy",
                 "what halloween candy do you like",
+                "do you like lollipops",
+                "do you enjoy lollipops",
+                "are you into lollipops",
+                "do you like candy corn",
+                "do you enjoy candy corn",
+                "are you into candy corn",
                 "do you have a favorite halloween candy",
                 "do you have a favourite halloween candy"))
             return "robot_favorite_halloween_candy";
@@ -2050,6 +2056,8 @@ public sealed partial class JiboInteractionService
                 "do you like ice cream flavours",
                 "do you like mint chocolate chip",
                 "do you like mint chocolate chip ice cream",
+                "do you enjoy mint chocolate chip",
+                "are you into mint chocolate chip",
                 "do you have a favorite ice cream flavor",
                 "do you have a favourite ice cream flavour"))
             return "robot_favorite_ice_cream_flavor";
@@ -2436,6 +2444,8 @@ public sealed partial class JiboInteractionService
                 "what kind of fruit do you like",
                 "do you like blueberries",
                 "do you like blueberry",
+                "do you enjoy blueberries",
+                "are you into blueberries",
                 "do you have a favorite fruit",
                 "do you have a favourite fruit"))
             return "robot_favorite_fruit";
@@ -2537,6 +2547,8 @@ public sealed partial class JiboInteractionService
                 "do you like desserts",
                 "do you like pie",
                 "do you like blueberry pie",
+                "do you enjoy blueberry pie",
+                "are you into blueberry pie",
                 "do you have a favorite dessert",
                 "do you have a favourite dessert"))
             return "robot_favorite_dessert";
@@ -2602,6 +2614,8 @@ public sealed partial class JiboInteractionService
                 "what kind of pet do you like",
                 "do you like pets",
                 "do you like groundhogs",
+                "do you enjoy groundhogs",
+                "are you into groundhogs",
                 "do you have a favorite pet",
                 "do you have a favourite pet"))
             return "robot_favorite_pet";

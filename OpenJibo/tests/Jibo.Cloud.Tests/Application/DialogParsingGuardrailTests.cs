@@ -410,6 +410,7 @@ public sealed class DialogParsingGuardrailTests
     [InlineData("would you remind me what my fave sport is", "sport")]
     [InlineData("what was my favorite color", "color")]
     [InlineData("what did I say my favorite color", "color")]
+    [InlineData("what did I say my favorite color was", "color")]
     [InlineData("what did I say my favourite food", "food")]
     [InlineData("what did I say my fave sport", "sport")]
     [InlineData("what did I say my favorite color is", "color")]

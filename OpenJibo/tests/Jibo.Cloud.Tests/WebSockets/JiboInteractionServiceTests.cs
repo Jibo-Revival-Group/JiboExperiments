@@ -1990,6 +1990,44 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("You told me your favorite sport is football.", recallDecision.ReplyText);
     }
 
+    [Theory]
+    [InlineData("what did I say my favorite music was")]
+    [InlineData("what did I tell you my favourite music was")]
+    [InlineData("what did I say my fave music was")]
+    public async Task BuildDecisionAsync_PreferenceMemory_PastTenseRecallAliasesStayOnMemoryRoute(
+        string recallTranscript)
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        var service = CreateService(memoryStore);
+
+        await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "my favorite music is jazz",
+            NormalizedTranscript = "my favorite music is jazz",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-a",
+                ["loopId"] = "loop-a"
+            },
+            DeviceId = "device-a"
+        });
+
+        var recallDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = recallTranscript,
+            NormalizedTranscript = recallTranscript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-a",
+                ["loopId"] = "loop-a"
+            },
+            DeviceId = "device-a"
+        });
+
+        Assert.Equal("memory_get_preference", recallDecision.IntentName);
+        Assert.Equal("You told me your favorite music is jazz.", recallDecision.ReplyText);
+    }
+
 
     [Theory]
     [InlineData("could you tell me my favorite music")]
@@ -4626,6 +4664,40 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_StopIt_MapsToIdleStopCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "stop it",
+            NormalizedTranscript = "stop it"
+        });
+
+        Assert.Equal("stop", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_ForgetIt_MapsToIdleStopCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "forget it",
+            NormalizedTranscript = "forget it"
+        });
+
+        Assert.Equal("stop", decision.IntentName);
+        Assert.Equal("@be/idle", decision.SkillName);
+        Assert.Equal("stop", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_StopMoving_UsesSourceBackedStopMovingReply()
     {
         var service = CreateService();
@@ -5001,6 +5073,23 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_IncreaseTheVolume_MapsToGlobalVolumeUpCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "increase the volume",
+            NormalizedTranscript = "increase the volume"
+        });
+
+        Assert.Equal("volume_up", decision.IntentName);
+        Assert.Equal("global_commands", decision.SkillName);
+        Assert.Equal("volumeUp", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("null", decision.SkillPayload["volumeLevel"]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_SetVolumeToSix_MapsToGlobalVolumeToValueCommand()
     {
         var service = CreateService();
@@ -5015,6 +5104,23 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("global_commands", decision.SkillName);
         Assert.Equal("volumeToValue", decision.SkillPayload!["globalIntent"]);
         Assert.Equal("6", decision.SkillPayload["volumeLevel"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_DecreaseTheVolume_MapsToGlobalVolumeDownCommand()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "decrease the volume",
+            NormalizedTranscript = "decrease the volume"
+        });
+
+        Assert.Equal("volume_down", decision.IntentName);
+        Assert.Equal("global_commands", decision.SkillName);
+        Assert.Equal("volumeDown", decision.SkillPayload!["globalIntent"]);
+        Assert.Equal("null", decision.SkillPayload["volumeLevel"]);
     }
 
     [Fact]

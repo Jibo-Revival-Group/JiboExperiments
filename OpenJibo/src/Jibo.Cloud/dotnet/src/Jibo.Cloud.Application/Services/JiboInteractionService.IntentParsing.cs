@@ -1567,9 +1567,13 @@ public sealed partial class JiboInteractionService
         if (string.IsNullOrWhiteSpace(category)) return null;
 
         var trimmed = category.Trim();
-        return trimmed.EndsWith(" is", StringComparison.Ordinal)
-            ? trimmed[..^3].Trim()
-            : trimmed;
+        foreach (var suffix in new[] { " is", " was", " were", " are" })
+        {
+            if (trimmed.EndsWith(suffix, StringComparison.Ordinal))
+                return trimmed[..^suffix.Length].Trim();
+        }
+
+        return trimmed;
     }
 
     private static string? TryExtractEmbeddedPreferenceCategory(string normalized, string lead, string spelling)

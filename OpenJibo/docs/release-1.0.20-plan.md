@@ -118,6 +118,14 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ### Progress Update (`2026-07-09`)
 
+- continued the STT / turn-reliability slice by proving the websocket turn pipeline for `stop it`, `forget it`, `increase the volume`, and `decrease the volume`, so the newly widened parser aliases are covered at the layer where EOS, follow-up suppression, and skill actions are actually emitted.
+
+- continued the source-backed preference-memory recall slice by teaching the lookup path to trim past-tense suffixes like `was` / `were` from category phrases, so prompts such as `what did I say my favorite music was` stay on the memory route instead of treating `music was` as the category. Added focused regression coverage for the new past-tense recall wording while live robot playback remains the proof item for this small slice.
+
+- continued the dialog-guardrail slice by adding explicit coverage for `what did I say my favorite color was`, keeping the lower-level recall matrix aligned with the memory-route parser fix and reducing the chance that this wording regresses back into generic chat.
+
+- continued the stop / volume parity slice by adding explicit coverage for `stop it`, `forget it`, `increase the volume`, and `decrease the volume`, confirming that the already-implemented global command paths still map to `@be/idle` and `global_commands` instead of generic chat.
+
 - continued the source-backed compact actor/actress preference parity slice by widening `do you enjoy`, `are you into`, and `are you a fan of` forms for Tom Hanks, Hanks, Julie Andrews, and Mary Poppins into the already-imported favorite actor/actress answer sets instead of generic chat. Added focused dialog guardrail coverage so these low-signal celebrity prompts preserve the authored Tom Hanks and Julie Andrews replies while live robot playback remains the proof item for this small slice.
 
 - continued the compact preference-question parity slice by adding `are you a fan of` variants for the recently widened source-backed favorites routes: shapes, favorite words, vegetables, places, superheroes, robots, cars, weather, time-of-day, sun/space presence, food, candy, ice cream, drinks, fruit, dessert, and pets. These now stay on the authored Pegasus/OpenJibo answer sets instead of falling through to generic chat; live robot playback remains the proof item for this small alias slice.

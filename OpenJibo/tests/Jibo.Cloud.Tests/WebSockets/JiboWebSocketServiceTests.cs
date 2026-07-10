@@ -3853,6 +3853,70 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_StopIt_EmitsGlobalStopWithoutReply()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-stop-it-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-stop-it","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-stop-it-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-stop-it","data":{"text":"stop it"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
+        Assert.Equal("stop", nlu.GetProperty("intent").GetString());
+        Assert.Equal("global_commands", nlu.GetProperty("domain").GetString());
+    }
+
+    [Fact]
+    public async Task ClientAsr_ForgetIt_EmitsGlobalStopWithoutReply()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-forget-it-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-forget-it","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-forget-it-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-forget-it","data":{"text":"forget it"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
+        Assert.Equal("stop", nlu.GetProperty("intent").GetString());
+        Assert.Equal("global_commands", nlu.GetProperty("domain").GetString());
+    }
+
+    [Fact]
     public async Task ClientAsr_GoToSleep_EmitsIdleSleepRedirect()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -4109,6 +4173,72 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("@be/nimbus",
             skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
         Assert.True(skillPayload.RootElement.GetProperty("data").GetProperty("final").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ClientAsr_IncreaseTheVolume_EmitsGlobalVolumeUp()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-volume-increase-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-volume-increase","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-volume-increase-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-volume-increase","data":{"text":"increase the volume"}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
+        Assert.Equal("volumeUp", nlu.GetProperty("intent").GetString());
+        Assert.Equal("global_commands", nlu.GetProperty("domain").GetString());
+    }
+
+    [Fact]
+    public async Task ClientAsr_DecreaseTheVolume_EmitsGlobalVolumeDown()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-volume-decrease-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-volume-decrease","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-volume-decrease-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-volume-decrease","data":{"text":"decrease the volume"}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
+        Assert.Equal("volumeDown", nlu.GetProperty("intent").GetString());
+        Assert.Equal("global_commands", nlu.GetProperty("domain").GetString());
     }
 
     [Fact]

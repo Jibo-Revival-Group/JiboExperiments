@@ -1994,16 +1994,25 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what did I say my favorite music was")]
     [InlineData("what did I tell you my favourite music was")]
     [InlineData("what did I say my fave music was")]
+    [InlineData("what did I say my favorite color was")]
     public async Task BuildDecisionAsync_PreferenceMemory_PastTenseRecallAliasesStayOnMemoryRoute(
         string recallTranscript)
     {
         var memoryStore = new InMemoryPersonalMemoryStore();
         var service = CreateService(memoryStore);
+        var isColorRecall = recallTranscript.Contains("color", StringComparison.OrdinalIgnoreCase);
+        var expectedMemoryValue = recallTranscript.Contains("color", StringComparison.OrdinalIgnoreCase)
+            ? "blue"
+            : "jazz";
 
         await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "my favorite music is jazz",
-            NormalizedTranscript = "my favorite music is jazz",
+            RawTranscript = isColorRecall
+                ? "my favorite color is blue"
+                : "my favorite music is jazz",
+            NormalizedTranscript = isColorRecall
+                ? "my favorite color is blue"
+                : "my favorite music is jazz",
             Attributes = new Dictionary<string, object?>
             {
                 ["accountId"] = "acct-a",
@@ -2025,7 +2034,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("memory_get_preference", recallDecision.IntentName);
-        Assert.Equal("You told me your favorite music is jazz.", recallDecision.ReplyText);
+        Assert.Equal($"You told me your favorite {(isColorRecall ? "color" : "music")} is {expectedMemoryValue}.",
+            recallDecision.ReplyText);
     }
 
 

@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using System.Text;
 using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
@@ -57,6 +58,34 @@ public sealed class WebSocketRequestCoordinatorTests
         Assert.Equal(3, session.TurnState.BufferedAudioBytes);
     }
 
+    [Fact]
+    public async Task HandleAsync_PathTokenFrames_UseSingleConnectionScopedSession()
+    {
+        var listen =
+            """{"type":"LISTEN","transID":"trans-path","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}""";
+        var socket = new FakeWebSocket(
+            new FakeWebSocketFrame(WebSocketMessageType.Text, Encoding.UTF8.GetBytes(listen)),
+            new FakeWebSocketFrame(WebSocketMessageType.Binary, [1, 2, 3, 4]),
+            new FakeWebSocketFrame(WebSocketMessageType.Close, []));
+        var context = CreateContext(socket);
+        context.Request.Host = new HostString("192.168.7.142");
+        context.Request.Path = "/v1/listen";
+
+        var coordinator = CreateCoordinator(out var telemetrySink, out var store);
+
+        await coordinator.HandleAsync(context);
+
+        Assert.True(socket.Accepted);
+        Assert.Null(store.FindSessionByToken("v1/listen"));
+        Assert.NotNull(telemetrySink.LastConnectionId);
+        var session = store.FindSessionByToken($"conn:{telemetrySink.LastConnectionId}");
+        Assert.NotNull(session);
+        Assert.Equal("trans-path", session.TurnState.TransId);
+        Assert.True(session.TurnState.SawListen);
+        Assert.Equal(4, session.TurnState.BufferedAudioBytes);
+        Assert.Equal(telemetrySink.LastConnectionId, telemetrySink.FirstConnectionId);
+    }
+
     private static WebSocketRequestCoordinator CreateCoordinator(out RecordingWebSocketTelemetrySink telemetrySink)
     {
         var service = CreateWebSocketService(out _);
@@ -107,10 +136,16 @@ public sealed class WebSocketRequestCoordinatorTests
     {
         public List<string> Events { get; } = [];
 
+        public string? FirstConnectionId { get; private set; }
+
+        public string? LastConnectionId { get; private set; }
+
         public Task RecordConnectionOpenedAsync(WebSocketMessageEnvelope envelope, CloudSession session,
             CancellationToken cancellationToken = default)
         {
             Events.Add("opened");
+            FirstConnectionId ??= envelope.ConnectionId;
+            LastConnectionId = envelope.ConnectionId;
             return Task.CompletedTask;
         }
 
@@ -118,6 +153,8 @@ public sealed class WebSocketRequestCoordinatorTests
             CancellationToken cancellationToken = default)
         {
             Events.Add($"inbound:{messageType}");
+            FirstConnectionId ??= envelope.ConnectionId;
+            LastConnectionId = envelope.ConnectionId;
             return Task.CompletedTask;
         }
 

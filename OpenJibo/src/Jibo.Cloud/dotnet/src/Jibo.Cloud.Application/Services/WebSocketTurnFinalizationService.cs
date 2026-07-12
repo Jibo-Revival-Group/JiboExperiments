@@ -681,13 +681,9 @@ public sealed class WebSocketTurnFinalizationService(
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
 
-            if (root.TryGetProperty("type", out var type) &&
-                type.ValueKind == JsonValueKind.String &&
-                string.Equals(type.GetString(), "LISTEN", StringComparison.OrdinalIgnoreCase))
-            {
-                turnState.SawListen = true;
-                turnState.ListenOpenedUtc ??= DateTimeOffset.UtcNow;
-            }
+            var isListenMessage = root.TryGetProperty("type", out var type) &&
+                                  type.ValueKind == JsonValueKind.String &&
+                                  string.Equals(type.GetString(), "LISTEN", StringComparison.OrdinalIgnoreCase);
 
             if (root.TryGetProperty("transID", out var transId) && transId.ValueKind == JsonValueKind.String)
             {
@@ -698,6 +694,12 @@ public sealed class WebSocketTurnFinalizationService(
                     ResetTurnState(turnState, nextTransId);
                     session.LastTransId = nextTransId;
                 }
+            }
+
+            if (isListenMessage)
+            {
+                turnState.SawListen = true;
+                turnState.ListenOpenedUtc ??= DateTimeOffset.UtcNow;
             }
 
             if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object) return;

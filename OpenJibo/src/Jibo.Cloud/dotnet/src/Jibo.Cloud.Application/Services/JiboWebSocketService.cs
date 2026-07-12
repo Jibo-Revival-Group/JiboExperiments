@@ -22,8 +22,9 @@ public sealed class JiboWebSocketService(
 
     public CloudSession GetOrCreateSession(WebSocketMessageEnvelope envelope)
     {
-        return stateStore.FindSessionByToken(envelope.Token ?? string.Empty) ??
-               stateStore.OpenSession(envelope.Kind, null, envelope.Token, envelope.HostName, envelope.Path);
+        var sessionKey = WebSocketSessionKeyResolver.ResolveSessionKey(envelope);
+        return stateStore.FindSessionByToken(sessionKey) ??
+               stateStore.OpenSession(envelope.Kind, null, sessionKey, envelope.HostName, envelope.Path);
     }
 
     public async Task<IReadOnlyList<WebSocketReply>> HandleMessageAsync(WebSocketMessageEnvelope envelope,

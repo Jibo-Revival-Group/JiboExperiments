@@ -743,9 +743,30 @@ replacing broad Jibo directories.
 ## Multiple Jibos On One OpenJibo Server
 
 When more than one physical Jibo points at the same OpenJibo cloud instance, each
-robot must keep a distinct device identity. If both wake on "Hey Jibo" at the same
-time without that separation, they can both enter listen mode and remain stuck in
-the blue ring until reboot.
+robot must keep isolated websocket turn state. If both wake on "Hey Jibo" at the
+same time while sharing one cloud session, they can both enter listen mode and
+remain stuck in the blue ring until reboot.
+
+### Path token vs hub token
+
+Robots can connect to neo-hub in two ways:
+
+```text
+Authorization: Bearer hub-<account>-<guid>   # per-robot hub token from CreateHubToken
+token=v1/listen                              # path fallback when no Bearer header
+```
+
+The path fallback is common when robots reach the server by IP, for example
+`http://192.168.7.142:24605/v1/listen`. Before connection-scoped session keying,
+every path-only connection shared one `CloudSession` keyed as `v1/listen`, which
+corrupted turn state across robots.
+
+Current behavior:
+
+- path tokens such as `v1/listen` are keyed per websocket connection as
+  `conn:<connectionId>`
+- bearer hub tokens such as `hub-*` still share session state by token, with
+  per-robot `deviceId` binding from `CreateHubToken`
 
 Minimum setup:
 
@@ -753,8 +774,8 @@ Minimum setup:
    and related hosts rewritten to the server).
 2. Complete `SetupRobot` separately for each robot with a unique friendly id and
    device id. Example ids: `BOJW-KITCHEN-0001`, `BOJW-OFFICE-0002`.
-3. Let each robot request its own hub token. The cloud binds that token to the
-   robot `deviceId` when the request includes one.
+3. Prefer letting each robot request its own hub token via `CreateHubToken`. The
+   cloud binds that token to the robot `deviceId` when the request includes one.
 4. Say "Hey Jibo" once while both robots are in range.
 
 Expected behavior with isolated robot sessions:
@@ -767,13 +788,14 @@ Live proof checklist:
 
 ```text
 capture robot logs from both devices
-capture websocket turn telemetry for both hub tokens
+capture websocket turn telemetry for both connections
 confirm both robots receive their own greeting/skill response
-confirm each token maps to a distinct device id and transID
+confirm path-token logs show distinct session ids even when token=v1/listen
+confirm hub-token logs show distinct hub-* tokens when Bearer auth is in use
 ```
 
-If both robots still hang, verify they are not sharing the same hub token and that
-each `SetupRobot` wrote a different device id into cloud state.
+If both robots still hang, verify they are not sharing one session id in cloud
+logs and that each `SetupRobot` wrote a different device id into cloud state.
 
 ## Voice Recognition Notes
 

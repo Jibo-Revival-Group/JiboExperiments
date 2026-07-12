@@ -8804,6 +8804,120 @@ public sealed class JiboWebSocketServiceTests
         Assert.True(sessionB.TurnState.AwaitingTurnCompletion);
     }
 
+    [Fact]
+    public void PathToken_TwoConnections_GetDistinctSessions()
+    {
+        var sessionA = _service.GetOrCreateSession(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-kitchen",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen"
+        });
+
+        var sessionB = _service.GetOrCreateSession(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-office",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen"
+        });
+
+        Assert.NotSame(sessionA, sessionB);
+        Assert.Null(_store.FindSessionByToken("v1/listen"));
+        Assert.Same(sessionA, _store.FindSessionByToken("conn:connection-kitchen"));
+        Assert.Same(sessionB, _store.FindSessionByToken("conn:connection-office"));
+    }
+
+    [Fact]
+    public async Task PathToken_SimultaneousHotphrase_BothAcceptAudio()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-kitchen",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                """{"type":"LISTEN","transID":"trans-kitchen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-office",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                """{"type":"LISTEN","transID":"trans-office","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-kitchen",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Binary = new byte[4096]
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-office",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Binary = new byte[4096]
+        });
+
+        var sessionA = _store.FindSessionByToken("conn:connection-kitchen");
+        var sessionB = _store.FindSessionByToken("conn:connection-office");
+        Assert.NotNull(sessionA);
+        Assert.NotNull(sessionB);
+        Assert.NotSame(sessionA, sessionB);
+        Assert.Equal("trans-kitchen", sessionA.TurnState.TransId);
+        Assert.Equal("trans-office", sessionB.TurnState.TransId);
+        Assert.True(sessionA.TurnState.SawListen);
+        Assert.True(sessionB.TurnState.SawListen);
+        Assert.Equal(4096, sessionA.TurnState.BufferedAudioBytes);
+        Assert.Equal(4096, sessionB.TurnState.BufferedAudioBytes);
+        Assert.True(sessionA.TurnState.AwaitingTurnCompletion);
+        Assert.True(sessionB.TurnState.AwaitingTurnCompletion);
+    }
+
+    [Fact]
+    public void HubBearerToken_StillSharesByToken()
+    {
+        var hubToken = _store.IssueHubToken("device-shared");
+
+        var sessionA = _service.GetOrCreateSession(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-one",
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = hubToken
+        });
+
+        var sessionB = _service.GetOrCreateSession(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-two",
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = hubToken
+        });
+
+        Assert.Same(sessionA, sessionB);
+        Assert.Same(sessionA, _store.FindSessionByToken(hubToken));
+    }
+
     private static string ReadReplyType(WebSocketReply reply)
     {
         using var payload = JsonDocument.Parse(reply.Text!);

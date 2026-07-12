@@ -52,12 +52,13 @@ internal sealed class WebSocketRequestCoordinator(
         using var socket = await context.WebSockets.AcceptWebSocketAsync();
         logger.LogDebug("WebSocket accepted kind={Kind} token={Token}", kind, token);
 
-        var openEnvelope = CreateEnvelope(context, kind, token);
-        var openSession = webSocketService.GetOrCreateSession(openEnvelope);
-        await telemetrySink.RecordConnectionOpenedAsync(openEnvelope, openSession, context.RequestAborted);
+        var connectionId = Guid.NewGuid().ToString("N");
+        var openEnvelope = CreateEnvelope(context, kind, token, connectionId);
+        var session = webSocketService.GetOrCreateSession(openEnvelope);
+        await telemetrySink.RecordConnectionOpenedAsync(openEnvelope, session, context.RequestAborted);
 
         var isPrematureClose = false;
-        var loopTransId = openSession.TurnState.TransId;
+        var loopTransId = session.TurnState.TransId;
 
         while (socket.State == WebSocketState.Open)
         {
@@ -91,11 +92,11 @@ internal sealed class WebSocketRequestCoordinator(
                 context,
                 kind,
                 token,
+                connectionId,
                 received.MessageType == WebSocketMessageType.Text ? Encoding.UTF8.GetString(received.Buffer) : null,
                 received.MessageType == WebSocketMessageType.Binary ? received.Buffer : null);
 
             var replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);
-            var session = webSocketService.GetOrCreateSession(envelope);
             if (!string.IsNullOrWhiteSpace(session.TurnState.TransId))
                 loopTransId = session.TurnState.TransId;
             logger.LogDebug(
@@ -119,12 +120,11 @@ internal sealed class WebSocketRequestCoordinator(
             await telemetrySink.RecordOutboundAsync(envelope, session, replies, context.RequestAborted);
         }
 
-        var closeEnvelope = CreateEnvelope(context, kind, token);
-        var closeSession = webSocketService.GetOrCreateSession(closeEnvelope);
+        var closeEnvelope = CreateEnvelope(context, kind, token, connectionId);
         if (isPrematureClose)
-            webSocketService.MarkPrematureSocketLoopEnded(closeSession, loopTransId);
+            webSocketService.MarkPrematureSocketLoopEnded(session, loopTransId);
 
-        await telemetrySink.RecordConnectionClosedAsync(closeEnvelope, closeSession,
+        await telemetrySink.RecordConnectionClosedAsync(closeEnvelope, session,
             $"socket-loop-ended{(isPrematureClose ? "-prematurely" : string.Empty)}", context.RequestAborted);
         logger.LogDebug("WebSocket request end kind={Kind} token={Token} prematureClose={PrematureClose}", kind, token,
             isPrematureClose);
@@ -134,12 +134,13 @@ internal sealed class WebSocketRequestCoordinator(
         HttpContext context,
         string kind,
         string? token,
+        string connectionId,
         string? text = null,
         byte[]? binary = null)
     {
         return new WebSocketMessageEnvelope
         {
-            ConnectionId = Guid.NewGuid().ToString("N"),
+            ConnectionId = connectionId,
             HostName = context.Request.Host.Host,
             Path = context.Request.Path.Value ?? "/",
             Kind = kind,

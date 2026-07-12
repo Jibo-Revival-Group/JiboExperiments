@@ -58,7 +58,16 @@ public static class MathCommandParser
         "compute"
     ];
 
-    private const string NumberPattern = @"(?<num>\d+(?:\.\d+)?|[a-z]+(?:[\s-]+[a-z]+)*)";
+    private const string SpokenOnesPattern =
+        "a|an|zero|oh|one|won|two|three|four|for|five|six|seven|eight|ate|nine|ten|" +
+        "eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen";
+
+    private const string SpokenTensPattern = "twenty|thirty|forty|fifty";
+
+    private const string SpokenNumberPattern =
+        $@"(?:{SpokenOnesPattern}|{SpokenTensPattern}|(?:{SpokenTensPattern})[\s-]+(?:one|two|three|four|five|six|seven|eight|nine))";
+
+    private const string NumberPattern = $@"(?<num>\d+(?:\.\d+)?|{SpokenNumberPattern})";
 
     private static readonly Regex SquareRootPattern = new(
         $@"^(?:the\s+)?square\s+root\s+of\s+{NumberPattern}\s*$",
@@ -77,7 +86,7 @@ public static class MathCommandParser
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly Regex BinaryPattern = new(
-        $@"^{NumberPattern}\s+(?<op>plus|\+|minus|subtract|subtracted\s+by|-|\*|x|times|multiplied\s+by|divided\s+by|over|/)\s+{NumberPattern}\s*$",
+        $@"^{NumberPattern}\s+(?<op>plus|add|added\s+to|\+|minus|subtract|subtracted\s+by|-|\*|x|times|multiplied\s+by|divided\s+by|over|/)\s+{NumberPattern}\s*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public static bool TryParse(string? transcript, out MathQuery query)
@@ -88,6 +97,8 @@ public static class MathCommandParser
 
         normalized = StripQuestionPrefix(normalized);
         if (string.IsNullOrWhiteSpace(normalized)) return false;
+
+        normalized = NormalizeSpokenNumberHomophones(normalized);
 
         if (TryParseSquareRoot(normalized, out query)) return true;
         if (TryParsePower(normalized, out query)) return true;
@@ -214,7 +225,7 @@ public static class MathCommandParser
         var opToken = match.Groups["op"].Value.Trim().ToLowerInvariant();
         var (operation, operatorSpoken) = opToken switch
         {
-            "plus" or "+" => (MathOperation.Add, "plus"),
+            "plus" or "add" or "added to" or "+" => (MathOperation.Add, "plus"),
             "minus" or "subtract" or "subtracted by" or "-" => (MathOperation.Subtract, "minus"),
             "*" or "x" or "times" or "multiplied by" => (MathOperation.Multiply, "times"),
             "divided by" or "over" or "/" => (MathOperation.Divide, "divided by"),
@@ -254,6 +265,26 @@ public static class MathCommandParser
             .Replace(" x ", " times ", StringComparison.Ordinal);
     }
 
+    private static string NormalizeSpokenNumberHomophones(string normalized)
+    {
+        if (string.IsNullOrWhiteSpace(normalized)) return string.Empty;
+
+        var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (var index = 0; index < tokens.Length; index++)
+        {
+            tokens[index] = tokens[index] switch
+            {
+                "for" => "four",
+                "won" => "one",
+                "ate" => "eight",
+                "oh" => "zero",
+                _ => tokens[index]
+            };
+        }
+
+        return string.Join(' ', tokens);
+    }
+
     private static string StripQuestionPrefix(string normalized)
     {
         foreach (var prefix in QuestionPrefixes)
@@ -288,14 +319,15 @@ public static class MathCommandParser
             return normalized switch
             {
                 "a" or "an" => 1,
-                "one" => 1,
+                "zero" or "oh" => 0,
+                "one" or "won" => 1,
                 "two" => 2,
                 "three" => 3,
-                "four" => 4,
+                "four" or "for" => 4,
                 "five" => 5,
                 "six" => 6,
                 "seven" => 7,
-                "eight" => 8,
+                "eight" or "ate" => 8,
                 "nine" => 9,
                 "ten" => 10,
                 "eleven" => 11,

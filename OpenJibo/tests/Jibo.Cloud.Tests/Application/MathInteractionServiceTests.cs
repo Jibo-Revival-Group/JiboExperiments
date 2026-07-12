@@ -10,7 +10,10 @@ public sealed class MathInteractionServiceTests
     [Theory]
     [InlineData("what's 12 plus 8", "12 plus 8 equals 20")]
     [InlineData("what's 6 times 5", "6 times 5 equals 30")]
+    [InlineData("hey jibo whats nine plus ten", "nine plus ten equals 19, but some might say it's 21")]
+    [InlineData("what is twelve add eight", "twelve plus eight equals 20")]
     [InlineData("what's the square root of 9", "the square root of 9 equals 3")]
+    [InlineData("what's the square root of sixteen", "the square root of sixteen equals 4")]
     [InlineData("what's 9 to the power of 3", "9 to the power of 3 equals 729")]
     public async Task BuildDecisionAsync_MathQuery_ReturnsExpectedReply(string transcript, string expectedReply)
     {

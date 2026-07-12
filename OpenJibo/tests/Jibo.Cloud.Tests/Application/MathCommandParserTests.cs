@@ -12,7 +12,10 @@ public sealed class MathCommandParserTests
     [InlineData("20 divided by 4", MathOperation.Divide, 20, 4)]
     [InlineData("15 minus 7", MathOperation.Subtract, 15, 7)]
     [InlineData("what is nine plus ten", MathOperation.Add, 9, 10)]
-    [InlineData("hey jibo what's 6 times 5", MathOperation.Multiply, 6, 5)]
+    [InlineData("hey jibo whats nine plus ten", MathOperation.Add, 9, 10)]
+    [InlineData("hey jibo what's six times five", MathOperation.Multiply, 6, 5)]
+    [InlineData("twelve add eight", MathOperation.Add, 12, 8)]
+    [InlineData("twenty one plus twelve", MathOperation.Add, 21, 12)]
     public void TryParse_BinaryOperations_ReturnExpectedValues(
         string transcript,
         MathOperation expectedOperation,
@@ -30,6 +33,8 @@ public sealed class MathCommandParserTests
     [Theory]
     [InlineData("square root of 9", 9, 3)]
     [InlineData("what's the square root of 16", 16, 4)]
+    [InlineData("square root of sixteen", 16, 4)]
+    [InlineData("what's the square root of nine", 9, 3)]
     public void TryParse_SquareRoot_ReturnsExpectedResult(string transcript, double input, double expected)
     {
         Assert.True(MathCommandParser.TryParse(transcript, out var query));
@@ -43,7 +48,9 @@ public sealed class MathCommandParserTests
 
     [Theory]
     [InlineData("9 to the power of 3", 9, 3, 729)]
+    [InlineData("nine to the power of three", 9, 3, 729)]
     [InlineData("5 squared", 5, 2, 25)]
+    [InlineData("five squared", 5, 2, 25)]
     [InlineData("2 cubed", 2, 3, 8)]
     public void TryParse_Power_ReturnsExpectedResult(
         string transcript,

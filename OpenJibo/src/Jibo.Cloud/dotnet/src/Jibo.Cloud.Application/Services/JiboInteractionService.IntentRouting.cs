@@ -88,6 +88,9 @@ public sealed partial class JiboInteractionService
                 _ => "chat"
             };
 
+        if (MathCommandParser.TryParse(loweredTranscript, out _))
+            return "math_query";
+
         if (IsUserBirthdaySetStatement(loweredTranscript) || IsUserBirthdaySetAttempt(loweredTranscript))
             return "memory_set_birthday";
 

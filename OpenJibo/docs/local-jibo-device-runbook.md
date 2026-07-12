@@ -740,6 +740,41 @@ The tested robot mounted `/var` read-only after filesystem errors. Prefer narrow
 overlays for volatile writable paths, such as `/var/jibo/keys`, instead of
 replacing broad Jibo directories.
 
+## Multiple Jibos On One OpenJibo Server
+
+When more than one physical Jibo points at the same OpenJibo cloud instance, each
+robot must keep a distinct device identity. If both wake on "Hey Jibo" at the same
+time without that separation, they can both enter listen mode and remain stuck in
+the blue ring until reboot.
+
+Minimum setup:
+
+1. Point each Jibo at the same OpenJibo host (`api.jibo.com`, `neo-hub.jibo.com`,
+   and related hosts rewritten to the server).
+2. Complete `SetupRobot` separately for each robot with a unique friendly id and
+   device id. Example ids: `BOJW-KITCHEN-0001`, `BOJW-OFFICE-0002`.
+3. Let each robot request its own hub token. The cloud binds that token to the
+   robot `deviceId` when the request includes one.
+4. Say "Hey Jibo" once while both robots are in range.
+
+Expected behavior with isolated robot sessions:
+
+- both Jibos orient and handle their own turn
+- neither robot's listen state, transID, or buffered audio overwrites the other
+- neither robot should require reset
+
+Live proof checklist:
+
+```text
+capture robot logs from both devices
+capture websocket turn telemetry for both hub tokens
+confirm both robots receive their own greeting/skill response
+confirm each token maps to a distinct device id and transID
+```
+
+If both robots still hang, verify they are not sharing the same hub token and that
+each `SetupRobot` wrote a different device id into cloud state.
+
 ## Voice Recognition Notes
 
 After connectivity worked, speech behavior was still imperfect. Captures showed

@@ -430,16 +430,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _users.First(u => u.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 
-    public string IssueHubToken()
+    public string IssueHubToken(string? deviceId = null)
     {
-        var token = $"hub-{_account.AccountId}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+        var resolvedDeviceId = string.IsNullOrWhiteSpace(deviceId) ? _robot.DeviceId : deviceId.Trim();
+        var token = $"hub-{_account.AccountId}-{Guid.NewGuid():N}";
         _sessionsByToken[token] = new CloudSession
         {
             Kind = "hub",
             AccountId = _account.AccountId,
             Token = token,
-            DeviceId = _robot.DeviceId,
-            Metadata = BuildSessionMetadata(_account.AccountId, _robot.DeviceId, ResolveDefaultLoopId())
+            DeviceId = resolvedDeviceId,
+            Metadata = BuildSessionMetadata(_account.AccountId, resolvedDeviceId, ResolveDefaultLoopId())
         };
 
         TouchState();
@@ -448,7 +449,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public string IssueRobotToken(string deviceId)
     {
-        var token = $"token-{deviceId}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+        var token = $"token-{deviceId}-{Guid.NewGuid():N}";
         _sessionsByToken[token] = new CloudSession
         {
             Kind = "robot",

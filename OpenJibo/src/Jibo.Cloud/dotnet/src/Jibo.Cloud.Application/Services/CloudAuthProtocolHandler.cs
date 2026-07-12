@@ -12,11 +12,22 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
         var body = envelope.TryParseBody();
 
         if (operation.Equals("CreateHubToken", StringComparison.OrdinalIgnoreCase))
+        {
+            var deviceId = !string.IsNullOrWhiteSpace(envelope.DeviceId)
+                ? envelope.DeviceId!
+                : ReadString(body, "deviceId")
+                  ?? ReadString(body, "serial_number")
+                  ?? ReadString(body, "serialNumber")
+                  ?? ReadString(body, "cpuid")
+                  ?? ReadString(body, "cpuId")
+                  ?? ReadString(body, "robotId");
+
             return ProtocolDispatchResult.Ok(new
             {
-                token = stateStore.IssueHubToken(),
+                token = stateStore.IssueHubToken(deviceId),
                 expires = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeMilliseconds()
             });
+        }
 
         if (operation.Equals("CreateAccessToken", StringComparison.OrdinalIgnoreCase))
             return ProtocolDispatchResult.Ok(new

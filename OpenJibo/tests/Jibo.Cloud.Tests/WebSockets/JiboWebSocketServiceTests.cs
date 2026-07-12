@@ -27,13 +27,14 @@ public sealed class JiboWebSocketServiceTests
             new SyntheticBufferedAudioSttStrategy()
         ]);
         var sink = new NullTurnTelemetrySink();
+        var turnFinalizationService = new WebSocketTurnFinalizationService(conversationBroker,
+            sttSelector,
+            sink);
 
         _service = new JiboWebSocketService(
             _store,
             new NullWebSocketTelemetrySink(),
-            new WebSocketTurnFinalizationService(conversationBroker,
-                sttSelector,
-                sink));
+            turnFinalizationService);
     }
 
     [Fact]
@@ -8757,6 +8758,50 @@ public sealed class JiboWebSocketServiceTests
             stateStore,
             new NullWebSocketTelemetrySink(),
             new WebSocketTurnFinalizationService(conversationBroker, sttSelector, sink));
+    }
+
+    [Fact]
+    public async Task SimultaneousHotphrase_BothRobotsRemainIndependentAndListening()
+    {
+        var tokenA = _store.IssueHubToken("device-kitchen");
+        var tokenB = _store.IssueHubToken("device-office");
+        Assert.NotEqual(tokenA, tokenB);
+
+        var firstReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = tokenA,
+            Text =
+                """{"type":"LISTEN","transID":"trans-kitchen","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        Assert.Empty(firstReplies);
+
+        var secondReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = tokenB,
+            Text =
+                """{"type":"LISTEN","transID":"trans-office","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        Assert.Empty(secondReplies);
+
+        var sessionA = _store.FindSessionByToken(tokenA);
+        var sessionB = _store.FindSessionByToken(tokenB);
+        Assert.NotNull(sessionA);
+        Assert.NotNull(sessionB);
+        Assert.NotSame(sessionA, sessionB);
+        Assert.Equal("device-kitchen", sessionA.DeviceId);
+        Assert.Equal("device-office", sessionB.DeviceId);
+        Assert.Equal("trans-kitchen", sessionA.TurnState.TransId);
+        Assert.Equal("trans-office", sessionB.TurnState.TransId);
+        Assert.True(sessionA.TurnState.AwaitingTurnCompletion);
+        Assert.True(sessionB.TurnState.AwaitingTurnCompletion);
     }
 
     private static string ReadReplyType(WebSocketReply reply)

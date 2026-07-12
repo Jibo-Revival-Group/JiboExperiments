@@ -17,7 +17,7 @@ public interface ICloudStateStore
     UserRecord? GetUserById(string id);
     UserRecord? GetUserByEmail(string email);
     UserRecord UpdateUser(string id, string? firstName, string? lastName, string? gender, long? birthday);
-    string IssueHubToken();
+    string IssueHubToken(string? deviceId = null);
     string IssueRobotToken(string deviceId);
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
     CloudSession? FindSessionByToken(string token);

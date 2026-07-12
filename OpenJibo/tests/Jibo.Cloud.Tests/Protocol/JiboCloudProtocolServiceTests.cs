@@ -14,6 +14,37 @@ public sealed class JiboCloudProtocolServiceTests
     private readonly JiboCloudProtocolService _service = new(new InMemoryCloudStateStore());
 
     [Fact]
+    public void CreateHubToken_WithDeviceId_BindsSessionToRobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        var handler = new CloudAuthProtocolHandler(store);
+
+        var kitchenResult = handler.HandleAccount("CreateHubToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"BOJW-KITCHEN-0001"}"""
+        });
+        var officeResult = handler.HandleAccount("CreateHubToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"BOJW-OFFICE-0002"}"""
+        });
+
+        using var kitchenPayload = JsonDocument.Parse(kitchenResult.BodyText);
+        using var officePayload = JsonDocument.Parse(officeResult.BodyText);
+        var kitchenToken = kitchenPayload.RootElement.GetProperty("token").GetString()!;
+        var officeToken = officePayload.RootElement.GetProperty("token").GetString()!;
+        Assert.NotEqual(kitchenToken, officeToken);
+
+        var kitchenSession = store.FindSessionByToken(kitchenToken);
+        var officeSession = store.FindSessionByToken(officeToken);
+
+        Assert.NotNull(kitchenSession);
+        Assert.NotNull(officeSession);
+        Assert.Equal("BOJW-KITCHEN-0001", kitchenSession.DeviceId);
+        Assert.Equal("BOJW-OFFICE-0002", officeSession.DeviceId);
+        Assert.NotEqual(kitchenSession.DeviceId, officeSession.DeviceId);
+    }
+
+    [Fact]
     public async Task CreateHubToken_ReturnsTokenAndExpiry()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope

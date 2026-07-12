@@ -117,7 +117,7 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             [
                 "Hi there. It is really good to talk with you.",
                 "Hello there. I am glad you said hi.",
-                "Hey. I am happy to see you."
+                "Hello. I am happy to see you."
             ],
             StoryReplies =
             [

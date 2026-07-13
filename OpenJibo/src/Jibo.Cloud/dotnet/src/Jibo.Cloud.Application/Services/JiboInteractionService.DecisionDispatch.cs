@@ -141,6 +141,7 @@ public sealed partial class JiboInteractionService
             "math_query" => BuildMathDecision(transcript),
             "spell_word" => BuildSpellDecision(transcript),
             "define_word" => await BuildDefineWordDecisionAsync(transcript, cancellationToken),
+            "countdown" => BuildCountdownDecision(transcript, referenceLocalTime),
             "dance_question" => BuildDanceQuestionDecision(catalog),
             "dance" => BuildRandomDanceDecision(catalog),
             "twerk" => BuildDanceDecision("twerk", "rom-twerk", "Watch me twerk."),

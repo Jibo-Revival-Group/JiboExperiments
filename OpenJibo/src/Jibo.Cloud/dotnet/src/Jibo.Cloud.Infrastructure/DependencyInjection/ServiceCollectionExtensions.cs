@@ -94,6 +94,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IKnowledgeSearchService, KnowledgeSearchService>();
         services.AddSingleton<IHolidayCalendarProvider>(provider =>
             new NagerDateHolidayCalendarProvider(provider.GetRequiredService<HolidayCalendarOptions>()));
+        services.AddSingleton<IHolidayCountdownCatalog>(_ =>
+        {
+            var catalogPath = Path.Combine(AppContext.BaseDirectory, "Content", "HolidayCountdownCatalog.json");
+            return new HolidayCountdownCatalogLoader().LoadFromFile(catalogPath);
+        });
         services.AddSingleton<ICalendarReportProvider>(provider =>
             new CloudStateCalendarReportProvider(provider.GetRequiredService<ICloudStateStore>()));
         services.AddSingleton<ICommuteReportProvider>(provider =>

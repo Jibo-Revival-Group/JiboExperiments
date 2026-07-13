@@ -14,6 +14,7 @@ public sealed partial class JiboInteractionService(
     INewsBriefingProvider? newsBriefingProvider = null,
     IFunFactProvider? funFactProvider = null,
     IWordDefinitionProvider? wordDefinitionProvider = null,
+    IHolidayCountdownCatalog? holidayCountdownCatalog = null,
     IKnowledgeSearchService? knowledgeSearchService = null,
     ICloudStateStore? cloudStateStore = null,
     IUserIntegrationStore? userIntegrationStore = null,

@@ -5,8 +5,9 @@ namespace Jibo.Cloud.Tests.Application;
 public sealed class DefineCommandParserTests
 {
     [Theory]
+    [InlineData("what does holiday mean", "holiday")]
+    [InlineData("hey jibo what does holiday mean", "holiday")]
     [InlineData("define holiday", "holiday")]
-    [InlineData("hey jibo define holiday", "holiday")]
     [InlineData("define the word holiday", "holiday")]
     [InlineData("what does ice cream mean", "ice cream")]
     [InlineData("what is the definition of holiday", "holiday")]

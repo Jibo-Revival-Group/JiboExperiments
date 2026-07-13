@@ -16,8 +16,8 @@ public sealed class DefineInteractionServiceTests
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "hey jibo define holiday",
-            NormalizedTranscript = "hey jibo define holiday"
+            RawTranscript = "hey jibo what does holiday mean",
+            NormalizedTranscript = "hey jibo what does holiday mean"
         });
 
         Assert.Equal("define_word", decision.IntentName);
@@ -33,8 +33,8 @@ public sealed class DefineInteractionServiceTests
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "define holiday",
-            NormalizedTranscript = "define holiday"
+            RawTranscript = "what does holiday mean",
+            NormalizedTranscript = "what does holiday mean"
         });
 
         Assert.Equal("define_word", decision.IntentName);

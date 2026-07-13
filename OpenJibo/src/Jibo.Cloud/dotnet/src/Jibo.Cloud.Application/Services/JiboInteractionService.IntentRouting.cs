@@ -94,6 +94,13 @@ public sealed partial class JiboInteractionService
         if (SpellCommandParser.TryParse(loweredTranscript, out _))
             return "spell_word";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "what does jibo mean",
+                "what does the name jibo mean",
+                "what is the meaning of jibo"))
+            return "robot_what_does_jibo_mean";
+
         if (DefineCommandParser.TryParse(loweredTranscript, out _))
             return "define_word";
 

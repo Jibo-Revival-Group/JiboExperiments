@@ -20,6 +20,6 @@ public static class SpellSpokenReplyFormatter
 
         if (pronunciations.Count == 0) return MissingWordReply;
 
-        return $"{word} is spelt as {string.Join(", ", pronunciations)}.";
+        return $"{word} is spelt with. {string.Join(", ", pronunciations)}.";
     }
 }

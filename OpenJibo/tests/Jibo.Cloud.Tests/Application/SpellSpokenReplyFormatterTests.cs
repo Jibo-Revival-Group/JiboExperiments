@@ -10,7 +10,7 @@ public sealed class SpellSpokenReplyFormatterTests
         var reply = SpellSpokenReplyFormatter.Format("attacking");
 
         Assert.Equal(
-            "attacking is spelt as ae, tea, tea, ae, see, kay, eye, en, jee.",
+            "attacking is spelt with. ae, tea, tea, ae, see, kay, eye, en, jee.",
             reply);
     }
 
@@ -19,7 +19,7 @@ public sealed class SpellSpokenReplyFormatterTests
     {
         var reply = SpellSpokenReplyFormatter.Format("Cat");
 
-        Assert.Equal("Cat is spelt as see, ae, tea.", reply);
+        Assert.Equal("Cat is spelt with. see, ae, tea.", reply);
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public sealed class SpellSpokenReplyFormatterTests
     {
         var reply = SpellSpokenReplyFormatter.Format("o'brien");
 
-        Assert.Equal("o'brien is spelt as hoh, b, are, eye, e, en.", reply);
+        Assert.Equal("o'brien is spelt with. hoh, b, are, eye, e, en.", reply);
     }
 
     [Fact]

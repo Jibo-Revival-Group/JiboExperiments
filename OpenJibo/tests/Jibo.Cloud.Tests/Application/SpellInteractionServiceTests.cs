@@ -20,7 +20,7 @@ public sealed class SpellInteractionServiceTests
 
         Assert.Equal("spell_word", decision.IntentName);
         Assert.Equal(
-            "attacking is spelt as ae, tea, tea, ae, see, kay, eye, en, jee.",
+            "attacking is spelt with. ae, tea, tea, ae, see, kay, eye, en, jee.",
             decision.ReplyText);
     }
 

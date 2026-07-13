@@ -6058,6 +6058,7 @@ public sealed class JiboInteractionServiceTests
         IFunFactProvider? funFactProvider = null,
         IWordDefinitionProvider? wordDefinitionProvider = null,
         IHolidayCountdownCatalog? holidayCountdownCatalog = null,
+        IMeasurementConversionCatalog? measurementConversionCatalog = null,
         IKnowledgeSearchService? knowledgeSearchService = null,
         IJiboExperienceContentRepository? contentRepository = null,
         IJiboRandomizer? randomizer = null)
@@ -6073,6 +6074,7 @@ public sealed class JiboInteractionServiceTests
             funFactProvider,
             wordDefinitionProvider,
             holidayCountdownCatalog,
+            measurementConversionCatalog,
             knowledgeSearchService,
             cloudStateStore);
     }

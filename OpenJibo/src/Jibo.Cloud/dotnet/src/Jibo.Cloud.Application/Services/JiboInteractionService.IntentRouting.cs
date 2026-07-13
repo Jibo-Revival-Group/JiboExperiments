@@ -107,6 +107,9 @@ public sealed partial class JiboInteractionService
         if (HowLongUntilCommandParser.TryParse(loweredTranscript, out _))
             return "countdown";
 
+        if (HowManyUnitsCommandParser.TryParse(loweredTranscript, out _))
+            return "measurement_conversion";
+
         if (IsUserBirthdaySetStatement(loweredTranscript) || IsUserBirthdaySetAttempt(loweredTranscript))
             return "memory_set_birthday";
 

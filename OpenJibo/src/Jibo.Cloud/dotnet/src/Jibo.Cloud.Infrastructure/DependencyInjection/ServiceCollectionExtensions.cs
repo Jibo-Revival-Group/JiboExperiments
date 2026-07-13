@@ -3,6 +3,7 @@ using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Audio;
 using Jibo.Cloud.Infrastructure.Calendar;
 using Jibo.Cloud.Infrastructure.Commute;
+using Jibo.Cloud.Infrastructure.Conversions;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Dictionary;
 using Jibo.Cloud.Infrastructure.FunFacts;
@@ -98,6 +99,11 @@ public static class ServiceCollectionExtensions
         {
             var catalogPath = Path.Combine(AppContext.BaseDirectory, "Content", "HolidayCountdownCatalog.json");
             return new HolidayCountdownCatalogLoader().LoadFromFile(catalogPath);
+        });
+        services.AddSingleton<IMeasurementConversionCatalog>(_ =>
+        {
+            var catalogPath = Path.Combine(AppContext.BaseDirectory, "Content", "MeasurementConversionCatalog.json");
+            return new MeasurementConversionCatalogLoader().LoadFromFile(catalogPath);
         });
         services.AddSingleton<ICalendarReportProvider>(provider =>
             new CloudStateCalendarReportProvider(provider.GetRequiredService<ICloudStateStore>()));

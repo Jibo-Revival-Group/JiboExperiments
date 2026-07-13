@@ -12,4 +12,6 @@ Preferred contents:
 
 Current turn-boundary work lives in `turn-boundary-eos-parity.md` and captures the rule that decisive hints or early buffered OGG ASR probes can close a command turn, while OGG EOS and the hard timeout remain safety nets.
 
+Current circadian work lives in `../system-diagram-alignment.md` and captures the robot-side `ALERT` / `RELAXED` / `NAP` / `FALLING_ASLEEP` / `ASLEEP` / `WAKING_UP` / `TURN_AWAY` flow plus the cloud-side sleep-state mirror.
+
 When a decision starts as exploration, record the mapping here first, then link the active release plan to it.

@@ -1964,6 +1964,11 @@ public sealed class WebSocketTurnFinalizationService(
 
     public static string ResolveGlsmPhase(CloudSession session)
     {
+        if (session.Metadata.TryGetValue("sleepState", out var sleepState) &&
+            sleepState is string sleepStateText &&
+            string.Equals(sleepStateText, "sleeping", StringComparison.OrdinalIgnoreCase))
+            return "ASLEEP";
+
         var turnState = session.TurnState;
         if (!turnState.AwaitingTurnCompletion)
             return session.FollowUpOpen ? "DISPATCH_DIALOG" : "PROCESS_LISTENER_QUEUE";

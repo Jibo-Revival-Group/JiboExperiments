@@ -68,6 +68,24 @@ public sealed partial class JiboInteractionService
             });
     }
 
+    private static JiboInteractionDecision BuildSleepDecision()
+    {
+        return new JiboInteractionDecision(
+            "sleep",
+            "Okay. Going to sleep.",
+            "@be/idle",
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/idle",
+                ["globalIntent"] = "sleep",
+                ["nluDomain"] = "global_commands"
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["sleepState"] = "sleeping"
+            });
+    }
+
     private static JiboInteractionDecision BuildIdleGlobalCommandDecision(
         string intentName,
         string globalIntent,

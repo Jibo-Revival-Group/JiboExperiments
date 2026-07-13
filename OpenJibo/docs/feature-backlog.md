@@ -408,11 +408,29 @@ These are the carryover items that need a clean proof pass first:
 - keep `go to sleep` from drifting into the wrong visible state; the legacy path is a real sleep global, the ASLEEP state is event-driven rather than timer-driven, wake is driven by `dayStarts`, `headTouch`, or `hjHeard`, and the legacy sleep behavior tree includes a sleeping-idle loop that we need to preserve so the robot stays visibly asleep
    - keep `turn around` and other motion verbs source-backed; the legacy snapshot backs the lane through `spin around` / `twirl`
    - separate bare `twerk` from the greeting-looking fallback while preserving `can you twerk`; the intent is source-backed and the remaining gap is robot-side STT mishearing
-4. STT and turn-finalization cleanup
+4. Circadian sleep / wake state-machine parity
+   - status: `ready`
+   - tags: `protocol`, `docs`
+   - architecture reference: [system-diagram-alignment.md](system-diagram-alignment.md)
+   - scope:
+     - preserve the original `@be/idle` circadian flow as `ALERT` / `RELAXED` / `NAP` / `FALLING_ASLEEP` / `ASLEEP` / `WAKING_UP` / `TURN_AWAY`
+     - keep the robot-side sleep state distinct from the cloud-side session mirror
+     - wire explicit wake events instead of flattening everything into a generic idle redirect
+   - current code truth:
+     - `sleep` already routes through `@be/idle`
+     - the cloud session now remembers `sleepState=sleeping`
+     - websocket diagnostics can report `ASLEEP`
+   - missing piece:
+     - explicit wake-event handling for `dayStarts`, `headTouch`, `hjHeard`, and related attention events
+   - exit criteria:
+     - sleep enters a persistent asleep mode
+     - wake events clear that mode cleanly
+     - robot/cloud state stays aligned during the full sleep cycle
+5. STT and turn-finalization cleanup
    - treat the bare `twerk` miss as an STT/parsing proof item until a robot capture proves the cloud path is at fault
    - `turn around` has been verified as working on the robot, so it no longer belongs in the STT cleanup bucket
    - keep short constrained replies and local prompts stable while the new regression items are retested
-5. Broader personality and presence continuation
+6. Broader personality and presence continuation
    - continue the source-backed favorites, presence, and seasonal ladder once the regression gaps are understood
 
 ## Near-Term `1.0.20` Queue

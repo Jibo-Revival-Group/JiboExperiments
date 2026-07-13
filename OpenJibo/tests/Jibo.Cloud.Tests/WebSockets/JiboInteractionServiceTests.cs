@@ -4997,6 +4997,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("@be/idle", decision.SkillName);
         Assert.Equal("sleep", decision.SkillPayload!["globalIntent"]);
         Assert.Equal("global_commands", decision.SkillPayload["nluDomain"]);
+        Assert.Equal("sleeping", decision.ContextUpdates!["sleepState"]);
     }
 
     [Fact]

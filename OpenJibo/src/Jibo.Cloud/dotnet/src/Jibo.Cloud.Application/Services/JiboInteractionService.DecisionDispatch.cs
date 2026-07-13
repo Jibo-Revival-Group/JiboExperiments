@@ -307,7 +307,7 @@ public sealed partial class JiboInteractionService
             "radio" => BuildRadioLaunchDecision(),
             "radio_genre" => BuildRadioGenreLaunchDecision(lowered),
             "stop" => BuildStopDecision(),
-            "sleep" => BuildIdleGlobalCommandDecision("sleep", "sleep", "Okay. Going to sleep."),
+            "sleep" => BuildSleepDecision(),
             "turn_around" => BuildIdleGlobalCommandDecision("turn_around", "turnAround", "Don't mind if I do."),
             "spin_around" => BuildIdleGlobalCommandDecision("spin_around", "spinAround", "Don't mind if I do."),
             "volume_up" => BuildVolumeControlDecision("volume_up", "volumeUp", "null"),

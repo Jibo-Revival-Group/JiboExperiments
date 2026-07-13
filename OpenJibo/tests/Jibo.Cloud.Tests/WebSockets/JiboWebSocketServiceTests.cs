@@ -3971,6 +3971,11 @@ public sealed class JiboWebSocketServiceTests
             speechPayload.RootElement.GetProperty("data").GetProperty("action").GetProperty("config")
                 .GetProperty("jcp").GetProperty("config").GetProperty("play").GetProperty("meta")
                 .GetProperty("mim_id").GetString());
+
+        var session = _store.FindSessionByToken("hub-sleep-token");
+        Assert.NotNull(session);
+        Assert.Equal("sleeping", session!.Metadata["sleepState"]);
+        Assert.Equal("ASLEEP", WebSocketTurnFinalizationService.ResolveGlsmPhase(session));
     }
 
     [Fact]

@@ -71,6 +71,111 @@ Current parity boundary:
 - this slice focuses on listener lifecycle observability plus stuck-listen recovery
 - deeper explicit parity states from GLSM (`Interrupt Listeners`, `Handle Launch Parse`, `Handle Global Parse`, `Dispatch Dialog` sub-branches) are next candidates once this capture-driven slice is validated live
 
+## Circadian Sleep And Wake Alignment (`2026-07-12`)
+
+Captured source:
+
+- `C:\Users\User\.codex\attachments\2c53505d-5aee-4df6-b0d1-67ba8040d657\pasted-text.txt`
+- legacy idle skill / circadian state machine bundle for `@be/idle`
+
+Goal:
+
+- preserve the original sleep/wake intent of the legacy `@be/idle` skill
+- represent the robot-side circadian state machine cleanly
+- map that state back into Open Jibo Cloud session and websocket state without pretending sleep is only a single redirect
+
+### State Model
+
+The legacy skill is best understood as two cooperating layers:
+
+- a robot-side circadian state machine that owns the visible sleep/wake mode
+- a cloud-side session mirror that remembers whether the current robot is asleep, waking, or active enough to process new turns normally
+
+The robot-side states are:
+
+- `ALERT`
+- `RELAXED`
+- `NAP`
+- `FALLING_ASLEEP`
+- `ASLEEP`
+- `WAKING_UP`
+- `TURN_AWAY`
+
+The cloud-side representation should stay narrower:
+
+- remember whether the session is currently asleep
+- expose that state to turn context and diagnostics
+- map wake events back into the same mode change instead of treating them as generic chat
+
+### Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> ALERT
+    ALERT --> RELAXED: settle / stay active
+    RELAXED --> NAP: nightStarts
+    RELAXED --> FALLING_ASLEEP: sleep pressure / sleep request
+    NAP --> RELAXED: noise or faceAppeared
+    NAP --> FALLING_ASLEEP: nightStarts
+    FALLING_ASLEEP --> ASLEEP: timeout
+    ASLEEP --> WAKING_UP: dayStarts
+    ASLEEP --> ALERT: headTouch / screenTouched / hjHeard / plugStateChanged
+    WAKING_UP --> RELAXED: timeout
+    WAKING_UP --> ALERT: noise or faceAppeared
+    ALERT --> TURN_AWAY: turnAround / turnAway
+    TURN_AWAY --> RELAXED: turn back
+    TURN_AWAY --> ASLEEP: nightStarts
+```
+
+### Mapping To Open Jibo Cloud
+
+| Legacy / robot-side concept | Open Jibo Cloud concept | Notes |
+| --- | --- | --- |
+| `goToSleep` global event | `sleep` intent | cloud entry point for sleep mode |
+| `ASLEEP` | `sleepState = sleeping` | session-level marker for persistent sleep mode |
+| `WAKING_UP` | clear or replace `sleepState` | should happen on an explicit wake event, not on an unrelated command |
+| `dayStarts` | wake-event bridge | morning wake should restore active routing |
+| `headTouch` | wake-event bridge | physical wake / attention event |
+| `hjHeard` | wake-event bridge | wake from hotword / robot-heard event |
+| `screenTouched` | wake-event bridge | optional wake path when the screen is touched |
+| `TURN_AWAY` | motion parity branch | still distinct from sleep, but shares the idle family |
+
+### Current Cloud Shape
+
+The current cloud work already has the first half of the mapping:
+
+- `sleep` is recognized as a global command
+- `@be/idle` remains the redirect target
+- the session now remembers `sleepState=sleeping`
+- websocket diagnostics can report `ASLEEP`
+
+The missing half is the explicit wake-event handling:
+
+- we still need a clear cloud contract for `dayStarts`, `headTouch`, `hjHeard`, and related wake triggers
+- the cloud should clear the mirrored sleep state when a wake event arrives
+- any wake event should restore the active listen / routing behavior cleanly instead of going through generic fallback paths
+
+### Robot-Side Trace We Confirmed
+
+The robot-side `@be/idle` bundle shows the local circadian flow in full:
+
+1. `CircadianManager.subscribeEventHandlers()` listens to `jibo.globalEvents.sleep`, `jibo.jetstream.events.hjHeard`, `jibo.lps.identity.events.visibleFaceStarted`, `jibo.lps.detector.ambientAudioSpike.trigger`, `jibo.action.events.secondHandTouchStop`, and the plug-state events.
+2. Those handlers forward into the circadian state machine through events such as `goToSleep`, `headTouch`, `noise`, `faceAppeared`, `hjHeard`, and `plugStateChanged`.
+3. `CircadianManager.checkCircadianStateChange()` observes the resulting state and forwards non-internal changes into the action system with `jibo.action.setCurrentCircadianState(current)`.
+
+That is the main reason the path feels indirect: the robot owns the live circadian state machine, while the cloud currently only mirrors the sleep marker once the sleep command has already been decided. We still do not have a cloud-side wake contract for the robot wake sources above.
+
+### Why This Matters
+
+Without this split, `go to sleep` only looks correct for the entry turn.
+
+With it, we can preserve the original charm of the legacy skill while making the cloud behavior understandable:
+
+- sleep is a real mode
+- wake is an event-driven exit from that mode
+- turn-away remains a related but distinct motion branch
+- cloud routing can stay honest about what the robot is doing instead of flattening everything into idle
+
 ## Where We Were
 
 Legacy cloud design was service-oriented around:

@@ -40,6 +40,11 @@ public sealed class ProtocolToTurnContextMapper
             !string.IsNullOrWhiteSpace(pendingProactivityOfferText))
             attributes["pendingProactivityOffer"] = pendingProactivityOfferText;
 
+        if (session.Metadata.TryGetValue("sleepState", out var sleepState) &&
+            sleepState is string sleepStateText &&
+            !string.IsNullOrWhiteSpace(sleepStateText))
+            attributes["sleepState"] = sleepStateText;
+
         foreach (var pair in session.Metadata)
         {
             if ((!pair.Key.StartsWith("personalReport", StringComparison.OrdinalIgnoreCase) &&

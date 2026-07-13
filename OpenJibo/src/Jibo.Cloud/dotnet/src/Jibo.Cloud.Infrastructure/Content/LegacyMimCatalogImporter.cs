@@ -435,6 +435,7 @@ public static class LegacyMimCatalogImporter
             RobotFacts = Merge(baseCatalog.RobotFacts, importedCatalog.RobotFacts),
             HumanFacts = Merge(baseCatalog.HumanFacts, importedCatalog.HumanFacts),
             FunFacts = Merge(baseCatalog.FunFacts, importedCatalog.FunFacts),
+            FunFactFallbacks = baseCatalog.FunFactFallbacks,
             FavoriteAnimalReplies = Merge(baseCatalog.FavoriteAnimalReplies, importedCatalog.FavoriteAnimalReplies),
             FriendReplies = Merge(baseCatalog.FriendReplies, importedCatalog.FriendReplies),
             BestFriendReplies = Merge(baseCatalog.BestFriendReplies, importedCatalog.BestFriendReplies),

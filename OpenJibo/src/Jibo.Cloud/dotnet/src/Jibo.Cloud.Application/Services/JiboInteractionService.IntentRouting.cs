@@ -91,6 +91,28 @@ public sealed partial class JiboInteractionService
         if (MathCommandParser.TryParse(loweredTranscript, out _))
             return "math_query";
 
+        if (SpellCommandParser.TryParse(loweredTranscript, out _))
+            return "spell_word";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what does jibo mean",
+                "what does the name jibo mean",
+                "what is the meaning of jibo"))
+            return "robot_what_does_jibo_mean";
+
+        if (DefineCommandParser.TryParse(loweredTranscript, out _))
+            return "define_word";
+
+        if (HowLongUntilCommandParser.TryParse(loweredTranscript, out _))
+            return "countdown";
+
+        if (HowManyUnitsCommandParser.TryParse(loweredTranscript, out _))
+            return "measurement_conversion";
+
+        if (RollDiceCommandParser.TryParse(loweredTranscript, out _))
+            return "roll_dice";
+
         if (IsUserBirthdaySetStatement(loweredTranscript) || IsUserBirthdaySetAttempt(loweredTranscript))
             return "memory_set_birthday";
 
@@ -222,6 +244,16 @@ public sealed partial class JiboInteractionService
                 "do you have a favourite joke",
                 "what joke do you like best"))
             return "robot_favorite_joke";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "fun fact",
+                "tell me a fun fact",
+                "give me a fun fact",
+                "share a fun fact",
+                "random fact",
+                "useless fact"))
+            return "fun_fact";
 
         if (MatchesAny(loweredTranscript, "joke", "funny", "make me laugh")) return "joke";
 

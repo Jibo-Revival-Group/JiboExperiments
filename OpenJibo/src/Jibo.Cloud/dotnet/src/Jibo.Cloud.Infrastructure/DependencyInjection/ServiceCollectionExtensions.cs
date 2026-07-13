@@ -3,7 +3,10 @@ using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Audio;
 using Jibo.Cloud.Infrastructure.Calendar;
 using Jibo.Cloud.Infrastructure.Commute;
+using Jibo.Cloud.Infrastructure.Conversions;
 using Jibo.Cloud.Infrastructure.Content;
+using Jibo.Cloud.Infrastructure.Dictionary;
+using Jibo.Cloud.Infrastructure.FunFacts;
 using Jibo.Cloud.Infrastructure.Holidays;
 using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.News;
@@ -49,6 +52,12 @@ public static class ServiceCollectionExtensions
         var holidayOptions = new HolidayCalendarOptions();
         configuration?.GetSection("OpenJibo:Holiday").Bind(holidayOptions);
 
+        var uselessFactsOptions = new UselessFactsOptions();
+        configuration?.GetSection("OpenJibo:FunFacts:UselessFacts").Bind(uselessFactsOptions);
+
+        var freeDictionaryApiOptions = new FreeDictionaryApiOptions();
+        configuration?.GetSection("OpenJibo:Dictionary:FreeDictionaryApi").Bind(freeDictionaryApiOptions);
+
         var searchSection = configuration?.GetSection("OpenJibo:Search");
         var llmInstructions = SearchInstructionsResolver.Resolve(
             Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_INSTRUCTIONS")
@@ -70,9 +79,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(openWeatherOptions);
         services.AddSingleton(newsApiOptions);
         services.AddSingleton(holidayOptions);
+        services.AddSingleton(uselessFactsOptions);
+        services.AddSingleton(freeDictionaryApiOptions);
         services.AddSingleton(searchBackendOptions);
         services.AddHttpClient<IWeatherReportProvider, OpenWeatherReportProvider>();
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
+        services.AddHttpClient<IFunFactProvider, UselessFactsFunFactProvider>();
+        services.AddHttpClient<IWordDefinitionProvider, FreeDictionaryApiDefinitionProvider>();
         services.AddHttpClient<WolframAlphaSearchProvider>();
         services.AddHttpClient<OllamaSearchProvider>();
         services.AddHttpClient<ChatGptSearchProvider>();
@@ -82,6 +95,16 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IKnowledgeSearchService, KnowledgeSearchService>();
         services.AddSingleton<IHolidayCalendarProvider>(provider =>
             new NagerDateHolidayCalendarProvider(provider.GetRequiredService<HolidayCalendarOptions>()));
+        services.AddSingleton<IHolidayCountdownCatalog>(_ =>
+        {
+            var catalogPath = Path.Combine(AppContext.BaseDirectory, "Content", "HolidayCountdownCatalog.json");
+            return new HolidayCountdownCatalogLoader().LoadFromFile(catalogPath);
+        });
+        services.AddSingleton<IMeasurementConversionCatalog>(_ =>
+        {
+            var catalogPath = Path.Combine(AppContext.BaseDirectory, "Content", "MeasurementConversionCatalog.json");
+            return new MeasurementConversionCatalogLoader().LoadFromFile(catalogPath);
+        });
         services.AddSingleton<ICalendarReportProvider>(provider =>
             new CloudStateCalendarReportProvider(provider.GetRequiredService<ICloudStateStore>()));
         services.AddSingleton<ICommuteReportProvider>(provider =>

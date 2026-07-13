@@ -17,6 +17,7 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> RobotFacts { get; init; } = [];
     public IReadOnlyList<string> HumanFacts { get; init; } = [];
     public IReadOnlyList<string> FunFacts { get; init; } = [];
+    public IReadOnlyList<string> FunFactFallbacks { get; init; } = [];
     public IReadOnlyList<string> FavoriteAnimalReplies { get; init; } = [];
     public IReadOnlyList<string> FriendReplies { get; init; } = [];
     public IReadOnlyList<string> BestFriendReplies { get; init; } = [];

@@ -110,6 +110,9 @@ public sealed partial class JiboInteractionService
         if (HowManyUnitsCommandParser.TryParse(loweredTranscript, out _))
             return "measurement_conversion";
 
+        if (RollDiceCommandParser.TryParse(loweredTranscript, out _))
+            return "roll_dice";
+
         if (IsUserBirthdaySetStatement(loweredTranscript) || IsUserBirthdaySetAttempt(loweredTranscript))
             return "memory_set_birthday";
 

@@ -13,6 +13,7 @@ public sealed partial class JiboInteractionService(
     ICommuteReportProvider? commuteReportProvider = null,
     INewsBriefingProvider? newsBriefingProvider = null,
     IFunFactProvider? funFactProvider = null,
+    IWordDefinitionProvider? wordDefinitionProvider = null,
     IKnowledgeSearchService? knowledgeSearchService = null,
     ICloudStateStore? cloudStateStore = null,
     IUserIntegrationStore? userIntegrationStore = null,

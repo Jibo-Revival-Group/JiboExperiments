@@ -6056,6 +6056,7 @@ public sealed class JiboInteractionServiceTests
         ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null,
         IFunFactProvider? funFactProvider = null,
+        IWordDefinitionProvider? wordDefinitionProvider = null,
         IKnowledgeSearchService? knowledgeSearchService = null,
         IJiboExperienceContentRepository? contentRepository = null,
         IJiboRandomizer? randomizer = null)
@@ -6069,6 +6070,7 @@ public sealed class JiboInteractionServiceTests
             commuteReportProvider,
             newsBriefingProvider,
             funFactProvider,
+            wordDefinitionProvider,
             knowledgeSearchService,
             cloudStateStore);
     }

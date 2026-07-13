@@ -91,6 +91,9 @@ public sealed partial class JiboInteractionService
         if (MathCommandParser.TryParse(loweredTranscript, out _))
             return "math_query";
 
+        if (SpellCommandParser.TryParse(loweredTranscript, out _))
+            return "spell_word";
+
         if (IsUserBirthdaySetStatement(loweredTranscript) || IsUserBirthdaySetAttempt(loweredTranscript))
             return "memory_set_birthday";
 

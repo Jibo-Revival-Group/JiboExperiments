@@ -139,6 +139,7 @@ public sealed partial class JiboInteractionService
             "joke" => BuildJokeDecision(catalog),
             "fun_fact" => await BuildFunFactDecisionAsync(catalog, cancellationToken),
             "math_query" => BuildMathDecision(transcript),
+            "spell_word" => BuildSpellDecision(transcript),
             "dance_question" => BuildDanceQuestionDecision(catalog),
             "dance" => BuildRandomDanceDecision(catalog),
             "twerk" => BuildDanceDecision("twerk", "rom-twerk", "Watch me twerk."),

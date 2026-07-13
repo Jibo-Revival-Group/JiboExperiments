@@ -19,6 +19,6 @@ public static class DiceRollSpokenReplyFormatter
     {
         if (sides != 6 || result is < 1 or > 6) return null;
 
-        return $"<speak><anim cat='jiboji' filter='roll-die-{result}' nonBlocking='true'/><break size='0.3'/> {spokenLine}</speak>";
+        return $"<speak><anim cat='jiboji' filter='roll-die-{result}'/><break size='0.3'/> {spokenLine}</speak>";
     }
 }

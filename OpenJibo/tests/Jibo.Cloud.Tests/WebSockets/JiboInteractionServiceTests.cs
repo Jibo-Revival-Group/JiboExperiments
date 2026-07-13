@@ -51,6 +51,39 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_FunFact_UsesApiFactWhenProviderReturnsOne()
+    {
+        var service = CreateService(funFactProvider: new StubFunFactProvider("Switzerland is the only country with a square flag."));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "hey jibo tell me a fun fact",
+            NormalizedTranscript = "hey jibo tell me a fun fact"
+        });
+
+        Assert.Equal("fun_fact", decision.IntentName);
+        Assert.Equal("chitchat-skill", decision.SkillName);
+        Assert.Equal("Switzerland is the only country with a square flag.", decision.ReplyText);
+        Assert.Equal("fun_fact", decision.SkillPayload!["replyType"]);
+        Assert.Equal("fun_fact", decision.SkillPayload["factCategory"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_FunFact_FallsBackToCatalogWhenProviderReturnsNull()
+    {
+        var service = CreateService(funFactProvider: new StubFunFactProvider(null));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "tell me a fun fact",
+            NormalizedTranscript = "tell me a fun fact"
+        });
+
+        Assert.Equal("fun_fact", decision.IntentName);
+        Assert.Equal("A shrimp's heart is in its head.", decision.ReplyText);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_Dance_UsesCatalogBackedAnimation()
     {
         var service = CreateService();
@@ -6022,6 +6055,7 @@ public sealed class JiboInteractionServiceTests
         ICalendarReportProvider? calendarReportProvider = null,
         ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null,
+        IFunFactProvider? funFactProvider = null,
         IKnowledgeSearchService? knowledgeSearchService = null,
         IJiboExperienceContentRepository? contentRepository = null,
         IJiboRandomizer? randomizer = null)
@@ -6034,6 +6068,7 @@ public sealed class JiboInteractionServiceTests
             calendarReportProvider,
             commuteReportProvider,
             newsBriefingProvider,
+            funFactProvider,
             knowledgeSearchService,
             cloudStateStore);
     }
@@ -6116,6 +6151,14 @@ public sealed class JiboInteractionServiceTests
         {
             LastRequest = request;
             return Task.FromResult(Snapshot);
+        }
+    }
+
+    private sealed class StubFunFactProvider(string? fact) : IFunFactProvider
+    {
+        public Task<string?> GetRandomFactAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(fact);
         }
     }
 

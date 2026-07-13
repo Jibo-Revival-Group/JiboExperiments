@@ -223,6 +223,16 @@ public sealed partial class JiboInteractionService
                 "what joke do you like best"))
             return "robot_favorite_joke";
 
+        if (MatchesAny(
+                loweredTranscript,
+                "fun fact",
+                "tell me a fun fact",
+                "give me a fun fact",
+                "share a fun fact",
+                "random fact",
+                "useless fact"))
+            return "fun_fact";
+
         if (MatchesAny(loweredTranscript, "joke", "funny", "make me laugh")) return "joke";
 
         if (MatchesAny(

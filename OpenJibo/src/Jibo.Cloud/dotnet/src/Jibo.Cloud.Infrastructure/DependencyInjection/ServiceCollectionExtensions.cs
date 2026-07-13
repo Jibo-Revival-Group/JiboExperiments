@@ -4,6 +4,7 @@ using Jibo.Cloud.Infrastructure.Audio;
 using Jibo.Cloud.Infrastructure.Calendar;
 using Jibo.Cloud.Infrastructure.Commute;
 using Jibo.Cloud.Infrastructure.Content;
+using Jibo.Cloud.Infrastructure.FunFacts;
 using Jibo.Cloud.Infrastructure.Holidays;
 using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.News;
@@ -49,6 +50,9 @@ public static class ServiceCollectionExtensions
         var holidayOptions = new HolidayCalendarOptions();
         configuration?.GetSection("OpenJibo:Holiday").Bind(holidayOptions);
 
+        var uselessFactsOptions = new UselessFactsOptions();
+        configuration?.GetSection("OpenJibo:FunFacts:UselessFacts").Bind(uselessFactsOptions);
+
         var searchSection = configuration?.GetSection("OpenJibo:Search");
         var llmInstructions = SearchInstructionsResolver.Resolve(
             Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_INSTRUCTIONS")
@@ -70,9 +74,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(openWeatherOptions);
         services.AddSingleton(newsApiOptions);
         services.AddSingleton(holidayOptions);
+        services.AddSingleton(uselessFactsOptions);
         services.AddSingleton(searchBackendOptions);
         services.AddHttpClient<IWeatherReportProvider, OpenWeatherReportProvider>();
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
+        services.AddHttpClient<IFunFactProvider, UselessFactsFunFactProvider>();
         services.AddHttpClient<WolframAlphaSearchProvider>();
         services.AddHttpClient<OllamaSearchProvider>();
         services.AddHttpClient<ChatGptSearchProvider>();

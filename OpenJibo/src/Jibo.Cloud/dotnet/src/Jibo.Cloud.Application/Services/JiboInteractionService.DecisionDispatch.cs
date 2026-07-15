@@ -137,7 +137,13 @@ public sealed partial class JiboInteractionService
         return semanticIntent switch
         {
             "joke" => BuildJokeDecision(catalog),
+            "fun_fact" => await BuildFunFactDecisionAsync(catalog, cancellationToken),
             "math_query" => BuildMathDecision(transcript),
+            "spell_word" => BuildSpellDecision(transcript),
+            "define_word" => await BuildDefineWordDecisionAsync(transcript, cancellationToken),
+            "countdown" => BuildCountdownDecision(transcript, referenceLocalTime),
+            "measurement_conversion" => BuildMeasurementConversionDecision(transcript),
+            "roll_dice" => BuildRollDiceDecision(transcript),
             "dance_question" => BuildDanceQuestionDecision(catalog),
             "dance" => BuildRandomDanceDecision(catalog),
             "twerk" => BuildDanceDecision("twerk", "rom-twerk", "Watch me twerk."),

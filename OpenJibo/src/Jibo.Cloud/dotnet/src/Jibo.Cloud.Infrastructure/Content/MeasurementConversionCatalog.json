@@ -1,0 +1,122 @@
+[
+  {
+    "smallUnit": { "singular": "inch", "plural": "inches", "aliases": ["inch", "inches"] },
+    "largeUnit": { "singular": "foot", "plural": "feet", "aliases": ["foot", "feet"] },
+    "count": 12
+  },
+  {
+    "smallUnit": { "singular": "foot", "plural": "feet", "aliases": ["foot", "feet"] },
+    "largeUnit": { "singular": "yard", "plural": "yards", "aliases": ["yard", "yards"] },
+    "count": 3
+  },
+  {
+    "smallUnit": { "singular": "yard", "plural": "yards", "aliases": ["yard", "yards"] },
+    "largeUnit": { "singular": "mile", "plural": "miles", "aliases": ["mile", "miles"] },
+    "count": 1760
+  },
+  {
+    "smallUnit": { "singular": "foot", "plural": "feet", "aliases": ["foot", "feet"] },
+    "largeUnit": { "singular": "mile", "plural": "miles", "aliases": ["mile", "miles"] },
+    "count": 5280
+  },
+  {
+    "smallUnit": { "singular": "inch", "plural": "inches", "aliases": ["inch", "inches"] },
+    "largeUnit": { "singular": "yard", "plural": "yards", "aliases": ["yard", "yards"] },
+    "count": 36
+  },
+  {
+    "smallUnit": { "singular": "ounce", "plural": "ounces", "aliases": ["ounce", "ounces"] },
+    "largeUnit": { "singular": "pound", "plural": "pounds", "aliases": ["pound", "pounds", "lb", "lbs"] },
+    "count": 16
+  },
+  {
+    "smallUnit": { "singular": "pound", "plural": "pounds", "aliases": ["pound", "pounds", "lb", "lbs"] },
+    "largeUnit": { "singular": "ton", "plural": "tons", "aliases": ["ton", "tons"] },
+    "count": 2000
+  },
+  {
+    "smallUnit": { "singular": "cup", "plural": "cups", "aliases": ["cup", "cups"] },
+    "largeUnit": { "singular": "pint", "plural": "pints", "aliases": ["pint", "pints"] },
+    "count": 2
+  },
+  {
+    "smallUnit": { "singular": "pint", "plural": "pints", "aliases": ["pint", "pints"] },
+    "largeUnit": { "singular": "quart", "plural": "quarts", "aliases": ["quart", "quarts"] },
+    "count": 2
+  },
+  {
+    "smallUnit": { "singular": "quart", "plural": "quarts", "aliases": ["quart", "quarts"] },
+    "largeUnit": { "singular": "gallon", "plural": "gallons", "aliases": ["gallon", "gallons"] },
+    "count": 4
+  },
+  {
+    "smallUnit": { "singular": "cup", "plural": "cups", "aliases": ["cup", "cups"] },
+    "largeUnit": { "singular": "gallon", "plural": "gallons", "aliases": ["gallon", "gallons"] },
+    "count": 16
+  },
+  {
+    "smallUnit": { "singular": "millimeter", "plural": "millimeters", "aliases": ["millimeter", "millimeters", "millimetre", "millimetres", "mm"] },
+    "largeUnit": { "singular": "centimeter", "plural": "centimeters", "aliases": ["centimeter", "centimeters", "centimetre", "centimetres", "cm"] },
+    "count": 10
+  },
+  {
+    "smallUnit": { "singular": "centimeter", "plural": "centimeters", "aliases": ["centimeter", "centimeters", "centimetre", "centimetres", "cm"] },
+    "largeUnit": { "singular": "meter", "plural": "meters", "aliases": ["meter", "meters", "metre", "metres", "m"] },
+    "count": 100
+  },
+  {
+    "smallUnit": { "singular": "meter", "plural": "meters", "aliases": ["meter", "meters", "metre", "metres", "m"] },
+    "largeUnit": { "singular": "kilometer", "plural": "kilometers", "aliases": ["kilometer", "kilometers", "kilometre", "kilometres", "km"] },
+    "count": 1000
+  },
+  {
+    "smallUnit": { "singular": "milliliter", "plural": "milliliters", "aliases": ["milliliter", "milliliters", "millilitre", "millilitres", "ml"] },
+    "largeUnit": { "singular": "liter", "plural": "liters", "aliases": ["liter", "liters", "litre", "litres", "l"] },
+    "count": 1000
+  },
+  {
+    "smallUnit": { "singular": "gram", "plural": "grams", "aliases": ["gram", "grams", "g"] },
+    "largeUnit": { "singular": "kilogram", "plural": "kilograms", "aliases": ["kilogram", "kilograms", "kg"] },
+    "count": 1000
+  },
+  {
+    "smallUnit": { "singular": "inch", "plural": "inches", "aliases": ["inch", "inches"] },
+    "largeUnit": { "singular": "centimeter", "plural": "centimeters", "aliases": ["centimeter", "centimeters", "centimetre", "centimetres", "cm"] },
+    "count": 2.54
+  },
+  {
+    "smallUnit": { "singular": "foot", "plural": "feet", "aliases": ["foot", "feet"] },
+    "largeUnit": { "singular": "meter", "plural": "meters", "aliases": ["meter", "meters", "metre", "metres", "m"] },
+    "count": 0.3048
+  },
+  {
+    "smallUnit": { "singular": "mile", "plural": "miles", "aliases": ["mile", "miles"] },
+    "largeUnit": { "singular": "kilometer", "plural": "kilometers", "aliases": ["kilometer", "kilometers", "kilometre", "kilometres", "km"] },
+    "count": 1.609344
+  },
+  {
+    "smallUnit": { "singular": "pound", "plural": "pounds", "aliases": ["pound", "pounds", "lb", "lbs"] },
+    "largeUnit": { "singular": "kilogram", "plural": "kilograms", "aliases": ["kilogram", "kilograms", "kg"] },
+    "count": 0.453592
+  },
+  {
+    "smallUnit": { "singular": "gallon", "plural": "gallons", "aliases": ["gallon", "gallons"] },
+    "largeUnit": { "singular": "liter", "plural": "liters", "aliases": ["liter", "liters", "litre", "litres", "l"] },
+    "count": 3.78541
+  },
+  {
+    "smallUnit": { "singular": "ounce", "plural": "ounces", "aliases": ["ounce", "ounces"] },
+    "largeUnit": { "singular": "cup", "plural": "cups", "aliases": ["cup", "cups"] },
+    "count": 8
+  },
+  {
+    "smallUnit": { "singular": "tablespoon", "plural": "tablespoons", "aliases": ["tablespoon", "tablespoons", "tbsp"] },
+    "largeUnit": { "singular": "cup", "plural": "cups", "aliases": ["cup", "cups"] },
+    "count": 16
+  },
+  {
+    "smallUnit": { "singular": "teaspoon", "plural": "teaspoons", "aliases": ["teaspoon", "teaspoons", "tsp"] },
+    "largeUnit": { "singular": "tablespoon", "plural": "tablespoons", "aliases": ["tablespoon", "tablespoons", "tbsp"] },
+    "count": 3
+  }
+]

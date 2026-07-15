@@ -1,0 +1,282 @@
+[
+  {
+    "canonicalName": "Christmas Day",
+    "rule": { "type": "fixed", "month": 12, "day": 25 },
+    "aliases": ["christmas", "christmas day", "xmas", "x-mas", "crimbo", "christougenna"]
+  },
+  {
+    "canonicalName": "Boxing Day",
+    "rule": { "type": "fixed", "month": 12, "day": 26 },
+    "aliases": ["boxing day", "glorifying mother of god", "st stephen's day", "saint stephen's day", "second day of christmas"]
+  },
+  {
+    "canonicalName": "New Year's Eve",
+    "rule": { "type": "fixed", "month": 12, "day": 31 },
+    "aliases": ["new year's eve", "new years eve", "nye", "hogmanay"]
+  },
+  {
+    "canonicalName": "New Year's Day",
+    "rule": { "type": "fixed", "month": 1, "day": 1 },
+    "aliases": ["new year's day", "new years day", "new year's", "new years", "january 1st", "año nuevo", "protochronia"]
+  },
+  {
+    "canonicalName": "Epiphany",
+    "rule": { "type": "fixed", "month": 1, "day": 6 },
+    "aliases": ["epiphany", "three kings day", "dia de reyes", "theofania", "timiou stavrou"]
+  },
+  {
+    "canonicalName": "Martin Luther King Jr. Day",
+    "rule": { "type": "nthWeekday", "month": 1, "dayOfWeek": "Monday", "occurrence": 3 },
+    "aliases": ["martin luther king jr day", "martin luther king day", "mlk day", "mlk jr day"]
+  },
+  {
+    "canonicalName": "Burns Night",
+    "rule": { "type": "fixed", "month": 1, "day": 25 },
+    "aliases": ["burns night", "robert burns day", "burns supper"]
+  },
+  {
+    "canonicalName": "Australia Day",
+    "rule": { "type": "fixed", "month": 1, "day": 26 },
+    "aliases": ["australia day", "survival day", "invasion day"]
+  },
+  {
+    "canonicalName": "Mexican Constitution Day",
+    "rule": { "type": "nthWeekday", "month": 2, "dayOfWeek": "Monday", "occurrence": 1 },
+    "aliases": ["mexican constitution day", "constitution day mexico", "dia de la constitucion"]
+  },
+  {
+    "canonicalName": "Valentine's Day",
+    "rule": { "type": "fixed", "month": 2, "day": 14 },
+    "aliases": ["valentine's day", "valentines day", "saint valentine's day", "st valentine's day", "valentines", "dia del amor y la amistad"]
+  },
+  {
+    "canonicalName": "Family Day",
+    "rule": { "type": "nthWeekday", "month": 2, "dayOfWeek": "Monday", "occurrence": 3 },
+    "aliases": ["family day", "louis riel day", "islander day", "heritage day canada"]
+  },
+  {
+    "canonicalName": "Presidents' Day",
+    "rule": { "type": "nthWeekday", "month": 2, "dayOfWeek": "Monday", "occurrence": 3 },
+    "aliases": ["presidents' day", "presidents day", "washington's birthday", "president's day"]
+  },
+  {
+    "canonicalName": "Clean Monday",
+    "rule": { "type": "orthodoxEasterOffset", "days": -48 },
+    "aliases": ["clean monday", "green monday", "kathara deftera", "ash monday", "pure monday"]
+  },
+  {
+    "canonicalName": "Benito Juárez's Birthday",
+    "rule": { "type": "nthWeekday", "month": 3, "dayOfWeek": "Monday", "occurrence": 3 },
+    "aliases": ["benito juarez birthday", "natalicio de benito juarez", "benito juarez day"]
+  },
+  {
+    "canonicalName": "St. Patrick's Day",
+    "rule": { "type": "fixed", "month": 3, "day": 17 },
+    "aliases": ["st. patrick's day", "st patrick's day", "saint patrick's day", "paddy's day", "st paddy's day", "st pattys day"]
+  },
+  {
+    "canonicalName": "Greek Independence Day",
+    "rule": { "type": "fixed", "month": 3, "day": 25 },
+    "aliases": ["greek independence day", "25th of march", "ikosti pempti martiou", "evangelismos", "annunciation"]
+  },
+  {
+    "canonicalName": "April Fools' Day",
+    "rule": { "type": "fixed", "month": 4, "day": 1 },
+    "aliases": ["april fools' day", "april fools day", "april fools", "all fools' day"]
+  },
+  {
+    "canonicalName": "Good Friday",
+    "rule": { "type": "easterOffset", "days": -2 },
+    "aliases": ["good friday", "orthodox good friday", "megali paraskevi", "viernes santo"]
+  },
+  {
+    "canonicalName": "Easter Sunday",
+    "rule": { "type": "easterOffset", "days": 0 },
+    "aliases": ["easter sunday", "easter", "easter day", "resurrection sunday", "orthodox easter", "pascha"]
+  },
+  {
+    "canonicalName": "Easter Monday",
+    "rule": { "type": "easterOffset", "days": 1 },
+    "aliases": ["easter monday", "deftera tou pascha", "lundi de paques"]
+  },
+  {
+    "canonicalName": "St. George's Day",
+    "rule": { "type": "fixed", "month": 4, "day": 23 },
+    "aliases": ["st george's day", "st georges day", "saint george's day"]
+  },
+  {
+    "canonicalName": "International Workers' Day",
+    "rule": { "type": "fixed", "month": 5, "day": 1 },
+    "aliases": ["international workers' day", "may day", "dia del trabajo", "protomagia"]
+  },
+  {
+    "canonicalName": "Early May Bank Holiday",
+    "rule": { "type": "nthWeekday", "month": 5, "dayOfWeek": "Monday", "occurrence": 1 },
+    "aliases": ["early may bank holiday", "may bank holiday", "uk may day"]
+  },
+  {
+    "canonicalName": "Cinco de Mayo",
+    "rule": { "type": "fixed", "month": 5, "day": 5 },
+    "aliases": ["cinco de mayo", "5th of may", "fifth of may", "battle of puebla"]
+  },
+  {
+    "canonicalName": "Mother's Day",
+    "rule": { "type": "nthWeekday", "month": 5, "dayOfWeek": "Sunday", "occurrence": 2 },
+    "aliases": ["mother's day", "mothers day", "mothering sunday", "dia de las madres"]
+  },
+  {
+    "canonicalName": "Victoria Day",
+    "rule": { "type": "mondayBefore", "month": 5, "day": 25 },
+    "aliases": ["victoria day", "patriots' day", "may two four", "fete de la reine", "journee nationale des patriotes"]
+  },
+  {
+    "canonicalName": "Memorial Day",
+    "rule": { "type": "lastWeekday", "month": 5, "dayOfWeek": "Monday" },
+    "aliases": ["memorial day", "decoration day"]
+  },
+  {
+    "canonicalName": "Spring Bank Holiday",
+    "rule": { "type": "lastWeekday", "month": 5, "dayOfWeek": "Monday" },
+    "aliases": ["spring bank holiday", "late may bank holiday"]
+  },
+  {
+    "canonicalName": "Holy Spirit Day",
+    "rule": { "type": "easterOffset", "days": 50 },
+    "aliases": ["holy spirit day", "whit monday", "pentecost monday", "deftera tis pentikostis", "agiou pnevmatos"]
+  },
+  {
+    "canonicalName": "Juneteenth",
+    "rule": { "type": "fixed", "month": 6, "day": 19 },
+    "aliases": ["juneteenth", "juneteenth national independence day", "freedom day", "jubilee day"]
+  },
+  {
+    "canonicalName": "National Indigenous Peoples Day",
+    "rule": { "type": "fixed", "month": 6, "day": 21 },
+    "aliases": ["national indigenous peoples day", "indigenous day canada", "aboriginal day"]
+  },
+  {
+    "canonicalName": "Father's Day",
+    "rule": { "type": "nthWeekday", "month": 6, "dayOfWeek": "Sunday", "occurrence": 3 },
+    "aliases": ["father's day", "fathers day", "dia del padre"]
+  },
+  {
+    "canonicalName": "Saint-Jean-Baptiste Day",
+    "rule": { "type": "fixed", "month": 6, "day": 24 },
+    "aliases": ["saint jean baptiste day", "fete nationale du quebec", "quebec national day"]
+  },
+  {
+    "canonicalName": "Canada Day",
+    "rule": { "type": "fixed", "month": 7, "day": 1 },
+    "aliases": ["canada day", "dominion day", "fete du canada", "july 1st canada"]
+  },
+  {
+    "canonicalName": "United States Independence Day",
+    "rule": { "type": "fixed", "month": 7, "day": 4 },
+    "aliases": ["independence day", "4th of july", "fourth of july", "july 4th", "july fourth", "us independence day"]
+  },
+  {
+    "canonicalName": "Orangemen's Day",
+    "rule": { "type": "fixed", "month": 7, "day": 12 },
+    "aliases": ["orangemen's day", "battle of the boyne", "the twelfth", "july 12th northern ireland"]
+  },
+  {
+    "canonicalName": "Civic Holiday",
+    "rule": { "type": "nthWeekday", "month": 8, "dayOfWeek": "Monday", "occurrence": 1 },
+    "aliases": ["civic holiday", "provincial day", "august long weekend", "bc day", "alberta heritage day", "saskatchewan day", "simcoe day"]
+  },
+  {
+    "canonicalName": "Dormition of the Mother of God",
+    "rule": { "type": "fixed", "month": 8, "day": 15 },
+    "aliases": ["dormition of the mother of god", "dormition of the theotokos", "dormition", "kimisi tis theotokou", "assumption of mary", "dekapentavgoustos"]
+  },
+  {
+    "canonicalName": "Summer Bank Holiday",
+    "rule": { "type": "lastWeekday", "month": 8, "dayOfWeek": "Monday" },
+    "aliases": ["summer bank holiday", "august bank holiday uk"]
+  },
+  {
+    "canonicalName": "Labor Day",
+    "rule": { "type": "nthWeekday", "month": 9, "dayOfWeek": "Monday", "occurrence": 1 },
+    "aliases": ["labor day", "labour day", "fete du travail"]
+  },
+  {
+    "canonicalName": "Mexican Independence Day",
+    "rule": { "type": "fixed", "month": 9, "day": 16 },
+    "aliases": ["mexican independence day", "dia de la independencia", "grito de dolores", "dieciseis de septiembre"]
+  },
+  {
+    "canonicalName": "National Day for Truth and Reconciliation",
+    "rule": { "type": "fixed", "month": 9, "day": 30 },
+    "aliases": ["national day for truth and reconciliation", "orange shirt day", "truth and reconciliation day"]
+  },
+  {
+    "canonicalName": "Canadian Thanksgiving",
+    "rule": { "type": "nthWeekday", "month": 10, "dayOfWeek": "Monday", "occurrence": 2 },
+    "aliases": ["canadian thanksgiving", "thanksgiving canada", "action de grace"]
+  },
+  {
+    "canonicalName": "Indigenous Peoples' Day",
+    "rule": { "type": "nthWeekday", "month": 10, "dayOfWeek": "Monday", "occurrence": 2 },
+    "aliases": ["indigenous peoples' day", "columbus day", "indigenous peoples day"]
+  },
+  {
+    "canonicalName": "Ohi Day",
+    "rule": { "type": "fixed", "month": 10, "day": 28 },
+    "aliases": ["ohi day", "ochi day", "day of the no", "imera tou ohi", "28th of october"]
+  },
+  {
+    "canonicalName": "Halloween",
+    "rule": { "type": "fixed", "month": 10, "day": 31 },
+    "aliases": ["halloween", "hallowe'en", "all hallows' eve", "all saints' eve"]
+  },
+  {
+    "canonicalName": "Day of the Dead",
+    "rule": { "type": "fixed", "month": 11, "day": 1 },
+    "aliases": ["day of the dead", "dia de los muertos", "dia de muertos", "all saints day mexico"]
+  },
+  {
+    "canonicalName": "Guy Fawkes Night",
+    "rule": { "type": "fixed", "month": 11, "day": 5 },
+    "aliases": ["guy fawkes night", "bonfire night", "fireworks night", "fifth of november"]
+  },
+  {
+    "canonicalName": "Remembrance Day",
+    "rule": { "type": "fixed", "month": 11, "day": 11 },
+    "aliases": ["remembrance day", "veterans day", "veteran's day", "poppy day", "armistice day"]
+  },
+  {
+    "canonicalName": "Mexican Revolution Day",
+    "rule": { "type": "nthWeekday", "month": 11, "dayOfWeek": "Monday", "occurrence": 3 },
+    "aliases": ["mexican revolution day", "dia de la revolucion", "revolution day mexico"]
+  },
+  {
+    "canonicalName": "Thanksgiving Day",
+    "rule": { "type": "nthWeekday", "month": 11, "dayOfWeek": "Thursday", "occurrence": 4 },
+    "aliases": ["thanksgiving day", "thanksgiving", "turkey day", "us thanksgiving"]
+  },
+  {
+    "canonicalName": "St. Andrew's Day",
+    "rule": { "type": "fixed", "month": 11, "day": 30 },
+    "aliases": ["st andrew's day", "saint andrew's day", "scotland national day"]
+  },
+  {
+    "canonicalName": "Hanukkah",
+    "rule": {
+      "type": "yearLookup",
+      "dates": {
+        "2025": "12-14",
+        "2026": "12-04",
+        "2027": "12-24",
+        "2028": "12-12",
+        "2029": "12-01",
+        "2030": "12-20",
+        "2031": "12-08",
+        "2032": "11-28",
+        "2033": "12-16",
+        "2034": "12-05",
+        "2035": "12-25"
+      }
+    },
+    "aliases": ["hanukkah", "chanukah", "festival of lights"]
+  }
+]

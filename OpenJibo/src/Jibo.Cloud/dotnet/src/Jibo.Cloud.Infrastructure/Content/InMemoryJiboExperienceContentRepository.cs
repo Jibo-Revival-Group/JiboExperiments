@@ -55,6 +55,24 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "An amazing but true fact for you. Dogs and elephants are the only animals that understand pointing.",
                 "A crazy fact for you. Polar bear fur isn't white. It's transparent."
             ],
+            FunFactFallbacks =
+            [
+                "A shrimp's heart is in its head.",
+                "Switzerland is the only country with a square flag.",
+                "A bolt of lightning is hotter than the surface of the sun.",
+                "Honey never spoils. Archaeologists have found edible honey in ancient Egyptian tombs.",
+                "Octopuses have three hearts and blue blood.",
+                "Bananas are berries, but strawberries are not.",
+                "A day on Venus is longer than a year on Venus.",
+                "Wombat poop is cube-shaped.",
+                "The Eiffel Tower can grow more than six inches taller in summer heat.",
+                "Scotland's national animal is the unicorn.",
+                "A group of flamingos is called a flamboyance.",
+                "Cleopatra lived closer in time to the Moon landing than to the building of the Great Pyramid.",
+                "There are more possible games of chess than atoms in the observable universe.",
+                "A single cloud can weigh more than a million pounds.",
+                "Sloths can hold their breath longer than dolphins can."
+            ],
             FavoriteAnimalReplies =
             [
                 "I really really like penguins. I kind of look like one.",

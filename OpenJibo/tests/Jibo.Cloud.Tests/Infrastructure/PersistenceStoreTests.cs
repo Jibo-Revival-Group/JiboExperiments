@@ -308,6 +308,29 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void AddOpenJiboCloud_FailsFastWhenLocalWhisperDependenciesAreMissing()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:Stt:EnableLocalWhisperCpp"] = "true",
+                ["OpenJibo:Stt:FfmpegPath"] = @"Z:\definitely-missing\ffmpeg.exe",
+                ["OpenJibo:Stt:WhisperCliPath"] = @"Z:\definitely-missing\whisper-cli.exe",
+                ["OpenJibo:Stt:WhisperModelPath"] = @"Z:\definitely-missing\ggml-base.en.bin"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => services.AddOpenJiboCloud(configuration));
+
+        Assert.Contains("local whisper.cpp STT", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OpenJibo:Stt:FfmpegPath", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OpenJibo:Stt:WhisperCliPath", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OpenJibo:Stt:WhisperModelPath", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void AddOpenJiboCloud_AutoDerivesSqliteConnectionStringsFromPersistencePaths()
     {
         var root = Path.Combine(Path.GetTempPath(), $"openjibo-sqlite-bootstrap-{Guid.NewGuid():N}");

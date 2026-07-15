@@ -34,6 +34,8 @@ public static class ServiceCollectionExtensions
             configuration.GetSection("OpenJibo:Stt").Bind(sttOptions);
         }
 
+        BufferedAudioSttPathResolver.ValidateResolvedDependencies(sttOptions);
+
         var openWeatherOptions = new OpenWeatherOptions();
         configuration?.GetSection("OpenJibo:Weather:OpenWeather").Bind(openWeatherOptions);
 

@@ -213,6 +213,31 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         Assert.Equal("models/ggml-base.en.bin", resolved.WhisperModelPath);
     }
 
+    [Fact]
+    public void Resolve_ExpandsTildeConfiguredPaths_UsingHomeDirectory()
+    {
+        const string homeDirectory = "/Users/test";
+
+        var resolved = BufferedAudioSttPathResolver.Resolve(
+            new BufferedAudioSttOptions
+            {
+                EnableLocalWhisperCpp = true,
+                FfmpegPath = "~/bin/ffmpeg",
+                WhisperCliPath = "~/whisper.cpp/build/bin/whisper-cli",
+                WhisperModelPath = "~/whisper.cpp/models/ggml-base.en.bin"
+            },
+            _ => null,
+            path => path is "/Users/test/bin/ffmpeg"
+                or "/Users/test/whisper.cpp/build/bin/whisper-cli"
+                or "/Users/test/whisper.cpp/models/ggml-base.en.bin",
+            homeDirectory,
+            OperatingSystemPlatform.MacOS);
+
+        Assert.Equal("/Users/test/bin/ffmpeg", resolved.FfmpegPath);
+        Assert.Equal("/Users/test/whisper.cpp/build/bin/whisper-cli", resolved.WhisperCliPath);
+        Assert.Equal("/Users/test/whisper.cpp/models/ggml-base.en.bin", resolved.WhisperModelPath);
+    }
+
     [Theory]
     [InlineData("shared/yes_no")]
     [InlineData("word-of-the-day/surprise")]
@@ -742,6 +767,29 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
         Assert.Equal(@"C:\Program Files\whisper.cpp\build\bin\Release\whisper-cli.exe", resolved.WhisperCliPath);
         Assert.Equal(Path.Combine(homeDirectory, "whisper.cpp", "models", "ggml-base.en.bin"),
             resolved.WhisperModelPath);
+    }
+
+    [Fact]
+    public void ValidateResolvedDependencies_ThrowsWhenLocalWhisperDependenciesAreMissing()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            BufferedAudioSttPathResolver.ValidateResolvedDependencies(
+                new BufferedAudioSttOptions
+                {
+                    EnableLocalWhisperCpp = true,
+                    FfmpegPath = @"Z:\definitely-missing\ffmpeg.exe",
+                    WhisperCliPath = @"Z:\definitely-missing\whisper-cli.exe",
+                    WhisperModelPath = @"Z:\definitely-missing\ggml-base.en.bin"
+                },
+                _ => null,
+                _ => false,
+                null,
+                OperatingSystemPlatform.Windows));
+
+        Assert.Contains("local whisper.cpp STT", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OpenJibo:Stt:FfmpegPath", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OpenJibo:Stt:WhisperCliPath", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OpenJibo:Stt:WhisperModelPath", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed class FakeExternalProcessRunner(

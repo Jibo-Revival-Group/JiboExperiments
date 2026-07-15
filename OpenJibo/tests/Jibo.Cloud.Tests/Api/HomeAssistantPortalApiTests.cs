@@ -838,6 +838,7 @@ public sealed class HomeAssistantPortalApiTests
                 builder.UseSetting(
                     "OpenJibo:PersonalMemory:PersistencePath",
                     Path.Combine(root, "personal-memory.json"));
+                builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
             });
     }
 }

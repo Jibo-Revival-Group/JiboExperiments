@@ -82,6 +82,7 @@ public sealed class JiboCloudApiIntegrationTests
                 builder.UseSetting("OpenJibo:PersonalMemory:PersistencePath",
                     Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Media:DirectoryPath", Path.Combine(root, "media"));
+                builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
             });
     }
 

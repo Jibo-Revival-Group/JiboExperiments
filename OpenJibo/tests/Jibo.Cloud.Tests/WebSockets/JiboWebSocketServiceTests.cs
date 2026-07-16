@@ -8265,6 +8265,23 @@ public sealed class JiboWebSocketServiceTests
                     .GetString());
         }
 
+        using (var startSkillPayload = JsonDocument.Parse(startReplies[2].Text!))
+        {
+            var jcpConfig = startSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config");
+            Assert.Equal("Q",
+                jcpConfig.GetProperty("play").GetProperty("meta").GetProperty("prompt_sub_category").GetString());
+            Assert.Equal("question",
+                jcpConfig.GetProperty("play").GetProperty("meta").GetProperty("mim_type").GetString());
+            Assert.Equal("LISTEN", jcpConfig.GetProperty("listen").GetProperty("type").GetString());
+            Assert.Equal("shared/yes_no",
+                jcpConfig.GetProperty("listen").GetProperty("contexts")[0].GetString());
+        }
+
         var session = _store.FindSessionByToken(token);
         Assert.NotNull(session);
         Assert.True(session.Metadata.TryGetValue(stateKey, out var stateValue));

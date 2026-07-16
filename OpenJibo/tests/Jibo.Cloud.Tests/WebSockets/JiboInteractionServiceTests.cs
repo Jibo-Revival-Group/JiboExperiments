@@ -2781,7 +2781,12 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_opt_in", decision.IntentName);
         Assert.Equal("Would you like your personal report now?", decision.ReplyText);
+        Assert.Equal("chitchat-skill", decision.SkillName);
         Assert.NotNull(decision.SkillPayload);
+        Assert.Equal("runtime-chat", decision.SkillPayload["mim_id"]);
+        Assert.Equal("question", decision.SkillPayload["mim_type"]);
+        Assert.Equal("RUNTIME_PROMPT", decision.SkillPayload["prompt_id"]);
+        Assert.Equal("Q", decision.SkillPayload["prompt_sub_category"]);
         var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
         Assert.Equal("shared/yes_no", listenContexts[0]);
         Assert.NotNull(decision.ContextUpdates);
@@ -2814,7 +2819,10 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_verify_user", decision.IntentName);
         Assert.Equal("I think this is alex. Is that right?", decision.ReplyText);
+        Assert.Equal("chitchat-skill", decision.SkillName);
         Assert.NotNull(decision.SkillPayload);
+        Assert.Equal("question", decision.SkillPayload["mim_type"]);
+        Assert.Equal("Q", decision.SkillPayload["prompt_sub_category"]);
         var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
         Assert.Equal("shared/yes_no", listenContexts[0]);
         Assert.NotNull(decision.ContextUpdates);

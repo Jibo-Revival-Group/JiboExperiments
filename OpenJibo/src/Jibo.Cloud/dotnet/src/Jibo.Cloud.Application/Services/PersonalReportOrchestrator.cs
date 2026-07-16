@@ -141,11 +141,7 @@ internal static partial class PersonalReportOrchestrator
                 ? "Would you like your personal report now?"
                 : $"{inlineToggleSummary} Would you like your personal report now?";
 
-            return new JiboInteractionDecision(
-                "personal_report_opt_in",
-                reply,
-                SkillPayload: BuildYesNoPromptPayload(),
-                ContextUpdates: contextUpdates);
+            return BuildYesNoPromptDecision("personal_report_opt_in", reply, contextUpdates);
         }
 
         if (string.IsNullOrWhiteSpace(loweredTranscript)) return BuildNoInputDecision(turn, state, toggles);
@@ -161,11 +157,10 @@ internal static partial class PersonalReportOrchestrator
                         var scope = tenantScopeResolver(turn);
                         var knownName = ReadString(turn, UserNameMetadataKey) ?? personalMemoryStore.GetName(scope);
                         if (!string.IsNullOrWhiteSpace(knownName))
-                            return new JiboInteractionDecision(
+                            return BuildYesNoPromptDecision(
                                 "personal_report_verify_user",
                                 $"I think this is {knownName}. Is that right?",
-                                SkillPayload: BuildYesNoPromptPayload(),
-                                ContextUpdates: BuildContextUpdates(
+                                BuildContextUpdates(
                                     AwaitingIdentityConfirmationState,
                                     0,
                                     0,
@@ -199,11 +194,10 @@ internal static partial class PersonalReportOrchestrator
                 }
 
                 if (!string.IsNullOrWhiteSpace(inlineToggleSummary))
-                    return new JiboInteractionDecision(
+                    return BuildYesNoPromptDecision(
                         "personal_report_opt_in",
                         $"{inlineToggleSummary} Would you like your personal report now?",
-                        SkillPayload: BuildYesNoPromptPayload(),
-                        ContextUpdates: BuildContextUpdates(
+                        BuildContextUpdates(
                             AwaitingOptInState,
                             0,
                             0,
@@ -414,17 +408,25 @@ internal static partial class PersonalReportOrchestrator
         var noInputCount = Math.Max(0, ReadInt(turn, NoInputCountMetadataKey)) + 1;
         if (noInputCount >= MaxNoInputCount) return BuildDeclinedDecision(toggles);
 
+        var contextUpdates = BuildContextUpdates(
+            state,
+            ReadInt(turn, NoMatchCountMetadataKey),
+            noInputCount,
+            toggles,
+            ReadString(turn, UserNameMetadataKey),
+            ReadBool(turn, UserVerifiedMetadataKey) ?? false,
+            string.Empty);
+
+        if (IsYesNoPromptState(state))
+            return BuildYesNoPromptDecision(
+                "personal_report_no_input",
+                "I am still here. Do you want your personal report?",
+                contextUpdates);
+
         return new JiboInteractionDecision(
             "personal_report_no_input",
             "I am still here. Do you want your personal report?",
-            ContextUpdates: BuildContextUpdates(
-                state,
-                ReadInt(turn, NoMatchCountMetadataKey),
-                noInputCount,
-                toggles,
-                ReadString(turn, UserNameMetadataKey),
-                ReadBool(turn, UserVerifiedMetadataKey) ?? false,
-                string.Empty));
+            ContextUpdates: contextUpdates);
     }
 
     private static JiboInteractionDecision BuildNoMatchDecision(
@@ -438,17 +440,22 @@ internal static partial class PersonalReportOrchestrator
         var noMatchCount = Math.Max(0, ReadInt(turn, NoMatchCountMetadataKey)) + 1;
         if (noMatchCount >= MaxNoMatchCount) return BuildDeclinedDecision(toggles);
 
+        var contextUpdates = BuildContextUpdates(
+            state,
+            noMatchCount,
+            0,
+            toggles,
+            userName,
+            userVerified,
+            string.Empty);
+
+        if (IsYesNoPromptState(state))
+            return BuildYesNoPromptDecision("personal_report_no_match", repromptText, contextUpdates);
+
         return new JiboInteractionDecision(
             "personal_report_no_match",
             repromptText,
-            ContextUpdates: BuildContextUpdates(
-                state,
-                noMatchCount,
-                0,
-                toggles,
-                userName,
-                userVerified,
-                string.Empty));
+            ContextUpdates: contextUpdates);
     }
 
     private static JiboInteractionDecision BuildDeclinedDecision(PersonalReportServiceToggles toggles)
@@ -505,10 +512,33 @@ internal static partial class PersonalReportOrchestrator
         };
     }
 
+    private static bool IsYesNoPromptState(string state)
+    {
+        return string.Equals(state, AwaitingOptInState, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(state, AwaitingIdentityConfirmationState, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static JiboInteractionDecision BuildYesNoPromptDecision(
+        string intentName,
+        string reply,
+        IDictionary<string, object?> contextUpdates)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            reply,
+            "chitchat-skill",
+            BuildYesNoPromptPayload(),
+            contextUpdates);
+    }
+
     private static IDictionary<string, object?> BuildYesNoPromptPayload()
     {
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
+            ["mim_id"] = "runtime-chat",
+            ["mim_type"] = "question",
+            ["prompt_id"] = "RUNTIME_PROMPT",
+            ["prompt_sub_category"] = "Q",
             ["listen_contexts"] = new[] { "shared/yes_no" }
         };
     }

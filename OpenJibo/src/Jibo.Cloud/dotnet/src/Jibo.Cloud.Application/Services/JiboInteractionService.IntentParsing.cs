@@ -138,9 +138,7 @@ public sealed partial class JiboInteractionService
         if (string.Equals(yesNoRule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase))
             return "word_of_the_day";
 
-        return string.Equals(yesNoRule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase)
-            ? "proactive_offer_pizza_fact"
-            : "yes";
+        return "yes";
     }
 
     private static string ResolveNegativeYesNoIntent(string? yesNoRule)

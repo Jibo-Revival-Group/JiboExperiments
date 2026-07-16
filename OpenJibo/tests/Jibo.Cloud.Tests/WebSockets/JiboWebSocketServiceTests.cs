@@ -3049,10 +3049,10 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-share-yes","data":{"text":"Yes!"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.Equal("proactive_offer_pizza_fact",
+        Assert.Equal("yes",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
         Assert.Single(rules.EnumerateArray());
@@ -3062,6 +3062,7 @@ public sealed class JiboWebSocketServiceTests
             listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
         Assert.Empty(listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("entities")
             .EnumerateObject());
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
     }
 
     [Fact]
@@ -5733,6 +5734,77 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("shared/yes_no",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
 
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+    }
+
+    [Fact]
+    public async Task BufferedAudio_SurprisesDateOfferPrompt_ReturnsLocalYesWithoutSkillAction()
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var service = CreateService(stateStore, sttStrategies:
+        [
+            new QueuedBufferedAudioSttStrategy("Yes.")
+        ]);
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-surprises-date-yesno-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-surprises-date-yesno","data":{"hotphrase":false,"rules":["surprises-date/offer_date_fact","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"],"earlyEOS":["$YESNO"],"encoding":"OGG_OPUS","sampleRate":16000}}}"""
+        });
+
+        foreach (var frame in new[]
+                 {
+                     BuildOggFrame(0x02, "OpusHead"),
+                     BuildOggFrame(0x00, "OpusTags"),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00),
+                     BuildOggFrame(0x00)
+                 })
+        {
+            var interimReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = "hub-surprises-date-yesno-token",
+                Binary = frame
+            });
+
+            Assert.Empty(interimReplies);
+        }
+
+        var session = stateStore.FindSessionByToken("hub-surprises-date-yesno-token");
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(4);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
+
+        var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-surprises-date-yesno-token",
+            Binary = BuildOggFrame(0x00)
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("surprises-date/offer_date_fact",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("yes", session.LastIntent);
         Assert.False(session.TurnState.AwaitingTurnCompletion);
     }
 

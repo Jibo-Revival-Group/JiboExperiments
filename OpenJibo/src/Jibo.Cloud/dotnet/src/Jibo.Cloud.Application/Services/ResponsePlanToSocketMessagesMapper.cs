@@ -560,6 +560,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // competing chitchat SKILL_ACTION from the cloud.
         //   tutorial/*           - the on-robot tutorial skill (yes_no after dance, keep_photo, ...)
         //   create/is_it_a_keeper - @be/create photo-save prompt
+        //   surprises-date/offer_date_fact - @be/surprises-date fact-offer prompt
         // Other yes/no rules (shared/yes_no, surprises-ota/want_to_download_now, etc.) are
         // cloud-side and do need a SKILL_ACTION reply.
         return ReadRuleValues(turn).Any(IsRobotLocalYesNoRule);
@@ -568,7 +569,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
     private static bool IsRobotLocalYesNoRule(string rule)
     {
         return rule.StartsWith("tutorial/", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(rule, "create/is_it_a_keeper", StringComparison.OrdinalIgnoreCase);
+               string.Equals(rule, "create/is_it_a_keeper", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? ReadYesNoRule(TurnContext turn)

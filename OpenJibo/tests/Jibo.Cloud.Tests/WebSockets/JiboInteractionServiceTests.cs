@@ -4444,7 +4444,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_SurprisesDateOfferPrompt_WithNoisyAffirmation_MapsToSurpriseIntent()
+    public async Task BuildDecisionAsync_SurprisesDateOfferPrompt_WithNoisyAffirmation_MapsToLocalYesIntent()
     {
         var service = CreateService();
 
@@ -4461,11 +4461,8 @@ public sealed class JiboInteractionServiceTests
             }
         });
 
-        Assert.Equal("proactive_offer_pizza_fact", decision.IntentName);
-        Assert.Equal("Do you want to hear a fun pizza fact?", decision.ReplyText);
-        Assert.NotNull(decision.SkillPayload);
-        var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
-        Assert.Equal("surprises-date/offer_date_fact", listenContexts[0]);
+        Assert.Equal("yes", decision.IntentName);
+        Assert.Equal("Yes.", decision.ReplyText);
     }
 
     [Fact]
@@ -4587,7 +4584,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_SurprisesDateOfferPrompt_MapsShortAffirmationToSurpriseFlow()
+    public async Task BuildDecisionAsync_SurprisesDateOfferPrompt_MapsShortAffirmationToLocalYesIntent()
     {
         var service = CreateService();
 
@@ -4602,11 +4599,8 @@ public sealed class JiboInteractionServiceTests
             }
         });
 
-        Assert.Equal("proactive_offer_pizza_fact", decision.IntentName);
-        Assert.Equal("Do you want to hear a fun pizza fact?", decision.ReplyText);
-        Assert.NotNull(decision.SkillPayload);
-        var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
-        Assert.Equal("surprises-date/offer_date_fact", listenContexts[0]);
+        Assert.Equal("yes", decision.IntentName);
+        Assert.Equal("Yes.", decision.ReplyText);
     }
 
     [Fact]

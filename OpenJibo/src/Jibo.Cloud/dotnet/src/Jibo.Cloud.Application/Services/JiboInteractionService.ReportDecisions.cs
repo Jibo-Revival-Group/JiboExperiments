@@ -36,6 +36,11 @@ public sealed partial class JiboInteractionService
         var weatherCoordinates = string.IsNullOrWhiteSpace(locationQuery)
             ? TryResolveWeatherCoordinates(turn)
             : null;
+        // Prefer the robot's known place name (e.g. Pleasant Hill) over OpenWeather's
+        // nearest POI label (e.g. Lone Jack) when fetching by GPS.
+        var preferredLocationName = string.IsNullOrWhiteSpace(locationQuery)
+            ? TryResolveCurrentLocationName(turn)
+            : null;
         var useCelsius = ShouldUseCelsius(turn, transcript);
         var isNextWeekForecast = IsNextWeekForecastRequest(normalizedTranscript, isRangeForecastRequest);
         var isThisWeekForecast = IsThisWeekForecastRequest(normalizedTranscript, isRangeForecastRequest);
@@ -59,7 +64,8 @@ public sealed partial class JiboInteractionService
                             weatherCoordinates?.Longitude,
                             offset == 1,
                             useCelsius,
-                            offset),
+                            offset,
+                            preferredLocationName),
                         cancellationToken);
                 }
                 catch (Exception) when (!cancellationToken.IsCancellationRequested)
@@ -67,7 +73,10 @@ public sealed partial class JiboInteractionService
                     weeklySnapshot = null;
                 }
 
-                if (weeklySnapshot is not null) weeklySnapshots.Add((offset, weeklySnapshot));
+                if (weeklySnapshot is not null)
+                    weeklySnapshots.Add((
+                        offset,
+                        ApplyPreferredWeatherLocationName(weeklySnapshot, preferredLocationName, locationQuery)));
             }
 
             if (weeklySnapshots.Count == 0)
@@ -116,7 +125,8 @@ public sealed partial class JiboInteractionService
                     weatherCoordinates?.Longitude,
                     string.Equals(weatherDate.DateEntity, "tomorrow", StringComparison.OrdinalIgnoreCase),
                     useCelsius,
-                    weatherDate.ForecastDayOffset),
+                    weatherDate.ForecastDayOffset,
+                    preferredLocationName),
                 cancellationToken);
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested)
@@ -129,6 +139,7 @@ public sealed partial class JiboInteractionService
                 "weather",
                 ChooseWeatherServiceDownReply(catalog));
 
+        snapshot = ApplyPreferredWeatherLocationName(snapshot, preferredLocationName, locationQuery);
         var spokenReply = BuildWeatherSpokenReply(snapshot, weatherDate, catalog);
         var weatherPayload = BuildWeatherSkillPayload(spokenReply, snapshot, referenceLocalTime);
         AddWeatherRequestDiagnostics(
@@ -145,6 +156,18 @@ public sealed partial class JiboInteractionService
             spokenReply,
             "chitchat-skill",
             weatherPayload);
+    }
+
+    private static WeatherReportSnapshot ApplyPreferredWeatherLocationName(
+        WeatherReportSnapshot snapshot,
+        string? preferredLocationName,
+        string? locationQuery)
+    {
+        if (string.IsNullOrWhiteSpace(preferredLocationName) ||
+            !string.IsNullOrWhiteSpace(locationQuery))
+            return snapshot;
+
+        return snapshot with { LocationName = preferredLocationName.Trim() };
     }
 
     private async Task<JiboInteractionDecision> BuildCommuteReportDecisionAsync(

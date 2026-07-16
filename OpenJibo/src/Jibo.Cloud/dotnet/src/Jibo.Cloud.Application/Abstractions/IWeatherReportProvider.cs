@@ -13,7 +13,8 @@ public sealed record WeatherReportRequest(
     double? Longitude,
     bool IsTomorrow,
     bool? UseCelsius,
-    int? ForecastDayOffset = null);
+    int? ForecastDayOffset = null,
+    string? PreferredLocationName = null);
 
 public sealed record WeatherReportSnapshot(
     string LocationName,

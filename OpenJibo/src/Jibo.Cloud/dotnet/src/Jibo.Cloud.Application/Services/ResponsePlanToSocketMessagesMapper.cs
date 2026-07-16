@@ -719,7 +719,18 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var weeklyWeatherCards = BuildWeatherHiLoSequenceCards(skillPayload);
         if (weatherHiLoView is null && weeklyWeatherCards.Count > 0) weatherHiLoView = weeklyWeatherCards[0].View;
 
-        var useWeatherSequence = false;
+        var useSequence = false;
+        var isPersonalReport = string.Equals(
+            ReadPayloadString(skillPayload, "cloudSkill"),
+            "personal_report",
+            StringComparison.OrdinalIgnoreCase);
+        var personalReportWeatherText = ReadPayloadString(skillPayload, "personal_report_weather_text");
+        var personalReportFollowUpText = ReadPayloadString(skillPayload, "personal_report_followup_text");
+        var usePersonalReportSequence = isPersonalReport &&
+                                       weatherHiLoView is not null &&
+                                       !string.IsNullOrWhiteSpace(personalReportWeatherText) &&
+                                       !string.IsNullOrWhiteSpace(personalReportFollowUpText);
+
         if (weatherHiLoView is not null)
         {
             var resolvedGuiContext = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -768,9 +779,22 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 ["views"] = weatherViews
             };
 
-            if (weeklyWeatherCards.Count > 1)
+            if (usePersonalReportSequence)
             {
-                useWeatherSequence = true;
+                useSequence = true;
+                var weatherIcon = ReadPayloadString(skillPayload, "weather_icon") ?? "cloudy";
+                jcpConfig["children"] = BuildPersonalReportSequenceChildren(
+                    personalReportWeatherText!,
+                    personalReportFollowUpText!,
+                    weatherHiLoView,
+                    weatherIcon,
+                    promptSubCategory,
+                    mimId,
+                    mimType);
+            }
+            else if (weeklyWeatherCards.Count > 1)
+            {
+                useSequence = true;
                 jcpConfig["children"] = BuildWeatherHiLoSequenceChildren(
                     weeklyWeatherCards,
                     promptSubCategory,
@@ -784,7 +808,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ["type"] = "SLIM",
             ["config"] = jcpConfig
         };
-        if (!useWeatherSequence ||
+        if (!useSequence ||
             !jcpConfig.TryGetValue("children", out var sequenceChildren) ||
             sequenceChildren is null)
             return new
@@ -1130,6 +1154,99 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ["weather_view_enabled"] = true,
             ["weather_view_kind"] = "weatherHiLo"
         };
+    }
+
+    private static IReadOnlyList<object> BuildPersonalReportSequenceChildren(
+        string weatherText,
+        string followUpText,
+        object weatherHiLoView,
+        string weatherIcon,
+        string promptSubCategory,
+        string mimId,
+        string mimType)
+    {
+        var weatherEsml =
+            $"<speak><anim cat='weather' meta='{EscapeXml(weatherIcon)}' nonBlocking='true' /><break size='0.35'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(weatherText)}</es></speak>";
+        var followUpEsml =
+            $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(followUpText)}</es></speak>";
+        var resolvedGuiContext = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = "Javascript",
+            ["data"] = weatherHiLoView,
+            ["pause"] = true
+        };
+
+        var weatherChild = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = "SLIM",
+            ["config"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["play"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["esml"] = weatherEsml,
+                    ["meta"] = new
+                    {
+                        prompt_id = "PersonalReportWeather_AN_01",
+                        prompt_sub_category = promptSubCategory,
+                        mim_id = mimId,
+                        mim_type = mimType
+                    }
+                },
+                ["gui"] = new
+                {
+                    type = "Javascript",
+                    data = "views.weatherHiLo",
+                    pause = true
+                },
+                ["display"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["view"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["type"] = "Javascript",
+                        ["data"] = weatherHiLoView,
+                        ["pause"] = true,
+                        ["context"] = resolvedGuiContext
+                    }
+                },
+                ["timeout"] = 6,
+                ["barge_in"] = true,
+                ["no_matches_for_gui"] = 0,
+                ["no_inputs_for_gui"] = 0,
+                ["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["weatherHiLo"] = weatherHiLoView
+                },
+                ["local"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["weatherHiLo"] = weatherHiLoView
+                    }
+                }
+            }
+        };
+
+        var followUpChild = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = "SLIM",
+            ["config"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["play"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["esml"] = followUpEsml,
+                    ["meta"] = new
+                    {
+                        prompt_id = "PersonalReportFollowUp_AN_01",
+                        prompt_sub_category = promptSubCategory,
+                        mim_id = mimId,
+                        mim_type = mimType
+                    }
+                },
+                ["barge_in"] = true
+            }
+        };
+
+        return [weatherChild, followUpChild];
     }
 
     private static IReadOnlyList<object> BuildWeatherHiLoSequenceChildren(

@@ -2889,6 +2889,14 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("runtime-personal-report", decision.SkillPayload["mim_id"]);
         Assert.Contains("Weather. For your weather.", decision.SkillPayload["personal_report_report_text"]?.ToString(),
             StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Weather.", decision.SkillPayload["personal_report_weather_text"]?.ToString(),
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("For your weather.", decision.SkillPayload["personal_report_weather_text"]?.ToString(),
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("news", decision.SkillPayload["personal_report_followup_text"]?.ToString(),
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("For your weather.", decision.SkillPayload["personal_report_followup_text"]?.ToString(),
+            StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("idle", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportUserVerifiedKey]);
@@ -3894,6 +3902,36 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(
             "For your weather. In Chicago, U.S., it's mostly cloudy and 70 degrees Fahrenheit. Today's high is 75, and the low is 62.",
             decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_WeatherWithRuntimeCity_PrefersContextLocationNameOverProviderLabel()
+    {
+        var provider = new CapturingWeatherReportProvider
+        {
+            Snapshot = new WeatherReportSnapshot("Lone Jack", "overcast clouds", 79, 82, 78, "clouds", false)
+        };
+        var service = CreateService(weatherReportProvider: provider);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "how is the weather",
+            NormalizedTranscript = "how is the weather",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] =
+                    """{"runtime":{"location":{"city":"Pleasant Hill","state":"Missouri","lat":38.8358494,"lng":-94.1427229,"iso":"2026-05-09T09:00:00-05:00"}}}"""
+            }
+        });
+
+        Assert.Equal("weather", decision.IntentName);
+        Assert.Null(provider.LastRequest?.LocationQuery);
+        Assert.Equal(38.8358494, provider.LastRequest?.Latitude);
+        Assert.Equal(-94.1427229, provider.LastRequest?.Longitude);
+        Assert.Equal("Pleasant Hill", provider.LastRequest?.PreferredLocationName);
+        Assert.Contains("Pleasant Hill", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Lone Jack", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Pleasant Hill", decision.SkillPayload?["weather_location"]);
     }
 
     [Fact]

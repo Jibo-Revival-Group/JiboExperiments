@@ -77,7 +77,12 @@ public sealed class OpenWeatherReportProvider(
         if (string.IsNullOrWhiteSpace(query))
         {
             if (request is { Latitude: not null, Longitude: not null })
-                return new LocationPoint(request.Latitude.Value, request.Longitude.Value, null);
+            {
+                var preferredName = string.IsNullOrWhiteSpace(request.PreferredLocationName)
+                    ? null
+                    : request.PreferredLocationName.Trim();
+                return new LocationPoint(request.Latitude.Value, request.Longitude.Value, preferredName);
+            }
 
             query = options.DefaultLocation;
         }
@@ -215,7 +220,7 @@ public sealed class OpenWeatherReportProvider(
         var root = document.RootElement;
         if (!root.TryGetProperty("main", out var main)) return null;
 
-        var locationName = ReadNonEmptyString(root, "name") ?? location.DisplayName ?? options.DefaultLocation;
+        var locationName = location.DisplayName ?? ReadNonEmptyString(root, "name") ?? options.DefaultLocation;
         var summary = TryReadWeatherSummary(root);
         var condition = TryReadWeatherCondition(root);
         var temperature = TryReadInt(main, "temp");
@@ -337,7 +342,7 @@ public sealed class OpenWeatherReportProvider(
             .Select(entry => entry.LowTemperature!.Value)
             .ToArray();
 
-        var locationName = ReadForecastLocationName(root) ?? location.DisplayName ?? options.DefaultLocation;
+        var locationName = location.DisplayName ?? ReadForecastLocationName(root) ?? options.DefaultLocation;
         var high = highs.Length > 0 ? highs.Max() : selectedEntry.HighTemperature;
         var low = lows.Length > 0 ? lows.Min() : selectedEntry.LowTemperature;
         var temperature = selectedEntry.Temperature ?? high ?? low ?? 0;

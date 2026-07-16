@@ -478,12 +478,45 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Metadata = BuildSessionMetadata(_account.AccountId, resolvedDeviceId, resolvedLoopId)
         };
 
-        if (string.IsNullOrWhiteSpace(token)) return session;
+        if (!string.IsNullOrWhiteSpace(token))
+            _sessionsByToken[token] = session;
 
-        _sessionsByToken[token] = session;
+        InheritDialogMetadataFromDevice(session);
         TouchState();
 
         return session;
+    }
+
+    private void InheritDialogMetadataFromDevice(CloudSession session)
+    {
+        if (string.IsNullOrWhiteSpace(session.DeviceId)) return;
+
+        var donor = _sessionsByToken.Values
+            .Where(candidate =>
+                !string.Equals(candidate.SessionId, session.SessionId, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(candidate.DeviceId, session.DeviceId, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(candidate => candidate.LastSeenUtc)
+            .ThenByDescending(candidate => candidate.CreatedUtc)
+            .FirstOrDefault();
+        if (donor is null) return;
+
+        foreach (var pair in donor.Metadata)
+        {
+            if (pair.Value is null || !ShouldInheritDialogMetadataKey(pair.Key)) continue;
+            if (session.Metadata.ContainsKey(pair.Key)) continue;
+            session.Metadata[pair.Key] = pair.Value;
+        }
+    }
+
+    private static bool ShouldInheritDialogMetadataKey(string key)
+    {
+        return key.StartsWith("personalReport", StringComparison.OrdinalIgnoreCase) ||
+               key.StartsWith("householdList", StringComparison.OrdinalIgnoreCase) ||
+               key.StartsWith("chitchat", StringComparison.OrdinalIgnoreCase) ||
+               key.StartsWith("greetings", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(key, "pendingProactivityOffer", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(key, "lastClockDomain", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(key, "sleepState", StringComparison.OrdinalIgnoreCase);
     }
 
     public CloudSession? FindSessionByToken(string token)

@@ -8376,6 +8376,82 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task PathToken_PersonalReportOptInThenYesOnNewConnection_ContinuesStateMachine()
+    {
+        // Live robots on path-token mode open a fresh websocket for the constrained yes/no listen.
+        // Dialog metadata must carry across connection-scoped sessions for the same device.
+        const string stateKey = "personalReportState";
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-personal-report-optin",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-pr-path-start","data":{"text":"give me my personal report"}}"""
+        });
+
+        var optInSession = _store.FindSessionByToken("conn:connection-personal-report-optin");
+        Assert.NotNull(optInSession);
+        Assert.Equal("awaiting_opt_in", optInSession.Metadata[stateKey]?.ToString());
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-personal-report-yesno",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                """{"type":"LISTEN","transID":"trans-pr-path-yes","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var yesSession = _store.FindSessionByToken("conn:connection-personal-report-yesno");
+        Assert.NotNull(yesSession);
+        Assert.NotSame(optInSession, yesSession);
+        Assert.Equal("awaiting_opt_in", yesSession.Metadata[stateKey]?.ToString());
+
+        var yesReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-personal-report-yesno",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-pr-path-yes","data":{"text":"Yes."}}"""
+        });
+
+        Assert.Equal(3, yesReplies.Count);
+        using (var yesListenPayload = JsonDocument.Parse(yesReplies[0].Text!))
+        {
+            Assert.Equal("personal_report_request_name",
+                yesListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
+        }
+
+        using (var yesSkillPayload = JsonDocument.Parse(yesReplies[2].Text!))
+        {
+            var esml = yesSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config")
+                .GetProperty("play")
+                .GetProperty("esml")
+                .GetString();
+            Assert.Contains("Who is this?", esml, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(">Yes.<", esml, StringComparison.Ordinal);
+        }
+
+        yesSession = _store.FindSessionByToken("conn:connection-personal-report-yesno");
+        Assert.NotNull(yesSession);
+        Assert.Equal("awaiting_identity_name", yesSession.Metadata[stateKey]?.ToString());
+    }
+
+    [Fact]
     public async Task ClientAsrPersonalReport_StateMachinePersistsAcrossTurns()
     {
         const string stateKey = "personalReportState";

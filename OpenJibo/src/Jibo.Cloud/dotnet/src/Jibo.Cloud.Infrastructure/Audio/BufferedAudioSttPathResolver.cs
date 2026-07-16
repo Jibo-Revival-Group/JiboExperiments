@@ -380,8 +380,20 @@ public static class BufferedAudioSttPathResolver
         {
             if (string.IsNullOrWhiteSpace(homeDirectory)) return path;
 
-            return Path.Combine(homeDirectory, path[2..]);
+            return NormalizeSlashes(Path.Combine(homeDirectory, path[2..]));
         }
+
+        return path;
+    }
+
+    private static string? NormalizeSlashes(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !ContainsDirectorySeparator(path)) return path;
+
+        var f = path.First(c => c == Path.DirectorySeparatorChar || c == Path.AltDirectorySeparatorChar);
+
+        path = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        path = path.Replace(Path.DirectorySeparatorChar, f);
 
         return path;
     }

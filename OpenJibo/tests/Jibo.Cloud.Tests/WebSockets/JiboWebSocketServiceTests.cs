@@ -8243,6 +8243,139 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsrPersonalReport_OptInYesWithSharedYesNoListen_ContinuesStateMachine()
+    {
+        const string stateKey = "personalReportState";
+        var token = _store.IssueRobotToken("personal-report-yesno-device");
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-pr-yesno-start","data":{"text":"personal report"}}"""
+        });
+
+        var session = _store.FindSessionByToken(token);
+        Assert.NotNull(session);
+        Assert.Equal("awaiting_opt_in", session.Metadata[stateKey]?.ToString());
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text =
+                """{"type":"LISTEN","transID":"trans-pr-yesno-listen","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        session = _store.FindSessionByToken(token);
+        Assert.NotNull(session);
+        Assert.Equal("awaiting_opt_in", session.Metadata[stateKey]?.ToString());
+
+        var optInReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-pr-yesno-listen","data":{"text":"yes"}}"""
+        });
+
+        Assert.Equal(3, optInReplies.Count);
+        using (var optInListenPayload = JsonDocument.Parse(optInReplies[0].Text!))
+        {
+            Assert.Equal("personal_report_request_name",
+                optInListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
+        }
+
+        using (var optInSkillPayload = JsonDocument.Parse(optInReplies[2].Text!))
+        {
+            var play = optInSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config")
+                .GetProperty("play");
+            var esml = play.GetProperty("esml").GetString();
+            Assert.DoesNotContain("Yes.", esml, StringComparison.Ordinal);
+            Assert.Contains("Who is this?", esml, StringComparison.OrdinalIgnoreCase);
+        }
+
+        session = _store.FindSessionByToken(token);
+        Assert.NotNull(session);
+        Assert.Equal("awaiting_identity_name", session.Metadata[stateKey]?.ToString());
+    }
+
+    [Fact]
+    public async Task ClientNluPersonalReport_OptInYesWithSharedYesNoListen_EmitsFollowUpSkillAction()
+    {
+        const string stateKey = "personalReportState";
+        var token = _store.IssueRobotToken("personal-report-yesno-nlu-device");
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-pr-nlu-start","data":{"text":"personal report"}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text =
+                """{"type":"LISTEN","transID":"trans-pr-nlu-listen","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var optInReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text =
+                """{"type":"CLIENT_NLU","transID":"trans-pr-nlu-listen","data":{"intent":"yes","rules":["shared/yes_no"],"text":"yes"}}"""
+        });
+
+        Assert.True(optInReplies.Count >= 2, $"expected listen+eos(+skill), got {optInReplies.Count}");
+        using (var optInListenPayload = JsonDocument.Parse(optInReplies[0].Text!))
+        {
+            Assert.Equal("personal_report_request_name",
+                optInListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
+        }
+
+        Assert.Equal(3, optInReplies.Count);
+        using (var optInSkillPayload = JsonDocument.Parse(optInReplies[2].Text!))
+        {
+            Assert.Equal("SKILL_ACTION", optInSkillPayload.RootElement.GetProperty("type").GetString());
+            var esml = optInSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config")
+                .GetProperty("play")
+                .GetProperty("esml")
+                .GetString();
+            Assert.Contains("Who is this?", esml, StringComparison.OrdinalIgnoreCase);
+        }
+
+        var session = _store.FindSessionByToken(token);
+        Assert.NotNull(session);
+        Assert.Equal("awaiting_identity_name", session.Metadata[stateKey]?.ToString());
+    }
+
+    [Fact]
     public async Task ClientAsrPersonalReport_StateMachinePersistsAcrossTurns()
     {
         const string stateKey = "personalReportState";

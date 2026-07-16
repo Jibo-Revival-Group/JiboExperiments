@@ -2798,6 +2798,26 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_PersonalReport_OptInYesWithSharedYesNoListenRules_ContinuesFlow()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "yes",
+            NormalizedTranscript = "yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                [PersonalReportStateKey] = "awaiting_opt_in",
+                ["listenRules"] = (string[])["shared/yes_no", "globals/gui_nav"]
+            }
+        });
+
+        Assert.Equal("personal_report_request_name", decision.IntentName);
+        Assert.Equal("Who is this?", decision.ReplyText);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_PersonalReport_OptInYesWithKnownName_AsksForIdentityConfirmation()
     {
         var memoryStore = new InMemoryPersonalMemoryStore();

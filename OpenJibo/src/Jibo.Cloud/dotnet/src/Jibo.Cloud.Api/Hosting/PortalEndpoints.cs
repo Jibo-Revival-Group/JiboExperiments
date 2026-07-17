@@ -1120,6 +1120,46 @@ internal static class PortalEndpoints
         return keys;
     }
 
+    /// <summary>
+    /// Keys used to find the robot's live api-socket for <c>LoopUpdated</c>.
+    /// Broader than calendar <see cref="BuildPortalRobotKeys"/>: notification tokens are often
+    /// issued for the serial/deviceId while Portal session FriendlyId may be a stock ObjectId.
+    /// </summary>
+    private static HashSet<string> BuildPortalLoopUpdatedPushKeys(
+        PortalSessionService.PortalSession session,
+        ICloudStateStore cloudStateStore,
+        string loopId)
+    {
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void Add(string? value)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                keys.Add(value.Trim());
+        }
+
+        Add(session.FriendlyId);
+        Add(session.DeviceId);
+
+        var loop = cloudStateStore.GetLoops()
+            .FirstOrDefault(item => item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+        if (loop is not null)
+        {
+            Add(loop.RobotId);
+            Add(loop.RobotFriendlyId);
+        }
+
+        foreach (var seed in keys.ToArray())
+        {
+            var device = cloudStateStore.FindDeviceByFriendlyId(seed);
+            if (device is null) continue;
+            Add(device.DeviceId);
+            Add(device.RobotId);
+            Add(device.FriendlyName);
+        }
+
+        return keys;
+    }
+
     private static bool PersonBelongsToPortalRobot(
         PersonRecord person,
         string loopId,
@@ -1221,17 +1261,29 @@ internal static class PortalEndpoints
             var payload = JiboCloudProtocolService.BuildLoopNotificationPayload(
                 loop,
                 cloudStateStore.GetLoopMembers(loopId));
-            var robotKeys = BuildPortalRobotKeys(session, cloudStateStore, loopId);
+            var robotKeys = BuildPortalLoopUpdatedPushKeys(session, cloudStateStore, loopId);
             var pushed = await robotNotificationRegistry.PushLoopUpdatedAsync(
                 robotKeys,
                 payload,
                 cancellationToken);
-            logger.LogInformation(
-                "LoopUpdated push loopId={LoopId} pushCount={PushCount} keyCount={KeyCount} keys={Keys}",
-                loopId,
-                pushed,
-                robotKeys.Count,
-                string.Join(',', robotKeys.Take(8)));
+            if (pushed == 0)
+            {
+                logger.LogWarning(
+                    "LoopUpdated push matched no live api-socket loopId={LoopId} keyCount={KeyCount} keys={Keys}. " +
+                    "Robot must keep wss/ws notification socket open (Host api-socket.jibo.com or /token-... path).",
+                    loopId,
+                    robotKeys.Count,
+                    string.Join(',', robotKeys.Take(8)));
+            }
+            else
+            {
+                logger.LogInformation(
+                    "LoopUpdated push loopId={LoopId} pushCount={PushCount} keyCount={KeyCount} keys={Keys}",
+                    loopId,
+                    pushed,
+                    robotKeys.Count,
+                    string.Join(',', robotKeys.Take(8)));
+            }
         }
         catch (Exception ex)
         {

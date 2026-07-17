@@ -1,11 +1,16 @@
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : ICloudAuthProtocolHandler
+public sealed class CloudAuthProtocolHandler(
+    ICloudStateStore stateStore,
+    ILogger<CloudAuthProtocolHandler>? logger = null) : ICloudAuthProtocolHandler
 {
+    private readonly ILogger _logger = logger ?? NullLogger<CloudAuthProtocolHandler>.Instance;
     public ProtocolDispatchResult HandleAccount(string operation, ProtocolEnvelope envelope)
     {
         var account = stateStore.GetAccount();
@@ -185,10 +190,15 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
               ?? "unknown-device";
 
         stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        var token = stateStore.IssueRobotToken(deviceId);
+        _logger.LogInformation(
+            "Notification NewRobotToken issued deviceId={DeviceId} token={Token}",
+            deviceId,
+            token);
 
         return ProtocolDispatchResult.Ok(new
         {
-            token = stateStore.IssueRobotToken(deviceId)
+            token
         });
     }
 

@@ -64,6 +64,29 @@ public sealed class PortalLoopMemberSyncTests
             socket.LastPayload!.Value.GetProperty("payload").GetProperty("name").GetString());
     }
 
+    [Fact]
+    public async Task PortalLoopMemberAdd_PushesLoopUpdated_WhenSocketKeyedByDeviceSerial()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        await AuthorizeAsync(client, factory);
+
+        var registry = factory.Services.GetRequiredService<RobotNotificationRegistry>();
+        using var socket = new CapturingWebSocket();
+        // NewRobotToken often keys the socket on serial while Portal session has FriendlyId.
+        registry.Register(["BOJW-1000-0017-0820-0020"], socket);
+
+        var addResponse = await client.PostAsJsonAsync(
+            "/api/portal/loop-members",
+            new { firstName = "Serial", lastName = "Keyed", gender = "female" });
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+
+        Assert.NotNull(socket.LastPayload);
+        Assert.Equal(
+            "LoopUpdated",
+            socket.LastPayload!.Value.GetProperty("payload").GetProperty("name").GetString());
+    }
+
 
     [Fact]
     public async Task PortalNameEdit_IsProtectedFromStaleRobotRosterSync()

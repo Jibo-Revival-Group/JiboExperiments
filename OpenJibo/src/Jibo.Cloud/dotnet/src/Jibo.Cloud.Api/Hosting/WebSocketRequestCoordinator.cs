@@ -74,10 +74,11 @@ internal sealed class WebSocketRequestCoordinator(
             var robotKeys = ResolveApiSocketRobotKeys(token, session);
             robotNotificationRegistry.Register(robotKeys, socket);
             registeredApiSocket = true;
-            logger.LogDebug(
-                "api-socket registered for LoopUpdated push token={Token} keyCount={KeyCount}",
+            logger.LogInformation(
+                "api-socket registered for LoopUpdated push token={Token} keyCount={KeyCount} keys={Keys}",
                 token,
-                robotKeys.Count);
+                robotKeys.Count,
+                string.Join(',', robotKeys.Take(8)));
         }
 
         var isPrematureClose = false;
@@ -167,6 +168,23 @@ internal sealed class WebSocketRequestCoordinator(
         if (!string.IsNullOrWhiteSpace(token))
             keys.Add(token.Trim());
 
+        // Stock/OpenJibo tokens look like token-{friendlyOrDeviceId}-{suffix}. Portal keys on
+        // friendlyId, so extract that segment so LoopUpdated push can find this socket.
+        if (TryParseRobotIdFromToken(token, out var tokenRobotId))
+        {
+            keys.Add(tokenRobotId);
+            var tokenDevice = cloudStateStore.FindDeviceByFriendlyId(tokenRobotId);
+            if (tokenDevice is not null)
+            {
+                if (!string.IsNullOrWhiteSpace(tokenDevice.DeviceId))
+                    keys.Add(tokenDevice.DeviceId.Trim());
+                if (!string.IsNullOrWhiteSpace(tokenDevice.RobotId))
+                    keys.Add(tokenDevice.RobotId.Trim());
+                if (!string.IsNullOrWhiteSpace(tokenDevice.FriendlyName))
+                    keys.Add(tokenDevice.FriendlyName.Trim());
+            }
+        }
+
         var deviceId = session.DeviceId;
         if (string.IsNullOrWhiteSpace(deviceId) && !string.IsNullOrWhiteSpace(token))
             deviceId = cloudStateStore.FindSessionByToken(token)?.DeviceId;
@@ -187,6 +205,42 @@ internal sealed class WebSocketRequestCoordinator(
         }
 
         return keys;
+    }
+
+    /// <summary>
+    /// Parses <c>token-{robotId}-{suffix}</c> (stock and OpenJibo IssueRobotToken shapes).
+    /// Hyphenated friendlyIds are preserved; the final numeric/guid segment is the suffix.
+    /// </summary>
+    internal static bool TryParseRobotIdFromToken(string? token, out string robotId)
+    {
+        robotId = string.Empty;
+        if (string.IsNullOrWhiteSpace(token)) return false;
+
+        var trimmed = token.Trim();
+        if (!trimmed.StartsWith("token-", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var body = trimmed["token-".Length..];
+        if (string.IsNullOrWhiteSpace(body)) return false;
+
+        var lastDash = body.LastIndexOf('-');
+        if (lastDash <= 0)
+        {
+            robotId = body;
+            return !string.IsNullOrWhiteSpace(robotId);
+        }
+
+        var suffix = body[(lastDash + 1)..];
+        // OpenJibo uses Guid:N; stock often uses a unix-ms timestamp. Either way the robot id
+        // is everything before the final segment.
+        if (suffix.Length >= 6 && suffix.All(static c => char.IsAsciiHexDigit(c) || char.IsDigit(c)))
+        {
+            robotId = body[..lastDash];
+            return !string.IsNullOrWhiteSpace(robotId);
+        }
+
+        robotId = body;
+        return true;
     }
 
     private static WebSocketMessageEnvelope CreateEnvelope(

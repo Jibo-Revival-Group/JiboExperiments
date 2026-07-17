@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -8,11 +10,12 @@ namespace Jibo.Cloud.Application.Services;
 /// Live registry of robot <c>api-socket</c> WebSockets, used to push stock-style
 /// <c>LoopUpdated</c> notifications so SSM can re-sync the on-device Loop immediately.
 /// </summary>
-public sealed class RobotNotificationRegistry
+public sealed class RobotNotificationRegistry(ILogger<RobotNotificationRegistry>? logger = null)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly ConcurrentDictionary<Guid, RobotConnection> _connections = new();
+    private readonly ILogger _logger = logger ?? NullLogger<RobotNotificationRegistry>.Instance;
 
     public void Register(IReadOnlyCollection<string> robotKeys, WebSocket socket)
     {
@@ -43,7 +46,11 @@ public sealed class RobotNotificationRegistry
         ArgumentNullException.ThrowIfNull(loopPayload);
 
         var targetKeys = NormalizeKeys(robotKeys);
-        if (targetKeys.Count == 0) return 0;
+        if (targetKeys.Count == 0)
+        {
+            _logger.LogDebug("LoopUpdated push skipped: no target robot keys");
+            return 0;
+        }
 
         var envelope = new
         {
@@ -56,17 +63,27 @@ public sealed class RobotNotificationRegistry
 
         var bytes = JsonSerializer.SerializeToUtf8Bytes(envelope, JsonOptions);
         var pushed = 0;
+        var openConnections = 0;
 
         foreach (var pair in _connections)
         {
             var connection = pair.Value;
             if (connection.Socket.State != WebSocketState.Open)
             {
+                _logger.LogDebug("LoopUpdated push skipping closed api-socket connection");
                 _connections.TryRemove(pair.Key, out _);
                 continue;
             }
 
-            if (!connection.RobotKeys.Overlaps(targetKeys)) continue;
+            openConnections++;
+            if (!connection.RobotKeys.Overlaps(targetKeys))
+            {
+                _logger.LogDebug(
+                    "LoopUpdated push key miss connectionKeys={ConnectionKeys} targetKeys={TargetKeys}",
+                    string.Join(',', connection.RobotKeys.Take(8)),
+                    string.Join(',', targetKeys.Take(8)));
+                continue;
+            }
 
             try
             {
@@ -85,6 +102,14 @@ public sealed class RobotNotificationRegistry
             {
                 _connections.TryRemove(pair.Key, out _);
             }
+        }
+
+        if (pushed == 0)
+        {
+            _logger.LogDebug(
+                "LoopUpdated push matched no sockets openConnections={OpenConnections} targetKeys={TargetKeys}",
+                openConnections,
+                string.Join(',', targetKeys.Take(8)));
         }
 
         return pushed;

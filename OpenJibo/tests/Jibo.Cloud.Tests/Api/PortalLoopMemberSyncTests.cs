@@ -40,6 +40,32 @@ public sealed class PortalLoopMemberSyncTests
     }
 
     [Fact]
+    public async Task PortalLoopMemberAdd_PushesLoopUpdated_WhenRegisteredUnderFriendlyIdFromToken()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        await AuthorizeAsync(client, factory);
+
+        var registry = factory.Services.GetRequiredService<RobotNotificationRegistry>();
+        using var socket = new CapturingWebSocket();
+        // Mimic ResolveApiSocketRobotKeys after parsing token-FriendlyId-suffix.
+        registry.Register(
+            ["token-Ghost-Instance-Onion-Silk-abc", "Ghost-Instance-Onion-Silk"],
+            socket);
+
+        var addResponse = await client.PostAsJsonAsync(
+            "/api/portal/loop-members",
+            new { firstName = "Lan", lastName = "Sync", gender = "male" });
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+
+        Assert.NotNull(socket.LastPayload);
+        Assert.Equal(
+            "LoopUpdated",
+            socket.LastPayload!.Value.GetProperty("payload").GetProperty("name").GetString());
+    }
+
+
+    [Fact]
     public async Task PortalNameEdit_IsProtectedFromStaleRobotRosterSync()
     {
         await using var factory = CreateFactory();

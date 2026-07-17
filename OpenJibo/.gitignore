@@ -1,8 +1,0 @@
-# Build outputs
-**/bin/
-**/obj/
-**/artifacts/
-
-# Local restore workaround
-.tmp-appdata/
-.tmp/

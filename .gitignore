@@ -423,6 +423,7 @@ FodyWeavers.xsd
 # OpenJibo live-run capture output
 OpenJibo/captures/
 OpenJibo/.tmp/
+OpenJibo/.tmp*/
 tmp/
 _tmp/
 _jibo_test_*/
@@ -435,7 +436,8 @@ OpenJibo/src/Jibo.Cloud/node/tls/openjibo-ca.key
 OpenJibo/.claude/
 .claude/
 .codex/
-
+.agents/
+OpenJibo/.codex*/
 OpenJibo/docs/DesignDoc/original server
 
 # Environment variables
@@ -453,3 +455,4 @@ OpenJibo/docs/DesignDoc/original server
 .env.development.example
 .env.production.example
 .env.test.example
+

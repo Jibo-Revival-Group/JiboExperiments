@@ -31,7 +31,13 @@ if [ -z "$robot_root" ]; then
   exit 2
 fi
 
-node - "$robot_root" "$output_path" "$strict" <<'NODE'
+tmp_js="$(mktemp "${TMPDIR:-/tmp}/audit-openjibo-conversion.XXXXXX.js")"
+cleanup() {
+  rm -f "$tmp_js"
+}
+trap cleanup EXIT
+
+cat > "$tmp_js" <<'NODE'
 const fs = require("fs");
 const path = require("path");
 
@@ -183,3 +189,5 @@ if (outputPath) {
   console.log(json);
 }
 NODE
+node "$tmp_js" "$robot_root" "$output_path" "$strict"
+node "$tmp_js" "$robot_root" "$output_path" "$strict"

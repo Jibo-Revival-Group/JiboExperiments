@@ -114,7 +114,13 @@ if [ "$apply" = true ]; then
   applied=true
 fi
 
-node - "$robot_root" "$target_mode" "$api_hostname" "${hub_hostname:-$api_hostname}" "$output_directory" "$audit_path" "$plan_path" "$applied" "$apply_path" <<'NODE'
+tmp_js="$(mktemp "${TMPDIR:-/tmp}/invoke-openjibo-conversion.XXXXXX.js")"
+cleanup() {
+  rm -f "$tmp_js"
+}
+trap cleanup EXIT
+
+cat > "$tmp_js" <<'NODE'
 const path = require("path");
 
 const summary = {
@@ -134,3 +140,5 @@ if (summary.Applied) {
 
 console.log(JSON.stringify(summary, null, 2));
 NODE
+node "$tmp_js" "$robot_root" "$target_mode" "$api_hostname" "${hub_hostname:-$api_hostname}" "$output_directory" "$audit_path" "$plan_path" "$applied" "$apply_path"
+node "$tmp_js" "$robot_root" "$target_mode" "$api_hostname" "${hub_hostname:-$api_hostname}" "$output_directory" "$audit_path" "$plan_path" "$applied" "$apply_path"

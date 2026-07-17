@@ -46,16 +46,17 @@ if [ -z "$robot_root" ]; then
   exit 2
 fi
 
-if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" == "open-jibo-ai" ) ]]; then
+if [ -z "$hub_hostname" ] && { [ "$target_mode" = "open-jibo" ] || [ "$target_mode" = "open-jibo-ai" ]; }; then
   hub_hostname="neohub.openjibo.com"
 fi
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 audit_script="$script_dir/audit-openjibo-conversion.sh"
 temp_audit_path="$(mktemp -t openjibo-conversion-audit.XXXXXX.json)"
+tmp_js="$(mktemp "${TMPDIR:-/tmp}/plan-openjibo-conversion.XXXXXX.js")"
 
 cleanup() {
-  rm -f "$temp_audit_path"
+  rm -f "$temp_audit_path" "$tmp_js"
 }
 trap cleanup EXIT
 
@@ -65,7 +66,7 @@ else
   sh "$audit_script" --robot-root "$robot_root" --output-path "$temp_audit_path" >/dev/null
 fi
 
-node - "$temp_audit_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict" <<'NODE'
+cat > "$tmp_js" <<'NODE'
 const fs = require("fs");
 const path = require("path");
 
@@ -199,3 +200,5 @@ if (outputPath) {
   console.log(json);
 }
 NODE
+node "$tmp_js" "$temp_audit_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"
+node "$tmp_js" "$temp_audit_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"

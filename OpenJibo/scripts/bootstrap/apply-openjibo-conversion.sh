@@ -60,7 +60,13 @@ if [ -z "$hub_hostname" ] && { [ "$target_mode" = "open-jibo" ] || [ "$target_mo
   hub_hostname="neohub.openjibo.com"
 fi
 
-node - "$robot_root" "$plan_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict" <<'NODE'
+tmp_js="$(mktemp "${TMPDIR:-/tmp}/apply-openjibo-conversion.XXXXXX.js")"
+cleanup() {
+  rm -f "$tmp_js"
+}
+trap cleanup EXIT
+
+cat > "$tmp_js" <<'NODE'
 const fs = require("fs");
 const path = require("path");
 
@@ -204,13 +210,14 @@ const baseRegion = jetstream["region-settings"].api || jetstream.regions.api || 
   hub_port: 443,
   entrypoint_port: 443,
 };
-const openJiboRegion = {
-  ...baseRegion,
-  hub_port: baseRegion.hub_port || 443,
-  entrypoint_port: baseRegion.entrypoint_port || 443,
-  hub_hostname: hubHostname,
-  entrypoint_hostname: apiHostname,
-};
+const openJiboRegion = {};
+for (const key of Object.keys(baseRegion)) {
+  openJiboRegion[key] = baseRegion[key];
+}
+openJiboRegion.hub_port = baseRegion.hub_port || 443;
+openJiboRegion.entrypoint_port = baseRegion.entrypoint_port || 443;
+openJiboRegion.hub_hostname = hubHostname;
+openJiboRegion.entrypoint_hostname = apiHostname;
 
 jetstream["region-settings"]["open-jibo"] = openJiboRegion;
 jetstream.regions["open-jibo"] = openJiboRegion;
@@ -292,9 +299,7 @@ const applyManifest = {
     serverServicePath,
     oobeConfigPath,
     conversionMarkerPath,
-    ...regionConfigFiles,
-    ...awsSdkAllFiles,
-  ],
+  ].concat(regionConfigFiles, awsSdkAllFiles),
 };
 
 const json = JSON.stringify(applyManifest, null, 2);
@@ -307,3 +312,5 @@ if (outputPath) {
   console.log(json);
 }
 NODE
+node "$tmp_js" "$robot_root" "$plan_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"
+node "$tmp_js" "$robot_root" "$plan_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"

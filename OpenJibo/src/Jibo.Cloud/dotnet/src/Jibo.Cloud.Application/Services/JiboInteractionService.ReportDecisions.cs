@@ -201,9 +201,25 @@ public sealed partial class JiboInteractionService
                 "commute_setup",
                 ChooseCommuteAppSetupReply(catalog));
 
+        var commuteReply = BuildCommuteSpokenReply(snapshot, catalog);
+        var commutePayload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["skillId"] = "report-skill",
+            ["cloudSkill"] = "commute",
+            ["commute_view_enabled"] = true,
+            ["commute_anim_cat"] = "commute",
+            ["commute_anim_meta"] = ResolveCommuteAnimationMeta(snapshot),
+            ["commute_duration_minutes"] = snapshot.DurationMinutes,
+            ["commute_extra_minutes"] = snapshot.ExtraMinutes,
+            ["commute_mode"] = snapshot.Mode,
+            ["esml"] =
+                $"<speak><anim cat='commute' meta='{ResolveCommuteAnimationMeta(snapshot)}' nonBlocking='true' /><break size='0.35'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(commuteReply)}</es></speak>"
+        };
         return new JiboInteractionDecision(
             "commute",
-            BuildCommuteSpokenReply(snapshot, catalog));
+            commuteReply,
+            "report-skill",
+            commutePayload);
     }
 
     private async Task<JiboInteractionDecision> BuildCalendarReportDecisionAsync(
@@ -241,7 +257,8 @@ public sealed partial class JiboInteractionService
         TurnContext turn,
         string transcript,
         JiboExperienceCatalog catalog,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeOutro = true)
     {
         var preferredCategories = ResolvePreferredNewsCategories(turn, transcript);
         if (newsBriefingProvider is not null)
@@ -256,7 +273,8 @@ public sealed partial class JiboInteractionService
                         snapshot,
                         catalog,
                         preferredCategories,
-                        MaxNewsHeadlines);
+                        MaxNewsHeadlines,
+                        includeOutro);
 
                 var providerStatus = ResolveNewsProviderStatus(snapshot);
                 var providerMessage = snapshot?.ProviderMessage;

@@ -68,15 +68,19 @@ public sealed partial class JiboInteractionService
         NewsBriefingSnapshot snapshot,
         JiboExperienceCatalog catalog,
         IReadOnlyList<string> preferredCategories,
-        int requestedHeadlineCount)
+        int requestedHeadlineCount,
+        bool includeOutro = true)
     {
         var filteredHeadlines = FilterNewsHeadlinesForJibo(snapshot.Headlines);
         var headlines = filteredHeadlines.Headlines
             .Take(MaxNewsHeadlines)
             .ToArray();
         if (headlines.Length == 0)
+        {
+            var fallbackBriefing = ChooseShortestTemplate(catalog.NewsBriefings)
+                                   ?? "I couldn't load fresh news headlines right now.";
             return BuildNewsDecision(
-                "I couldn't load fresh headlines right now.",
+                fallbackBriefing,
                 snapshot.SourceName,
                 preferredCategories,
                 0,
@@ -86,11 +90,14 @@ public sealed partial class JiboInteractionService
                     requestedHeadlineCount,
                     0,
                     skippedHeadlineCount: filteredHeadlines.SkippedCount));
+        }
 
         var leadIn = BuildNewsLeadIn(snapshot.SourceName, preferredCategories);
         var joinedHeadlines = string.Join(" ", headlines.Select(static headline => $"{headline.Title}."));
-        var outroTemplate = ChooseShortestTemplate(catalog.NewsOutroReplies) ?? "And that's the news.";
-        var spokenBriefing = $"{leadIn} {joinedHeadlines} {outroTemplate}".Trim();
+        var spokenBriefing = includeOutro
+            ? $"{leadIn} {joinedHeadlines} {ChooseShortestTemplate(catalog.NewsOutroReplies) ?? "And that's the news."}"
+                .Trim()
+            : $"{leadIn} {joinedHeadlines}".Trim();
         return BuildNewsDecision(
             spokenBriefing,
             snapshot.SourceName,
@@ -202,11 +209,13 @@ public sealed partial class JiboInteractionService
 
     private static string BuildNewsLeadIn(string? sourceName, IReadOnlyList<string> preferredCategories)
     {
+        // Keep the word "news" in the lead-in so personal-report speech clearly announces the section
+        // (Pegasus NewsIntro always says "today's news").
         var categoryLeadIn = preferredCategories.Count switch
         {
-            <= 0 => "Here are a few headlines.",
-            1 => $"Here are your {preferredCategories[0]} headlines.",
-            _ => $"Here are your {preferredCategories[0]} and {preferredCategories[1]} headlines."
+            <= 0 => "Here's today's news.",
+            1 => $"Here's today's {preferredCategories[0]} news.",
+            _ => $"Here's today's {preferredCategories[0]} and {preferredCategories[1]} news."
         };
 
         return string.IsNullOrWhiteSpace(sourceName)

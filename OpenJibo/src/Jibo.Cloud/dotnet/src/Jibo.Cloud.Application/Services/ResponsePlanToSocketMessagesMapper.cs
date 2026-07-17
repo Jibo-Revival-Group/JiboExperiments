@@ -1184,11 +1184,19 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
             var isWeatherSection = string.Equals(kind, "kickoff_weather", StringComparison.OrdinalIgnoreCase) ||
                                    string.Equals(kind, "weather", StringComparison.OrdinalIgnoreCase);
+            var animCat = ReadPayloadString(section, "anim_cat");
+            var animMeta = ReadPayloadString(section, "anim_meta");
+            if (isWeatherSection && string.IsNullOrWhiteSpace(animCat))
+            {
+                animCat = "weather";
+                animMeta = weatherIcon;
+            }
+
             var promptLabel = Regex.Replace(kind, "[^A-Za-z0-9]", string.Empty, RegexOptions.CultureInvariant);
             if (string.IsNullOrWhiteSpace(promptLabel)) promptLabel = $"Section{index + 1}";
 
-            var esml = isWeatherSection && weatherHiLoView is not null
-                ? $"<speak><anim cat='weather' meta='{EscapeXml(weatherIcon)}' nonBlocking='true' /><break size='0.35'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(text)}</es></speak>"
+            var esml = !string.IsNullOrWhiteSpace(animCat) && !string.IsNullOrWhiteSpace(animMeta)
+                ? $"<speak><anim cat='{EscapeXml(animCat)}' meta='{EscapeXml(animMeta)}' nonBlocking='true' /><break size='0.35'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(text)}</es></speak>"
                 : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(text)}</es></speak>";
 
             var config = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)

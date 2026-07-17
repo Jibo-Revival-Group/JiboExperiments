@@ -8556,8 +8556,10 @@ public sealed class JiboWebSocketServiceTests
             new StubNewsBriefingProvider(
                 new NewsBriefingSnapshot(
                     [
-                        new NewsHeadline("Space missions are preparing for new launches"),
-                        new NewsHeadline("AI tools keep pushing into everyday products")
+                        new NewsHeadline("Space missions are preparing for new launches",
+                            "Teams are preparing new orbital missions."),
+                        new NewsHeadline("AI tools keep pushing into everyday products",
+                            "Consumer products continue adopting AI features.")
                     ],
                     "NewsAPI")));
 
@@ -8735,7 +8737,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.True(sawNews);
         Assert.True(sawCalendar);
         Assert.True(sawOutro);
-        Assert.True(totalLength < 700, $"Personal report speech was still too long: {totalLength} chars.");
+        Assert.True(totalLength < 1200, $"Personal report speech was still too long: {totalLength} chars.");
     }
 
     [Fact]

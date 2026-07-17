@@ -107,11 +107,22 @@ public sealed partial class JiboInteractionService
     {
         var duration = snapshot.DurationMinutes;
         var durationText = duration <= 1 ? "1 minute" : $"{duration} minutes";
+        var durationNumberText = Math.Max(1, duration).ToString(System.Globalization.CultureInfo.InvariantCulture);
         var minutesLeft = snapshot.MinutesUntilWork;
         var minutesLeftText = minutesLeft <= 1 ? "1 minute" : $"{Math.Abs(minutesLeft)} minutes";
+        var minutesLeftNumberText =
+            Math.Max(1, Math.Abs(minutesLeft)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var extraMinutes = Math.Max(0, snapshot.ExtraMinutes);
+        var extraMinutesText = extraMinutes <= 1 ? "1" : extraMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var mode = string.IsNullOrWhiteSpace(snapshot.Mode) ? "driving" : snapshot.Mode.Trim();
         var template = ChooseCommuteTemplate(snapshot, catalog, mode);
-        var reply = RenderCommuteTemplate(template, durationText, minutesLeftText);
+        var reply = RenderCommuteTemplate(
+            template,
+            durationText,
+            minutesLeftText,
+            durationNumberText,
+            minutesLeftNumberText,
+            extraMinutesText);
 
         switch (minutesLeft)
         {
@@ -119,7 +130,8 @@ public sealed partial class JiboInteractionService
             {
                 var minutesTemplate = ChooseShortestTemplate(catalog.CommuteMinutesLeftReplies)
                                       ?? "That's in about ${skill.commute.minsLeft} minutes.";
-                reply = $"{reply} {RenderCommuteTemplate(minutesTemplate, durationText, minutesLeftText)}";
+                reply =
+                    $"{reply} {RenderCommuteTemplate(minutesTemplate, durationText, minutesLeftText, durationNumberText, minutesLeftNumberText, extraMinutesText)}";
                 break;
             }
             case <= 0 or >= 120:
@@ -128,7 +140,8 @@ public sealed partial class JiboInteractionService
 
         var departTemplate = ChooseCommuteDepartTimeTemplate(snapshot, catalog, mode);
         if (!string.IsNullOrWhiteSpace(departTemplate))
-            reply = $"{reply} {RenderCommuteTemplate(departTemplate, durationText, minutesLeftText)}";
+            reply =
+                $"{reply} {RenderCommuteTemplate(departTemplate, durationText, minutesLeftText, durationNumberText, minutesLeftNumberText, extraMinutesText)}";
 
         return reply.Replace("  ", " ", StringComparison.Ordinal).Trim();
     }
@@ -207,14 +220,31 @@ public sealed partial class JiboInteractionService
         };
     }
 
-    private static string RenderCommuteTemplate(string template, string durationText, string minutesLeftText)
+    private static string RenderCommuteTemplate(
+        string template,
+        string durationText,
+        string minutesLeftText,
+        string durationNumberText,
+        string minutesLeftNumberText,
+        string extraMinutesText)
     {
         return template
-            .Replace("${skill.commute.durationMins}", durationText, StringComparison.OrdinalIgnoreCase)
-            .Replace("${skill.commute.minsLeft}", minutesLeftText, StringComparison.OrdinalIgnoreCase)
+            .Replace("${skill.commute.durationMins}", durationNumberText, StringComparison.OrdinalIgnoreCase)
+            .Replace("${skill.commute.minsLeft}", minutesLeftNumberText, StringComparison.OrdinalIgnoreCase)
+            .Replace("${skill.commute.extraMins}", extraMinutesText, StringComparison.OrdinalIgnoreCase)
+            .Replace("{duration}", durationText, StringComparison.OrdinalIgnoreCase)
+            .Replace("{minutes}", minutesLeftNumberText, StringComparison.OrdinalIgnoreCase)
             .Replace("${speaker}", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
+    }
+
+    private static string ResolveCommuteAnimationMeta(CommuteReportSnapshot snapshot)
+    {
+        var extraMinutes = Math.Max(0, snapshot.ExtraMinutes);
+        if (extraMinutes >= 15) return "commute-terrible, no-eye-end";
+        if (extraMinutes >= 5) return "commute-poor, no-eye-end";
+        return "commute-normal, no-eye-end";
     }
 
     private static string? ChooseShortestTemplate(IEnumerable<string> templates)

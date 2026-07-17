@@ -68,6 +68,7 @@ public sealed partial class JiboInteractionService
             BuildWeatherReportDecisionAsync,
             BuildCalendarReportDecisionAsync,
             BuildCommuteReportDecisionAsync,
+            (turnContext, ct) => BuildNewsDecisionAsync(turnContext, string.Empty, catalog, ct, includeOutro: false),
             turnContext => ResolveTenantScope(turnContext),
             cancellationToken);
         if (personalReportDecision is not null) return personalReportDecision;

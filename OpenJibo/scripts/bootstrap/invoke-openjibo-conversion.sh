@@ -144,4 +144,3 @@ if (summary.Applied) {
 console.log(JSON.stringify(summary, null, 2));
 NODE
 node "$tmp_js" "$robot_root" "$target_mode" "$api_hostname" "${hub_hostname:-$api_hostname}" "$output_directory" "$audit_path" "$plan_path" "$applied" "$apply_path"
-node "$tmp_js" "$robot_root" "$target_mode" "$api_hostname" "${hub_hostname:-$api_hostname}" "$output_directory" "$audit_path" "$plan_path" "$applied" "$apply_path"

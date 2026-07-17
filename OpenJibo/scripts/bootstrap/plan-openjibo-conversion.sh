@@ -117,20 +117,23 @@ const proposedChanges = [
     ],
   },
   {
-    File: "/usr/lib/node_modules/@jibo/jibo-server-client/lib/region_config.json",
-    Action: "replace the stock region endpoint templates",
+    File: "all discovered region_config.json copies",
+    Action: "replace the stock region endpoint templates in every discovered copy",
     Details: [
+      "change {service}.{region}.api.jibo.com to {service}.{region}.api.openjibo.com",
+      "change https://api.jibo.com to https://api.openjibo.com",
+      "change http://api.jibo.com:8080 to http://api.openjibo.com:8080",
       "change https://{region}.jibo.com to https://{region}.openjibo.com",
       "change http://{region}.jibo.com:8080 to http://{region}.openjibo.com:8080",
       "change the socket template to the Open Jibo socket suffix",
     ],
   },
   {
-    File: "/usr/lib/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
-    Action: "replace the bundled region endpoint templates",
+    File: "all discovered aws-sdk-all.js copies",
+    Action: "replace the bundled region endpoint templates in every discovered copy",
     Details: [
       "mirror the region_config.json host substitutions inside the bundled SDK",
-      "cover the live rootfs copy used by jibo-server-service",
+      "cover the live rootfs copies used by jibo-server-service, jibo-ota-updater, jibo-log-client, and jibo-ssm",
       "keep the bundle and JSON template aligned",
     ],
   },
@@ -213,5 +216,4 @@ if (outputPath) {
   console.log(json);
 }
 NODE
-node "$tmp_js" "$temp_audit_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"
 node "$tmp_js" "$temp_audit_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"

@@ -146,6 +146,28 @@ Additional files to audit:
 - update, backup, restore, media, and person-recognition state locations
 - token and signing credential locations used by `Notification.NewRobotToken`, account, hub, and robot registration flows
 
+Region-template replacements the conversion scripts now target in every discovered `region_config.json` and `aws-sdk-all.js` copy:
+
+- `{service}.{region}.api.jibo.com` -> `{service}.{region}.api.openjibo.com`
+- `https://api.jibo.com` -> `https://api.openjibo.com`
+- `http://api.jibo.com:8080` -> `http://api.openjibo.com:8080`
+- `https://{region}.jibo.com` -> `https://{region}.openjibo.com`
+- `http://{region}.jibo.com:8080` -> `http://{region}.openjibo.com:8080`
+- `wss://{region}-socket.jibo.com` -> `wss://{region}-socket.openjibo.com`
+- `ws://{region}-socket.jibo.com:8090` -> `ws://{region}-socket.openjibo.com:8090`
+
+The script coverage should include every discovered copy under:
+
+- `/usr/lib/node_modules/@jibo/jibo-server-client/...`
+- `/usr/lib/node/@jibo/jibo-server-client/...`
+- `/usr/lib/node_modules/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/...`
+- `/usr/lib/node/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/...`
+- `/usr/lib/node_modules/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/...`
+- `/usr/lib/node/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/...`
+- `/usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/...`
+- `/opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/...`
+- `/opt/jibo/Jibo/Skills/oobe-config/node_modules/@jibo/jibo-server-client/...`
+
 ## Onboarding And Config Skill
 
 The Open Jibo skill should be the owner-facing control surface for conversion.

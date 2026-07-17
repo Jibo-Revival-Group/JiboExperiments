@@ -135,6 +135,36 @@ const awsSdkAllFiles = collectExisting([
   "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
 ]);
 
+const templateNeedles = [
+  "{service}.{region}.api.jibo.com",
+  "https://api.jibo.com",
+  "http://api.jibo.com:8080",
+  "https://{region}.jibo.com",
+  "http://{region}.jibo.com:8080",
+  "wss://{region}-socket.jibo.com",
+  "ws://{region}-socket.jibo.com:8090",
+];
+
+function scanTemplateMatches(filePaths) {
+  const matches = [];
+  for (const filePath of filePaths) {
+    let text = "";
+    try {
+      text = fs.readFileSync(filePath, "utf8");
+    } catch (error) {
+      continue;
+    }
+    const found = [];
+    for (const needle of templateNeedles) {
+      if (text.indexOf(needle) !== -1) found.push(needle);
+    }
+    if (found.length > 0) {
+      matches.push({ File: filePath, Patterns: found });
+    }
+  }
+  return matches;
+}
+
 const jetstream = readJsonFile(jetstreamPath);
 const serverService = readJsonFile(serverServicePath);
 const credentials = readJsonFile(credentialsPath);
@@ -186,6 +216,7 @@ const audit = {
     RegionConfigFiles: regionConfigFiles,
     AwsSdkAllFiles: awsSdkAllFiles,
   },
+  TemplateMatches: scanTemplateMatches(regionConfigFiles.concat(awsSdkAllFiles)),
   Recommendations: recommendations,
   CanProceed: recommendations.length === 0,
   BlockingIssues: recommendations,
@@ -205,5 +236,4 @@ if (outputPath) {
   console.log(json);
 }
 NODE
-node "$tmp_js" "$robot_root" "$output_path" "$strict"
 node "$tmp_js" "$robot_root" "$output_path" "$strict"

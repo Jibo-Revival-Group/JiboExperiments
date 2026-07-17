@@ -260,6 +260,9 @@ if (serverService && serverServicePath) {
 writeJson(oobeConfigPath, oobe);
 
 const endpointReplacements = [
+  ["{service}.{region}.api.jibo.com", "{service}.{region}.api.openjibo.com"],
+  ["https://api.jibo.com", "https://api.openjibo.com"],
+  ["http://api.jibo.com:8080", "http://api.openjibo.com:8080"],
   ["https://{region}.jibo.com", "https://{region}.openjibo.com"],
   ["http://{region}.jibo.com:8080", "http://{region}.openjibo.com:8080"],
   ["wss://{region}-socket.jibo.com", "wss://{region}-socket.openjibo.com"],
@@ -305,7 +308,7 @@ const applyManifest = {
     "The active credentials region remains on the proven value until first-boot conversion completes.",
     "The staged open-jibo region points to the canonical Open Jibo API hostname.",
     "The staged notification subsystem suffix points the robot at open-jibo-socket.openjibo.com while the deployment binds neohub.openjibo.com separately.",
-    "The helper also normalizes bundled jibo-server-client region templates in live robot bundles.",
+    "The helper also normalizes bundled jibo-server-client region templates in live robot bundles, including api, service-scoped api, and socket host forms.",
   ],
   WrittenFiles: [
     jetstreamPath,
@@ -325,5 +328,4 @@ if (outputPath) {
   console.log(json);
 }
 NODE
-node "$tmp_js" "$robot_root" "$plan_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"
 node "$tmp_js" "$robot_root" "$plan_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"

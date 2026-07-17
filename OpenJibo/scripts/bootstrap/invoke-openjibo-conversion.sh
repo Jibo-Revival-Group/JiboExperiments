@@ -66,7 +66,7 @@ plan_script="$script_dir/plan-openjibo-conversion.sh"
 apply_script="$script_dir/apply-openjibo-conversion.sh"
 
 if [ -z "$output_directory" ]; then
-  output_directory="$(mktemp -d -t openjibo-conversion.XXXXXX)"
+  output_directory="$(mktemp -d "${TMPDIR:-/tmp}/openjibo-conversion.XXXXXX")"
 else
   case "$output_directory" in
     /*) : ;;

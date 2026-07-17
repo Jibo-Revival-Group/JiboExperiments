@@ -374,11 +374,13 @@ internal static class PortalEndpoints
             return Results.Json(BuildLoopMembersPayload(cloudStateStore, loopId));
         });
 
-        app.MapPost("/api/portal/loop-members", (
+        app.MapPost("/api/portal/loop-members", async (
             [FromBody] AddLoopMemberRequest request,
             HttpRequest httpRequest,
             PortalSessionService portalSessionService,
-            ICloudStateStore cloudStateStore) =>
+            ICloudStateStore cloudStateStore,
+            RobotNotificationRegistry robotNotificationRegistry,
+            CancellationToken cancellationToken) =>
         {
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
             if (session is null)
@@ -398,17 +400,21 @@ internal static class PortalEndpoints
                 NormalizeGender(request.Gender),
                 null,
                 false,
-                "member");
+                "member",
+                markPortalEdited: true);
 
+            await TryPushLoopUpdatedAsync(cloudStateStore, robotNotificationRegistry, session, loopId, cancellationToken);
             return Results.Json(BuildLoopMemberPayload(member));
         });
 
-        app.MapPut("/api/portal/loop-members/{memberId}", (
+        app.MapPut("/api/portal/loop-members/{memberId}", async (
             string memberId,
             [FromBody] UpdateLoopMemberRequest request,
             HttpRequest httpRequest,
             PortalSessionService portalSessionService,
-            ICloudStateStore cloudStateStore) =>
+            ICloudStateStore cloudStateStore,
+            RobotNotificationRegistry robotNotificationRegistry,
+            CancellationToken cancellationToken) =>
         {
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
             if (session is null)
@@ -435,8 +441,10 @@ internal static class PortalEndpoints
                     null,
                     existing.IsChild,
                     null,
-                    null);
+                    null,
+                    markPortalEdited: true);
 
+                await TryPushLoopUpdatedAsync(cloudStateStore, robotNotificationRegistry, session, loopId, cancellationToken);
                 return Results.Json(BuildLoopMemberPayload(updated));
             }
             catch (InvalidOperationException)
@@ -445,11 +453,13 @@ internal static class PortalEndpoints
             }
         });
 
-        app.MapDelete("/api/portal/loop-members/{memberId}", (
+        app.MapDelete("/api/portal/loop-members/{memberId}", async (
             string memberId,
             HttpRequest request,
             PortalSessionService portalSessionService,
-            ICloudStateStore cloudStateStore) =>
+            ICloudStateStore cloudStateStore,
+            RobotNotificationRegistry robotNotificationRegistry,
+            CancellationToken cancellationToken) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null)
@@ -465,6 +475,7 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "The loop owner and robot cannot be removed here." });
 
             cloudStateStore.RemoveLoopMember(loopId, memberId);
+            await TryPushLoopUpdatedAsync(cloudStateStore, robotNotificationRegistry, session, loopId, cancellationToken);
             return Results.Json(new { removed = true, memberId });
         });
 
@@ -1162,6 +1173,31 @@ internal static class PortalEndpoints
         if (string.IsNullOrWhiteSpace(gender)) return "unknown";
         var normalized = gender.Trim().ToLowerInvariant();
         return normalized is "male" or "female" ? normalized : "unknown";
+    }
+
+    private static async Task TryPushLoopUpdatedAsync(
+        ICloudStateStore cloudStateStore,
+        RobotNotificationRegistry robotNotificationRegistry,
+        PortalSessionService.PortalSession session,
+        string loopId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var loop = cloudStateStore.GetLoops()
+                .FirstOrDefault(item => item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+            if (loop is null) return;
+
+            var payload = JiboCloudProtocolService.BuildLoopNotificationPayload(
+                loop,
+                cloudStateStore.GetLoopMembers(loopId));
+            var robotKeys = BuildPortalRobotKeys(session, cloudStateStore, loopId);
+            await robotNotificationRegistry.PushLoopUpdatedAsync(robotKeys, payload, cancellationToken);
+        }
+        catch
+        {
+            // Best-effort: HTTP poll (Loop#list) remains the authoritative fallback.
+        }
     }
 
     private static string ResolvePortalLoopId(

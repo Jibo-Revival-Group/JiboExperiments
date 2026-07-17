@@ -780,11 +780,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
                 // Drop people previously attributed to this robot that are no longer in its roster.
                 // This also clears cross-robot contamination from older shared-loop syncs.
+                // Keep Portal-edited people until the robot has pulled the updated Loop.
                 if (!string.IsNullOrWhiteSpace(resolvedRobotId))
                 {
                     _people.RemoveAll(person =>
                         person.RobotId.Equals(resolvedRobotId, StringComparison.OrdinalIgnoreCase) &&
-                        !rosterIds.Contains(person.PersonId));
+                        !rosterIds.Contains(person.PersonId) &&
+                        !HasRecentPortalEditLocked(resolvedLoopId, person.PersonId));
                 }
 
                 _people.RemoveAll(person =>
@@ -822,36 +824,72 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             return;
 
         var now = DateTimeOffset.UtcNow;
+        var existing = index >= 0 ? _loopMembers[index] : null;
+        var protectPortalEdit = existing?.PortalEditedUtc is not null;
+
+        // When the robot still reports a stale name after a Portal edit, keep the Portal values.
+        // Once the robot roster matches (or PortalEditedUtc is cleared), accept robot values again.
+        string? resolvedFirstName;
+        string? resolvedLastName;
+        string? resolvedNickname;
+        DateTimeOffset? portalEditedUtc = existing?.PortalEditedUtc;
+        if (protectPortalEdit)
+        {
+            var robotMatchesPortal =
+                NamesEqual(firstName, existing!.FirstName) &&
+                NamesEqual(lastName, existing.LastName);
+            if (robotMatchesPortal)
+            {
+                resolvedFirstName = firstName ?? existing.FirstName;
+                resolvedLastName = lastName ?? existing.LastName;
+                resolvedNickname = nickname ?? existing.Nickname;
+                portalEditedUtc = null;
+            }
+            else
+            {
+                resolvedFirstName = existing.FirstName;
+                resolvedLastName = existing.LastName;
+                resolvedNickname = existing.Nickname ?? nickname;
+            }
+        }
+        else
+        {
+            resolvedFirstName = firstName ?? existing?.FirstName;
+            resolvedLastName = lastName ?? existing?.LastName;
+            resolvedNickname = nickname ?? existing?.Nickname;
+        }
+
         var member = new LoopMemberRecord
         {
-            Id = index >= 0 ? _loopMembers[index].Id : personId,
+            Id = existing?.Id ?? personId,
             LoopId = loopId,
             AccountId = string.IsNullOrWhiteSpace(user.AccountId)
-                ? (index >= 0 ? _loopMembers[index].AccountId : null)
+                ? existing?.AccountId
                 : user.AccountId.Trim(),
-            Email = index >= 0 ? _loopMembers[index].Email : null,
-            FirstName = firstName ?? (index >= 0 ? _loopMembers[index].FirstName : null),
-            LastName = lastName ?? (index >= 0 ? _loopMembers[index].LastName : null),
-            Gender = index >= 0 ? _loopMembers[index].Gender : "unknown",
-            Birthday = index >= 0 ? _loopMembers[index].Birthday : null,
-            IsChild = index >= 0 && _loopMembers[index].IsChild,
+            Email = existing?.Email,
+            FirstName = resolvedFirstName,
+            LastName = resolvedLastName,
+            Gender = existing?.Gender ?? "unknown",
+            Birthday = existing?.Birthday,
+            IsChild = existing?.IsChild ?? false,
             Status = "active",
             Type = memberType,
-            Nickname = nickname ?? (index >= 0 ? _loopMembers[index].Nickname : null),
-            PhoneticName = index >= 0 ? _loopMembers[index].PhoneticName : null,
-            FaceEnrolled = index >= 0 && _loopMembers[index].FaceEnrolled,
-            VoiceEnrolled = index >= 0 && _loopMembers[index].VoiceEnrolled,
-            LegalGuardianId = index >= 0 ? _loopMembers[index].LegalGuardianId : null,
-            AgreementId = index >= 0 ? _loopMembers[index].AgreementId : null,
-            CreatedUtc = index >= 0 ? _loopMembers[index].CreatedUtc : now
+            Nickname = resolvedNickname,
+            PhoneticName = existing?.PhoneticName,
+            FaceEnrolled = existing?.FaceEnrolled ?? false,
+            VoiceEnrolled = existing?.VoiceEnrolled ?? false,
+            LegalGuardianId = existing?.LegalGuardianId,
+            AgreementId = existing?.AgreementId,
+            CreatedUtc = existing?.CreatedUtc ?? now,
+            PortalEditedUtc = portalEditedUtc
         };
 
         // Prefer the robot's looper id as the stable member id (Pegasus personId).
         if (index >= 0 &&
             !member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) &&
-            !_loopMembers.Any(existing =>
-                existing.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
-                existing.Id.Equals(personId, StringComparison.OrdinalIgnoreCase)))
+            !_loopMembers.Any(existingMember =>
+                existingMember.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                existingMember.Id.Equals(personId, StringComparison.OrdinalIgnoreCase)))
         {
             member = new LoopMemberRecord
             {
@@ -872,7 +910,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 VoiceEnrolled = member.VoiceEnrolled,
                 LegalGuardianId = member.LegalGuardianId,
                 AgreementId = member.AgreementId,
-                CreatedUtc = member.CreatedUtc
+                CreatedUtc = member.CreatedUtc,
+                PortalEditedUtc = member.PortalEditedUtc
             };
         }
 
@@ -880,6 +919,23 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             _loopMembers[index] = member;
         else
             _loopMembers.Add(member);
+    }
+
+    private bool HasRecentPortalEditLocked(string loopId, string personId)
+    {
+        return _loopMembers.Any(member =>
+            member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+            member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) &&
+            member.PortalEditedUtc is not null &&
+            !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool NamesEqual(string? left, string? right)
+    {
+        return string.Equals(
+            left?.Trim() ?? string.Empty,
+            right?.Trim() ?? string.Empty,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     public IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId)
@@ -1043,7 +1099,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
-        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null)
+        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null,
+        bool markPortalEdited = false)
     {
         var member = new LoopMemberRecord
         {
@@ -1057,7 +1114,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             IsChild = isChild,
             Type = type,
             Status = "active",
-            LegalGuardianId = legalGuardianId?.Trim()
+            LegalGuardianId = legalGuardianId?.Trim(),
+            PortalEditedUtc = markPortalEdited ? DateTimeOffset.UtcNow : null
         };
         lock (_syncRoot)
         {
@@ -1069,7 +1127,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public LoopMemberRecord UpdateLoopMember(string loopId, string memberId, string? firstName, string? lastName,
-        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName)
+        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName,
+        bool markPortalEdited = false)
     {
         lock (_syncRoot)
         {
@@ -1099,7 +1158,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 VoiceEnrolled = existing.VoiceEnrolled,
                 LegalGuardianId = existing.LegalGuardianId,
                 AgreementId = existing.AgreementId,
-                CreatedUtc = existing.CreatedUtc
+                CreatedUtc = existing.CreatedUtc,
+                PortalEditedUtc = markPortalEdited ? DateTimeOffset.UtcNow : existing.PortalEditedUtc
             };
         }
 
@@ -1137,7 +1197,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 VoiceEnrolled = existing.VoiceEnrolled,
                 LegalGuardianId = existing.LegalGuardianId,
                 AgreementId = existing.AgreementId,
-                CreatedUtc = existing.CreatedUtc
+                CreatedUtc = existing.CreatedUtc,
+                PortalEditedUtc = existing.PortalEditedUtc
             };
         }
 
@@ -1175,7 +1236,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 VoiceEnrolled = voice ?? existing.VoiceEnrolled,
                 LegalGuardianId = existing.LegalGuardianId,
                 AgreementId = existing.AgreementId,
-                CreatedUtc = existing.CreatedUtc
+                CreatedUtc = existing.CreatedUtc,
+            PortalEditedUtc = existing.PortalEditedUtc
             };
         }
 
@@ -1765,7 +1827,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                     VoiceEnrolled = member.VoiceEnrolled,
                     LegalGuardianId = member.LegalGuardianId,
                     AgreementId = member.AgreementId,
-                    CreatedUtc = member.CreatedUtc
+                    CreatedUtc = member.CreatedUtc,
+                PortalEditedUtc = member.PortalEditedUtc
                 };
         }
 
@@ -2559,7 +2622,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 VoiceEnrolled = member.VoiceEnrolled,
                 LegalGuardianId = member.LegalGuardianId,
                 AgreementId = member.AgreementId,
-                CreatedUtc = member.CreatedUtc
+                CreatedUtc = member.CreatedUtc,
+            PortalEditedUtc = member.PortalEditedUtc
             };
         }
     }

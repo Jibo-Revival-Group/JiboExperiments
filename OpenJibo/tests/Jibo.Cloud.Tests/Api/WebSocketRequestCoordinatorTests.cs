@@ -88,10 +88,10 @@ public sealed class WebSocketRequestCoordinatorTests
 
     private static WebSocketRequestCoordinator CreateCoordinator(out RecordingWebSocketTelemetrySink telemetrySink)
     {
-        var service = CreateWebSocketService(out _);
+        var service = CreateWebSocketService(out var store);
         telemetrySink = new RecordingWebSocketTelemetrySink();
         var haHandler = new HomeAssistantWebSocketHandler(new HomeAssistantConnectionRegistry());
-        return new WebSocketRequestCoordinator(service, haHandler, telemetrySink);
+        return new WebSocketRequestCoordinator(service, haHandler, telemetrySink, store);
     }
 
     private static WebSocketRequestCoordinator CreateCoordinator(
@@ -101,7 +101,7 @@ public sealed class WebSocketRequestCoordinatorTests
         var service = CreateWebSocketService(out store);
         telemetrySink = new RecordingWebSocketTelemetrySink();
         var haHandler = new HomeAssistantWebSocketHandler(new HomeAssistantConnectionRegistry());
-        return new WebSocketRequestCoordinator(service, haHandler, telemetrySink);
+        return new WebSocketRequestCoordinator(service, haHandler, telemetrySink, store);
     }
 
     private static JiboWebSocketService CreateWebSocketService(out InMemoryCloudStateStore store)

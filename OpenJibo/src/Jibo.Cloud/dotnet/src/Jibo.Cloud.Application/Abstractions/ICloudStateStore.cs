@@ -49,10 +49,12 @@ public interface ICloudStateStore
     void RevokeIdentityGraphAnchor(string anchor);
 
     LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
-        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null);
+        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null,
+        bool markPortalEdited = false);
 
     LoopMemberRecord UpdateLoopMember(string loopId, string memberId, string? firstName, string? lastName,
-        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName);
+        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName,
+        bool markPortalEdited = false);
 
     bool RemoveLoopMember(string loopId, string memberId);
     LoopMemberRecord SetMemberEnrollment(string loopId, string memberId, bool? face, bool? voice);

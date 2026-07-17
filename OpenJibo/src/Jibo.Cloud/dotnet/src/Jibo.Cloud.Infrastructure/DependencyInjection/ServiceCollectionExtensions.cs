@@ -236,6 +236,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<JiboVerificationService>();
         services.AddSingleton<PortalSessionService>();
         services.AddSingleton<HomeAssistantConnectionRegistry>();
+        services.AddSingleton<RobotNotificationRegistry>();
         services.AddSingleton<HomeAssistantCommandService>();
 
         return services;

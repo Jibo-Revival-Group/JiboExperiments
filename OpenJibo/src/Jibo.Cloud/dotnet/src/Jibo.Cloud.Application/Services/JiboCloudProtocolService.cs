@@ -1009,7 +1009,7 @@ public sealed class JiboCloudProtocolService(
             .ToArray());
     }
 
-    private static object MapLoopMember(LoopMemberRecord member)
+    public static object MapLoopMember(LoopMemberRecord member)
     {
         return new
         {
@@ -1053,7 +1053,7 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
-    private static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members)
+    public static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members)
     {
         return new
         {
@@ -1068,8 +1068,16 @@ public sealed class JiboCloudProtocolService(
                 .ToArray(),
             isSuspended = loop.IsSuspended,
             created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
-            updated = loop.UpdatedUtc.ToUnixTimeMilliseconds()
+            updated = loop.UpdatedUtc.ToUnixTimeMilliseconds(),
+            eventKey = "LoopUpdated"
         };
+    }
+
+    public static object BuildLoopNotificationPayload(
+        LoopRecord loop,
+        IEnumerable<LoopMemberRecord> members)
+    {
+        return MapLoopRecord(loop, members);
     }
 
     private static ProtocolDispatchResult HandleLog(string operation)

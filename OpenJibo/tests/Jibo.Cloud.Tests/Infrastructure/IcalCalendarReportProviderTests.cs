@@ -19,7 +19,7 @@ public sealed class IcalCalendarReportProviderTests
                 new EncryptedUserDataSnapshotStore(path, new UserDataEncryptionService()));
             var cloudState = new InMemoryCloudStateStore();
             var loopId = cloudState.GetLoops().First().LoopId;
-            cloudState.SyncPeopleFromLoopUsers(loopId,
+            cloudState.SyncPeopleFromLoopUsers(loopId, "robot-zane",
             [
                 new LoopUserSnapshot("looper-zane", "Zane", "A", Type: "member"),
                 new LoopUserSnapshot("looper-jon", "Jon", "B", Type: "member")

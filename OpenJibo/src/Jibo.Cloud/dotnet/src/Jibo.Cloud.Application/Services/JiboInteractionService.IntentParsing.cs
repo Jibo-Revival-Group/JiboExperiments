@@ -406,10 +406,37 @@ public sealed partial class JiboInteractionService
         var loopUsers = TryReadLoopUsersFromTurn(turn);
         if (loopUsers.Count == 0) return;
 
-        var loopId = ReadTenantAttribute(turn, "loopId") ??
-                     cloudStateStore.GetLoops().FirstOrDefault()?.LoopId ??
-                     "openjibo-default-loop";
-        cloudStateStore.SyncPeopleFromLoopUsers(loopId, loopUsers);
+        var robotId = ResolveTurnRobotId(turn);
+        var robotFriendlyId = ReadTenantAttribute(turn, "robotFriendlyId") ??
+                              ReadTenantAttribute(turn, "friendlyId") ??
+                              robotId;
+        var loop = cloudStateStore.AddLoop(
+            null,
+            ReadTenantAttribute(turn, "accountId"),
+            robotId,
+            robotFriendlyId);
+        cloudStateStore.SyncPeopleFromLoopUsers(loop.LoopId, robotId, loopUsers);
+    }
+
+    private string ResolveTurnRobotId(TurnContext turn)
+    {
+        var explicitRobotId = ReadTenantAttribute(turn, "robotId") ??
+                              ReadTenantAttribute(turn, "deviceId") ??
+                              turn.DeviceId;
+        if (!string.IsNullOrWhiteSpace(explicitRobotId))
+            return explicitRobotId.Trim();
+
+        var friendlyId = ReadTenantAttribute(turn, "robotFriendlyId") ??
+                         ReadTenantAttribute(turn, "friendlyId");
+        if (!string.IsNullOrWhiteSpace(friendlyId) && cloudStateStore is not null)
+        {
+            var device = cloudStateStore.FindDeviceByFriendlyId(friendlyId);
+            if (device is not null)
+                return string.IsNullOrWhiteSpace(device.RobotId) ? device.DeviceId : device.RobotId;
+            return friendlyId.Trim();
+        }
+
+        return cloudStateStore?.GetRobot().RobotId ?? "openjibo-robot";
     }
 
     private static IReadOnlyList<Domain.Models.LoopUserSnapshot> TryReadLoopUsersFromTurn(TurnContext turn)

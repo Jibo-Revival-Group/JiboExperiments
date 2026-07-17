@@ -18,9 +18,10 @@ public sealed class PortalCalendarFeedApiTests
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
         var store = factory.Services.GetRequiredService<ICloudStateStore>();
-        var loopId = store.GetLoops().First().LoopId;
+        await AuthorizeAsync(client, factory);
+        var loop = store.AddLoop(null, null, "Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
         var member = store.AddLoopMember(
-            loopId,
+            loop.LoopId,
             null,
             "zane@example.test",
             "Zane",
@@ -29,8 +30,6 @@ public sealed class PortalCalendarFeedApiTests
             null,
             false,
             "member");
-
-        await AuthorizeAsync(client, factory);
 
         const string secretUrl = "https://calendar.example.com/ical/zane/private-token/basic.ics";
         var putResponse = await client.PutAsJsonAsync(
@@ -58,7 +57,7 @@ public sealed class PortalCalendarFeedApiTests
         Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
 
         var integrationStore = factory.Services.GetRequiredService<IUserIntegrationStore>();
-        Assert.Null(integrationStore.FindMemberCalendarFeed(loopId, member.Id));
+        Assert.Null(integrationStore.FindMemberCalendarFeed(loop.LoopId, member.Id));
     }
 
     [Fact]
@@ -67,15 +66,16 @@ public sealed class PortalCalendarFeedApiTests
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
         var store = factory.Services.GetRequiredService<ICloudStateStore>();
-        var loopId = store.GetLoops().First().LoopId;
-
-        store.SyncPeopleFromLoopUsers(loopId,
-        [
-            new LoopUserSnapshot("looper-zane", "Zane", "Tester", "acct-zane", Type: "owner"),
-            new LoopUserSnapshot("looper-jon", "Jon", "Tester", "acct-jon", Type: "member")
-        ]);
 
         await AuthorizeAsync(client, factory);
+        var loop = store.AddLoop(null, null, "Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        store.SyncPeopleFromLoopUsers(
+            loop.LoopId,
+            "Ghost-Instance-Onion-Silk",
+            [
+                new LoopUserSnapshot("looper-zane", "Zane", "Tester", "acct-zane", Type: "owner"),
+                new LoopUserSnapshot("looper-jon", "Jon", "Tester", "acct-jon", Type: "member")
+            ]);
 
         var listResponse = await client.GetAsync("/api/portal/calendar-feeds");
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
@@ -85,6 +85,83 @@ public sealed class PortalCalendarFeedApiTests
         Assert.Contains("looper-zane", listBody, StringComparison.Ordinal);
         Assert.Contains("looper-jon", listBody, StringComparison.Ordinal);
         Assert.DoesNotContain("person-openjibo-household-member", listBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CalendarFeeds_DoesNotMergePeopleFromAnotherRobot()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+
+        await AuthorizeAsync(client, factory);
+        var thisLoop = store.AddLoop(null, null, "Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var otherLoop = store.AddLoop(null, null, "Other-Jibo-Friendly", "OTHER-DEVICE-0001");
+
+        store.SyncPeopleFromLoopUsers(
+            thisLoop.LoopId,
+            "Ghost-Instance-Onion-Silk",
+            [
+                new LoopUserSnapshot("looper-zane", "Zane", "Tester", Type: "owner"),
+                new LoopUserSnapshot("looper-dad", "My Dad", "Tester", Type: "member")
+            ]);
+        store.SyncPeopleFromLoopUsers(
+            otherLoop.LoopId,
+            "Other-Jibo-Friendly",
+            [
+                new LoopUserSnapshot("looper-guy", "Guy from Jibo 2", "X", Type: "member"),
+                new LoopUserSnapshot("looper-gal", "Gal from Jibo 2", "Y", Type: "member")
+            ]);
+
+        var listBody = await (await client.GetAsync("/api/portal/calendar-feeds")).Content.ReadAsStringAsync();
+        Assert.Contains("Zane", listBody, StringComparison.Ordinal);
+        Assert.Contains("My Dad", listBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("Guy from Jibo 2", listBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("Gal from Jibo 2", listBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("looper-guy", listBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Dashboard_IsUniqueToVerifiedJibo()
+    {
+        await using var factory = CreateFactory();
+        var firstClient = factory.CreateClient();
+        var secondClient = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var integrations = factory.Services.GetRequiredService<IUserIntegrationStore>();
+
+        var firstLoop = store.AddLoop(null, null, "Jibo-One", "DEVICE-ONE");
+        var secondLoop = store.AddLoop(null, null, "Jibo-Two", "DEVICE-TWO");
+        store.SyncPeopleFromLoopUsers(
+            firstLoop.LoopId,
+            "Jibo-One",
+            [new LoopUserSnapshot("person-one", "First Household", Type: "owner")]);
+        store.SyncPeopleFromLoopUsers(
+            secondLoop.LoopId,
+            "Jibo-Two",
+            [new LoopUserSnapshot("person-two", "Second Household", Type: "owner")]);
+        integrations.AddHomeAssistantLink("DEVICE-ONE", "Jibo-One", "ha-one");
+        integrations.AddHomeAssistantLink("DEVICE-TWO", "Jibo-Two", "ha-two");
+
+        await AuthorizeAsync(firstClient, factory, "Jibo-One", "DEVICE-ONE");
+        await AuthorizeAsync(secondClient, factory, "Jibo-Two", "DEVICE-TWO");
+
+        var firstDashboard =
+            await (await firstClient.GetAsync("/api/portal/dashboard")).Content.ReadFromJsonAsync<JsonElement>();
+        var secondDashboard =
+            await (await secondClient.GetAsync("/api/portal/dashboard")).Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal("Jibo-One", firstDashboard.GetProperty("jiboFriendlyId").GetString());
+        Assert.Contains("First Household", firstDashboard.ToString(), StringComparison.Ordinal);
+        Assert.Contains("ha-one", firstDashboard.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("Second Household", firstDashboard.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("ha-two", firstDashboard.ToString(), StringComparison.Ordinal);
+
+        Assert.Equal("Jibo-Two", secondDashboard.GetProperty("jiboFriendlyId").GetString());
+        Assert.Contains("Second Household", secondDashboard.ToString(), StringComparison.Ordinal);
+        Assert.Contains("ha-two", secondDashboard.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("First Household", secondDashboard.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("ha-one", secondDashboard.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -103,9 +180,10 @@ public sealed class PortalCalendarFeedApiTests
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
         var store = factory.Services.GetRequiredService<ICloudStateStore>();
-        var loopId = store.GetLoops().First().LoopId;
+        await AuthorizeAsync(client, factory);
+        var loop = store.AddLoop(null, null, "Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
         var member = store.AddLoopMember(
-            loopId,
+            loop.LoopId,
             null,
             "jon@example.test",
             "Jon",
@@ -115,19 +193,20 @@ public sealed class PortalCalendarFeedApiTests
             false,
             "member");
 
-        await AuthorizeAsync(client, factory);
-
         var response = await client.PutAsJsonAsync(
             $"/api/portal/calendar-feeds/{member.Id}",
             new { icalUrl = "http://calendar.example.com/basic.ics" });
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    private static async Task AuthorizeAsync(HttpClient client, WebApplicationFactory<Program> factory)
+    private static async Task AuthorizeAsync(
+        HttpClient client,
+        WebApplicationFactory<Program> factory,
+        string friendlyId = "Ghost-Instance-Onion-Silk",
+        string deviceId = "BOJW-1000-0017-0820-0020")
     {
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
-        var spokenCode =
-            verificationService.IssueCodeForDevice("Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var spokenCode = verificationService.IssueCodeForDevice(friendlyId, deviceId);
         var confirmPayload = await (await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",
             new { code = spokenCode })).Content.ReadFromJsonAsync<JsonElement>();

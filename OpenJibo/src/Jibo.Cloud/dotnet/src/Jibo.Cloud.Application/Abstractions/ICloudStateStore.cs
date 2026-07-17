@@ -11,6 +11,7 @@ public interface ICloudStateStore
     DeviceRegistration GetRobot();
     RobotProfile GetRobotProfile();
     DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion);
+    DeviceRegistration UpsertDevice(DeviceRegistration registration);
     DeviceRegistration? FindDeviceByFriendlyId(string friendlyId);
     UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);
     UserRecord? AuthenticateUser(string email, string password);
@@ -28,8 +29,10 @@ public interface ICloudStateStore
     /// <summary>
     /// Upserts people (and matching non-robot loop members) from the robot's
     /// <c>runtime.loop.users</c> roster — the same source Pegasus personal report uses.
+    /// People are scoped to <paramref name="loopId"/> + <paramref name="robotId"/> so
+    /// multiple Jibos on one cloud do not merge households.
     /// </summary>
-    int SyncPeopleFromLoopUsers(string loopId, IReadOnlyList<LoopUserSnapshot> loopUsers);
+    int SyncPeopleFromLoopUsers(string loopId, string? robotId, IReadOnlyList<LoopUserSnapshot> loopUsers);
     IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
     IReadOnlyList<TrustedServerRecord> GetTrustedServers();
     IReadOnlyList<TrustedServerAdmissionRecord> GetTrustedServerAdmissions(string? canonicalHost = null);

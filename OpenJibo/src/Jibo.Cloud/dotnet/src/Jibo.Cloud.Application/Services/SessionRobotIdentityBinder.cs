@@ -4,8 +4,11 @@ using Jibo.Cloud.Domain.Models;
 namespace Jibo.Cloud.Application.Services;
 
 /// <summary>
-/// Binds Pegasus CONTEXT <c>data.general.robotID</c> (friendlyId) onto the WebSocket session
-/// so path-token listen sockets are not stuck on the process-wide singleton robot DeviceId.
+/// Binds a per-robot identity from CONTEXT onto the WebSocket session so path-token listen
+/// sockets are not stuck on the process-wide singleton robot DeviceId.
+/// Real Pegasus/BE firmware never sets <c>data.general.robotID</c> (that block only carries
+/// <c>release</c>); the actual per-robot signal is <c>data.runtime.loop.jibo.id</c> /
+/// <c>data.runtime.loop.loopId</c>. Synthetic tests may still supply <c>general.robotID</c>.
 /// </summary>
 public static class SessionRobotIdentityBinder
 {
@@ -53,25 +56,34 @@ public static class SessionRobotIdentityBinder
         {
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
-            var general = root;
-            if (root.TryGetProperty("data", out var data) &&
-                data.ValueKind == JsonValueKind.Object &&
-                data.TryGetProperty("general", out var nestedGeneral) &&
-                nestedGeneral.ValueKind == JsonValueKind.Object)
-                general = nestedGeneral;
-            else if (root.TryGetProperty("general", out var topGeneral) &&
-                     topGeneral.ValueKind == JsonValueKind.Object)
-                general = topGeneral;
-            else
-                return false;
+            var data = root.TryGetProperty("data", out var nestedData) && nestedData.ValueKind == JsonValueKind.Object
+                ? nestedData
+                : root;
 
-            if (!TryReadString(general, "robotID", out robotId) &&
-                !TryReadString(general, "robotId", out robotId))
-                return false;
+            if (data.TryGetProperty("general", out var general) && general.ValueKind == JsonValueKind.Object &&
+                (TryReadString(general, "robotID", out robotId) || TryReadString(general, "robotId", out robotId)))
+            {
+                _ = TryReadString(general, "accountID", out accountId) ||
+                    TryReadString(general, "accountId", out accountId);
+                return true;
+            }
 
-            _ = TryReadString(general, "accountID", out accountId) ||
-                TryReadString(general, "accountId", out accountId);
-            return true;
+            // Real Pegasus/BE firmware never sets general.robotID — its general block only ever
+            // carries {"release": "..."}. The actual per-robot signal on every real CONTEXT message
+            // is data.runtime.loop.jibo.id (this specific Jibo unit) / data.runtime.loop.loopId
+            // (household), confirmed from captured hardware traffic in artifact-output/jibo-test-*.
+            if (data.TryGetProperty("runtime", out var runtime) && runtime.ValueKind == JsonValueKind.Object &&
+                runtime.TryGetProperty("loop", out var loop) && loop.ValueKind == JsonValueKind.Object)
+            {
+                if (loop.TryGetProperty("jibo", out var jibo) && jibo.ValueKind == JsonValueKind.Object &&
+                    TryReadString(jibo, "id", out robotId))
+                    return true;
+
+                if (TryReadString(loop, "loopId", out robotId))
+                    return true;
+            }
+
+            return false;
         }
         catch
         {

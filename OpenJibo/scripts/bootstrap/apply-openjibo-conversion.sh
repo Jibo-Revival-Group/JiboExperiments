@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 robot_root=""
 plan_path=""
@@ -9,7 +9,7 @@ hub_hostname=""
 output_path=""
 strict=false
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
     --robot-root)
       robot_root="${2:-}"
@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$robot_root" || -z "$plan_path" ]]; then
+if [ -z "$robot_root" ] || [ -z "$plan_path" ]; then
   echo "--robot-root and --plan-path are required" >&2
   exit 2
 fi
@@ -56,7 +56,7 @@ Physical-robot preflight:
   Before applying conversion writes on a real robot, run `jibo-mount --rw` so the partition mounts accept changes.
 EOF
 
-if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" == "open-jibo-ai" ) ]]; then
+if [ -z "$hub_hostname" ] && { [ "$target_mode" = "open-jibo" ] || [ "$target_mode" = "open-jibo-ai" ]; }; then
   hub_hostname="neohub.openjibo.com"
 fi
 

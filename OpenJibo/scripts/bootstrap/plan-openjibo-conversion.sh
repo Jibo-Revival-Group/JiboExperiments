@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 robot_root=""
 target_mode="open-jibo"
@@ -8,7 +8,7 @@ hub_hostname=""
 output_path=""
 strict=false
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
     --robot-root)
       robot_root="${2:-}"
@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$robot_root" ]]; then
+if [ -z "$robot_root" ]; then
   echo "--robot-root is required" >&2
   exit 2
 fi
@@ -50,7 +50,7 @@ if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" ==
   hub_hostname="neohub.openjibo.com"
 fi
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 audit_script="$script_dir/audit-openjibo-conversion.sh"
 temp_audit_path="$(mktemp -t openjibo-conversion-audit.XXXXXX.json)"
 
@@ -59,12 +59,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-audit_args=(--robot-root "$robot_root" --output-path "$temp_audit_path")
-if [[ "$strict" == true ]]; then
-  audit_args+=(--strict)
+if [ "$strict" = true ]; then
+  sh "$audit_script" --robot-root "$robot_root" --output-path "$temp_audit_path" --strict >/dev/null
+else
+  sh "$audit_script" --robot-root "$robot_root" --output-path "$temp_audit_path" >/dev/null
 fi
-
-bash "$audit_script" "${audit_args[@]}" >/dev/null
 
 node - "$temp_audit_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict" <<'NODE'
 const fs = require("fs");

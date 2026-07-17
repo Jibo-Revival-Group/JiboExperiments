@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 robot_root=""
 target_mode="open-jibo"
@@ -9,7 +9,7 @@ output_directory=""
 apply=false
 strict=false
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
     --robot-root)
       robot_root="${2:-}"
@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$robot_root" ]]; then
+if [ -z "$robot_root" ]; then
   echo "--robot-root is required" >&2
   exit 2
 fi
@@ -56,19 +56,22 @@ Physical-robot preflight:
   If this target is a real robot, run `jibo-mount --rw` before any audit, plan, or apply step that will write robot partitions.
 EOF
 
-if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" == "open-jibo-ai" ) ]]; then
+if [ -z "$hub_hostname" ] && { [ "$target_mode" = "open-jibo" ] || [ "$target_mode" = "open-jibo-ai" ]; }; then
   hub_hostname="neohub.openjibo.com"
 fi
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 audit_script="$script_dir/audit-openjibo-conversion.sh"
 plan_script="$script_dir/plan-openjibo-conversion.sh"
 apply_script="$script_dir/apply-openjibo-conversion.sh"
 
-if [[ -z "$output_directory" ]]; then
+if [ -z "$output_directory" ]; then
   output_directory="$(mktemp -d -t openjibo-conversion.XXXXXX)"
-elif [[ "$output_directory" != /* ]]; then
-  output_directory="$(pwd)/$output_directory"
+else
+  case "$output_directory" in
+    /*) : ;;
+    *) output_directory="$(pwd)/$output_directory" ;;
+  esac
 fi
 
 mkdir -p "$output_directory"
@@ -77,31 +80,37 @@ audit_path="$output_directory/conversion-audit.json"
 plan_path="$output_directory/conversion-plan.json"
 apply_path="$output_directory/conversion-apply.json"
 
-audit_args=(--robot-root "$robot_root" --output-path "$audit_path")
-plan_args=(--robot-root "$robot_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-path "$plan_path")
-
-if [[ -n "$hub_hostname" ]]; then
-  plan_args+=(--hub-hostname "$hub_hostname")
+if [ "$strict" = true ]; then
+  sh "$audit_script" --robot-root "$robot_root" --output-path "$audit_path" --strict >/dev/null
+  if [ -n "$hub_hostname" ]; then
+    sh "$plan_script" --robot-root "$robot_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --hub-hostname "$hub_hostname" --output-path "$plan_path" --strict >/dev/null
+  else
+    sh "$plan_script" --robot-root "$robot_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-path "$plan_path" --strict >/dev/null
+  fi
+else
+  sh "$audit_script" --robot-root "$robot_root" --output-path "$audit_path" >/dev/null
+  if [ -n "$hub_hostname" ]; then
+    sh "$plan_script" --robot-root "$robot_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --hub-hostname "$hub_hostname" --output-path "$plan_path" >/dev/null
+  else
+    sh "$plan_script" --robot-root "$robot_root" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-path "$plan_path" >/dev/null
+  fi
 fi
-
-if [[ "$strict" == true ]]; then
-  audit_args+=(--strict)
-  plan_args+=(--strict)
-fi
-
-bash "$audit_script" "${audit_args[@]}" >/dev/null
-bash "$plan_script" "${plan_args[@]}" >/dev/null
 
 applied=false
-if [[ "$apply" == true ]]; then
-  apply_args=(--robot-root "$robot_root" --plan-path "$plan_path" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-path "$apply_path")
-  if [[ -n "$hub_hostname" ]]; then
-    apply_args+=(--hub-hostname "$hub_hostname")
+if [ "$apply" = true ]; then
+  if [ -n "$hub_hostname" ]; then
+    if [ "$strict" = true ]; then
+      sh "$apply_script" --robot-root "$robot_root" --plan-path "$plan_path" --target-mode "$target_mode" --api-hostname "$api_hostname" --hub-hostname "$hub_hostname" --output-path "$apply_path" --strict >/dev/null
+    else
+      sh "$apply_script" --robot-root "$robot_root" --plan-path "$plan_path" --target-mode "$target_mode" --api-hostname "$api_hostname" --hub-hostname "$hub_hostname" --output-path "$apply_path" >/dev/null
+    fi
+  else
+    if [ "$strict" = true ]; then
+      sh "$apply_script" --robot-root "$robot_root" --plan-path "$plan_path" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-path "$apply_path" --strict >/dev/null
+    else
+      sh "$apply_script" --robot-root "$robot_root" --plan-path "$plan_path" --target-mode "$target_mode" --api-hostname "$api_hostname" --output-path "$apply_path" >/dev/null
+    fi
   fi
-  if [[ "$strict" == true ]]; then
-    apply_args+=(--strict)
-  fi
-  bash "$apply_script" "${apply_args[@]}" >/dev/null
   applied=true
 fi
 

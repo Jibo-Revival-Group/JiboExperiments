@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 robot_root=""
 output_path=""
 strict=false
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
     --robot-root)
       robot_root="${2:-}"
@@ -26,7 +26,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$robot_root" ]]; then
+if [ -z "$robot_root" ]; then
   echo "--robot-root is required" >&2
   exit 2
 fi

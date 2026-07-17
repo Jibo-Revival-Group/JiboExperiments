@@ -123,7 +123,7 @@ function backupFile(filePath) {
   const relative = path.relative(robotRoot, filePath);
   const backupPath = path.resolve(backupRoot, relative);
   ensureDir(path.dirname(backupPath));
-  fs.copyFileSync(filePath, backupPath);
+  fs.writeFileSync(backupPath, fs.readFileSync(filePath));
   return backupPath;
 }
 

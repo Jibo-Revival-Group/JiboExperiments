@@ -46,4 +46,25 @@ public sealed class JiboIdentityResolverTests
         Assert.Equal("BOJW-1000-0017-0820-0020", deviceId);
         Assert.Equal("Ghost-Instance-Onion-Silk", friendlyId);
     }
+
+    [Fact]
+    public void Resolve_DoesNotInheritSingletonDeviceId_ForUnregisteredFriendlyId()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            RobotId = "Bootstrap-Robot",
+            FriendlyName = "Bootstrap"
+        });
+
+        var (deviceId, friendlyId) = JiboIdentityResolver.Resolve(new TurnContext
+        {
+            DeviceId = "Jibo-One"
+        }, store);
+
+        Assert.Equal("Jibo-One", deviceId);
+        Assert.Equal("Jibo-One", friendlyId);
+        Assert.NotEqual("SHARED-SINGLETON-DEVICE", deviceId);
+    }
 }

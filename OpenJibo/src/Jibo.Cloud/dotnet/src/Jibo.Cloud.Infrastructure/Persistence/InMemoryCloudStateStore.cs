@@ -622,13 +622,16 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static bool LoopMatchesRobot(LoopRecord loop, string? robotId, string? robotFriendlyId)
     {
-        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(robotId)) keys.Add(robotId.Trim());
-        if (!string.IsNullOrWhiteSpace(robotFriendlyId)) keys.Add(robotFriendlyId.Trim());
-        if (keys.Count == 0) return false;
+        // One loop per friendlyId (Pegasus robotID / BE robotFriendlyId). Prefer robotId as the
+        // canonical key; only fall back to robotFriendlyId when robotId is empty. Never OR-match
+        // a shared serial/device string across robots.
+        var friendlyKey = !string.IsNullOrWhiteSpace(robotId)
+            ? robotId.Trim()
+            : robotFriendlyId?.Trim();
+        if (string.IsNullOrWhiteSpace(friendlyKey)) return false;
 
-        return (!string.IsNullOrWhiteSpace(loop.RobotId) && keys.Contains(loop.RobotId)) ||
-               (!string.IsNullOrWhiteSpace(loop.RobotFriendlyId) && keys.Contains(loop.RobotFriendlyId));
+        return string.Equals(loop.RobotId, friendlyKey, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(loop.RobotFriendlyId, friendlyKey, StringComparison.OrdinalIgnoreCase);
     }
 
     public IReadOnlyList<PersonRecord> GetPeople()

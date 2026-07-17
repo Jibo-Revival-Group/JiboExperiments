@@ -165,6 +165,89 @@ public sealed class PortalCalendarFeedApiTests
     }
 
     [Fact]
+    public async Task Portal_IsolatesRobots_ThroughIdentityResolver_WithSharedSingletonDeviceId()
+    {
+        await using var factory = CreateFactory();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        var integrations = factory.Services.GetRequiredService<IUserIntegrationStore>();
+
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            RobotId = "Bootstrap-Robot",
+            FriendlyName = "Bootstrap"
+        });
+
+        // Real bug path: unregistered hyphenated friendlyIds must not inherit GetRobot().DeviceId.
+        var (deviceOne, friendlyOne) = JiboIdentityResolver.Resolve(
+            new Jibo.Runtime.Abstractions.TurnContext { DeviceId = "Jibo-One" }, store);
+        var (deviceTwo, friendlyTwo) = JiboIdentityResolver.Resolve(
+            new Jibo.Runtime.Abstractions.TurnContext { DeviceId = "Jibo-Two" }, store);
+        Assert.Equal("Jibo-One", deviceOne);
+        Assert.Equal("Jibo-One", friendlyOne);
+        Assert.Equal("Jibo-Two", deviceTwo);
+        Assert.Equal("Jibo-Two", friendlyTwo);
+        Assert.NotEqual("SHARED-SINGLETON-DEVICE", deviceOne);
+        Assert.NotEqual("SHARED-SINGLETON-DEVICE", deviceTwo);
+
+        var firstLoop = store.AddLoop(null, null, friendlyOne, deviceOne);
+        var secondLoop = store.AddLoop(null, null, friendlyTwo, deviceTwo);
+        Assert.NotEqual(firstLoop.LoopId, secondLoop.LoopId);
+
+        // Shared second arg must not merge loops once matching is friendlyId-primary.
+        var mergedProbe = store.AddLoop(null, null, "Jibo-Two", "SHARED-SINGLETON-DEVICE");
+        Assert.Equal(secondLoop.LoopId, mergedProbe.LoopId);
+        Assert.NotEqual(firstLoop.LoopId, mergedProbe.LoopId);
+
+        store.SyncPeopleFromLoopUsers(
+            firstLoop.LoopId,
+            friendlyOne,
+            [new LoopUserSnapshot("person-one", "First Household", Type: "owner")]);
+        store.SyncPeopleFromLoopUsers(
+            secondLoop.LoopId,
+            friendlyTwo,
+            [new LoopUserSnapshot("person-two", "Second Household", Type: "owner")]);
+        integrations.UpsertMemberCalendarFeed(
+            firstLoop.LoopId,
+            "person-one",
+            "https://calendar.example.com/one.ics",
+            true);
+        integrations.UpsertMemberCalendarFeed(
+            secondLoop.LoopId,
+            "person-two",
+            "https://calendar.example.com/two.ics",
+            true);
+
+        var firstClient = factory.CreateClient();
+        var secondClient = factory.CreateClient();
+        Assert.False(string.IsNullOrWhiteSpace(friendlyOne));
+        Assert.False(string.IsNullOrWhiteSpace(deviceOne));
+        Assert.False(string.IsNullOrWhiteSpace(friendlyTwo));
+        Assert.False(string.IsNullOrWhiteSpace(deviceTwo));
+        await AuthorizeViaResolverAsync(firstClient, verificationService, friendlyOne!, deviceOne!);
+        await AuthorizeViaResolverAsync(secondClient, verificationService, friendlyTwo!, deviceTwo!);
+
+        var firstFeeds = await (await firstClient.GetAsync("/api/portal/calendar-feeds")).Content.ReadAsStringAsync();
+        var secondFeeds = await (await secondClient.GetAsync("/api/portal/calendar-feeds")).Content.ReadAsStringAsync();
+        Assert.Contains("First Household", firstFeeds, StringComparison.Ordinal);
+        Assert.DoesNotContain("Second Household", firstFeeds, StringComparison.Ordinal);
+        Assert.Contains("Second Household", secondFeeds, StringComparison.Ordinal);
+        Assert.DoesNotContain("First Household", secondFeeds, StringComparison.Ordinal);
+
+        var firstDashboard =
+            await (await firstClient.GetAsync("/api/portal/dashboard")).Content.ReadFromJsonAsync<JsonElement>();
+        var secondDashboard =
+            await (await secondClient.GetAsync("/api/portal/dashboard")).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Jibo-One", firstDashboard.GetProperty("jiboFriendlyId").GetString());
+        Assert.Equal("Jibo-Two", secondDashboard.GetProperty("jiboFriendlyId").GetString());
+        Assert.Contains("First Household", firstDashboard.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("Second Household", firstDashboard.ToString(), StringComparison.Ordinal);
+        Assert.Contains("Second Household", secondDashboard.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("First Household", secondDashboard.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task CalendarFeeds_RequiresPortalSession()
     {
         await using var factory = CreateFactory();
@@ -206,6 +289,15 @@ public sealed class PortalCalendarFeedApiTests
         string deviceId = "BOJW-1000-0017-0820-0020")
     {
         var verificationService = factory.Services.GetRequiredService<JiboVerificationService>();
+        await AuthorizeViaResolverAsync(client, verificationService, friendlyId, deviceId);
+    }
+
+    private static async Task AuthorizeViaResolverAsync(
+        HttpClient client,
+        JiboVerificationService verificationService,
+        string friendlyId,
+        string deviceId)
+    {
         var spokenCode = verificationService.IssueCodeForDevice(friendlyId, deviceId);
         var confirmPayload = await (await client.PostAsJsonAsync(
             "/api/portal/jibo-verification/confirm",

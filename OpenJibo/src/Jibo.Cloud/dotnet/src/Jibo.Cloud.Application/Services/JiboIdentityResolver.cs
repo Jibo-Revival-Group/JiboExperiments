@@ -7,33 +7,27 @@ public static class JiboIdentityResolver
 {
     public static (string? DeviceId, string? FriendlyId) Resolve(TurnContext turn, ICloudStateStore cloudStateStore)
     {
-        var robot = cloudStateStore.GetRobot();
         var sessionDeviceId = turn.DeviceId?.Trim();
-
-        var deviceId = robot.DeviceId;
-        var friendlyId = robot.RobotId;
 
         if (!string.IsNullOrWhiteSpace(sessionDeviceId))
         {
             var registered = cloudStateStore.FindDeviceByFriendlyId(sessionDeviceId);
             if (registered is not null)
             {
-                deviceId = registered.DeviceId;
-                friendlyId = registered.RobotId;
+                var friendly = string.IsNullOrWhiteSpace(registered.RobotId)
+                    ? registered.DeviceId
+                    : registered.RobotId;
+                return (registered.DeviceId, friendly);
             }
-            else if (sessionDeviceId.Contains('-', StringComparison.Ordinal))
-            {
-                friendlyId = sessionDeviceId;
-            }
-            else
-            {
-                deviceId = sessionDeviceId;
-            }
+
+            // Unregistered turn identity is the robot key. Never inherit GetRobot().DeviceId —
+            // that singleton collapses every unregistered hyphenated id onto one shared device.
+            return (sessionDeviceId, sessionDeviceId);
         }
 
-        if (string.IsNullOrWhiteSpace(friendlyId))
-            friendlyId = deviceId;
-
+        var robot = cloudStateStore.GetRobot();
+        var deviceId = robot.DeviceId;
+        var friendlyId = string.IsNullOrWhiteSpace(robot.RobotId) ? deviceId : robot.RobotId;
         return (deviceId, friendlyId);
     }
 }

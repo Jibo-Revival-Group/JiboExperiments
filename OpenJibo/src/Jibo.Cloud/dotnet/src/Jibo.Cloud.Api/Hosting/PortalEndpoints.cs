@@ -293,7 +293,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var link = integrationStore.FindLinkForJibo(session.DeviceId, session.FriendlyId);
+            var link = integrationStore.FindLinkForJibo(session.FriendlyId, session.FriendlyId);
             return Results.Json(BuildDashboardPayload(session, link, registry, cloudStateStore, integrationStore));
         });
 
@@ -567,7 +567,7 @@ internal static class PortalEndpoints
                     { error = "Home Assistant verification code is invalid or has expired." });
 
             var link = integrationStore.AddHomeAssistantLink(
-                session.DeviceId,
+                session.FriendlyId,
                 session.FriendlyId,
                 pendingHa.InstanceId);
 
@@ -598,7 +598,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var link = integrationStore.FindLinkForJibo(session.DeviceId, session.FriendlyId);
+            var link = integrationStore.FindLinkForJibo(session.FriendlyId, session.FriendlyId);
             if (link is null)
                 return Results.NotFound(new { error = "No Home Assistant link exists for this Jibo." });
 
@@ -634,7 +634,7 @@ internal static class PortalEndpoints
             var updates = cloudStateStore.ListUpdates();
             var media = cloudStateStore.ListMedia([loopId]);
             var people = graph.People;
-            var haLink = integrationStore.FindLinkForJibo(session.DeviceId, session.FriendlyId);
+            var haLink = integrationStore.FindLinkForJibo(session.FriendlyId, session.FriendlyId);
             var robotKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 { session.DeviceId, session.FriendlyId };
             var trustedServerAdmissions = cloudStateStore.GetTrustedServerAdmissions()
@@ -736,7 +736,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var link = integrationStore.FindLinkForJibo(session.DeviceId, session.FriendlyId);
+            var link = integrationStore.FindLinkForJibo(session.FriendlyId, session.FriendlyId);
             return Results.Json(new
             {
                 links = link is null
@@ -801,22 +801,46 @@ internal static class PortalEndpoints
     private static void RegisterVerifiedRobotIdentity(ICloudStateStore cloudStateStore, string deviceId,
         string friendlyId)
     {
-        var existing = cloudStateStore.FindDeviceByFriendlyId(deviceId) ??
-                       cloudStateStore.FindDeviceByFriendlyId(friendlyId);
-        var defaults = existing ?? cloudStateStore.GetRobot();
+        var resolvedFriendlyId = !string.IsNullOrWhiteSpace(friendlyId)
+            ? friendlyId.Trim()
+            : deviceId.Trim();
+        if (string.IsNullOrWhiteSpace(resolvedFriendlyId))
+            return;
+
+        var existing = cloudStateStore.FindDeviceByFriendlyId(resolvedFriendlyId);
+        var singleton = cloudStateStore.GetRobot();
+        var candidateDeviceId = string.IsNullOrWhiteSpace(deviceId) ? resolvedFriendlyId : deviceId.Trim();
+
+        // Never key a different robot's registration by the process-wide singleton DeviceId.
+        var isSharedSingletonDeviceId =
+            !string.IsNullOrWhiteSpace(singleton.DeviceId) &&
+            candidateDeviceId.Equals(singleton.DeviceId, StringComparison.OrdinalIgnoreCase) &&
+            !resolvedFriendlyId.Equals(singleton.RobotId, StringComparison.OrdinalIgnoreCase);
+
+        var resolvedDeviceId = existing?.DeviceId
+            ?? (isSharedSingletonDeviceId ? resolvedFriendlyId : candidateDeviceId);
+
+        var conflict = cloudStateStore.FindDeviceByFriendlyId(resolvedDeviceId);
+        if (conflict is not null &&
+            !conflict.RobotId.Equals(resolvedFriendlyId, StringComparison.OrdinalIgnoreCase) &&
+            !conflict.DeviceId.Equals(resolvedFriendlyId, StringComparison.OrdinalIgnoreCase))
+            resolvedDeviceId = resolvedFriendlyId;
+
         cloudStateStore.UpsertDevice(new DeviceRegistration
         {
-            DeviceId = deviceId,
-            RobotId = friendlyId,
-            FriendlyName = defaults.FriendlyName,
-            FirmwareVersion = defaults.FirmwareVersion,
-            ApplicationVersion = defaults.ApplicationVersion,
-            IsActive = defaults.IsActive,
-            CertificateThumbprint = defaults.CertificateThumbprint,
-            IssuedIdentityId = defaults.IssuedIdentityId,
-            BuildHash = defaults.BuildHash,
-            ConfigHash = defaults.ConfigHash,
-            HostMappings = new Dictionary<string, string>(defaults.HostMappings, StringComparer.OrdinalIgnoreCase)
+            DeviceId = resolvedDeviceId,
+            RobotId = resolvedFriendlyId,
+            FriendlyName = existing?.FriendlyName ?? resolvedFriendlyId,
+            FirmwareVersion = existing?.FirmwareVersion,
+            ApplicationVersion = existing?.ApplicationVersion,
+            IsActive = existing?.IsActive ?? true,
+            CertificateThumbprint = existing?.CertificateThumbprint,
+            IssuedIdentityId = existing?.IssuedIdentityId,
+            BuildHash = existing?.BuildHash,
+            ConfigHash = existing?.ConfigHash,
+            HostMappings = existing is null
+                ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, string>(existing.HostMappings, StringComparer.OrdinalIgnoreCase)
         });
     }
 
@@ -927,15 +951,26 @@ internal static class PortalEndpoints
         string loopId)
     {
         var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(session.FriendlyId)) keys.Add(session.FriendlyId.Trim());
-        if (!string.IsNullOrWhiteSpace(session.DeviceId)) keys.Add(session.DeviceId.Trim());
+        if (!string.IsNullOrWhiteSpace(session.FriendlyId))
+            keys.Add(session.FriendlyId.Trim());
+
+        // Only include DeviceId when it is the same robot key (friendlyId). A shared singleton
+        // serial must not widen the key set and pull another Jibo's people into this portal.
+        if (!string.IsNullOrWhiteSpace(session.DeviceId) &&
+            (string.IsNullOrWhiteSpace(session.FriendlyId) ||
+             session.DeviceId.Equals(session.FriendlyId, StringComparison.OrdinalIgnoreCase)))
+            keys.Add(session.DeviceId.Trim());
 
         var loop = cloudStateStore.GetLoops()
             .FirstOrDefault(item => item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
         if (loop is not null)
         {
-            if (!string.IsNullOrWhiteSpace(loop.RobotId)) keys.Add(loop.RobotId.Trim());
-            if (!string.IsNullOrWhiteSpace(loop.RobotFriendlyId)) keys.Add(loop.RobotFriendlyId.Trim());
+            if (!string.IsNullOrWhiteSpace(loop.RobotId) &&
+                (keys.Count == 0 || keys.Contains(loop.RobotId)))
+                keys.Add(loop.RobotId.Trim());
+            if (!string.IsNullOrWhiteSpace(loop.RobotFriendlyId) &&
+                (keys.Count == 0 || keys.Contains(loop.RobotFriendlyId)))
+                keys.Add(loop.RobotFriendlyId.Trim());
         }
 
         return keys;
@@ -985,11 +1020,10 @@ internal static class PortalEndpoints
         ICloudStateStore cloudStateStore,
         PortalSessionService.PortalSession session)
     {
-        var loop = cloudStateStore.AddLoop(
-            null,
-            null,
-            session.FriendlyId,
-            session.DeviceId);
+        // One loop per friendlyId (Pegasus robotID). Do not pass DeviceId — a shared serial
+        // singleton would OR-match and merge households.
+        var friendlyId = session.FriendlyId;
+        var loop = cloudStateStore.AddLoop(null, null, friendlyId, friendlyId);
         return loop.LoopId;
     }
 

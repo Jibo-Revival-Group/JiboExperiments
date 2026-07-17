@@ -198,7 +198,11 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("api.openjibo.com",
             payload.RootElement.GetProperty("hostMappings").GetProperty("api-socket.jibo.com").GetString());
         Assert.Equal("api.openjibo.com",
+            payload.RootElement.GetProperty("hostMappings").GetProperty("open-jibo-socket.openjibo.com").GetString());
+        Assert.Equal("api.openjibo.com",
             payload.RootElement.GetProperty("hostMappings").GetProperty("neo-hub.jibo.com").GetString());
+        Assert.Equal("api.openjibo.com",
+            payload.RootElement.GetProperty("hostMappings").GetProperty("neohub.openjibo.com").GetString());
     }
 
 
@@ -424,7 +428,9 @@ public sealed class JiboCloudProtocolServiceTests
         var hostMappings = statusPayload.RootElement.GetProperty("hostMappings");
         Assert.Equal("api.openjibo.com", hostMappings.GetProperty("api.jibo.com").GetString());
         Assert.Equal("api.openjibo.com", hostMappings.GetProperty("api-socket.jibo.com").GetString());
+        Assert.Equal("api.openjibo.com", hostMappings.GetProperty("open-jibo-socket.openjibo.com").GetString());
         Assert.Equal("api.openjibo.com", hostMappings.GetProperty("neo-hub.jibo.com").GetString());
+        Assert.Equal("api.openjibo.com", hostMappings.GetProperty("neohub.openjibo.com").GetString());
     }
 
     [Fact]
@@ -808,6 +814,12 @@ public sealed class JiboCloudProtocolServiceTests
             blocker => blocker.GetString() == "incomplete-reported-host-mappings");
         Assert.Contains(proofPayload.RootElement.GetProperty("reportedHostMappingCompleteness").GetProperty("missingHosts").EnumerateArray(),
             host => host.GetString() == "api-socket.jibo.com");
+        Assert.Contains(proofPayload.RootElement.GetProperty("reportedHostMappingCompleteness").GetProperty("missingHosts").EnumerateArray(),
+            host => host.GetString() == "open-jibo-socket.openjibo.com");
+        Assert.Contains(proofPayload.RootElement.GetProperty("reportedHostMappingCompleteness").GetProperty("missingHosts").EnumerateArray(),
+            host => host.GetString() == "neo-hub.jibo.com");
+        Assert.Contains(proofPayload.RootElement.GetProperty("reportedHostMappingCompleteness").GetProperty("missingHosts").EnumerateArray(),
+            host => host.GetString() == "neohub.openjibo.com");
     }
 
 
@@ -845,7 +857,7 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "OOBE_20160715",
             Operation = "VerifyConnection",
-            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"requireFreshConnectionProof":true,"reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"requireFreshConnectionProof":true,"reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","open-jibo-socket.openjibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa","neohub.openjibo.com":"jibo.expected.home.arpa"}}"""
         });
 
         using var proofPayload = JsonDocument.Parse(proof.BodyText);
@@ -891,7 +903,7 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "OOBE_20160715",
             Operation = "VerifyConnection",
-            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"requireFreshConnectionProof":true,"connectionProofObservedAt":"{{{observedAt}}}","connectionProofSource":"robot-conversion-harness","connectionProofId":"capture-42","reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"requireFreshConnectionProof":true,"connectionProofObservedAt":"{{{observedAt}}}","connectionProofSource":"robot-conversion-harness","connectionProofId":"capture-42","reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","open-jibo-socket.openjibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa","neohub.openjibo.com":"jibo.expected.home.arpa"}}"""
         });
 
         using var proofPayload = JsonDocument.Parse(proof.BodyText);
@@ -944,7 +956,7 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "OOBE_20160715",
             Operation = "VerifyConnection",
-            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"requireFreshConnectionProof":true,"connectionProofMaxAgeSeconds":60,"connectionProofObservedAt":"{{{observedAt}}}","reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+            BodyText = $$$"""{"token":"{{{token}}}","requireLiveRobotProof":true,"requireFreshConnectionProof":true,"connectionProofMaxAgeSeconds":60,"connectionProofObservedAt":"{{{observedAt}}}","reportedConnectionHost":"jibo.expected.home.arpa","reportedHostMappings":{"api.jibo.com":"jibo.expected.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","open-jibo-socket.openjibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa","neohub.openjibo.com":"jibo.expected.home.arpa"}}"""
         });
 
         using var proofPayload = JsonDocument.Parse(proof.BodyText);
@@ -993,7 +1005,7 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "OOBE_20160715",
             Operation = "VerifyConnection",
-            BodyText = $$$"""{"token":"{{{token}}}","reportedHostMappings":{"api.jibo.com":"https://jibo.expected.home.arpa:443","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+            BodyText = $$$"""{"token":"{{{token}}}","reportedHostMappings":{"api.jibo.com":"https://jibo.expected.home.arpa:443","api-socket.jibo.com":"jibo.expected.home.arpa","open-jibo-socket.openjibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa","neohub.openjibo.com":"jibo.expected.home.arpa"}}"""
         });
 
         using var proofPayload = JsonDocument.Parse(proof.BodyText);
@@ -1038,7 +1050,7 @@ public sealed class JiboCloudProtocolServiceTests
             Method = "POST",
             ServicePrefix = "OOBE_20160715",
             Operation = "VerifyConnection",
-            BodyText = $$$"""{"token":"{{{token}}}","reportedDnsMappings":{"api.jibo.com":"wrong.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa"}}"""
+            BodyText = $$$"""{"token":"{{{token}}}","reportedDnsMappings":{"api.jibo.com":"wrong.home.arpa","api-socket.jibo.com":"jibo.expected.home.arpa","open-jibo-socket.openjibo.com":"jibo.expected.home.arpa","neo-hub.jibo.com":"jibo.expected.home.arpa","neohub.openjibo.com":"jibo.expected.home.arpa"}}"""
         });
 
         using var proofPayload = JsonDocument.Parse(proof.BodyText);

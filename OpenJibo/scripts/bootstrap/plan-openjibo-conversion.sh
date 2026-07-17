@@ -80,6 +80,16 @@ const hubHostname = (process.argv[5] || "").trim() || apiHostname;
 const outputPath = (process.argv[6] || "").trim();
 const strict = String(process.argv[7]).toLowerCase() === "true";
 
+function ensureDir(dirPath) {
+  if (!dirPath || fs.existsSync(dirPath)) return;
+  ensureDir(path.dirname(dirPath));
+  try {
+    fs.mkdirSync(dirPath);
+  } catch (error) {
+    if (!fs.existsSync(dirPath)) throw error;
+  }
+}
+
 const audit = JSON.parse(fs.readFileSync(auditPath, "utf8"));
 const recommendations = (audit.Recommendations || []).filter(item => String(item).trim().length > 0);
 const requiresAttention = recommendations.length > 0;
@@ -196,7 +206,7 @@ if (strict && !canApply) {
 const json = JSON.stringify(plan, null, 2);
 if (outputPath) {
   const resolvedOutput = path.resolve(outputPath);
-  fs.mkdirSync(path.dirname(resolvedOutput), { recursive: true });
+  ensureDir(path.dirname(resolvedOutput));
   fs.writeFileSync(resolvedOutput, json);
   console.log(`Saved conversion plan to ${resolvedOutput}`);
 } else {

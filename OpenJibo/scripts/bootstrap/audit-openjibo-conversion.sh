@@ -69,6 +69,16 @@ function resolveCandidate(relativePaths) {
   return null;
 }
 
+function ensureDir(dirPath) {
+  if (!dirPath || fs.existsSync(dirPath)) return;
+  ensureDir(path.dirname(dirPath));
+  try {
+    fs.mkdirSync(dirPath);
+  } catch (error) {
+    if (!fs.existsSync(dirPath)) throw error;
+  }
+}
+
 const jetstreamPath = resolveCandidate([
   "etc/jibo-jetstream-service.json",
   "usr/local/etc/jibo-jetstream-service.json",
@@ -188,7 +198,7 @@ if (strict && !audit.CanProceed) {
 const json = JSON.stringify(audit, null, 2);
 if (outputPath) {
   const resolvedOutput = path.resolve(outputPath);
-  fs.mkdirSync(path.dirname(resolvedOutput), { recursive: true });
+  ensureDir(path.dirname(resolvedOutput));
   fs.writeFileSync(resolvedOutput, json);
   console.log(`Saved conversion audit to ${resolvedOutput}`);
 } else {

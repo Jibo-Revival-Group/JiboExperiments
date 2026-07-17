@@ -81,6 +81,16 @@ const hubHostname = (process.argv[6] || "").trim() || apiHostname;
 const outputPath = (process.argv[7] || "").trim();
 const strict = String(process.argv[8]).toLowerCase() === "true";
 
+function ensureDir(dirPath) {
+  if (!dirPath || fs.existsSync(dirPath)) return;
+  ensureDir(path.dirname(dirPath));
+  try {
+    fs.mkdirSync(dirPath);
+  } catch (error) {
+    if (!fs.existsSync(dirPath)) throw error;
+  }
+}
+
 if (!fs.existsSync(planPath)) {
   throw new Error(`Plan file not found at ${planPath}`);
 }
@@ -112,7 +122,7 @@ function backupFile(filePath) {
   if (!filePath || !fs.existsSync(filePath)) return null;
   const relative = path.relative(robotRoot, filePath);
   const backupPath = path.resolve(backupRoot, relative);
-  fs.mkdirSync(path.dirname(backupPath), { recursive: true });
+  ensureDir(path.dirname(backupPath));
   fs.copyFileSync(filePath, backupPath);
   return backupPath;
 }
@@ -122,7 +132,7 @@ function readJson(filePath) {
 }
 
 function writeJson(filePath, value) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  ensureDir(path.dirname(filePath));
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
 }
 

@@ -511,12 +511,12 @@ public sealed class JiboCloudProtocolService(
         "expired-prepared-oobe-token" => "Prepare a fresh OOBE token, then rerun SetupRobot before verifying the connection.",
         "setup-incomplete" => "Complete SetupRobot or ReconnectRobot with the prepared token before using VerifyConnection as release proof.",
         "robot-inactive" => "Register or reactivate the robot identity before relying on stored cloud state for connection proof.",
-        "host-mapping-mismatch" => "Rerun setup with the intended target mode/host so stored api.jibo.com, api-socket.jibo.com, and neo-hub.jibo.com mappings match the proof target.",
+        "host-mapping-mismatch" => "Rerun setup with the intended target mode/host so stored api.jibo.com, api-socket.jibo.com, open-jibo-socket.openjibo.com, and neohub.openjibo.com mappings match the proof target.",
         "missing-reported-connection-host" => "Have the physical robot or conversion helper report the host it actually reached with reportedConnectionHost/connectedHost/currentHost.",
-        "missing-reported-host-mappings" => "Have the physical robot or conversion helper report resolved legacy host mappings for api.jibo.com, api-socket.jibo.com, and neo-hub.jibo.com.",
-        "incomplete-reported-host-mappings" => "Include all required legacy host mappings in reportedHostMappings, reportedDnsMappings, or resolvedHostMappings.",
+        "missing-reported-host-mappings" => "Have the physical robot or conversion helper report resolved host mappings for api.jibo.com, api-socket.jibo.com, open-jibo-socket.openjibo.com, neo-hub.jibo.com, and neohub.openjibo.com.",
+        "incomplete-reported-host-mappings" => "Include all required host mappings in reportedHostMappings, reportedDnsMappings, or resolvedHostMappings.",
         "reported-connection-host-mismatch" => "Check DNS/TLS retargeting: the robot-reported connected host does not match the selected Open Jibo target host.",
-        "reported-host-mapping-mismatch" => "Check DNS/static host rewrites: at least one robot-reported legacy host mapping points away from the selected Open Jibo target host.",
+        "reported-host-mapping-mismatch" => "Check DNS/static host rewrites: at least one robot-reported host mapping points away from the selected Open Jibo target host.",
         "missing-proof-observed-at" => "Include connectionProofObservedAt from the live robot capture when the gate requires fresh proof.",
         "stale-proof-observed-at" => "Capture a new live robot proof; fresh proof must be recent enough for the release/video gate.",
         _ => "Review the connection proof payload and conversion readiness details."
@@ -821,7 +821,9 @@ public sealed class JiboCloudProtocolService(
         {
             ["api.jibo.com"] = resolvedHost,
             ["api-socket.jibo.com"] = resolvedHost,
-            ["neo-hub.jibo.com"] = resolvedHost
+            ["open-jibo-socket.openjibo.com"] = resolvedHost,
+            ["neo-hub.jibo.com"] = resolvedHost,
+            ["neohub.openjibo.com"] = resolvedHost
         };
     }
 

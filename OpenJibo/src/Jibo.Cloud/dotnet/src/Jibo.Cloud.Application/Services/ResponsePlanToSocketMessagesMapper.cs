@@ -720,15 +720,22 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (weatherHiLoView is null && weeklyWeatherCards.Count > 0) weatherHiLoView = weeklyWeatherCards[0].View;
 
         var useSequence = false;
+        var cloudSkillName = ReadPayloadString(skillPayload, "cloudSkill");
         var isPersonalReport = string.Equals(
-            ReadPayloadString(skillPayload, "cloudSkill"),
+            cloudSkillName,
             "personal_report",
             StringComparison.OrdinalIgnoreCase);
+        var isNewsSkill = string.Equals(cloudSkillName, "news", StringComparison.OrdinalIgnoreCase);
         var personalReportSections = skillPayload is not null &&
                                      skillPayload.TryGetValue("personal_report_sections", out var sectionsRaw)
             ? ReadPayloadObjectArray(sectionsRaw!)
             : [];
+        var newsSections = skillPayload is not null &&
+                           skillPayload.TryGetValue("news_sections", out var newsSectionsRaw)
+            ? ReadPayloadObjectArray(newsSectionsRaw!)
+            : [];
         var usePersonalReportSequence = isPersonalReport && personalReportSections.Length > 1;
+        var useNewsSequence = isNewsSkill && newsSections.Length > 1;
 
         if (weatherHiLoView is not null)
         {
@@ -806,6 +813,18 @@ public sealed class ResponsePlanToSocketMessagesMapper
             useSequence = true;
             jcpConfig["children"] = BuildPersonalReportSequenceChildren(
                 personalReportSections,
+                null,
+                "cloudy",
+                promptSubCategory,
+                mimId,
+                mimType);
+        }
+        else if (useNewsSequence)
+        {
+            // Standalone news: Intro + one Headline SLIM per story (Pegasus NewsMimLogic order).
+            useSequence = true;
+            jcpConfig["children"] = BuildPersonalReportSequenceChildren(
+                newsSections,
                 null,
                 "cloudy",
                 promptSubCategory,
@@ -1195,8 +1214,13 @@ public sealed class ResponsePlanToSocketMessagesMapper
             var promptLabel = Regex.Replace(kind, "[^A-Za-z0-9]", string.Empty, RegexOptions.CultureInvariant);
             if (string.IsNullOrWhiteSpace(promptLabel)) promptLabel = $"Section{index + 1}";
 
+            // Pegasus NewsHeadline / commute MIMs use a longer post-anim break than 0.35.
+            var animBreak = string.Equals(animCat, "news", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(animCat, "commute", StringComparison.OrdinalIgnoreCase)
+                ? "0.75"
+                : "0.35";
             var esml = !string.IsNullOrWhiteSpace(animCat) && !string.IsNullOrWhiteSpace(animMeta)
-                ? $"<speak><anim cat='{EscapeXml(animCat)}' meta='{EscapeXml(animMeta)}' nonBlocking='true' /><break size='0.35'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(text)}</es></speak>"
+                ? $"<speak><anim cat='{EscapeXml(animCat)}' meta='{EscapeXml(animMeta)}' nonBlocking='true' /><break size='{animBreak}'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(text)}</es></speak>"
                 : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(text)}</es></speak>";
 
             var config = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -1215,44 +1239,31 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 ["barge_in"] = true
             };
 
+            var isCommuteSection = string.Equals(kind, "commute", StringComparison.OrdinalIgnoreCase);
+            var isCalendarSection = string.Equals(kind, "calendar", StringComparison.OrdinalIgnoreCase);
+            var isNewsSection = kind.StartsWith("news", StringComparison.OrdinalIgnoreCase);
+            var shouldHoldSection = isWeatherSection ||
+                                    isCommuteSection ||
+                                    isCalendarSection ||
+                                    isNewsSection ||
+                                    TryReadPayloadInt(section, "hold_timeout") is > 0;
+
             if (isWeatherSection && weatherHiLoView is not null)
             {
-                var resolvedGuiContext = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["type"] = "Javascript",
-                    ["data"] = weatherHiLoView,
-                    ["pause"] = true
-                };
-                config["gui"] = new
-                {
-                    type = "Javascript",
-                    data = "views.weatherHiLo",
-                    pause = true
-                };
-                config["display"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["view"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        ["type"] = "Javascript",
-                        ["data"] = weatherHiLoView,
-                        ["pause"] = true,
-                        ["context"] = resolvedGuiContext
-                    }
-                };
-                config["timeout"] = 6;
+                AttachPausedGuiView(config, "weatherHiLo", weatherHiLoView);
+            }
+            else if (isCalendarSection)
+            {
+                var calendarView = BuildCalendarEventsView(section);
+                if (calendarView is not null)
+                    AttachPausedGuiView(config, "calendarEvents", calendarView);
+            }
+
+            if (shouldHoldSection)
+            {
+                config["timeout"] = TryReadPayloadInt(section, "hold_timeout") ?? 6;
                 config["no_matches_for_gui"] = 0;
                 config["no_inputs_for_gui"] = 0;
-                config["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["weatherHiLo"] = weatherHiLoView
-                };
-                config["local"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        ["weatherHiLo"] = weatherHiLoView
-                    }
-                };
             }
 
             children.Add(new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -1263,6 +1274,164 @@ public sealed class ResponsePlanToSocketMessagesMapper
         }
 
         return children;
+    }
+
+    private static void AttachPausedGuiView(
+        IDictionary<string, object?> config,
+        string viewName,
+        object view)
+    {
+        var resolvedGuiContext = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = "Javascript",
+            ["data"] = view,
+            ["pause"] = true
+        };
+        config["gui"] = new
+        {
+            type = "Javascript",
+            data = $"views.{viewName}",
+            pause = true
+        };
+        config["display"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["view"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["type"] = "Javascript",
+                ["data"] = view,
+                ["pause"] = true,
+                ["context"] = resolvedGuiContext
+            }
+        };
+        config["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            [viewName] = view
+        };
+        config["local"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                [viewName] = view
+            }
+        };
+    }
+
+    private static object? BuildCalendarEventsView(IDictionary<string, object?> section)
+    {
+        if (!TryReadPayloadBool(section, "calendar_view_enabled") &&
+            string.IsNullOrWhiteSpace(ReadPayloadString(section, "calendar_event_summary")))
+            return null;
+
+        var summary = ReadPayloadString(section, "calendar_event_summary");
+        if (string.IsNullOrWhiteSpace(summary)) return null;
+
+        var timeLabel = ReadPayloadString(section, "calendar_event_time_label") ?? string.Empty;
+        var amPmLabel = ReadPayloadString(section, "calendar_event_ampm") ?? string.Empty;
+        var theme = ReadPayloadString(section, "calendar_event_theme") ?? "Afternoon";
+
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["viewConfig"] = new
+            {
+                type = "View",
+                id = "eventView",
+                category = "gui"
+            },
+            ["open"] = new
+            {
+                transitionOpen = "trans_in",
+                removeAll = true
+            },
+            ["defaultSelect"] = new
+            {
+                transitionClose = "trans_out",
+                removeAll = true,
+                leaveEmpty = false
+            },
+            ["componentConfigs"] = new object[]
+            {
+                new
+                {
+                    id = "cardClip",
+                    type = "Clip",
+                    assets = new object[]
+                    {
+                        new
+                        {
+                            id = "eventCard",
+                            src = $"assets/personal-report-skill/calendar/cards/event{theme}_v01.crn",
+                            type = "texture"
+                        }
+                    },
+                    position = new { x = 140, y = 110 }
+                },
+                new
+                {
+                    id = "iconClip",
+                    type = "Clip",
+                    assets = new object[]
+                    {
+                        new
+                        {
+                            id = "eventIcon",
+                            src = "assets/personal-report-skill/calendar/icons/generic_v01.crn",
+                            type = "texture"
+                        }
+                    },
+                    position = new { x = 534, y = 0 }
+                },
+                new
+                {
+                    id = "timeLabel",
+                    type = "Label",
+                    text = timeLabel,
+                    style = new
+                    {
+                        fontSize = "160",
+                        fontFamily = "Proxima Nova Soft",
+                        fontWeight = "bold",
+                        fill = "#FFFFFF"
+                    },
+                    position = new { x = 618, y = 684 },
+                    targetAnchor = new { x = 1, y = 1 }
+                },
+                new
+                {
+                    id = "ampmLabel",
+                    type = "Label",
+                    text = amPmLabel,
+                    style = new
+                    {
+                        fontSize = "90",
+                        fontFamily = "Proxima Nova Soft",
+                        fontWeight = "bold",
+                        fill = "#FFFFFF"
+                    },
+                    position = new { x = 620, y = 670 },
+                    targetAnchor = new { x = 0, y = 1 }
+                },
+                new
+                {
+                    id = "eventSummary",
+                    type = "Label",
+                    text = summary,
+                    style = new
+                    {
+                        fontSize = "90",
+                        fontFamily = "Proxima Nova Light",
+                        fill = "#FFFFFF",
+                        align = "center",
+                        leading = -10,
+                        letterSpacing = 0,
+                        wordWrap = true,
+                        breakWords = true,
+                        wordWrapWidth = 800
+                    },
+                    position = new { x = 640, y = 330 },
+                    targetAnchor = new { x = 0.5, y = 0.5 }
+                }
+            }
+        };
     }
 
     private static IReadOnlyList<object> BuildWeatherHiLoSequenceChildren(

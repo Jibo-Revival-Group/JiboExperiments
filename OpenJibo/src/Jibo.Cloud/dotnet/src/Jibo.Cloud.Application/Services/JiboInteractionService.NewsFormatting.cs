@@ -20,9 +20,13 @@ public sealed partial class JiboInteractionService
         IReadOnlyList<string>? categories,
         int? headlineCount,
         IReadOnlyDictionary<string, object?>? providerDiagnostics = null,
-        IReadOnlyList<NewsHeadline>? headlines = null)
+        IReadOnlyList<NewsHeadline>? headlines = null,
+        IReadOnlyList<IDictionary<string, object?>>? newsSections = null)
     {
         var speakableBriefing = NormalizeNewsSpeechText(spokenBriefing);
+        var resolvedSections = newsSections is { Count: > 0 }
+            ? newsSections
+            : BuildFallbackNewsSections(speakableBriefing);
         var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["skillId"] = "news",
@@ -34,8 +38,9 @@ public sealed partial class JiboInteractionService
             ["news_view_enabled"] = true,
             ["news_view_kind"] = "newsBriefing",
             ["news_view_mode"] = "provider",
+            ["news_sections"] = resolvedSections,
             ["esml"] =
-                $"<speak><anim cat='news' meta='news-stinger' nonBlocking='true' /><break size='0.35'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(speakableBriefing)}</es></speak>"
+                $"<speak><anim cat='news' meta='news-stinger' nonBlocking='true' /><break size='0.75'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(speakableBriefing)}</es></speak>"
         };
 
         if (!string.IsNullOrWhiteSpace(sourceName)) payload["news_source"] = sourceName;
@@ -94,10 +99,13 @@ public sealed partial class JiboInteractionService
 
         var leadIn = BuildNewsLeadIn(snapshot.SourceName, preferredCategories);
         var joinedHeadlines = string.Join(" ", headlines.Select(static headline => $"{headline.Title}."));
-        var spokenBriefing = includeOutro
-            ? $"{leadIn} {joinedHeadlines} {ChooseShortestTemplate(catalog.NewsOutroReplies) ?? "And that's the news."}"
-                .Trim()
-            : $"{leadIn} {joinedHeadlines}".Trim();
+        var outro = includeOutro
+            ? ChooseShortestTemplate(catalog.NewsOutroReplies) ?? "And that's the news."
+            : null;
+        var spokenBriefing = string.IsNullOrWhiteSpace(outro)
+            ? $"{leadIn} {joinedHeadlines}".Trim()
+            : $"{leadIn} {joinedHeadlines} {outro}".Trim();
+        var newsSections = BuildProviderNewsSections(leadIn, headlines, outro);
         return BuildNewsDecision(
             spokenBriefing,
             snapshot.SourceName,
@@ -109,7 +117,67 @@ public sealed partial class JiboInteractionService
                 requestedHeadlineCount,
                 headlines.Length,
                 skippedHeadlineCount: filteredHeadlines.SkippedCount),
-            headlines);
+            headlines,
+            newsSections);
+    }
+
+    private static IReadOnlyList<IDictionary<string, object?>> BuildProviderNewsSections(
+        string leadIn,
+        IReadOnlyList<NewsHeadline> headlines,
+        string? outro)
+    {
+        var sections = new List<IDictionary<string, object?>>(headlines.Count + 2)
+        {
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["kind"] = "news_intro",
+                ["text"] = leadIn,
+                ["anim_cat"] = "news",
+                ["anim_meta"] = "news-intro, no-eye-end",
+                ["hold_timeout"] = 6
+            }
+        };
+
+        foreach (var headline in headlines)
+        {
+            var title = headline.Title.Trim();
+            var headlineText = title.EndsWith(".", StringComparison.Ordinal) ? title : $"{title}.";
+            sections.Add(new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["kind"] = "news_headline",
+                ["text"] = headlineText,
+                ["anim_cat"] = "news",
+                ["anim_meta"] = "news-stinger",
+                ["hold_timeout"] = 6
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(outro))
+            sections.Add(new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["kind"] = "news_outro",
+                ["text"] = outro.Trim(),
+                ["hold_timeout"] = 6
+            });
+
+        return sections;
+    }
+
+    private static IReadOnlyList<IDictionary<string, object?>> BuildFallbackNewsSections(string spokenBriefing)
+    {
+        if (string.IsNullOrWhiteSpace(spokenBriefing)) return [];
+
+        return
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["kind"] = "news",
+                ["text"] = spokenBriefing.Trim(),
+                ["anim_cat"] = "news",
+                ["anim_meta"] = "news-stinger",
+                ["hold_timeout"] = 6
+            }
+        ];
     }
 
     private static FilteredNewsHeadlines FilterNewsHeadlinesForJibo(IReadOnlyList<NewsHeadline> sourceHeadlines)

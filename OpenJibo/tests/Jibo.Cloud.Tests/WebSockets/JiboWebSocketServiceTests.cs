@@ -3409,18 +3409,27 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var speakPayload = JsonDocument.Parse(replies[2].Text!);
-        var esml = speakPayload.RootElement
+        var jcp = speakPayload.RootElement
             .GetProperty("data")
             .GetProperty("action")
             .GetProperty("config")
-            .GetProperty("jcp")
-            .GetProperty("config")
-            .GetProperty("play")
-            .GetProperty("esml")
-            .GetString();
+            .GetProperty("jcp");
+        Assert.Equal("SEQUENCE", jcp.GetProperty("type").GetString());
+        var children = jcp.GetProperty("children");
+        Assert.True(children.GetArrayLength() >= 3);
 
-        Assert.Contains("Robotics club opens a new community lab", esml, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Source: NewsAPI.", esml, StringComparison.OrdinalIgnoreCase);
+        var introEsml = children[0].GetProperty("config").GetProperty("play").GetProperty("esml").GetString();
+        Assert.Contains("news-intro", introEsml, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Here's today's news", introEsml, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(6, children[0].GetProperty("config").GetProperty("timeout").GetInt32());
+
+        var joinedChildren = string.Join(
+            ' ',
+            children.EnumerateArray()
+                .Select(child => child.GetProperty("config").GetProperty("play").GetProperty("esml").GetString()));
+        Assert.Contains("Robotics club opens a new community lab", joinedChildren, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("news-stinger", joinedChildren, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Source: NewsAPI.", joinedChildren, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -8716,14 +8725,27 @@ public sealed class JiboWebSocketServiceTests
                 Assert.Contains("weather", stripped, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain("news", stripped, StringComparison.OrdinalIgnoreCase);
             }
-            else
+            else if (childConfig.TryGetProperty("gui", out var nonWeatherGui))
             {
-                Assert.False(childConfig.TryGetProperty("gui", out _),
-                    "Only the weather section should carry the weather GUI.");
+                // Calendar event cards may attach views.calendarEvents; other sections stay GUI-free.
+                Assert.Equal("views.calendarEvents", nonWeatherGui.GetProperty("data").GetString());
             }
 
-            if (stripped.Contains("news", StringComparison.OrdinalIgnoreCase)) sawNews = true;
-            if (stripped.Contains("calendar", StringComparison.OrdinalIgnoreCase)) sawCalendar = true;
+            if (childEsml.Contains("news-stinger", StringComparison.OrdinalIgnoreCase) ||
+                childEsml.Contains("news-intro", StringComparison.OrdinalIgnoreCase) ||
+                stripped.Contains("news", StringComparison.OrdinalIgnoreCase))
+            {
+                sawNews = true;
+                Assert.True(childConfig.TryGetProperty("timeout", out var newsTimeout));
+                Assert.Equal(6, newsTimeout.GetInt32());
+            }
+
+            if (stripped.Contains("calendar", StringComparison.OrdinalIgnoreCase))
+            {
+                sawCalendar = true;
+                Assert.True(childConfig.TryGetProperty("timeout", out var calendarTimeout));
+                Assert.Equal(6, calendarTimeout.GetInt32());
+            }
             if (i == children.GetArrayLength() - 1 &&
                 (stripped.Contains("wraps up your report", StringComparison.OrdinalIgnoreCase) ||
                  stripped.Contains("that's your report", StringComparison.OrdinalIgnoreCase) ||

@@ -2946,6 +2946,15 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("Your calendar says get personal report from jibo, at 6:00 p.m.", decision.ReplyText,
             StringComparison.OrdinalIgnoreCase);
         Assert.Contains("calendar", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        var sections = Assert.IsAssignableFrom<IReadOnlyList<IDictionary<string, object?>>>(
+            decision.SkillPayload!["personal_report_sections"]);
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "calendar", StringComparison.OrdinalIgnoreCase) &&
+            Equals(section["hold_timeout"], 6) &&
+            Equals(section["calendar_view_enabled"], true) &&
+            section["calendar_event_summary"]?.ToString()?.Contains(
+                "get personal report from jibo",
+                StringComparison.OrdinalIgnoreCase) == true);
     }
 
     [Fact]
@@ -3004,7 +3013,11 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains(sections, static section =>
             string.Equals(section["kind"]?.ToString(), "commute", StringComparison.OrdinalIgnoreCase) &&
             string.Equals(section["anim_cat"]?.ToString(), "commute", StringComparison.OrdinalIgnoreCase) &&
-            section["text"]?.ToString()?.Contains("25", StringComparison.Ordinal) == true);
+            section["text"]?.ToString()?.Contains("25", StringComparison.Ordinal) == true &&
+            Equals(section["hold_timeout"], 6));
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "calendar", StringComparison.OrdinalIgnoreCase) &&
+            Equals(section["hold_timeout"], 6));
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal(true, decision.ContextUpdates![PersonalReportCommuteEnabledKey]);
     }
@@ -5888,6 +5901,15 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(2, decision.SkillPayload["news_provider_resolved_headlines"]);
         Assert.NotNull(decision.SkillPayload["news_headlines"]);
         Assert.IsType<Dictionary<string, object?>[]>(decision.SkillPayload["news_headlines"]);
+        var newsSections = Assert.IsAssignableFrom<IReadOnlyList<IDictionary<string, object?>>>(
+            decision.SkillPayload["news_sections"]);
+        Assert.Contains(newsSections, static section =>
+            string.Equals(section["kind"]?.ToString(), "news_intro", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(section["anim_meta"]?.ToString(), "news-intro, no-eye-end", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(newsSections, static section =>
+            string.Equals(section["kind"]?.ToString(), "news_headline", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(section["anim_meta"]?.ToString(), "news-stinger", StringComparison.OrdinalIgnoreCase) &&
+            section["text"]?.ToString()?.Contains("Local robotics team", StringComparison.OrdinalIgnoreCase) == true);
         Assert.Contains("Local robotics team unveils weather-ready helper", decision.ReplyText,
             StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(provider.LastRequest);

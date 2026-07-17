@@ -324,12 +324,28 @@ internal static partial class PersonalReportOrchestrator
 
         if (toggles.CalendarEnabled)
         {
-            var calendarReply = (await buildCalendarDecisionAsync(turn, cancellationToken)).ReplyText;
+            var calendarDecision = await buildCalendarDecisionAsync(turn, cancellationToken);
+            var calendarReply = calendarDecision.ReplyText;
             if (!string.IsNullOrWhiteSpace(calendarReply))
             {
                 // Full-report calendar never plays CalendarOutro (Pegasus single-skill only).
+                // Pegasus calendar MIMs have no body anim — hold with timeout (+ event GUI when available).
                 spokenSections.Add(calendarReply);
-                sequenceSections.Add(BuildReportSequenceSection("calendar", calendarReply));
+                var calendarSectionPayload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["hold_timeout"] = 6
+                };
+                if (calendarDecision.SkillPayload is not null)
+                    foreach (var (key, value) in calendarDecision.SkillPayload)
+                        if (!string.Equals(key, "esml", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(key, "skillId", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(key, "cloudSkill", StringComparison.OrdinalIgnoreCase))
+                            calendarSectionPayload[key] = value;
+
+                sequenceSections.Add(BuildReportSequenceSection(
+                    "calendar",
+                    calendarReply,
+                    extraPayload: calendarSectionPayload));
             }
         }
 
@@ -348,7 +364,11 @@ internal static partial class PersonalReportOrchestrator
                     "commute",
                     commuteReply.Trim(),
                     "commute",
-                    animMeta));
+                    animMeta,
+                    new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["hold_timeout"] = 6
+                    }));
             }
         }
 
@@ -432,11 +452,16 @@ internal static partial class PersonalReportOrchestrator
             // Pegasus: NewsIntro with news-intro anim, then one NewsHeadline MIM per story.
             var leadIn = "Here's today's news.";
             var spokenParts = new List<string> { leadIn };
+            var newsHold = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["hold_timeout"] = 6
+            };
             sequenceSections.Add(BuildReportSequenceSection(
                 "news_intro",
                 leadIn,
                 "news",
-                "news-intro, no-eye-end"));
+                "news-intro, no-eye-end",
+                newsHold));
 
             foreach (var title in headlineTitles)
             {
@@ -446,7 +471,8 @@ internal static partial class PersonalReportOrchestrator
                     "news_headline",
                     headlineText,
                     "news",
-                    "news-stinger"));
+                    "news-stinger",
+                    newsHold));
             }
 
             spokenNews = string.Join(" ", spokenParts);

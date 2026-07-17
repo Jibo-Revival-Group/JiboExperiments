@@ -213,7 +213,7 @@ public sealed partial class JiboInteractionService
             ["commute_extra_minutes"] = snapshot.ExtraMinutes,
             ["commute_mode"] = snapshot.Mode,
             ["esml"] =
-                $"<speak><anim cat='commute' meta='{ResolveCommuteAnimationMeta(snapshot)}' nonBlocking='true' /><break size='0.35'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(commuteReply)}</es></speak>"
+                $"<speak><anim cat='commute' meta='{ResolveCommuteAnimationMeta(snapshot)}' nonBlocking='true' /><break size='0.75'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(commuteReply)}</es></speak>"
         };
         return new JiboInteractionDecision(
             "commute",
@@ -231,7 +231,9 @@ public sealed partial class JiboInteractionService
         if (calendarReportProvider is null)
             return new JiboInteractionDecision(
                 "calendar",
-                ChooseCalendarServiceDownReply(catalog));
+                ChooseCalendarServiceDownReply(catalog),
+                "report-skill",
+                BuildCalendarSkillPayload(null));
 
         CalendarReportSnapshot? snapshot;
         try
@@ -246,11 +248,16 @@ public sealed partial class JiboInteractionService
         if (snapshot is null)
             return new JiboInteractionDecision(
                 "calendar",
-                ChooseCalendarServiceDownReply(catalog));
+                ChooseCalendarServiceDownReply(catalog),
+                "report-skill",
+                BuildCalendarSkillPayload(null));
 
+        var calendarReply = BuildCalendarSpokenReply(snapshot, catalog);
         return new JiboInteractionDecision(
             "calendar",
-            BuildCalendarSpokenReply(snapshot, catalog));
+            calendarReply,
+            "report-skill",
+            BuildCalendarSkillPayload(snapshot));
     }
 
     private async Task<JiboInteractionDecision> BuildNewsDecisionAsync(

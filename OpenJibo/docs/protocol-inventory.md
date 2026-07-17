@@ -30,7 +30,8 @@ Confirmed or strongly observed files:
 
 - `/etc/jibo-jetstream-service.json`
 - `/var/jibo/credentials.json`
-- `/etc/jibo-ssm/*.json`
+- `/usr/local/etc/jibo-ssm/*.json`
+- `/usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json`
 - `/skills/jibo/Jibo/Skills/@be/be/node_modules/language-subtag-registry/data/json/registry.json`
 - `/skills/jibo/Jibo/Skills/oobe-config/config.json`
 

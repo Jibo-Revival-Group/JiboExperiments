@@ -63,6 +63,7 @@ The audit scripts should read, not write:
 - `3.services/etc/jibo-ssm/jibo-ssm-oobe.json`
 - `3.services/etc/jibo-ssm/jibo-ssm-developer.json`
 - `3.services/etc/jibo-ssm/jibo-ssm-int-developer.json`
+- `3.services/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json`
 - `5.skills/jibo/Jibo/Skills/oobe-config/config.json`
 - `5.skills/jibo/Jibo/Skills/oobe-config/oobe-config.js`
 - `0.rootfsA/boot/extlinux/extlinux.conf`
@@ -147,6 +148,8 @@ The composer should leave a `filesystem-progress.json` checkpoint while copying 
   - service launch order and mode layout
 - `3.services/etc/jibo-ssm/*.json`
   - mode-specific SSM definitions
+- `3.services/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json`
+  - region template used by the SSM bundle, translated on-robot to `/usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json`
 
 ### OOBE and skill state
 

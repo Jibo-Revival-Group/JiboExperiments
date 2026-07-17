@@ -117,6 +117,32 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
 }
 
+function patchTextFile(filePath, replacements) {
+  if (!filePath || !fs.existsSync(filePath)) return false;
+  let text = fs.readFileSync(filePath, "utf8");
+  let changed = false;
+  for (const [from, to] of replacements) {
+    if (text.includes(from)) {
+      text = text.split(from).join(to);
+      changed = true;
+    }
+  }
+  if (changed) {
+    backupFile(filePath);
+    fs.writeFileSync(filePath, text);
+  }
+  return changed;
+}
+
+function collectExisting(relativePaths) {
+  const found = [];
+  for (const relativePath of relativePaths) {
+    const candidate = path.resolve(robotRoot, relativePath);
+    if (fs.existsSync(candidate)) found.push(candidate);
+  }
+  return found;
+}
+
 const jetstreamPath = firstExisting(candidatePaths([
   "usr/local/etc/jibo-jetstream-service.json",
   "etc/jibo-jetstream-service.json",
@@ -132,6 +158,26 @@ const oobeConfigPath = firstExisting(candidatePaths([
   "skills/jibo/Jibo/Skills/oobe-config/config.json",
   "opt/jibo/Jibo/Skills/oobe-config/config.json",
 ]));
+const regionConfigFiles = collectExisting([
+  "usr/lib/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node_modules/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node_modules/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "opt/jibo/Jibo/Skills/oobe-config/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+]);
+const awsSdkAllFiles = collectExisting([
+  "usr/lib/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node_modules/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node_modules/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+]);
 
 if (!jetstreamPath || !serverServicePath || !credentialsPath || !oobeConfigPath) {
   throw new Error("Expected conversion files were not found on the robot root.");
@@ -142,6 +188,8 @@ const backups = {
   serverService: backupFile(serverServicePath),
   credentials: backupFile(credentialsPath),
   oobe: backupFile(oobeConfigPath),
+  regionConfigFiles: regionConfigFiles.map(backupFile).filter(Boolean),
+  awsSdkAllFiles: awsSdkAllFiles.map(backupFile).filter(Boolean),
 };
 
 const jetstream = readJson(jetstreamPath);
@@ -191,6 +239,21 @@ if (serverService && serverServicePath) {
 }
 writeJson(oobeConfigPath, oobe);
 
+const endpointReplacements = [
+  ["https://{region}.jibo.com", "https://{region}.openjibo.com"],
+  ["http://{region}.jibo.com:8080", "http://{region}.openjibo.com:8080"],
+  ["wss://{region}-socket.jibo.com", "wss://{region}-socket.openjibo.com"],
+  ["ws://{region}-socket.jibo.com:8090", "ws://{region}-socket.openjibo.com:8090"],
+];
+
+for (const filePath of regionConfigFiles) {
+  patchTextFile(filePath, endpointReplacements);
+}
+
+for (const filePath of awsSdkAllFiles) {
+  patchTextFile(filePath, endpointReplacements);
+}
+
 const conversionMarkerPath = path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");
 writeJson(conversionMarkerPath, {
   targetMode,
@@ -222,12 +285,15 @@ const applyManifest = {
     "The active credentials region remains on the proven value until first-boot conversion completes.",
     "The staged open-jibo region points to the canonical Open Jibo API hostname.",
     "The staged notification subsystem suffix points the robot at open-jibo-socket.openjibo.com while the deployment binds neohub.openjibo.com separately.",
+    "The helper also normalizes bundled jibo-server-client region templates in live robot bundles.",
   ],
   WrittenFiles: [
     jetstreamPath,
     serverServicePath,
     oobeConfigPath,
     conversionMarkerPath,
+    ...regionConfigFiles,
+    ...awsSdkAllFiles,
   ],
 };
 

@@ -138,7 +138,8 @@ Current strongest evidence:
 
 Additional files to audit:
 
-- `/etc/jibo-ssm/*.json`
+- `/usr/local/etc/jibo-ssm/*.json`
+- `/usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json`
 - `/skills/jibo/Jibo/Skills/@be/be/node_modules/language-subtag-registry/data/json/registry.json`
 - `/skills/jibo/Jibo/Skills/oobe-config/config.json`
 - local skill manifest/config locations for menu visibility and first-boot behavior

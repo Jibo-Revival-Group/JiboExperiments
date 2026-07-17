@@ -41,6 +41,7 @@ Relevant scripts:
 ## SSM Internals
 
 The SSM is a Node.js bundle at `/usr/local/bin/jibo-ssm/lib/skills-service-manager.js`.
+Its region template lives at `/usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json`, which is the bundle copy of the placeholder-based region routing config used during onboarding and conversion.
 
 ### Boot skill
 

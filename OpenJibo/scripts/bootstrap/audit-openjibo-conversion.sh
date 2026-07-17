@@ -74,6 +74,15 @@ const oobeConfigPath = resolveCandidate([
   "opt/jibo/Jibo/Skills/oobe-config/config.json",
 ]);
 
+function collectExisting(relativePaths) {
+  const found = [];
+  for (const relativePath of relativePaths) {
+    const candidate = path.resolve(robotRoot, relativePath);
+    if (fs.existsSync(candidate)) found.push(candidate);
+  }
+  return found;
+}
+
 const ssmFiles = [];
 for (const base of [path.resolve(robotRoot, "etc/jibo-ssm"), path.resolve(robotRoot, "usr/local/etc/jibo-ssm")]) {
   if (!fs.existsSync(base)) continue;
@@ -81,6 +90,28 @@ for (const base of [path.resolve(robotRoot, "etc/jibo-ssm"), path.resolve(robotR
     if (entry.isFile() && entry.name.endsWith(".json")) ssmFiles.push(path.resolve(base, entry.name));
   }
 }
+
+const regionConfigFiles = collectExisting([
+  "usr/lib/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node_modules/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node_modules/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/lib/node/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+  "opt/jibo/Jibo/Skills/oobe-config/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+]);
+
+const awsSdkAllFiles = collectExisting([
+  "usr/lib/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node_modules/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node/@jibo/jibo-ota-updater/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node_modules/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/lib/node/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+]);
 
 const jetstream = readJsonFile(jetstreamPath);
 const serverService = readJsonFile(serverServicePath);
@@ -111,6 +142,8 @@ const audit = {
     Credentials: credentialsPath,
     OobeConfig: oobeConfigPath,
     SsmCount: ssmFiles.length,
+    RegionConfigCount: regionConfigFiles.length,
+    AwsSdkAllCount: awsSdkAllFiles.length,
   },
   Credentials: {
     Region: region || null,
@@ -126,6 +159,10 @@ const audit = {
   Oobe: {
     ServerRegion: getField(oobeConfig, "serverRegion") || null,
     OtaFilter: getField(oobeConfig, "otaFilter") || null,
+  },
+  NodeBundles: {
+    RegionConfigFiles: regionConfigFiles,
+    AwsSdkAllFiles: awsSdkAllFiles,
   },
   Recommendations: recommendations,
   CanProceed: recommendations.length === 0,

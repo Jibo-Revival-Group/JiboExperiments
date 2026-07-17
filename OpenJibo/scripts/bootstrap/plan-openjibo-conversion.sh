@@ -104,6 +104,24 @@ const proposedChanges = [
     ],
   },
   {
+    File: "/usr/lib/node_modules/@jibo/jibo-server-client/lib/region_config.json",
+    Action: "replace the stock region endpoint templates",
+    Details: [
+      "change https://{region}.jibo.com to https://{region}.openjibo.com",
+      "change http://{region}.jibo.com:8080 to http://{region}.openjibo.com:8080",
+      "change the socket template to the Open Jibo socket suffix",
+    ],
+  },
+  {
+    File: "/usr/lib/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+    Action: "replace the bundled region endpoint templates",
+    Details: [
+      "mirror the region_config.json host substitutions inside the bundled SDK",
+      "cover the live rootfs copy used by jibo-server-service",
+      "keep the bundle and JSON template aligned",
+    ],
+  },
+  {
     File: "/var/jibo/credentials.json",
     Action: "record the active region",
     Details: [
@@ -155,6 +173,8 @@ const plan = {
     audit.Files && audit.Files.ServerService,
     audit.Files && audit.Files.Credentials,
     audit.Files && audit.Files.OobeConfig,
+    ...(audit.NodeBundles && audit.NodeBundles.RegionConfigFiles ? audit.NodeBundles.RegionConfigFiles : []),
+    ...(audit.NodeBundles && audit.NodeBundles.AwsSdkAllFiles ? audit.NodeBundles.AwsSdkAllFiles : []),
   ].filter(Boolean),
   ProposedChanges: proposedChanges,
   RollbackPlan: rollbackPlan,

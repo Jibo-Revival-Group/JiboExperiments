@@ -10,11 +10,14 @@ namespace Jibo.Cloud.Application.Services;
 /// Live registry of robot <c>api-socket</c> WebSockets, used to push stock-style
 /// <c>LoopUpdated</c> notifications so SSM can re-sync the on-device Loop immediately.
 /// </summary>
-public sealed class RobotNotificationRegistry(ILogger<RobotNotificationRegistry>? logger = null)
+public sealed class RobotNotificationRegistry(
+    RobotPendingNotificationStore? pendingStore = null,
+    ILogger<RobotNotificationRegistry>? logger = null)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly ConcurrentDictionary<Guid, RobotConnection> _connections = new();
+    private readonly RobotPendingNotificationStore _pendingStore = pendingStore ?? new RobotPendingNotificationStore();
     private readonly ILogger _logger = logger ?? NullLogger<RobotNotificationRegistry>.Instance;
 
     public void Register(IReadOnlyCollection<string> robotKeys, WebSocket socket)
@@ -52,16 +55,78 @@ public sealed class RobotNotificationRegistry(ILogger<RobotNotificationRegistry>
             return 0;
         }
 
-        var envelope = new
-        {
-            payload = new
-            {
-                name = "LoopUpdated",
-                payload = loopPayload
-            }
-        };
-
+        var envelope = CreateStockNotificationRecord("LoopUpdated", loopPayload);
         var bytes = JsonSerializer.SerializeToUtf8Bytes(envelope, JsonOptions);
+        _pendingStore.Enqueue("LoopUpdated", targetKeys, bytes);
+
+        var pushed = await PushBytesToLiveSocketsAsync(targetKeys, bytes, cancellationToken);
+        if (pushed > 0)
+            _pendingStore.Drain(targetKeys);
+
+        return pushed;
+    }
+
+    public async Task<int> PushRawNotificationAsync(
+        IReadOnlyCollection<string> robotKeys,
+        byte[] payload,
+        string name = "LoopUpdated",
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(payload);
+
+        var targetKeys = NormalizeKeys(robotKeys);
+        if (targetKeys.Count == 0 || payload.Length == 0)
+        {
+            _logger.LogDebug("Notification push skipped: no target robot keys");
+            return 0;
+        }
+
+        _pendingStore.Enqueue(name, targetKeys, payload);
+        var pushed = await PushBytesToLiveSocketsAsync(targetKeys, payload, cancellationToken);
+        if (pushed > 0)
+            _pendingStore.Drain(targetKeys);
+        return pushed;
+    }
+
+    public async Task<int> DrainPendingAsync(
+        IReadOnlyCollection<string> robotKeys,
+        WebSocket socket,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(socket);
+        if (socket.State != WebSocketState.Open) return 0;
+
+        var drained = _pendingStore.Drain(robotKeys);
+        if (drained.Count == 0) return 0;
+
+        var sent = 0;
+        foreach (var payload in drained)
+        {
+            try
+            {
+                await socket.SendAsync(payload, WebSocketMessageType.Text, true, cancellationToken);
+                sent++;
+            }
+            catch (WebSocketException)
+            {
+                break;
+            }
+            catch (ObjectDisposedException)
+            {
+                break;
+            }
+        }
+
+        return sent;
+    }
+
+    public int PendingCount => _pendingStore.Count;
+
+    private async Task<int> PushBytesToLiveSocketsAsync(
+        IReadOnlySet<string> targetKeys,
+        byte[] bytes,
+        CancellationToken cancellationToken)
+    {
         var pushed = 0;
         var openConnections = 0;
 
@@ -113,6 +178,21 @@ public sealed class RobotNotificationRegistry(ILogger<RobotNotificationRegistry>
         }
 
         return pushed;
+    }
+
+    private static object CreateStockNotificationRecord(string name, object payload)
+    {
+        return new
+        {
+            _id = Guid.NewGuid().ToString("N"),
+            created = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            skillId = "-1",
+            payload = new
+            {
+                name,
+                payload
+            }
+        };
     }
 
     private static HashSet<string> NormalizeKeys(IReadOnlyCollection<string>? robotKeys)

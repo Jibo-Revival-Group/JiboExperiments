@@ -380,11 +380,9 @@ internal static class PortalEndpoints
             HttpRequest httpRequest,
             PortalSessionService portalSessionService,
             ICloudStateStore cloudStateStore,
-            RobotNotificationRegistry robotNotificationRegistry,
-            ILoggerFactory loggerFactory,
+            LoopUpdatedPushService loopUpdatedPushService,
             CancellationToken cancellationToken) =>
         {
-            var logger = loggerFactory.CreateLogger("Jibo.Cloud.Api.PortalLoopSync");
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
             if (session is null)
                 return Results.Unauthorized();
@@ -406,13 +404,7 @@ internal static class PortalEndpoints
                 "member",
                 markPortalEdited: true);
 
-            await TryPushLoopUpdatedAsync(
-                cloudStateStore,
-                robotNotificationRegistry,
-                session,
-                loopId,
-                logger,
-                cancellationToken);
+            await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
             return Results.Json(BuildLoopMemberPayload(member));
         });
 
@@ -422,11 +414,9 @@ internal static class PortalEndpoints
             HttpRequest httpRequest,
             PortalSessionService portalSessionService,
             ICloudStateStore cloudStateStore,
-            RobotNotificationRegistry robotNotificationRegistry,
-            ILoggerFactory loggerFactory,
+            LoopUpdatedPushService loopUpdatedPushService,
             CancellationToken cancellationToken) =>
         {
-            var logger = loggerFactory.CreateLogger("Jibo.Cloud.Api.PortalLoopSync");
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
             if (session is null)
                 return Results.Unauthorized();
@@ -455,13 +445,7 @@ internal static class PortalEndpoints
                     null,
                     markPortalEdited: true);
 
-                await TryPushLoopUpdatedAsync(
-                    cloudStateStore,
-                    robotNotificationRegistry,
-                    session,
-                    loopId,
-                    logger,
-                    cancellationToken);
+                await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
                 return Results.Json(BuildLoopMemberPayload(updated));
             }
             catch (InvalidOperationException)
@@ -475,11 +459,9 @@ internal static class PortalEndpoints
             HttpRequest request,
             PortalSessionService portalSessionService,
             ICloudStateStore cloudStateStore,
-            RobotNotificationRegistry robotNotificationRegistry,
-            ILoggerFactory loggerFactory,
+            LoopUpdatedPushService loopUpdatedPushService,
             CancellationToken cancellationToken) =>
         {
-            var logger = loggerFactory.CreateLogger("Jibo.Cloud.Api.PortalLoopSync");
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null)
                 return Results.Unauthorized();
@@ -494,13 +476,7 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "The loop owner and robot cannot be removed here." });
 
             cloudStateStore.RemoveLoopMember(loopId, memberId);
-            await TryPushLoopUpdatedAsync(
-                cloudStateStore,
-                robotNotificationRegistry,
-                session,
-                loopId,
-                logger,
-                cancellationToken);
+            await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
             return Results.Json(new { removed = true, memberId });
         });
 
@@ -1120,43 +1096,13 @@ internal static class PortalEndpoints
         return keys;
     }
 
-    /// <summary>
-    /// Keys used to find the robot's live api-socket for <c>LoopUpdated</c>.
-    /// Broader than calendar <see cref="BuildPortalRobotKeys"/>: notification tokens are often
-    /// issued for the serial/deviceId while Portal session FriendlyId may be a stock ObjectId.
-    /// </summary>
-    private static HashSet<string> BuildPortalLoopUpdatedPushKeys(
-        PortalSessionService.PortalSession session,
-        ICloudStateStore cloudStateStore,
-        string loopId)
+    private static HashSet<string> BuildPortalLoopUpdatedSeedKeys(PortalSessionService.PortalSession session)
     {
         var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        void Add(string? value)
-        {
-            if (!string.IsNullOrWhiteSpace(value))
-                keys.Add(value.Trim());
-        }
-
-        Add(session.FriendlyId);
-        Add(session.DeviceId);
-
-        var loop = cloudStateStore.GetLoops()
-            .FirstOrDefault(item => item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
-        if (loop is not null)
-        {
-            Add(loop.RobotId);
-            Add(loop.RobotFriendlyId);
-        }
-
-        foreach (var seed in keys.ToArray())
-        {
-            var device = cloudStateStore.FindDeviceByFriendlyId(seed);
-            if (device is null) continue;
-            Add(device.DeviceId);
-            Add(device.RobotId);
-            Add(device.FriendlyName);
-        }
-
+        if (!string.IsNullOrWhiteSpace(session.FriendlyId))
+            keys.Add(session.FriendlyId.Trim());
+        if (!string.IsNullOrWhiteSpace(session.DeviceId))
+            keys.Add(session.DeviceId.Trim());
         return keys;
     }
 
@@ -1240,56 +1186,16 @@ internal static class PortalEndpoints
         return normalized is "male" or "female" ? normalized : "unknown";
     }
 
-    private static async Task TryPushLoopUpdatedAsync(
-        ICloudStateStore cloudStateStore,
-        RobotNotificationRegistry robotNotificationRegistry,
+    private static Task TryPushLoopUpdatedAsync(
+        LoopUpdatedPushService loopUpdatedPushService,
         PortalSessionService.PortalSession session,
         string loopId,
-        ILogger logger,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var loop = cloudStateStore.GetLoops()
-                .FirstOrDefault(item => item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
-            if (loop is null)
-            {
-                logger.LogWarning("LoopUpdated push skipped: loop {LoopId} not found", loopId);
-                return;
-            }
-
-            var payload = JiboCloudProtocolService.BuildLoopNotificationPayload(
-                loop,
-                cloudStateStore.GetLoopMembers(loopId));
-            var robotKeys = BuildPortalLoopUpdatedPushKeys(session, cloudStateStore, loopId);
-            var pushed = await robotNotificationRegistry.PushLoopUpdatedAsync(
-                robotKeys,
-                payload,
-                cancellationToken);
-            if (pushed == 0)
-            {
-                logger.LogWarning(
-                    "LoopUpdated push matched no live api-socket loopId={LoopId} keyCount={KeyCount} keys={Keys}. " +
-                    "Robot must keep wss/ws notification socket open (Host api-socket.jibo.com or /token-... path).",
-                    loopId,
-                    robotKeys.Count,
-                    string.Join(',', robotKeys.Take(8)));
-            }
-            else
-            {
-                logger.LogInformation(
-                    "LoopUpdated push loopId={LoopId} pushCount={PushCount} keyCount={KeyCount} keys={Keys}",
-                    loopId,
-                    pushed,
-                    robotKeys.Count,
-                    string.Join(',', robotKeys.Take(8)));
-            }
-        }
-        catch (Exception ex)
-        {
-            // Best-effort: HTTP poll (Loop#list) remains the authoritative fallback.
-            logger.LogWarning(ex, "LoopUpdated push failed for loopId={LoopId}", loopId);
-        }
+        return loopUpdatedPushService.PushForLoopIdAsync(
+            loopId,
+            BuildPortalLoopUpdatedSeedKeys(session),
+            cancellationToken);
     }
 
     private static string ResolvePortalLoopId(

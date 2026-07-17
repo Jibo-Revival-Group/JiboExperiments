@@ -290,33 +290,14 @@ do
   fi
 done
 
-# Stock Notification.connect uses wss://api-socket.jibo.com (TLS :443). Self-hosted
-# listen already works on cleartext :24605; force the notification socket onto the same
-# HTTP port so LoopUpdated push can register without fighting robot TLS trust.
-HTTP_PORT="${OPENJIBO_HTTP_PORT:-24605}"
-for f in \
-  /opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib/region_config.json \
-  /opt/jibo/Jibo/Skills/oobe-config/node_modules/@jibo/jibo-server-client/lib/region_config.json \
-  /usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json \
-  /usr/lib/node_modules/@jibo/jibo-server-client/lib/region_config.json \
-  /opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/dist/jibo-server-client-all.js \
-  /usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/dist/jibo-server-client-all.js \
-  /usr/lib/node_modules/@jibo/jibo-server-client/dist/jibo-server-client-all.js
-do
-  if [ -f "$f" ]; then
-    sed -i "s|wss://{region}-socket.jibo.com|ws://{region}-socket.jibo.com:${HTTP_PORT}|g" "$f" 2>/dev/null || true
-  fi
-done
-
 if [ -f "$GLOBAL_JSC" ] && ! is_mounted "$GLOBAL_JSC"; then
   cp "$GLOBAL_JSC" "$GLOBAL_JSC_ORIGINAL"
   cp "$GLOBAL_JSC_ORIGINAL" "$GLOBAL_JSC_PATCH"
   sed -i 's/rejectUnauthorized: true/rejectUnauthorized: false/g' "$GLOBAL_JSC_PATCH" 2>/dev/null || true
-  sed -i "s|wss://{region}-socket.jibo.com|ws://{region}-socket.jibo.com:${HTTP_PORT}|g" "$GLOBAL_JSC_PATCH" 2>/dev/null || true
   mount -o bind "$GLOBAL_JSC_PATCH" "$GLOBAL_JSC" 2>/dev/null || true
 fi
 
-log "applied for $MAC_IP (api-socket ws port $HTTP_PORT)"
+log "applied for $MAC_IP"
 ```
 
 The init wrapper:
@@ -493,14 +474,15 @@ https://api.jibo.com/
 https://neohub.openjibo.com/
 ```
 
-Stock `Notification.connect` also opens `wss://api-socket.jibo.com/{token}` on
-TLS port 443. If that handshake fails (`unknown ca`), Portal `LoopUpdated` push
-stays at `openConnections=0` even while `/v1/listen` on `:24605` works.
+Stock server-service opens `wss://api-socket.jibo.com/{token}` on TLS port 443.
+If that handshake fails (`unknown ca`), Portal `LoopUpdated` push stays at
+`openConnections=0` even while `/v1/listen` on `:24605` works.
 
-The bootstrap script above rewrites the JSC `wsendpoint` to
-`ws://{region}-socket.jibo.com:24605` so the notification socket rides the same
-cleartext HTTP listener as listen. Prefer that for LAN self-host; otherwise
-install the OpenJibo CA (and OpenSSL hash symlinks) so WSS on `:443` succeeds.
+For physical robots, do not rely on Node/JSC `wsendpoint` rewrites. The C++
+NotificationSubsystem uses HTTPS/WSS on `:443` directly, so the fix is:
+
+- OpenJibo listening on `https://<host>:443`
+- robot trust store includes the OpenJibo CA (with OpenSSL hash links)
 
 The working setup installs the OpenJibo CA and also creates OpenSSL hash
 symlinks under `/etc/ssl/certs`. Appending the CA to

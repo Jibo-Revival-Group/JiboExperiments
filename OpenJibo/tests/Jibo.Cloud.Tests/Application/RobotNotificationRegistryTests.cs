@@ -73,6 +73,46 @@ public sealed class RobotNotificationRegistryTests
         Assert.Null(socket.LastPayload);
     }
 
+    [Fact]
+    public async Task PushLoopUpdatedAsync_QueuesPending_WhenNoLiveSocket()
+    {
+        var pending = new RobotPendingNotificationStore();
+        var registry = new RobotNotificationRegistry(pending);
+
+        var pushed = await registry.PushLoopUpdatedAsync(["robot-a"], new { id = "loop-1", eventKey = "LoopUpdated" });
+
+        Assert.Equal(0, pushed);
+        Assert.Equal(1, registry.PendingCount);
+
+        using var socket = new CapturingWebSocket();
+        var drained = await registry.DrainPendingAsync(["robot-a"], socket);
+
+        Assert.Equal(1, drained);
+        Assert.Equal(0, registry.PendingCount);
+        Assert.NotNull(socket.LastPayload);
+        Assert.Equal("LoopUpdated", socket.LastPayload!.Value.GetProperty("payload").GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task PushLoopUpdatedAsync_CoalescesPendingByRobotOverlap()
+    {
+        var pending = new RobotPendingNotificationStore();
+        var registry = new RobotNotificationRegistry(pending);
+
+        await registry.PushLoopUpdatedAsync(["robot-a"], new { id = "loop-old", eventKey = "LoopUpdated" });
+        await registry.PushLoopUpdatedAsync(["robot-a"], new { id = "loop-new", eventKey = "LoopUpdated" });
+
+        Assert.Equal(1, registry.PendingCount);
+
+        using var socket = new CapturingWebSocket();
+        var drained = await registry.DrainPendingAsync(["robot-a"], socket);
+
+        Assert.Equal(1, drained);
+        Assert.Equal(
+            "loop-new",
+            socket.LastPayload!.Value.GetProperty("payload").GetProperty("payload").GetProperty("id").GetString());
+    }
+
     private sealed class CapturingWebSocket : WebSocket
     {
         public JsonElement? LastPayload { get; private set; }

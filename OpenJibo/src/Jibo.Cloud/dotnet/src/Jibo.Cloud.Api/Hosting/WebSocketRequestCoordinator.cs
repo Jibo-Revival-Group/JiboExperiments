@@ -74,10 +74,15 @@ internal sealed class WebSocketRequestCoordinator(
             var robotKeys = ResolveApiSocketRobotKeys(token, session);
             robotNotificationRegistry.Register(robotKeys, socket);
             registeredApiSocket = true;
+            var drained = await robotNotificationRegistry.DrainPendingAsync(
+                robotKeys,
+                socket,
+                context.RequestAborted);
             logger.LogInformation(
-                "api-socket registered for LoopUpdated push token={Token} keyCount={KeyCount} keys={Keys}",
+                "api-socket registered for LoopUpdated push token={Token} keyCount={KeyCount} pendingDrained={PendingDrained} keys={Keys}",
                 token,
                 robotKeys.Count,
+                drained,
                 string.Join(',', robotKeys.Take(8)));
         }
 

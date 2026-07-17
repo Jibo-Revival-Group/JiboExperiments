@@ -1240,24 +1240,14 @@ public sealed class ResponsePlanToSocketMessagesMapper
             };
 
             var isCommuteSection = string.Equals(kind, "commute", StringComparison.OrdinalIgnoreCase);
-            var isCalendarSection = string.Equals(kind, "calendar", StringComparison.OrdinalIgnoreCase);
             var isNewsSection = kind.StartsWith("news", StringComparison.OrdinalIgnoreCase);
             var shouldHoldSection = isWeatherSection ||
                                     isCommuteSection ||
-                                    isCalendarSection ||
                                     isNewsSection ||
                                     TryReadPayloadInt(section, "hold_timeout") is > 0;
 
             if (isWeatherSection && weatherHiLoView is not null)
-            {
                 AttachPausedGuiView(config, "weatherHiLo", weatherHiLoView);
-            }
-            else if (isCalendarSection)
-            {
-                var calendarView = BuildCalendarEventsView(section);
-                if (calendarView is not null)
-                    AttachPausedGuiView(config, "calendarEvents", calendarView);
-            }
 
             if (shouldHoldSection)
             {
@@ -1312,124 +1302,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
                 [viewName] = view
-            }
-        };
-    }
-
-    private static object? BuildCalendarEventsView(IDictionary<string, object?> section)
-    {
-        if (!TryReadPayloadBool(section, "calendar_view_enabled") &&
-            string.IsNullOrWhiteSpace(ReadPayloadString(section, "calendar_event_summary")))
-            return null;
-
-        var summary = ReadPayloadString(section, "calendar_event_summary");
-        if (string.IsNullOrWhiteSpace(summary)) return null;
-
-        var timeLabel = ReadPayloadString(section, "calendar_event_time_label") ?? string.Empty;
-        var amPmLabel = ReadPayloadString(section, "calendar_event_ampm") ?? string.Empty;
-        var theme = ReadPayloadString(section, "calendar_event_theme") ?? "Afternoon";
-
-        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["viewConfig"] = new
-            {
-                type = "View",
-                id = "eventView",
-                category = "gui"
-            },
-            ["open"] = new
-            {
-                transitionOpen = "trans_in",
-                removeAll = true
-            },
-            ["defaultSelect"] = new
-            {
-                transitionClose = "trans_out",
-                removeAll = true,
-                leaveEmpty = false
-            },
-            ["componentConfigs"] = new object[]
-            {
-                new
-                {
-                    id = "cardClip",
-                    type = "Clip",
-                    assets = new object[]
-                    {
-                        new
-                        {
-                            id = "eventCard",
-                            src = $"assets/personal-report-skill/calendar/cards/event{theme}_v01.crn",
-                            type = "texture"
-                        }
-                    },
-                    position = new { x = 140, y = 110 }
-                },
-                new
-                {
-                    id = "iconClip",
-                    type = "Clip",
-                    assets = new object[]
-                    {
-                        new
-                        {
-                            id = "eventIcon",
-                            src = "assets/personal-report-skill/calendar/icons/generic_v01.crn",
-                            type = "texture"
-                        }
-                    },
-                    position = new { x = 534, y = 0 }
-                },
-                new
-                {
-                    id = "timeLabel",
-                    type = "Label",
-                    text = timeLabel,
-                    style = new
-                    {
-                        fontSize = "160",
-                        fontFamily = "Proxima Nova Soft",
-                        fontWeight = "bold",
-                        fill = "#FFFFFF"
-                    },
-                    position = new { x = 618, y = 684 },
-                    targetAnchor = new { x = 1, y = 1 }
-                },
-                new
-                {
-                    id = "ampmLabel",
-                    type = "Label",
-                    text = amPmLabel,
-                    style = new
-                    {
-                        fontSize = "90",
-                        fontFamily = "Proxima Nova Soft",
-                        fontWeight = "bold",
-                        fill = "#FFFFFF"
-                    },
-                    position = new { x = 620, y = 670 },
-                    targetAnchor = new { x = 0, y = 1 }
-                },
-                new
-                {
-                    id = "eventSummary",
-                    type = "Label",
-                    text = summary,
-                    style = new
-                    {
-                        fontSize = "90",
-                        fontFamily = "Proxima Nova Light",
-                        fill = "#FFFFFF",
-                        align = "center",
-                        leading = -10,
-                        letterSpacing = 0,
-                        wordWrap = true,
-                        breakWords = true,
-                        wordWrapWidth = 800
-                    },
-                    position = new { x = 640, y = 330 },
-                    targetAnchor = new { x = 0.5, y = 0.5 }
-                }
             }
         };
     }

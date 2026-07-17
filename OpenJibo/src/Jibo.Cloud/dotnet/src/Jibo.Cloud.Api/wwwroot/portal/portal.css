@@ -136,6 +136,21 @@ h2 {
   margin-bottom: 1rem;
 }
 
+.loop-subsection {
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.loop-subsection h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.loop-subsection .panel-header {
+  margin-bottom: 0.75rem;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

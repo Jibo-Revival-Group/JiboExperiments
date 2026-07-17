@@ -2950,9 +2950,7 @@ public sealed class JiboInteractionServiceTests
             decision.SkillPayload!["personal_report_sections"]);
         Assert.Contains(sections, static section =>
             string.Equals(section["kind"]?.ToString(), "calendar", StringComparison.OrdinalIgnoreCase) &&
-            Equals(section["hold_timeout"], 6) &&
-            Equals(section["calendar_view_enabled"], true) &&
-            section["calendar_event_summary"]?.ToString()?.Contains(
+            section["text"]?.ToString()?.Contains(
                 "get personal report from jibo",
                 StringComparison.OrdinalIgnoreCase) == true);
     }
@@ -3017,7 +3015,8 @@ public sealed class JiboInteractionServiceTests
             Equals(section["hold_timeout"], 6));
         Assert.Contains(sections, static section =>
             string.Equals(section["kind"]?.ToString(), "calendar", StringComparison.OrdinalIgnoreCase) &&
-            Equals(section["hold_timeout"], 6));
+            !section.ContainsKey("hold_timeout") &&
+            !section.ContainsKey("calendar_view_enabled"));
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal(true, decision.ContextUpdates![PersonalReportCommuteEnabledKey]);
     }

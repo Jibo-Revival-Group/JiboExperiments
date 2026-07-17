@@ -626,7 +626,7 @@ function calendarFeedStatusBadge(member) {
   return `<span class="badge success">Configured</span>`;
 }
 
-function renderCalendarFeedsPanel(dashboard) {
+function renderLoopPanel(dashboard) {
   const calendarFeeds = dashboard.calendarFeeds || { members: [] };
   const members = calendarFeeds.members || [];
   const options = members.map((member) => `
@@ -636,7 +636,7 @@ function renderCalendarFeedsPanel(dashboard) {
   `).join("");
 
   const memberRows = members.length === 0
-    ? `<li><span class="muted">No Loop people found yet. Talk to the robot once so it can sync its Loop roster, or add people through face enrollment — then configure calendars here.</span></li>`
+    ? `<li><span class="muted">No Loop people found yet. Talk to the robot once so it can sync its Loop roster, then manage calendars here.</span></li>`
     : members.map((member) => `
       <li>
         <strong>${escapeHtml(member.displayName || member.memberId)}</strong>
@@ -653,29 +653,39 @@ function renderCalendarFeedsPanel(dashboard) {
     <section class="card panel">
       <div class="panel-header">
         <div>
-          <p class="eyebrow">Integration</p>
-          <h2>Personal calendars</h2>
+          <p class="eyebrow">Household</p>
+          <h2>Loop</h2>
         </div>
-        <span class="badge success">${members.filter((member) => member.configured).length}/${members.length} configured</span>
+        <span class="badge success">${members.length} ${members.length === 1 ? "person" : "people"}</span>
       </div>
-      <p class="muted">Paste each Loop person's private iCal URL so personal report can read that person's calendar. People come from the robot's Loop roster (same source Pegasus uses). The full URL is stored encrypted and is never shown again after save.</p>
-      <ul class="steps">
-        ${memberRows}
-      </ul>
-      <div class="inline-form">
-        <label for="calendarMemberSelect">Loop member</label>
-        <select id="calendarMemberSelect"${members.length === 0 ? " disabled" : ""}>
-          ${options || `<option value="">No members available</option>`}
-        </select>
-        <label for="calendarIcalUrl">Private iCal URL</label>
-        <input id="calendarIcalUrl" type="password" autocomplete="off" placeholder="https://calendar.example.com/.../basic.ics"${members.length === 0 ? " disabled" : ""}>
-        <div class="button-row">
-          <button class="button primary" id="saveCalendarFeedButton" type="button"${members.length === 0 ? " disabled" : ""}>Save calendar</button>
-          <button class="button secondary" id="testCalendarFeedButton" type="button"${members.length === 0 ? " disabled" : ""}>Test feed</button>
-          <button class="button danger" id="clearCalendarFeedButton" type="button"${members.length === 0 ? " disabled" : ""}>Clear</button>
+      <p class="muted">Manage this robot's Loop. More household controls will land here over time; for now you can attach each person's calendar.</p>
+
+      <div class="loop-subsection">
+        <div class="panel-header">
+          <div>
+            <h3>Calendars</h3>
+          </div>
+          <span class="badge success">${members.filter((member) => member.configured).length}/${members.length} configured</span>
         </div>
+        <p class="muted">Paste each Loop person's private iCal URL so personal report can read that person's calendar. The full URL is stored encrypted and is never shown again after save.</p>
+        <ul class="steps">
+          ${memberRows}
+        </ul>
+        <div class="inline-form">
+          <label for="calendarMemberSelect">Person</label>
+          <select id="calendarMemberSelect"${members.length === 0 ? " disabled" : ""}>
+            ${options || `<option value="">No people available</option>`}
+          </select>
+          <label for="calendarIcalUrl">Private iCal URL</label>
+          <input id="calendarIcalUrl" type="password" autocomplete="off" placeholder="https://calendar.example.com/.../basic.ics"${members.length === 0 ? " disabled" : ""}>
+          <div class="button-row">
+            <button class="button primary" id="saveCalendarFeedButton" type="button"${members.length === 0 ? " disabled" : ""}>Save calendar</button>
+            <button class="button secondary" id="testCalendarFeedButton" type="button"${members.length === 0 ? " disabled" : ""}>Test feed</button>
+            <button class="button danger" id="clearCalendarFeedButton" type="button"${members.length === 0 ? " disabled" : ""}>Clear</button>
+          </div>
+        </div>
+        <p id="calendarFeedActionStatus" class="status hidden"></p>
       </div>
-      <p id="calendarFeedActionStatus" class="status hidden"></p>
     </section>
   `;
 }
@@ -781,7 +791,7 @@ async function renderDashboard(message = "", tone = "success") {
         </section>
 
         ${renderHomeAssistantPanel(dashboard)}
-        ${renderCalendarFeedsPanel(dashboard)}
+        ${renderLoopPanel(dashboard)}
       </div>
 
       ${adminPanel}

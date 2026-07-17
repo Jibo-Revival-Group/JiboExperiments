@@ -332,23 +332,9 @@ internal static partial class PersonalReportOrchestrator
             if (!string.IsNullOrWhiteSpace(calendarReply))
             {
                 // Full-report calendar never plays CalendarOutro (Pegasus single-skill only).
-                // Pegasus calendar MIMs have no body anim — hold with timeout (+ event GUI when available).
+                // Skip calendar GUI/hold for now — missing views.calendarEvents freezes the robot.
                 spokenSections.Add(calendarReply);
-                var calendarSectionPayload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["hold_timeout"] = 6
-                };
-                if (calendarDecision.SkillPayload is not null)
-                    foreach (var (key, value) in calendarDecision.SkillPayload)
-                        if (!string.Equals(key, "esml", StringComparison.OrdinalIgnoreCase) &&
-                            !string.Equals(key, "skillId", StringComparison.OrdinalIgnoreCase) &&
-                            !string.Equals(key, "cloudSkill", StringComparison.OrdinalIgnoreCase))
-                            calendarSectionPayload[key] = value;
-
-                sequenceSections.Add(BuildReportSequenceSection(
-                    "calendar",
-                    calendarReply,
-                    extraPayload: calendarSectionPayload));
+                sequenceSections.Add(BuildReportSequenceSection("calendar", calendarReply));
             }
         }
 

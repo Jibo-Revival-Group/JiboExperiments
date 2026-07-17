@@ -8725,10 +8725,9 @@ public sealed class JiboWebSocketServiceTests
                 Assert.Contains("weather", stripped, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain("news", stripped, StringComparison.OrdinalIgnoreCase);
             }
-            else if (childConfig.TryGetProperty("gui", out var nonWeatherGui))
+            else if (childConfig.TryGetProperty("gui", out _))
             {
-                // Calendar event cards may attach views.calendarEvents; other sections stay GUI-free.
-                Assert.Equal("views.calendarEvents", nonWeatherGui.GetProperty("data").GetString());
+                Assert.Fail("Only the weather section should attach a paused GUI view.");
             }
 
             if (childEsml.Contains("news-stinger", StringComparison.OrdinalIgnoreCase) ||
@@ -8743,8 +8742,10 @@ public sealed class JiboWebSocketServiceTests
             if (stripped.Contains("calendar", StringComparison.OrdinalIgnoreCase))
             {
                 sawCalendar = true;
-                Assert.True(childConfig.TryGetProperty("timeout", out var calendarTimeout));
-                Assert.Equal(6, calendarTimeout.GetInt32());
+                Assert.False(childConfig.TryGetProperty("timeout", out _),
+                    "Calendar section should be speech-only without a GUI hold timeout.");
+                Assert.False(childConfig.TryGetProperty("gui", out _),
+                    "Calendar section should not attach a paused GUI view.");
             }
             if (i == children.GetArrayLength() - 1 &&
                 (stripped.Contains("wraps up your report", StringComparison.OrdinalIgnoreCase) ||

@@ -715,59 +715,14 @@ public sealed partial class JiboInteractionService
             : "Looks like I can't access calendars right now. Sorry.";
     }
 
-    private static IDictionary<string, object?> BuildCalendarSkillPayload(CalendarReportSnapshot? snapshot)
+    private static IDictionary<string, object?> BuildCalendarSkillPayload(CalendarReportSnapshot? _)
     {
-        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        // Speech-only for now. Do not attach calendarEvents GUI / hold — that freezes robots
+        // that do not ship the legacy calendar view asset.
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["skillId"] = "report-skill",
-            ["cloudSkill"] = "calendar",
-            ["hold_timeout"] = 6
+            ["cloudSkill"] = "calendar"
         };
-
-        if (snapshot is null ||
-            snapshot.EventSummaries.Count == 0 ||
-            snapshot.EventTimesOnAt.Count == 0)
-            return payload;
-
-        var summary = snapshot.EventSummaries[0];
-        var timeOnAt = snapshot.EventTimesOnAt[0];
-        var (timeLabel, amPm, theme) = ParseCalendarEventDisplayFields(timeOnAt);
-        payload["calendar_view_enabled"] = true;
-        payload["calendar_event_summary"] = summary;
-        payload["calendar_event_time"] = timeOnAt;
-        payload["calendar_event_time_label"] = timeLabel;
-        payload["calendar_event_ampm"] = amPm;
-        payload["calendar_event_theme"] = theme;
-        return payload;
-    }
-
-    private static (string TimeLabel, string AmPm, string Theme) ParseCalendarEventDisplayFields(string timeOnAt)
-    {
-        // Examples: "at 6:00 p.m.", "at 9 a.m.", "on Monday at 3:30pm"
-        var match = Regex.Match(
-            timeOnAt,
-            @"(?<hour>\d{1,2})(?::(?<minute>\d{2}))?\s*(?<ampm>a\.?m\.?|p\.?m\.?)",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        if (!match.Success)
-            return (string.Empty, string.Empty, "Afternoon");
-
-        var hour = int.Parse(match.Groups["hour"].Value, System.Globalization.CultureInfo.InvariantCulture);
-        var minuteGroup = match.Groups["minute"];
-        var timeLabel = minuteGroup.Success && minuteGroup.Value != "00"
-            ? $"{hour}:{minuteGroup.Value}"
-            : hour.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var amPmRaw = match.Groups["ampm"].Value.Replace(".", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .ToUpperInvariant();
-        var amPm = amPmRaw.StartsWith('A') ? "AM" : "PM";
-        var hour24 = amPm == "AM"
-            ? hour % 12
-            : hour % 12 + 12;
-        var theme = hour24 switch
-        {
-            < 12 => "Morning",
-            < 19 => "Afternoon",
-            _ => "Night"
-        };
-        return (timeLabel, amPm, theme);
     }
 }

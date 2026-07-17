@@ -1255,8 +1255,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
             else if (isCalendarSection)
             {
                 var calendarView = BuildCalendarEventsView(section);
+                // Never use pause:true here. A missing/unloadable calendar texture previously
+                // wedged @be/nimbus forever (robot went silent on later turns). Hold via timeout only.
                 if (calendarView is not null)
-                    AttachPausedGuiView(config, "calendarEvents", calendarView);
+                    AttachGuiView(config, "calendarEvents", calendarView, pause: false);
             }
 
             if (shouldHoldSection)
@@ -1281,17 +1283,26 @@ public sealed class ResponsePlanToSocketMessagesMapper
         string viewName,
         object view)
     {
+        AttachGuiView(config, viewName, view, pause: true);
+    }
+
+    private static void AttachGuiView(
+        IDictionary<string, object?> config,
+        string viewName,
+        object view,
+        bool pause)
+    {
         var resolvedGuiContext = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["type"] = "Javascript",
             ["data"] = view,
-            ["pause"] = true
+            ["pause"] = pause
         };
         config["gui"] = new
         {
             type = "Javascript",
             data = $"views.{viewName}",
-            pause = true
+            pause
         };
         config["display"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -1299,7 +1310,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             {
                 ["type"] = "Javascript",
                 ["data"] = view,
-                ["pause"] = true,
+                ["pause"] = pause,
                 ["context"] = resolvedGuiContext
             }
         };

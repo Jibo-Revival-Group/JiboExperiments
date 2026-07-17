@@ -120,6 +120,16 @@ internal static partial class PersonalReportOrchestrator
         if (!isActiveState &&
             !string.Equals(semanticIntent, "personal_report", StringComparison.OrdinalIgnoreCase)) return null;
 
+        // If the user clearly asked for something else (time, verify, etc.), abandon a stuck
+        // personal-report dialog instead of trapping every subsequent turn.
+        if (isActiveState &&
+            !string.Equals(semanticIntent, "personal_report", StringComparison.OrdinalIgnoreCase) &&
+            IsUnrelatedInterruptIntent(semanticIntent))
+        {
+            turn.Attributes[StateMetadataKey] = IdleState;
+            return null;
+        }
+
         var toggles = ApplyInlineToggleHints(
             ReadServiceToggles(turn),
             loweredTranscript,
@@ -815,6 +825,20 @@ internal static partial class PersonalReportOrchestrator
 
         return replyText.Contains("couldn't fetch the weather", StringComparison.OrdinalIgnoreCase) ||
                replyText.Contains("weather service is connected", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsUnrelatedInterruptIntent(string semanticIntent)
+    {
+        // Only bail out for clear, unrelated commands — not chat/name/memory answers.
+        return semanticIntent is
+            "time" or "date" or "day" or
+            "verify_me" or
+            "volume" or "volume_up" or "volume_down" or "mute" or "unmute" or
+            "weather" or
+            "news" or
+            "clock_open" or "clock_menu" or
+            "timer" or "timer_menu" or "timer_delete" or "timer_cancel" or
+            "alarm" or "alarm_menu" or "alarm_delete" or "alarm_cancel";
     }
 
     private static PersonalReportServiceToggles ReadServiceToggles(TurnContext turn)

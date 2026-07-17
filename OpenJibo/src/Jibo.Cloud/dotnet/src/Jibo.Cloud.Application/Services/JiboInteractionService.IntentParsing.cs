@@ -403,13 +403,20 @@ public sealed partial class JiboInteractionService
     {
         if (cloudStateStore is null) return;
 
-        var loopUsers = TryReadLoopUsersFromTurn(turn);
-        if (loopUsers.Count == 0) return;
+        try
+        {
+            var loopUsers = TryReadLoopUsersFromTurn(turn);
+            if (loopUsers.Count == 0) return;
 
-        var loopId = ReadTenantAttribute(turn, "loopId") ??
-                     cloudStateStore.GetLoops().FirstOrDefault()?.LoopId ??
-                     "openjibo-default-loop";
-        cloudStateStore.SyncPeopleFromLoopUsers(loopId, loopUsers);
+            var loopId = ReadTenantAttribute(turn, "loopId") ??
+                         cloudStateStore.GetLoops().FirstOrDefault()?.LoopId ??
+                         "openjibo-default-loop";
+            cloudStateStore.SyncPeopleFromLoopUsers(loopId, loopUsers);
+        }
+        catch
+        {
+            // Loop roster sync must never break verify/time/chat turns.
+        }
     }
 
     private static IReadOnlyList<Domain.Models.LoopUserSnapshot> TryReadLoopUsersFromTurn(TurnContext turn)

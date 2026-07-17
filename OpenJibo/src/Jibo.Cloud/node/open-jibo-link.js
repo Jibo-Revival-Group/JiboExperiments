@@ -387,9 +387,9 @@
       const bearerToken = getBearerToken(request);
 
       let kind = "unknown";
-      if (host === "api-socket.jibo.com") {
+      if (host === "api-socket.jibo.com" || host === "open-jibo-socket.openjibo.com") {
         kind = "api-socket";
-      } else if (host === "neo-hub.jibo.com") {
+      } else if (host === "neo-hub.jibo.com" || host === "neohub.openjibo.com") {
         kind = url.startsWith("/v1/proactive")
           ? "neo-hub-proactive"
           : "neo-hub-listen";

@@ -148,6 +148,7 @@ If a physical Jibo does not connect, confirm DNS/host routing for:
 
 - `api.jibo.com`
 - `api-socket.jibo.com`
-- `neo-hub.jibo.com`
+- `open-jibo-socket.openjibo.com`
+- `neohub.openjibo.com`
 
 Then compare with the live runbook in [live-jibo-test-runbook.md](live-jibo-test-runbook.md).

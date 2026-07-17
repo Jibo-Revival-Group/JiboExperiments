@@ -12,9 +12,10 @@ The working device path is:
 
 ```text
 Mac runs OpenJibo .NET cloud on 443
-Jibo resolves api.jibo.com, api-socket.jibo.com, and neo-hub.jibo.com to the Mac
+Jibo resolves api.jibo.com, api-socket.jibo.com, open-jibo-socket.openjibo.com,
+and neohub.openjibo.com to the Mac
 Jibo keeps /var/jibo/credentials.json region as api
-Jetstream uses api region settings for api.jibo.com and neo-hub.jibo.com
+Jetstream uses api region settings for api.jibo.com and neohub.openjibo.com
 Jibo boot script reapplies local hosts, CA, writable key overlay, and TLS patch
 .NET cloud is configured with the robot id Jibo expects in its local KB
 ```
@@ -151,12 +152,12 @@ The working Jetstream region config keeps `api` as the active region:
 "region-settings": {
   "api": {
     "hub_port": 443,
-    "hub_hostname": "neo-hub.jibo.com",
+    "hub_hostname": "neohub.openjibo.com",
     "entrypoint_hostname": "api.jibo.com"
   },
   "openjibo-local": {
     "hub_port": 443,
-    "hub_hostname": "neo-hub.jibo.com",
+    "hub_hostname": "neohub.openjibo.com",
     "entrypoint_hostname": "api.jibo.com"
   }
 }
@@ -164,6 +165,11 @@ The working Jetstream region config keeps `api` as the active region:
 
 `openjibo-local` can remain documented in this file, but the credentials region
 must not be switched to it on this build.
+
+The notification subsystem config at `/usr/local/etc/jibo-server-service.json`
+should stage `NotificationSubsystem.serverURLSuffix` as `-socket.openjibo.com`
+so the converted robot resolves `open-jibo-socket.openjibo.com` without a robot
+code change.
 
 Also remove `HubClient.override` unless deliberately testing override behavior.
 
@@ -248,7 +254,7 @@ cat > "$HOSTS_TMP" <<EOF
 127.0.1.1	Ghost-Instance-Onion-Silk
 $MAC_IP	api.jibo.com
 $MAC_IP	api-socket.jibo.com
-$MAC_IP	neo-hub.jibo.com
+$MAC_IP	neohub.openjibo.com
 EOF
 chmod 644 "$HOSTS_TMP"
 
@@ -396,6 +402,8 @@ After boot, verify on Jibo:
 cat /var/jibo/credentials.json
 cat /etc/hosts
 curl -k https://api.jibo.com/health
+curl -k https://open-jibo-socket.openjibo.com/
+curl -k https://neohub.openjibo.com/v1/proactive
 grep -n 'rejectUnauthorized' /usr/lib/node_modules/@jibo/jibo-server-client/lib/http/node.js
 mount | grep -E 'hosts|ca-certificates|jibo-server-client|/var/jibo/keys'
 ```
@@ -406,7 +414,8 @@ Expected (IP will vary):
 "region":"api"
 <mac-ip> api.jibo.com
 <mac-ip> api-socket.jibo.com
-<mac-ip> neo-hub.jibo.com
+<mac-ip> open-jibo-socket.openjibo.com
+<mac-ip> neohub.openjibo.com
 {"ok":true,"service":"OpenJibo Cloud Api","version":"1.0.19"}
 rejectUnauthorized: false
 ```
@@ -422,7 +431,7 @@ Expected success lines:
 
 ```text
 NotificationSubsystem::connect established connection to server
-HubClient settings: hub_hostname=neo-hub.jibo.com, hub_port=443, entrypoint_hostname=api.jibo.com
+HubClient settings: hub_hostname=neohub.openjibo.com, hub_port=443, entrypoint_hostname=api.jibo.com
 P.secure-transfer-service.Service: Successfully completed STS initialization!
 ```
 
@@ -448,7 +457,8 @@ Jibo must resolve these public production names to the local Mac:
 ```text
 api.jibo.com
 api-socket.jibo.com
-neo-hub.jibo.com
+open-jibo-socket.openjibo.com
+neohub.openjibo.com
 ```
 
 The hosts patch has to be boot-persistent because Jibo recreates or remounts
@@ -460,7 +470,7 @@ Jibo must trust the local OpenJibo certificate chain for:
 
 ```text
 https://api.jibo.com/
-https://neo-hub.jibo.com/
+https://neohub.openjibo.com/
 ```
 
 The working setup installs the OpenJibo CA and also creates OpenSSL hash
@@ -749,7 +759,7 @@ remain stuck in the blue ring until reboot.
 
 ### Path token vs hub token
 
-Robots can connect to neo-hub in two ways:
+Robots can connect to neohub in two ways:
 
 ```text
 Authorization: Bearer hub-<account>-<guid>   # per-robot hub token from CreateHubToken
@@ -770,7 +780,7 @@ Current behavior:
 
 Minimum setup:
 
-1. Point each Jibo at the same OpenJibo host (`api.jibo.com`, `neo-hub.jibo.com`,
+1. Point each Jibo at the same OpenJibo host (`api.jibo.com`, `neohub.openjibo.com`,
    and related hosts rewritten to the server).
 2. Complete `SetupRobot` separately for each robot with a unique friendly id and
    device id. Example ids: `BOJW-KITCHEN-0001`, `BOJW-OFFICE-0002`.

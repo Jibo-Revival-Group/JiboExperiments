@@ -51,6 +51,10 @@ if [[ -z "$robot_root" ]]; then
   exit 2
 fi
 
+if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" == "open-jibo-ai" ) ]]; then
+  hub_hostname="neohub.openjibo.com"
+fi
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 audit_script="$script_dir/audit-openjibo-conversion.sh"
 plan_script="$script_dir/plan-openjibo-conversion.sh"

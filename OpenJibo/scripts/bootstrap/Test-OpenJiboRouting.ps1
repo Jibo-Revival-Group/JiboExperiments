@@ -2,7 +2,9 @@ param(
     [string[]]$Hosts = @(
         "https://api.jibo.com/health",
         "https://api-socket.jibo.com/",
-        "https://neo-hub.jibo.com/v1/proactive"
+        "https://open-jibo-socket.openjibo.com/",
+        "https://neo-hub.jibo.com/v1/proactive",
+        "https://neohub.openjibo.com/v1/proactive"
     )
 )
 

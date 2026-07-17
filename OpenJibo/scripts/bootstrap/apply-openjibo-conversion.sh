@@ -51,6 +51,10 @@ if [[ -z "$robot_root" || -z "$plan_path" ]]; then
   exit 2
 fi
 
+if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" == "open-jibo-ai" ) ]]; then
+  hub_hostname="neohub.openjibo.com"
+fi
+
 node - "$robot_root" "$plan_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict" <<'NODE'
 const fs = require("fs");
 const path = require("path");
@@ -112,6 +116,10 @@ const jetstreamPath = firstExisting(candidatePaths([
   "usr/local/etc/jibo-jetstream-service.json",
   "etc/jibo-jetstream-service.json",
 ]));
+const serverServicePath = firstExisting(candidatePaths([
+  "usr/local/etc/jibo-server-service.json",
+  "etc/jibo-server-service.json",
+]));
 const credentialsPath = firstExisting(candidatePaths([
   "var/jibo/credentials.json",
 ]));
@@ -120,17 +128,19 @@ const oobeConfigPath = firstExisting(candidatePaths([
   "opt/jibo/Jibo/Skills/oobe-config/config.json",
 ]));
 
-if (!jetstreamPath || !credentialsPath || !oobeConfigPath) {
+if (!jetstreamPath || !serverServicePath || !credentialsPath || !oobeConfigPath) {
   throw new Error("Expected conversion files were not found on the robot root.");
 }
 
 const backups = {
   jetstream: backupFile(jetstreamPath),
+  serverService: backupFile(serverServicePath),
   credentials: backupFile(credentialsPath),
   oobe: backupFile(oobeConfigPath),
 };
 
 const jetstream = readJson(jetstreamPath);
+const serverService = serverServicePath ? readJson(serverServicePath) : null;
 const currentRegion = readJson(credentialsPath).region || "api";
 const oobe = readJson(oobeConfigPath);
 
@@ -152,6 +162,11 @@ const openJiboRegion = {
 jetstream["region-settings"]["open-jibo"] = openJiboRegion;
 jetstream.regions["open-jibo"] = openJiboRegion;
 
+if (serverService && typeof serverService === "object") {
+  serverService.NotificationSubsystem = serverService.NotificationSubsystem || {};
+  serverService.NotificationSubsystem.serverURLSuffix = "-socket.openjibo.com";
+}
+
 oobe.serverRegion = oobe.serverRegion || currentRegion || "api";
 oobe.otaFilter = oobe.otaFilter || "eau";
 oobe.openJiboConversion = {
@@ -160,11 +175,15 @@ oobe.openJiboConversion = {
   state: "pending",
   apiHostname,
   hubHostname,
+  notificationSocketSuffix: "-socket.openjibo.com",
   createdUtc: new Date().toISOString(),
   backupRoot,
 };
 
 writeJson(jetstreamPath, jetstream);
+if (serverService && serverServicePath) {
+  writeJson(serverServicePath, serverService);
+}
 writeJson(oobeConfigPath, oobe);
 
 const conversionMarkerPath = path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");
@@ -174,6 +193,7 @@ writeJson(conversionMarkerPath, {
   sourceRegion: currentRegion,
   apiHostname,
   hubHostname,
+  notificationSocketSuffix: "-socket.openjibo.com",
   createdUtc: new Date().toISOString(),
   backups,
   robotRoot,
@@ -186,6 +206,7 @@ const applyManifest = {
   CanApply: Boolean(plan.CanApply),
   ApiHostname: apiHostname,
   HubHostname: hubHostname,
+  NotificationSocketSuffix: "-socket.openjibo.com",
   Backups: plan.Backups || [],
   BackupRoot: backupRoot,
   CreatedBackups: backups,
@@ -195,9 +216,11 @@ const applyManifest = {
     "This helper writes the minimal staged conversion state after taking backups.",
     "The active credentials region remains on the proven value until first-boot conversion completes.",
     "The staged open-jibo region points to the canonical Open Jibo API hostname.",
+    "The staged notification subsystem suffix points the robot at open-jibo-socket.openjibo.com while the deployment binds neohub.openjibo.com separately.",
   ],
   WrittenFiles: [
     jetstreamPath,
+    serverServicePath,
     oobeConfigPath,
     conversionMarkerPath,
   ],

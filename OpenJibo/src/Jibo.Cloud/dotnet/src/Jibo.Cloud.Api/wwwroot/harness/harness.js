@@ -35,7 +35,9 @@ function profileBody(overrides = {}) {
 
 function expectedHost() {
   const targetHost = $("targetHost").value.trim();
-  return $("targetMode").value === "open-jibo" ? "api.openjibo.com" : targetHost;
+  return $("targetMode").value === "open-jibo" || $("targetMode").value === "open-jibo-ai"
+    ? "api.openjibo.com"
+    : targetHost;
 }
 
 function setPreparedToken(token) {
@@ -77,7 +79,13 @@ $("loadVerifyConnection").addEventListener("click", () => {
     token: tokenBox.value.trim() || "paste-prepared-token-here",
     requireLiveRobotProof: true,
     reportedConnectionHost: host,
-    reportedHostMappings: { "api.jibo.com": host, "api-socket.jibo.com": host, "neo-hub.jibo.com": host },
+    reportedHostMappings: {
+      "api.jibo.com": host,
+      "api-socket.jibo.com": host,
+      "open-jibo-socket.openjibo.com": host,
+      "neo-hub.jibo.com": host,
+      "neohub.openjibo.com": host,
+    },
   });
 });
 
@@ -100,7 +108,18 @@ $("runConversionSmoke").addEventListener("click", async () => {
     const setup = await sendRobotCall("OOBE_20161026", "SetupRobot", { token: tokenBox.value, id: $("deviceId").value.trim() || "fake-jibo-001" });
     if (!setup.res.ok) return;
     const host = expectedHost();
-    await sendRobotCall("OOBE_20161026", "VerifyConnection", { token: tokenBox.value, requireLiveRobotProof: true, reportedConnectionHost: host, reportedHostMappings: { "api.jibo.com": host, "api-socket.jibo.com": host, "neo-hub.jibo.com": host } });
+    await sendRobotCall("OOBE_20161026", "VerifyConnection", {
+      token: tokenBox.value,
+      requireLiveRobotProof: true,
+      reportedConnectionHost: host,
+      reportedHostMappings: {
+        "api.jibo.com": host,
+        "api-socket.jibo.com": host,
+        "open-jibo-socket.openjibo.com": host,
+        "neo-hub.jibo.com": host,
+        "neohub.openjibo.com": host,
+      },
+    });
   } catch (error) { showStatus(error.message, "error"); }
 });
 

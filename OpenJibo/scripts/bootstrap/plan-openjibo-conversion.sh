@@ -46,6 +46,10 @@ if [[ -z "$robot_root" ]]; then
   exit 2
 fi
 
+if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" == "open-jibo-ai" ) ]]; then
+  hub_hostname="neohub.openjibo.com"
+fi
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 audit_script="$script_dir/audit-openjibo-conversion.sh"
 temp_audit_path="$(mktemp -t openjibo-conversion-audit.XXXXXX.json)"
@@ -91,6 +95,15 @@ const proposedChanges = [
     ],
   },
   {
+    File: "/usr/local/etc/jibo-server-service.json",
+    Action: "retarget the notification socket suffix",
+    Details: [
+      "preserve the stock service layout where possible",
+      "set NotificationSubsystem.serverURLSuffix to -socket.openjibo.com",
+      "stage the socket host that matches the Open Jibo domain plan",
+    ],
+  },
+  {
     File: "/var/jibo/credentials.json",
     Action: "record the active region",
     Details: [
@@ -111,6 +124,7 @@ const proposedChanges = [
 
 const rollbackPlan = [
   "restore the recorded jetstream config snapshot",
+  "restore the recorded jibo-server-service config snapshot",
   "restore /var/jibo/credentials.json from the pre-conversion backup",
   "clear first-boot pending state if onboarding is abandoned",
   "leave the Open Jibo skill visible so the owner can retry conversion later",
@@ -126,16 +140,19 @@ const plan = {
   CanApply: canApply,
   AuditSummary: {
     JetstreamPath: audit.Files && audit.Files.Jetstream ? audit.Files.Jetstream : null,
+    ServerServicePath: audit.Files && audit.Files.ServerService ? audit.Files.ServerService : null,
     CredentialsPath: audit.Files && audit.Files.Credentials ? audit.Files.Credentials : null,
     OobeConfigPath: audit.Files && audit.Files.OobeConfig ? audit.Files.OobeConfig : null,
     SsmCount: audit.Files ? audit.Files.SsmCount : 0,
     Region: audit.Credentials ? audit.Credentials.Region : null,
+    ServerServiceSuffix: audit.ServerService ? audit.ServerService.NotificationSubsystemSuffix : null,
     OobeServerRegion: audit.Oobe ? audit.Oobe.ServerRegion : null,
     OobeOtaFilter: audit.Oobe ? audit.Oobe.OtaFilter : null,
     Recommendations: recommendations,
   },
   Backups: [
     audit.Files && audit.Files.Jetstream,
+    audit.Files && audit.Files.ServerService,
     audit.Files && audit.Files.Credentials,
     audit.Files && audit.Files.OobeConfig,
   ].filter(Boolean),
@@ -145,7 +162,7 @@ const plan = {
     "verify the audit report is clean enough for the target device",
     "take a backup before any write helper runs",
     "confirm the conversion mode target with the owner",
-    "confirm api.openjibo.com DNS/custom-domain routing is ready before physical robot conversion",
+    "confirm api.openjibo.com, open-jibo-socket.openjibo.com, and neohub.openjibo.com DNS/custom-domain routing is ready before physical robot conversion",
   ],
 };
 

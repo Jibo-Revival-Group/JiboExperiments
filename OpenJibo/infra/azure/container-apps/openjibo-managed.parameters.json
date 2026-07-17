@@ -10,6 +10,12 @@
     },
     "apiHostname": {
       "value": "api.openjibo.com"
+    },
+    "socketHostname": {
+      "value": "open-jibo-socket.openjibo.com"
+    },
+    "neoHubHostname": {
+      "value": "neohub.openjibo.com"
     }
   }
 }

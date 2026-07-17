@@ -64,6 +64,10 @@ const jetstreamPath = resolveCandidate([
   "etc/jibo-jetstream-service.json",
   "usr/local/etc/jibo-jetstream-service.json",
 ]);
+const serverServicePath = resolveCandidate([
+  "etc/jibo-server-service.json",
+  "usr/local/etc/jibo-server-service.json",
+]);
 const credentialsPath = resolveCandidate(["var/jibo/credentials.json"]);
 const oobeConfigPath = resolveCandidate([
   "skills/jibo/Jibo/Skills/oobe-config/config.json",
@@ -79,6 +83,7 @@ for (const base of [path.resolve(robotRoot, "etc/jibo-ssm"), path.resolve(robotR
 }
 
 const jetstream = readJsonFile(jetstreamPath);
+const serverService = readJsonFile(serverServicePath);
 const credentials = readJsonFile(credentialsPath);
 const oobeConfig = readJsonFile(oobeConfigPath);
 
@@ -93,6 +98,7 @@ if (jetstream && typeof jetstream === "object" && jetstream.regions && typeof je
 
 const recommendations = [];
 if (!jetstreamPath) recommendations.push("Add or mount a jetstream region config file before conversion.");
+if (!serverServicePath) recommendations.push("Add or mount jibo-server-service.json before conversion so the notification socket suffix can be staged.");
 if (!credentialsPath) recommendations.push("Locate credentials.json before attempting any mode switch.");
 if (!oobeConfigPath) recommendations.push("Confirm the oobe-config bundle before wiring first-boot behavior.");
 if (!region) recommendations.push("Region is not set yet; that needs to be recorded before any write helper runs.");
@@ -101,6 +107,7 @@ const audit = {
   RobotRoot: robotRoot,
   Files: {
     Jetstream: jetstreamPath,
+    ServerService: serverServicePath,
     Credentials: credentialsPath,
     OobeConfig: oobeConfigPath,
     SsmCount: ssmFiles.length,
@@ -112,6 +119,9 @@ const audit = {
   },
   Jetstream: {
     RegionNames: jetstreamRegionNames,
+  },
+  ServerService: {
+    NotificationSubsystemSuffix: getField(getField(serverService, "NotificationSubsystem"), "serverURLSuffix") || null,
   },
   Oobe: {
     ServerRegion: getField(oobeConfig, "serverRegion") || null,

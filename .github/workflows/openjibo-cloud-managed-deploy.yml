@@ -15,6 +15,14 @@ on:
         description: Canonical robot-facing hosted API hostname
         required: false
         default: api.openjibo.com
+      socket_hostname:
+        description: Canonical robot-facing socket hostname for notification traffic
+        required: false
+        default: open-jibo-socket.openjibo.com
+      neohub_hostname:
+        description: Canonical robot-facing neohub hostname for listen/proactive traffic
+        required: false
+        default: neohub.openjibo.com
       enable_azure_speech:
         description: Enable Azure Speech STT on the managed hosted deployment
         required: false
@@ -96,6 +104,8 @@ jobs:
           --registry-name "${{ steps.foundation.outputs.registryName }}"
           --image-tag "${{ inputs.image_tag }}"
           --api-hostname "${{ inputs.api_hostname }}"
+          --socket-hostname "${{ inputs.socket_hostname }}"
+          --neohub-hostname "${{ inputs.neohub_hostname }}"
           ${{ inputs.enable_azure_speech == 'false' && '--disable-azure-speech' || '' }}
           ${{ inputs.enable_azure_speech == 'true' && inputs.azure_speech_region != '' && format('--azure-speech-region {0}', inputs.azure_speech_region) || '' }}
           ${{ inputs.location != '' && format('--location {0}', inputs.location) || '' }}

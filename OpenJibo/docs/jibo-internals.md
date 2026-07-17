@@ -104,8 +104,9 @@ Region selection comes from `credentials.json` -> `region`.
 For the working path:
 
 - `api` routes to `api.jibo.com`
-- `api` also maps the hub to `neo-hub.jibo.com`
+- `api` also maps the hub to `neohub.openjibo.com`
 - notification WebSocket host becomes `api-socket.jibo.com`
+- the Open Jibo managed path uses `api.openjibo.com`, `neohub.openjibo.com`, and `open-jibo-socket.openjibo.com`
 
 Do not switch the credentials region to `openjibo-local` on this build. That
 causes derived hosts like `openjibo-local.jibo.com`, which do not exist.

@@ -8,7 +8,8 @@ CAPTURE_DIRECTORY="${CAPTURE_DIRECTORY:-${REPO_ROOT}/captures/websocket}"
 EXPECTED_HOSTS=(
   "api.jibo.com"
   "api-socket.jibo.com"
-  "neo-hub.jibo.com"
+  "open-jibo-socket.openjibo.com"
+  "neohub.openjibo.com"
 )
 
 echo "OpenJibo live Jibo prep"

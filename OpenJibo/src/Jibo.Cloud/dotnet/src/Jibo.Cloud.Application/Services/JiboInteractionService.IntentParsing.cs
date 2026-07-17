@@ -420,9 +420,16 @@ public sealed partial class JiboInteractionService
     {
         var friendlyId = ReadTenantAttribute(turn, "robotFriendlyId") ??
                          ReadTenantAttribute(turn, "friendlyId") ??
+                         ReadTenantAttribute(turn, "robotID") ??
                          ReadTenantAttribute(turn, "robotId");
         if (!string.IsNullOrWhiteSpace(friendlyId))
             return ResolveRegisteredFriendlyId(friendlyId);
+
+        if (SessionRobotIdentityBinder.TryReadGeneralRobotIdentity(
+                turn.Attributes.TryGetValue("context", out var context) ? context?.ToString() : null,
+                out var contextRobotId,
+                out _))
+            return ResolveRegisteredFriendlyId(contextRobotId);
 
         if (!string.IsNullOrWhiteSpace(turn.DeviceId))
             return ResolveRegisteredFriendlyId(turn.DeviceId);

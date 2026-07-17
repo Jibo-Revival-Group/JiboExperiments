@@ -67,4 +67,28 @@ public sealed class JiboIdentityResolverTests
         Assert.Equal("Jibo-One", friendlyId);
         Assert.NotEqual("SHARED-SINGLETON-DEVICE", deviceId);
     }
+
+    [Fact]
+    public void Resolve_PrefersContextGeneralRobotId_OverSingletonSessionDeviceId()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            RobotId = "Bootstrap-Robot",
+            FriendlyName = "Bootstrap"
+        });
+
+        var (deviceId, friendlyId) = JiboIdentityResolver.Resolve(new TurnContext
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = """{"general":{"accountID":"acct-1","robotID":"Ghost-Instance-Onion-Silk"}}"""
+            }
+        }, store);
+
+        Assert.Equal("Ghost-Instance-Onion-Silk", deviceId);
+        Assert.Equal("Ghost-Instance-Onion-Silk", friendlyId);
+    }
 }

@@ -421,6 +421,9 @@ public sealed class WebSocketTurnFinalizationService(
             turnState.SawContext = true;
             turnState.ContextPayload = ExtractDataPayload(envelope.Text);
             session.Metadata["context"] = turnState.ContextPayload;
+            SessionRobotIdentityBinder.TryBindFromContextPayload(
+                session,
+                turnState.ContextPayload ?? envelope.Text);
 
             if (TryReadContextProperty(envelope.Text, "audioTranscriptHint", out var transcriptHint) &&
                 !string.IsNullOrWhiteSpace(transcriptHint))

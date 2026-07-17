@@ -8388,8 +8388,9 @@ public sealed class JiboWebSocketServiceTests
     public async Task PathToken_PersonalReportOptInThenYesOnNewConnection_ContinuesStateMachine()
     {
         // Live robots on path-token mode open a fresh websocket for the constrained yes/no listen.
-        // Dialog metadata must carry across connection-scoped sessions for the same device.
+        // Dialog metadata must carry across connection-scoped sessions for the same robotID.
         const string stateKey = "personalReportState";
+        const string robotId = "Ghost-Instance-Kitchen";
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -8408,6 +8409,31 @@ public sealed class JiboWebSocketServiceTests
 
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
+            ConnectionId = "connection-personal-report-optin",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                "{\"type\":\"CONTEXT\",\"transID\":\"trans-pr-path-start\",\"data\":{\"general\":{\"accountID\":\"acct-1\",\"robotID\":\"" +
+                robotId + "\"}}}"
+        });
+        Assert.Equal(robotId, optInSession.DeviceId);
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-personal-report-yesno",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                "{\"type\":\"CONTEXT\",\"transID\":\"trans-pr-path-yes\",\"data\":{\"general\":{\"accountID\":\"acct-1\",\"robotID\":\"" +
+                robotId + "\"}}}"
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
             ConnectionId = "connection-personal-report-yesno",
             HostName = "192.168.7.142",
             Path = "/v1/listen",
@@ -8420,6 +8446,7 @@ public sealed class JiboWebSocketServiceTests
         var yesSession = _store.FindSessionByToken("conn:connection-personal-report-yesno");
         Assert.NotNull(yesSession);
         Assert.NotSame(optInSession, yesSession);
+        Assert.Equal(robotId, yesSession.DeviceId);
         Assert.Equal("awaiting_opt_in", yesSession.Metadata[stateKey]?.ToString());
 
         var yesReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope

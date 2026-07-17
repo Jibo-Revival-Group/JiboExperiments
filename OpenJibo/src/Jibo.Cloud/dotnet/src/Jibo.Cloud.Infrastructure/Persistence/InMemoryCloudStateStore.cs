@@ -479,7 +479,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path)
     {
-        var resolvedDeviceId = deviceId ?? _robot.DeviceId;
+        // Path-token / per-connection listen sockets must not inherit the process-wide singleton
+        // DeviceId — that collapses every robot onto one identity until CONTEXT arrives.
+        var resolvedDeviceId = !string.IsNullOrWhiteSpace(deviceId)
+            ? deviceId.Trim()
+            : IsAmbiguousConnectionToken(token)
+                ? null
+                : _robot.DeviceId;
         var resolvedLoopId = ResolveDefaultLoopId();
         var session = new CloudSession
         {
@@ -499,6 +505,24 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         TouchState();
 
         return session;
+    }
+
+    public void ReinheritDialogMetadata(CloudSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        InheritDialogMetadataFromDevice(session);
+        TouchState();
+    }
+
+    private static bool IsAmbiguousConnectionToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return true;
+        var trimmed = token.Trim();
+        return trimmed.StartsWith("conn:", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("v1/listen", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("listen", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("v1/proactive", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("proactive", StringComparison.OrdinalIgnoreCase);
     }
 
     private void InheritDialogMetadataFromDevice(CloudSession session)

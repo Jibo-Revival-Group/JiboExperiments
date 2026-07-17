@@ -11,7 +11,7 @@
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "",
-			"prompt": "Good question, I'm still learning about TV shows.",
+			"prompt": "My favorite TV show is Impractical Jokers. I find their pranks super funny!",
 			"media": "TTS",
 			"prompt_id": "RI_JBO_HasFavoriteTVShow_AN_01",
 			"weight": 1
@@ -21,7 +21,7 @@
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "",
-			"prompt": "Y'know, I'm not sure which are my favorite TV shows yet.",
+			"prompt": "I really like comedy shows. My favorite is Impractical Jokers. Murr is my favorite.",
 			"media": "TTS",
 			"prompt_id": "RI_JBO_HasFavoriteTVShow_AN_02",
 			"weight": 1,

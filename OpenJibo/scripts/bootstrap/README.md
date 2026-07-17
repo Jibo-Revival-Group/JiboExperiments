@@ -96,7 +96,7 @@ Example:
   --target-mode open-jibo \
   --base-url https://api.openjibo.com \
   --api-hostname api.openjibo.com \
-  --hub-hostname api.openjibo.com \
+  --hub-hostname neohub.openjibo.com \
   --strict \
   --clean \
   --output-directory /tmp/openjibo-conversion-video

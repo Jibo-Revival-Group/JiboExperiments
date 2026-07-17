@@ -17,21 +17,21 @@ These scripts help exercise the new .NET hosted cloud locally.
 - `Deploy-OpenJiboManagedFoundation.ps1`
   Deploys the managed foundation resources, then seeds Key Vault secrets from the deployment outputs and supplied bootstrap values.
 - `Deploy-OpenJiboManaged.ps1`
-  Deploys the first Azure Container Apps stack from the Bicep template under `infra/azure/container-apps/`. Use `-RunMigration` to apply schema changes and `-RunSmoke` to verify the deployed endpoint. Use `-ApiHostname api.openjibo.com` to keep deploy smoke and runtime configuration aligned with the canonical robot-facing API hostname.
+  Deploys the first Azure Container Apps stack from the Bicep template under `infra/azure/container-apps/`. Use `-RunMigration` to apply schema changes and `-RunSmoke` to verify the deployed endpoint. By default it binds `api.openjibo.com`, `open-jibo-socket.openjibo.com`, and `neohub.openjibo.com` so the robot API, notification socket, and neohub paths stay aligned.
 - `deploy-openjibo-managed-foundation.sh`
   Bash deploy wrapper for the managed foundation stack.
 - `publish-openjibo-managed.sh`
   Bash build-and-push wrapper for the managed ACR image.
 - `deploy-openjibo-managed.sh`
-  Bash deploy wrapper for the managed Container Apps stack plus optional migration and smoke. Use `--api-hostname api.openjibo.com` to deploy and smoke the canonical managed API hostname; this is the default for the managed path.
+  Bash deploy wrapper for the managed Container Apps stack plus optional migration and smoke. It defaults to the canonical managed host trio: `--api-hostname api.openjibo.com`, `--socket-hostname open-jibo-socket.openjibo.com`, and `--neohub-hostname neohub.openjibo.com`.
 - `Test-OpenJiboManagedDeploymentContract.ps1`
   Validates the managed deployment contract by checking the Bicep templates, workflow, and deploy scripts for expected markers before any Azure calls run.
 - `test-openjibo-managed-deployment-contract.sh`
-  Bash contract checker for the managed deployment path and workflow markers, including the canonical `api.openjibo.com` hostname path.
+  Bash contract checker for the managed deployment path and workflow markers, including the canonical managed host trio and `api.openjibo.com` hostname path.
 - `Test-OpenJiboSelfHostedDeploymentContract.ps1`
   Validates the self-hosted contract by checking the Compose file, migration wrapper, and smoke script before local CI brings up the stack.
 - GitHub Actions `openjibo-cloud-managed-deploy`
-  Manual workflow that deploys the foundation, builds the managed image, deploys the ACA stack, binds the canonical custom hostname, runs migrations, and smokes the deployed endpoint. The workflow defaults the robot-facing API hostname to `api.openjibo.com`.
+  Manual workflow that deploys the foundation, builds the managed image, deploys the ACA stack, binds the canonical API/socket/neohub hostnames, runs migrations, and smokes the deployed endpoint. The workflow defaults the robot-facing host trio to `api.openjibo.com`, `open-jibo-socket.openjibo.com`, and `neohub.openjibo.com`.
 - `OPENJIBO_POSTGRES_PASSWORD`
   Required when running the self-hosted PostgreSQL stack locally or in CI so the database password stays out of source control.
 - `initialize-openjibo-compose-env.sh`
@@ -91,7 +91,7 @@ The foundation adds a PostgreSQL firewall rule for Azure services and, when the 
 
 ## Managed hostname binding
 
-`deploy-openjibo-managed.sh` and `Deploy-OpenJiboManaged.ps1` bind the requested `api.openjibo.com` style hostname after the Container App deployment. Azure Container Apps managed certificates require DNS to point directly at the generated Container App hostname before certificate issuance can succeed. For subdomains such as `api.openjibo.com`, create a CNAME from the custom hostname to the generated Container App FQDN returned by the deployment output.
+`deploy-openjibo-managed.sh` and `Deploy-OpenJiboManaged.ps1` bind the requested host trio after the Container App deployment. Azure Container Apps managed certificates require DNS to point directly at the generated Container App hostname before certificate issuance can succeed. For subdomains such as `api.openjibo.com`, `open-jibo-socket.openjibo.com`, and `neohub.openjibo.com`, create a CNAME from each custom hostname to the generated Container App FQDN returned by the deployment output.
 
 Use `--skip-hostname-binding` or `-SkipHostnameBinding` only for temporary diagnostics where the generated Container App FQDN is enough.
 

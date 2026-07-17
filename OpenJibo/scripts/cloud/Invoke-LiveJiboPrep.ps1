@@ -3,7 +3,8 @@ param(
     [string[]]$ExpectedHosts = @(
         "api.jibo.com",
         "api-socket.jibo.com",
-        "neo-hub.jibo.com"
+        "open-jibo-socket.openjibo.com",
+        "neohub.openjibo.com"
     ),
     [string]$CaptureDirectory = "..\..\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Api\bin\Debug\net10.0\captures\websocket"
 )

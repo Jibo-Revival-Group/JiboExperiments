@@ -269,7 +269,9 @@ if (-not $statusAfter.Success) {
 $reportedHostMappings = @{
     "api.jibo.com" = $TargetHost
     "api-socket.jibo.com" = $TargetHost
+    "open-jibo-socket.openjibo.com" = $TargetHost
     "neo-hub.jibo.com" = $TargetHost
+    "neohub.openjibo.com" = $TargetHost
 }
 
 $connectionProof = Invoke-JsonRequest -Name "VerifyConnection" -Method "POST" -Url "$BaseUrl/" -Headers @{
@@ -315,13 +317,13 @@ if (-not $connectionProof.Body.reportedHostMappingsMatch) {
     throw "VerifyConnection did not confirm the robot-reported legacy host mappings matched the target host."
 }
 
-foreach ($legacyHost in @("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com")) {
+foreach ($legacyHost in @("api.jibo.com", "api-socket.jibo.com", "open-jibo-socket.openjibo.com", "neo-hub.jibo.com", "neohub.openjibo.com")) {
     if ($connectionProof.Body.reportedHostMappings.$legacyHost -ne $TargetHost) {
         throw "VerifyConnection did not echo the robot-reported $legacyHost mapping to $TargetHost."
     }
 }
 
-foreach ($legacyHost in @("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com")) {
+foreach ($legacyHost in @("api.jibo.com", "api-socket.jibo.com", "open-jibo-socket.openjibo.com", "neo-hub.jibo.com", "neohub.openjibo.com")) {
     if ($connectionProof.Body.hostMappings.$legacyHost -ne $TargetHost) {
         throw "VerifyConnection did not map $legacyHost to $TargetHost."
     }

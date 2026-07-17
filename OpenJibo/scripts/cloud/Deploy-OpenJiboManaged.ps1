@@ -8,6 +8,8 @@ param(
     [string]$ImageTag = "managed",
     [string]$Location = "",
     [string]$ApiHostname = "api.openjibo.com",
+    [string]$SocketHostname = "open-jibo-socket.openjibo.com",
+    [string]$NeoHubHostname = "neohub.openjibo.com",
     [Parameter(Mandatory = $true)]
     [string]$RegistryName,
     [bool]$EnableAzureSpeech = $true,
@@ -198,6 +200,34 @@ function Restart-ContainerAppRevision {
     Write-Host "Container App revision '$latestRevisionName' restarted."
 }
 
+function Bind-ContainerAppHostname {
+    param(
+        [string]$ContainerAppName,
+        [string]$ManagedEnvironmentName,
+        [string]$Hostname
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Hostname)) {
+        return
+    }
+
+    Write-Host "Adding hostname '$Hostname' to Container App '$ContainerAppName'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate."
+    & az containerapp hostname add `
+        --resource-group $ResourceGroupName `
+        --name $ContainerAppName `
+        --hostname $Hostname `
+        --output none
+    Write-Host "Hostname '$Hostname' added. Binding the managed certificate for Container App '$ContainerAppName'."
+    & az containerapp hostname bind `
+        --resource-group $ResourceGroupName `
+        --name $ContainerAppName `
+        --hostname $Hostname `
+        --environment $ManagedEnvironmentName `
+        --validation-method CNAME `
+        --output none
+    Write-Host "Managed certificate binding completed for hostname '$Hostname'."
+}
+
 $arguments = @(
     "deployment", "group", "create",
     "--resource-group", $ResourceGroupName,
@@ -208,6 +238,8 @@ $arguments = @(
     "--parameters", "keyVaultName=$KeyVaultName",
     "--parameters", "imageTag=$ImageTag",
     "--parameters", "apiHostname=$ApiHostname",
+    "--parameters", "socketHostname=$SocketHostname",
+    "--parameters", "neoHubHostname=$NeoHubHostname",
     "--parameters", "stateConnectionString=$stateConnectionString",
     "--parameters", "personalMemoryConnectionString=$personalMemoryConnectionString",
     "--parameters", "mediaConnectionString=$mediaConnectionString",
@@ -250,21 +282,9 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
         throw "Managed environment name was not returned from the deployment."
     }
 
-    Write-Host "Adding hostname '$ApiHostname' to Container App '$containerAppName'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate."
-    az containerapp hostname add `
-        --resource-group $ResourceGroupName `
-        --name $containerAppName `
-        --hostname $ApiHostname `
-        --output none
-    Write-Host "Hostname '$ApiHostname' added. Binding the managed certificate for Container App '$containerAppName'."
-    az containerapp hostname bind `
-        --resource-group $ResourceGroupName `
-        --name $containerAppName `
-        --hostname $ApiHostname `
-        --environment $managedEnvironmentName `
-        --validation-method CNAME `
-        --output none
-    Write-Host "Managed certificate binding completed for hostname '$ApiHostname'."
+    Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $ApiHostname
+    Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $SocketHostname
+    Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $NeoHubHostname
 
     $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
     $postgresServerName = Get-PostgresServerNameFromConnectionString -ConnectionString $stateConnectionString

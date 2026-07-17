@@ -4,7 +4,9 @@ set -euo pipefail
 HOSTS=(
   "https://api.jibo.com/health"
   "https://api-socket.jibo.com/"
+  "https://open-jibo-socket.openjibo.com/"
   "https://neo-hub.jibo.com/v1/proactive"
+  "https://neohub.openjibo.com/v1/proactive"
 )
 
 for url in "${HOSTS[@]}"; do

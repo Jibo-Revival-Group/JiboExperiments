@@ -56,6 +56,10 @@ if [[ -z "$source_root" || -z "$overlay_root" ]]; then
   exit 2
 fi
 
+if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" == "open-jibo-ai" ) ]]; then
+  hub_hostname="neohub.openjibo.com"
+fi
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 roundtrip_script="$script_dir/roundtrip-openjibo-harness.sh"
 validator_script="$script_dir/validate-openjibo-harness-roundtrip.sh"

@@ -7,6 +7,8 @@ registry_name=""
 image_tag="managed"
 location=""
 api_hostname="api.openjibo.com"
+socket_hostname="open-jibo-socket.openjibo.com"
+neohub_hostname="neohub.openjibo.com"
 enable_azure_speech=true
 azure_speech_region=""
 template_path="infra/azure/container-apps/openjibo-managed.bicep"
@@ -39,6 +41,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --api-hostname)
       api_hostname="${2:-api.openjibo.com}"
+      shift 2
+      ;;
+    --socket-hostname)
+      socket_hostname="${2:-open-jibo-socket.openjibo.com}"
+      shift 2
+      ;;
+    --neohub-hostname)
+      neohub_hostname="${2:-neohub.openjibo.com}"
       shift 2
       ;;
     --enable-azure-speech)
@@ -206,6 +216,8 @@ deployment_args=(
   --parameters "keyVaultName=${key_vault_name}"
   --parameters "imageTag=${image_tag}"
   --parameters "apiHostname=${api_hostname}"
+  --parameters "socketHostname=${socket_hostname}"
+  --parameters "neoHubHostname=${neohub_hostname}"
   --parameters "stateConnectionString=${state_connection_string}"
   --parameters "personalMemoryConnectionString=${personal_memory_connection_string}"
   --parameters "mediaConnectionString=${media_connection_string}"
@@ -252,21 +264,32 @@ print(deployment_json["properties"]["outputs"]["managedEnvironmentName"]["value"
 PY
 )"
 
-  echo "Adding hostname '${api_hostname}' to Container App '${container_app_name}'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate." >&2
-  az containerapp hostname add \
-    --resource-group "$resource_group_name" \
-    --name "$container_app_name" \
-    --hostname "$api_hostname" \
-    --output none
-  echo "Hostname '${api_hostname}' added. Binding the managed certificate for Container App '${container_app_name}'." >&2
-  az containerapp hostname bind \
-    --resource-group "$resource_group_name" \
-    --name "$container_app_name" \
-    --hostname "$api_hostname" \
-    --environment "$managed_environment_name" \
-    --validation-method CNAME \
-    --output none
-  echo "Managed certificate binding completed for hostname '${api_hostname}'." >&2
+  bind_containerapp_hostname() {
+    local hostname="$1"
+    if [[ -z "$hostname" ]]; then
+      return
+    fi
+
+    echo "Adding hostname '${hostname}' to Container App '${container_app_name}'. DNS must point directly at the generated Container App hostname before Azure can issue the managed certificate." >&2
+    az containerapp hostname add \
+      --resource-group "$resource_group_name" \
+      --name "$container_app_name" \
+      --hostname "$hostname" \
+      --output none
+    echo "Hostname '${hostname}' added. Binding the managed certificate for Container App '${container_app_name}'." >&2
+    az containerapp hostname bind \
+      --resource-group "$resource_group_name" \
+      --name "$container_app_name" \
+      --hostname "$hostname" \
+      --environment "$managed_environment_name" \
+      --validation-method CNAME \
+      --output none
+    echo "Managed certificate binding completed for hostname '${hostname}'." >&2
+  }
+
+  bind_containerapp_hostname "$api_hostname"
+  bind_containerapp_hostname "$socket_hostname"
+  bind_containerapp_hostname "$neohub_hostname"
 
   state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-state-connection-string --query value -o tsv)"
   postgres_server_name="$(parse_postgres_server_name "$state_connection_string")"

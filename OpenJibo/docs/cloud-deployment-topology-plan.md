@@ -158,7 +158,7 @@ Recommended public shape:
 
 - `auth.openjibo.com`: people, loops, robots, cloud/server registration, token issuance, and trust metadata
 - `api.openjibo.com`: canonical robot-facing hosted API for account, loop, OOBE, media, update, and related cloud protocol traffic
-- `neo-hub.openjibo.com`: only if we later need a distinct host or route boundary for listen/proactive WebSocket traffic
+- `neohub.openjibo.com`: canonical managed host for listen/proactive WebSocket traffic
 - `cloud.openjibo.com`: managed Open Jibo Cloud runtime
 - `ai.openjibo.com` or `cloud-ai.openjibo.com`: Open Jibo AI runtime when ready
 - `openjibo.com`: public web app, account entry point, documentation, and owner flows
@@ -177,7 +177,7 @@ Decision: use the Open Jibo domain family as the root identity authority, with a
 
 Decision: auth should start as a separate deployable service, not as a module embedded inside the robot cloud container. That avoids a later split when self-hosted, managed, hybrid, and AI modes need to share identity without all running the same robot runtime.
 
-Decision: the first managed API surface should use `api.openjibo.com` as the canonical hostname, and `neo-hub` should only remain distinct if the listen/proactive protocol split truly needs a separate ingress or certificate boundary.
+Decision: the first managed API surface should use `api.openjibo.com` as the canonical hostname, with `neohub.openjibo.com` as the canonical listen/proactive host.
 
 Decision: `openjibo.com` should be treated as a real product surface, not just a marketing page. The first public site should be able to host account entry, onboarding redirects, and the project overview without requiring a separate domain for the owner-facing web app.
 
@@ -388,7 +388,7 @@ Custom-domain readiness should be part of that gate once the public hostnames ar
 
 - the managed API answers correctly behind `api.openjibo.com`
 - the public site answers correctly behind `openjibo.com`
-- any `neo-hub` routing decision is either explicit or intentionally collapsed onto the API host
+- any `neohub.openjibo.com` routing decision is either explicit or intentionally collapsed onto the API host
 - the same deployment can still satisfy the robot-facing protocol smoke checks without depending on a hardcoded legacy hostname
 
 Research target: record a new-robot onboarding session and reduce it to the smallest replayable sequence that proves the deployment can onboard, issue tokens, accept sockets, and complete basic operation turns.

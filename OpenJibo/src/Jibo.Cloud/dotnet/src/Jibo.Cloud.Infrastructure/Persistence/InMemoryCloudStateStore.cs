@@ -95,8 +95,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["api.jibo.com"] = "openjibo.com",
+                ["api.openjibo.com"] = "openjibo.com",
                 ["api-socket.jibo.com"] = "openjibo.com",
-                ["neo-hub.jibo.com"] = "openjibo.com"
+                ["open-jibo-socket.openjibo.com"] = "openjibo.com",
+                ["neo-hub.jibo.com"] = "openjibo.com",
+                ["neohub.openjibo.com"] = "openjibo.com"
             }
         };
 

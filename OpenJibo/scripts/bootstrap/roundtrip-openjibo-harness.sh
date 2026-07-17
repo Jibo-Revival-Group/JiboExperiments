@@ -56,6 +56,10 @@ if [[ -z "$source_root" || -z "$overlay_root" ]]; then
   exit 2
 fi
 
+if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" == "open-jibo-ai" ) ]]; then
+  hub_hostname="neohub.openjibo.com"
+fi
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 scaffold_script="$script_dir/scaffold-openjibo-harness.sh"
 run_script="$script_dir/run-openjibo-harness.sh"

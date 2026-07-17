@@ -27,6 +27,12 @@ param imageTag string = 'managed'
 @description('Canonical robot-facing hosted API hostname. This should match the hostname written by the robot conversion helpers.')
 param apiHostname string = 'api.openjibo.com'
 
+@description('Canonical robot-facing socket hostname for the notification subsystem. This should match the hostname derived by the robot conversion helpers.')
+param socketHostname string = 'open-jibo-socket.openjibo.com'
+
+@description('Canonical robot-facing neo-hub hostname for listen and proactive traffic.')
+param neoHubHostname string = 'neohub.openjibo.com'
+
 @description('Enables Azure Speech STT for hosted deployments.')
 param enableAzureSpeech bool = true
 
@@ -69,6 +75,8 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 
 var registryName = split(registryLoginServer, '.')[0]
 var canonicalApiBaseUrl = 'https://${apiHostname}'
+var canonicalSocketBaseUrl = 'https://${socketHostname}'
+var canonicalNeoHubBaseUrl = 'https://${neoHubHostname}'
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: registryName
@@ -160,6 +168,14 @@ var managedEnvVars = concat([
   {
     name: 'OpenJibo__CanonicalApiBaseUrl'
     value: canonicalApiBaseUrl
+  }
+  {
+    name: 'OpenJibo__CanonicalSocketHostname'
+    value: socketHostname
+  }
+  {
+    name: 'OpenJibo__CanonicalNeoHubHostname'
+    value: neoHubHostname
   }
   {
     name: 'OpenJibo__State__Backend'
@@ -296,3 +312,7 @@ output managedEnvironmentName string = managedEnvironment.name
 output containerAppFqdn string = containerApp.properties.configuration.ingress.fqdn
 output canonicalApiHostname string = apiHostname
 output canonicalApiBaseUrl string = canonicalApiBaseUrl
+output canonicalSocketHostname string = socketHostname
+output canonicalSocketBaseUrl string = canonicalSocketBaseUrl
+output canonicalNeoHubHostname string = neoHubHostname
+output canonicalNeoHubBaseUrl string = canonicalNeoHubBaseUrl

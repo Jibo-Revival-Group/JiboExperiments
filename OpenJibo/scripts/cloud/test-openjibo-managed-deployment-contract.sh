@@ -68,11 +68,19 @@ required_managed_markers=(
   "param registryLoginServer string"
   "param keyVaultName string"
   "param apiHostname string = 'api.openjibo.com'"
+  "param socketHostname string = 'open-jibo-socket.openjibo.com'"
+  "param neoHubHostname string = 'neohub.openjibo.com'"
   "param enableAzureSpeech bool = true"
   "param azureSpeechRegion string = location"
   "OpenJibo__CanonicalApiHostname"
   "OpenJibo__CanonicalApiBaseUrl"
+  "OpenJibo__CanonicalSocketHostname"
+  "OpenJibo__CanonicalNeoHubHostname"
   "output canonicalApiHostname string"
+  "output canonicalSocketHostname string"
+  "output canonicalNeoHubHostname string"
+  "output canonicalSocketBaseUrl string"
+  "output canonicalNeoHubBaseUrl string"
   "output containerAppName string"
   "output managedEnvironmentName string"
   "OpenJibo__Stt__EnableAzureSpeech"
@@ -104,8 +112,14 @@ required_workflow_markers=(
   "steps.foundation.outputs.keyVaultName"
   "inputs.location"
   "api_hostname"
+  "socket_hostname"
+  "neohub_hostname"
   "api.openjibo.com"
+  "open-jibo-socket.openjibo.com"
+  "neohub.openjibo.com"
   "--api-hostname"
+  "--socket-hostname"
+  "--neohub-hostname"
   "enable_azure_speech"
   "azure_speech_region"
   "--run-migration"
@@ -145,7 +159,7 @@ if [[ "$foundation_script_text" != *"seedPrincipalObjectId"* ]]; then
   exit 1
 fi
 
-for marker in "RegistryName" "ApiHostname" "containerapp hostname add" "containerapp hostname bind" "SkipHostnameBinding" "EnableAzureSpeech" "AzureSpeechRegion"; do
+for marker in "RegistryName" "ApiHostname" "SocketHostname" "NeoHubHostname" "containerapp hostname add" "containerapp hostname bind" "SkipHostnameBinding" "EnableAzureSpeech" "AzureSpeechRegion"; do
   if [[ "$managed_script_text" != *"$marker"* ]]; then
     echo "Managed deploy script is missing expected marker: $marker" >&2
     exit 1
@@ -177,7 +191,7 @@ if [[ "$linux_publish_script_text" != *"az acr build"* ]]; then
   exit 1
 fi
 
-for marker in "--run-smoke" "--run-migration" "--api-hostname" "az containerapp hostname add" "az containerapp hostname bind" 'bash "${script_dir}/invoke-openjibo-migration.sh"' "--skip-hostname-binding"; do
+for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "az containerapp hostname add" "az containerapp hostname bind" 'bash "${script_dir}/invoke-openjibo-migration.sh"' "--skip-hostname-binding"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing expected marker: $marker" >&2
     exit 1

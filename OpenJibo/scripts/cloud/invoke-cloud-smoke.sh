@@ -407,7 +407,9 @@ if not status_after.success:
 reported_host_mappings = {
     "api.jibo.com": target_host,
     "api-socket.jibo.com": target_host,
+    "open-jibo-socket.openjibo.com": target_host,
     "neo-hub.jibo.com": target_host,
+    "neohub.openjibo.com": target_host,
 }
 
 connection_proof = request_json(
@@ -463,7 +465,7 @@ for legacy_host, expected_host in reported_host_mappings.items():
         raise SystemExit(f"VerifyConnection did not echo the robot-reported {legacy_host} mapping to {expected_host}.")
 
 host_mappings = proof_body.get("hostMappings") if isinstance(proof_body.get("hostMappings"), dict) else {}
-for legacy_host in ("api.jibo.com", "api-socket.jibo.com", "neo-hub.jibo.com"):
+for legacy_host in ("api.jibo.com", "api-socket.jibo.com", "open-jibo-socket.openjibo.com", "neo-hub.jibo.com", "neohub.openjibo.com"):
     if host_mappings.get(legacy_host) != target_host:
         raise SystemExit(f"VerifyConnection did not map {legacy_host} to {target_host}.")
 

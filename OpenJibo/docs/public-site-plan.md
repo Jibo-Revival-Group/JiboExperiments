@@ -21,7 +21,7 @@ Stand up a small public site and web app on `openjibo.com` that makes the projec
 - zero-touch recovery
 - complete parity with the original cloud
 - public production readiness before device validation is repeatable
-- that `neo-hub` needs a separate public web presence unless routing evidence proves it
+- that `neohub.openjibo.com` needs a separate public web presence unless routing evidence proves it
 
 ## Initial Repo Asset
 

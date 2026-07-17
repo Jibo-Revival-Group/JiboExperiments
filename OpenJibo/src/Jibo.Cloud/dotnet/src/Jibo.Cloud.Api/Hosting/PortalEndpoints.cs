@@ -361,6 +361,113 @@ internal static class PortalEndpoints
             return Results.Json(new { cleared = true, memberId });
         });
 
+        app.MapGet("/api/portal/loop-members", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            return Results.Json(BuildLoopMembersPayload(cloudStateStore, loopId));
+        });
+
+        app.MapPost("/api/portal/loop-members", (
+            [FromBody] AddLoopMemberRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var firstName = request.FirstName?.Trim();
+            if (string.IsNullOrWhiteSpace(firstName))
+                return Results.BadRequest(new { error = "firstName is required." });
+
+            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var member = cloudStateStore.AddLoopMember(
+                loopId,
+                null,
+                null,
+                firstName,
+                request.LastName?.Trim(),
+                NormalizeGender(request.Gender),
+                null,
+                false,
+                "member");
+
+            return Results.Json(BuildLoopMemberPayload(member));
+        });
+
+        app.MapPut("/api/portal/loop-members/{memberId}", (
+            string memberId,
+            [FromBody] UpdateLoopMemberRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var existing = cloudStateStore.GetLoopMembers(loopId)
+                .FirstOrDefault(m => m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+            if (existing is null)
+                return Results.NotFound(new { error = "Loop member not found." });
+
+            var firstName = request.FirstName?.Trim();
+            if (request.FirstName is not null && string.IsNullOrWhiteSpace(firstName))
+                return Results.BadRequest(new { error = "firstName cannot be blank." });
+
+            try
+            {
+                var updated = cloudStateStore.UpdateLoopMember(
+                    loopId,
+                    memberId,
+                    firstName,
+                    request.LastName?.Trim(),
+                    request.Gender is null ? null : NormalizeGender(request.Gender),
+                    null,
+                    existing.IsChild,
+                    null,
+                    null);
+
+                return Results.Json(BuildLoopMemberPayload(updated));
+            }
+            catch (InvalidOperationException)
+            {
+                return Results.NotFound(new { error = "Loop member not found." });
+            }
+        });
+
+        app.MapDelete("/api/portal/loop-members/{memberId}", (
+            string memberId,
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var existing = cloudStateStore.GetLoopMembers(loopId)
+                .FirstOrDefault(m => m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+            if (existing is null)
+                return Results.NotFound(new { error = "Loop member not found." });
+
+            if (existing.Type is "owner" or "robot")
+                return Results.BadRequest(new { error = "The loop owner and robot cannot be removed here." });
+
+            cloudStateStore.RemoveLoopMember(loopId, memberId);
+            return Results.Json(new { removed = true, memberId });
+        });
+
         app.MapPost("/api/portal/calendar-feeds/{memberId}/test", async (
             string memberId,
             [FromBody] TestMemberCalendarFeedRequest request,
@@ -863,7 +970,8 @@ internal static class PortalEndpoints
                     connected = false
                 }
                 : BuildHomeAssistantPayload(link, registry),
-            calendarFeeds = BuildCalendarFeedsPayload(cloudStateStore, integrationStore, session)
+            calendarFeeds = BuildCalendarFeedsPayload(cloudStateStore, integrationStore, session),
+            loopMembers = BuildLoopMembersPayload(cloudStateStore, ResolvePortalLoopId(cloudStateStore, session))
         };
     }
 
@@ -1016,6 +1124,46 @@ internal static class PortalEndpoints
         string? LastName,
         string? Nickname);
 
+    private static object BuildLoopMembersPayload(ICloudStateStore cloudStateStore, string loopId)
+    {
+        var members = cloudStateStore.GetLoopMembers(loopId)
+            .Where(static member => !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(static member => member.Type.Equals("owner", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(static member => member.FirstName, StringComparer.OrdinalIgnoreCase)
+            .Select(BuildLoopMemberPayload)
+            .ToArray();
+
+        return new { loopId, members };
+    }
+
+    private static object BuildLoopMemberPayload(LoopMemberRecord member)
+    {
+        var displayName = !string.IsNullOrWhiteSpace(member.Nickname)
+            ? member.Nickname
+            : string.Join(' ', new[] { member.FirstName, member.LastName }
+                .Where(static part => !string.IsNullOrWhiteSpace(part)));
+        if (string.IsNullOrWhiteSpace(displayName))
+            displayName = member.Id;
+
+        return new
+        {
+            id = member.Id,
+            firstName = member.FirstName,
+            lastName = member.LastName,
+            displayName,
+            gender = member.Gender,
+            type = member.Type,
+            canRemove = member.Type is not "owner" and not "robot"
+        };
+    }
+
+    private static string NormalizeGender(string? gender)
+    {
+        if (string.IsNullOrWhiteSpace(gender)) return "unknown";
+        var normalized = gender.Trim().ToLowerInvariant();
+        return normalized is "male" or "female" ? normalized : "unknown";
+    }
+
     private static string ResolvePortalLoopId(
         ICloudStateStore cloudStateStore,
         PortalSessionService.PortalSession session)
@@ -1070,6 +1218,18 @@ internal static class PortalEndpoints
     private sealed record TestMemberCalendarFeedRequest(
         string? PortalSessionToken,
         string? IcalUrl);
+
+    private sealed record AddLoopMemberRequest(
+        string? PortalSessionToken,
+        string? FirstName,
+        string? LastName,
+        string? Gender);
+
+    private sealed record UpdateLoopMemberRequest(
+        string? PortalSessionToken,
+        string? FirstName,
+        string? LastName,
+        string? Gender);
 
     private sealed record PortalLogoutRequest(string? PortalSessionToken);
 

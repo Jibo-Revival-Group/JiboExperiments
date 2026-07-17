@@ -332,6 +332,84 @@ function bindPortalControls() {
     refreshButton.addEventListener("click", () => renderDashboard());
   }
 
+  document.querySelectorAll(".save-member-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const status = document.getElementById("loopMembersActionStatus");
+      const memberId = button.getAttribute("data-member-id");
+      const row = button.closest(".member-row");
+      const firstName = row.querySelector(".member-first-name").value.trim();
+      const lastName = row.querySelector(".member-last-name").value.trim();
+      const gender = row.querySelector(".member-gender").value;
+
+      if (!firstName) {
+        status.textContent = "First name is required.";
+        status.className = "status error";
+        status.classList.remove("hidden");
+        return;
+      }
+
+      try {
+        await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ firstName, lastName, gender }),
+        });
+        await renderDashboard("Loop member updated.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+        status.classList.remove("hidden");
+      }
+    });
+  });
+
+  document.querySelectorAll(".remove-member-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const status = document.getElementById("loopMembersActionStatus");
+      const memberId = button.getAttribute("data-member-id");
+      if (!window.confirm("Remove this person from the Loop?")) return;
+
+      try {
+        await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
+          method: "DELETE",
+        });
+        await renderDashboard("Loop member removed.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+        status.classList.remove("hidden");
+      }
+    });
+  });
+
+  const addMemberButton = document.getElementById("addMemberButton");
+  if (addMemberButton) {
+    addMemberButton.addEventListener("click", async () => {
+      const status = document.getElementById("loopMembersActionStatus");
+      const firstName = document.getElementById("newMemberFirstName").value.trim();
+      const lastName = document.getElementById("newMemberLastName").value.trim();
+      const gender = document.getElementById("newMemberGender").value;
+
+      if (!firstName) {
+        status.textContent = "First name is required.";
+        status.className = "status error";
+        status.classList.remove("hidden");
+        return;
+      }
+
+      try {
+        await apiFetch("/api/portal/loop-members", {
+          method: "POST",
+          body: JSON.stringify({ firstName, lastName, gender }),
+        });
+        await renderDashboard("Loop member added.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+        status.classList.remove("hidden");
+      }
+    });
+  }
+
   document.querySelectorAll(".trusted-server-action").forEach((button) => {
     button.addEventListener("click", async () => {
       const status = document.getElementById("trustedServerActionStatus");
@@ -626,6 +704,67 @@ function calendarFeedStatusBadge(member) {
   return `<span class="badge success">Configured</span>`;
 }
 
+function genderOptionsHtml(selectedGender) {
+  const gender = selectedGender || "unknown";
+  const options = [
+    ["unknown", "Unspecified"],
+    ["male", "Male"],
+    ["female", "Female"],
+  ];
+  return options.map(([value, label]) => `
+    <option value="${value}"${gender === value ? " selected" : ""}>${label}</option>
+  `).join("");
+}
+
+function renderLoopMemberRow(member) {
+  const badgeLabel = member.type === "owner" ? "Owner" : "Member";
+  const badgeClass = member.type === "owner" ? "success" : "neutral";
+  return `
+    <div class="member-row" data-member-id="${escapeHtml(member.id)}">
+      <input class="member-first-name" type="text" value="${escapeHtml(member.firstName || "")}" placeholder="First name">
+      <input class="member-last-name" type="text" value="${escapeHtml(member.lastName || "")}" placeholder="Last name">
+      <select class="member-gender">
+        ${genderOptionsHtml(member.gender)}
+      </select>
+      <div class="member-row-actions">
+        <span class="badge ${badgeClass}">${badgeLabel}</span>
+        <button class="button secondary save-member-button" data-member-id="${escapeHtml(member.id)}" type="button">Save</button>
+        ${member.canRemove ? `<button class="button danger remove-member-button" data-member-id="${escapeHtml(member.id)}" type="button">Remove</button>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function renderLoopMembersSection(dashboard) {
+  const loopMembers = (dashboard.loopMembers && dashboard.loopMembers.members) || [];
+
+  const memberRows = loopMembers.length === 0
+    ? `<p class="muted">No people yet. Add the first person to this robot's Loop below.</p>`
+    : `<div class="member-list">${loopMembers.map(renderLoopMemberRow).join("")}</div>`;
+
+  return `
+    <div class="loop-subsection">
+      <div class="panel-header">
+        <div>
+          <h3>People</h3>
+        </div>
+        <span class="badge success">${loopMembers.length} ${loopMembers.length === 1 ? "person" : "people"}</span>
+      </div>
+      <p class="muted">Edit each person's name and gender, or add and remove people from this robot's Loop. The owner and the robot itself cannot be removed here.</p>
+      ${memberRows}
+      <div class="member-row member-row-add">
+        <input id="newMemberFirstName" type="text" placeholder="First name">
+        <input id="newMemberLastName" type="text" placeholder="Last name (optional)">
+        <select id="newMemberGender">
+          ${genderOptionsHtml("unknown")}
+        </select>
+        <button class="button primary" id="addMemberButton" type="button">Add person</button>
+      </div>
+      <p id="loopMembersActionStatus" class="status hidden"></p>
+    </div>
+  `;
+}
+
 function renderLoopPanel(dashboard) {
   const calendarFeeds = dashboard.calendarFeeds || { members: [] };
   const members = calendarFeeds.members || [];
@@ -658,7 +797,9 @@ function renderLoopPanel(dashboard) {
         </div>
         <span class="badge success">${members.length} ${members.length === 1 ? "person" : "people"}</span>
       </div>
-      <p class="muted">Manage this robot's Loop. More household controls will land here over time; for now you can attach each person's calendar.</p>
+      <p class="muted">Manage this robot's Loop: add or remove people, fix a name or gender, and attach calendars.</p>
+
+      ${renderLoopMembersSection(dashboard)}
 
       <div class="loop-subsection">
         <div class="panel-header">

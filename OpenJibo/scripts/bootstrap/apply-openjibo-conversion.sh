@@ -105,7 +105,7 @@ const applyOutputDirectory = outputPath
   ? path.dirname(path.resolve(outputPath))
   : path.dirname(planPath);
 const backupRoot = path.resolve(applyOutputDirectory, "backups");
-fs.mkdirSync(backupRoot, { recursive: true });
+ensureDir(backupRoot);
 
 function candidatePaths(relativePaths) {
   return relativePaths.map(relativePath => path.resolve(robotRoot, relativePath));

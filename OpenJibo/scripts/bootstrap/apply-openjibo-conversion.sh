@@ -318,7 +318,7 @@ const applyManifest = {
 const json = JSON.stringify(applyManifest, null, 2);
 if (outputPath) {
   const resolvedOutput = path.resolve(outputPath);
-  fs.mkdirSync(path.dirname(resolvedOutput), { recursive: true });
+  ensureDir(path.dirname(resolvedOutput));
   fs.writeFileSync(resolvedOutput, json);
   console.log(`Saved conversion apply manifest to ${resolvedOutput}`);
 } else {

@@ -117,7 +117,7 @@ if [ "$apply" = true ]; then
   applied=true
 fi
 
-tmp_js="$(mktemp "${TMPDIR:-/tmp}/invoke-openjibo-conversion.XXXXXX.js")"
+tmp_js="$(mktemp "${TMPDIR:-/tmp}/invoke-openjibo-conversion.XXXXXX")"
 cleanup() {
   rm -f "$tmp_js"
 }

@@ -63,7 +63,7 @@ if [ -z "$hub_hostname" ] && { [ "$target_mode" = "open-jibo" ] || [ "$target_mo
   hub_hostname="neohub.openjibo.com"
 fi
 
-tmp_js="$(mktemp "${TMPDIR:-/tmp}/apply-openjibo-conversion.XXXXXX.js")"
+tmp_js="$(mktemp "${TMPDIR:-/tmp}/apply-openjibo-conversion.XXXXXX")"
 cleanup() {
   rm -f "$tmp_js"
 }

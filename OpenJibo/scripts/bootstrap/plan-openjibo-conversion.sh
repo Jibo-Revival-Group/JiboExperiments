@@ -55,8 +55,8 @@ fi
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 audit_script="$script_dir/audit-openjibo-conversion.sh"
-temp_audit_path="$(mktemp "${TMPDIR:-/tmp}/openjibo-conversion-audit.XXXXXX.json")"
-tmp_js="$(mktemp "${TMPDIR:-/tmp}/plan-openjibo-conversion.XXXXXX.js")"
+temp_audit_path="$(mktemp "${TMPDIR:-/tmp}/openjibo-conversion-audit.XXXXXX")"
+tmp_js="$(mktemp "${TMPDIR:-/tmp}/plan-openjibo-conversion.XXXXXX")"
 
 cleanup() {
   rm -f "$temp_audit_path" "$tmp_js"

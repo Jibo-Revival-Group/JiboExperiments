@@ -34,7 +34,7 @@ if [ -z "$robot_root" ]; then
   exit 2
 fi
 
-tmp_js="$(mktemp "${TMPDIR:-/tmp}/audit-openjibo-conversion.XXXXXX.js")"
+tmp_js="$(mktemp "${TMPDIR:-/tmp}/audit-openjibo-conversion.XXXXXX")"
 cleanup() {
   rm -f "$tmp_js"
 }

@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
+using Jibo.Cloud.Domain.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -58,6 +59,32 @@ public sealed class PortalCalendarFeedApiTests
 
         var integrationStore = factory.Services.GetRequiredService<IUserIntegrationStore>();
         Assert.Null(integrationStore.FindMemberCalendarFeed(loopId, member.Id));
+    }
+
+    [Fact]
+    public async Task CalendarFeeds_ListsPeopleFromLoopRoster()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var loopId = store.GetLoops().First().LoopId;
+
+        store.SyncPeopleFromLoopUsers(loopId,
+        [
+            new LoopUserSnapshot("looper-zane", "Zane", "Tester", "acct-zane", Type: "owner"),
+            new LoopUserSnapshot("looper-jon", "Jon", "Tester", "acct-jon", Type: "member")
+        ]);
+
+        await AuthorizeAsync(client, factory);
+
+        var listResponse = await client.GetAsync("/api/portal/calendar-feeds");
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+        var listBody = await listResponse.Content.ReadAsStringAsync();
+        Assert.Contains("Zane", listBody, StringComparison.Ordinal);
+        Assert.Contains("Jon", listBody, StringComparison.Ordinal);
+        Assert.Contains("looper-zane", listBody, StringComparison.Ordinal);
+        Assert.Contains("looper-jon", listBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("person-openjibo-household-member", listBody, StringComparison.Ordinal);
     }
 
     [Fact]

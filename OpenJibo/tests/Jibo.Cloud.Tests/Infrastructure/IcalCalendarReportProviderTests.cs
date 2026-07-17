@@ -19,16 +19,19 @@ public sealed class IcalCalendarReportProviderTests
                 new EncryptedUserDataSnapshotStore(path, new UserDataEncryptionService()));
             var cloudState = new InMemoryCloudStateStore();
             var loopId = cloudState.GetLoops().First().LoopId;
-            var zane = cloudState.AddLoopMember(loopId, null, null, "Zane", "A", "unknown", null, false, "member");
-            var jon = cloudState.AddLoopMember(loopId, null, null, "Jon", "B", "unknown", null, false, "member");
+            cloudState.SyncPeopleFromLoopUsers(loopId,
+            [
+                new LoopUserSnapshot("looper-zane", "Zane", "A", Type: "member"),
+                new LoopUserSnapshot("looper-jon", "Jon", "B", Type: "member")
+            ]);
 
             integrationStore.UpsertMemberCalendarFeed(
                 loopId,
-                zane.Id,
+                "looper-zane",
                 "https://calendar.example.com/zane.ics");
             integrationStore.UpsertMemberCalendarFeed(
                 loopId,
-                jon.Id,
+                "looper-jon",
                 "https://calendar.example.com/jon.ics");
 
             // Provider windows use the robot/local calendar day, not UTC.
@@ -68,7 +71,7 @@ public sealed class IcalCalendarReportProviderTests
                 Attributes = new Dictionary<string, object?>
                 {
                     ["loopId"] = loopId,
-                    ["personId"] = zane.Id
+                    ["personId"] = "looper-zane"
                 }
             });
             var jonReport = await provider.GetReportAsync(new TurnContext

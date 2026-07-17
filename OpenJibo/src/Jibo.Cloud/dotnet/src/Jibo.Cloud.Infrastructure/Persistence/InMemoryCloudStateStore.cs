@@ -583,6 +583,198 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _people.ToArray();
     }
 
+    public PersonRecord UpsertPerson(PersonRecord person)
+    {
+        if (person is null) throw new ArgumentNullException(nameof(person));
+        if (string.IsNullOrWhiteSpace(person.PersonId))
+            throw new ArgumentException("PersonId is required.", nameof(person));
+
+        PersonRecord resolved;
+        lock (_syncRoot)
+        {
+            var index = _people.FindIndex(existing =>
+                existing.PersonId.Equals(person.PersonId, StringComparison.OrdinalIgnoreCase));
+            var now = DateTimeOffset.UtcNow;
+            resolved = new PersonRecord
+            {
+                PersonId = person.PersonId.Trim(),
+                AccountId = string.IsNullOrWhiteSpace(person.AccountId) ? _account.AccountId : person.AccountId.Trim(),
+                LoopId = string.IsNullOrWhiteSpace(person.LoopId) ? ResolveDefaultLoopId() : person.LoopId.Trim(),
+                RobotId = string.IsNullOrWhiteSpace(person.RobotId) ? _robot.RobotId : person.RobotId.Trim(),
+                DisplayName = string.IsNullOrWhiteSpace(person.DisplayName) ? person.PersonId.Trim() : person.DisplayName.Trim(),
+                Alias = string.IsNullOrWhiteSpace(person.Alias) ? null : person.Alias.Trim(),
+                IsPrimary = person.IsPrimary,
+                CreatedUtc = index >= 0 ? _people[index].CreatedUtc : now,
+                UpdatedUtc = now
+            };
+
+            if (index >= 0)
+                _people[index] = resolved;
+            else
+                _people.Add(resolved);
+        }
+
+        TouchState();
+        return resolved;
+    }
+
+    public int SyncPeopleFromLoopUsers(string loopId, IReadOnlyList<LoopUserSnapshot> loopUsers)
+    {
+        if (string.IsNullOrWhiteSpace(loopId) || loopUsers is null || loopUsers.Count == 0)
+            return 0;
+
+        var resolvedLoopId = loopId.Trim();
+        var upserted = 0;
+        lock (_syncRoot)
+        {
+            foreach (var user in loopUsers)
+            {
+                if (string.IsNullOrWhiteSpace(user.Id)) continue;
+                if (string.Equals(user.Type, "robot", StringComparison.OrdinalIgnoreCase)) continue;
+
+                var personId = user.Id.Trim();
+                var firstName = user.FirstName?.Trim();
+                var lastName = user.LastName?.Trim();
+                var nickname = user.Nickname?.Trim();
+                var displayName = !string.IsNullOrWhiteSpace(nickname)
+                    ? nickname
+                    : string.Join(' ', new[] { firstName, lastName }.Where(static part => !string.IsNullOrWhiteSpace(part)));
+                if (string.IsNullOrWhiteSpace(displayName))
+                    displayName = personId;
+
+                var existingPerson = _people.FindIndex(person =>
+                    person.PersonId.Equals(personId, StringComparison.OrdinalIgnoreCase));
+                var now = DateTimeOffset.UtcNow;
+                var person = new PersonRecord
+                {
+                    PersonId = personId,
+                    AccountId = string.IsNullOrWhiteSpace(user.AccountId)
+                        ? (existingPerson >= 0 ? _people[existingPerson].AccountId : _account.AccountId)
+                        : user.AccountId.Trim(),
+                    LoopId = resolvedLoopId,
+                    RobotId = existingPerson >= 0 ? _people[existingPerson].RobotId : _robot.RobotId,
+                    DisplayName = displayName,
+                    Alias = !string.IsNullOrWhiteSpace(nickname)
+                        ? nickname
+                        : !string.IsNullOrWhiteSpace(firstName)
+                            ? firstName
+                            : existingPerson >= 0
+                                ? _people[existingPerson].Alias
+                                : null,
+                    IsPrimary = existingPerson >= 0
+                        ? _people[existingPerson].IsPrimary
+                        : string.Equals(user.Type, "owner", StringComparison.OrdinalIgnoreCase),
+                    CreatedUtc = existingPerson >= 0 ? _people[existingPerson].CreatedUtc : now,
+                    UpdatedUtc = now
+                };
+
+                if (existingPerson >= 0)
+                    _people[existingPerson] = person;
+                else
+                    _people.Add(person);
+
+                UpsertLoopMemberFromLoopUserLocked(resolvedLoopId, user, firstName, lastName, nickname);
+                upserted++;
+            }
+
+            // Drop the bootstrap household stub once the robot has published a real loop roster.
+            if (upserted > 0)
+            {
+                _people.RemoveAll(person =>
+                    person.PersonId.Equals("person-openjibo-household-member", StringComparison.OrdinalIgnoreCase) &&
+                    person.LoopId.Equals(resolvedLoopId, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+        if (upserted > 0)
+            TouchState();
+
+        return upserted;
+    }
+
+    private void UpsertLoopMemberFromLoopUserLocked(
+        string loopId,
+        LoopUserSnapshot user,
+        string? firstName,
+        string? lastName,
+        string? nickname)
+    {
+        var personId = user.Id.Trim();
+        var index = _loopMembers.FindIndex(member =>
+            member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+            (member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) ||
+             (!string.IsNullOrWhiteSpace(user.AccountId) &&
+              member.AccountId is not null &&
+              member.AccountId.Equals(user.AccountId, StringComparison.OrdinalIgnoreCase) &&
+              !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))));
+
+        var memberType = string.IsNullOrWhiteSpace(user.Type)
+            ? (index >= 0 ? _loopMembers[index].Type : "member")
+            : user.Type.Trim();
+        if (string.Equals(memberType, "robot", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var now = DateTimeOffset.UtcNow;
+        var member = new LoopMemberRecord
+        {
+            Id = index >= 0 ? _loopMembers[index].Id : personId,
+            LoopId = loopId,
+            AccountId = string.IsNullOrWhiteSpace(user.AccountId)
+                ? (index >= 0 ? _loopMembers[index].AccountId : null)
+                : user.AccountId.Trim(),
+            Email = index >= 0 ? _loopMembers[index].Email : null,
+            FirstName = firstName ?? (index >= 0 ? _loopMembers[index].FirstName : null),
+            LastName = lastName ?? (index >= 0 ? _loopMembers[index].LastName : null),
+            Gender = index >= 0 ? _loopMembers[index].Gender : "unknown",
+            Birthday = index >= 0 ? _loopMembers[index].Birthday : null,
+            IsChild = index >= 0 && _loopMembers[index].IsChild,
+            Status = "active",
+            Type = memberType,
+            Nickname = nickname ?? (index >= 0 ? _loopMembers[index].Nickname : null),
+            PhoneticName = index >= 0 ? _loopMembers[index].PhoneticName : null,
+            FaceEnrolled = index >= 0 && _loopMembers[index].FaceEnrolled,
+            VoiceEnrolled = index >= 0 && _loopMembers[index].VoiceEnrolled,
+            LegalGuardianId = index >= 0 ? _loopMembers[index].LegalGuardianId : null,
+            AgreementId = index >= 0 ? _loopMembers[index].AgreementId : null,
+            CreatedUtc = index >= 0 ? _loopMembers[index].CreatedUtc : now
+        };
+
+        // Prefer the robot's looper id as the stable member id (Pegasus personId).
+        if (index >= 0 &&
+            !member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) &&
+            !_loopMembers.Any(existing =>
+                existing.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                existing.Id.Equals(personId, StringComparison.OrdinalIgnoreCase)))
+        {
+            member = new LoopMemberRecord
+            {
+                Id = personId,
+                LoopId = member.LoopId,
+                AccountId = member.AccountId,
+                Email = member.Email,
+                FirstName = member.FirstName,
+                LastName = member.LastName,
+                Gender = member.Gender,
+                Birthday = member.Birthday,
+                IsChild = member.IsChild,
+                Status = member.Status,
+                Type = member.Type,
+                Nickname = member.Nickname,
+                PhoneticName = member.PhoneticName,
+                FaceEnrolled = member.FaceEnrolled,
+                VoiceEnrolled = member.VoiceEnrolled,
+                LegalGuardianId = member.LegalGuardianId,
+                AgreementId = member.AgreementId,
+                CreatedUtc = member.CreatedUtc
+            };
+        }
+
+        if (index >= 0)
+            _loopMembers[index] = member;
+        else
+            _loopMembers.Add(member);
+    }
+
     public IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId)
     {
         return _loopMembers

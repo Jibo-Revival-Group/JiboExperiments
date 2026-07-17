@@ -124,6 +124,22 @@ public sealed class IcalCalendarReportProvider(
         var normalized = NormalizeName(userName);
         if (string.IsNullOrWhiteSpace(normalized)) return null;
 
+        foreach (var person in cloudStateStore.GetPeople()
+                     .Where(item => string.Equals(item.LoopId, loopId, StringComparison.OrdinalIgnoreCase)))
+        {
+            var candidates = new[]
+            {
+                person.Alias,
+                person.DisplayName,
+                person.DisplayName.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()
+            };
+
+            if (candidates.Any(candidate =>
+                    !string.IsNullOrWhiteSpace(candidate) &&
+                    string.Equals(NormalizeName(candidate!), normalized, StringComparison.Ordinal)))
+                return person.PersonId;
+        }
+
         var members = cloudStateStore.GetLoopMembers(loopId)
             .Where(static member =>
                 !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) &&

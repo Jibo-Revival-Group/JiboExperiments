@@ -636,7 +636,7 @@ function renderCalendarFeedsPanel(dashboard) {
   `).join("");
 
   const memberRows = members.length === 0
-    ? `<li><span class="muted">No Loop members found yet. Add people to this robot's Loop, then configure their calendars here.</span></li>`
+    ? `<li><span class="muted">No Loop people found yet. Talk to the robot once so it can sync its Loop roster, or add people through face enrollment — then configure calendars here.</span></li>`
     : members.map((member) => `
       <li>
         <strong>${escapeHtml(member.displayName || member.memberId)}</strong>
@@ -658,7 +658,7 @@ function renderCalendarFeedsPanel(dashboard) {
         </div>
         <span class="badge success">${members.filter((member) => member.configured).length}/${members.length} configured</span>
       </div>
-      <p class="muted">Paste each Loop member's private iCal URL so personal report can read that person's calendar. The full URL is stored encrypted and is never shown again after save.</p>
+      <p class="muted">Paste each Loop person's private iCal URL so personal report can read that person's calendar. People come from the robot's Loop roster (same source Pegasus uses). The full URL is stored encrypted and is never shown again after save.</p>
       <ul class="steps">
         ${memberRows}
       </ul>

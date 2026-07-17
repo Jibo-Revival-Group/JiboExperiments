@@ -8,6 +8,7 @@ public sealed partial class JiboInteractionService
     public async Task<JiboInteractionDecision> BuildDecisionCoreAsync(TurnContext turn,
         CancellationToken cancellationToken = default)
     {
+        SyncLoopPeopleFromTurn(turn);
         var catalog = await contentCache.GetCatalogAsync(cancellationToken);
         var transcript = (turn.NormalizedTranscript ?? turn.RawTranscript ?? string.Empty).Trim();
         var lowered = transcript.ToLowerInvariant();

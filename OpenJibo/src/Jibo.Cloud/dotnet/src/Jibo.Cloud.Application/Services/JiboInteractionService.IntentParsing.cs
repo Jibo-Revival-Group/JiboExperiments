@@ -399,6 +399,61 @@ public sealed partial class JiboInteractionService
         }
     }
 
+    private void SyncLoopPeopleFromTurn(TurnContext turn)
+    {
+        if (cloudStateStore is null) return;
+
+        var loopUsers = TryReadLoopUsersFromTurn(turn);
+        if (loopUsers.Count == 0) return;
+
+        var loopId = ReadTenantAttribute(turn, "loopId") ??
+                     cloudStateStore.GetLoops().FirstOrDefault()?.LoopId ??
+                     "openjibo-default-loop";
+        cloudStateStore.SyncPeopleFromLoopUsers(loopId, loopUsers);
+    }
+
+    private static IReadOnlyList<Domain.Models.LoopUserSnapshot> TryReadLoopUsersFromTurn(TurnContext turn)
+    {
+        if (!turn.Attributes.TryGetValue("context", out var contextValue) ||
+            contextValue is null ||
+            string.IsNullOrWhiteSpace(contextValue.ToString()))
+            return [];
+
+        try
+        {
+            using var document = JsonDocument.Parse(contextValue.ToString()!);
+            if (!document.RootElement.TryGetProperty("runtime", out var runtime) ||
+                runtime.ValueKind != JsonValueKind.Object ||
+                !runtime.TryGetProperty("loop", out var loop) ||
+                loop.ValueKind != JsonValueKind.Object ||
+                !loop.TryGetProperty("users", out var users) ||
+                users.ValueKind != JsonValueKind.Array)
+                return [];
+
+            var snapshots = new List<Domain.Models.LoopUserSnapshot>();
+            foreach (var user in users.EnumerateArray())
+            {
+                if (user.ValueKind != JsonValueKind.Object) continue;
+                var id = TryReadStringProperty(user, "id");
+                if (string.IsNullOrWhiteSpace(id)) continue;
+
+                snapshots.Add(new Domain.Models.LoopUserSnapshot(
+                    id,
+                    TryReadStringProperty(user, "firstName"),
+                    TryReadStringProperty(user, "lastName"),
+                    TryReadStringProperty(user, "accountId"),
+                    TryReadStringProperty(user, "nickname", "nickName"),
+                    TryReadStringProperty(user, "type")));
+            }
+
+            return snapshots;
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
     private static GreetingPresenceProfile ResolveGreetingPresenceProfile(TurnContext turn)
     {
         if (!turn.Attributes.TryGetValue("context", out var contextValue) ||

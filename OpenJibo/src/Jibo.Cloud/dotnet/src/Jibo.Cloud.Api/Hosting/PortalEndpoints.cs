@@ -329,14 +329,13 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = validationError });
 
             var loopId = ResolvePortalLoopId(cloudStateStore);
-            var member = cloudStateStore.GetLoopMembers(loopId)
-                .FirstOrDefault(item => item.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+            var member = FindCalendarFeedPerson(cloudStateStore, loopId, memberId);
             if (member is null)
                 return Results.NotFound(new { error = "Loop member not found." });
 
             var feed = integrationStore.UpsertMemberCalendarFeed(
                 loopId,
-                member.Id,
+                member.MemberId,
                 request.IcalUrl!.Trim(),
                 request.IsEnabled ?? true);
 
@@ -376,14 +375,13 @@ internal static class PortalEndpoints
                 return Results.Unauthorized();
 
             var loopId = ResolvePortalLoopId(cloudStateStore);
-            var member = cloudStateStore.GetLoopMembers(loopId)
-                .FirstOrDefault(item => item.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+            var member = FindCalendarFeedPerson(cloudStateStore, loopId, memberId);
             if (member is null)
                 return Results.NotFound(new { error = "Loop member not found." });
 
             var icalUrl = request.IcalUrl;
             if (string.IsNullOrWhiteSpace(icalUrl))
-                icalUrl = integrationStore.FindMemberCalendarFeed(loopId, member.Id)?.IcalUrl;
+                icalUrl = integrationStore.FindMemberCalendarFeed(loopId, member.MemberId)?.IcalUrl;
 
             if (string.IsNullOrWhiteSpace(icalUrl))
                 return Results.BadRequest(new { error = "iCal URL is required." });
@@ -394,7 +392,7 @@ internal static class PortalEndpoints
             var probe = await feedInspector.ProbeAsync(icalUrl);
             if (!probe.Ok)
             {
-                integrationStore.UpdateMemberCalendarFeedSyncStatus(loopId, member.Id, null, probe.Error);
+                integrationStore.UpdateMemberCalendarFeedSyncStatus(loopId, member.MemberId, null, probe.Error);
                 return Results.Json(new
                 {
                     ok = false,
@@ -403,7 +401,7 @@ internal static class PortalEndpoints
                 });
             }
 
-            integrationStore.UpdateMemberCalendarFeedSyncStatus(loopId, member.Id, DateTimeOffset.UtcNow, null);
+            integrationStore.UpdateMemberCalendarFeedSyncStatus(loopId, member.MemberId, DateTimeOffset.UtcNow, null);
             return Results.Json(new
             {
                 ok = true,
@@ -843,15 +841,14 @@ internal static class PortalEndpoints
     {
         var loopId = ResolvePortalLoopId(cloudStateStore);
         var feeds = integrationStore.GetMemberCalendarFeeds(loopId);
-        var members = cloudStateStore.GetLoopMembers(loopId)
-            .Where(static member =>
-                !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(member.Status, "removed", StringComparison.OrdinalIgnoreCase))
-            .Select(member =>
+        // Prefer GetPeople() — same household roster personal-report / "what's the Loop" use.
+        // Fall back to non-robot loop members so portal/protocol-created members still appear.
+        var members = EnumerateCalendarFeedPeople(cloudStateStore, loopId)
+            .Select(person =>
             {
                 var feed = feeds.FirstOrDefault(item =>
-                    item.MemberId.Equals(member.Id, StringComparison.OrdinalIgnoreCase));
-                return BuildMemberCalendarFeedStatus(member, feed);
+                    item.MemberId.Equals(person.MemberId, StringComparison.OrdinalIgnoreCase));
+                return BuildMemberCalendarFeedStatus(person, feed);
             })
             .ToArray();
 
@@ -862,21 +859,65 @@ internal static class PortalEndpoints
         };
     }
 
+    private static IEnumerable<CalendarFeedPerson> EnumerateCalendarFeedPeople(
+        ICloudStateStore cloudStateStore,
+        string loopId)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var person in cloudStateStore.GetPeople()
+                     .Where(item => string.Equals(item.LoopId, loopId, StringComparison.OrdinalIgnoreCase))
+                     .OrderBy(item => item.IsPrimary ? 0 : 1)
+                     .ThenBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase))
+        {
+            if (!seen.Add(person.PersonId)) continue;
+            yield return new CalendarFeedPerson(
+                person.PersonId,
+                person.DisplayName,
+                person.Alias,
+                null,
+                person.Alias);
+        }
+
+        foreach (var member in cloudStateStore.GetLoopMembers(loopId)
+                     .Where(static member =>
+                         !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) &&
+                         !string.Equals(member.Status, "removed", StringComparison.OrdinalIgnoreCase)))
+        {
+            if (!seen.Add(member.Id)) continue;
+            var displayName = !string.IsNullOrWhiteSpace(member.Nickname)
+                ? member.Nickname
+                : string.Join(' ', new[] { member.FirstName, member.LastName }
+                    .Where(static part => !string.IsNullOrWhiteSpace(part)));
+            if (string.IsNullOrWhiteSpace(displayName))
+                displayName = member.Email ?? member.Id;
+
+            yield return new CalendarFeedPerson(
+                member.Id,
+                displayName,
+                member.FirstName,
+                member.LastName,
+                member.Nickname);
+        }
+    }
+
+    private static CalendarFeedPerson? FindCalendarFeedPerson(
+        ICloudStateStore cloudStateStore,
+        string loopId,
+        string memberId)
+    {
+        return EnumerateCalendarFeedPeople(cloudStateStore, loopId)
+            .FirstOrDefault(person => person.MemberId.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+    }
+
     private static object BuildMemberCalendarFeedStatus(
-        LoopMemberRecord member,
+        CalendarFeedPerson member,
         MemberCalendarFeedRecord? feed)
     {
-        var displayName = !string.IsNullOrWhiteSpace(member.Nickname)
-            ? member.Nickname
-            : string.Join(' ', new[] { member.FirstName, member.LastName }
-                .Where(static part => !string.IsNullOrWhiteSpace(part)));
-        if (string.IsNullOrWhiteSpace(displayName))
-            displayName = member.Email ?? member.Id;
-
         return new
         {
-            memberId = member.Id,
-            displayName,
+            memberId = member.MemberId,
+            displayName = member.DisplayName,
             firstName = member.FirstName,
             lastName = member.LastName,
             nickname = member.Nickname,
@@ -888,6 +929,13 @@ internal static class PortalEndpoints
             updatedUtc = feed?.UpdatedUtc
         };
     }
+
+    private sealed record CalendarFeedPerson(
+        string MemberId,
+        string DisplayName,
+        string? FirstName,
+        string? LastName,
+        string? Nickname);
 
     private static string ResolvePortalLoopId(ICloudStateStore cloudStateStore)
     {

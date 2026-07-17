@@ -24,6 +24,12 @@ public interface ICloudStateStore
     IReadOnlyList<LoopRecord> GetLoops();
     LoopRecord AddLoop(string? name, string? ownerAccountId, string? robotId, string? robotFriendlyId);
     IReadOnlyList<PersonRecord> GetPeople();
+    PersonRecord UpsertPerson(PersonRecord person);
+    /// <summary>
+    /// Upserts people (and matching non-robot loop members) from the robot's
+    /// <c>runtime.loop.users</c> roster — the same source Pegasus personal report uses.
+    /// </summary>
+    int SyncPeopleFromLoopUsers(string loopId, IReadOnlyList<LoopUserSnapshot> loopUsers);
     IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
     IReadOnlyList<TrustedServerRecord> GetTrustedServers();
     IReadOnlyList<TrustedServerAdmissionRecord> GetTrustedServerAdmissions(string? canonicalHost = null);

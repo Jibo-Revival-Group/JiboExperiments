@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+SCRIPT_VERSION="2026-07-17.1"
+echo "apply-openjibo-conversion.sh $SCRIPT_VERSION" >&2
+
 robot_root=""
 plan_path=""
 target_mode="open-jibo"

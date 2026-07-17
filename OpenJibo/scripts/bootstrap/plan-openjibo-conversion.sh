@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+SCRIPT_VERSION="2026-07-17.1"
+echo "plan-openjibo-conversion.sh $SCRIPT_VERSION" >&2
+
 robot_root=""
 target_mode="open-jibo"
 api_hostname="api.openjibo.com"

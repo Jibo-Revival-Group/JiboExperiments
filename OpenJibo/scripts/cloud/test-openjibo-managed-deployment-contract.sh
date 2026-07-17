@@ -166,7 +166,7 @@ for marker in "RegistryName" "ApiHostname" "SocketHostname" "NeoHubHostname" "co
   fi
 done
 
-for marker in "managedEnvironmentName" "--environment" "--validation-method TXT"; do
+for marker in "managedEnvironmentName" "--environment" "--validation-method CNAME"; do
   if [[ "$managed_script_text" != *"$marker"* ]]; then
     echo "Managed deploy script is missing hostname binding environment marker: $marker" >&2
     exit 1
@@ -198,7 +198,7 @@ for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostnam
   fi
 done
 
-for marker in "managedEnvironmentName" "--environment" "--validation-method TXT"; do
+for marker in "managedEnvironmentName" "--environment" "--validation-method CNAME"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing hostname binding environment marker: $marker" >&2
     exit 1

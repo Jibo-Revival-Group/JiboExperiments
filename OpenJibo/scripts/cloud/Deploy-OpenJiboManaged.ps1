@@ -223,7 +223,7 @@ function Bind-ContainerAppHostname {
         --name $ContainerAppName `
         --hostname $Hostname `
         --environment $ManagedEnvironmentName `
-        --validation-method TXT `
+        --validation-method CNAME `
         --output none
     Write-Host "Managed certificate binding completed for hostname '$Hostname'."
 }

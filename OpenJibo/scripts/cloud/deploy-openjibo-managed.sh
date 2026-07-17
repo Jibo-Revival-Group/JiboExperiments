@@ -282,7 +282,7 @@ PY
       --name "$container_app_name" \
       --hostname "$hostname" \
       --environment "$managed_environment_name" \
-      --validation-method CNAME \
+      --validation-method TXT \
       --output none
     echo "Managed certificate binding completed for hostname '${hostname}'." >&2
   }

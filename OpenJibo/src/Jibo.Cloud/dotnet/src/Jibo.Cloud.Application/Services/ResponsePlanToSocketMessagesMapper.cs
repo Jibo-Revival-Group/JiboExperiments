@@ -1328,6 +1328,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var timeLabel = ReadPayloadString(section, "calendar_event_time_label") ?? string.Empty;
         var amPmLabel = ReadPayloadString(section, "calendar_event_ampm") ?? string.Empty;
         var theme = ReadPayloadString(section, "calendar_event_theme") ?? "Afternoon";
+        // Must reference an asset that exists in @be/nimbus; "calendar" is the Pegasus default.
+        var icon = ReadPayloadString(section, "calendar_event_icon");
+        if (string.IsNullOrWhiteSpace(icon)) icon = "calendar";
 
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -1374,7 +1377,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                         new
                         {
                             id = "eventIcon",
-                            src = "assets/personal-report-skill/calendar/icons/generic_v01.crn",
+                            src = $"assets/personal-report-skill/calendar/icons/{icon}_v01.crn",
                             type = "texture"
                         }
                     },

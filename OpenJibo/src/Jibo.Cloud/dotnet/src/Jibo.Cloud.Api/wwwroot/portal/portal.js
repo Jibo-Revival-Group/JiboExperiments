@@ -626,7 +626,27 @@ function calendarFeedStatusBadge(member) {
   return `<span class="badge success">Configured</span>`;
 }
 
-function renderCalendarFeedsPanel(dashboard) {
+function renderLoopControlsPanel(dashboard) {
+  const configuredCount = (dashboard.calendarFeeds?.members || [])
+    .filter((member) => member.configured).length;
+  const totalCount = (dashboard.calendarFeeds?.members || []).length;
+
+  return `
+    <section class="card panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Loop</p>
+          <h2>Loop controls</h2>
+        </div>
+        <span class="badge success">${configuredCount}/${totalCount} calendars</span>
+      </div>
+      <p class="muted">Manage what Jibo knows for the people in this robot's Loop. People come from the robot's Loop roster (the same source Pegasus personal report uses). More controls will appear here over time.</p>
+      ${renderLoopCalendarSubsection(dashboard)}
+    </section>
+  `;
+}
+
+function renderLoopCalendarSubsection(dashboard) {
   const calendarFeeds = dashboard.calendarFeeds || { members: [] };
   const members = calendarFeeds.members || [];
   const options = members.map((member) => `
@@ -650,15 +670,9 @@ function renderCalendarFeedsPanel(dashboard) {
     `).join("");
 
   return `
-    <section class="card panel">
-      <div class="panel-header">
-        <div>
-          <p class="eyebrow">Integration</p>
-          <h2>Personal calendars</h2>
-        </div>
-        <span class="badge success">${members.filter((member) => member.configured).length}/${members.length} configured</span>
-      </div>
-      <p class="muted">Paste each Loop person's private iCal URL so personal report can read that person's calendar. People come from the robot's Loop roster (same source Pegasus uses). The full URL is stored encrypted and is never shown again after save.</p>
+    <div class="loop-subsection">
+      <h3>Calendars</h3>
+      <p class="muted">Paste each Loop person's private iCal URL so personal report can read that person's calendar. The full URL is stored encrypted and is never shown again after save.</p>
       <ul class="steps">
         ${memberRows}
       </ul>
@@ -676,7 +690,7 @@ function renderCalendarFeedsPanel(dashboard) {
         </div>
       </div>
       <p id="calendarFeedActionStatus" class="status hidden"></p>
-    </section>
+    </div>
   `;
 }
 
@@ -781,7 +795,7 @@ async function renderDashboard(message = "", tone = "success") {
         </section>
 
         ${renderHomeAssistantPanel(dashboard)}
-        ${renderCalendarFeedsPanel(dashboard)}
+        ${renderLoopControlsPanel(dashboard)}
       </div>
 
       ${adminPanel}

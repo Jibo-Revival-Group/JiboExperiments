@@ -95,8 +95,11 @@ function collectExisting(relativePaths) {
 const ssmFiles = [];
 for (const base of [path.resolve(robotRoot, "etc/jibo-ssm"), path.resolve(robotRoot, "usr/local/etc/jibo-ssm")]) {
   if (!fs.existsSync(base)) continue;
-  for (const entry of fs.readdirSync(base, { withFileTypes: true })) {
-    if (entry.isFile() && entry.name.endsWith(".json")) ssmFiles.push(path.resolve(base, entry.name));
+  for (const name of fs.readdirSync(base)) {
+    const candidate = path.resolve(base, name);
+    if (fs.statSync(candidate).isFile() && name.endsWith(".json")) {
+      ssmFiles.push(candidate);
+    }
   }
 }
 

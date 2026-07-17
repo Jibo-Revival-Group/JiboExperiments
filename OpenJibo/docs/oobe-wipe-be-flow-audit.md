@@ -27,7 +27,7 @@ ficheros persistentes que importan para este flujo son:
 - `/var/jibo/credentials.json`: `accessKeyId`, `secretAccessKey`, `region`.
 - `/var/jibo/keys/symmetric-<loopId>.json`: clave simetrica STS.
 - `/usr/local/etc/jibo-jetstream-service.json`: region, `api.jibo.com`,
-  `api-socket.jibo.com`, `neo-hub.jibo.com`.
+  `api-socket.jibo.com`, and the legacy `neo-hub.jibo.com`.
 
 Importante: en este firmware conviene mantener `region: "api"` y resolver
 DNS/hosts hacia OpenJibo. Cambiar la region a `openjibo-local` hace que
@@ -131,7 +131,7 @@ Minimo para cerrar OOBE y primer arranque normal:
 - `Key_20160201.ShouldCreate`, creacion/carga de clave simetrica STS.
 - `Update_*` para no-op/update manifest.
 - `Backup_*`, logs y uploads para no bloquear wipe/OTA.
-- WebSockets en `api-socket.jibo.com` y `neo-hub.jibo.com` para listen/proactive.
+- WebSockets en `api-socket.jibo.com` y el legado `neo-hub.jibo.com` para listen/proactive.
 
 ## Contraste React Native
 
@@ -164,7 +164,7 @@ El servidor ya cubria la mayor parte del contrato:
   credenciales y marca `GetStatus.complete`.
 - El estado en memoria/SQLite siembra loop, owner y robot member para
   satisfacer `_isLoopGood`.
-- Host routing cubre `api.jibo.com`, `api-socket.jibo.com`, `neo-hub.jibo.com`.
+- Host routing cubre `api.jibo.com`, `api-socket.jibo.com`, y el legado `neo-hub.jibo.com`.
 - WebSockets aceptan tokens y mapean LISTEN/ASR/NLU a respuestas BE.
 - STT local por buffered Ogg/Opus existe con whisper.cpp.
 

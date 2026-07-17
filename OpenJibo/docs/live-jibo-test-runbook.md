@@ -13,7 +13,7 @@ For release closeout coverage after the robot is connected, use [regression-test
 Use the existing Ubuntu networking path and certificate material first.
 
 - keep the current controlled Wi-Fi / routing arrangement
-- keep the current Jibo-facing hostnames:
+- keep the current legacy Jibo-facing hostnames used for comparison:
   - `api.jibo.com`
   - `api-socket.jibo.com`
   - `neo-hub.jibo.com`

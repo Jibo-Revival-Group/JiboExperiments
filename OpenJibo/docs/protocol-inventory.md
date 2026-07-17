@@ -19,7 +19,7 @@ Confidence levels:
 | `api.jibo.com` | HTTPS API target for `X-Amz-Target` operations | high | Main request dispatch path in the Node prototype |
 | `api-socket.jibo.com` | token-authenticated WebSocket path | medium | Node accepts tokenized connections and intentionally sends no greeting |
 | `open-jibo-socket.openjibo.com` | managed notification socket alias | medium | Managed Open Jibo socket hostname derived from the staged robot suffix |
-| `neo-hub.jibo.com` | listen and proactive WebSocket traffic | medium | Path-driven split between listen and `/v1/proactive` |
+| `neo-hub.jibo.com` | legacy listen and proactive WebSocket traffic | medium | Historical dashed host kept for compatibility and rollback evidence |
 | `neohub.openjibo.com` | managed listen and proactive WebSocket traffic | medium | Managed Open Jibo hub hostname that mirrors the robot-facing hub config |
 
 ## Region Configuration
@@ -59,9 +59,9 @@ Observed from `open-jibo-link.js`:
 | --- | --- | --- | --- |
 | `api-socket.jibo.com/{token}` | token-authenticated socket for API-side signaling | medium | stub endpoint implemented |
 | `open-jibo-socket.openjibo.com/{token}` | managed notification socket alias | medium | routed with the same API-side socket behavior as the stock API socket |
-| `neo-hub.jibo.com/{listen-path}` | listen turn flow with JSON and binary audio traffic | medium | fixture-backed synthetic turn flow implemented for `LISTEN`, `CONTEXT`, `CLIENT_NLU`, `CLIENT_ASR`, `EOS`, and first chat/joke skill responses |
+| `neo-hub.jibo.com/{listen-path}` | legacy listen turn flow with JSON and binary audio traffic | medium | fixture-backed synthetic turn flow implemented for `LISTEN`, `CONTEXT`, `CLIENT_NLU`, `CLIENT_ASR`, `EOS`, and first chat/joke skill responses |
 | `neohub.openjibo.com/{listen-path}` | managed listen turn flow with JSON and binary audio traffic | medium | managed hub alias for the same listen/proactive turn flow |
-| `neo-hub.jibo.com/v1/proactive` | proactive connection flow | medium | stub endpoint implemented |
+| `neo-hub.jibo.com/v1/proactive` | legacy proactive connection flow | medium | stub endpoint implemented |
 | `neohub.openjibo.com/v1/proactive` | managed proactive connection flow | medium | managed hub alias for proactive traffic |
 
 ### Current WebSocket Parity Slice

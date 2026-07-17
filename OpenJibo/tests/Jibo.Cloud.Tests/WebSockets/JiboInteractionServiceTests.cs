@@ -2873,12 +2873,14 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("personal_report_delivered", decision.IntentName);
         Assert.Equal("report-skill", decision.SkillName);
         Assert.Contains("Sure alex. Here it is.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Weather.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Weather.", decision.ReplyText, StringComparison.Ordinal);
         Assert.Contains(
             "For your weather. In Boston, U.S., it's light rain and 61 degrees Fahrenheit. Today's high is 65, and the low is 54.",
             decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("And that's it.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("And that's it.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("what's new in the news", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("news", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("wraps up your report", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.True(StripMarkup(decision.ReplyText).Length < 500,
             $"Personal report speech was still too long: {StripMarkup(decision.ReplyText).Length} chars.");
         Assert.Contains("alex", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
@@ -2887,16 +2889,20 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("personal_report", decision.SkillPayload["cloudSkill"]);
         Assert.Equal(true, decision.SkillPayload["weather_view_enabled"]);
         Assert.Equal("runtime-personal-report", decision.SkillPayload["mim_id"]);
-        Assert.Contains("Weather. For your weather.", decision.SkillPayload["personal_report_report_text"]?.ToString(),
+        Assert.Contains("For your weather.", decision.SkillPayload["personal_report_report_text"]?.ToString(),
             StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Weather.", decision.SkillPayload["personal_report_weather_text"]?.ToString(),
-            StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("For your weather.", decision.SkillPayload["personal_report_weather_text"]?.ToString(),
-            StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("news", decision.SkillPayload["personal_report_followup_text"]?.ToString(),
-            StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("For your weather.", decision.SkillPayload["personal_report_followup_text"]?.ToString(),
-            StringComparison.OrdinalIgnoreCase);
+        var sections = Assert.IsAssignableFrom<IReadOnlyList<IDictionary<string, object?>>>(
+            decision.SkillPayload["personal_report_sections"]);
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "kickoff_weather", StringComparison.OrdinalIgnoreCase) &&
+            section["text"]?.ToString()?.Contains("For your weather.", StringComparison.OrdinalIgnoreCase) == true);
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "news", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "outro", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "news", StringComparison.OrdinalIgnoreCase) &&
+            section["text"]?.ToString()?.Contains("what's new in the news", StringComparison.OrdinalIgnoreCase) == true);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("idle", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportUserVerifiedKey]);

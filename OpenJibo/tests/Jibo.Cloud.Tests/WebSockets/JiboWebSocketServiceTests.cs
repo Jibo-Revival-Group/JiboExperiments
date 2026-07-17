@@ -8689,26 +8689,53 @@ public sealed class JiboWebSocketServiceTests
 
         Assert.Equal("SEQUENCE", jcp.GetProperty("type").GetString());
         var children = jcp.GetProperty("children");
-        Assert.Equal(2, children.GetArrayLength());
+        Assert.True(children.GetArrayLength() >= 4,
+            $"Expected sectioned personal-report SEQUENCE, got {children.GetArrayLength()} children.");
 
         var weatherEsml = children[0].GetProperty("config").GetProperty("play").GetProperty("esml").GetString();
-        var followUpEsml = children[1].GetProperty("config").GetProperty("play").GetProperty("esml").GetString();
         Assert.NotNull(weatherEsml);
-        Assert.NotNull(followUpEsml);
-
         Assert.Equal("views.weatherHiLo",
             children[0].GetProperty("config").GetProperty("gui").GetProperty("data").GetString());
-        Assert.False(children[1].GetProperty("config").TryGetProperty("gui", out _));
 
-        var weatherStripped = StripMarkup(weatherEsml);
-        var followUpStripped = StripMarkup(followUpEsml);
-        Assert.Contains("weather", weatherStripped, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("news", weatherStripped, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("news", followUpStripped, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("calendar", followUpStripped, StringComparison.OrdinalIgnoreCase);
-        Assert.True(
-            weatherStripped.Length + followUpStripped.Length < 600,
-            $"Personal report speech was still too long: {weatherStripped.Length + followUpStripped.Length} chars.");
+        var totalLength = 0;
+        var sawNews = false;
+        var sawCalendar = false;
+        var sawOutro = false;
+        for (var i = 0; i < children.GetArrayLength(); i += 1)
+        {
+            var childConfig = children[i].GetProperty("config");
+            var childEsml = childConfig.GetProperty("play").GetProperty("esml").GetString();
+            Assert.NotNull(childEsml);
+            var stripped = StripMarkup(childEsml);
+            totalLength += stripped.Length;
+
+            if (i == 0)
+            {
+                Assert.Contains("weather", stripped, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("news", stripped, StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                Assert.False(childConfig.TryGetProperty("gui", out _),
+                    "Only the weather section should carry the weather GUI.");
+            }
+
+            if (stripped.Contains("news", StringComparison.OrdinalIgnoreCase)) sawNews = true;
+            if (stripped.Contains("calendar", StringComparison.OrdinalIgnoreCase)) sawCalendar = true;
+            if (i == children.GetArrayLength() - 1 &&
+                (stripped.Contains("wraps up your report", StringComparison.OrdinalIgnoreCase) ||
+                 stripped.Contains("that's your report", StringComparison.OrdinalIgnoreCase) ||
+                 stripped.Contains("personal report", StringComparison.OrdinalIgnoreCase)))
+                sawOutro = true;
+
+            Assert.DoesNotContain("And that's it.", stripped, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("what's new in the news", stripped, StringComparison.OrdinalIgnoreCase);
+        }
+
+        Assert.True(sawNews);
+        Assert.True(sawCalendar);
+        Assert.True(sawOutro);
+        Assert.True(totalLength < 700, $"Personal report speech was still too long: {totalLength} chars.");
     }
 
     [Fact]

@@ -285,9 +285,8 @@ internal static partial class PersonalReportOrchestrator
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCommuteDecisionAsync,
         CancellationToken cancellationToken)
     {
-        var reportSections = new List<string>();
-        var weatherBlockSections = new List<string>();
-        var followUpSections = new List<string>();
+        var spokenSections = new List<string>();
+        var sequenceSections = new List<IDictionary<string, object?>>();
         var serviceError = string.Empty;
         IDictionary<string, object?>? weatherSkillPayload = null;
 
@@ -296,74 +295,74 @@ internal static partial class PersonalReportOrchestrator
                 catalog.PersonalReportKickOffReplies,
                 "Okay. Here's your personal report."),
             userName);
-        weatherBlockSections.Add(kickOff);
 
+        var weatherBlockParts = new List<string> { kickOff };
         if (toggles.WeatherEnabled)
         {
             var weatherDecision = await buildWeatherDecisionAsync(turn, "weather", cancellationToken);
             weatherSkillPayload = weatherDecision.SkillPayload;
-            weatherBlockSections.Add("Weather.");
-            weatherBlockSections.Add(weatherDecision.ReplyText);
+            if (!string.IsNullOrWhiteSpace(weatherDecision.ReplyText))
+                weatherBlockParts.Add(weatherDecision.ReplyText);
             if (IsWeatherErrorReply(weatherDecision.ReplyText)) serviceError = "weather";
         }
+
+        var weatherBlockText = string.Join(" ", weatherBlockParts);
+        spokenSections.Add(weatherBlockText);
+        sequenceSections.Add(BuildReportSequenceSection("kickoff_weather", weatherBlockText));
 
         if (toggles.CalendarEnabled)
         {
             var calendarReply = (await buildCalendarDecisionAsync(turn, cancellationToken)).ReplyText;
             if (!string.IsNullOrWhiteSpace(calendarReply))
             {
-                followUpSections.Add(calendarReply);
-
-                var calendarOutro = ChooseShortestTemplate(catalog.CalendarOutroReplies);
-                if (!string.IsNullOrWhiteSpace(calendarOutro))
-                    followUpSections.Add(RenderPersonalReportTemplate(calendarOutro, userName));
+                // Full-report calendar never plays CalendarOutro (Pegasus single-skill only).
+                spokenSections.Add(calendarReply);
+                sequenceSections.Add(BuildReportSequenceSection("calendar", calendarReply));
             }
         }
 
         if (toggles.CommuteEnabled)
         {
             var commuteReply = (await buildCommuteDecisionAsync(turn, cancellationToken)).ReplyText;
-            var commuteSnippet = ChooseFirstSentence(commuteReply);
-            if (!string.IsNullOrWhiteSpace(commuteSnippet))
-                followUpSections.Add(commuteSnippet);
+            if (!string.IsNullOrWhiteSpace(commuteReply))
+            {
+                spokenSections.Add(commuteReply.Trim());
+                sequenceSections.Add(BuildReportSequenceSection("commute", commuteReply.Trim()));
+            }
         }
 
         if (toggles.NewsEnabled)
         {
-            followUpSections.Add(
+            var newsParts = new List<string>
+            {
                 RenderReportSkillTemplate(
                     ChooseReportSkillTemplate(
                         catalog.NewsIntroReplies,
                         catalog.NewsCategoryIntroReplies,
                         "Here's today's news, from the associated press."),
-                    userName));
-            followUpSections.Add(ChooseShortestBriefing(catalog.NewsBriefings));
-            followUpSections.Add(
-                RenderReportSkillTemplate(
-                    ChooseReportSkillTemplate(
-                        catalog.NewsOutroReplies,
-                        [],
-                        "And that's what's new in the news."),
-                    userName));
+                    userName)
+            };
+            var briefing = ChooseShortestBriefing(catalog.NewsBriefings);
+            if (!string.IsNullOrWhiteSpace(briefing)) newsParts.Add(briefing);
+
+            // Full-report news never plays NewsOutro (Pegasus single-skill only).
+            var newsText = string.Join(" ", newsParts);
+            spokenSections.Add(newsText);
+            sequenceSections.Add(BuildReportSequenceSection("news", newsText));
         }
 
-        followUpSections.Add(
-            RenderPersonalReportTemplate(
-                ChoosePersonalReportTemplate(
-                    catalog.PersonalReportOutroReplies,
-                    "And that's your report for the day. I hope you had as much fun as I did."),
-                userName));
+        var outro = RenderPersonalReportTemplate(
+            ChoosePersonalReportOutroTemplate(catalog.PersonalReportOutroReplies, toggles),
+            userName);
+        spokenSections.Add(outro);
+        sequenceSections.Add(BuildReportSequenceSection("outro", outro));
 
-        reportSections.AddRange(weatherBlockSections);
-        reportSections.AddRange(followUpSections);
-        var weatherBlockText = string.Join(" ", weatherBlockSections);
-        var followUpText = string.Join(" ", followUpSections);
-        var reportText = string.Join(" ", reportSections);
+        var reportText = string.Join(" ", spokenSections);
         return new JiboInteractionDecision(
             "personal_report_delivered",
             reportText,
             "report-skill",
-            BuildPersonalReportSkillPayload(reportText, weatherSkillPayload, weatherBlockText, followUpText),
+            BuildPersonalReportSkillPayload(reportText, weatherSkillPayload, sequenceSections),
             BuildContextUpdates(
                 IdleState,
                 0,
@@ -374,11 +373,19 @@ internal static partial class PersonalReportOrchestrator
                 serviceError));
     }
 
+    private static IDictionary<string, object?> BuildReportSequenceSection(string kind, string text)
+    {
+        return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["kind"] = kind,
+            ["text"] = text
+        };
+    }
+
     private static IDictionary<string, object?> BuildPersonalReportSkillPayload(
         string reportText,
         IDictionary<string, object?>? weatherSkillPayload,
-        string weatherBlockText,
-        string followUpText)
+        IReadOnlyList<IDictionary<string, object?>> sequenceSections)
     {
         var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -391,8 +398,7 @@ internal static partial class PersonalReportOrchestrator
             ["esml"] =
                 $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(reportText)}</es></speak>",
             ["personal_report_report_text"] = reportText,
-            ["personal_report_weather_text"] = weatherBlockText,
-            ["personal_report_followup_text"] = followUpText
+            ["personal_report_sections"] = sequenceSections
         };
 
         if (weatherSkillPayload is null) return payload;
@@ -408,6 +414,42 @@ internal static partial class PersonalReportOrchestrator
                 payload[key] = value;
 
         return payload;
+    }
+
+    private static string ChoosePersonalReportOutroTemplate(
+        IReadOnlyList<string> templates,
+        PersonalReportServiceToggles toggles)
+    {
+        const string configuredFallback =
+            "That wraps up your report for the day. Hope you have a good one.";
+        const string unconfiguredFallback =
+            "And that's the report. Next time I can make it more personal in the Jibo app.";
+
+        var isConfigured = toggles.WeatherEnabled ||
+                           toggles.CalendarEnabled ||
+                           toggles.CommuteEnabled ||
+                           toggles.NewsEnabled;
+        var filtered = templates
+            .Where(static template => !string.IsNullOrWhiteSpace(template) &&
+                                      !template.Contains("${dt.", StringComparison.OrdinalIgnoreCase))
+            .Where(template => isConfigured
+                ? !IsUnconfiguredOutroTemplate(template)
+                : IsUnconfiguredOutroTemplate(template))
+            .ToArray();
+
+        if (filtered.Length == 0)
+            return isConfigured ? configuredFallback : unconfiguredFallback;
+
+        return ChoosePersonalReportTemplate(filtered, isConfigured ? configuredFallback : unconfiguredFallback);
+    }
+
+    private static bool IsUnconfiguredOutroTemplate(string template)
+    {
+        return template.Contains("Jibo app", StringComparison.OrdinalIgnoreCase) ||
+               template.Contains("Loop tab", StringComparison.OrdinalIgnoreCase) ||
+               template.Contains("set that up", StringComparison.OrdinalIgnoreCase) ||
+               template.Contains("set <pitch", StringComparison.OrdinalIgnoreCase) ||
+               template.Contains("more personalized report", StringComparison.OrdinalIgnoreCase);
     }
 
     private static JiboInteractionDecision BuildNoInputDecision(
@@ -819,16 +861,6 @@ internal static partial class PersonalReportOrchestrator
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .FirstOrDefault();
         return string.IsNullOrWhiteSpace(firstSentence) ? selected : firstSentence;
-    }
-
-    private static string ChooseFirstSentence(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
-
-        var firstSentence = value.Split(['.', '!', '?'], 2,
-                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .FirstOrDefault();
-        return string.IsNullOrWhiteSpace(firstSentence) ? value.Trim() : firstSentence;
     }
 
     private static string? ChooseShortestTemplate(IEnumerable<string> templates)

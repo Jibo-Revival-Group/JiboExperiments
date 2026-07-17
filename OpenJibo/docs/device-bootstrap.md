@@ -16,6 +16,8 @@ The `1.0.20` conversion planning track builds on this bootstrap path in [open-ji
 The next-session checklist lives in [open-jibo-conversion-test-runbook.md](open-jibo-conversion-test-runbook.md).
 The extracted-image file map lives in [robot-image-script-map.md](robot-image-script-map.md).
 
+For the managed production path, keep the robot-facing contract on `api.openjibo.com`, `open-jibo-socket.openjibo.com`, and `neohub.openjibo.com`. Treat `openjibo.com` as the public app/docs surface, not the robot API target.
+
 ## Why This Path Comes First
 
 - it matches the region-driven configuration seams observed on the robot
@@ -46,11 +48,12 @@ Planning consequence:
 ## Bootstrap Checklist
 
 1. Connect the robot to a controlled Wi-Fi network.
-2. Add an OpenJibo region entry to `/etc/jibo-jetstream-service.json` that points `entrypoint_hostname` to `api.openjibo.com` and `hub_hostname` to `neohub.openjibo.com`.
-3. Update `/usr/local/etc/jibo-server-service.json` so `NotificationSubsystem.serverURLSuffix` points at the Open Jibo socket suffix and the robot resolves `open-jibo-socket.openjibo.com` without further code changes.
-4. Set the robot `region` field in `/var/jibo/credentials.json` to the OpenJibo region after audit, plan, and backup are complete.
-5. Gain RCM/device access for targeted TLS or host validation changes.
-6. Verify robot startup, token flow, socket flow, and first-turn behavior against the Azure-hosted Open Jibo API.
+2. Remount the robot partitions read-write with `jibo-mount --rw`.
+3. Add an OpenJibo region entry to `/usr/local/etc/jibo-jetstream-service.json` that points `entrypoint_hostname` to `api.openjibo.com` and `hub_hostname` to `neohub.openjibo.com`.
+4. Update `/usr/local/etc/jibo-server-service.json` so `NotificationSubsystem.serverURLSuffix` points at the Open Jibo socket suffix and the robot resolves `open-jibo-socket.openjibo.com` without further code changes.
+5. Set the robot `region` field in `/var/jibo/credentials.json` to the OpenJibo region after audit, plan, and backup are complete.
+6. Gain RCM/device access for targeted TLS or host validation changes.
+7. Verify robot startup, token flow, socket flow, and first-turn behavior against the Azure-hosted Open Jibo API.
 
 ## Easy Button Flow
 
@@ -60,13 +63,14 @@ The "easy button" recovery appliance should follow the same staged sequence ever
 2. Use the exploit path to open the patch window.
 3. Patch only enough to make SSH reachable over the USB/LAN path.
 4. Reboot out of RCM and confirm SSH access.
-5. Snapshot the robot before any conversion writes.
-6. Run the predictive conversion audit and plan helpers before any write step.
-7. Install the Open Jibo skill and conversion assets.
-8. Apply the staged region/mode entries and the first-boot/OOBE pending state while keeping the proven live credentials region intact until onboarding finishes.
-9. Reboot into the Open Jibo mode.
-10. Let the skill complete the onboarding and conversion.
-11. If onboarding is abandoned or a write step fails, restore the snapshot and return to stock behavior.
+5. Run `jibo-mount --rw` before any helper writes robot partitions.
+6. Snapshot the robot before any conversion writes.
+7. Run the predictive conversion audit and plan helpers before any write step.
+8. Install the Open Jibo skill and conversion assets.
+9. Apply the staged region/mode entries and the first-boot/OOBE pending state while keeping the proven live credentials region intact until onboarding finishes.
+10. Reboot into the Open Jibo mode.
+11. Let the skill complete the onboarding and conversion.
+12. If onboarding is abandoned or a write step fails, restore the snapshot and return to stock behavior.
 
 ## Region-Driven Configuration
 
@@ -74,7 +78,7 @@ Current findings suggest the preferred OpenJibo bootstrap path is to inject a ne
 
 Confirmed paths:
 
-- `/etc/jibo-jetstream-service.json`
+- `/usr/local/etc/jibo-jetstream-service.json`
   Add an OpenJibo region definition that points Jibo to our cloud. The default managed target is `api.openjibo.com` for the robot-facing API entrypoint. The hub hostname should be `neohub.openjibo.com` for the managed path.
 - `/usr/local/etc/jibo-server-service.json`
   Set `NotificationSubsystem.serverURLSuffix` so the converted robot resolves `open-jibo-socket.openjibo.com` for notification traffic without needing a robot software change.

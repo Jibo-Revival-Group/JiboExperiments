@@ -6,12 +6,15 @@ Use this checklist for the next robot session after the Linux-first conversion h
 
 Prove the staged conversion flow on the real robot root without breaking the known-good `api` baseline.
 
+In this runbook, `open-jibo` is the staged conversion target label used by the helpers. It is not a robot boot mode. The robot still boots through stock modes like `normal`, `oobe`, and `int-developer`, while the managed production cloud contract stays on `api.openjibo.com`, `open-jibo-socket.openjibo.com`, and `neohub.openjibo.com`.
+
 ## Before You Start
 
 - confirm you have the latest `main`
 - have the real robot root or mounted capture tree ready
 - have the latest robot logs and capture folder available
 - do not skip the audit step
+- if you are touching the physical robot, run `jibo-mount --rw` before any audit, plan, or apply step that writes partitions
 
 ## Test Order
 

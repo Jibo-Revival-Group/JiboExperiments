@@ -51,6 +51,11 @@ if [[ -z "$robot_root" || -z "$plan_path" ]]; then
   exit 2
 fi
 
+cat >&2 <<'EOF'
+Physical-robot preflight:
+  Before applying conversion writes on a real robot, run `jibo-mount --rw` so the partition mounts accept changes.
+EOF
+
 if [[ -z "$hub_hostname" && ( "$target_mode" == "open-jibo" || "$target_mode" == "open-jibo-ai" ) ]]; then
   hub_hostname="neohub.openjibo.com"
 fi

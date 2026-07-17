@@ -26,7 +26,7 @@ Open Jibo should use explicit modes instead of overwriting stock configuration i
 | Mode | Purpose | Expected server target |
 | --- | --- | --- |
 | `normal`, `oobe` or `int-developer` | Original Jibo behavior and rollback target (reference as `stock`) | original region/config where available |
-| `open-jibo` | Default managed Open Jibo experience | `openjibo.com` hosted cloud |
+| `open-jibo` | Default managed Open Jibo experience | managed Open Jibo production cloud (`api.openjibo.com`, `open-jibo-socket.openjibo.com`, `neohub.openjibo.com`) |
 | `open-jibo-ai` | Open Jibo with higher-level AI/orchestration features | `openjibo.ai` or managed AI-capable cloud |
 | `open-jibo-self-hosted` | Owner-managed local or private server | owner supplied host/region |
 | `open-jibo-developer` | Testing/debugging mode for development builds and captures | developer supplied host/region |
@@ -133,7 +133,7 @@ Open question: decide which device fingerprints are stable and safe enough to us
 
 Current strongest evidence:
 
-- `/etc/jibo-jetstream-service.json`
+- `/usr/local/etc/jibo-jetstream-service.json`
 - `/var/jibo/credentials.json`
 
 Additional files to audit:
@@ -197,7 +197,7 @@ Implication: the first conversion proof should not invent a brand-new setup shap
 
 Likely future behaviors:
 
-- pair the robot to an openjibo.com account
+- pair the robot to the Open Jibo account surface
 - select hosted, self-hosted, hybrid, or developer server
 - scan or enter a self-hosted server code
 - run a compatibility check

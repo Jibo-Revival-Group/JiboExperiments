@@ -25,6 +25,8 @@ The intended flow is:
 2. run audit/plan/apply against the overlay
 3. reset the overlay from the source snapshot when you want a clean run
 
+On a physical robot, run `jibo-mount --rw` before any helper that writes robot partitions. The helpers are safe to inspect against a mounted copy, but the real device must be remounted writable first.
+
 The scaffold normalizes the extracted image layout into robot-root paths such as `var/jibo`, `usr/local/etc`, `skills`, `etc`, and `boot` so the conversion helpers can run against the overlay without special-case path handling.
 
 Entry points:
@@ -44,6 +46,7 @@ Entry points:
 Example:
 
 ```powershell
+.\jibo-mount --rw
 .\Scaffold-OpenJiboHarness.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OverlayRoot C:\Projects\JiboExperiments\artifacts\harness-overlay -Clean
 .\Run-OpenJiboHarness.ps1 -SourceRoot C:\Users\JacobDubin\Downloads\jibo_full_emmc -OverlayRoot C:\Projects\JiboExperiments\artifacts\harness-overlay -TargetMode open-jibo -Apply -Strict -Clean
 .\Rollback-OpenJiboConversion.ps1 -RobotRoot C:\Projects\JiboExperiments\artifacts\harness-overlay -ApplyPath C:\Projects\JiboExperiments\artifacts\harness-overlay\run-output\invoke\conversion-apply.json -Strict

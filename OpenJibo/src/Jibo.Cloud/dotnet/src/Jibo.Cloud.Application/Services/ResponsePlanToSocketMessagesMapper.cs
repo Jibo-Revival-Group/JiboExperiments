@@ -54,6 +54,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var localIntent = ReadSkillPayloadString(skill, "localIntent");
         var clockIntent = ReadSkillPayloadString(skill, "clockIntent");
         var clockDomain = ReadSkillPayloadString(skill, "domain");
+        var clockHoliday = ReadSkillPayloadString(skill, "holiday");
         var timerHours = ReadSkillPayloadString(skill, "hours");
         var timerMinutes = ReadSkillPayloadString(skill, "minutes");
         var timerSeconds = ReadSkillPayloadString(skill, "seconds");
@@ -154,6 +155,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             radioStation,
             isClockSkillLaunch,
             clockDomain,
+            clockHoliday,
             timerHours,
             timerMinutes,
             timerSeconds,
@@ -323,7 +325,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // Don't emit a chitchat SKILL_ACTION for tutorial yes/no turns: the tutorial skill handles
         // the response locally. Sending a competing chitchat-skill action with final:true causes the
         // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
-        if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
+        // Clock launches also speak locally via @be/clock — don't stack a chitchat speak on top.
+        if (emitSkillActions && speak is not null && !isClockSkillLaunch &&
+            !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill)),
                 75));
@@ -463,6 +467,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         string? radioStation,
         bool clockSkillLaunch,
         string? clockDomain,
+        string? clockHoliday,
         string? timerHours,
         string? timerMinutes,
         string? timerSeconds,
@@ -508,6 +513,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             var entities = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(clockDomain)) entities["domain"] = clockDomain;
+            if (!string.IsNullOrWhiteSpace(clockHoliday)) entities["holiday"] = clockHoliday;
 
             if (string.Equals(clockDomain, "timer", StringComparison.OrdinalIgnoreCase) &&
                 !string.IsNullOrWhiteSpace(timerHours + timerMinutes + timerSeconds))

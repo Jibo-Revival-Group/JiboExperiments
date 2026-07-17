@@ -1091,15 +1091,29 @@ public sealed partial class JiboInteractionService
     private static bool IsVerifyMeRequest(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
-        return MatchesAny(
-            normalized,
-            "verify me",
-            "verify",
-            "verification",
-            "verification code",
-            "give me my verification code",
-            "what is my verification code",
-            "what's my verification code");
+        if (MatchesAny(
+                normalized,
+                "verify me",
+                "verify my",
+                "verification",
+                "verification code",
+                "give me my verification code",
+                "what is my verification code",
+                "what's my verification code"))
+            return true;
+
+        // Whisper often mangles the short phrase "verify me".
+        return normalized is
+            "verify" or
+            "bear by me" or
+            "bare by me" or
+            "berry me" or
+            "berry by me" or
+            "very me" or
+            "vary me" or
+            "veri me" or
+            "veer by me" or
+            "fear by me";
     }
 
     private static string? TryExtractNameFact(string transcript)

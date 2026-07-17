@@ -64,7 +64,7 @@ Current API and protocol scope:
 
 - HTTP `X-Amz-Target` dispatch through `JiboCloudProtocolService`
 - `/health` diagnostics
-- WebSocket acceptance for `api-socket.jibo.com`, `neo-hub.jibo.com` listen, and `neo-hub.jibo.com/v1/proactive`
+- WebSocket acceptance for `api-socket.jibo.com`, `open-jibo-socket.openjibo.com`, `neohub.openjibo.com` listen, and `neohub.openjibo.com/v1/proactive`
 - token/session issuance for account, hub, and robot startup flows
 - starter account, notification, loop, media, key, person, backup, robot, update, and upload/log handling
 - media lookup through `/media/{path}`

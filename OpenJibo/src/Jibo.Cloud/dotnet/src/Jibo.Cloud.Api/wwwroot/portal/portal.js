@@ -242,6 +242,73 @@ function bindPortalControls() {
     });
   }
 
+  const saveCalendarFeedButton = document.getElementById("saveCalendarFeedButton");
+  if (saveCalendarFeedButton) {
+    saveCalendarFeedButton.addEventListener("click", async () => {
+      const status = document.getElementById("calendarFeedActionStatus");
+      const memberId = document.getElementById("calendarMemberSelect").value;
+      const icalUrl = document.getElementById("calendarIcalUrl").value.trim();
+      try {
+        await apiFetch(`/api/portal/calendar-feeds/${encodeURIComponent(memberId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ icalUrl, isEnabled: true }),
+        });
+        document.getElementById("calendarIcalUrl").value = "";
+        await renderDashboard("Calendar feed saved for that Loop member.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+        status.classList.remove("hidden");
+      }
+    });
+  }
+
+  const testCalendarFeedButton = document.getElementById("testCalendarFeedButton");
+  if (testCalendarFeedButton) {
+    testCalendarFeedButton.addEventListener("click", async () => {
+      const status = document.getElementById("calendarFeedActionStatus");
+      const memberId = document.getElementById("calendarMemberSelect").value;
+      const icalUrl = document.getElementById("calendarIcalUrl").value.trim();
+      try {
+        const result = await apiFetch(`/api/portal/calendar-feeds/${encodeURIComponent(memberId)}/test`, {
+          method: "POST",
+          body: JSON.stringify({ icalUrl: icalUrl || undefined }),
+        });
+        if (!result.ok) {
+          status.textContent = result.error || "Feed test failed.";
+          status.className = "status error";
+        } else {
+          status.textContent = `Feed ok on ${result.host || "host"}. Today: ${result.todayEventCount}, tomorrow: ${result.tomorrowEventCount}.`;
+          status.className = "status success";
+        }
+        status.classList.remove("hidden");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+        status.classList.remove("hidden");
+      }
+    });
+  }
+
+  const clearCalendarFeedButton = document.getElementById("clearCalendarFeedButton");
+  if (clearCalendarFeedButton) {
+    clearCalendarFeedButton.addEventListener("click", async () => {
+      const status = document.getElementById("calendarFeedActionStatus");
+      const memberId = document.getElementById("calendarMemberSelect").value;
+      if (!window.confirm("Clear the saved iCal URL for this Loop member?")) return;
+      try {
+        await apiFetch(`/api/portal/calendar-feeds/${encodeURIComponent(memberId)}`, {
+          method: "DELETE",
+        });
+        await renderDashboard("Calendar feed cleared for that Loop member.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+        status.classList.remove("hidden");
+      }
+    });
+  }
+
   const revokeIdentityAnchorButton = document.getElementById("revokeIdentityAnchorButton");
   if (revokeIdentityAnchorButton) {
     revokeIdentityAnchorButton.addEventListener("click", async () => {
@@ -546,6 +613,73 @@ function haStatusBadge(homeAssistant) {
   return `<span class="badge warning">Linked, offline</span>`;
 }
 
+function calendarFeedStatusBadge(member) {
+  if (!member?.configured) {
+    return `<span class="badge neutral">Not configured</span>`;
+  }
+  if (!member.isEnabled) {
+    return `<span class="badge warning">Disabled</span>`;
+  }
+  if (member.lastError) {
+    return `<span class="badge warning">Needs attention</span>`;
+  }
+  return `<span class="badge success">Configured</span>`;
+}
+
+function renderCalendarFeedsPanel(dashboard) {
+  const calendarFeeds = dashboard.calendarFeeds || { members: [] };
+  const members = calendarFeeds.members || [];
+  const options = members.map((member) => `
+    <option value="${escapeHtml(member.memberId)}">
+      ${escapeHtml(member.displayName || member.memberId)}
+    </option>
+  `).join("");
+
+  const memberRows = members.length === 0
+    ? `<li><span class="muted">No Loop members found yet. Add people to this robot's Loop, then configure their calendars here.</span></li>`
+    : members.map((member) => `
+      <li>
+        <strong>${escapeHtml(member.displayName || member.memberId)}</strong>
+        ${calendarFeedStatusBadge(member)}
+        <div class="muted">
+          ${member.configured
+            ? `Host: ${escapeHtml(member.host || "—")}${member.lastError ? ` · Last error: ${escapeHtml(member.lastError)}` : ""}`
+            : "No private iCal URL saved for this person."}
+        </div>
+      </li>
+    `).join("");
+
+  return `
+    <section class="card panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Integration</p>
+          <h2>Personal calendars</h2>
+        </div>
+        <span class="badge success">${members.filter((member) => member.configured).length}/${members.length} configured</span>
+      </div>
+      <p class="muted">Paste each Loop member's private iCal URL so personal report can read that person's calendar. The full URL is stored encrypted and is never shown again after save.</p>
+      <ul class="steps">
+        ${memberRows}
+      </ul>
+      <div class="inline-form">
+        <label for="calendarMemberSelect">Loop member</label>
+        <select id="calendarMemberSelect"${members.length === 0 ? " disabled" : ""}>
+          ${options || `<option value="">No members available</option>`}
+        </select>
+        <label for="calendarIcalUrl">Private iCal URL</label>
+        <input id="calendarIcalUrl" type="password" autocomplete="off" placeholder="https://calendar.example.com/.../basic.ics"${members.length === 0 ? " disabled" : ""}>
+        <div class="button-row">
+          <button class="button primary" id="saveCalendarFeedButton" type="button"${members.length === 0 ? " disabled" : ""}>Save calendar</button>
+          <button class="button secondary" id="testCalendarFeedButton" type="button"${members.length === 0 ? " disabled" : ""}>Test feed</button>
+          <button class="button danger" id="clearCalendarFeedButton" type="button"${members.length === 0 ? " disabled" : ""}>Clear</button>
+        </div>
+      </div>
+      <p id="calendarFeedActionStatus" class="status hidden"></p>
+    </section>
+  `;
+}
+
 function renderHomeAssistantPanel(dashboard) {
   const ha = dashboard.homeAssistant || { linked: false, connected: false };
 
@@ -647,6 +781,7 @@ async function renderDashboard(message = "", tone = "success") {
         </section>
 
         ${renderHomeAssistantPanel(dashboard)}
+        ${renderCalendarFeedsPanel(dashboard)}
       </div>
 
       ${adminPanel}

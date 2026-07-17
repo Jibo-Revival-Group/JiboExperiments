@@ -16,4 +16,21 @@ public interface IUserIntegrationStore
 
     HomeAssistantLinkRecord? RemoveHomeAssistantLink(string linkId);
     void UpdateHomeAssistantLastSeen(string linkId, DateTimeOffset lastSeenUtc);
+
+    IReadOnlyList<MemberCalendarFeedRecord> GetMemberCalendarFeeds(string? loopId = null);
+    MemberCalendarFeedRecord? FindMemberCalendarFeed(string loopId, string memberId);
+
+    MemberCalendarFeedRecord UpsertMemberCalendarFeed(
+        string loopId,
+        string memberId,
+        string icalUrl,
+        bool isEnabled = true);
+
+    MemberCalendarFeedRecord? ClearMemberCalendarFeed(string loopId, string memberId);
+
+    MemberCalendarFeedRecord? UpdateMemberCalendarFeedSyncStatus(
+        string loopId,
+        string memberId,
+        DateTimeOffset? lastSuccessUtc,
+        string? lastError);
 }

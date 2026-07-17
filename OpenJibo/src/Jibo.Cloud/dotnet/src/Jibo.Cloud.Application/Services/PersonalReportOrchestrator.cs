@@ -322,9 +322,12 @@ internal static partial class PersonalReportOrchestrator
                     : "cloudy"
                 : null));
 
+        // Carry verified speaker name so per-member calendar feeds can resolve Zane vs Jon.
+        var memberScopedTurn = EnrichTurnWithReportIdentity(turn, userName);
+
         if (toggles.CalendarEnabled)
         {
-            var calendarDecision = await buildCalendarDecisionAsync(turn, cancellationToken);
+            var calendarDecision = await buildCalendarDecisionAsync(memberScopedTurn, cancellationToken);
             var calendarReply = calendarDecision.ReplyText;
             if (!string.IsNullOrWhiteSpace(calendarReply))
             {
@@ -351,7 +354,7 @@ internal static partial class PersonalReportOrchestrator
 
         if (toggles.CommuteEnabled)
         {
-            var commuteDecision = await buildCommuteDecisionAsync(turn, cancellationToken);
+            var commuteDecision = await buildCommuteDecisionAsync(memberScopedTurn, cancellationToken);
             var commuteReply = commuteDecision.ReplyText;
             if (!string.IsNullOrWhiteSpace(commuteReply))
             {
@@ -878,6 +881,36 @@ internal static partial class PersonalReportOrchestrator
             return enable(toggles);
 
         return toggles;
+    }
+
+    private static TurnContext EnrichTurnWithReportIdentity(TurnContext turn, string userName)
+    {
+        var attributes = new Dictionary<string, object?>(turn.Attributes, StringComparer.OrdinalIgnoreCase)
+        {
+            [UserNameMetadataKey] = userName
+        };
+        return new TurnContext
+        {
+            TurnId = turn.TurnId,
+            SessionId = turn.SessionId,
+            TimestampUtc = turn.TimestampUtc,
+            InputMode = turn.InputMode,
+            SourceKind = turn.SourceKind,
+            WakePhrase = turn.WakePhrase,
+            RawTranscript = turn.RawTranscript,
+            NormalizedTranscript = turn.NormalizedTranscript,
+            DeviceId = turn.DeviceId,
+            HostName = turn.HostName,
+            RequestId = turn.RequestId,
+            ProtocolService = turn.ProtocolService,
+            ProtocolOperation = turn.ProtocolOperation,
+            FirmwareVersion = turn.FirmwareVersion,
+            ApplicationVersion = turn.ApplicationVersion,
+            Locale = turn.Locale,
+            TimeZone = turn.TimeZone,
+            IsFollowUpEligible = turn.IsFollowUpEligible,
+            Attributes = attributes
+        };
     }
 
     private static string ReadState(TurnContext turn)

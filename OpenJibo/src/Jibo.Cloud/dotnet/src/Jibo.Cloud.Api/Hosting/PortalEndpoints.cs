@@ -4,6 +4,7 @@ using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.Calendar;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 
@@ -285,6 +286,7 @@ internal static class PortalEndpoints
             HttpRequest request,
             PortalSessionService portalSessionService,
             IUserIntegrationStore integrationStore,
+            ICloudStateStore cloudStateStore,
             HomeAssistantConnectionRegistry registry) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
@@ -292,7 +294,124 @@ internal static class PortalEndpoints
                 return Results.Unauthorized();
 
             var link = integrationStore.FindLinkForJibo(session.DeviceId, session.FriendlyId);
-            return Results.Json(BuildDashboardPayload(session, link, registry));
+            return Results.Json(BuildDashboardPayload(session, link, registry, cloudStateStore, integrationStore));
+        });
+
+        app.MapGet("/api/portal/calendar-feeds", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            IUserIntegrationStore integrationStore,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            return Results.Json(BuildCalendarFeedsPayload(cloudStateStore, integrationStore));
+        });
+
+        app.MapPut("/api/portal/calendar-feeds/{memberId}", (
+            string memberId,
+            [FromBody] UpsertMemberCalendarFeedRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            IUserIntegrationStore integrationStore,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(memberId))
+                return Results.BadRequest(new { error = "memberId is required." });
+
+            if (!IcalUrlValidator.TryValidateHttpsPublicUrl(request.IcalUrl, out _, out var validationError))
+                return Results.BadRequest(new { error = validationError });
+
+            var loopId = ResolvePortalLoopId(cloudStateStore);
+            var member = cloudStateStore.GetLoopMembers(loopId)
+                .FirstOrDefault(item => item.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+            if (member is null)
+                return Results.NotFound(new { error = "Loop member not found." });
+
+            var feed = integrationStore.UpsertMemberCalendarFeed(
+                loopId,
+                member.Id,
+                request.IcalUrl!.Trim(),
+                request.IsEnabled ?? true);
+
+            return Results.Json(BuildMemberCalendarFeedStatus(member, feed));
+        });
+
+        app.MapDelete("/api/portal/calendar-feeds/{memberId}", (
+            string memberId,
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            IUserIntegrationStore integrationStore,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var loopId = ResolvePortalLoopId(cloudStateStore);
+            var removed = integrationStore.ClearMemberCalendarFeed(loopId, memberId);
+            if (removed is null)
+                return Results.NotFound(new { error = "No calendar feed is configured for that member." });
+
+            return Results.Json(new { cleared = true, memberId });
+        });
+
+        app.MapPost("/api/portal/calendar-feeds/{memberId}/test", async (
+            string memberId,
+            [FromBody] TestMemberCalendarFeedRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            IUserIntegrationStore integrationStore,
+            ICloudStateStore cloudStateStore,
+            IcalCalendarFeedInspector feedInspector) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var loopId = ResolvePortalLoopId(cloudStateStore);
+            var member = cloudStateStore.GetLoopMembers(loopId)
+                .FirstOrDefault(item => item.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
+            if (member is null)
+                return Results.NotFound(new { error = "Loop member not found." });
+
+            var icalUrl = request.IcalUrl;
+            if (string.IsNullOrWhiteSpace(icalUrl))
+                icalUrl = integrationStore.FindMemberCalendarFeed(loopId, member.Id)?.IcalUrl;
+
+            if (string.IsNullOrWhiteSpace(icalUrl))
+                return Results.BadRequest(new { error = "iCal URL is required." });
+
+            if (!IcalUrlValidator.TryValidateHttpsPublicUrl(icalUrl, out _, out var validationError))
+                return Results.BadRequest(new { error = validationError });
+
+            var probe = await feedInspector.ProbeAsync(icalUrl);
+            if (!probe.Ok)
+            {
+                integrationStore.UpdateMemberCalendarFeedSyncStatus(loopId, member.Id, null, probe.Error);
+                return Results.Json(new
+                {
+                    ok = false,
+                    error = probe.Error,
+                    host = IcalUrlValidator.TryGetSafeHost(icalUrl)
+                });
+            }
+
+            integrationStore.UpdateMemberCalendarFeedSyncStatus(loopId, member.Id, DateTimeOffset.UtcNow, null);
+            return Results.Json(new
+            {
+                ok = true,
+                host = IcalUrlValidator.TryGetSafeHost(icalUrl),
+                todayEventCount = probe.TodayEventCount,
+                tomorrowEventCount = probe.TomorrowEventCount,
+                sampleSummaries = probe.SampleSummaries
+            });
         });
 
         app.MapGet("/api/portal/identity-graph", (
@@ -698,7 +817,9 @@ internal static class PortalEndpoints
     private static object BuildDashboardPayload(
         PortalSessionService.PortalSession session,
         HomeAssistantLinkRecord? link,
-        HomeAssistantConnectionRegistry registry)
+        HomeAssistantConnectionRegistry registry,
+        ICloudStateStore cloudStateStore,
+        IUserIntegrationStore integrationStore)
     {
         return new
         {
@@ -711,8 +832,66 @@ internal static class PortalEndpoints
                     linked = false,
                     connected = false
                 }
-                : BuildHomeAssistantPayload(link, registry)
+                : BuildHomeAssistantPayload(link, registry),
+            calendarFeeds = BuildCalendarFeedsPayload(cloudStateStore, integrationStore)
         };
+    }
+
+    private static object BuildCalendarFeedsPayload(
+        ICloudStateStore cloudStateStore,
+        IUserIntegrationStore integrationStore)
+    {
+        var loopId = ResolvePortalLoopId(cloudStateStore);
+        var feeds = integrationStore.GetMemberCalendarFeeds(loopId);
+        var members = cloudStateStore.GetLoopMembers(loopId)
+            .Where(static member =>
+                !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(member.Status, "removed", StringComparison.OrdinalIgnoreCase))
+            .Select(member =>
+            {
+                var feed = feeds.FirstOrDefault(item =>
+                    item.MemberId.Equals(member.Id, StringComparison.OrdinalIgnoreCase));
+                return BuildMemberCalendarFeedStatus(member, feed);
+            })
+            .ToArray();
+
+        return new
+        {
+            loopId,
+            members
+        };
+    }
+
+    private static object BuildMemberCalendarFeedStatus(
+        LoopMemberRecord member,
+        MemberCalendarFeedRecord? feed)
+    {
+        var displayName = !string.IsNullOrWhiteSpace(member.Nickname)
+            ? member.Nickname
+            : string.Join(' ', new[] { member.FirstName, member.LastName }
+                .Where(static part => !string.IsNullOrWhiteSpace(part)));
+        if (string.IsNullOrWhiteSpace(displayName))
+            displayName = member.Email ?? member.Id;
+
+        return new
+        {
+            memberId = member.Id,
+            displayName,
+            firstName = member.FirstName,
+            lastName = member.LastName,
+            nickname = member.Nickname,
+            configured = feed is not null && !string.IsNullOrWhiteSpace(feed.IcalUrl),
+            isEnabled = feed?.IsEnabled ?? false,
+            host = feed is null ? null : IcalUrlValidator.TryGetSafeHost(feed.IcalUrl),
+            lastSuccessUtc = feed?.LastSuccessUtc,
+            lastError = feed?.LastError,
+            updatedUtc = feed?.UpdatedUtc
+        };
+    }
+
+    private static string ResolvePortalLoopId(ICloudStateStore cloudStateStore)
+    {
+        return cloudStateStore.GetLoops().FirstOrDefault()?.LoopId ?? "openjibo-default-loop";
     }
 
     private static object BuildHomeAssistantPayload(
@@ -735,6 +914,15 @@ internal static class PortalEndpoints
     private sealed record ConfirmJiboVerificationRequest(string? Code);
 
     private sealed record LinkHomeAssistantRequest(string? PortalSessionToken, string? HaCode);
+
+    private sealed record UpsertMemberCalendarFeedRequest(
+        string? PortalSessionToken,
+        string? IcalUrl,
+        bool? IsEnabled);
+
+    private sealed record TestMemberCalendarFeedRequest(
+        string? PortalSessionToken,
+        string? IcalUrl);
 
     private sealed record PortalLogoutRequest(string? PortalSessionToken);
 

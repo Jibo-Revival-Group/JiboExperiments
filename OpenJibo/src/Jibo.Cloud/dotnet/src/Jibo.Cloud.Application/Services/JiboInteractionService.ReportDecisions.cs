@@ -245,7 +245,7 @@ public sealed partial class JiboInteractionService
             snapshot = null;
         }
 
-        if (snapshot is null)
+        if (snapshot is null || snapshot.HasServiceError)
             return new JiboInteractionDecision(
                 "calendar",
                 ChooseCalendarServiceDownReply(catalog),

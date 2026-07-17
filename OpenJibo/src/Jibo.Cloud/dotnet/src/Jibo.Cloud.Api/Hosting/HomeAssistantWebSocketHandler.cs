@@ -183,5 +183,38 @@ internal sealed class HomeAssistantWebSocketHandler(
         public void UpdateHomeAssistantLastSeen(string linkId, DateTimeOffset lastSeenUtc)
         {
         }
+
+        public IReadOnlyList<MemberCalendarFeedRecord> GetMemberCalendarFeeds(string? loopId = null)
+        {
+            return [];
+        }
+
+        public MemberCalendarFeedRecord? FindMemberCalendarFeed(string loopId, string memberId)
+        {
+            return null;
+        }
+
+        public MemberCalendarFeedRecord UpsertMemberCalendarFeed(
+            string loopId,
+            string memberId,
+            string icalUrl,
+            bool isEnabled = true)
+        {
+            throw new NotSupportedException();
+        }
+
+        public MemberCalendarFeedRecord? ClearMemberCalendarFeed(string loopId, string memberId)
+        {
+            return null;
+        }
+
+        public MemberCalendarFeedRecord? UpdateMemberCalendarFeedSyncStatus(
+            string loopId,
+            string memberId,
+            DateTimeOffset? lastSuccessUtc,
+            string? lastError)
+        {
+            return null;
+        }
     }
 }

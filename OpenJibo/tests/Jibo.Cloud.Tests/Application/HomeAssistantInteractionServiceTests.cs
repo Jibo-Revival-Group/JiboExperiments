@@ -83,30 +83,6 @@ public sealed class HomeAssistantInteractionServiceTests
             decision.ReplyText);
     }
 
-    [Theory]
-    [InlineData("bear by me")]
-    [InlineData("berry me")]
-    [InlineData("very me")]
-    [InlineData("verify my")]
-    public async Task BuildDecisionAsync_VerifyMe_MatchesCommonSttMishears(string transcript)
-    {
-        var service = new JiboInteractionService(
-            new JiboExperienceContentCache(new InMemoryJiboExperienceContentRepository()),
-            new FirstItemRandomizer(),
-            new InMemoryPersonalMemoryStore(),
-            jiboVerificationService: new JiboVerificationService());
-
-        var decision = await service.BuildDecisionAsync(new TurnContext
-        {
-            RawTranscript = transcript,
-            NormalizedTranscript = transcript,
-            DeviceId = "Ghost-Instance-Onion-Silk"
-        });
-
-        Assert.Equal("verify_me", decision.IntentName);
-        Assert.StartsWith("Your verification code is ", decision.ReplyText);
-    }
-
     private static InMemoryUserIntegrationStore CreateLinkedIntegrationStore()
     {
         var snapshotStore = new EncryptedUserDataSnapshotStore(

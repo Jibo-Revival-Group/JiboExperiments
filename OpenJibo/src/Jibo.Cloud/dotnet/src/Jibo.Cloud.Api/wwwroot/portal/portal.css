@@ -136,22 +136,6 @@ h2 {
   margin-bottom: 1rem;
 }
 
-.loop-subsection {
-  margin-top: 1.25rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--line);
-}
-
-.loop-subsection:first-of-type {
-  margin-top: 0.5rem;
-}
-
-.loop-subsection h3 {
-  margin: 0 0 0.35rem;
-  font-size: 1.02rem;
-  font-weight: 600;
-}
-
 .badge {
   display: inline-flex;
   align-items: center;

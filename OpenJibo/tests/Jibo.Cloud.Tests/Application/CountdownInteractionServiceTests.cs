@@ -10,7 +10,7 @@ namespace Jibo.Cloud.Tests.Application;
 public sealed class CountdownInteractionServiceTests
 {
     [Fact]
-    public async Task BuildDecisionAsync_Christmas_LaunchesClockHolidaySkill()
+    public async Task BuildDecisionAsync_Christmas_ReturnsDayCountFromReferenceDate()
     {
         var service = CreateService(LoadCatalog());
 
@@ -25,31 +25,7 @@ public sealed class CountdownInteractionServiceTests
         });
 
         Assert.Equal("countdown", decision.IntentName);
-        Assert.Equal("@be/clock", decision.SkillName);
-        Assert.NotNull(decision.SkillPayload);
-        Assert.Equal("whenIsHoliday", decision.SkillPayload["clockIntent"]);
-        Assert.Equal("clock", decision.SkillPayload["domain"]);
-        Assert.Equal("christmas", decision.SkillPayload["holiday"]);
-    }
-
-    [Fact]
-    public async Task BuildDecisionAsync_HowManyDaysUntilChristmas_LaunchesClockHolidaySkill()
-    {
-        var service = CreateService(LoadCatalog());
-
-        var decision = await service.BuildDecisionAsync(new TurnContext
-        {
-            RawTranscript = "how many days until christmas",
-            NormalizedTranscript = "how many days until christmas",
-            Attributes = new Dictionary<string, object?>
-            {
-                ["context"] = """{"runtime":{"location":{"iso":"2026-07-12T12:00:00-04:00"}}}"""
-            }
-        });
-
-        Assert.Equal("countdown", decision.IntentName);
-        Assert.Equal("@be/clock", decision.SkillName);
-        Assert.Equal("christmas", decision.SkillPayload!["holiday"]);
+        Assert.Equal("Christmas Day is in 166 days.", decision.ReplyText);
     }
 
     [Fact]

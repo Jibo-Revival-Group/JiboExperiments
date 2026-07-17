@@ -700,11 +700,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         string? nickname)
     {
         var personId = user.Id.Trim();
-        // Match only by the robot looper id. Do not rewrite existing owner rows by AccountId —
-        // that previously replaced the bootstrap owner member id and could corrupt Loop state.
         var index = _loopMembers.FindIndex(member =>
             member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
-            member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase));
+            (member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) ||
+             (!string.IsNullOrWhiteSpace(user.AccountId) &&
+              member.AccountId is not null &&
+              member.AccountId.Equals(user.AccountId, StringComparison.OrdinalIgnoreCase) &&
+              !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))));
 
         var memberType = string.IsNullOrWhiteSpace(user.Type)
             ? (index >= 0 ? _loopMembers[index].Type : "member")
@@ -715,7 +717,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var now = DateTimeOffset.UtcNow;
         var member = new LoopMemberRecord
         {
-            Id = personId,
+            Id = index >= 0 ? _loopMembers[index].Id : personId,
             LoopId = loopId,
             AccountId = string.IsNullOrWhiteSpace(user.AccountId)
                 ? (index >= 0 ? _loopMembers[index].AccountId : null)
@@ -736,6 +738,36 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AgreementId = index >= 0 ? _loopMembers[index].AgreementId : null,
             CreatedUtc = index >= 0 ? _loopMembers[index].CreatedUtc : now
         };
+
+        // Prefer the robot's looper id as the stable member id (Pegasus personId).
+        if (index >= 0 &&
+            !member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) &&
+            !_loopMembers.Any(existing =>
+                existing.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                existing.Id.Equals(personId, StringComparison.OrdinalIgnoreCase)))
+        {
+            member = new LoopMemberRecord
+            {
+                Id = personId,
+                LoopId = member.LoopId,
+                AccountId = member.AccountId,
+                Email = member.Email,
+                FirstName = member.FirstName,
+                LastName = member.LastName,
+                Gender = member.Gender,
+                Birthday = member.Birthday,
+                IsChild = member.IsChild,
+                Status = member.Status,
+                Type = member.Type,
+                Nickname = member.Nickname,
+                PhoneticName = member.PhoneticName,
+                FaceEnrolled = member.FaceEnrolled,
+                VoiceEnrolled = member.VoiceEnrolled,
+                LegalGuardianId = member.LegalGuardianId,
+                AgreementId = member.AgreementId,
+                CreatedUtc = member.CreatedUtc
+            };
+        }
 
         if (index >= 0)
             _loopMembers[index] = member;

@@ -403,20 +403,13 @@ public sealed partial class JiboInteractionService
     {
         if (cloudStateStore is null) return;
 
-        try
-        {
-            var loopUsers = TryReadLoopUsersFromTurn(turn);
-            if (loopUsers.Count == 0) return;
+        var loopUsers = TryReadLoopUsersFromTurn(turn);
+        if (loopUsers.Count == 0) return;
 
-            var loopId = ReadTenantAttribute(turn, "loopId") ??
-                         cloudStateStore.GetLoops().FirstOrDefault()?.LoopId ??
-                         "openjibo-default-loop";
-            cloudStateStore.SyncPeopleFromLoopUsers(loopId, loopUsers);
-        }
-        catch
-        {
-            // Loop roster sync must never break verify/time/chat turns.
-        }
+        var loopId = ReadTenantAttribute(turn, "loopId") ??
+                     cloudStateStore.GetLoops().FirstOrDefault()?.LoopId ??
+                     "openjibo-default-loop";
+        cloudStateStore.SyncPeopleFromLoopUsers(loopId, loopUsers);
     }
 
     private static IReadOnlyList<Domain.Models.LoopUserSnapshot> TryReadLoopUsersFromTurn(TurnContext turn)
@@ -1091,29 +1084,15 @@ public sealed partial class JiboInteractionService
     private static bool IsVerifyMeRequest(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);
-        if (MatchesAny(
-                normalized,
-                "verify me",
-                "verify my",
-                "verification",
-                "verification code",
-                "give me my verification code",
-                "what is my verification code",
-                "what's my verification code"))
-            return true;
-
-        // Whisper often mangles the short phrase "verify me".
-        return normalized is
-            "verify" or
-            "bear by me" or
-            "bare by me" or
-            "berry me" or
-            "berry by me" or
-            "very me" or
-            "vary me" or
-            "veri me" or
-            "veer by me" or
-            "fear by me";
+        return MatchesAny(
+            normalized,
+            "verify me",
+            "verify",
+            "verification",
+            "verification code",
+            "give me my verification code",
+            "what is my verification code",
+            "what's my verification code");
     }
 
     private static string? TryExtractNameFact(string transcript)

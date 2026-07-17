@@ -94,8 +94,6 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
             "time" => false,
             "date" => false,
             "day" => false,
-            "countdown" => false,
-            "verify_me" => false,
             "clock_open" => false,
             "clock_menu" => false,
             "timer_menu" => false,

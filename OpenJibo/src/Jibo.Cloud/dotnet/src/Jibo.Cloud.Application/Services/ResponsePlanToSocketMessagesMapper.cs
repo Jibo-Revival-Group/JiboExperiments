@@ -54,7 +54,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var localIntent = ReadSkillPayloadString(skill, "localIntent");
         var clockIntent = ReadSkillPayloadString(skill, "clockIntent");
         var clockDomain = ReadSkillPayloadString(skill, "domain");
-        var clockHoliday = ReadSkillPayloadString(skill, "holiday");
         var timerHours = ReadSkillPayloadString(skill, "hours");
         var timerMinutes = ReadSkillPayloadString(skill, "minutes");
         var timerSeconds = ReadSkillPayloadString(skill, "seconds");
@@ -155,7 +154,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
             radioStation,
             isClockSkillLaunch,
             clockDomain,
-            clockHoliday,
             timerHours,
             timerMinutes,
             timerSeconds,
@@ -325,9 +323,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // Don't emit a chitchat SKILL_ACTION for tutorial yes/no turns: the tutorial skill handles
         // the response locally. Sending a competing chitchat-skill action with final:true causes the
         // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
-        // Clock launches also speak locally via @be/clock — don't stack a chitchat speak on top.
-        if (emitSkillActions && speak is not null && !isClockSkillLaunch &&
-            !(isYesNoIntent && isSkillOwnedYesNoTurn))
+        if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill)),
                 75));
@@ -467,7 +463,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
         string? radioStation,
         bool clockSkillLaunch,
         string? clockDomain,
-        string? clockHoliday,
         string? timerHours,
         string? timerMinutes,
         string? timerSeconds,
@@ -513,7 +508,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             var entities = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(clockDomain)) entities["domain"] = clockDomain;
-            if (!string.IsNullOrWhiteSpace(clockHoliday)) entities["holiday"] = clockHoliday;
 
             if (string.Equals(clockDomain, "timer", StringComparison.OrdinalIgnoreCase) &&
                 !string.IsNullOrWhiteSpace(timerHours + timerMinutes + timerSeconds))
@@ -1261,10 +1255,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
             else if (isCalendarSection)
             {
                 var calendarView = BuildCalendarEventsView(section);
-                // Never use pause:true here. A missing/unloadable calendar texture previously
-                // wedged @be/nimbus forever (robot went silent on later turns). Hold via timeout only.
                 if (calendarView is not null)
-                    AttachGuiView(config, "calendarEvents", calendarView, pause: false);
+                    AttachPausedGuiView(config, "calendarEvents", calendarView);
             }
 
             if (shouldHoldSection)
@@ -1289,26 +1281,17 @@ public sealed class ResponsePlanToSocketMessagesMapper
         string viewName,
         object view)
     {
-        AttachGuiView(config, viewName, view, pause: true);
-    }
-
-    private static void AttachGuiView(
-        IDictionary<string, object?> config,
-        string viewName,
-        object view,
-        bool pause)
-    {
         var resolvedGuiContext = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["type"] = "Javascript",
             ["data"] = view,
-            ["pause"] = pause
+            ["pause"] = true
         };
         config["gui"] = new
         {
             type = "Javascript",
             data = $"views.{viewName}",
-            pause
+            pause = true
         };
         config["display"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -1316,7 +1299,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             {
                 ["type"] = "Javascript",
                 ["data"] = view,
-                ["pause"] = pause,
+                ["pause"] = true,
                 ["context"] = resolvedGuiContext
             }
         };
@@ -1345,9 +1328,6 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var timeLabel = ReadPayloadString(section, "calendar_event_time_label") ?? string.Empty;
         var amPmLabel = ReadPayloadString(section, "calendar_event_ampm") ?? string.Empty;
         var theme = ReadPayloadString(section, "calendar_event_theme") ?? "Afternoon";
-        // Must reference an asset that exists in @be/nimbus; "calendar" is the Pegasus default.
-        var icon = ReadPayloadString(section, "calendar_event_icon");
-        if (string.IsNullOrWhiteSpace(icon)) icon = "calendar";
 
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -1394,7 +1374,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                         new
                         {
                             id = "eventIcon",
-                            src = $"assets/personal-report-skill/calendar/icons/{icon}_v01.crn",
+                            src = "assets/personal-report-skill/calendar/icons/generic_v01.crn",
                             type = "texture"
                         }
                     },

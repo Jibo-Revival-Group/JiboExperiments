@@ -105,22 +105,18 @@ public sealed partial class JiboInteractionService
     }
 
     private static JiboInteractionDecision BuildClockLaunchDecision(string intentName, string domain,
-        string clockIntent, string replyText, string? holiday = null)
+        string clockIntent, string replyText)
     {
-        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["skillId"] = "@be/clock",
-            ["domain"] = domain,
-            ["clockIntent"] = clockIntent
-        };
-        if (!string.IsNullOrWhiteSpace(holiday))
-            payload["holiday"] = holiday;
-
         return new JiboInteractionDecision(
             intentName,
             replyText,
             "@be/clock",
-            payload);
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/clock",
+                ["domain"] = domain,
+                ["clockIntent"] = clockIntent
+            });
     }
 
     private static JiboInteractionDecision BuildClockLaunchDecision(string domain, string replyText)

@@ -282,7 +282,8 @@ fi
 for f in \
   /opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib/http/node.js \
   /opt/jibo/Jibo/Skills/oobe-config/node_modules/@jibo/jibo-server-client/lib/http/node.js \
-  /usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/http/node.js
+  /usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/http/node.js \
+  /usr/lib/node_modules/@jibo/jibo-server-client/lib/http/node.js
 do
   if [ -f "$f" ]; then
     sed -i 's/rejectUnauthorized: true/rejectUnauthorized: false/g' "$f" 2>/dev/null || true
@@ -472,6 +473,16 @@ Jibo must trust the local OpenJibo certificate chain for:
 https://api.jibo.com/
 https://neohub.openjibo.com/
 ```
+
+Stock server-service opens `wss://api-socket.jibo.com/{token}` on TLS port 443.
+If that handshake fails (`unknown ca`), Portal `LoopUpdated` push stays at
+`openConnections=0` even while `/v1/listen` on `:24605` works.
+
+For physical robots, do not rely on Node/JSC `wsendpoint` rewrites. The C++
+NotificationSubsystem uses HTTPS/WSS on `:443` directly, so the fix is:
+
+- OpenJibo listening on `https://<host>:443`
+- robot trust store includes the OpenJibo CA (with OpenSSL hash links)
 
 The working setup installs the OpenJibo CA and also creates OpenSSL hash
 symlinks under `/etc/ssl/certs`. Appending the CA to

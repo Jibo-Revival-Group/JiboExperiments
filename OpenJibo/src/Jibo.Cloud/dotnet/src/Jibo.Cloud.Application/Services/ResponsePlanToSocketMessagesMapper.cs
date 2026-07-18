@@ -719,7 +719,24 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var weeklyWeatherCards = BuildWeatherHiLoSequenceCards(skillPayload);
         if (weatherHiLoView is null && weeklyWeatherCards.Count > 0) weatherHiLoView = weeklyWeatherCards[0].View;
 
-        var useWeatherSequence = false;
+        var useSequence = false;
+        var cloudSkillName = ReadPayloadString(skillPayload, "cloudSkill");
+        var isPersonalReport = string.Equals(
+            cloudSkillName,
+            "personal_report",
+            StringComparison.OrdinalIgnoreCase);
+        var isNewsSkill = string.Equals(cloudSkillName, "news", StringComparison.OrdinalIgnoreCase);
+        var personalReportSections = skillPayload is not null &&
+                                     skillPayload.TryGetValue("personal_report_sections", out var sectionsRaw)
+            ? ReadPayloadObjectArray(sectionsRaw!)
+            : [];
+        var newsSections = skillPayload is not null &&
+                           skillPayload.TryGetValue("news_sections", out var newsSectionsRaw)
+            ? ReadPayloadObjectArray(newsSectionsRaw!)
+            : [];
+        var usePersonalReportSequence = isPersonalReport && personalReportSections.Length > 1;
+        var useNewsSequence = isNewsSkill && newsSections.Length > 1;
+
         if (weatherHiLoView is not null)
         {
             var resolvedGuiContext = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -768,9 +785,21 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 ["views"] = weatherViews
             };
 
-            if (weeklyWeatherCards.Count > 1)
+            if (usePersonalReportSequence)
             {
-                useWeatherSequence = true;
+                useSequence = true;
+                var weatherIcon = ReadPayloadString(skillPayload, "weather_icon") ?? "cloudy";
+                jcpConfig["children"] = BuildPersonalReportSequenceChildren(
+                    personalReportSections,
+                    weatherHiLoView,
+                    weatherIcon,
+                    promptSubCategory,
+                    mimId,
+                    mimType);
+            }
+            else if (weeklyWeatherCards.Count > 1)
+            {
+                useSequence = true;
                 jcpConfig["children"] = BuildWeatherHiLoSequenceChildren(
                     weeklyWeatherCards,
                     promptSubCategory,
@@ -778,13 +807,37 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     mimType);
             }
         }
+        else if (usePersonalReportSequence)
+        {
+            // Personal report without a weather GUI still benefits from sectioned SLIMs.
+            useSequence = true;
+            jcpConfig["children"] = BuildPersonalReportSequenceChildren(
+                personalReportSections,
+                null,
+                "cloudy",
+                promptSubCategory,
+                mimId,
+                mimType);
+        }
+        else if (useNewsSequence)
+        {
+            // Standalone news: Intro + one Headline SLIM per story (Pegasus NewsMimLogic order).
+            useSequence = true;
+            jcpConfig["children"] = BuildPersonalReportSequenceChildren(
+                newsSections,
+                null,
+                "cloudy",
+                promptSubCategory,
+                mimId,
+                mimType);
+        }
 
         var jcp = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["type"] = "SLIM",
             ["config"] = jcpConfig
         };
-        if (!useWeatherSequence ||
+        if (!useSequence ||
             !jcpConfig.TryGetValue("children", out var sequenceChildren) ||
             sequenceChildren is null)
             return new
@@ -1129,6 +1182,127 @@ public sealed class ResponsePlanToSocketMessagesMapper
         {
             ["weather_view_enabled"] = true,
             ["weather_view_kind"] = "weatherHiLo"
+        };
+    }
+
+    private static IReadOnlyList<object> BuildPersonalReportSequenceChildren(
+        IReadOnlyList<IDictionary<string, object?>> sections,
+        object? weatherHiLoView,
+        string weatherIcon,
+        string promptSubCategory,
+        string mimId,
+        string mimType)
+    {
+        var children = new List<object>(sections.Count);
+        for (var index = 0; index < sections.Count; index += 1)
+        {
+            var section = sections[index];
+            var kind = ReadPayloadString(section, "kind") ?? $"section{index + 1}";
+            var text = ReadPayloadString(section, "text");
+            if (string.IsNullOrWhiteSpace(text)) continue;
+
+            var isWeatherSection = string.Equals(kind, "kickoff_weather", StringComparison.OrdinalIgnoreCase) ||
+                                   string.Equals(kind, "weather", StringComparison.OrdinalIgnoreCase);
+            var animCat = ReadPayloadString(section, "anim_cat");
+            var animMeta = ReadPayloadString(section, "anim_meta");
+            if (isWeatherSection && string.IsNullOrWhiteSpace(animCat))
+            {
+                animCat = "weather";
+                animMeta = weatherIcon;
+            }
+
+            var promptLabel = Regex.Replace(kind, "[^A-Za-z0-9]", string.Empty, RegexOptions.CultureInvariant);
+            if (string.IsNullOrWhiteSpace(promptLabel)) promptLabel = $"Section{index + 1}";
+
+            // Pegasus NewsHeadline / commute MIMs use a longer post-anim break than 0.35.
+            var animBreak = string.Equals(animCat, "news", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(animCat, "commute", StringComparison.OrdinalIgnoreCase)
+                ? "0.75"
+                : "0.35";
+            var esml = !string.IsNullOrWhiteSpace(animCat) && !string.IsNullOrWhiteSpace(animMeta)
+                ? $"<speak><anim cat='{EscapeXml(animCat)}' meta='{EscapeXml(animMeta)}' nonBlocking='true' /><break size='{animBreak}'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(text)}</es></speak>"
+                : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(text)}</es></speak>";
+
+            var config = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["play"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["esml"] = esml,
+                    ["meta"] = new
+                    {
+                        prompt_id = $"PersonalReport{promptLabel}_AN_01",
+                        prompt_sub_category = promptSubCategory,
+                        mim_id = mimId,
+                        mim_type = mimType
+                    }
+                },
+                ["barge_in"] = true
+            };
+
+            var isCommuteSection = string.Equals(kind, "commute", StringComparison.OrdinalIgnoreCase);
+            var isNewsSection = kind.StartsWith("news", StringComparison.OrdinalIgnoreCase);
+            var shouldHoldSection = isWeatherSection ||
+                                    isCommuteSection ||
+                                    isNewsSection ||
+                                    TryReadPayloadInt(section, "hold_timeout") is > 0;
+
+            if (isWeatherSection && weatherHiLoView is not null)
+                AttachPausedGuiView(config, "weatherHiLo", weatherHiLoView);
+
+            if (shouldHoldSection)
+            {
+                config["timeout"] = TryReadPayloadInt(section, "hold_timeout") ?? 6;
+                config["no_matches_for_gui"] = 0;
+                config["no_inputs_for_gui"] = 0;
+            }
+
+            children.Add(new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["type"] = "SLIM",
+                ["config"] = config
+            });
+        }
+
+        return children;
+    }
+
+    private static void AttachPausedGuiView(
+        IDictionary<string, object?> config,
+        string viewName,
+        object view)
+    {
+        var resolvedGuiContext = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = "Javascript",
+            ["data"] = view,
+            ["pause"] = true
+        };
+        config["gui"] = new
+        {
+            type = "Javascript",
+            data = $"views.{viewName}",
+            pause = true
+        };
+        config["display"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["view"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["type"] = "Javascript",
+                ["data"] = view,
+                ["pause"] = true,
+                ["context"] = resolvedGuiContext
+            }
+        };
+        config["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            [viewName] = view
+        };
+        config["local"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                [viewName] = view
+            }
         };
     }
 

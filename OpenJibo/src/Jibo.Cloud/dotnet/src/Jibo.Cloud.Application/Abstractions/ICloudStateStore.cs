@@ -11,6 +11,7 @@ public interface ICloudStateStore
     DeviceRegistration GetRobot();
     RobotProfile GetRobotProfile();
     DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion);
+    DeviceRegistration UpsertDevice(DeviceRegistration registration);
     DeviceRegistration? FindDeviceByFriendlyId(string friendlyId);
     UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);
     UserRecord? AuthenticateUser(string email, string password);
@@ -21,9 +22,22 @@ public interface ICloudStateStore
     string IssueRobotToken(string deviceId);
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
     CloudSession? FindSessionByToken(string token);
+    /// <summary>
+    /// Copies dialog-continuation metadata from other sessions that share this session's DeviceId
+    /// (same robot reconnecting on a new path-token websocket).
+    /// </summary>
+    void ReinheritDialogMetadata(CloudSession session);
     IReadOnlyList<LoopRecord> GetLoops();
     LoopRecord AddLoop(string? name, string? ownerAccountId, string? robotId, string? robotFriendlyId);
     IReadOnlyList<PersonRecord> GetPeople();
+    PersonRecord UpsertPerson(PersonRecord person);
+    /// <summary>
+    /// Upserts people (and matching non-robot loop members) from the robot's
+    /// <c>runtime.loop.users</c> roster — the same source Pegasus personal report uses.
+    /// People are scoped to <paramref name="loopId"/> + <paramref name="robotId"/> so
+    /// multiple Jibos on one cloud do not merge households.
+    /// </summary>
+    int SyncPeopleFromLoopUsers(string loopId, string? robotId, IReadOnlyList<LoopUserSnapshot> loopUsers);
     IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
     IReadOnlyList<TrustedServerRecord> GetTrustedServers();
     IReadOnlyList<TrustedServerAdmissionRecord> GetTrustedServerAdmissions(string? canonicalHost = null);
@@ -35,10 +49,12 @@ public interface ICloudStateStore
     void RevokeIdentityGraphAnchor(string anchor);
 
     LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
-        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null);
+        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null,
+        bool markPortalEdited = false);
 
     LoopMemberRecord UpdateLoopMember(string loopId, string memberId, string? firstName, string? lastName,
-        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName);
+        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName,
+        bool markPortalEdited = false);
 
     bool RemoveLoopMember(string loopId, string memberId);
     LoopMemberRecord SetMemberEnrollment(string loopId, string memberId, bool? face, bool? voice);

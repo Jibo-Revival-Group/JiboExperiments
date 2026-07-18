@@ -8,6 +8,7 @@ using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Tests.Api;
 
@@ -86,12 +87,43 @@ public sealed class WebSocketRequestCoordinatorTests
         Assert.Equal(telemetrySink.LastConnectionId, telemetrySink.FirstConnectionId);
     }
 
+    [Fact]
+    public async Task HandleAsync_ApiSocketDrainsPendingLoopUpdatedOnRegister()
+    {
+        var socket = new FakeWebSocket(new FakeWebSocketFrame(WebSocketMessageType.Close, []));
+        var context = CreateContext(socket);
+        context.Request.Host = new HostString("192.168.7.142");
+        context.Request.Path = "/token-Ghost-Instance-Onion-Silk-123456";
+
+        var service = CreateWebSocketService(out var store);
+        var telemetrySink = new RecordingWebSocketTelemetrySink();
+        var pendingStore = new RobotPendingNotificationStore();
+        var registry = new RobotNotificationRegistry(pendingStore);
+        var haHandler = new HomeAssistantWebSocketHandler(new HomeAssistantConnectionRegistry());
+        var coordinator = new WebSocketRequestCoordinator(
+            service,
+            haHandler,
+            telemetrySink,
+            registry,
+            store,
+            NullLogger<WebSocketRequestCoordinator>.Instance);
+
+        await registry.PushLoopUpdatedAsync(
+            ["Ghost-Instance-Onion-Silk"],
+            new { id = "loop-1", eventKey = "LoopUpdated" });
+
+        await coordinator.HandleAsync(context);
+
+        Assert.True(socket.Accepted);
+        Assert.NotEmpty(socket.SentPayloads);
+    }
+
     private static WebSocketRequestCoordinator CreateCoordinator(out RecordingWebSocketTelemetrySink telemetrySink)
     {
-        var service = CreateWebSocketService(out _);
+        var service = CreateWebSocketService(out var store);
         telemetrySink = new RecordingWebSocketTelemetrySink();
         var haHandler = new HomeAssistantWebSocketHandler(new HomeAssistantConnectionRegistry());
-        return new WebSocketRequestCoordinator(service, haHandler, telemetrySink);
+        return new WebSocketRequestCoordinator(service, haHandler, telemetrySink, store);
     }
 
     private static WebSocketRequestCoordinator CreateCoordinator(
@@ -101,7 +133,7 @@ public sealed class WebSocketRequestCoordinatorTests
         var service = CreateWebSocketService(out store);
         telemetrySink = new RecordingWebSocketTelemetrySink();
         var haHandler = new HomeAssistantWebSocketHandler(new HomeAssistantConnectionRegistry());
-        return new WebSocketRequestCoordinator(service, haHandler, telemetrySink);
+        return new WebSocketRequestCoordinator(service, haHandler, telemetrySink, store);
     }
 
     private static JiboWebSocketService CreateWebSocketService(out InMemoryCloudStateStore store)

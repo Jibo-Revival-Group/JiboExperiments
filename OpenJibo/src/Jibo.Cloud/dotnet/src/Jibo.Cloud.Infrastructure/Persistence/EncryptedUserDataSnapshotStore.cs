@@ -47,8 +47,19 @@ public sealed class EncryptedUserDataSnapshotStore
                 envelope.Ciphertext));
 
             var snapshot = JsonSerializer.Deserialize<UserIntegrationSnapshot>(plaintext, JsonOptions);
-            if (snapshot is null || snapshot.SchemaVersion != UserIntegrationSnapshot.CurrentSchemaVersion)
+            if (snapshot is null ||
+                snapshot.SchemaVersion < UserIntegrationSnapshot.MinimumSupportedSchemaVersion ||
+                snapshot.SchemaVersion > UserIntegrationSnapshot.CurrentSchemaVersion)
                 return ResetAndSave("User integration schema is unsupported.");
+
+            // v1 snapshots omit MemberCalendarFeeds; normalize to current schema on load.
+            if (snapshot.SchemaVersion < UserIntegrationSnapshot.CurrentSchemaVersion)
+                return new UserIntegrationSnapshot
+                {
+                    SchemaVersion = UserIntegrationSnapshot.CurrentSchemaVersion,
+                    HomeAssistantLinks = snapshot.HomeAssistantLinks ?? [],
+                    MemberCalendarFeeds = snapshot.MemberCalendarFeeds ?? []
+                };
 
             return snapshot;
         }
@@ -110,7 +121,8 @@ public sealed class EncryptedUserDataSnapshotStore
         return new UserIntegrationSnapshot
         {
             SchemaVersion = UserIntegrationSnapshot.CurrentSchemaVersion,
-            HomeAssistantLinks = []
+            HomeAssistantLinks = [],
+            MemberCalendarFeeds = []
         };
     }
 

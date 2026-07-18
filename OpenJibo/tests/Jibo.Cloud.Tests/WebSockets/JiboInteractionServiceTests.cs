@@ -2781,7 +2781,12 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_opt_in", decision.IntentName);
         Assert.Equal("Would you like your personal report now?", decision.ReplyText);
+        Assert.Equal("chitchat-skill", decision.SkillName);
         Assert.NotNull(decision.SkillPayload);
+        Assert.Equal("runtime-chat", decision.SkillPayload["mim_id"]);
+        Assert.Equal("question", decision.SkillPayload["mim_type"]);
+        Assert.Equal("RUNTIME_PROMPT", decision.SkillPayload["prompt_id"]);
+        Assert.Equal("Q", decision.SkillPayload["prompt_sub_category"]);
         var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
         Assert.Equal("shared/yes_no", listenContexts[0]);
         Assert.NotNull(decision.ContextUpdates);
@@ -2790,6 +2795,26 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(true, decision.ContextUpdates[PersonalReportCalendarEnabledKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportCommuteEnabledKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportNewsEnabledKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PersonalReport_OptInYesWithSharedYesNoListenRules_ContinuesFlow()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "yes",
+            NormalizedTranscript = "yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                [PersonalReportStateKey] = "awaiting_opt_in",
+                ["listenRules"] = (string[])["shared/yes_no", "globals/gui_nav"]
+            }
+        });
+
+        Assert.Equal("personal_report_request_name", decision.IntentName);
+        Assert.Equal("Who is this?", decision.ReplyText);
     }
 
     [Fact]
@@ -2814,7 +2839,10 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("personal_report_verify_user", decision.IntentName);
         Assert.Equal("I think this is alex. Is that right?", decision.ReplyText);
+        Assert.Equal("chitchat-skill", decision.SkillName);
         Assert.NotNull(decision.SkillPayload);
+        Assert.Equal("question", decision.SkillPayload["mim_type"]);
+        Assert.Equal("Q", decision.SkillPayload["prompt_sub_category"]);
         var listenContexts = Assert.IsAssignableFrom<IReadOnlyList<string>>(decision.SkillPayload["listen_contexts"]);
         Assert.Equal("shared/yes_no", listenContexts[0]);
         Assert.NotNull(decision.ContextUpdates);
@@ -2845,13 +2873,15 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("personal_report_delivered", decision.IntentName);
         Assert.Equal("report-skill", decision.SkillName);
         Assert.Contains("Sure alex. Here it is.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Weather.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Weather.", decision.ReplyText, StringComparison.Ordinal);
         Assert.Contains(
             "For your weather. In Boston, U.S., it's light rain and 61 degrees Fahrenheit. Today's high is 65, and the low is 54.",
             decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("And that's it.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("And that's it.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("what's new in the news", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("news", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
-        Assert.True(StripMarkup(decision.ReplyText).Length < 500,
+        Assert.Contains("wraps up your report", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.True(StripMarkup(decision.ReplyText).Length < 900,
             $"Personal report speech was still too long: {StripMarkup(decision.ReplyText).Length} chars.");
         Assert.Contains("alex", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.SkillPayload);
@@ -2859,8 +2889,24 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("personal_report", decision.SkillPayload["cloudSkill"]);
         Assert.Equal(true, decision.SkillPayload["weather_view_enabled"]);
         Assert.Equal("runtime-personal-report", decision.SkillPayload["mim_id"]);
-        Assert.Contains("Weather. For your weather.", decision.SkillPayload["personal_report_report_text"]?.ToString(),
+        Assert.Contains("For your weather.", decision.SkillPayload["personal_report_report_text"]?.ToString(),
             StringComparison.OrdinalIgnoreCase);
+        var sections = Assert.IsAssignableFrom<IReadOnlyList<IDictionary<string, object?>>>(
+            decision.SkillPayload["personal_report_sections"]);
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "kickoff_weather", StringComparison.OrdinalIgnoreCase) &&
+            section["text"]?.ToString()?.Contains("For your weather.", StringComparison.OrdinalIgnoreCase) == true);
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "news", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(section["kind"]?.ToString(), "news_intro", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(section["kind"]?.ToString(), "news_headline", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "outro", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(sections, static section =>
+            (string.Equals(section["kind"]?.ToString(), "news", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(section["kind"]?.ToString(), "news_intro", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(section["kind"]?.ToString(), "news_headline", StringComparison.OrdinalIgnoreCase)) &&
+            section["text"]?.ToString()?.Contains("what's new in the news", StringComparison.OrdinalIgnoreCase) == true);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("idle", decision.ContextUpdates![PersonalReportStateKey]);
         Assert.Equal(true, decision.ContextUpdates[PersonalReportUserVerifiedKey]);
@@ -2900,6 +2946,13 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("Your calendar says get personal report from jibo, at 6:00 p.m.", decision.ReplyText,
             StringComparison.OrdinalIgnoreCase);
         Assert.Contains("calendar", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        var sections = Assert.IsAssignableFrom<IReadOnlyList<IDictionary<string, object?>>>(
+            decision.SkillPayload!["personal_report_sections"]);
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "calendar", StringComparison.OrdinalIgnoreCase) &&
+            section["text"]?.ToString()?.Contains(
+                "get personal report from jibo",
+                StringComparison.OrdinalIgnoreCase) == true);
     }
 
     [Fact]
@@ -2920,7 +2973,7 @@ public sealed class JiboInteractionServiceTests
         var calendarProvider = new CloudStateCalendarReportProvider(calendarStore);
         var cloudStateStore = new InMemoryCloudStateStore();
         var commuteProvider = new CloudStateCommuteReportProvider(cloudStateStore);
-        var commuteTime = DateTimeOffset.Now.AddMinutes(45);
+        var commuteTime = DateTimeOffset.Now.AddHours(3);
         cloudStateStore.UpsertCommuteProfile(new CommuteProfileRecord
         {
             LoopId = "openjibo-default-loop",
@@ -2947,10 +3000,80 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("personal_report_delivered", decision.IntentName);
+        Assert.Contains("25", decision.ReplyText, StringComparison.Ordinal);
+        Assert.DoesNotContain("{duration}", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("${skill.commute", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("durationMins", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.SkillPayload);
         Assert.Equal("runtime-personal-report", decision.SkillPayload["mim_id"]);
+        var sections = Assert.IsAssignableFrom<IReadOnlyList<IDictionary<string, object?>>>(
+            decision.SkillPayload["personal_report_sections"]);
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "commute", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(section["anim_cat"]?.ToString(), "commute", StringComparison.OrdinalIgnoreCase) &&
+            section["text"]?.ToString()?.Contains("25", StringComparison.Ordinal) == true &&
+            Equals(section["hold_timeout"], 6));
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "calendar", StringComparison.OrdinalIgnoreCase) &&
+            !section.ContainsKey("hold_timeout") &&
+            !section.ContainsKey("calendar_view_enabled"));
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal(true, decision.ContextUpdates![PersonalReportCommuteEnabledKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PersonalReport_UsesLiveNewsHeadlinesWithoutOutro()
+    {
+        var weatherProvider = new CapturingWeatherReportProvider
+        {
+            Snapshot = new WeatherReportSnapshot("Boston, U.S.", "light rain", 61, 65, 54, "rain", false)
+        };
+        var newsProvider = new CapturingNewsBriefingProvider
+        {
+            Snapshot = new NewsBriefingSnapshot(
+                [
+                    new NewsHeadline("Space missions are preparing for new launches",
+                        "Teams are preparing new orbital missions."),
+                    new NewsHeadline("AI tools keep pushing into everyday products",
+                        "Consumer products continue adopting AI features.")
+                ],
+                "NewsAPI")
+        };
+        var service = CreateService(weatherReportProvider: weatherProvider, newsBriefingProvider: newsProvider);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "yes",
+            NormalizedTranscript = "yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                [PersonalReportStateKey] = "awaiting_identity_confirmation",
+                [PersonalReportUserNameKey] = "alex"
+            }
+        });
+
+        Assert.Equal("personal_report_delivered", decision.IntentName);
+        Assert.NotNull(newsProvider.LastRequest);
+        Assert.Contains("Space missions are preparing for new launches", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("AI tools keep pushing into everyday products", decision.ReplyText,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("what's new in the news", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("And that's the news.", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        var sections = Assert.IsAssignableFrom<IReadOnlyList<IDictionary<string, object?>>>(
+            decision.SkillPayload!["personal_report_sections"]);
+        Assert.Contains(sections, static section =>
+            string.Equals(section["kind"]?.ToString(), "news_intro", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(section["kind"]?.ToString(), "news", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(sections, static section =>
+            (string.Equals(section["kind"]?.ToString(), "news_headline", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(section["kind"]?.ToString(), "news", StringComparison.OrdinalIgnoreCase)) &&
+            section["text"]?.ToString()?.Contains("Space missions", StringComparison.OrdinalIgnoreCase) == true);
+        Assert.Contains(sections, static section =>
+            section.TryGetValue("anim_cat", out var animCat) &&
+            section.TryGetValue("anim_meta", out var animMeta) &&
+            string.Equals(animCat?.ToString(), "news", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(animMeta?.ToString(), "news-stinger", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -3866,6 +3989,36 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(
             "For your weather. In Chicago, U.S., it's mostly cloudy and 70 degrees Fahrenheit. Today's high is 75, and the low is 62.",
             decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_WeatherWithRuntimeCity_PrefersContextLocationNameOverProviderLabel()
+    {
+        var provider = new CapturingWeatherReportProvider
+        {
+            Snapshot = new WeatherReportSnapshot("Lone Jack", "overcast clouds", 79, 82, 78, "clouds", false)
+        };
+        var service = CreateService(weatherReportProvider: provider);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "how is the weather",
+            NormalizedTranscript = "how is the weather",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] =
+                    """{"runtime":{"location":{"city":"Pleasant Hill","state":"Missouri","lat":38.8358494,"lng":-94.1427229,"iso":"2026-05-09T09:00:00-05:00"}}}"""
+            }
+        });
+
+        Assert.Equal("weather", decision.IntentName);
+        Assert.Null(provider.LastRequest?.LocationQuery);
+        Assert.Equal(38.8358494, provider.LastRequest?.Latitude);
+        Assert.Equal(-94.1427229, provider.LastRequest?.Longitude);
+        Assert.Equal("Pleasant Hill", provider.LastRequest?.PreferredLocationName);
+        Assert.Contains("Pleasant Hill", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Lone Jack", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Pleasant Hill", decision.SkillPayload?["weather_location"]);
     }
 
     [Fact]
@@ -5747,6 +5900,15 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(2, decision.SkillPayload["news_provider_resolved_headlines"]);
         Assert.NotNull(decision.SkillPayload["news_headlines"]);
         Assert.IsType<Dictionary<string, object?>[]>(decision.SkillPayload["news_headlines"]);
+        var newsSections = Assert.IsAssignableFrom<IReadOnlyList<IDictionary<string, object?>>>(
+            decision.SkillPayload["news_sections"]);
+        Assert.Contains(newsSections, static section =>
+            string.Equals(section["kind"]?.ToString(), "news_intro", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(section["anim_meta"]?.ToString(), "news-intro, no-eye-end", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(newsSections, static section =>
+            string.Equals(section["kind"]?.ToString(), "news_headline", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(section["anim_meta"]?.ToString(), "news-stinger", StringComparison.OrdinalIgnoreCase) &&
+            section["text"]?.ToString()?.Contains("Local robotics team", StringComparison.OrdinalIgnoreCase) == true);
         Assert.Contains("Local robotics team unveils weather-ready helper", decision.ReplyText,
             StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(provider.LastRequest);

@@ -21,7 +21,19 @@ public sealed class ProtocolToTurnContextMapper
 
         if (!string.IsNullOrWhiteSpace(session.AccountId)) attributes["accountId"] = session.AccountId;
 
-        if (!string.IsNullOrWhiteSpace(session.DeviceId)) attributes["deviceId"] = session.DeviceId;
+        var robotFriendlyId = SessionRobotIdentityBinder.ResolveRobotFriendlyId(session, turnState.ContextPayload);
+        if (!string.IsNullOrWhiteSpace(robotFriendlyId))
+        {
+            attributes["deviceId"] = robotFriendlyId;
+            attributes["robotId"] = robotFriendlyId;
+            attributes["robotID"] = robotFriendlyId;
+            attributes["friendlyId"] = robotFriendlyId;
+            attributes["robotFriendlyId"] = robotFriendlyId;
+        }
+        else if (!string.IsNullOrWhiteSpace(session.DeviceId))
+        {
+            attributes["deviceId"] = session.DeviceId;
+        }
 
         if (session.Metadata.TryGetValue("loopId", out var loopId) &&
             loopId is string loopIdText &&
@@ -87,7 +99,7 @@ public sealed class ProtocolToTurnContextMapper
             SourceKind = TurnSourceKind.Api,
             RawTranscript = text,
             NormalizedTranscript = text?.Trim(),
-            DeviceId = session.DeviceId,
+            DeviceId = robotFriendlyId ?? session.DeviceId,
             HostName = envelope.HostName,
             RequestId = envelope.ConnectionId,
             ProtocolService = "neo-hub",

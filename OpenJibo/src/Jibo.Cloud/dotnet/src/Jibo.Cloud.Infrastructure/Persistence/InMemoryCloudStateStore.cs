@@ -229,6 +229,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return device;
     }
 
+    public DeviceRegistration UpsertDevice(DeviceRegistration registration)
+    {
+        ArgumentNullException.ThrowIfNull(registration);
+        if (string.IsNullOrWhiteSpace(registration.DeviceId))
+            throw new ArgumentException("DeviceId is required.", nameof(registration));
+
+        _devices[registration.DeviceId.Trim()] = registration;
+        TouchState();
+        return registration;
+    }
+
     public DeviceRegistration? FindDeviceByFriendlyId(string friendlyId)
     {
         if (string.IsNullOrWhiteSpace(friendlyId)) return null;
@@ -468,7 +479,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path)
     {
-        var resolvedDeviceId = deviceId ?? _robot.DeviceId;
+        // Path-token / per-connection listen sockets must not inherit the process-wide singleton
+        // DeviceId — that collapses every robot onto one identity until CONTEXT arrives.
+        var resolvedDeviceId = !string.IsNullOrWhiteSpace(deviceId)
+            ? deviceId.Trim()
+            : IsAmbiguousConnectionToken(token)
+                ? null
+                : _robot.DeviceId;
         var resolvedLoopId = ResolveDefaultLoopId();
         var session = new CloudSession
         {
@@ -481,12 +498,63 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Metadata = BuildSessionMetadata(_account.AccountId, resolvedDeviceId, resolvedLoopId)
         };
 
-        if (string.IsNullOrWhiteSpace(token)) return session;
+        if (!string.IsNullOrWhiteSpace(token))
+            _sessionsByToken[token] = session;
 
-        _sessionsByToken[token] = session;
+        InheritDialogMetadataFromDevice(session);
         TouchState();
 
         return session;
+    }
+
+    public void ReinheritDialogMetadata(CloudSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        InheritDialogMetadataFromDevice(session);
+        TouchState();
+    }
+
+    private static bool IsAmbiguousConnectionToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return true;
+        var trimmed = token.Trim();
+        return trimmed.StartsWith("conn:", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("v1/listen", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("listen", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("v1/proactive", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("proactive", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void InheritDialogMetadataFromDevice(CloudSession session)
+    {
+        if (string.IsNullOrWhiteSpace(session.DeviceId)) return;
+
+        var donor = _sessionsByToken.Values
+            .Where(candidate =>
+                !string.Equals(candidate.SessionId, session.SessionId, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(candidate.DeviceId, session.DeviceId, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(candidate => candidate.LastSeenUtc)
+            .ThenByDescending(candidate => candidate.CreatedUtc)
+            .FirstOrDefault();
+        if (donor is null) return;
+
+        foreach (var pair in donor.Metadata)
+        {
+            if (pair.Value is null || !ShouldInheritDialogMetadataKey(pair.Key)) continue;
+            if (session.Metadata.ContainsKey(pair.Key)) continue;
+            session.Metadata[pair.Key] = pair.Value;
+        }
+    }
+
+    private static bool ShouldInheritDialogMetadataKey(string key)
+    {
+        return key.StartsWith("personalReport", StringComparison.OrdinalIgnoreCase) ||
+               key.StartsWith("householdList", StringComparison.OrdinalIgnoreCase) ||
+               key.StartsWith("chitchat", StringComparison.OrdinalIgnoreCase) ||
+               key.StartsWith("greetings", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(key, "pendingProactivityOffer", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(key, "lastClockDomain", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(key, "sleepState", StringComparison.OrdinalIgnoreCase);
     }
 
     public CloudSession? FindSessionByToken(string token)
@@ -517,12 +585,35 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         lock (_syncRoot)
         {
-            if (!string.IsNullOrWhiteSpace(resolvedRobotId))
+            var existing = FindLoopForRobotLocked(resolvedRobotId, resolvedRobotFriendlyId);
+            if (existing is not null)
             {
-                var existing = _loops.FirstOrDefault(loop =>
-                    string.Equals(loop.OwnerAccountId, resolvedOwnerAccountId, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(loop.RobotId, resolvedRobotId, StringComparison.OrdinalIgnoreCase));
-                if (existing is not null) return existing;
+                if ((string.IsNullOrWhiteSpace(existing.RobotId) && !string.IsNullOrWhiteSpace(resolvedRobotId)) ||
+                    (string.IsNullOrWhiteSpace(existing.RobotFriendlyId) && !string.IsNullOrWhiteSpace(resolvedRobotFriendlyId)))
+                {
+                    var index = _loops.FindIndex(loop =>
+                        loop.LoopId.Equals(existing.LoopId, StringComparison.OrdinalIgnoreCase));
+                    if (index >= 0)
+                    {
+                        existing = new LoopRecord
+                        {
+                            LoopId = existing.LoopId,
+                            Name = existing.Name,
+                            OwnerAccountId = existing.OwnerAccountId,
+                            RobotId = string.IsNullOrWhiteSpace(existing.RobotId) ? resolvedRobotId : existing.RobotId,
+                            RobotFriendlyId = string.IsNullOrWhiteSpace(existing.RobotFriendlyId)
+                                ? resolvedRobotFriendlyId
+                                : existing.RobotFriendlyId,
+                            IsSuspended = existing.IsSuspended,
+                            CreatedUtc = existing.CreatedUtc,
+                            UpdatedUtc = DateTimeOffset.UtcNow
+                        };
+                        _loops[index] = existing;
+                        TouchState();
+                    }
+                }
+
+                return existing;
             }
 
             var candidateLoopId = baseLoopId;
@@ -548,9 +639,303 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         }
     }
 
+    private LoopRecord? FindLoopForRobotLocked(string robotId, string robotFriendlyId)
+    {
+        return _loops.FirstOrDefault(loop => LoopMatchesRobot(loop, robotId, robotFriendlyId));
+    }
+
+    private static bool LoopMatchesRobot(LoopRecord loop, string? robotId, string? robotFriendlyId)
+    {
+        // One loop per friendlyId (Pegasus robotID / BE robotFriendlyId). Prefer robotId as the
+        // canonical key; only fall back to robotFriendlyId when robotId is empty. Never OR-match
+        // a shared serial/device string across robots.
+        var friendlyKey = !string.IsNullOrWhiteSpace(robotId)
+            ? robotId.Trim()
+            : robotFriendlyId?.Trim();
+        if (string.IsNullOrWhiteSpace(friendlyKey)) return false;
+
+        return string.Equals(loop.RobotId, friendlyKey, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(loop.RobotFriendlyId, friendlyKey, StringComparison.OrdinalIgnoreCase);
+    }
+
     public IReadOnlyList<PersonRecord> GetPeople()
     {
         return _people.ToArray();
+    }
+
+    public PersonRecord UpsertPerson(PersonRecord person)
+    {
+        if (person is null) throw new ArgumentNullException(nameof(person));
+        if (string.IsNullOrWhiteSpace(person.PersonId))
+            throw new ArgumentException("PersonId is required.", nameof(person));
+
+        PersonRecord resolved;
+        lock (_syncRoot)
+        {
+            var index = _people.FindIndex(existing =>
+                existing.PersonId.Equals(person.PersonId, StringComparison.OrdinalIgnoreCase));
+            var now = DateTimeOffset.UtcNow;
+            resolved = new PersonRecord
+            {
+                PersonId = person.PersonId.Trim(),
+                AccountId = string.IsNullOrWhiteSpace(person.AccountId) ? _account.AccountId : person.AccountId.Trim(),
+                LoopId = string.IsNullOrWhiteSpace(person.LoopId) ? ResolveDefaultLoopId() : person.LoopId.Trim(),
+                RobotId = string.IsNullOrWhiteSpace(person.RobotId) ? _robot.RobotId : person.RobotId.Trim(),
+                DisplayName = string.IsNullOrWhiteSpace(person.DisplayName) ? person.PersonId.Trim() : person.DisplayName.Trim(),
+                Alias = string.IsNullOrWhiteSpace(person.Alias) ? null : person.Alias.Trim(),
+                IsPrimary = person.IsPrimary,
+                CreatedUtc = index >= 0 ? _people[index].CreatedUtc : now,
+                UpdatedUtc = now
+            };
+
+            if (index >= 0)
+                _people[index] = resolved;
+            else
+                _people.Add(resolved);
+        }
+
+        TouchState();
+        return resolved;
+    }
+
+    public int SyncPeopleFromLoopUsers(string loopId, string? robotId, IReadOnlyList<LoopUserSnapshot> loopUsers)
+    {
+        if (string.IsNullOrWhiteSpace(loopId) || loopUsers is null || loopUsers.Count == 0)
+            return 0;
+
+        var resolvedLoopId = loopId.Trim();
+        var resolvedRobotId = string.IsNullOrWhiteSpace(robotId) ? _robot.RobotId : robotId.Trim();
+        var upserted = 0;
+        lock (_syncRoot)
+        {
+            foreach (var user in loopUsers)
+            {
+                if (string.IsNullOrWhiteSpace(user.Id)) continue;
+                if (string.Equals(user.Type, "robot", StringComparison.OrdinalIgnoreCase)) continue;
+
+                var personId = user.Id.Trim();
+                var firstName = user.FirstName?.Trim();
+                var lastName = user.LastName?.Trim();
+                var nickname = user.Nickname?.Trim();
+                var displayName = !string.IsNullOrWhiteSpace(nickname)
+                    ? nickname
+                    : string.Join(' ', new[] { firstName, lastName }.Where(static part => !string.IsNullOrWhiteSpace(part)));
+                if (string.IsNullOrWhiteSpace(displayName))
+                    displayName = personId;
+
+                // Scope by loop (+ robot) so two Jibos never collide on the same PersonId.
+                var existingPerson = _people.FindIndex(person =>
+                    person.PersonId.Equals(personId, StringComparison.OrdinalIgnoreCase) &&
+                    person.LoopId.Equals(resolvedLoopId, StringComparison.OrdinalIgnoreCase));
+                if (existingPerson < 0)
+                {
+                    existingPerson = _people.FindIndex(person =>
+                        person.PersonId.Equals(personId, StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrWhiteSpace(resolvedRobotId) &&
+                        person.RobotId.Equals(resolvedRobotId, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var now = DateTimeOffset.UtcNow;
+                var person = new PersonRecord
+                {
+                    PersonId = personId,
+                    AccountId = string.IsNullOrWhiteSpace(user.AccountId)
+                        ? (existingPerson >= 0 ? _people[existingPerson].AccountId : _account.AccountId)
+                        : user.AccountId.Trim(),
+                    LoopId = resolvedLoopId,
+                    RobotId = resolvedRobotId,
+                    DisplayName = displayName,
+                    Alias = !string.IsNullOrWhiteSpace(nickname)
+                        ? nickname
+                        : !string.IsNullOrWhiteSpace(firstName)
+                            ? firstName
+                            : existingPerson >= 0
+                                ? _people[existingPerson].Alias
+                                : null,
+                    IsPrimary = existingPerson >= 0
+                        ? _people[existingPerson].IsPrimary
+                        : string.Equals(user.Type, "owner", StringComparison.OrdinalIgnoreCase),
+                    CreatedUtc = existingPerson >= 0 ? _people[existingPerson].CreatedUtc : now,
+                    UpdatedUtc = now
+                };
+
+                if (existingPerson >= 0)
+                    _people[existingPerson] = person;
+                else
+                    _people.Add(person);
+
+                UpsertLoopMemberFromLoopUserLocked(resolvedLoopId, user, firstName, lastName, nickname);
+                upserted++;
+            }
+
+            if (upserted > 0)
+            {
+                var rosterIds = new HashSet<string>(
+                    loopUsers
+                        .Where(static user =>
+                            !string.IsNullOrWhiteSpace(user.Id) &&
+                            !string.Equals(user.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                        .Select(static user => user.Id.Trim()),
+                    StringComparer.OrdinalIgnoreCase);
+
+                // Drop people previously attributed to this robot that are no longer in its roster.
+                // This also clears cross-robot contamination from older shared-loop syncs.
+                // Keep Portal-edited people until the robot has pulled the updated Loop.
+                if (!string.IsNullOrWhiteSpace(resolvedRobotId))
+                {
+                    _people.RemoveAll(person =>
+                        person.RobotId.Equals(resolvedRobotId, StringComparison.OrdinalIgnoreCase) &&
+                        !rosterIds.Contains(person.PersonId) &&
+                        !HasRecentPortalEditLocked(resolvedLoopId, person.PersonId));
+                }
+
+                _people.RemoveAll(person =>
+                    person.PersonId.Equals("person-openjibo-household-member", StringComparison.OrdinalIgnoreCase) &&
+                    person.LoopId.Equals(resolvedLoopId, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+        if (upserted > 0)
+            TouchState();
+
+        return upserted;
+    }
+
+    private void UpsertLoopMemberFromLoopUserLocked(
+        string loopId,
+        LoopUserSnapshot user,
+        string? firstName,
+        string? lastName,
+        string? nickname)
+    {
+        var personId = user.Id.Trim();
+        var index = _loopMembers.FindIndex(member =>
+            member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+            (member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) ||
+             (!string.IsNullOrWhiteSpace(user.AccountId) &&
+              member.AccountId is not null &&
+              member.AccountId.Equals(user.AccountId, StringComparison.OrdinalIgnoreCase) &&
+              !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))));
+
+        var memberType = string.IsNullOrWhiteSpace(user.Type)
+            ? (index >= 0 ? _loopMembers[index].Type : "member")
+            : user.Type.Trim();
+        if (string.Equals(memberType, "robot", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var now = DateTimeOffset.UtcNow;
+        var existing = index >= 0 ? _loopMembers[index] : null;
+        var protectPortalEdit = existing?.PortalEditedUtc is not null;
+
+        // When the robot still reports a stale name after a Portal edit, keep the Portal values.
+        // Once the robot roster matches (or PortalEditedUtc is cleared), accept robot values again.
+        string? resolvedFirstName;
+        string? resolvedLastName;
+        string? resolvedNickname;
+        DateTimeOffset? portalEditedUtc = existing?.PortalEditedUtc;
+        if (protectPortalEdit)
+        {
+            var robotMatchesPortal =
+                NamesEqual(firstName, existing!.FirstName) &&
+                NamesEqual(lastName, existing.LastName);
+            if (robotMatchesPortal)
+            {
+                resolvedFirstName = firstName ?? existing.FirstName;
+                resolvedLastName = lastName ?? existing.LastName;
+                resolvedNickname = nickname ?? existing.Nickname;
+                portalEditedUtc = null;
+            }
+            else
+            {
+                resolvedFirstName = existing.FirstName;
+                resolvedLastName = existing.LastName;
+                resolvedNickname = existing.Nickname ?? nickname;
+            }
+        }
+        else
+        {
+            resolvedFirstName = firstName ?? existing?.FirstName;
+            resolvedLastName = lastName ?? existing?.LastName;
+            resolvedNickname = nickname ?? existing?.Nickname;
+        }
+
+        var member = new LoopMemberRecord
+        {
+            Id = existing?.Id ?? personId,
+            LoopId = loopId,
+            AccountId = string.IsNullOrWhiteSpace(user.AccountId)
+                ? existing?.AccountId
+                : user.AccountId.Trim(),
+            Email = existing?.Email,
+            FirstName = resolvedFirstName,
+            LastName = resolvedLastName,
+            Gender = existing?.Gender ?? "unknown",
+            Birthday = existing?.Birthday,
+            IsChild = existing?.IsChild ?? false,
+            Status = "active",
+            Type = memberType,
+            Nickname = resolvedNickname,
+            PhoneticName = existing?.PhoneticName,
+            FaceEnrolled = existing?.FaceEnrolled ?? false,
+            VoiceEnrolled = existing?.VoiceEnrolled ?? false,
+            LegalGuardianId = existing?.LegalGuardianId,
+            AgreementId = existing?.AgreementId,
+            CreatedUtc = existing?.CreatedUtc ?? now,
+            PortalEditedUtc = portalEditedUtc
+        };
+
+        // Prefer the robot's looper id as the stable member id (Pegasus personId).
+        if (index >= 0 &&
+            !member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) &&
+            !_loopMembers.Any(existingMember =>
+                existingMember.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                existingMember.Id.Equals(personId, StringComparison.OrdinalIgnoreCase)))
+        {
+            member = new LoopMemberRecord
+            {
+                Id = personId,
+                LoopId = member.LoopId,
+                AccountId = member.AccountId,
+                Email = member.Email,
+                FirstName = member.FirstName,
+                LastName = member.LastName,
+                Gender = member.Gender,
+                Birthday = member.Birthday,
+                IsChild = member.IsChild,
+                Status = member.Status,
+                Type = member.Type,
+                Nickname = member.Nickname,
+                PhoneticName = member.PhoneticName,
+                FaceEnrolled = member.FaceEnrolled,
+                VoiceEnrolled = member.VoiceEnrolled,
+                LegalGuardianId = member.LegalGuardianId,
+                AgreementId = member.AgreementId,
+                CreatedUtc = member.CreatedUtc,
+                PortalEditedUtc = member.PortalEditedUtc
+            };
+        }
+
+        if (index >= 0)
+            _loopMembers[index] = member;
+        else
+            _loopMembers.Add(member);
+    }
+
+    private bool HasRecentPortalEditLocked(string loopId, string personId)
+    {
+        return _loopMembers.Any(member =>
+            member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+            member.Id.Equals(personId, StringComparison.OrdinalIgnoreCase) &&
+            member.PortalEditedUtc is not null &&
+            !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool NamesEqual(string? left, string? right)
+    {
+        return string.Equals(
+            left?.Trim() ?? string.Empty,
+            right?.Trim() ?? string.Empty,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     public IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId)
@@ -563,18 +948,26 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public IdentityGraphSnapshot GetIdentityGraph(string? loopId = null)
     {
-        var resolvedLoopId = string.IsNullOrWhiteSpace(loopId) ? ResolveDefaultLoopId() : loopId.Trim();
+        var useDefaultRobot = string.IsNullOrWhiteSpace(loopId);
+        var resolvedLoopId = useDefaultRobot ? ResolveDefaultLoopId() : loopId!.Trim();
+        // Preserve legacy single-robot behavior for unscoped protocol callers. Portal callers
+        // always pass an explicit session loop and receive that loop's robot.
+        var graphRobot = useDefaultRobot ? _robot : ResolveRobotForLoop(resolvedLoopId);
         var members = GetLoopMembers(resolvedLoopId);
         var people = _people
-            .Where(person => person.LoopId.Equals(resolvedLoopId, StringComparison.OrdinalIgnoreCase))
+            .Where(person =>
+                person.LoopId.Equals(resolvedLoopId, StringComparison.OrdinalIgnoreCase) &&
+                (string.IsNullOrWhiteSpace(person.RobotId) ||
+                 person.RobotId.Equals(graphRobot.RobotId, StringComparison.OrdinalIgnoreCase) ||
+                 person.RobotId.Equals(graphRobot.DeviceId, StringComparison.OrdinalIgnoreCase)))
             .ToArray();
         var relationships = new List<IdentityGraphRelationship>();
 
         AddIdentityRelationship(relationships, _account.AccountId, "account", "owns", resolvedLoopId, "loop",
             resolvedLoopId);
-        AddIdentityRelationship(relationships, resolvedLoopId, "loop", "served-by", _robot.RobotId, "robot",
+        AddIdentityRelationship(relationships, resolvedLoopId, "loop", "served-by", graphRobot.RobotId, "robot",
             resolvedLoopId);
-        AddIdentityRelationship(relationships, _robot.RobotId, "robot", "runs-on", _robot.DeviceId, "device",
+        AddIdentityRelationship(relationships, graphRobot.RobotId, "robot", "runs-on", graphRobot.DeviceId, "device",
             resolvedLoopId);
 
         foreach (var person in people)
@@ -601,7 +994,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
             if (string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
             {
-                var memberRobot = ResolveIdentityGraphRobotMemberDevice(member) ?? _robot;
+                var memberRobot = ResolveIdentityGraphRobotMemberDevice(member) ?? graphRobot;
                 var memberRobotId = string.IsNullOrWhiteSpace(memberRobot.RobotId) ? subjectId : memberRobot.RobotId;
 
                 AddIdentityRelationship(relationships, resolvedLoopId, "loop", "served-by", memberRobotId, "robot",
@@ -618,12 +1011,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
                 if (member.FaceEnrolled)
                     AddIdentityRelationship(relationships, member.Id, "loop-member", "face-enrolled-with",
-                        _robot.RobotId,
+                        graphRobot.RobotId,
                         "robot", resolvedLoopId);
 
                 if (member.VoiceEnrolled)
                     AddIdentityRelationship(relationships, member.Id, "loop-member", "voice-enrolled-with",
-                        _robot.RobotId, "robot", resolvedLoopId);
+                        graphRobot.RobotId, "robot", resolvedLoopId);
 
                 if (member.IsChild && !string.IsNullOrWhiteSpace(member.LegalGuardianId))
                 {
@@ -640,8 +1033,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AddIdentityRelationship(relationships, observation.MemberId, "loop-member",
                 $"{observation.Modality}-recognized-by", observation.RobotId, "robot", resolvedLoopId);
 
-        var evidenceSignals = BuildIdentityGraphEvidenceSignals(resolvedLoopId, _robot, recognitionObservations);
-        var contentHash = ComputeIdentityGraphContentHash(_account.AccountId, resolvedLoopId, _robot, people, members,
+        var evidenceSignals = BuildIdentityGraphEvidenceSignals(resolvedLoopId, graphRobot, recognitionObservations);
+        var contentHash = ComputeIdentityGraphContentHash(_account.AccountId, resolvedLoopId, graphRobot, people, members,
             relationships, evidenceSignals);
 
         var signaturePayload = BuildIdentityGraphSignaturePayload(_account.AccountId, resolvedLoopId, contentHash);
@@ -650,7 +1043,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         var admissionAssessment = BuildSignedIdentityGraphAdmissionAssessment(_account.AccountId, resolvedLoopId,
             contentHash,
             evidenceSignals, revokedAnchors);
-        var evidenceBundle = BuildSignedIdentityGraphEvidenceBundle(_account.AccountId, resolvedLoopId, _robot,
+        var evidenceBundle = BuildSignedIdentityGraphEvidenceBundle(_account.AccountId, resolvedLoopId, graphRobot,
             contentHash, signature, admissionAssessment, people.Length, members.Count, relationships.Count,
             evidenceSignals.Count, SummarizeIdentityGraphRelationshipKinds(relationships),
             SummarizeIdentityGraphEvidenceSignalKinds(evidenceSignals));
@@ -659,8 +1052,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         {
             AccountId = _account.AccountId,
             LoopId = resolvedLoopId,
-            RobotId = _robot.RobotId,
-            DeviceId = _robot.DeviceId,
+            RobotId = graphRobot.RobotId,
+            DeviceId = graphRobot.DeviceId,
             SnapshotVersion = IdentityGraphSnapshotVersion,
             ContentHash = contentHash,
             SignatureAlgorithm = IdentityGraphSignatureAlgorithm,
@@ -674,6 +1067,22 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Relationships = relationships,
             EvidenceSignals = evidenceSignals
         };
+    }
+
+    private DeviceRegistration ResolveRobotForLoop(string loopId)
+    {
+        var loop = _loops.FirstOrDefault(item =>
+            item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+        if (loop is null)
+            return _robot;
+
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(loop.RobotId)) keys.Add(loop.RobotId);
+        if (!string.IsNullOrWhiteSpace(loop.RobotFriendlyId)) keys.Add(loop.RobotFriendlyId);
+
+        return _devices.Values.FirstOrDefault(device =>
+                   keys.Contains(device.DeviceId) || keys.Contains(device.RobotId))
+               ?? _robot;
     }
 
 
@@ -690,7 +1099,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public LoopMemberRecord AddLoopMember(string loopId, string? accountId, string? email, string? firstName,
-        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null)
+        string? lastName, string? gender, long? birthday, bool isChild, string type, string? legalGuardianId = null,
+        bool markPortalEdited = false)
     {
         var member = new LoopMemberRecord
         {
@@ -704,7 +1114,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             IsChild = isChild,
             Type = type,
             Status = "active",
-            LegalGuardianId = legalGuardianId?.Trim()
+            LegalGuardianId = legalGuardianId?.Trim(),
+            PortalEditedUtc = markPortalEdited ? DateTimeOffset.UtcNow : null
         };
         lock (_syncRoot)
         {
@@ -716,7 +1127,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public LoopMemberRecord UpdateLoopMember(string loopId, string memberId, string? firstName, string? lastName,
-        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName)
+        string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName,
+        bool markPortalEdited = false)
     {
         lock (_syncRoot)
         {
@@ -746,7 +1158,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 VoiceEnrolled = existing.VoiceEnrolled,
                 LegalGuardianId = existing.LegalGuardianId,
                 AgreementId = existing.AgreementId,
-                CreatedUtc = existing.CreatedUtc
+                CreatedUtc = existing.CreatedUtc,
+                PortalEditedUtc = markPortalEdited ? DateTimeOffset.UtcNow : existing.PortalEditedUtc
             };
         }
 
@@ -784,7 +1197,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 VoiceEnrolled = existing.VoiceEnrolled,
                 LegalGuardianId = existing.LegalGuardianId,
                 AgreementId = existing.AgreementId,
-                CreatedUtc = existing.CreatedUtc
+                CreatedUtc = existing.CreatedUtc,
+                PortalEditedUtc = existing.PortalEditedUtc
             };
         }
 
@@ -822,7 +1236,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 VoiceEnrolled = voice ?? existing.VoiceEnrolled,
                 LegalGuardianId = existing.LegalGuardianId,
                 AgreementId = existing.AgreementId,
-                CreatedUtc = existing.CreatedUtc
+                CreatedUtc = existing.CreatedUtc,
+            PortalEditedUtc = existing.PortalEditedUtc
             };
         }
 
@@ -1412,8 +1827,29 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                     VoiceEnrolled = member.VoiceEnrolled,
                     LegalGuardianId = member.LegalGuardianId,
                     AgreementId = member.AgreementId,
-                    CreatedUtc = member.CreatedUtc
+                    CreatedUtc = member.CreatedUtc,
+                PortalEditedUtc = member.PortalEditedUtc
                 };
+        }
+
+        for (var i = 0; i < _loops.Count; i++)
+        {
+            var loop = _loops[i];
+            if (!string.Equals(loop.RobotId, oldRobotId, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(loop.RobotFriendlyId, oldRobotId, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            _loops[i] = new LoopRecord
+            {
+                LoopId = loop.LoopId,
+                Name = loop.Name,
+                OwnerAccountId = loop.OwnerAccountId,
+                RobotId = registration.RobotId,
+                RobotFriendlyId = registration.DeviceId,
+                IsSuspended = loop.IsSuspended,
+                CreatedUtc = loop.CreatedUtc,
+                UpdatedUtc = DateTimeOffset.UtcNow
+            };
         }
 
         TouchState();
@@ -2186,7 +2622,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 VoiceEnrolled = member.VoiceEnrolled,
                 LegalGuardianId = member.LegalGuardianId,
                 AgreementId = member.AgreementId,
-                CreatedUtc = member.CreatedUtc
+                CreatedUtc = member.CreatedUtc,
+            PortalEditedUtc = member.PortalEditedUtc
             };
         }
     }

@@ -5,7 +5,7 @@ public sealed class CloudSession
     public string SessionId { get; init; } = Guid.NewGuid().ToString("N");
     public string Kind { get; init; } = "http";
     public string? AccountId { get; init; }
-    public string? DeviceId { get; init; }
+    public string? DeviceId { get; set; }
     public string? Token { get; init; }
     public string? HostName { get; init; }
     public string? Path { get; init; }

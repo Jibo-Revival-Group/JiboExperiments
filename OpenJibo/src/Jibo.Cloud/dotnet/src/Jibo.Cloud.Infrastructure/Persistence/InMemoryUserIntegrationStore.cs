@@ -222,7 +222,7 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
                 IcalUrl = existing.IcalUrl,
                 IsEnabled = existing.IsEnabled,
                 CreatedUtc = existing.CreatedUtc,
-                UpdatedUtc = DateTimeOffset.UtcNow,
+                UpdatedUtc = existing.UpdatedUtc,
                 LastSuccessUtc = lastSuccessUtc ?? existing.LastSuccessUtc,
                 LastError = lastError
             };

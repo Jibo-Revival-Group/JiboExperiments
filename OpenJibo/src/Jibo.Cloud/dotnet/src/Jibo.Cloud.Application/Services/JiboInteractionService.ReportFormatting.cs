@@ -113,7 +113,7 @@ public sealed partial class JiboInteractionService
         var minutesLeftNumberText =
             Math.Max(1, Math.Abs(minutesLeft)).ToString(System.Globalization.CultureInfo.InvariantCulture);
         var extraMinutes = Math.Max(0, snapshot.ExtraMinutes);
-        var extraMinutesText = extraMinutes <= 1 ? "1" : extraMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var extraMinutesText = extraMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var mode = string.IsNullOrWhiteSpace(snapshot.Mode) ? "driving" : snapshot.Mode.Trim();
         var template = ChooseCommuteTemplate(snapshot, catalog, mode);
         var reply = RenderCommuteTemplate(

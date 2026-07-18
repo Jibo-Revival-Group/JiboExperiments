@@ -140,6 +140,7 @@ Additional files to audit:
 
 - `/usr/local/etc/jibo-ssm/*.json`
 - `/usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json`
+- `/usr/local/bin/jibo-ssm/lib/skills-service-manager.js`
 - `/skills/jibo/Jibo/Skills/@be/be/node_modules/language-subtag-registry/data/json/registry.json`
 - `/skills/jibo/Jibo/Skills/oobe-config/config.json`
 - local skill manifest/config locations for menu visibility and first-boot behavior
@@ -155,6 +156,12 @@ Region-template replacements the conversion scripts now target in every discover
 - `http://{region}.jibo.com:8080` -> `http://{region}.openjibo.com:8080`
 - `wss://{region}-socket.jibo.com` -> `wss://{region}-socket.openjibo.com`
 - `ws://{region}-socket.jibo.com:8090` -> `ws://{region}-socket.openjibo.com:8090`
+
+Live `jibo-ssm` runtime bundle replacements the conversion scripts now also target:
+
+- `data.region + ".jibo.com"` -> `data.region + ".openjibo.com"`
+- `this._wifiService.options.region + ".jibo.com"` -> `this._wifiService.options.region + ".openjibo.com"`
+- `API: 'api.jibo.com'` -> `API: 'api.openjibo.com'`
 
 The script coverage should include every discovered copy under:
 

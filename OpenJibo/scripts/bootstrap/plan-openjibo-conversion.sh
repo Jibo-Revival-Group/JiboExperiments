@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-17.1"
+SCRIPT_VERSION="2026-07-18.1"
 echo "plan-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -138,6 +138,16 @@ const proposedChanges = [
     ],
   },
   {
+    File: "usr/local/bin/jibo-ssm/lib/skills-service-manager.js and other scanned jibo-ssm runtime JS files",
+    Action: "replace the hardcoded server hostname builder inside the live jibo-ssm bundle",
+    Details: [
+      'change data.region + ".jibo.com" to data.region + ".openjibo.com"',
+      'change this._wifiService.options.region + ".jibo.com" to this._wifiService.options.region + ".openjibo.com"',
+      "change API: 'api.jibo.com' to API: 'api.openjibo.com'",
+      "keep the runtime bundle aligned with the region_config.json and AWS SDK template rewrites",
+    ],
+  },
+  {
     File: "/var/jibo/credentials.json",
     Action: "record the active region",
     Details: [
@@ -191,6 +201,7 @@ const plan = {
     audit.Files && audit.Files.OobeConfig,
     ...(audit.NodeBundles && audit.NodeBundles.RegionConfigFiles ? audit.NodeBundles.RegionConfigFiles : []),
     ...(audit.NodeBundles && audit.NodeBundles.AwsSdkAllFiles ? audit.NodeBundles.AwsSdkAllFiles : []),
+    ...(audit.NodeBundles && audit.NodeBundles.JiboSsmRuntimeJsFiles ? audit.NodeBundles.JiboSsmRuntimeJsFiles : []),
   ].filter(Boolean),
   ProposedChanges: proposedChanges,
   RollbackPlan: rollbackPlan,

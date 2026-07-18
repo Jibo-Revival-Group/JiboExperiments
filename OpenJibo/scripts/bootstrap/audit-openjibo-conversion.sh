@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-17.1"
+SCRIPT_VERSION="2026-07-18.1"
 echo "audit-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -102,6 +102,26 @@ function collectExisting(relativePaths) {
   return found;
 }
 
+function collectJsFilesUnder(relativePath) {
+  const base = path.resolve(robotRoot, relativePath);
+  const found = [];
+  if (!fs.existsSync(base)) return found;
+  const stack = [base];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    for (const entry of fs.readdirSync(current)) {
+      const candidate = path.resolve(current, entry);
+      const stat = fs.statSync(candidate);
+      if (stat.isDirectory()) {
+        stack.push(candidate);
+      } else if (stat.isFile() && entry.endsWith(".js")) {
+        found.push(candidate);
+      }
+    }
+  }
+  return found;
+}
+
 const ssmFiles = [];
 for (const base of [path.resolve(robotRoot, "etc/jibo-ssm"), path.resolve(robotRoot, "usr/local/etc/jibo-ssm")]) {
   if (!fs.existsSync(base)) continue;
@@ -134,6 +154,7 @@ const awsSdkAllFiles = collectExisting([
   "usr/lib/node/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
   "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
 ]);
+const jiboSsmRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/lib");
 
 const templateNeedles = [
   "{service}.{region}.api.jibo.com",
@@ -143,6 +164,12 @@ const templateNeedles = [
   "http://{region}.jibo.com:8080",
   "wss://{region}-socket.jibo.com",
   "ws://{region}-socket.jibo.com:8090",
+];
+
+const runtimeJsNeedles = [
+  'data.region + ".jibo.com"',
+  'this._wifiService.options.region + ".jibo.com"',
+  "API: 'api.jibo.com'",
 ];
 
 function scanTemplateMatches(filePaths) {
@@ -156,6 +183,26 @@ function scanTemplateMatches(filePaths) {
     }
     const found = [];
     for (const needle of templateNeedles) {
+      if (text.indexOf(needle) !== -1) found.push(needle);
+    }
+    if (found.length > 0) {
+      matches.push({ File: filePath, Patterns: found });
+    }
+  }
+  return matches;
+}
+
+function scanRuntimeJsMatches(filePaths) {
+  const matches = [];
+  for (const filePath of filePaths) {
+    let text = "";
+    try {
+      text = fs.readFileSync(filePath, "utf8");
+    } catch (error) {
+      continue;
+    }
+    const found = [];
+    for (const needle of runtimeJsNeedles) {
       if (text.indexOf(needle) !== -1) found.push(needle);
     }
     if (found.length > 0) {
@@ -215,8 +262,10 @@ const audit = {
   NodeBundles: {
     RegionConfigFiles: regionConfigFiles,
     AwsSdkAllFiles: awsSdkAllFiles,
+    JiboSsmRuntimeJsFiles: jiboSsmRuntimeJsFiles,
   },
   TemplateMatches: scanTemplateMatches(regionConfigFiles.concat(awsSdkAllFiles)),
+  RuntimeJsMatches: scanRuntimeJsMatches(jiboSsmRuntimeJsFiles),
   Recommendations: recommendations,
   CanProceed: recommendations.length === 0,
   BlockingIssues: recommendations,

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.3"
+SCRIPT_VERSION="2026-07-18.5"
 echo "plan-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -149,10 +149,10 @@ const proposedChanges = [
   },
   {
     File: "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
-    Action: "replace the same hardcoded hostname strings inside the runtime source map",
+    Action: "replace the same runtime hostname strings inside the source map",
     Details: [
-      "keep the source map text aligned with the patched runtime bundle",
-      "prevent the shipped map from preserving legacy .jibo.com references",
+      "the source map embeds the same source text as the JS bundle in compact JSON form",
+      "keep the map aligned with the patched runtime bundle so debugging points at the same hostnames",
     ],
   },
   {

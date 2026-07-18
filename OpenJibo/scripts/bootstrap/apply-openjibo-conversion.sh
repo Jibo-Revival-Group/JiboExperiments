@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.3"
+SCRIPT_VERSION="2026-07-18.5"
 echo "apply-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -350,6 +350,7 @@ const applyManifest = {
   "The staged notification subsystem suffix points the robot at open-jibo-socket.openjibo.com while the deployment binds neohub.openjibo.com separately.",
   "The helper also normalizes bundled jibo-server-client region templates in live robot bundles, including api, service-scoped api, and socket host forms.",
   "The helper now also normalizes the live jibo-ssm runtime bundle when it hardcodes region + .jibo.com or api.jibo.com.",
+  "The nearby source map is audited, backed up, and rewritten with the same runtime hostname strings as the JS bundle.",
   ],
   WrittenFiles: [
     jetstreamPath,

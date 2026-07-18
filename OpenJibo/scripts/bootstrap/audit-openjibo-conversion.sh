@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.3"
+SCRIPT_VERSION="2026-07-18.5"
 echo "audit-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -270,7 +270,7 @@ const audit = {
   },
   TemplateMatches: scanTemplateMatches(regionConfigFiles.concat(awsSdkAllFiles)),
   RuntimeJsMatches: scanRuntimeJsMatches(jiboSsmRuntimeJsFiles),
-  RuntimeMapMatches: scanTemplateMatches(jiboSsmRuntimeMapFiles),
+  RuntimeMapMatches: scanRuntimeJsMatches(jiboSsmRuntimeMapFiles),
   Recommendations: recommendations,
   CanProceed: recommendations.length === 0,
   BlockingIssues: recommendations,

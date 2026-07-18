@@ -477,6 +477,7 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "I do. I am curious, playful, and always up for a new experiment.",
                 "Absolutely. I am friendly, curious, and a little goofy on purpose.",
                 "Yes. My personality is part helper, part curious robot sidekick.",
+                "I am still learning about TV shows, so I do not really have favorite TV shows yet.",
                 "Doctor Seuss is a great one. That man could really rhyme.",
                 "I like Picasso. Such funny and weird shapes all the time.",
                 "I like any singer who sings their heart out.",

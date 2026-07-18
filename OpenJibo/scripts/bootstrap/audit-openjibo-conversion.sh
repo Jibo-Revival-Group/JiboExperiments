@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.6"
+SCRIPT_VERSION="2026-07-18.7"
 echo "audit-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -175,12 +175,6 @@ const runtimeJsNeedles = [
   "API: 'api.jibo.com'",
 ];
 
-const runtimeMapNeedles = [
-  'data.region + \\".jibo.com\\"',
-  'this._wifiService.options.region + \\".jibo.com\\"',
-  "API: 'api.jibo.com'",
-];
-
 function scanTemplateMatches(filePaths) {
   const matches = [];
   for (const filePath of filePaths) {
@@ -221,18 +215,30 @@ function scanRuntimeJsMatches(filePaths) {
   return matches;
 }
 
-function scanRuntimeMapMatches(filePaths) {
+function scanRuntimeSourceMapMatches(filePaths) {
   const matches = [];
   for (const filePath of filePaths) {
-    let text = "";
+    let raw = "";
     try {
-      text = fs.readFileSync(filePath, "utf8");
+      raw = fs.readFileSync(filePath, "utf8");
+    } catch (error) {
+      continue;
+    }
+    let map;
+    try {
+      map = JSON.parse(raw);
     } catch (error) {
       continue;
     }
     const found = [];
-    for (const needle of runtimeMapNeedles) {
-      if (text.indexOf(needle) !== -1) found.push(needle);
+    const sourcesContent = Array.isArray(map.sourcesContent) ? map.sourcesContent : [];
+    for (const sourceContent of sourcesContent) {
+      if (typeof sourceContent !== "string") continue;
+      for (const needle of runtimeJsNeedles) {
+        if (sourceContent.indexOf(needle) !== -1 && !found.includes(needle)) {
+          found.push(needle);
+        }
+      }
     }
     if (found.length > 0) {
       matches.push({ File: filePath, Patterns: found });
@@ -296,7 +302,7 @@ const audit = {
   },
   TemplateMatches: scanTemplateMatches(regionConfigFiles.concat(awsSdkAllFiles)),
   RuntimeJsMatches: scanRuntimeJsMatches(jiboSsmRuntimeJsFiles),
-  RuntimeMapMatches: scanRuntimeMapMatches(jiboSsmRuntimeMapFiles),
+  RuntimeMapMatches: scanRuntimeSourceMapMatches(jiboSsmRuntimeMapFiles),
   Recommendations: recommendations,
   CanProceed: recommendations.length === 0,
   BlockingIssues: recommendations,

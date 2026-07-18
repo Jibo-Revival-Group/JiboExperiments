@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.6"
+SCRIPT_VERSION="2026-07-18.7"
 echo "apply-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -150,6 +150,48 @@ function patchTextFile(filePath, replacements) {
     backupFile(filePath);
     fs.writeFileSync(filePath, text);
   }
+  return changed;
+}
+
+function patchSourceMapFile(filePath, replacements) {
+  if (!filePath || !fs.existsSync(filePath)) return false;
+  let raw = "";
+  try {
+    raw = fs.readFileSync(filePath, "utf8");
+  } catch (error) {
+    return false;
+  }
+
+  let map;
+  try {
+    map = JSON.parse(raw);
+  } catch (error) {
+    return patchTextFile(filePath, replacements);
+  }
+
+  if (!map || !Array.isArray(map.sourcesContent)) {
+    return patchTextFile(filePath, replacements);
+  }
+
+  let changed = false;
+  const nextSourcesContent = map.sourcesContent.map((content) => {
+    if (typeof content !== "string") return content;
+    let next = content;
+    for (const [from, to] of replacements) {
+      if (next.includes(from)) {
+        next = next.split(from).join(to);
+        changed = true;
+      }
+    }
+    return next;
+  });
+
+  if (changed) {
+    backupFile(filePath);
+    map.sourcesContent = nextSourcesContent;
+    fs.writeFileSync(filePath, JSON.stringify(map));
+  }
+
   return changed;
 }
 
@@ -320,7 +362,7 @@ for (const filePath of jiboSsmRuntimeJsFiles) {
 }
 
 for (const filePath of jiboSsmRuntimeMapFiles) {
-  patchTextFile(filePath, runtimeMapReplacements);
+  patchSourceMapFile(filePath, runtimeJsReplacements);
 }
 
 const conversionMarkerPath = path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");
@@ -356,7 +398,7 @@ const applyManifest = {
   "The staged notification subsystem suffix points the robot at open-jibo-socket.openjibo.com while the deployment binds neohub.openjibo.com separately.",
   "The helper also normalizes bundled jibo-server-client region templates in live robot bundles, including api, service-scoped api, and socket host forms.",
   "The helper now also normalizes the live jibo-ssm runtime bundle when it hardcodes region + .jibo.com or api.jibo.com.",
-  "The nearby source map is audited, backed up, and rewritten with the same runtime hostname strings as the JS bundle.",
+  "The nearby source map is parsed, backed up, and rewritten through sourcesContent so the embedded source text stays aligned with the JS bundle.",
   ],
   WrittenFiles: [
     jetstreamPath,

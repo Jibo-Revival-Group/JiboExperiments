@@ -214,10 +214,9 @@ public sealed class CloudAuthProtocolHandler(
 
         var token = stateStore.IssueRobotToken(deviceId);
         _logger.LogInformation(
-            "Notification NewRobotToken issued deviceId={DeviceId} robotId={RobotId} token={Token}",
+            "Notification NewRobotToken issued deviceId={DeviceId} robotId={RobotId}",
             deviceId,
-            presentedRobotId,
-            token);
+            presentedRobotId);
 
         return ProtocolDispatchResult.Ok(new
         {

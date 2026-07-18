@@ -79,11 +79,9 @@ internal sealed class WebSocketRequestCoordinator(
                 socket,
                 context.RequestAborted);
             logger.LogInformation(
-                "api-socket registered for LoopUpdated push token={Token} keyCount={KeyCount} pendingDrained={PendingDrained} keys={Keys}",
-                token,
+                "api-socket registered for LoopUpdated push keyCount={KeyCount} pendingDrained={PendingDrained}",
                 robotKeys.Count,
-                drained,
-                string.Join(',', robotKeys.Take(8)));
+                drained);
         }
 
         var isPrematureClose = false;

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.5"
+SCRIPT_VERSION="2026-07-18.6"
 echo "apply-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -301,6 +301,12 @@ const runtimeJsReplacements = [
   ["API: 'api.jibo.com'", "API: 'api.openjibo.com'"],
 ];
 
+const runtimeMapReplacements = [
+  ['data.region + \\".jibo.com\\"', 'data.region + \\".openjibo.com\\"'],
+  ['this._wifiService.options.region + \\".jibo.com\\"', 'this._wifiService.options.region + \\".openjibo.com\\"'],
+  ["API: 'api.jibo.com'", "API: 'api.openjibo.com'"],
+];
+
 for (const filePath of regionConfigFiles) {
   patchTextFile(filePath, endpointReplacements);
 }
@@ -314,7 +320,7 @@ for (const filePath of jiboSsmRuntimeJsFiles) {
 }
 
 for (const filePath of jiboSsmRuntimeMapFiles) {
-  patchTextFile(filePath, runtimeJsReplacements);
+  patchTextFile(filePath, runtimeMapReplacements);
 }
 
 const conversionMarkerPath = path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.5"
+SCRIPT_VERSION="2026-07-18.6"
 echo "audit-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -175,6 +175,12 @@ const runtimeJsNeedles = [
   "API: 'api.jibo.com'",
 ];
 
+const runtimeMapNeedles = [
+  'data.region + \\".jibo.com\\"',
+  'this._wifiService.options.region + \\".jibo.com\\"',
+  "API: 'api.jibo.com'",
+];
+
 function scanTemplateMatches(filePaths) {
   const matches = [];
   for (const filePath of filePaths) {
@@ -204,8 +210,28 @@ function scanRuntimeJsMatches(filePaths) {
     } catch (error) {
       continue;
     }
+  const found = [];
+  for (const needle of runtimeJsNeedles) {
+    if (text.indexOf(needle) !== -1) found.push(needle);
+  }
+    if (found.length > 0) {
+      matches.push({ File: filePath, Patterns: found });
+    }
+  }
+  return matches;
+}
+
+function scanRuntimeMapMatches(filePaths) {
+  const matches = [];
+  for (const filePath of filePaths) {
+    let text = "";
+    try {
+      text = fs.readFileSync(filePath, "utf8");
+    } catch (error) {
+      continue;
+    }
     const found = [];
-    for (const needle of runtimeJsNeedles) {
+    for (const needle of runtimeMapNeedles) {
       if (text.indexOf(needle) !== -1) found.push(needle);
     }
     if (found.length > 0) {
@@ -270,7 +296,7 @@ const audit = {
   },
   TemplateMatches: scanTemplateMatches(regionConfigFiles.concat(awsSdkAllFiles)),
   RuntimeJsMatches: scanRuntimeJsMatches(jiboSsmRuntimeJsFiles),
-  RuntimeMapMatches: scanRuntimeJsMatches(jiboSsmRuntimeMapFiles),
+  RuntimeMapMatches: scanRuntimeMapMatches(jiboSsmRuntimeMapFiles),
   Recommendations: recommendations,
   CanProceed: recommendations.length === 0,
   BlockingIssues: recommendations,

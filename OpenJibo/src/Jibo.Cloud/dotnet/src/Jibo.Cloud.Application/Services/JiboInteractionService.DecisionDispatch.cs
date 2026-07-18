@@ -938,8 +938,8 @@ public sealed partial class JiboInteractionService
             "robot_favorite_tv_show" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_tv_show",
-                "still learning about tv shows",
-                "favorite tv shows yet"),
+                "impractical jokers",
+                "favorite tv show"),
             "robot_favorite_scary_movie" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_scary_movie",

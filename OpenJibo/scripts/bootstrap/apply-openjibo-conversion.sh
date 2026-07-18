@@ -260,8 +260,12 @@ const awsSdkAllFiles = collectExisting([
   "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
 ]);
 const jiboSsmRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/lib");
+const jiboStsRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib");
 const jiboSsmRuntimeMapFiles = collectExisting([
   "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
+]);
+const jiboStsRuntimeMapFiles = collectExisting([
+  "usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib/jibo-service-clients.js.map",
 ]);
 
 if (!jetstreamPath || !serverServicePath || !credentialsPath || !oobeConfigPath) {
@@ -338,12 +342,14 @@ const endpointReplacements = [
 ];
 
 const runtimeJsReplacements = [
+  [".jibo.com", ".openjibo.com"],
   ['data.region + ".jibo.com"', 'data.region + ".openjibo.com"'],
   ['this._wifiService.options.region + ".jibo.com"', 'this._wifiService.options.region + ".openjibo.com"'],
   ["API: 'api.jibo.com'", "API: 'api.openjibo.com'"],
 ];
 
 const runtimeMapReplacements = [
+  [".jibo.com", ".openjibo.com"],
   ['data.region + \\".jibo.com\\"', 'data.region + \\".openjibo.com\\"'],
   ['this._wifiService.options.region + \\".jibo.com\\"', 'this._wifiService.options.region + \\".openjibo.com\\"'],
   ["API: 'api.jibo.com'", "API: 'api.openjibo.com'"],
@@ -362,6 +368,14 @@ for (const filePath of jiboSsmRuntimeJsFiles) {
 }
 
 for (const filePath of jiboSsmRuntimeMapFiles) {
+  patchSourceMapFile(filePath, runtimeJsReplacements);
+}
+
+for (const filePath of jiboStsRuntimeJsFiles) {
+  patchTextFile(filePath, runtimeJsReplacements);
+}
+
+for (const filePath of jiboStsRuntimeMapFiles) {
   patchSourceMapFile(filePath, runtimeJsReplacements);
 }
 
@@ -405,7 +419,7 @@ const applyManifest = {
     serverServicePath,
     oobeConfigPath,
     conversionMarkerPath,
-  ].concat(regionConfigFiles, awsSdkAllFiles, jiboSsmRuntimeJsFiles, jiboSsmRuntimeMapFiles),
+  ].concat(regionConfigFiles, awsSdkAllFiles, jiboSsmRuntimeJsFiles, jiboSsmRuntimeMapFiles, jiboStsRuntimeJsFiles, jiboStsRuntimeMapFiles),
 };
 
 const json = JSON.stringify(applyManifest, null, 2);

@@ -155,9 +155,15 @@ const awsSdkAllFiles = collectExisting([
   "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
 ]);
 const jiboSsmRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/lib");
+const jiboStsRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib");
 const jiboSsmRuntimeMapFiles = collectExisting([
   "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
 ]);
+const jiboStsRuntimeMapFiles = collectExisting([
+  "usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib/jibo-service-clients.js.map",
+]);
+const jiboRuntimeJsFiles = jiboSsmRuntimeJsFiles.concat(jiboStsRuntimeJsFiles);
+const jiboRuntimeMapFiles = jiboSsmRuntimeMapFiles.concat(jiboStsRuntimeMapFiles);
 
 const templateNeedles = [
   "{service}.{region}.api.jibo.com",
@@ -170,6 +176,7 @@ const templateNeedles = [
 ];
 
 const runtimeJsNeedles = [
+  ".jibo.com",
   'data.region + ".jibo.com"',
   'this._wifiService.options.region + ".jibo.com"',
   "API: 'api.jibo.com'",
@@ -299,10 +306,12 @@ const audit = {
     AwsSdkAllFiles: awsSdkAllFiles,
     JiboSsmRuntimeJsFiles: jiboSsmRuntimeJsFiles,
     JiboSsmRuntimeMapFiles: jiboSsmRuntimeMapFiles,
+    JiboStsRuntimeJsFiles: jiboStsRuntimeJsFiles,
+    JiboStsRuntimeMapFiles: jiboStsRuntimeMapFiles,
   },
   TemplateMatches: scanTemplateMatches(regionConfigFiles.concat(awsSdkAllFiles)),
-  RuntimeJsMatches: scanRuntimeJsMatches(jiboSsmRuntimeJsFiles),
-  RuntimeMapMatches: scanRuntimeSourceMapMatches(jiboSsmRuntimeMapFiles),
+  RuntimeJsMatches: scanRuntimeJsMatches(jiboRuntimeJsFiles),
+  RuntimeMapMatches: scanRuntimeSourceMapMatches(jiboRuntimeMapFiles),
   Recommendations: recommendations,
   CanProceed: recommendations.length === 0,
   BlockingIssues: recommendations,

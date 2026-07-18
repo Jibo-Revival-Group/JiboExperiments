@@ -156,6 +156,22 @@ const proposedChanges = [
     ],
   },
   {
+    File: "usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib/jibo-service-clients.js and other scanned jibo-sts service-client JS files",
+    Action: "replace remaining runtime hostname strings inside the shared jibo-sts service-client bundle",
+    Details: [
+      'replace any remaining ".jibo.com" runtime host fragments with ".openjibo.com"',
+      "keep the shared service-client bundle aligned with the same OpenJibo hostname translation used by jibo-ssm",
+    ],
+  },
+  {
+    File: "usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib/jibo-service-clients.js.map",
+    Action: "replace the same runtime hostname strings inside the service-client source map",
+    Details: [
+      "the source map may still preserve the old hostname fragments even after the JS bundle is patched",
+      "keep the map aligned so stack traces and debugger views show the same OpenJibo endpoints",
+    ],
+  },
+  {
     File: "/var/jibo/credentials.json",
     Action: "record the active region",
     Details: [

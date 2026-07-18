@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.1"
+SCRIPT_VERSION="2026-07-18.3"
 echo "invoke-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""

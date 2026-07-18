@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.1"
+SCRIPT_VERSION="2026-07-18.3"
 echo "apply-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -218,6 +218,9 @@ const awsSdkAllFiles = collectExisting([
   "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
 ]);
 const jiboSsmRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/lib");
+const jiboSsmRuntimeMapFiles = collectExisting([
+  "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
+]);
 
 if (!jetstreamPath || !serverServicePath || !credentialsPath || !oobeConfigPath) {
   throw new Error("Expected conversion files were not found on the robot root.");
@@ -231,6 +234,7 @@ const backups = {
   regionConfigFiles: regionConfigFiles.map(backupFile).filter(Boolean),
   awsSdkAllFiles: awsSdkAllFiles.map(backupFile).filter(Boolean),
   jiboSsmRuntimeJsFiles: jiboSsmRuntimeJsFiles.map(backupFile).filter(Boolean),
+  jiboSsmRuntimeMapFiles: jiboSsmRuntimeMapFiles.map(backupFile).filter(Boolean),
 };
 
 const jetstream = readJson(jetstreamPath);
@@ -309,6 +313,10 @@ for (const filePath of jiboSsmRuntimeJsFiles) {
   patchTextFile(filePath, runtimeJsReplacements);
 }
 
+for (const filePath of jiboSsmRuntimeMapFiles) {
+  patchTextFile(filePath, runtimeJsReplacements);
+}
+
 const conversionMarkerPath = path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");
 writeJson(conversionMarkerPath, {
   targetMode,
@@ -348,7 +356,7 @@ const applyManifest = {
     serverServicePath,
     oobeConfigPath,
     conversionMarkerPath,
-  ].concat(regionConfigFiles, awsSdkAllFiles, jiboSsmRuntimeJsFiles),
+  ].concat(regionConfigFiles, awsSdkAllFiles, jiboSsmRuntimeJsFiles, jiboSsmRuntimeMapFiles),
 };
 
 const json = JSON.stringify(applyManifest, null, 2);

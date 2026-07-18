@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.1"
+SCRIPT_VERSION="2026-07-18.3"
 echo "plan-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -145,6 +145,14 @@ const proposedChanges = [
       'change this._wifiService.options.region + ".jibo.com" to this._wifiService.options.region + ".openjibo.com"',
       "change API: 'api.jibo.com' to API: 'api.openjibo.com'",
       "keep the runtime bundle aligned with the region_config.json and AWS SDK template rewrites",
+    ],
+  },
+  {
+    File: "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
+    Action: "replace the same hardcoded hostname strings inside the runtime source map",
+    Details: [
+      "keep the source map text aligned with the patched runtime bundle",
+      "prevent the shipped map from preserving legacy .jibo.com references",
     ],
   },
   {

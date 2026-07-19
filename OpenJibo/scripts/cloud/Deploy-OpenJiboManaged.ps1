@@ -52,6 +52,7 @@ $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVault
 $mediaConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-media-connection-string --query value -o tsv
 $openWeatherApiKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-openweather-api-key --query value -o tsv
 $newsApiKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-newsapi-key --query value -o tsv
+$portalStatusPassword = az keyvault secret show --vault-name $KeyVaultName --name openjibo-portal-status-password --query value -o tsv
 
 function Get-PostgresServerNameFromConnectionString {
     param([string]$ConnectionString)
@@ -130,7 +131,8 @@ function Set-ContainerAppSecretsFromKeyVault {
     param(
         [string]$ContainerAppName,
         [string]$StateConnectionString,
-        [string]$PersonalMemoryConnectionString
+        [string]$PersonalMemoryConnectionString,
+        [string]$PortalStatusPassword
     )
 
     if ([string]::IsNullOrWhiteSpace($ContainerAppName)) {
@@ -141,7 +143,7 @@ function Set-ContainerAppSecretsFromKeyVault {
         throw "Managed Container App secret refresh requires both PostgreSQL connection strings."
     }
 
-    Write-Host "Refreshing Container App '$ContainerAppName' PostgreSQL secrets from Key Vault to force the latest database credentials into the revision."
+    Write-Host "Refreshing Container App '$ContainerAppName' secrets from Key Vault to force the latest managed values into the revision."
     Invoke-OpenJiboAzWithRetry `
         -Arguments @(
             "containerapp", "secret", "set",
@@ -149,11 +151,12 @@ function Set-ContainerAppSecretsFromKeyVault {
             "--name", $ContainerAppName,
             "--secrets", "state-connection-string=$StateConnectionString",
             "personal-memory-connection-string=$PersonalMemoryConnectionString",
+            "portal-status-password=$PortalStatusPassword",
             "--output", "none"
         ) `
         -Description "Container App secret refresh for '$ContainerAppName'" `
         -Attempts 6 | Out-Null
-    Write-Host "Container App PostgreSQL secrets refreshed for '$ContainerAppName'."
+    Write-Host "Container App managed secrets refreshed for '$ContainerAppName'."
 }
 
 function Restart-ContainerAppRevision {
@@ -244,7 +247,8 @@ $arguments = @(
     "--parameters", "personalMemoryConnectionString=$personalMemoryConnectionString",
     "--parameters", "mediaConnectionString=$mediaConnectionString",
     "--parameters", "openWeatherApiKey=$openWeatherApiKey",
-    "--parameters", "newsApiKey=$newsApiKey"
+    "--parameters", "newsApiKey=$newsApiKey",
+    "--parameters", "portalStatusPassword=$portalStatusPassword"
 )
 
 if (-not [string]::IsNullOrWhiteSpace($Location)) {
@@ -355,7 +359,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 
 $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
 $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
-Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString
+Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -PortalStatusPassword $portalStatusPassword
 Restart-ContainerAppRevision -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value
 Start-Sleep -Seconds 20
 

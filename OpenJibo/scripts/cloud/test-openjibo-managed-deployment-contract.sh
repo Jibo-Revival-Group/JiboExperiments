@@ -91,11 +91,15 @@ required_managed_markers=(
   "param mediaConnectionString string = ''"
   "param openWeatherApiKey string = ''"
   "param newsApiKey string = ''"
+  "param portalStatusPassword string = ''"
   "value: stateConnectionString"
   "value: personalMemoryConnectionString"
   "value: mediaConnectionString"
   "value: openWeatherApiKey"
   "value: newsApiKey"
+  "value: portalStatusPassword"
+  "OpenJibo__Portal__StatusPassword"
+  "portal-status-password"
   "var logAnalyticsWorkspaceKey"
   "value: 'PostgreSql'"
   "value: 'AzureBlob'"
@@ -159,7 +163,7 @@ if [[ "$foundation_script_text" != *"seedPrincipalObjectId"* ]]; then
   exit 1
 fi
 
-for marker in "RegistryName" "ApiHostname" "SocketHostname" "NeoHubHostname" "containerapp hostname add" "containerapp hostname bind" "SkipHostnameBinding" "EnableAzureSpeech" "AzureSpeechRegion"; do
+for marker in "RegistryName" "ApiHostname" "SocketHostname" "NeoHubHostname" "containerapp hostname add" "containerapp hostname bind" "SkipHostnameBinding" "EnableAzureSpeech" "AzureSpeechRegion" "portalStatusPassword" "openjibo-portal-status-password"; do
   if [[ "$managed_script_text" != *"$marker"* ]]; then
     echo "Managed deploy script is missing expected marker: $marker" >&2
     exit 1
@@ -191,7 +195,7 @@ if [[ "$linux_publish_script_text" != *"az acr build"* ]]; then
   exit 1
 fi
 
-for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "az containerapp hostname add" "az containerapp hostname bind" 'bash "${script_dir}/invoke-openjibo-migration.sh"' "--skip-hostname-binding"; do
+for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "az containerapp hostname add" "az containerapp hostname bind" 'bash "${script_dir}/invoke-openjibo-migration.sh"' "--skip-hostname-binding" "portal-status-password" "openjibo-portal-status-password"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing expected marker: $marker" >&2
     exit 1

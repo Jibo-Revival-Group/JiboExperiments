@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
@@ -11,6 +13,8 @@ namespace Jibo.Cloud.Api.Hosting;
 
 internal static class PortalEndpoints
 {
+    private const string AdminSessionDeviceId = "portal-admin";
+    private static readonly TimeSpan StatusHeartbeatWindow = TimeSpan.FromMinutes(5);
     private static readonly string[] RequiredLegacyHostMappings =
     [
         "api.jibo.com",
@@ -589,6 +593,41 @@ internal static class PortalEndpoints
             });
         });
 
+        app.MapPost("/api/portal/status/login", (
+            [FromBody] AdminStatusLoginRequest request,
+            IConfiguration configuration,
+            PortalSessionService portalSessionService) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.Password))
+                return Results.BadRequest(new { error = "password is required." });
+
+            var configuredPassword = ResolveAdminStatusPassword(configuration);
+            if (string.IsNullOrWhiteSpace(configuredPassword))
+                return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+
+            if (!PasswordsMatch(request.Password, configuredPassword))
+                return Results.Unauthorized();
+
+            var session = portalSessionService.CreateSession(AdminSessionDeviceId, "Portal Admin");
+            return Results.Json(new
+            {
+                portalSessionToken = session.Token,
+                expiresAtUtc = session.ExpiresAtUtc
+            });
+        });
+
+        app.MapGet("/api/portal/status/summary", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            return Results.Json(BuildStatusSummaryPayload(cloudStateStore));
+        });
+
         app.MapPost("/api/portal/logout", (
             [FromBody] PortalLogoutRequest request,
             HttpRequest httpRequest,
@@ -621,6 +660,112 @@ internal static class PortalEndpoints
                 .Select(link => BuildHomeAssistantPayload(link, registry));
             return Results.Json(new { links });
         });
+    }
+
+    private static object BuildStatusSummaryPayload(ICloudStateStore cloudStateStore)
+    {
+        var now = DateTimeOffset.UtcNow;
+        using var process = Process.GetCurrentProcess();
+        var processStartUtc = process.StartTime.ToUniversalTime();
+        var devices = cloudStateStore.GetDevices();
+        var sessions = cloudStateStore.GetSessions();
+        var liveSessions = sessions
+            .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
+            .ToArray();
+        var liveDeviceIds = liveSessions
+            .Where(session => !string.IsNullOrWhiteSpace(session.DeviceId))
+            .Select(session => session.DeviceId!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var sessionsByDevice = liveSessions
+            .Where(session => !string.IsNullOrWhiteSpace(session.DeviceId))
+            .GroupBy(session => session.DeviceId!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.OrdinalIgnoreCase);
+
+        var robots = devices
+            .Select(device =>
+            {
+                sessionsByDevice.TryGetValue(device.DeviceId, out var deviceSessions);
+                deviceSessions ??= [];
+
+                var lastSeenUtc = deviceSessions.Length > 0
+                    ? deviceSessions.Max(session => session.LastSeenUtc)
+                    : (DateTimeOffset?)null;
+                var firstSeenUtc = deviceSessions.Length > 0
+                    ? deviceSessions.Min(session => session.CreatedUtc)
+                    : (DateTimeOffset?)null;
+
+                return new
+                {
+                    device.DeviceId,
+                    device.RobotId,
+                    device.FriendlyName,
+                    device.FirmwareVersion,
+                    device.ApplicationVersion,
+                    device.IsActive,
+                    connected = deviceSessions.Length > 0,
+                    sessionCount = deviceSessions.Length,
+                    firstSeenUtc,
+                    lastSeenUtc,
+                    lastHeartbeatAgeSeconds = lastSeenUtc is null ? (double?)null : (now - lastSeenUtc.Value).TotalSeconds,
+                    sessionKinds = deviceSessions
+                        .Select(session => session.Kind)
+                        .Where(kind => !string.IsNullOrWhiteSpace(kind))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(kind => kind, StringComparer.OrdinalIgnoreCase)
+                        .ToArray()
+                };
+            })
+            .OrderByDescending(robot => robot.connected)
+            .ThenBy(robot => robot.FriendlyName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(robot => robot.DeviceId, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var latestSeenUtc = liveSessions.Length > 0 ? liveSessions.Max(session => session.LastSeenUtc) : (DateTimeOffset?)null;
+        var oldestLiveSessionCreatedUtc = liveSessions.Length > 0 ? liveSessions.Min(session => session.CreatedUtc) : (DateTimeOffset?)null;
+
+        return new
+        {
+            generatedAtUtc = now,
+            service = new
+            {
+                version = OpenJiboCloudBuildInfo.Version,
+                startedAtUtc = processStartUtc,
+                uptimeSeconds = (long)(now - processStartUtc).TotalSeconds,
+                uptimeLabel = FormatDuration(now - processStartUtc)
+            },
+            persistence = cloudStateStore.GetPersistenceStateInfo(),
+            fleet = new
+            {
+                registeredRobots = devices.Count,
+                activeRobots = devices.Count(device => device.IsActive),
+                connectedRobots = liveDeviceIds.Length,
+                totalSessions = sessions.Count,
+                liveSessions = liveSessions.Length,
+                staleSessions = sessions.Count(session => now - session.LastSeenUtc > StatusHeartbeatWindow),
+                latestSeenUtc,
+                oldestLiveSessionCreatedUtc,
+                averageHeartbeatAgeSeconds = liveSessions.Length > 0
+                    ? liveSessions.Average(session => (now - session.LastSeenUtc).TotalSeconds)
+                    : (double?)null
+            },
+            robots,
+            recentSessions = liveSessions
+                .OrderByDescending(session => session.LastSeenUtc)
+                .Take(10)
+                .Select(session => new
+                {
+                    session.SessionId,
+                    session.Kind,
+                    session.DeviceId,
+                    session.HostName,
+                    session.Path,
+                    session.CreatedUtc,
+                    session.LastSeenUtc,
+                    heartbeatAgeSeconds = (now - session.LastSeenUtc).TotalSeconds
+                })
+                .ToArray()
+        };
     }
 
 
@@ -661,6 +806,11 @@ internal static class PortalEndpoints
         return portalSessionService.TryGetSession(ResolvePortalSessionToken(request, portalSessionToken));
     }
 
+    private static bool IsAdminSession(PortalSessionService.PortalSession session)
+    {
+        return string.Equals(session.DeviceId, AdminSessionDeviceId, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string? ResolvePortalSessionToken(
         HttpRequest request,
         string? portalSessionToken)
@@ -673,6 +823,37 @@ internal static class PortalEndpoints
         token ??= request.Query["portalSessionToken"].FirstOrDefault();
         token ??= portalSessionToken;
         return token;
+    }
+
+    private static string? ResolveAdminStatusPassword(IConfiguration configuration)
+    {
+        return configuration["OpenJibo:Portal:StatusPassword"]
+               ?? Environment.GetEnvironmentVariable("OPENJIBO_PORTAL_STATUS_PASSWORD");
+    }
+
+    private static bool PasswordsMatch(string suppliedPassword, string configuredPassword)
+    {
+        var suppliedBytes = Encoding.UTF8.GetBytes(suppliedPassword);
+        var configuredBytes = Encoding.UTF8.GetBytes(configuredPassword);
+        return suppliedBytes.Length == configuredBytes.Length &&
+               CryptographicOperations.FixedTimeEquals(suppliedBytes, configuredBytes);
+    }
+
+    private static string FormatDuration(TimeSpan duration)
+    {
+        if (duration < TimeSpan.Zero)
+            duration = TimeSpan.Zero;
+
+        if (duration.TotalDays >= 1)
+            return $"{(int)duration.TotalDays}d {duration.Hours}h";
+
+        if (duration.TotalHours >= 1)
+            return $"{(int)duration.TotalHours}h {duration.Minutes}m";
+
+        if (duration.TotalMinutes >= 1)
+            return $"{(int)duration.TotalMinutes}m {duration.Seconds}s";
+
+        return $"{duration.Seconds}s";
     }
 
     private static void RegisterVerifiedRobotIdentity(ICloudStateStore cloudStateStore, string deviceId,
@@ -739,6 +920,8 @@ internal static class PortalEndpoints
     private sealed record PortalLogoutRequest(string? PortalSessionToken);
 
     private sealed record RevokeIdentityGraphAnchorRequest(string? Anchor, string? PortalSessionToken);
+
+    private sealed record AdminStatusLoginRequest(string? Password);
 
     private sealed record UpsertTrustedServerRequest(
         string? PortalSessionToken,

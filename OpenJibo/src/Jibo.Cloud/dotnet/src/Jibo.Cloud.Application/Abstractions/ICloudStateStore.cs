@@ -9,6 +9,8 @@ public interface ICloudStateStore
     void SavePersistedState();
     AccountProfile GetAccount();
     DeviceRegistration GetRobot();
+    IReadOnlyList<DeviceRegistration> GetDevices();
+    IReadOnlyList<CloudSession> GetSessions();
     RobotProfile GetRobotProfile();
     DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion);
     DeviceRegistration? FindDeviceByFriendlyId(string friendlyId);

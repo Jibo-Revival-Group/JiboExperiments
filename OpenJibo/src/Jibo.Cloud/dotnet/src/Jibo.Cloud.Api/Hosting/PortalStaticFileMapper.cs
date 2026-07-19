@@ -13,6 +13,12 @@ internal static class PortalStaticFileMapper
         app.MapGet("/portal/portal.css", () => Serve(portalDirectory, "portal.css", "text/css; charset=utf-8"));
         app.MapGet("/portal/portal.js",
             () => Serve(portalDirectory, "portal.js", "application/javascript; charset=utf-8"));
+        app.MapGet("/portal/status", () => Results.Redirect("/portal/status/index.html"));
+        app.MapGet("/portal/status.html", () => Results.Redirect("/portal/status/index.html"));
+        app.MapGet("/portal/status/index.html", () => Serve(portalDirectory, "status/index.html", "text/html; charset=utf-8"));
+        app.MapGet("/portal/status/status.css", () => Serve(portalDirectory, "status/status.css", "text/css; charset=utf-8"));
+        app.MapGet("/portal/status/status.js",
+            () => Serve(portalDirectory, "status/status.js", "application/javascript; charset=utf-8"));
 
         app.MapGet("/harness", () => Results.Redirect("/harness/index.html"));
         app.MapGet("/harness.html", () => Results.Redirect("/harness/index.html"));

@@ -204,6 +204,7 @@ personal_memory_connection_string="$(az keyvault secret show --vault-name "$key_
 media_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-media-connection-string --query value -o tsv)"
 open_weather_api_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-openweather-api-key --query value -o tsv)"
 news_api_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-newsapi-key --query value -o tsv)"
+portal_status_password="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-portal-status-password --query value -o tsv)"
 
 echo "Deploying Open Jibo managed Container Apps stack to resource group '${resource_group_name}'"
 deployment_args=(
@@ -223,6 +224,7 @@ deployment_args=(
   --parameters "mediaConnectionString=${media_connection_string}"
   --parameters "openWeatherApiKey=${open_weather_api_key}"
   --parameters "newsApiKey=${news_api_key}"
+  --parameters "portalStatusPassword=${portal_status_password}"
 )
 
 if [[ "$enable_azure_speech" == true ]]; then
@@ -356,7 +358,7 @@ if [[ -n "${container_app_name:-}" ]]; then
   az containerapp secret set \
     --resource-group "$resource_group_name" \
     --name "$container_app_name" \
-    --secrets "state-connection-string=${state_connection_string}" "personal-memory-connection-string=${personal_memory_connection_string}" \
+    --secrets "state-connection-string=${state_connection_string}" "personal-memory-connection-string=${personal_memory_connection_string}" "portal-status-password=${portal_status_password}" \
     --output none
   echo "Container App PostgreSQL secrets refreshed for '${container_app_name}'." >&2
 

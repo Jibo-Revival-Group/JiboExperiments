@@ -289,6 +289,30 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task StatusLogin_UnlocksPasswordProtectedFleetSummary()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/api/portal/status/login",
+            new { password = "test-admin-password" });
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        var loginPayload = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", loginPayload.GetProperty("portalSessionToken").GetString());
+
+        var summaryResponse = await client.GetAsync("/api/portal/status/summary");
+
+        Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
+        var summary = await summaryResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(summary.GetProperty("fleet").GetProperty("registeredRobots").GetInt32() >= 1);
+        Assert.True(summary.GetProperty("service").GetProperty("uptimeSeconds").GetInt64() >= 0);
+        Assert.NotEmpty(summary.GetProperty("robots").EnumerateArray());
+    }
+
+    [Fact]
     public async Task IdentityGraphEndpoint_ReturnsSignedEvidencePayloadForPortalSession()
     {
         await using var factory = CreateFactory();
@@ -839,6 +863,7 @@ public sealed class HomeAssistantPortalApiTests
                     "OpenJibo:PersonalMemory:PersistencePath",
                     Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
+                builder.UseSetting("OpenJibo:Portal:StatusPassword", "test-admin-password");
             });
     }
 }

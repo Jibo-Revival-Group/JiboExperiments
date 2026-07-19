@@ -631,6 +631,7 @@ async function renderDashboard(message = "", tone = "success") {
           <p class="muted">Manage integrations for this robot.</p>
         </div>
         <div class="button-row" style="margin-top: 0;">
+          <a class="secondary-button" href="/portal/status">Open status page</a>
           <button class="button secondary" id="logoutButton" type="button">Sign out</button>
         </div>
       </header>

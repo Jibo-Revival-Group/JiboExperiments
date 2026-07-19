@@ -102,11 +102,15 @@ $requiredManagedMarkers = @(
     "param mediaConnectionString string = ''",
     "param openWeatherApiKey string = ''",
     "param newsApiKey string = ''",
+    "param portalStatusPassword string = ''",
     "value: stateConnectionString",
     "value: personalMemoryConnectionString",
     "value: mediaConnectionString",
     "value: openWeatherApiKey",
     "value: newsApiKey",
+    "value: portalStatusPassword",
+    "OpenJibo__Portal__StatusPassword",
+    "portal-status-password",
     "var logAnalyticsWorkspaceKey",
     "value: 'PostgreSql'",
     "value: 'AzureBlob'",
@@ -153,7 +157,7 @@ foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscrip
     Assert-ContainsMarker -Text $foundationScriptText -Marker $marker -FailurePrefix "Foundation script is missing expected marker"
 }
 
-foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion")) {
+foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion", "portalStatusPassword", "openjibo-portal-status-password")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
 }
 
@@ -172,7 +176,7 @@ foreach ($marker in @("seedPrincipalObjectId", "openjibo-media-connection-string
 Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker '"az", "storage", "account", "show-connection-string"' -FailurePrefix "Linux foundation script does not resolve the storage connection string outside Bicep outputs"
 Assert-ContainsMarker -Text $linuxPublishScriptText -Marker "az acr build" -FailurePrefix "Linux publish script is missing the ACR build path"
 
-foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "--socket-hostname", "--neohub-hostname", "az containerapp hostname add", "az containerapp hostname bind", "--skip-hostname-binding")) {
+foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "--socket-hostname", "--neohub-hostname", "az containerapp hostname add", "az containerapp hostname bind", "--skip-hostname-binding", "portal-status-password", "openjibo-portal-status-password")) {
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing expected marker"
 }
 

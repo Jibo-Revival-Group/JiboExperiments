@@ -89,6 +89,8 @@ The foundation adds a PostgreSQL firewall rule for Azure services and, when the 
 
 `deploy-openjibo-managed.sh` and `Deploy-OpenJiboManaged.ps1` also query the Container Apps environment outbound IPs and create matching PostgreSQL firewall rules before migrations and smoke checks run. That keeps the managed runtime on PostgreSQL while giving the deployed container its own firewall path.
 
+The managed Container App now expects a Key Vault secret named `openjibo-portal-status-password` before deploy. Seed it the same way you seed the other managed secrets, then the deploy script will pass it through as the password gate for `/portal/status`.
+
 ## Managed hostname binding
 
 `deploy-openjibo-managed.sh` and `Deploy-OpenJiboManaged.ps1` bind the requested host trio after the Container App deployment. Azure Container Apps managed certificates require DNS to point directly at the generated Container App hostname before certificate issuance can succeed. For subdomains such as `api.openjibo.com`, `open-jibo-socket.openjibo.com`, and `neohub.openjibo.com`, create a CNAME from each custom hostname to the generated Container App FQDN returned by the deployment output.

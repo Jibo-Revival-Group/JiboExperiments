@@ -63,6 +63,10 @@ param openWeatherApiKey string = ''
 @secure()
 param newsApiKey string = ''
 
+@description('Password used to gate the OpenJibo admin status page.')
+@secure()
+param portalStatusPassword string = ''
+
 @description('Minimum number of replicas for the runtime container.')
 param minReplicas int = 1
 
@@ -120,6 +124,10 @@ var managedSecrets = concat([
   {
     name: 'news-api-key'
     value: newsApiKey
+  }
+  {
+    name: 'portal-status-password'
+    value: portalStatusPassword
   }
 ])
 var azureSpeechEnvEntries = enableAzureSpeech ? [
@@ -220,6 +228,10 @@ var managedEnvVars = concat([
   {
     name: 'NEWSAPI_KEY'
     secretRef: 'news-api-key'
+  }
+  {
+    name: 'OpenJibo__Portal__StatusPassword'
+    secretRef: 'portal-status-password'
   }
 ], azureSpeechEnvEntries)
 

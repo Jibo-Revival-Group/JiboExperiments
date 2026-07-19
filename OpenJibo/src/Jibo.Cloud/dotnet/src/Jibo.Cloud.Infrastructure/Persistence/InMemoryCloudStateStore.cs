@@ -194,6 +194,19 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _robot;
     }
 
+    public IReadOnlyList<DeviceRegistration> GetDevices()
+    {
+        lock (_syncRoot)
+        {
+            return _devices.Values.Select(CloneDeviceRegistration).ToArray();
+        }
+    }
+
+    public IReadOnlyList<CloudSession> GetSessions()
+    {
+        return _sessionsByToken.Values.Select(CloneSession).ToArray();
+    }
+
     public RobotProfile GetRobotProfile()
     {
         return _robotProfile;
@@ -2379,6 +2392,47 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             LastTranscript = session.LastTranscript,
             LastTransId = session.LastTransId,
             Metadata = session.Metadata
+        };
+    }
+
+    private static DeviceRegistration CloneDeviceRegistration(DeviceRegistration device)
+    {
+        return new DeviceRegistration
+        {
+            DeviceId = device.DeviceId,
+            RobotId = device.RobotId,
+            FriendlyName = device.FriendlyName,
+            FirmwareVersion = device.FirmwareVersion,
+            ApplicationVersion = device.ApplicationVersion,
+            IsActive = device.IsActive,
+            CertificateThumbprint = device.CertificateThumbprint,
+            IssuedIdentityId = device.IssuedIdentityId,
+            BuildHash = device.BuildHash,
+            ConfigHash = device.ConfigHash,
+            HostMappings = new Dictionary<string, string>(device.HostMappings, StringComparer.OrdinalIgnoreCase)
+        };
+    }
+
+    private static CloudSession CloneSession(CloudSession session)
+    {
+        return new CloudSession
+        {
+            SessionId = session.SessionId,
+            Kind = session.Kind,
+            AccountId = session.AccountId,
+            DeviceId = session.DeviceId,
+            Token = session.Token,
+            HostName = session.HostName,
+            Path = session.Path,
+            CreatedUtc = session.CreatedUtc,
+            LastSeenUtc = session.LastSeenUtc,
+            FollowUpExpiresUtc = session.FollowUpExpiresUtc,
+            LastMessageType = session.LastMessageType,
+            LastListenType = session.LastListenType,
+            LastIntent = session.LastIntent,
+            LastTranscript = session.LastTranscript,
+            LastTransId = session.LastTransId,
+            Metadata = new Dictionary<string, object?>(session.Metadata, StringComparer.OrdinalIgnoreCase)
         };
     }
 

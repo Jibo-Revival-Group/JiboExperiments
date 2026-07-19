@@ -129,7 +129,7 @@ const proposedChanges = [
     ],
   },
   {
-    File: "all discovered aws-sdk-all.js copies",
+    File: "all discovered aws-sdk-all.js copies, including /opt/jibo/Jibo/Skills/@be/be and /opt/jibo/Jibo/Skills/oobe-config",
     Action: "replace the bundled region endpoint templates in every discovered copy",
     Details: [
       "mirror the region_config.json host substitutions inside the bundled SDK",

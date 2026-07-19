@@ -258,6 +258,8 @@ const awsSdkAllFiles = collectExisting([
   "usr/lib/node_modules/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
   "usr/lib/node/@jibo/jibo-log-client/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
   "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
+  "opt/jibo/Jibo/Skills/oobe-config/node_modules/@jibo/jibo-server-client/dist/aws-sdk-all.js",
 ]);
 const jiboSsmRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/lib");
 const jiboStsRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib");

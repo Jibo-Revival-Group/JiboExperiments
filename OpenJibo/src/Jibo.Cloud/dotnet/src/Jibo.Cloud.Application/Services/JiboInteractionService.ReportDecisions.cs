@@ -36,6 +36,11 @@ public sealed partial class JiboInteractionService
         var weatherCoordinates = string.IsNullOrWhiteSpace(locationQuery)
             ? TryResolveWeatherCoordinates(turn)
             : null;
+        // Prefer the robot's known place name (e.g. Pleasant Hill) over OpenWeather's
+        // nearest POI label (e.g. Lone Jack) when fetching by GPS.
+        var preferredLocationName = string.IsNullOrWhiteSpace(locationQuery)
+            ? TryResolveCurrentLocationName(turn)
+            : null;
         var useCelsius = ShouldUseCelsius(turn, transcript);
         var isNextWeekForecast = IsNextWeekForecastRequest(normalizedTranscript, isRangeForecastRequest);
         var isThisWeekForecast = IsThisWeekForecastRequest(normalizedTranscript, isRangeForecastRequest);
@@ -59,7 +64,8 @@ public sealed partial class JiboInteractionService
                             weatherCoordinates?.Longitude,
                             offset == 1,
                             useCelsius,
-                            offset),
+                            offset,
+                            preferredLocationName),
                         cancellationToken);
                 }
                 catch (Exception) when (!cancellationToken.IsCancellationRequested)
@@ -67,7 +73,10 @@ public sealed partial class JiboInteractionService
                     weeklySnapshot = null;
                 }
 
-                if (weeklySnapshot is not null) weeklySnapshots.Add((offset, weeklySnapshot));
+                if (weeklySnapshot is not null)
+                    weeklySnapshots.Add((
+                        offset,
+                        ApplyPreferredWeatherLocationName(weeklySnapshot, preferredLocationName, locationQuery)));
             }
 
             if (weeklySnapshots.Count == 0)
@@ -116,7 +125,8 @@ public sealed partial class JiboInteractionService
                     weatherCoordinates?.Longitude,
                     string.Equals(weatherDate.DateEntity, "tomorrow", StringComparison.OrdinalIgnoreCase),
                     useCelsius,
-                    weatherDate.ForecastDayOffset),
+                    weatherDate.ForecastDayOffset,
+                    preferredLocationName),
                 cancellationToken);
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested)
@@ -129,6 +139,7 @@ public sealed partial class JiboInteractionService
                 "weather",
                 ChooseWeatherServiceDownReply(catalog));
 
+        snapshot = ApplyPreferredWeatherLocationName(snapshot, preferredLocationName, locationQuery);
         var spokenReply = BuildWeatherSpokenReply(snapshot, weatherDate, catalog);
         var weatherPayload = BuildWeatherSkillPayload(spokenReply, snapshot, referenceLocalTime);
         AddWeatherRequestDiagnostics(
@@ -145,6 +156,18 @@ public sealed partial class JiboInteractionService
             spokenReply,
             "chitchat-skill",
             weatherPayload);
+    }
+
+    private static WeatherReportSnapshot ApplyPreferredWeatherLocationName(
+        WeatherReportSnapshot snapshot,
+        string? preferredLocationName,
+        string? locationQuery)
+    {
+        if (string.IsNullOrWhiteSpace(preferredLocationName) ||
+            !string.IsNullOrWhiteSpace(locationQuery))
+            return snapshot;
+
+        return snapshot with { LocationName = preferredLocationName.Trim() };
     }
 
     private async Task<JiboInteractionDecision> BuildCommuteReportDecisionAsync(
@@ -178,9 +201,25 @@ public sealed partial class JiboInteractionService
                 "commute_setup",
                 ChooseCommuteAppSetupReply(catalog));
 
+        var commuteReply = BuildCommuteSpokenReply(snapshot, catalog);
+        var commutePayload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["skillId"] = "report-skill",
+            ["cloudSkill"] = "commute",
+            ["commute_view_enabled"] = true,
+            ["commute_anim_cat"] = "commute",
+            ["commute_anim_meta"] = ResolveCommuteAnimationMeta(snapshot),
+            ["commute_duration_minutes"] = snapshot.DurationMinutes,
+            ["commute_extra_minutes"] = snapshot.ExtraMinutes,
+            ["commute_mode"] = snapshot.Mode,
+            ["esml"] =
+                $"<speak><anim cat='commute' meta='{ResolveCommuteAnimationMeta(snapshot)}' nonBlocking='true' /><break size='0.75'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(commuteReply)}</es></speak>"
+        };
         return new JiboInteractionDecision(
             "commute",
-            BuildCommuteSpokenReply(snapshot, catalog));
+            commuteReply,
+            "report-skill",
+            commutePayload);
     }
 
     private async Task<JiboInteractionDecision> BuildCalendarReportDecisionAsync(
@@ -192,7 +231,9 @@ public sealed partial class JiboInteractionService
         if (calendarReportProvider is null)
             return new JiboInteractionDecision(
                 "calendar",
-                ChooseCalendarServiceDownReply(catalog));
+                ChooseCalendarServiceDownReply(catalog),
+                "report-skill",
+                BuildCalendarSkillPayload(null));
 
         CalendarReportSnapshot? snapshot;
         try
@@ -204,21 +245,27 @@ public sealed partial class JiboInteractionService
             snapshot = null;
         }
 
-        if (snapshot is null)
+        if (snapshot is null || snapshot.HasServiceError)
             return new JiboInteractionDecision(
                 "calendar",
-                ChooseCalendarServiceDownReply(catalog));
+                ChooseCalendarServiceDownReply(catalog),
+                "report-skill",
+                BuildCalendarSkillPayload(null));
 
+        var calendarReply = BuildCalendarSpokenReply(snapshot, catalog);
         return new JiboInteractionDecision(
             "calendar",
-            BuildCalendarSpokenReply(snapshot, catalog));
+            calendarReply,
+            "report-skill",
+            BuildCalendarSkillPayload(snapshot));
     }
 
     private async Task<JiboInteractionDecision> BuildNewsDecisionAsync(
         TurnContext turn,
         string transcript,
         JiboExperienceCatalog catalog,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeOutro = true)
     {
         var preferredCategories = ResolvePreferredNewsCategories(turn, transcript);
         if (newsBriefingProvider is not null)
@@ -233,7 +280,8 @@ public sealed partial class JiboInteractionService
                         snapshot,
                         catalog,
                         preferredCategories,
-                        MaxNewsHeadlines);
+                        MaxNewsHeadlines,
+                        includeOutro);
 
                 var providerStatus = ResolveNewsProviderStatus(snapshot);
                 var providerMessage = snapshot?.ProviderMessage;

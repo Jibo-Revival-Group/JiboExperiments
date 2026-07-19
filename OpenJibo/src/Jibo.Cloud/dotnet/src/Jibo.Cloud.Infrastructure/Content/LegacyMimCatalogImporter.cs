@@ -595,6 +595,19 @@ public static class LegacyMimCatalogImporter
             or LegacyMimBucket.WeatherTomorrowHighLow
             or LegacyMimBucket.WeatherServiceDown
             or LegacyMimBucket.ReportSkillTemplate
+            or LegacyMimBucket.CommuteNow
+            or LegacyMimBucket.CommuteMinutesLeft
+            or LegacyMimBucket.CommuteDepartTimeNormal
+            or LegacyMimBucket.CommuteDepartTimeNotNormal
+            or LegacyMimBucket.CommuteDriveNormal
+            or LegacyMimBucket.CommuteDriveLate
+            or LegacyMimBucket.CommuteDriveHurry
+            or LegacyMimBucket.CommuteDrivePoor
+            or LegacyMimBucket.CommuteDriveTerrible
+            or LegacyMimBucket.CommuteTransportNormal
+            or LegacyMimBucket.CommuteTransportLate
+            or LegacyMimBucket.CommuteTransportHurry
+            or LegacyMimBucket.CommuteConfirmSpeaker
             or LegacyMimBucket.Age
             or LegacyMimBucket.Holiday
             or LegacyMimBucket.HolidayTracker;

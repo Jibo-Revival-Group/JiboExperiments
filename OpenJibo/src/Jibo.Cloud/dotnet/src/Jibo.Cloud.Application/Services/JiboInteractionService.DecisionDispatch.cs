@@ -8,6 +8,7 @@ public sealed partial class JiboInteractionService
     public async Task<JiboInteractionDecision> BuildDecisionCoreAsync(TurnContext turn,
         CancellationToken cancellationToken = default)
     {
+        SyncLoopPeopleFromTurn(turn);
         var catalog = await contentCache.GetCatalogAsync(cancellationToken);
         var transcript = (turn.NormalizedTranscript ?? turn.RawTranscript ?? string.Empty).Trim();
         var lowered = transcript.ToLowerInvariant();
@@ -68,6 +69,7 @@ public sealed partial class JiboInteractionService
             BuildWeatherReportDecisionAsync,
             BuildCalendarReportDecisionAsync,
             BuildCommuteReportDecisionAsync,
+            (turnContext, ct) => BuildNewsDecisionAsync(turnContext, string.Empty, catalog, ct, includeOutro: false),
             turnContext => ResolveTenantScope(turnContext),
             cancellationToken);
         if (personalReportDecision is not null) return personalReportDecision;
@@ -936,8 +938,8 @@ public sealed partial class JiboInteractionService
             "robot_favorite_tv_show" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_tv_show",
-                "still learning about tv shows",
-                "favorite tv shows yet"),
+                "impractical jokers",
+                "favorite tv show"),
             "robot_favorite_scary_movie" => BuildScriptedPersonalityDecision(
                 catalog,
                 "robot_favorite_scary_movie",

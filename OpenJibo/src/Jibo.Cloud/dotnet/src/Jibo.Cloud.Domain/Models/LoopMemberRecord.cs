@@ -21,4 +21,8 @@ public sealed class LoopMemberRecord
     public string? LegalGuardianId { get; init; }
     public string? AgreementId { get; init; }
     public DateTimeOffset CreatedUtc { get; init; } = DateTimeOffset.UtcNow;
+    /// <summary>
+    /// When set, a Portal edit owns name/gender until the robot's roster catches up.
+    /// </summary>
+    public DateTimeOffset? PortalEditedUtc { get; init; }
 }

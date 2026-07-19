@@ -122,11 +122,14 @@ public sealed class JiboWebSocketService(
             case "CONTEXT":
             {
                 var replies = await turnFinalizationService.HandleContextAsync(session, envelope, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(session.DeviceId))
+                    stateStore.ReinheritDialogMetadata(session);
                 await telemetrySink.RecordTurnEventAsync(envelope, session, "context_received",
                     new Dictionary<string, object?>
                     {
                         ["transID"] = session.TurnState.TransId,
-                        ["glsmPhase"] = WebSocketTurnFinalizationService.ResolveGlsmPhase(session)
+                        ["glsmPhase"] = WebSocketTurnFinalizationService.ResolveGlsmPhase(session),
+                        ["robotId"] = session.DeviceId
                     }, cancellationToken);
                 return replies;
             }

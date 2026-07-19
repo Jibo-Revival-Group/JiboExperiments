@@ -15,6 +15,14 @@ namespace Jibo.Cloud.Tests.Api;
 public sealed class HomeAssistantPortalApiTests
 {
     [Fact]
+    public async Task Links_RequiresPortalSession()
+    {
+        await using var factory = CreateFactory();
+        var response = await factory.CreateClient().GetAsync("/api/portal/home-assistant/links");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task LinkFlow_ConnectsHomeAssistantAndLinksJibo()
     {
         await using var factory = CreateFactory();

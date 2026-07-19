@@ -3409,18 +3409,27 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
 
         using var speakPayload = JsonDocument.Parse(replies[2].Text!);
-        var esml = speakPayload.RootElement
+        var jcp = speakPayload.RootElement
             .GetProperty("data")
             .GetProperty("action")
             .GetProperty("config")
-            .GetProperty("jcp")
-            .GetProperty("config")
-            .GetProperty("play")
-            .GetProperty("esml")
-            .GetString();
+            .GetProperty("jcp");
+        Assert.Equal("SEQUENCE", jcp.GetProperty("type").GetString());
+        var children = jcp.GetProperty("children");
+        Assert.True(children.GetArrayLength() >= 3);
 
-        Assert.Contains("Robotics club opens a new community lab", esml, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Source: NewsAPI.", esml, StringComparison.OrdinalIgnoreCase);
+        var introEsml = children[0].GetProperty("config").GetProperty("play").GetProperty("esml").GetString();
+        Assert.Contains("news-intro", introEsml, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Here's today's news", introEsml, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(6, children[0].GetProperty("config").GetProperty("timeout").GetInt32());
+
+        var joinedChildren = string.Join(
+            ' ',
+            children.EnumerateArray()
+                .Select(child => child.GetProperty("config").GetProperty("play").GetProperty("esml").GetString()));
+        Assert.Contains("Robotics club opens a new community lab", joinedChildren, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("news-stinger", joinedChildren, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Source: NewsAPI.", joinedChildren, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -8243,6 +8252,242 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsrPersonalReport_OptInYesWithSharedYesNoListen_ContinuesStateMachine()
+    {
+        const string stateKey = "personalReportState";
+        var token = _store.IssueRobotToken("personal-report-yesno-device");
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-pr-yesno-start","data":{"text":"personal report"}}"""
+        });
+
+        var session = _store.FindSessionByToken(token);
+        Assert.NotNull(session);
+        Assert.Equal("awaiting_opt_in", session.Metadata[stateKey]?.ToString());
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text =
+                """{"type":"LISTEN","transID":"trans-pr-yesno-listen","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        session = _store.FindSessionByToken(token);
+        Assert.NotNull(session);
+        Assert.Equal("awaiting_opt_in", session.Metadata[stateKey]?.ToString());
+
+        var optInReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-pr-yesno-listen","data":{"text":"yes"}}"""
+        });
+
+        Assert.Equal(3, optInReplies.Count);
+        using (var optInListenPayload = JsonDocument.Parse(optInReplies[0].Text!))
+        {
+            Assert.Equal("personal_report_request_name",
+                optInListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
+        }
+
+        using (var optInSkillPayload = JsonDocument.Parse(optInReplies[2].Text!))
+        {
+            var play = optInSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config")
+                .GetProperty("play");
+            var esml = play.GetProperty("esml").GetString();
+            Assert.DoesNotContain("Yes.", esml, StringComparison.Ordinal);
+            Assert.Contains("Who is this?", esml, StringComparison.OrdinalIgnoreCase);
+        }
+
+        session = _store.FindSessionByToken(token);
+        Assert.NotNull(session);
+        Assert.Equal("awaiting_identity_name", session.Metadata[stateKey]?.ToString());
+    }
+
+    [Fact]
+    public async Task ClientNluPersonalReport_OptInYesWithSharedYesNoListen_EmitsFollowUpSkillAction()
+    {
+        const string stateKey = "personalReportState";
+        var token = _store.IssueRobotToken("personal-report-yesno-nlu-device");
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text = """{"type":"CLIENT_ASR","transID":"trans-pr-nlu-start","data":{"text":"personal report"}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text =
+                """{"type":"LISTEN","transID":"trans-pr-nlu-listen","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var optInReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text =
+                """{"type":"CLIENT_NLU","transID":"trans-pr-nlu-listen","data":{"intent":"yes","rules":["shared/yes_no"],"text":"yes"}}"""
+        });
+
+        Assert.True(optInReplies.Count >= 2, $"expected listen+eos(+skill), got {optInReplies.Count}");
+        using (var optInListenPayload = JsonDocument.Parse(optInReplies[0].Text!))
+        {
+            Assert.Equal("personal_report_request_name",
+                optInListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
+        }
+
+        Assert.Equal(3, optInReplies.Count);
+        using (var optInSkillPayload = JsonDocument.Parse(optInReplies[2].Text!))
+        {
+            Assert.Equal("SKILL_ACTION", optInSkillPayload.RootElement.GetProperty("type").GetString());
+            var esml = optInSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config")
+                .GetProperty("play")
+                .GetProperty("esml")
+                .GetString();
+            Assert.Contains("Who is this?", esml, StringComparison.OrdinalIgnoreCase);
+        }
+
+        var session = _store.FindSessionByToken(token);
+        Assert.NotNull(session);
+        Assert.Equal("awaiting_identity_name", session.Metadata[stateKey]?.ToString());
+    }
+
+    [Fact]
+    public async Task PathToken_PersonalReportOptInThenYesOnNewConnection_ContinuesStateMachine()
+    {
+        // Live robots on path-token mode open a fresh websocket for the constrained yes/no listen.
+        // Dialog metadata must carry across connection-scoped sessions for the same robotID.
+        const string stateKey = "personalReportState";
+        const string robotId = "Ghost-Instance-Kitchen";
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-personal-report-optin",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-pr-path-start","data":{"text":"give me my personal report"}}"""
+        });
+
+        var optInSession = _store.FindSessionByToken("conn:connection-personal-report-optin");
+        Assert.NotNull(optInSession);
+        Assert.Equal("awaiting_opt_in", optInSession.Metadata[stateKey]?.ToString());
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-personal-report-optin",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                "{\"type\":\"CONTEXT\",\"transID\":\"trans-pr-path-start\",\"data\":{\"general\":{\"accountID\":\"acct-1\",\"robotID\":\"" +
+                robotId + "\"}}}"
+        });
+        Assert.Equal(robotId, optInSession.DeviceId);
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-personal-report-yesno",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                "{\"type\":\"CONTEXT\",\"transID\":\"trans-pr-path-yes\",\"data\":{\"general\":{\"accountID\":\"acct-1\",\"robotID\":\"" +
+                robotId + "\"}}}"
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-personal-report-yesno",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text =
+                """{"type":"LISTEN","transID":"trans-pr-path-yes","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var yesSession = _store.FindSessionByToken("conn:connection-personal-report-yesno");
+        Assert.NotNull(yesSession);
+        Assert.NotSame(optInSession, yesSession);
+        Assert.Equal(robotId, yesSession.DeviceId);
+        Assert.Equal("awaiting_opt_in", yesSession.Metadata[stateKey]?.ToString());
+
+        var yesReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-personal-report-yesno",
+            HostName = "192.168.7.142",
+            Path = "/v1/listen",
+            Kind = "neo-hub-listen",
+            Token = "v1/listen",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-pr-path-yes","data":{"text":"Yes."}}"""
+        });
+
+        Assert.Equal(3, yesReplies.Count);
+        using (var yesListenPayload = JsonDocument.Parse(yesReplies[0].Text!))
+        {
+            Assert.Equal("personal_report_request_name",
+                yesListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
+                    .GetString());
+        }
+
+        using (var yesSkillPayload = JsonDocument.Parse(yesReplies[2].Text!))
+        {
+            var esml = yesSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config")
+                .GetProperty("play")
+                .GetProperty("esml")
+                .GetString();
+            Assert.Contains("Who is this?", esml, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(">Yes.<", esml, StringComparison.Ordinal);
+        }
+
+        yesSession = _store.FindSessionByToken("conn:connection-personal-report-yesno");
+        Assert.NotNull(yesSession);
+        Assert.Equal("awaiting_identity_name", yesSession.Metadata[stateKey]?.ToString());
+    }
+
+    [Fact]
     public async Task ClientAsrPersonalReport_StateMachinePersistsAcrossTurns()
     {
         const string stateKey = "personalReportState";
@@ -8263,6 +8508,23 @@ public sealed class JiboWebSocketServiceTests
             Assert.Equal("personal_report_opt_in",
                 startListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
                     .GetString());
+        }
+
+        using (var startSkillPayload = JsonDocument.Parse(startReplies[2].Text!))
+        {
+            var jcpConfig = startSkillPayload.RootElement
+                .GetProperty("data")
+                .GetProperty("action")
+                .GetProperty("config")
+                .GetProperty("jcp")
+                .GetProperty("config");
+            Assert.Equal("Q",
+                jcpConfig.GetProperty("play").GetProperty("meta").GetProperty("prompt_sub_category").GetString());
+            Assert.Equal("question",
+                jcpConfig.GetProperty("play").GetProperty("meta").GetProperty("mim_type").GetString());
+            Assert.Equal("LISTEN", jcpConfig.GetProperty("listen").GetProperty("type").GetString());
+            Assert.Equal("shared/yes_no",
+                jcpConfig.GetProperty("listen").GetProperty("contexts")[0].GetString());
         }
 
         var session = _store.FindSessionByToken(token);
@@ -8330,8 +8592,10 @@ public sealed class JiboWebSocketServiceTests
             new StubNewsBriefingProvider(
                 new NewsBriefingSnapshot(
                     [
-                        new NewsHeadline("Space missions are preparing for new launches"),
-                        new NewsHeadline("AI tools keep pushing into everyday products")
+                        new NewsHeadline("Space missions are preparing for new launches",
+                            "Teams are preparing new orbital missions."),
+                        new NewsHeadline("AI tools keep pushing into everyday products",
+                            "Consumer products continue adopting AI features.")
                     ],
                     "NewsAPI")));
 
@@ -8455,22 +8719,75 @@ public sealed class JiboWebSocketServiceTests
                 .GetProperty("intent").GetString());
 
         using var skillPayload = JsonDocument.Parse(reportReplies[2].Text!);
-        var esml = skillPayload.RootElement
+        var jcp = skillPayload.RootElement
             .GetProperty("data")
             .GetProperty("action")
             .GetProperty("config")
-            .GetProperty("jcp")
-            .GetProperty("config")
-            .GetProperty("play")
-            .GetProperty("esml")
-            .GetString();
+            .GetProperty("jcp");
 
-        Assert.NotNull(esml);
-        var stripped = StripMarkup(esml);
-        Assert.Contains("weather", stripped, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("calendar", stripped, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("news", stripped, StringComparison.OrdinalIgnoreCase);
-        Assert.True(stripped.Length < 600, $"Personal report speech was still too long: {stripped.Length} chars.");
+        Assert.Equal("SEQUENCE", jcp.GetProperty("type").GetString());
+        var children = jcp.GetProperty("children");
+        Assert.True(children.GetArrayLength() >= 4,
+            $"Expected sectioned personal-report SEQUENCE, got {children.GetArrayLength()} children.");
+
+        var weatherEsml = children[0].GetProperty("config").GetProperty("play").GetProperty("esml").GetString();
+        Assert.NotNull(weatherEsml);
+        Assert.Equal("views.weatherHiLo",
+            children[0].GetProperty("config").GetProperty("gui").GetProperty("data").GetString());
+
+        var totalLength = 0;
+        var sawNews = false;
+        var sawCalendar = false;
+        var sawOutro = false;
+        for (var i = 0; i < children.GetArrayLength(); i += 1)
+        {
+            var childConfig = children[i].GetProperty("config");
+            var childEsml = childConfig.GetProperty("play").GetProperty("esml").GetString();
+            Assert.NotNull(childEsml);
+            var stripped = StripMarkup(childEsml);
+            totalLength += stripped.Length;
+
+            if (i == 0)
+            {
+                Assert.Contains("weather", stripped, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("news", stripped, StringComparison.OrdinalIgnoreCase);
+            }
+            else if (childConfig.TryGetProperty("gui", out _))
+            {
+                Assert.Fail("Only the weather section should attach a paused GUI view.");
+            }
+
+            if (childEsml.Contains("news-stinger", StringComparison.OrdinalIgnoreCase) ||
+                childEsml.Contains("news-intro", StringComparison.OrdinalIgnoreCase) ||
+                stripped.Contains("news", StringComparison.OrdinalIgnoreCase))
+            {
+                sawNews = true;
+                Assert.True(childConfig.TryGetProperty("timeout", out var newsTimeout));
+                Assert.Equal(6, newsTimeout.GetInt32());
+            }
+
+            if (stripped.Contains("calendar", StringComparison.OrdinalIgnoreCase))
+            {
+                sawCalendar = true;
+                Assert.False(childConfig.TryGetProperty("timeout", out _),
+                    "Calendar section should be speech-only without a GUI hold timeout.");
+                Assert.False(childConfig.TryGetProperty("gui", out _),
+                    "Calendar section should not attach a paused GUI view.");
+            }
+            if (i == children.GetArrayLength() - 1 &&
+                (stripped.Contains("wraps up your report", StringComparison.OrdinalIgnoreCase) ||
+                 stripped.Contains("that's your report", StringComparison.OrdinalIgnoreCase) ||
+                 stripped.Contains("personal report", StringComparison.OrdinalIgnoreCase)))
+                sawOutro = true;
+
+            Assert.DoesNotContain("And that's it.", stripped, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("what's new in the news", stripped, StringComparison.OrdinalIgnoreCase);
+        }
+
+        Assert.True(sawNews);
+        Assert.True(sawCalendar);
+        Assert.True(sawOutro);
+        Assert.True(totalLength < 1200, $"Personal report speech was still too long: {totalLength} chars.");
     }
 
     [Fact]

@@ -1,11 +1,17 @@
 using System.Text.Json;
+using System.Collections.Generic;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : ICloudAuthProtocolHandler
+public sealed class CloudAuthProtocolHandler(
+    ICloudStateStore stateStore,
+    ILogger<CloudAuthProtocolHandler>? logger = null) : ICloudAuthProtocolHandler
 {
+    private readonly ILogger _logger = logger ?? NullLogger<CloudAuthProtocolHandler>.Instance;
     public ProtocolDispatchResult HandleAccount(string operation, ProtocolEnvelope envelope)
     {
         var account = stateStore.GetAccount();
@@ -174,21 +180,47 @@ public sealed class CloudAuthProtocolHandler(ICloudStateStore stateStore) : IClo
             return ProtocolDispatchResult.Ok(new { ok = true, operation });
 
         var body = envelope.TryParseBody();
-        var deviceId = !string.IsNullOrWhiteSpace(envelope.DeviceId)
-            ? envelope.DeviceId!
-            : ReadString(body, "deviceId")
-              ?? ReadString(body, "serial_number")
-              ?? ReadString(body, "serialNumber")
-              ?? ReadString(body, "cpuid")
-              ?? ReadString(body, "cpuId")
-              ?? ReadString(body, "robotId")
-              ?? "unknown-device";
+        var presentedDeviceId = ReadString(body, "deviceId")
+                                ?? ReadString(body, "serial_number")
+                                ?? ReadString(body, "serialNumber")
+                                ?? ReadString(body, "cpuid")
+                                ?? ReadString(body, "cpuId");
+        var presentedRobotId = ReadString(body, "robotId")
+                               ?? ReadString(body, "friendlyId")
+                               ?? envelope.DeviceId;
+        var deviceId = !string.IsNullOrWhiteSpace(presentedDeviceId)
+            ? presentedDeviceId!
+            : !string.IsNullOrWhiteSpace(presentedRobotId)
+                ? presentedRobotId!
+                : "unknown-device";
 
-        stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        var existing = stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        if (!string.IsNullOrWhiteSpace(presentedRobotId))
+        {
+            var resolvedRobotId = presentedRobotId.Trim();
+            stateStore.UpsertDevice(new DeviceRegistration
+            {
+                DeviceId = existing.DeviceId,
+                RobotId = resolvedRobotId,
+                FriendlyName = string.IsNullOrWhiteSpace(existing.FriendlyName)
+                    ? resolvedRobotId
+                    : existing.FriendlyName,
+                FirmwareVersion = existing.FirmwareVersion ?? envelope.FirmwareVersion,
+                ApplicationVersion = existing.ApplicationVersion ?? envelope.ApplicationVersion,
+                IsActive = true,
+                HostMappings = new Dictionary<string, string>(existing.HostMappings, StringComparer.OrdinalIgnoreCase)
+            });
+        }
+
+        var token = stateStore.IssueRobotToken(deviceId);
+        _logger.LogInformation(
+            "Notification NewRobotToken issued deviceId={DeviceId} robotId={RobotId}",
+            deviceId,
+            presentedRobotId);
 
         return ProtocolDispatchResult.Ok(new
         {
-            token = stateStore.IssueRobotToken(deviceId)
+            token
         });
     }
 

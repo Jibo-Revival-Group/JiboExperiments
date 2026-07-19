@@ -421,6 +421,9 @@ public sealed class WebSocketTurnFinalizationService(
             turnState.SawContext = true;
             turnState.ContextPayload = ExtractDataPayload(envelope.Text);
             session.Metadata["context"] = turnState.ContextPayload;
+            SessionRobotIdentityBinder.TryBindFromContextPayload(
+                session,
+                turnState.ContextPayload ?? envelope.Text);
 
             if (TryReadContextProperty(envelope.Text, "audioTranscriptHint", out var transcriptHint) &&
                 !string.IsNullOrWhiteSpace(transcriptHint))
@@ -1536,7 +1539,8 @@ public sealed class WebSocketTurnFinalizationService(
                 !string.Equals(plan.IntentName, "snapshot", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase) &&
                 (messageType != "CLIENT_NLU" ||
-                 string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase));
+                 string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase) ||
+                 IsCloudOwnedPersonalReportIntent(plan.IntentName));
             var replies = ResponsePlanToSocketMessagesMapper.Map(plan, finalizedTurn, session, emitSkillActions)
                 .Select(map => new WebSocketReply
                 {
@@ -2195,6 +2199,12 @@ public sealed class WebSocketTurnFinalizationService(
         var state = ReadAttribute(turn, PersonalReportOrchestrator.StateMetadataKey);
         return !string.IsNullOrWhiteSpace(state) &&
                !string.Equals(state, PersonalReportOrchestrator.IdleState, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsCloudOwnedPersonalReportIntent(string? intentName)
+    {
+        return !string.IsNullOrWhiteSpace(intentName) &&
+               intentName.StartsWith("personal_report_", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool ShouldHandleAsLocalNoInput(TurnContext turn)

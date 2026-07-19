@@ -399,6 +399,103 @@ public sealed partial class JiboInteractionService
         }
     }
 
+    private void SyncLoopPeopleFromTurn(TurnContext turn)
+    {
+        if (cloudStateStore is null) return;
+
+        var loopUsers = TryReadLoopUsersFromTurn(turn);
+        if (loopUsers.Count == 0) return;
+
+        var robotId = ResolveTurnRobotId(turn);
+        // Both fields store friendlyId (BE robotFriendlyId / Pegasus robotID) — never a shared serial.
+        var loop = cloudStateStore.AddLoop(
+            null,
+            ReadTenantAttribute(turn, "accountId"),
+            robotId,
+            robotId);
+        cloudStateStore.SyncPeopleFromLoopUsers(loop.LoopId, robotId, loopUsers);
+    }
+
+    private string ResolveTurnRobotId(TurnContext turn)
+    {
+        var friendlyId = ReadTenantAttribute(turn, "robotFriendlyId") ??
+                         ReadTenantAttribute(turn, "friendlyId") ??
+                         ReadTenantAttribute(turn, "robotID") ??
+                         ReadTenantAttribute(turn, "robotId");
+        if (!string.IsNullOrWhiteSpace(friendlyId))
+            return ResolveRegisteredFriendlyId(friendlyId);
+
+        if (SessionRobotIdentityBinder.TryReadGeneralRobotIdentity(
+                turn.Attributes.TryGetValue("context", out var context) ? context?.ToString() : null,
+                out var contextRobotId,
+                out _))
+            return ResolveRegisteredFriendlyId(contextRobotId);
+
+        if (!string.IsNullOrWhiteSpace(turn.DeviceId))
+            return ResolveRegisteredFriendlyId(turn.DeviceId);
+
+        var deviceAttr = ReadTenantAttribute(turn, "deviceId");
+        if (!string.IsNullOrWhiteSpace(deviceAttr))
+            return ResolveRegisteredFriendlyId(deviceAttr);
+
+        return cloudStateStore?.GetRobot().RobotId ?? "openjibo-robot";
+    }
+
+    private string ResolveRegisteredFriendlyId(string candidate)
+    {
+        var trimmed = candidate.Trim();
+        if (cloudStateStore is null)
+            return trimmed;
+
+        var device = cloudStateStore.FindDeviceByFriendlyId(trimmed);
+        if (device is not null && !string.IsNullOrWhiteSpace(device.RobotId))
+            return device.RobotId.Trim();
+
+        return trimmed;
+    }
+
+    private static IReadOnlyList<Domain.Models.LoopUserSnapshot> TryReadLoopUsersFromTurn(TurnContext turn)
+    {
+        if (!turn.Attributes.TryGetValue("context", out var contextValue) ||
+            contextValue is null ||
+            string.IsNullOrWhiteSpace(contextValue.ToString()))
+            return [];
+
+        try
+        {
+            using var document = JsonDocument.Parse(contextValue.ToString()!);
+            if (!document.RootElement.TryGetProperty("runtime", out var runtime) ||
+                runtime.ValueKind != JsonValueKind.Object ||
+                !runtime.TryGetProperty("loop", out var loop) ||
+                loop.ValueKind != JsonValueKind.Object ||
+                !loop.TryGetProperty("users", out var users) ||
+                users.ValueKind != JsonValueKind.Array)
+                return [];
+
+            var snapshots = new List<Domain.Models.LoopUserSnapshot>();
+            foreach (var user in users.EnumerateArray())
+            {
+                if (user.ValueKind != JsonValueKind.Object) continue;
+                var id = TryReadStringProperty(user, "id");
+                if (string.IsNullOrWhiteSpace(id)) continue;
+
+                snapshots.Add(new Domain.Models.LoopUserSnapshot(
+                    id,
+                    TryReadStringProperty(user, "firstName"),
+                    TryReadStringProperty(user, "lastName"),
+                    TryReadStringProperty(user, "accountId"),
+                    TryReadStringProperty(user, "nickname", "nickName"),
+                    TryReadStringProperty(user, "type")));
+            }
+
+            return snapshots;
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
     private static GreetingPresenceProfile ResolveGreetingPresenceProfile(TurnContext turn)
     {
         if (!turn.Attributes.TryGetValue("context", out var contextValue) ||

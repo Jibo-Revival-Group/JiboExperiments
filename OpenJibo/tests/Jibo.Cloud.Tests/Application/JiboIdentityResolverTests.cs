@@ -46,4 +46,88 @@ public sealed class JiboIdentityResolverTests
         Assert.Equal("BOJW-1000-0017-0820-0020", deviceId);
         Assert.Equal("Ghost-Instance-Onion-Silk", friendlyId);
     }
+
+    [Fact]
+    public void Resolve_DoesNotInheritSingletonDeviceId_ForUnregisteredFriendlyId()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            RobotId = "Bootstrap-Robot",
+            FriendlyName = "Bootstrap"
+        });
+
+        var (deviceId, friendlyId) = JiboIdentityResolver.Resolve(new TurnContext
+        {
+            DeviceId = "Jibo-One"
+        }, store);
+
+        Assert.Equal("Jibo-One", deviceId);
+        Assert.Equal("Jibo-One", friendlyId);
+        Assert.NotEqual("SHARED-SINGLETON-DEVICE", deviceId);
+    }
+
+    [Fact]
+    public void Resolve_PrefersContextGeneralRobotId_OverSingletonSessionDeviceId()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            RobotId = "Bootstrap-Robot",
+            FriendlyName = "Bootstrap"
+        });
+
+        var (deviceId, friendlyId) = JiboIdentityResolver.Resolve(new TurnContext
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = """{"general":{"accountID":"acct-1","robotID":"Ghost-Instance-Onion-Silk"}}"""
+            }
+        }, store);
+
+        Assert.Equal("Ghost-Instance-Onion-Silk", deviceId);
+        Assert.Equal("Ghost-Instance-Onion-Silk", friendlyId);
+    }
+
+    [Fact]
+    public void Resolve_UsesRuntimeLoopJiboId_WhenGeneralHasNoRobotId()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            RobotId = "Bootstrap-Robot",
+            FriendlyName = "Bootstrap"
+        });
+
+        var (deviceOne, friendlyOne) = JiboIdentityResolver.Resolve(new TurnContext
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] =
+                    """{"runtime":{"loop":{"loopId":"loop-one","jibo":{"id":"jibo-unit-one"},"users":[]}},"general":{"release":"1.9.2"}}"""
+            }
+        }, store);
+        var (deviceTwo, friendlyTwo) = JiboIdentityResolver.Resolve(new TurnContext
+        {
+            DeviceId = "SHARED-SINGLETON-DEVICE",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] =
+                    """{"runtime":{"loop":{"loopId":"loop-two","jibo":{"id":"jibo-unit-two"},"users":[]}},"general":{"release":"1.9.2"}}"""
+            }
+        }, store);
+
+        Assert.Equal("jibo-unit-one", deviceOne);
+        Assert.Equal("jibo-unit-one", friendlyOne);
+        Assert.Equal("jibo-unit-two", deviceTwo);
+        Assert.Equal("jibo-unit-two", friendlyTwo);
+        Assert.NotEqual(deviceOne, deviceTwo);
+        Assert.NotEqual("SHARED-SINGLETON-DEVICE", deviceOne);
+        Assert.NotEqual("SHARED-SINGLETON-DEVICE", deviceTwo);
+    }
 }

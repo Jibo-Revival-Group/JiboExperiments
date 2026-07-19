@@ -591,13 +591,13 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             ],
             CommuteNowReplies =
             [
-                "For your commute, it should take about {duration}.",
-                "If you head out now, it should take about {duration}."
+                "For your commute, it should take about ${skill.commute.durationMins} minutes.",
+                "If you head out now, it should take about ${skill.commute.durationMins} minutes."
             ],
             CommuteMinutesLeftReplies =
             [
-                "That's in about {minutes} minutes.",
-                "That's about {minutes} minutes from now."
+                "That's in about ${skill.commute.minsLeft} minutes.",
+                "That's about ${skill.commute.minsLeft} minutes from now."
             ],
             CommuteDepartTimeNormalReplies =
             [
@@ -654,7 +654,7 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
             ],
             NewsBriefings =
             [
-                "Here are your headlines. Space missions are preparing for new launches, climate and weather systems are staying active across the country, and AI tools keep pushing into everyday products.",
+                "Here's today's news. Space missions are preparing for new launches, climate and weather systems are staying active across the country, and AI tools keep pushing into everyday products.",
                 "Here is a quick news brief. Technology companies are still racing on AI, global leaders are trading policy updates, and science teams are sharing new research findings."
             ],
             GenericFallbackReplies =

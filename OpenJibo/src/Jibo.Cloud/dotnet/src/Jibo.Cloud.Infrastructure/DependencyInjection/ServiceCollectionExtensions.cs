@@ -107,8 +107,23 @@ public static class ServiceCollectionExtensions
             var catalogPath = Path.Combine(AppContext.BaseDirectory, "Content", "MeasurementConversionCatalog.json");
             return new MeasurementConversionCatalogLoader().LoadFromFile(catalogPath);
         });
+        services.AddHttpClient<IIcalFeedFetcher, IcalFeedFetcher>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            });
+        services.AddSingleton<IcalCalendarFeedInspector>();
+        services.AddSingleton<CloudStateCalendarReportProvider>();
         services.AddSingleton<ICalendarReportProvider>(provider =>
-            new CloudStateCalendarReportProvider(provider.GetRequiredService<ICloudStateStore>()));
+            new IcalCalendarReportProvider(
+                provider.GetRequiredService<IUserIntegrationStore>(),
+                provider.GetRequiredService<ICloudStateStore>(),
+                provider.GetRequiredService<IIcalFeedFetcher>(),
+                provider.GetRequiredService<CloudStateCalendarReportProvider>(),
+                provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<IcalCalendarReportProvider>>()));
         services.AddSingleton<ICommuteReportProvider>(provider =>
             new CloudStateCommuteReportProvider(provider.GetRequiredService<ICloudStateStore>()));
         var statePersistencePath = configuration?["OpenJibo:State:PersistencePath"]
@@ -221,6 +236,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<JiboVerificationService>();
         services.AddSingleton<PortalSessionService>();
         services.AddSingleton<HomeAssistantConnectionRegistry>();
+        services.AddSingleton<RobotPendingNotificationStore>();
+        services.AddSingleton<RobotNotificationRegistry>();
+        services.AddSingleton<LoopUpdatedPushService>();
         services.AddSingleton<HomeAssistantCommandService>();
 
         return services;

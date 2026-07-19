@@ -15,6 +15,14 @@ internal static class SocketKindResolver
         "localhost"
     };
 
+    private static readonly HashSet<string> HubListenPaths = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "/v1/listen",
+        "/listen",
+        "/v1/proactive",
+        "/proactive"
+    };
+
     internal static string Resolve(string host, PathString path)
     {
         if (string.Equals(host, ApiSocketHost, StringComparison.OrdinalIgnoreCase) ||
@@ -28,6 +36,37 @@ internal static class SocketKindResolver
         if (path.StartsWithSegments("/v1/homeassistant"))
             return "home-assistant";
 
+        // Self-hosted / LAN: Host is often the machine IP (or localhost) while the robot
+        // still opens the stock notification path /{token}. Classify that as api-socket so
+        // LoopUpdated can be pushed. Do not reclassify real neo-hub hosts (handled above).
+        if (IsNotificationTokenPath(path))
+            return "api-socket";
+
         return OpenJiboHosts.Contains(host) ? "openjibo" : "neo-hub-listen";
+    }
+
+    /// <summary>
+    /// Stock notification socket path is <c>/{token}</c> (e.g. <c>/token-Friendly-Id-...</c>),
+    /// not the hub listen/proactive routes.
+    /// </summary>
+    internal static bool IsNotificationTokenPath(PathString path)
+    {
+        var value = path.Value;
+        if (string.IsNullOrWhiteSpace(value) || value == "/")
+            return false;
+
+        if (path.StartsWithSegments("/v1/homeassistant"))
+            return false;
+
+        foreach (var hubPath in HubListenPaths)
+        {
+            if (path.StartsWithSegments(hubPath) ||
+                string.Equals(value.TrimEnd('/'), hubPath, StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
+
+        // Single path segment: /token-... or any opaque robot path token.
+        var trimmed = value.Trim('/');
+        return !string.IsNullOrWhiteSpace(trimmed) && !trimmed.Contains('/');
     }
 }

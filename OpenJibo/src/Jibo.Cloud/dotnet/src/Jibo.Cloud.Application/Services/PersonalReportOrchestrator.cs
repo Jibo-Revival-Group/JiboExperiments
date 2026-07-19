@@ -111,6 +111,7 @@ internal static partial class PersonalReportOrchestrator
         Func<TurnContext, string, CancellationToken, Task<JiboInteractionDecision>> buildWeatherDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCalendarDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCommuteDecisionAsync,
+        Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildNewsDecisionAsync,
         Func<TurnContext, PersonalMemoryTenantScope> tenantScopeResolver,
         CancellationToken cancellationToken)
     {
@@ -141,11 +142,7 @@ internal static partial class PersonalReportOrchestrator
                 ? "Would you like your personal report now?"
                 : $"{inlineToggleSummary} Would you like your personal report now?";
 
-            return new JiboInteractionDecision(
-                "personal_report_opt_in",
-                reply,
-                SkillPayload: BuildYesNoPromptPayload(),
-                ContextUpdates: contextUpdates);
+            return BuildYesNoPromptDecision("personal_report_opt_in", reply, contextUpdates);
         }
 
         if (string.IsNullOrWhiteSpace(loweredTranscript)) return BuildNoInputDecision(turn, state, toggles);
@@ -161,11 +158,10 @@ internal static partial class PersonalReportOrchestrator
                         var scope = tenantScopeResolver(turn);
                         var knownName = ReadString(turn, UserNameMetadataKey) ?? personalMemoryStore.GetName(scope);
                         if (!string.IsNullOrWhiteSpace(knownName))
-                            return new JiboInteractionDecision(
+                            return BuildYesNoPromptDecision(
                                 "personal_report_verify_user",
                                 $"I think this is {knownName}. Is that right?",
-                                SkillPayload: BuildYesNoPromptPayload(),
-                                ContextUpdates: BuildContextUpdates(
+                                BuildContextUpdates(
                                     AwaitingIdentityConfirmationState,
                                     0,
                                     0,
@@ -199,11 +195,10 @@ internal static partial class PersonalReportOrchestrator
                 }
 
                 if (!string.IsNullOrWhiteSpace(inlineToggleSummary))
-                    return new JiboInteractionDecision(
+                    return BuildYesNoPromptDecision(
                         "personal_report_opt_in",
                         $"{inlineToggleSummary} Would you like your personal report now?",
-                        SkillPayload: BuildYesNoPromptPayload(),
-                        ContextUpdates: BuildContextUpdates(
+                        BuildContextUpdates(
                             AwaitingOptInState,
                             0,
                             0,
@@ -240,7 +235,7 @@ internal static partial class PersonalReportOrchestrator
                 {
                     YesNoReply.Affirmative => await BuildDeliveredReportDecisionAsync(turn, catalog,
                         toggles, currentName, buildWeatherDecisionAsync, buildCalendarDecisionAsync,
-                        buildCommuteDecisionAsync, cancellationToken),
+                        buildCommuteDecisionAsync, buildNewsDecisionAsync, cancellationToken),
                     YesNoReply.Negative => new JiboInteractionDecision("personal_report_request_name",
                         "Okay, who is this?",
                         ContextUpdates: BuildContextUpdates(AwaitingIdentityNameState, 0, 0, toggles, null, false,
@@ -273,6 +268,7 @@ internal static partial class PersonalReportOrchestrator
                     buildWeatherDecisionAsync,
                     buildCalendarDecisionAsync,
                     buildCommuteDecisionAsync,
+                    buildNewsDecisionAsync,
                     cancellationToken);
             }
 
@@ -289,81 +285,111 @@ internal static partial class PersonalReportOrchestrator
         Func<TurnContext, string, CancellationToken, Task<JiboInteractionDecision>> buildWeatherDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCalendarDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCommuteDecisionAsync,
+        Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildNewsDecisionAsync,
         CancellationToken cancellationToken)
     {
-        var reportSections = new List<string>
-        {
-            RenderPersonalReportTemplate(
-                ChoosePersonalReportTemplate(
-                    catalog.PersonalReportKickOffReplies,
-                    "Okay. Here's your personal report."),
-                userName)
-        };
+        var spokenSections = new List<string>();
+        var sequenceSections = new List<IDictionary<string, object?>>();
         var serviceError = string.Empty;
         IDictionary<string, object?>? weatherSkillPayload = null;
+        IDictionary<string, object?>? newsSkillPayload = null;
 
+        var kickOff = RenderPersonalReportTemplate(
+            ChoosePersonalReportTemplate(
+                catalog.PersonalReportKickOffReplies,
+                "Okay. Here's your personal report."),
+            userName);
+
+        var weatherBlockParts = new List<string> { kickOff };
         if (toggles.WeatherEnabled)
         {
             var weatherDecision = await buildWeatherDecisionAsync(turn, "weather", cancellationToken);
             weatherSkillPayload = weatherDecision.SkillPayload;
-            reportSections.Add("Weather.");
-            reportSections.Add(weatherDecision.ReplyText);
+            if (!string.IsNullOrWhiteSpace(weatherDecision.ReplyText))
+                weatherBlockParts.Add(weatherDecision.ReplyText);
             if (IsWeatherErrorReply(weatherDecision.ReplyText)) serviceError = "weather";
         }
 
+        var weatherBlockText = string.Join(" ", weatherBlockParts);
+        spokenSections.Add(weatherBlockText);
+        sequenceSections.Add(BuildReportSequenceSection(
+            "kickoff_weather",
+            weatherBlockText,
+            "weather",
+            weatherSkillPayload is not null
+                ? weatherSkillPayload.TryGetValue("weather_icon", out var weatherIcon)
+                    ? weatherIcon?.ToString() ?? "cloudy"
+                    : "cloudy"
+                : null));
+
+        // Carry verified speaker name so per-member calendar feeds can resolve Zane vs Jon.
+        var memberScopedTurn = EnrichTurnWithReportIdentity(turn, userName);
+
         if (toggles.CalendarEnabled)
         {
-            var calendarReply = (await buildCalendarDecisionAsync(turn, cancellationToken)).ReplyText;
+            var calendarDecision = await buildCalendarDecisionAsync(memberScopedTurn, cancellationToken);
+            var calendarReply = calendarDecision.ReplyText;
             if (!string.IsNullOrWhiteSpace(calendarReply))
             {
-                reportSections.Add(calendarReply);
-
-                var calendarOutro = ChooseShortestTemplate(catalog.CalendarOutroReplies);
-                if (!string.IsNullOrWhiteSpace(calendarOutro))
-                    reportSections.Add(RenderPersonalReportTemplate(calendarOutro, userName));
+                // Full-report calendar never plays CalendarOutro (Pegasus single-skill only).
+                // Skip calendar GUI/hold for now — missing views.calendarEvents freezes the robot.
+                spokenSections.Add(calendarReply);
+                sequenceSections.Add(BuildReportSequenceSection("calendar", calendarReply));
             }
         }
 
         if (toggles.CommuteEnabled)
         {
-            var commuteReply = (await buildCommuteDecisionAsync(turn, cancellationToken)).ReplyText;
-            var commuteSnippet = ChooseFirstSentence(commuteReply);
-            if (!string.IsNullOrWhiteSpace(commuteSnippet))
-                reportSections.Add(commuteSnippet);
+            var commuteDecision = await buildCommuteDecisionAsync(memberScopedTurn, cancellationToken);
+            var commuteReply = commuteDecision.ReplyText;
+            if (!string.IsNullOrWhiteSpace(commuteReply))
+            {
+                spokenSections.Add(commuteReply.Trim());
+                var animMeta = commuteDecision.SkillPayload is not null &&
+                               commuteDecision.SkillPayload.TryGetValue("commute_anim_meta", out var meta)
+                    ? meta?.ToString()
+                    : "commute-normal, no-eye-end";
+                sequenceSections.Add(BuildReportSequenceSection(
+                    "commute",
+                    commuteReply.Trim(),
+                    "commute",
+                    animMeta,
+                    new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["hold_timeout"] = 6
+                    }));
+            }
         }
 
         if (toggles.NewsEnabled)
         {
-            reportSections.Add(
-                RenderReportSkillTemplate(
-                    ChooseReportSkillTemplate(
-                        catalog.NewsIntroReplies,
-                        catalog.NewsCategoryIntroReplies,
-                        "Here's today's news, from the associated press."),
-                    userName));
-            reportSections.Add(ChooseShortestBriefing(catalog.NewsBriefings));
-            reportSections.Add(
-                RenderReportSkillTemplate(
-                    ChooseReportSkillTemplate(
-                        catalog.NewsOutroReplies,
-                        [],
-                        "And that's what's new in the news."),
-                    userName));
+            var newsDecision = await buildNewsDecisionAsync(turn, cancellationToken);
+            newsSkillPayload = newsDecision.SkillPayload;
+            // Full-report news never plays NewsOutro (Pegasus single-skill only).
+            // Match Pegasus mim order: NewsIntro (news-intro) then one NewsHeadline (news-stinger) per story.
+            if (TryBuildPersonalReportNewsSections(
+                    newsDecision,
+                    newsSkillPayload,
+                    out var newsSpoken,
+                    out var newsSequenceSections))
+            {
+                spokenSections.Add(newsSpoken);
+                sequenceSections.AddRange(newsSequenceSections);
+            }
         }
 
-        reportSections.Add(
-            RenderPersonalReportTemplate(
-                ChoosePersonalReportTemplate(
-                    catalog.PersonalReportOutroReplies,
-                    "And that's your report for the day. I hope you had as much fun as I did."),
-                userName));
+        var outro = RenderPersonalReportTemplate(
+            ChoosePersonalReportOutroTemplate(catalog.PersonalReportOutroReplies, toggles),
+            userName);
+        spokenSections.Add(outro);
+        sequenceSections.Add(BuildReportSequenceSection("outro", outro));
 
-        var reportText = string.Join(" ", reportSections);
+        var reportText = string.Join(" ", spokenSections);
         return new JiboInteractionDecision(
             "personal_report_delivered",
             reportText,
             "report-skill",
-            BuildPersonalReportSkillPayload(reportText, weatherSkillPayload),
+            BuildPersonalReportSkillPayload(reportText, weatherSkillPayload, newsSkillPayload, sequenceSections),
             BuildContextUpdates(
                 IdleState,
                 0,
@@ -374,9 +400,132 @@ internal static partial class PersonalReportOrchestrator
                 serviceError));
     }
 
+    private static IDictionary<string, object?> BuildReportSequenceSection(
+        string kind,
+        string text,
+        string? animCat = null,
+        string? animMeta = null,
+        IDictionary<string, object?>? extraPayload = null)
+    {
+        var section = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["kind"] = kind,
+            ["text"] = text
+        };
+        if (!string.IsNullOrWhiteSpace(animCat)) section["anim_cat"] = animCat;
+        if (!string.IsNullOrWhiteSpace(animMeta)) section["anim_meta"] = animMeta;
+        if (extraPayload is null) return section;
+
+        foreach (var (key, value) in extraPayload)
+            if (!string.Equals(key, "esml", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(key, "skillId", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(key, "cloudSkill", StringComparison.OrdinalIgnoreCase) &&
+                !section.ContainsKey(key))
+                section[key] = value;
+
+        return section;
+    }
+
+    private static bool TryBuildPersonalReportNewsSections(
+        JiboInteractionDecision newsDecision,
+        IDictionary<string, object?>? newsSkillPayload,
+        out string spokenNews,
+        out List<IDictionary<string, object?>> sequenceSections)
+    {
+        spokenNews = string.Empty;
+        sequenceSections = [];
+
+        var headlineTitles = ExtractNewsHeadlineTitles(newsSkillPayload);
+        if (headlineTitles.Count > 0)
+        {
+            // Pegasus: NewsIntro with news-intro anim, then one NewsHeadline MIM per story.
+            var leadIn = "Here's today's news.";
+            var spokenParts = new List<string> { leadIn };
+            var newsHold = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["hold_timeout"] = 6
+            };
+            sequenceSections.Add(BuildReportSequenceSection(
+                "news_intro",
+                leadIn,
+                "news",
+                "news-intro, no-eye-end",
+                newsHold));
+
+            foreach (var title in headlineTitles)
+            {
+                var headlineText = title.EndsWith(".", StringComparison.Ordinal) ? title : $"{title}.";
+                spokenParts.Add(headlineText);
+                sequenceSections.Add(BuildReportSequenceSection(
+                    "news_headline",
+                    headlineText,
+                    "news",
+                    "news-stinger",
+                    newsHold));
+            }
+
+            spokenNews = string.Join(" ", spokenParts);
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(newsDecision.ReplyText)) return false;
+
+        var newsText = newsDecision.ReplyText.Trim();
+        spokenNews = newsText;
+        sequenceSections.Add(BuildReportSequenceSection(
+            "news",
+            newsText,
+            "news",
+            "news-stinger",
+            newsSkillPayload));
+        return true;
+    }
+
+    private static IReadOnlyList<string> ExtractNewsHeadlineTitles(IDictionary<string, object?>? newsSkillPayload)
+    {
+        if (newsSkillPayload is null ||
+            !newsSkillPayload.TryGetValue("news_headlines", out var raw) ||
+            raw is null)
+            return [];
+
+        var titles = new List<string>();
+        if (raw is IEnumerable<object?> objectItems)
+        {
+            foreach (var item in objectItems)
+            {
+                if (item is IDictionary<string, object?> dict &&
+                    dict.TryGetValue("title", out var titleObj) &&
+                    titleObj is string title &&
+                    !string.IsNullOrWhiteSpace(title))
+                    titles.Add(title.Trim());
+                else if (item is IReadOnlyDictionary<string, object?> readOnlyDict &&
+                         readOnlyDict.TryGetValue("title", out var readOnlyTitle) &&
+                         readOnlyTitle is string readOnlyTitleText &&
+                         !string.IsNullOrWhiteSpace(readOnlyTitleText))
+                    titles.Add(readOnlyTitleText.Trim());
+            }
+
+            return titles;
+        }
+
+        if (raw is System.Collections.IEnumerable enumerable)
+            foreach (var item in enumerable)
+            {
+                if (item is IDictionary<string, object?> dict &&
+                    dict.TryGetValue("title", out var titleObj) &&
+                    titleObj is string title &&
+                    !string.IsNullOrWhiteSpace(title))
+                    titles.Add(title.Trim());
+            }
+
+        return titles;
+    }
+
     private static IDictionary<string, object?> BuildPersonalReportSkillPayload(
         string reportText,
-        IDictionary<string, object?>? weatherSkillPayload)
+        IDictionary<string, object?>? weatherSkillPayload,
+        IDictionary<string, object?>? newsSkillPayload,
+        IReadOnlyList<IDictionary<string, object?>> sequenceSections)
     {
         var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -388,22 +537,67 @@ internal static partial class PersonalReportOrchestrator
             ["prompt_sub_category"] = "AN",
             ["esml"] =
                 $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeForEsml(reportText)}</es></speak>",
-            ["personal_report_report_text"] = reportText
+            ["personal_report_report_text"] = reportText,
+            ["personal_report_sections"] = sequenceSections
         };
 
-        if (weatherSkillPayload is null) return payload;
+        MergeSkillPayload(payload, weatherSkillPayload);
+        MergeSkillPayload(payload, newsSkillPayload);
+        return payload;
+    }
 
-        foreach (var (key, value) in weatherSkillPayload)
+    private static void MergeSkillPayload(
+        IDictionary<string, object?> payload,
+        IDictionary<string, object?>? skillPayload)
+    {
+        if (skillPayload is null) return;
+
+        foreach (var (key, value) in skillPayload)
             if (!string.Equals(key, "esml", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(key, "skillId", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(key, "cloudSkill", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(key, "mim_id", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(key, "mim_type", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(key, "prompt_id", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(key, "prompt_sub_category", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(key, "prompt_sub_category", StringComparison.OrdinalIgnoreCase) &&
+                !payload.ContainsKey(key))
                 payload[key] = value;
+    }
 
-        return payload;
+    private static string ChoosePersonalReportOutroTemplate(
+        IReadOnlyList<string> templates,
+        PersonalReportServiceToggles toggles)
+    {
+        const string configuredFallback =
+            "That wraps up your report for the day. Hope you have a good one.";
+        const string unconfiguredFallback =
+            "And that's the report. Next time I can make it more personal in the Jibo app.";
+
+        var isConfigured = toggles.WeatherEnabled ||
+                           toggles.CalendarEnabled ||
+                           toggles.CommuteEnabled ||
+                           toggles.NewsEnabled;
+        var filtered = templates
+            .Where(static template => !string.IsNullOrWhiteSpace(template) &&
+                                      !template.Contains("${dt.", StringComparison.OrdinalIgnoreCase))
+            .Where(template => isConfigured
+                ? !IsUnconfiguredOutroTemplate(template)
+                : IsUnconfiguredOutroTemplate(template))
+            .ToArray();
+
+        if (filtered.Length == 0)
+            return isConfigured ? configuredFallback : unconfiguredFallback;
+
+        return ChoosePersonalReportTemplate(filtered, isConfigured ? configuredFallback : unconfiguredFallback);
+    }
+
+    private static bool IsUnconfiguredOutroTemplate(string template)
+    {
+        return template.Contains("Jibo app", StringComparison.OrdinalIgnoreCase) ||
+               template.Contains("Loop tab", StringComparison.OrdinalIgnoreCase) ||
+               template.Contains("set that up", StringComparison.OrdinalIgnoreCase) ||
+               template.Contains("set <pitch", StringComparison.OrdinalIgnoreCase) ||
+               template.Contains("more personalized report", StringComparison.OrdinalIgnoreCase);
     }
 
     private static JiboInteractionDecision BuildNoInputDecision(
@@ -414,17 +608,25 @@ internal static partial class PersonalReportOrchestrator
         var noInputCount = Math.Max(0, ReadInt(turn, NoInputCountMetadataKey)) + 1;
         if (noInputCount >= MaxNoInputCount) return BuildDeclinedDecision(toggles);
 
+        var contextUpdates = BuildContextUpdates(
+            state,
+            ReadInt(turn, NoMatchCountMetadataKey),
+            noInputCount,
+            toggles,
+            ReadString(turn, UserNameMetadataKey),
+            ReadBool(turn, UserVerifiedMetadataKey) ?? false,
+            string.Empty);
+
+        if (IsYesNoPromptState(state))
+            return BuildYesNoPromptDecision(
+                "personal_report_no_input",
+                "I am still here. Do you want your personal report?",
+                contextUpdates);
+
         return new JiboInteractionDecision(
             "personal_report_no_input",
             "I am still here. Do you want your personal report?",
-            ContextUpdates: BuildContextUpdates(
-                state,
-                ReadInt(turn, NoMatchCountMetadataKey),
-                noInputCount,
-                toggles,
-                ReadString(turn, UserNameMetadataKey),
-                ReadBool(turn, UserVerifiedMetadataKey) ?? false,
-                string.Empty));
+            ContextUpdates: contextUpdates);
     }
 
     private static JiboInteractionDecision BuildNoMatchDecision(
@@ -438,17 +640,22 @@ internal static partial class PersonalReportOrchestrator
         var noMatchCount = Math.Max(0, ReadInt(turn, NoMatchCountMetadataKey)) + 1;
         if (noMatchCount >= MaxNoMatchCount) return BuildDeclinedDecision(toggles);
 
+        var contextUpdates = BuildContextUpdates(
+            state,
+            noMatchCount,
+            0,
+            toggles,
+            userName,
+            userVerified,
+            string.Empty);
+
+        if (IsYesNoPromptState(state))
+            return BuildYesNoPromptDecision("personal_report_no_match", repromptText, contextUpdates);
+
         return new JiboInteractionDecision(
             "personal_report_no_match",
             repromptText,
-            ContextUpdates: BuildContextUpdates(
-                state,
-                noMatchCount,
-                0,
-                toggles,
-                userName,
-                userVerified,
-                string.Empty));
+            ContextUpdates: contextUpdates);
     }
 
     private static JiboInteractionDecision BuildDeclinedDecision(PersonalReportServiceToggles toggles)
@@ -505,10 +712,33 @@ internal static partial class PersonalReportOrchestrator
         };
     }
 
+    private static bool IsYesNoPromptState(string state)
+    {
+        return string.Equals(state, AwaitingOptInState, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(state, AwaitingIdentityConfirmationState, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static JiboInteractionDecision BuildYesNoPromptDecision(
+        string intentName,
+        string reply,
+        IDictionary<string, object?> contextUpdates)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            reply,
+            "chitchat-skill",
+            BuildYesNoPromptPayload(),
+            contextUpdates);
+    }
+
     private static IDictionary<string, object?> BuildYesNoPromptPayload()
     {
         return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
+            ["mim_id"] = "runtime-chat",
+            ["mim_type"] = "question",
+            ["prompt_id"] = "RUNTIME_PROMPT",
+            ["prompt_sub_category"] = "Q",
             ["listen_contexts"] = new[] { "shared/yes_no" }
         };
     }
@@ -639,6 +869,36 @@ internal static partial class PersonalReportOrchestrator
         return toggles;
     }
 
+    private static TurnContext EnrichTurnWithReportIdentity(TurnContext turn, string userName)
+    {
+        var attributes = new Dictionary<string, object?>(turn.Attributes, StringComparer.OrdinalIgnoreCase)
+        {
+            [UserNameMetadataKey] = userName
+        };
+        return new TurnContext
+        {
+            TurnId = turn.TurnId,
+            SessionId = turn.SessionId,
+            TimestampUtc = turn.TimestampUtc,
+            InputMode = turn.InputMode,
+            SourceKind = turn.SourceKind,
+            WakePhrase = turn.WakePhrase,
+            RawTranscript = turn.RawTranscript,
+            NormalizedTranscript = turn.NormalizedTranscript,
+            DeviceId = turn.DeviceId,
+            HostName = turn.HostName,
+            RequestId = turn.RequestId,
+            ProtocolService = turn.ProtocolService,
+            ProtocolOperation = turn.ProtocolOperation,
+            FirmwareVersion = turn.FirmwareVersion,
+            ApplicationVersion = turn.ApplicationVersion,
+            Locale = turn.Locale,
+            TimeZone = turn.TimeZone,
+            IsFollowUpEligible = turn.IsFollowUpEligible,
+            Attributes = attributes
+        };
+    }
+
     private static string ReadState(TurnContext turn)
     {
         return ReadString(turn, StateMetadataKey) ?? IdleState;
@@ -758,39 +1018,6 @@ internal static partial class PersonalReportOrchestrator
             .Trim();
     }
 
-    private static string ChooseReportSkillTemplate(
-        IReadOnlyList<string> primaryTemplates,
-        IReadOnlyList<string> secondaryTemplates,
-        string fallback)
-    {
-        var primary = ChooseShortestTemplate(primaryTemplates);
-        if (!string.IsNullOrWhiteSpace(primary)) return primary;
-
-        var secondary = ChooseShortestTemplate(secondaryTemplates);
-        return !string.IsNullOrWhiteSpace(secondary) ? secondary : fallback;
-    }
-
-    private static string ChooseShortestBriefing(IReadOnlyList<string> briefings)
-    {
-        var selected = ChooseShortestTemplate(briefings);
-        if (string.IsNullOrWhiteSpace(selected)) return string.Empty;
-
-        var firstSentence = selected.Split(['.', '!', '?'], 2,
-                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .FirstOrDefault();
-        return string.IsNullOrWhiteSpace(firstSentence) ? selected : firstSentence;
-    }
-
-    private static string ChooseFirstSentence(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
-
-        var firstSentence = value.Split(['.', '!', '?'], 2,
-                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .FirstOrDefault();
-        return string.IsNullOrWhiteSpace(firstSentence) ? value.Trim() : firstSentence;
-    }
-
     private static string? ChooseShortestTemplate(IEnumerable<string> templates)
     {
         var selected = templates
@@ -799,15 +1026,6 @@ internal static partial class PersonalReportOrchestrator
             .FirstOrDefault();
 
         return selected;
-    }
-
-    private static string RenderReportSkillTemplate(string template, string userName)
-    {
-        return template
-            .Replace("${speaker}", userName, StringComparison.OrdinalIgnoreCase)
-            .Replace("${speaker}'s", $"{userName}'s", StringComparison.OrdinalIgnoreCase)
-            .Replace("  ", " ", StringComparison.Ordinal)
-            .Trim();
     }
 
     private static string EscapeForEsml(string value)

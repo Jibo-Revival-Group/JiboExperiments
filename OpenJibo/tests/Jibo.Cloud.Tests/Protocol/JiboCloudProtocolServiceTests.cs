@@ -1124,6 +1124,50 @@ public sealed class JiboCloudProtocolServiceTests
             signal.Value == "api.openjibo.com");
     }
 
+    [Fact]
+    public async Task SetupRobot_WithDeploymentSmokeRegistrationPersistsHostMappingsForVerification()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["X-OpenJibo-Registration-Source"] = "deployment-smoke"
+            },
+            BodyText =
+                """{"token":"smoke-token","id":"open-jibo-smoke-robot-123","targetMode":"open-jibo","rollbackSnapshotId":"rollback-smoke"}"""
+        });
+
+        Assert.Equal(200, result.StatusCode);
+
+        var robot = store.FindDeviceByFriendlyId("open-jibo-smoke-robot-123");
+        Assert.NotNull(robot);
+        Assert.Equal("api.openjibo.com", robot!.HostMappings["api.jibo.com"]);
+        Assert.Equal("api.openjibo.com", robot.HostMappings["api-socket.jibo.com"]);
+        Assert.Equal("api.openjibo.com", robot.HostMappings["neo-hub.jibo.com"]);
+
+        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "OOBE_20160715",
+            Operation = "VerifyConnection",
+            BodyText =
+                """{"token":"smoke-token","reportedConnectionHost":"api.openjibo.com","reportedHostMappings":{"api.jibo.com":"api.openjibo.com","api-socket.jibo.com":"api.openjibo.com","open-jibo-socket.openjibo.com":"api.openjibo.com","neo-hub.jibo.com":"api.openjibo.com","neohub.openjibo.com":"api.openjibo.com"}}"""
+        });
+
+        Assert.Equal(200, proof.StatusCode);
+        using var proofPayload = JsonDocument.Parse(proof.BodyText);
+        Assert.True(proofPayload.RootElement.GetProperty("connected").GetBoolean());
+        Assert.Empty(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray());
+    }
+
 
     [Fact]
     public async Task SetupRobot_WithPreparedTokenRejectsUnsafeBodyOverridesBeforeIdentityWrite()

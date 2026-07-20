@@ -47,6 +47,34 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task UpdateRobot_WithExplicitRegisteredId_BindsFollowingEmptyHubTokenToThatRobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        var authHandler = new CloudAuthProtocolHandler(store);
+        var service = new JiboCloudProtocolService(store, authHandler: authHandler);
+
+        authHandler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"Royal-Current-Sage-Canvas"}"""
+        });
+        await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Robot_20160225",
+            Operation = "UpdateRobot",
+            BodyText = """{"id":"Royal-Current-Sage-Canvas","payload":{"serialNumber":"BOJW-1000-0017-1114-0008"}}"""
+        });
+
+        var hubResult = authHandler.HandleAccount("CreateHubToken", new ProtocolEnvelope { BodyText = "{}" });
+        using var hubPayload = JsonDocument.Parse(hubResult.BodyText);
+        var hubToken = hubPayload.RootElement.GetProperty("token").GetString()!;
+
+        Assert.Equal("Royal-Current-Sage-Canvas", store.GetRobot().DeviceId);
+        Assert.Equal("Royal-Current-Sage-Canvas", store.FindSessionByToken(hubToken)?.DeviceId);
+    }
+
+    [Fact]
     public async Task CreateHubToken_ReturnsTokenAndExpiry()
     {
         var result = await _service.DispatchAsync(new ProtocolEnvelope

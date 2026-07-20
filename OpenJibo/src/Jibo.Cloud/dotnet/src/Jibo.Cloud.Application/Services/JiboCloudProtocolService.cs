@@ -1373,21 +1373,30 @@ public sealed class JiboCloudProtocolService(
 
         if (operation.Equals("UpdateRobot", StringComparison.OrdinalIgnoreCase))
         {
+            var body = envelope.TryParseBody();
+            var explicitRobotId = _configuredRobotId ?? ReadString(body, "id");
+            var registeredDevice = !string.IsNullOrWhiteSpace(explicitRobotId)
+                ? stateStore.FindDeviceByFriendlyId(explicitRobotId) ??
+                  stateStore.GetOrCreateDevice(explicitRobotId, envelope.FirmwareVersion, envelope.ApplicationVersion)
+                : robot;
             var updated = new DeviceRegistration
             {
-                DeviceId = robot.DeviceId,
-                RobotId = effectiveRobotId,
-                FriendlyName = robot.FriendlyName,
-                FirmwareVersion = envelope.FirmwareVersion ?? robot.FirmwareVersion,
-                ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
-                CertificateThumbprint = robot.CertificateThumbprint,
-                IssuedIdentityId = robot.IssuedIdentityId,
-                BuildHash = robot.BuildHash,
-                ConfigHash = robot.ConfigHash,
-                RegistrationSource = robot.RegistrationSource,
-                IsHidden = robot.IsHidden,
-                ArchivedUtc = robot.ArchivedUtc,
-                HostMappings = robot.HostMappings
+                // Physical clients identify themselves here before requesting an empty-body hub token.
+                // Promote that exact registered device so the following hub socket retains its real identity.
+                DeviceId = registeredDevice.DeviceId,
+                RobotId = explicitRobotId ?? registeredDevice.RobotId,
+                FriendlyName = registeredDevice.FriendlyName,
+                FirmwareVersion = envelope.FirmwareVersion ?? registeredDevice.FirmwareVersion,
+                ApplicationVersion = envelope.ApplicationVersion ?? registeredDevice.ApplicationVersion,
+                IsActive = registeredDevice.IsActive,
+                CertificateThumbprint = registeredDevice.CertificateThumbprint,
+                IssuedIdentityId = registeredDevice.IssuedIdentityId,
+                BuildHash = registeredDevice.BuildHash,
+                ConfigHash = registeredDevice.ConfigHash,
+                RegistrationSource = registeredDevice.RegistrationSource,
+                IsHidden = registeredDevice.IsHidden,
+                ArchivedUtc = registeredDevice.ArchivedUtc,
+                HostMappings = registeredDevice.HostMappings
             };
 
             stateStore.UpdateRobot(updated);

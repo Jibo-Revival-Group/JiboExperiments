@@ -11,6 +11,7 @@ linux_publish_script_path="scripts/cloud/publish-openjibo-managed.sh"
 linux_managed_script_path="scripts/cloud/deploy-openjibo-managed.sh"
 smoke_script_path="scripts/cloud/Invoke-CloudSmoke.ps1"
 linux_smoke_script_path="scripts/cloud/invoke-cloud-smoke.sh"
+dockerfile_path="Dockerfile"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
@@ -37,6 +38,7 @@ linux_publish_script_text="$(get_repo_file_text "$linux_publish_script_path")"
 linux_managed_script_text="$(get_repo_file_text "$linux_managed_script_path")"
 smoke_script_text="$(get_repo_file_text "$smoke_script_path")"
 linux_smoke_script_text="$(get_repo_file_text "$linux_smoke_script_path")"
+dockerfile_text="$(get_repo_file_text "$dockerfile_path")"
 
 required_foundation_markers=(
   "output keyVaultName string"
@@ -248,6 +250,13 @@ if [[ "$managed_script_text" != *"Location"* ]]; then
   echo "Managed deploy script is missing the regional override path." >&2
   exit 1
 fi
+
+for marker in "apt-get install -y --no-install-recommends ffmpeg" "/usr/bin/ffmpeg"; do
+  if [[ "$dockerfile_text$managed_text" != *"$marker"* ]]; then
+    echo "Managed deployment is missing the Azure STT ffmpeg contract marker: $marker" >&2
+    exit 1
+  fi
+done
 
 for forbidden_marker in "OPENJIBO_MEDIA_CONNECTION_STRING" "OPENJIBO_STATE_CONNECTION_STRING" "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING" "openjiboacr" "openjibokv" "-MediaConnectionString" "output storageConnectionString" "listKeys(storageAccount" "keyvault set-policy" "AZURE_SPEECH_SUBSCRIPTION_KEY" "--azure-speech-subscription-key"; do
   if [[ "$workflow_text" == *"$forbidden_marker"* ]]; then

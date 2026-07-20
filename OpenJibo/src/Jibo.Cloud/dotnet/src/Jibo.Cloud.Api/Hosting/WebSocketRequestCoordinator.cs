@@ -15,6 +15,8 @@ internal sealed class WebSocketRequestCoordinator(
     ICloudStateStore cloudStateStore,
     ILogger<WebSocketRequestCoordinator> logger)
 {
+    private static readonly TimeSpan TurnWatchdogInterval = TimeSpan.FromMilliseconds(250);
+
     /// <summary>
     /// Test helper constructor. Production DI injects the full primary constructor.
     /// </summary>
@@ -89,12 +91,42 @@ internal sealed class WebSocketRequestCoordinator(
 
         try
         {
+            Task<ReceivedSocketMessage>? pendingReceive = null;
+            var watchdogDelay = Task.Delay(TurnWatchdogInterval, context.RequestAborted);
             while (socket.State == WebSocketState.Open)
             {
                 ReceivedSocketMessage received;
                 try
                 {
-                    received = await ReceiveAsync(socket, context.RequestAborted);
+                    pendingReceive ??= ReceiveAsync(socket, context.RequestAborted);
+                    var completedTask = await Task.WhenAny(pendingReceive, watchdogDelay);
+                    if (completedTask != pendingReceive)
+                    {
+                        watchdogDelay = Task.Delay(TurnWatchdogInterval, context.RequestAborted);
+                        var idleEnvelope = CreateEnvelope(context, kind, token, connectionId);
+                        var idleReplies = await webSocketService.HandleIdleAsync(
+                            session,
+                            idleEnvelope,
+                            context.RequestAborted);
+                        if (idleReplies.Count > 0)
+                        {
+                            logger.LogInformation(
+                                "WebSocket turn watchdog reply batch ready kind={Kind} token={Token} replyCount={ReplyCount}",
+                                kind,
+                                token,
+                                idleReplies.Count);
+                            await SendRepliesAsync(socket, idleReplies, context.RequestAborted);
+                            await telemetrySink.RecordOutboundAsync(
+                                idleEnvelope,
+                                session,
+                                idleReplies,
+                                context.RequestAborted);
+                        }
+                        continue;
+                    }
+
+                    received = await pendingReceive;
+                    pendingReceive = null;
                     logger.LogDebug(
                         "WebSocket frame received kind={Kind} token={Token} messageType={MessageType} bytes={Bytes}",
                         kind,
@@ -136,15 +168,7 @@ internal sealed class WebSocketRequestCoordinator(
                     replies.Count);
                 await telemetrySink.RecordInboundAsync(envelope, session, SocketMessageTypeReader.Read(envelope.Text),
                     context.RequestAborted);
-                foreach (var reply in replies)
-                {
-                    if (string.IsNullOrWhiteSpace(reply.Text)) continue;
-
-                    if (reply.DelayMs > 0) await Task.Delay(reply.DelayMs, context.RequestAborted);
-
-                    var payload = Encoding.UTF8.GetBytes(reply.Text);
-                    await socket.SendAsync(payload, WebSocketMessageType.Text, true, context.RequestAborted);
-                }
+                await SendRepliesAsync(socket, replies, context.RequestAborted);
 
                 await telemetrySink.RecordOutboundAsync(envelope, session, replies, context.RequestAborted);
             }
@@ -279,6 +303,21 @@ internal sealed class WebSocketRequestCoordinator(
         } while (!result.EndOfMessage);
 
         return new ReceivedSocketMessage(result.MessageType, ms.ToArray());
+    }
+
+    private static async Task SendRepliesAsync(
+        WebSocket socket,
+        IReadOnlyList<WebSocketReply> replies,
+        CancellationToken cancellationToken)
+    {
+        foreach (var reply in replies)
+        {
+            if (string.IsNullOrWhiteSpace(reply.Text)) continue;
+            if (reply.DelayMs > 0) await Task.Delay(reply.DelayMs, cancellationToken);
+
+            var payload = Encoding.UTF8.GetBytes(reply.Text);
+            await socket.SendAsync(payload, WebSocketMessageType.Text, true, cancellationToken);
+        }
     }
 
     private sealed record ReceivedSocketMessage(WebSocketMessageType MessageType, byte[] Buffer);

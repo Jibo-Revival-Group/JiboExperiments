@@ -8,7 +8,8 @@ param(
     [string]$LinuxPublishScriptPath = "scripts/cloud/publish-openjibo-managed.sh",
     [string]$LinuxManagedScriptPath = "scripts/cloud/deploy-openjibo-managed.sh",
     [string]$SmokeScriptPath = "scripts/cloud/Invoke-CloudSmoke.ps1",
-    [string]$LinuxSmokeScriptPath = "scripts/cloud/invoke-cloud-smoke.sh"
+    [string]$LinuxSmokeScriptPath = "scripts/cloud/invoke-cloud-smoke.sh",
+    [string]$DockerfilePath = "Dockerfile"
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,6 +49,7 @@ $linuxPublishScriptText = Get-RepoFileText -RelativePath $LinuxPublishScriptPath
 $linuxManagedScriptText = Get-RepoFileText -RelativePath $LinuxManagedScriptPath
 $smokeScriptText = Get-RepoFileText -RelativePath $SmokeScriptPath
 $linuxSmokeScriptText = Get-RepoFileText -RelativePath $LinuxSmokeScriptPath
+$dockerfileText = Get-RepoFileText -RelativePath $DockerfilePath
 
 $requiredFoundationMarkers = @(
     "output keyVaultName string",
@@ -198,6 +200,8 @@ if ($linuxSmokeScriptText -match [regex]::Escape('"Host": "api.jibo.com"')) {
 
 Assert-ContainsMarker -Text $linuxManagedScriptText -Marker "--location" -FailurePrefix "Linux managed deploy script is missing the regional override path"
 Assert-ContainsMarker -Text $managedScriptText -Marker "Location" -FailurePrefix "Managed deploy script is missing the regional override path"
+Assert-ContainsMarker -Text $dockerfileText -Marker "apt-get install -y --no-install-recommends ffmpeg" -FailurePrefix "Managed image is missing ffmpeg"
+Assert-ContainsMarker -Text ($dockerfileText + $managedText) -Marker "/usr/bin/ffmpeg" -FailurePrefix "Managed deployment is missing the ffmpeg path contract"
 
 $forbiddenMarkers = @(
     "OPENJIBO_MEDIA_CONNECTION_STRING",

@@ -241,6 +241,9 @@ public sealed class AzureSpeechBufferedAudioSttStrategy(
         CancellationToken cancellationToken)
     {
         var endpoint = ResolveEndpoint(turn.Locale);
+        var requestTimeout = _options.AzureSpeechRequestTimeout > TimeSpan.Zero
+            ? _options.AzureSpeechRequestTimeout
+            : TimeSpan.FromSeconds(8);
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
         request.Headers.TryAddWithoutValidation("Ocp-Apim-Subscription-Key", _options.AzureSpeechSubscriptionKey);
         request.Content = new ByteArrayContent(await File.ReadAllBytesAsync(wavPath, cancellationToken));
@@ -248,40 +251,72 @@ public sealed class AzureSpeechBufferedAudioSttStrategy(
             "Content-Type",
             "audio/wav; codecs=\"audio/pcm\"; samplerate=16000");
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        var rawResponse = await response.Content.ReadAsStringAsync(cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(requestTimeout);
+
+        HttpResponseMessage response;
+        try
         {
-            logger.LogWarning(
-                "Azure STT request failed turnId={TurnId} statusCode={StatusCode} endpoint={Endpoint}",
+            response = await httpClient.SendAsync(request, timeoutCts.Token);
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning(ex,
+                "Azure STT request timed out turnId={TurnId} timeoutMs={TimeoutMs} endpoint={Endpoint}",
                 turn.TurnId,
-                (int)response.StatusCode,
+                (int)requestTimeout.TotalMilliseconds,
                 endpoint);
-            throw new InvalidOperationException(
-                $"Azure speech STT request failed with HTTP {(int)response.StatusCode} ({response.ReasonPhrase}).");
+            throw new TimeoutException(
+                $"Azure speech STT request timed out after {(int)requestTimeout.TotalMilliseconds} ms.", ex);
         }
 
-        if (string.IsNullOrWhiteSpace(rawResponse))
-            return new AzureSpeechResult(string.Empty, "empty-response", rawResponse);
+        using (response)
+        {
+            var rawResponse = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning(
+                    "Azure STT request failed turnId={TurnId} statusCode={StatusCode} endpoint={Endpoint} response={Response}",
+                    turn.TurnId,
+                    (int)response.StatusCode,
+                    endpoint,
+                    TruncateForLog(rawResponse));
+                throw new InvalidOperationException(
+                    $"Azure speech STT request failed with HTTP {(int)response.StatusCode} ({response.ReasonPhrase}).");
+            }
 
-        using var document = JsonDocument.Parse(rawResponse);
-        var root = document.RootElement;
+            if (string.IsNullOrWhiteSpace(rawResponse))
+                return new AzureSpeechResult(string.Empty, "empty-response", rawResponse);
 
-        var status = root.TryGetProperty("RecognitionStatus", out var statusElement) &&
-                     statusElement.ValueKind == JsonValueKind.String
-            ? statusElement.GetString() ?? string.Empty
-            : string.Empty;
-        var transcript = root.TryGetProperty("DisplayText", out var displayText) &&
-                         displayText.ValueKind == JsonValueKind.String
-            ? displayText.GetString() ?? string.Empty
-            : string.Empty;
+            using var document = JsonDocument.Parse(rawResponse);
+            var root = document.RootElement;
 
-        if (!string.Equals(status, "Success", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(status, "NoMatch", StringComparison.OrdinalIgnoreCase))
-            logger.LogDebug("Azure STT returned non-success recognition status {Status} for turnId={TurnId}", status,
-                turn.TurnId);
+            var status = root.TryGetProperty("RecognitionStatus", out var statusElement) &&
+                         statusElement.ValueKind == JsonValueKind.String
+                ? statusElement.GetString() ?? string.Empty
+                : string.Empty;
+            var transcript = root.TryGetProperty("DisplayText", out var displayText) &&
+                             displayText.ValueKind == JsonValueKind.String
+                ? displayText.GetString() ?? string.Empty
+                : string.Empty;
 
-        return new AzureSpeechResult(transcript, status, rawResponse);
+            if (!string.Equals(status, "Success", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(status, "NoMatch", StringComparison.OrdinalIgnoreCase))
+                logger.LogWarning(
+                    "Azure STT returned recognition status turnId={TurnId} status={Status} endpoint={Endpoint} response={Response}",
+                    turn.TurnId,
+                    status,
+                    endpoint,
+                    TruncateForLog(rawResponse));
+
+            return new AzureSpeechResult(transcript, status, rawResponse);
+        }
+    }
+
+    private static string TruncateForLog(string value)
+    {
+        const int maxLength = 512;
+        return value.Length <= maxLength ? value : value[..maxLength];
     }
 
     private string ResolveEndpoint(string? locale)

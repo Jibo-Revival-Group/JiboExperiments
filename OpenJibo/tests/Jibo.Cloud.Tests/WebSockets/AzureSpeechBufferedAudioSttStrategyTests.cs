@@ -212,6 +212,49 @@ public sealed class AzureSpeechBufferedAudioSttStrategyTests
         }
     }
 
+    [Fact]
+    public async Task TranscribeAsync_TimesOutHungAzureSpeechRequest()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"openjibo-stt-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var strategy = new AzureSpeechBufferedAudioSttStrategy(
+                new BufferedAudioSttOptions
+                {
+                    EnableAzureSpeech = true,
+                    FfmpegPath = "ffmpeg",
+                    AzureSpeechRegion = "eastus",
+                    AzureSpeechSubscriptionKey = "secret",
+                    AzureSpeechRequestTimeout = TimeSpan.FromMilliseconds(25),
+                    TempDirectory = tempDirectory
+                },
+                new FakeExternalProcessRunner(),
+                new HttpClient(new HangingHttpMessageHandler()),
+                NullLogger<AzureSpeechBufferedAudioSttStrategy>.Instance);
+
+            var turn = new TurnContext
+            {
+                TurnId = "turn-azure-stt-timeout",
+                Locale = "en-US",
+                Attributes = new Dictionary<string, object?>
+                {
+                    ["bufferedAudioBytes"] = 147,
+                    ["bufferedAudioFrames"] = new[] { BuildMinimalOggPage(), BuildAudioBearingPage() }
+                }
+            };
+
+            var exception = await Assert.ThrowsAsync<TimeoutException>(() => strategy.TranscribeAsync(turn));
+
+            Assert.Contains("25 ms", exception.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory)) Directory.Delete(tempDirectory, true);
+        }
+    }
+
     private static byte[] BuildMinimalOggPage()
     {
         return
@@ -291,6 +334,17 @@ public sealed class AzureSpeechBufferedAudioSttStrategyTests
         {
             RequestCount += 1;
             return Task.FromResult(_responseFactory(request));
+        }
+    }
+
+    private sealed class HangingHttpMessageHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            throw new InvalidOperationException("The cancellation token should end the simulated hung request.");
         }
     }
 }

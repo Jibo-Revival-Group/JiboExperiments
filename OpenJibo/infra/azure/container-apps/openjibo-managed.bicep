@@ -142,6 +142,10 @@ var azureSpeechEnvEntries = enableAzureSpeech ? [
     value: 'true'
   }
   {
+    name: 'OpenJibo__Stt__FfmpegPath'
+    value: '/usr/bin/ffmpeg'
+  }
+  {
     name: 'OpenJibo__Stt__AzureSpeechRegion'
     value: azureSpeechRegion
   }

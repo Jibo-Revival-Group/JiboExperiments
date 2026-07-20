@@ -203,6 +203,21 @@ public sealed class JiboWebSocketService(
         return marked;
     }
 
+    public async Task<IReadOnlyList<WebSocketReply>> HandleIdleAsync(
+        CloudSession session,
+        WebSocketMessageEnvelope envelope,
+        CancellationToken cancellationToken = default)
+    {
+        var replies = await turnFinalizationService.HandleIdleAsync(session, envelope, cancellationToken);
+        if (replies.Count > 0)
+            logger.LogInformation(
+                "WebSocket idle watchdog emitted replies session={SessionId} replyCount={ReplyCount} glsmPhase={GlsmPhase}",
+                session.SessionId,
+                replies.Count,
+                WebSocketTurnFinalizationService.ResolveGlsmPhase(session));
+        return replies;
+    }
+
     private static string ReadMessageType(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return "UNKNOWN";

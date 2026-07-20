@@ -84,6 +84,35 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task IdleWatchdog_ClosesStalledListenWithEos()
+    {
+        var envelope = new WebSocketMessageEnvelope
+        {
+            ConnectionId = "connection-idle-watchdog",
+            HostName = "neohub.openjibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-idle-watchdog-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-idle-watchdog","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        };
+
+        var setupReplies = await _service.HandleMessageAsync(envelope);
+        Assert.Empty(setupReplies);
+
+        var session = _store.FindSessionByToken(envelope.Token!);
+        Assert.NotNull(session);
+        session.TurnState.ListenOpenedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(10);
+
+        var replies = await _service.HandleIdleAsync(session, envelope);
+
+        Assert.Contains(replies, reply => string.Equals(ReadReplyType(reply), "EOS", StringComparison.Ordinal));
+        Assert.False(session.TurnState.AwaitingTurnCompletion);
+        Assert.False(session.TurnState.SawListen);
+        Assert.Equal("no-input", session.LastListenType);
+    }
+
+    [Fact]
     public async Task Listen_CloudVersion_DoesNotOpenFollowUpAndClosesLateTailListen()
     {
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope

@@ -786,10 +786,31 @@ public sealed class LocalWhisperCppBufferedAudioSttStrategyTests
                 null,
                 OperatingSystemPlatform.Windows));
 
-        Assert.Contains("local whisper.cpp STT", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("buffered-audio STT", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("OpenJibo:Stt:FfmpegPath", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("OpenJibo:Stt:WhisperCliPath", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("OpenJibo:Stt:WhisperModelPath", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ValidateResolvedDependencies_ThrowsWhenAzureSpeechFfmpegIsMissing()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            BufferedAudioSttPathResolver.ValidateResolvedDependencies(
+                new BufferedAudioSttOptions
+                {
+                    EnableAzureSpeech = true,
+                    FfmpegPath = @"Z:\definitely-missing\ffmpeg.exe"
+                },
+                _ => null,
+                _ => false,
+                null,
+                OperatingSystemPlatform.Windows));
+
+        Assert.Contains("buffered-audio STT", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OpenJibo:Stt:FfmpegPath", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("OpenJibo:Stt:WhisperCliPath", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("OpenJibo:Stt:WhisperModelPath", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed class FakeExternalProcessRunner(

@@ -56,6 +56,7 @@ public static class BufferedAudioSttPathResolver
             AzureSpeechRegion = source.AzureSpeechRegion,
             AzureSpeechSubscriptionKey = source.AzureSpeechSubscriptionKey,
             AzureSpeechEndpoint = source.AzureSpeechEndpoint,
+            AzureSpeechRequestTimeout = source.AzureSpeechRequestTimeout,
             WhisperLanguage = source.WhisperLanguage,
             TempDirectory = source.TempDirectory,
             CleanupTempFiles = source.CleanupTempFiles
@@ -138,24 +139,27 @@ public static class BufferedAudioSttPathResolver
         OperatingSystemPlatform platform)
     {
         var resolved = Resolve(source, getEnvironmentVariable, fileExists, homeDirectory, platform);
-        if (!resolved.EnableLocalWhisperCpp) return;
+        if (!resolved.EnableLocalWhisperCpp && !resolved.EnableAzureSpeech) return;
 
         var issues = new List<string>();
 
         if (!IsExecutableAvailable(resolved.FfmpegPath, getEnvironmentVariable, fileExists, platform))
             issues.Add(DescribeExecutableIssue("ffmpeg", resolved.FfmpegPath, "OpenJibo:Stt:FfmpegPath"));
 
-        if (!IsExecutableAvailable(resolved.WhisperCliPath, getEnvironmentVariable, fileExists, platform))
-            issues.Add(DescribeExecutableIssue("whisper-cli", resolved.WhisperCliPath,
-                "OpenJibo:Stt:WhisperCliPath"));
+        if (resolved.EnableLocalWhisperCpp)
+        {
+            if (!IsExecutableAvailable(resolved.WhisperCliPath, getEnvironmentVariable, fileExists, platform))
+                issues.Add(DescribeExecutableIssue("whisper-cli", resolved.WhisperCliPath,
+                    "OpenJibo:Stt:WhisperCliPath"));
 
-        if (!IsFileAvailable(resolved.WhisperModelPath, fileExists))
-            issues.Add(DescribeFileIssue(resolved.WhisperModelPath, "OpenJibo:Stt:WhisperModelPath"));
+            if (!IsFileAvailable(resolved.WhisperModelPath, fileExists))
+                issues.Add(DescribeFileIssue(resolved.WhisperModelPath, "OpenJibo:Stt:WhisperModelPath"));
+        }
 
         if (issues.Count == 0) return;
 
         throw new InvalidOperationException(
-            "OpenJibo is configured to use local whisper.cpp STT, but one or more required dependencies could not be resolved. " +
+            "OpenJibo is configured to use buffered-audio STT, but one or more required dependencies could not be resolved. " +
             "This often happens when the server is started under a different user account than the one that owns the tools, " +
             "for example via sudo. " +
             string.Join(" ", issues) +

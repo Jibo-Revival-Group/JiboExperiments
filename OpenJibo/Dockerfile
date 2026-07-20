@@ -27,6 +27,10 @@ WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/publish/api ./api
 COPY --from=build /app/publish/migrations ./migrations
 ENTRYPOINT ["dotnet"]

@@ -562,6 +562,30 @@ public sealed class WebSocketTurnFinalizationService(
         return [];
     }
 
+    public async Task<IReadOnlyList<WebSocketReply>> HandleIdleAsync(
+        CloudSession session,
+        WebSocketMessageEnvelope envelope,
+        CancellationToken cancellationToken = default)
+    {
+        var turnState = session.TurnState;
+        if (!turnState.AwaitingTurnCompletion) return [];
+
+        if (await TryCloseStalledListenAsNoInputAsync(session, envelope, "socket_idle", cancellationToken) is
+            { } stalledListenReplies)
+            return stalledListenReplies;
+
+        if (!ShouldAutoFinalize(session) && !ShouldEarlyFinalizeBufferedAudio(session)) return [];
+
+        turnState.LastAutoFinalizeAttemptUtc = DateTimeOffset.UtcNow;
+        logger.LogInformation(
+            "Turn socket-idle watchdog finalizing session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks}",
+            session.SessionId,
+            turnState.TransId,
+            turnState.BufferedAudioBytes,
+            turnState.BufferedAudioChunkCount);
+        return await FinalizeTurnAsync(session, envelope, "AUTO_FINALIZE", true, cancellationToken);
+    }
+
     private async Task<TurnContext> ResolveTranscriptAsync(TurnContext turn, CloudSession session,
         WebSocketMessageEnvelope envelope, CancellationToken cancellationToken)
     {

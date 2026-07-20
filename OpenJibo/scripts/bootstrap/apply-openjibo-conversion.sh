@@ -360,8 +360,12 @@ const backups = {
 
 const jetstream = readJson(jetstreamPath);
 const serverService = serverServicePath ? readJson(serverServicePath) : null;
-const currentRegion = readJson(credentialsPath).region || "api";
+const credentials = readJson(credentialsPath);
+const currentRegion = credentials.region || "api";
 const oobe = readJson(oobeConfigPath);
+const nextCredentialsRegion = (targetMode === "open-jibo" || targetMode === "open-jibo-ai")
+  ? "open-jibo"
+  : currentRegion;
 
 jetstream.HubClient = jetstream.HubClient || {};
 const regionSettings = jetstream.HubClient["region-settings"] || jetstream["region-settings"] || jetstream.regions || {};
@@ -402,10 +406,13 @@ oobe.openJiboConversion = {
   backupRoot,
 };
 
+credentials.region = nextCredentialsRegion;
+
 writeJson(jetstreamPath, jetstream);
 if (serverService && serverServicePath) {
   writeJson(serverServicePath, serverService);
 }
+writeJson(credentialsPath, credentials);
 writeJson(oobeConfigPath, oobe);
 
 const endpointReplacements = [
@@ -505,7 +512,7 @@ const applyManifest = {
   RollbackPlan: plan.RollbackPlan || [],
   Notes: [
     "This helper writes the minimal staged conversion state after taking backups.",
-    "The active credentials region remains on the proven value until first-boot conversion completes.",
+    "The active credentials region is rewritten to open-jibo so the robot boots against the converted routing state.",
     "The staged open-jibo region points to the canonical Open Jibo API hostname.",
   "The staged notification subsystem suffix points the robot at open-jibo-socket.openjibo.com while the deployment binds neohub.openjibo.com separately.",
   "The helper also normalizes bundled jibo-server-client region templates in live robot bundles, including api, service-scoped api, and socket host forms.",

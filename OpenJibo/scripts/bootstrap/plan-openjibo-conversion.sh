@@ -184,10 +184,10 @@ const proposedChanges = [
   },
   {
     File: "/var/jibo/credentials.json",
-    Action: "record the active region",
+    Action: "rewrite the active region for Open Jibo routing",
     Details: [
       "save the current stock region before any switch",
-      "switch the region field only after backups and validation",
+      "rewrite the region field to open-jibo during apply after backups and validation",
     ],
   },
   {

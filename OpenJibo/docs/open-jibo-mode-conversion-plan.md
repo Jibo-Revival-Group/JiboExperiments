@@ -273,7 +273,7 @@ Build scripts in layers:
    - snapshot files
    - add Open Jibo region/mode entries
    - stage the Open Jibo conversion marker and first-boot pending state
-   - keep the live credentials region on the proven baseline until onboarding completes
+   - rewrite the live credentials region to `open-jibo` during apply
    - install or update the Open Jibo skill
    - prepare rollback metadata for a clean restore path
 4. Verify

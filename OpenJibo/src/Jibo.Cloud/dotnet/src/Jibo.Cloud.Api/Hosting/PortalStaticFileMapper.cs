@@ -19,10 +19,17 @@ internal static class PortalStaticFileMapper
         app.MapGet("/portal/status/status.css", () => Serve(portalDirectory, "status/status.css", "text/css; charset=utf-8"));
         app.MapGet("/portal/status/status.js",
             () => Serve(portalDirectory, "status/status.js", "application/javascript; charset=utf-8"));
+        app.MapGet("/portal/admin/onboarding", () => Results.Redirect("/portal/admin/onboarding/index.html"));
+        app.MapGet("/portal/admin/onboarding/index.html",
+            () => Serve(portalDirectory, "admin/onboarding/index.html", "text/html; charset=utf-8"));
+        app.MapGet("/portal/admin/onboarding/onboarding.js",
+            () => Serve(portalDirectory, "admin/onboarding/onboarding.js", "application/javascript; charset=utf-8"));
+        app.MapGet("/portal/admin/harness", () => Results.Redirect("/portal/admin/harness/index.html"));
+        app.MapGet("/portal/admin/harness/index.html", () => Serve(harnessDirectory, "index.html", "text/html; charset=utf-8"));
 
-        app.MapGet("/harness", () => Results.Redirect("/harness/index.html"));
-        app.MapGet("/harness.html", () => Results.Redirect("/harness/index.html"));
-        app.MapGet("/harness/index.html", () => Serve(harnessDirectory, "index.html", "text/html; charset=utf-8"));
+        app.MapGet("/harness", () => Results.Redirect("/portal/admin/harness/index.html"));
+        app.MapGet("/harness.html", () => Results.Redirect("/portal/admin/harness/index.html"));
+        app.MapGet("/harness/index.html", () => Results.Redirect("/portal/admin/harness/index.html"));
         app.MapGet("/harness/harness.css", () => Serve(harnessDirectory, "harness.css", "text/css; charset=utf-8"));
         app.MapGet("/harness/harness.js",
             () => Serve(harnessDirectory, "harness.js", "application/javascript; charset=utf-8"));

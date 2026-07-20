@@ -1,3 +1,54 @@
+const ADMIN_SESSION_KEY = "openjibo_status_session";
+
+async function ensureAdminAccess() {
+  const token = localStorage.getItem(ADMIN_SESSION_KEY);
+  if (token) {
+    const response = await fetch("/api/portal/status/summary", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.ok) return true;
+  }
+
+  document.body.innerHTML = `
+    <main class="shell">
+      <section class="card">
+        <p class="eyebrow">OpenJibo Admin</p>
+        <h1>Robot harness access</h1>
+        <p class="lede">Enter the admin password to use robot protocol and conversion tools.</p>
+        <label for="adminPassword">Admin password<input id="adminPassword" type="password" autocomplete="current-password"></label>
+        <div class="actions"><button id="adminLogin" class="primary" type="button">Open harness</button></div>
+        <p id="adminStatus" class="status hidden"></p>
+      </section>
+    </main>`;
+
+  const login = async () => {
+    const password = document.getElementById("adminPassword").value;
+    const status = document.getElementById("adminStatus");
+    const response = await fetch("/api/portal/status/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      status.textContent = payload.error || "Admin login failed.";
+      status.className = "status error";
+      return;
+    }
+    localStorage.setItem(ADMIN_SESSION_KEY, payload.portalSessionToken);
+    window.location.reload();
+  };
+  document.getElementById("adminLogin").addEventListener("click", login);
+  document.getElementById("adminPassword").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") login();
+  });
+  document.getElementById("adminPassword").focus();
+  return false;
+}
+
+async function bootHarness() {
+  if (!await ensureAdminAccess()) return;
+
 const $ = (id) => document.getElementById(id);
 const responseBox = $("response");
 const statusBox = $("status");
@@ -125,3 +176,11 @@ $("runConversionSmoke").addEventListener("click", async () => {
 });
 
 loadPlan("AuditConversion");
+
+$("adminSignOut").addEventListener("click", () => {
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+  window.location.reload();
+});
+}
+
+void bootHarness();

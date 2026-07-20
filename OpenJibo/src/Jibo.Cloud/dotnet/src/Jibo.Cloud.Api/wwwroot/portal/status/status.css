@@ -108,6 +108,14 @@ body {
   padding: 1.1rem 1.25rem;
 }
 
+.status-shell .panel-header {
+  flex-wrap: wrap;
+}
+
+.status-shell .panel-header > div {
+  min-width: 0;
+}
+
 .table-wrap {
   overflow-x: auto;
   border-radius: 16px;
@@ -162,12 +170,19 @@ body {
 }
 
 .toggle-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
   color: var(--muted);
   font-size: 0.9rem;
   white-space: nowrap;
 }
 
 .toggle-control input {
+  width: auto;
+  margin: 0;
+  padding: 0;
   accent-color: var(--status-accent);
 }
 

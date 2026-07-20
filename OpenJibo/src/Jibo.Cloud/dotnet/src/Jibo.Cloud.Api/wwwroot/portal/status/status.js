@@ -221,7 +221,9 @@ async function renderStatus(message = "", tone = "success") {
             <p class="status-lede">Live socket presence, recent activity, and a clean fleet inventory.</p>
           </div>
           <div class="button-row" style="margin-top: 0;">
-            <a class="secondary-button" href="/portal">Portal dashboard</a>
+            <a class="secondary-button" href="/portal/admin/onboarding">Onboarding</a>
+            <a class="secondary-button" href="/portal/admin/harness">Harness</a>
+            <a class="secondary-button" href="/portal">Customer portal</a>
             <button class="button secondary" id="refreshButton" type="button">Refresh</button>
             <button class="button danger" id="logoutButton" type="button">Sign out</button>
           </div>

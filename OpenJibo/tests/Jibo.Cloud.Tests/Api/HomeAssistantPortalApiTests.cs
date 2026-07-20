@@ -316,6 +316,19 @@ public sealed class HomeAssistantPortalApiTests
         {
             BodyText = """{"deviceId":"live-hub-jibo"}"""
         });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "archived-live-jibo",
+            RobotId = "archived-live-jibo",
+            FriendlyName = "Archived Living Room Jibo",
+            RegistrationSource = RobotRegistrationSources.Physical,
+            IsHidden = true,
+            ArchivedUtc = DateTimeOffset.UtcNow
+        });
+        authHandler.HandleAccount("CreateHubToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"archived-live-jibo"}"""
+        });
 
         var loginResponse = await client.PostAsJsonAsync(
             "/api/portal/status/login",
@@ -331,7 +344,7 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
         var summary = await summaryResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(summary.GetProperty("fleet").GetProperty("registeredRobots").GetInt32() >= 1);
-        Assert.Equal(1, summary.GetProperty("fleet").GetProperty("hiddenRobots").GetInt32());
+        Assert.Equal(2, summary.GetProperty("fleet").GetProperty("hiddenRobots").GetInt32());
         Assert.True(summary.GetProperty("service").GetProperty("uptimeSeconds").GetInt64() >= 0);
         Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "physical-status-robot" &&
@@ -340,6 +353,10 @@ public sealed class HomeAssistantPortalApiTests
             robot.GetProperty("deviceId").GetString() == "live-hub-jibo" &&
             robot.GetProperty("presence").GetString() == "online" &&
             !robot.GetProperty("hasOpenSocket").GetBoolean());
+        Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
+            robot.GetProperty("deviceId").GetString() == "archived-live-jibo" &&
+            robot.GetProperty("isHidden").GetBoolean() &&
+            robot.GetProperty("presence").GetString() == "online");
 
         var archiveResponse = await client.PostAsJsonAsync(
             "/api/portal/status/robots/physical-status-robot/archive",
@@ -372,7 +389,7 @@ public sealed class HomeAssistantPortalApiTests
 
         var networkSummary = await (await client.GetAsync("/api/portal/status/summary"))
             .Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal(3, networkSummary.GetProperty("serverFleet").GetProperty("network")
+        Assert.Equal(4, networkSummary.GetProperty("serverFleet").GetProperty("network")
             .GetProperty("connectedRobots").GetInt32());
         Assert.Contains(networkSummary.GetProperty("serverFleet").GetProperty("servers").EnumerateArray(), server =>
             server.GetProperty("canonicalHost").GetString() == remoteServer.CanonicalHost);
@@ -590,6 +607,7 @@ public sealed class HomeAssistantPortalApiTests
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
+        await AuthenticateAdminAsync(client);
 
         var response = await client.GetAsync("/api/onboarding/trusted-servers");
 
@@ -622,6 +640,7 @@ public sealed class HomeAssistantPortalApiTests
 
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+        await AuthenticateAdminAsync(client);
 
         var registerResponse = await client.PostAsJsonAsync(
             "/api/portal/trusted-servers",
@@ -661,6 +680,7 @@ public sealed class HomeAssistantPortalApiTests
 
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+        await AuthenticateAdminAsync(client);
 
         var hybridResponse = await client.PostAsJsonAsync(
             "/api/portal/trusted-servers",
@@ -714,6 +734,7 @@ public sealed class HomeAssistantPortalApiTests
 
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+        await AuthenticateAdminAsync(client);
 
         await client.PostAsJsonAsync(
             "/api/portal/trusted-servers",
@@ -773,6 +794,7 @@ public sealed class HomeAssistantPortalApiTests
 
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+        await AuthenticateAdminAsync(client);
 
         var revokeResponse = await client.PostAsJsonAsync(
             "/api/portal/trusted-servers/lifecycle",
@@ -800,6 +822,7 @@ public sealed class HomeAssistantPortalApiTests
 
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+        await AuthenticateAdminAsync(client);
 
         var registerResponse = await client.PostAsJsonAsync(
             "/api/portal/trusted-servers",
@@ -830,6 +853,7 @@ public sealed class HomeAssistantPortalApiTests
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
+        await AuthenticateAdminAsync(client);
 
         var localResponse = await client.PostAsJsonAsync(
             "/api/onboarding/self-hosted/validate",
@@ -875,6 +899,7 @@ public sealed class HomeAssistantPortalApiTests
 
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
+        await AuthenticateAdminAsync(client);
 
         var admissionResponse = await client.PostAsJsonAsync(
             "/api/portal/trusted-servers",
@@ -898,10 +923,19 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
         Assert.Equal("application/json", exportResponse.Content.Headers.ContentType?.MediaType);
         var exportBody = await exportResponse.Content.ReadAsStringAsync();
-        Assert.Contains("\"exportedBy\": \"Ghost-Instance-Onion-Silk\"", exportBody);
+        Assert.Contains("\"exportedBy\": \"Portal Admin\"", exportBody);
         Assert.Contains("\"CanonicalHost\": \"export.example.openjibo.com\"", exportBody);
         Assert.Contains("\"Action\": \"admit\"", exportBody);
         Assert.Contains("\"SignatureKeyId\": \"open-jibo-local-trusted-server-admission-v1\"", exportBody);
+    }
+
+    private static async Task AuthenticateAdminAsync(HttpClient client)
+    {
+        var response = await client.PostAsJsonAsync("/api/portal/status/login", new { password = "test-admin-password" });
+        response.EnsureSuccessStatusCode();
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", payload.GetProperty("portalSessionToken").GetString());
     }
 
     private static async Task<JsonElement> ReadJsonFrameAsync(WebSocket socket)

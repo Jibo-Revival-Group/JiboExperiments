@@ -489,8 +489,6 @@ function bindPortalControls() {
 }
 
 async function renderLogin(message = "", isError = false) {
-  const trustedServersPanel = await renderTrustedServerDirectoryPanel();
-  const selfHostedPanel = await renderSelfHostedOnboardingPanel();
   app.innerHTML = `
     <div class="center-shell">
       <section class="card login-card">
@@ -507,11 +505,6 @@ async function renderLogin(message = "", isError = false) {
 
         ${message ? `<p class="status ${isError ? "error" : "success"}">${escapeHtml(message)}</p>` : ""}
       </section>
-
-      <div class="grid two">
-        ${trustedServersPanel}
-        ${selfHostedPanel}
-      </div>
     </div>
   `;
 
@@ -905,7 +898,6 @@ async function renderDashboard(message = "", tone = "success") {
 
   const identityGraphPanel = await renderIdentityGraphPanel();
   const adminPanel = await renderAdminPanel();
-  const trustedServerRegistryPanel = await renderTrustedServerRegistryPanel();
 
   app.innerHTML = `
     <div class="shell">
@@ -916,7 +908,6 @@ async function renderDashboard(message = "", tone = "success") {
           <p class="muted">Manage integrations for this robot.</p>
         </div>
         <div class="button-row" style="margin-top: 0;">
-          <a class="secondary-button" href="/portal/status">Open status page</a>
           <button class="button secondary" id="logoutButton" type="button">Sign out</button>
         </div>
       </header>
@@ -937,8 +928,6 @@ async function renderDashboard(message = "", tone = "success") {
       </div>
 
       ${adminPanel}
-
-      ${trustedServerRegistryPanel}
 
       ${identityGraphPanel}
 

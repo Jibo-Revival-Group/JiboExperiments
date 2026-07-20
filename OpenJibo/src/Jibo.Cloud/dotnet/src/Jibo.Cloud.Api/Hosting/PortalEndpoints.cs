@@ -28,8 +28,14 @@ internal static class PortalEndpoints
     internal static void MapPortalEndpoints(this WebApplication app)
     {
         app.MapGet("/api/onboarding/trusted-servers", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
             ICloudStateStore cloudStateStore) =>
         {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
             var servers = cloudStateStore.GetTrustedServers();
             return Results.Json(new
             {
@@ -87,7 +93,7 @@ internal static class PortalEndpoints
             ICloudStateStore cloudStateStore) =>
         {
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
-            if (session is null)
+            if (session is null || !IsAdminSession(session))
                 return Results.Unauthorized();
 
             if (string.IsNullOrWhiteSpace(request.CanonicalHost))
@@ -133,7 +139,7 @@ internal static class PortalEndpoints
             ICloudStateStore cloudStateStore) =>
         {
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
-            if (session is null)
+            if (session is null || !IsAdminSession(session))
                 return Results.Unauthorized();
 
             if (string.IsNullOrWhiteSpace(request.CanonicalHost))
@@ -204,8 +210,14 @@ internal static class PortalEndpoints
         });
 
         app.MapPost("/api/onboarding/self-hosted/validate", (
-            [FromBody] ValidateSelfHostedRequest request) =>
+            [FromBody] ValidateSelfHostedRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService) =>
         {
+            var session = ResolvePortalSession(httpRequest, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
             var mode = NormalizeSelfHostedMode(request.ServerMode);
             var hostname = NormalizeOnboardingHost(request.ServerHost ?? request.ServerUrl);
             var isLocal = IsLocalSelfHostedTarget(hostname);
@@ -245,7 +257,7 @@ internal static class PortalEndpoints
             ICloudStateStore cloudStateStore) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
-            if (session is null)
+            if (session is null || !IsAdminSession(session))
                 return Results.Unauthorized();
 
             var admissions = cloudStateStore.GetTrustedServerAdmissions();
@@ -1019,12 +1031,20 @@ internal static class PortalEndpoints
         using var process = Process.GetCurrentProcess();
         var processStartUtc = process.StartTime.ToUniversalTime();
         var allDevices = cloudStateStore.GetDevices();
-        var devices = allDevices.Where(device => includeHidden || !device.IsHidden).ToArray();
         var sessions = cloudStateStore.GetSessions();
         var recentSessions = sessions
             .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
             .ToArray();
         var liveConnections = robotPresenceRegistry.GetLiveConnections();
+        var devices = allDevices.Where(device =>
+            includeHidden ||
+            !device.IsHidden ||
+            // Keep test/deployment records out of the operational view, but never hide a
+            // real robot that is currently communicating just because its old record was archived.
+            (!IsSyntheticDevice(device) &&
+             (recentSessions.Any(session => SessionMatchesDevice(session, device)) ||
+              liveConnections.Any(connection => ConnectionMatchesDevice(connection, device)))))
+            .ToArray();
 
         var robots = devices
             .Select(device =>
@@ -1053,7 +1073,7 @@ internal static class PortalEndpoints
                     device.IsHidden,
                     device.ArchivedUtc,
                     registrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
-                    isSynthetic = RobotRegistrationSources.IsSynthetic(device.RegistrationSource),
+                    isSynthetic = IsSyntheticDevice(device),
                     presence,
                     connected = presence is "online" or "sleeping",
                     hasOpenSocket = deviceConnections.Length > 0,
@@ -1191,6 +1211,10 @@ internal static class PortalEndpoints
 
     private static bool ConnectionMatchesDevice(RobotPresenceConnection connection, DeviceRegistration device) =>
         connection.RobotKeys.Contains(device.DeviceId) || connection.RobotKeys.Contains(device.RobotId);
+
+    private static bool IsSyntheticDevice(DeviceRegistration device) =>
+        RobotRegistrationSources.IsSynthetic(
+            RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId));
 
     private static string? ReadSessionMetadata(CloudSession session, string key) =>
         session.Metadata.TryGetValue(key, out var value) ? value?.ToString() : null;

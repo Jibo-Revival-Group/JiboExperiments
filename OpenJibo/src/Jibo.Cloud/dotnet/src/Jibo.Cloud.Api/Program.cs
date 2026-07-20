@@ -42,6 +42,8 @@ builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 builder.Services.AddOpenJiboCloud(builder.Configuration);
 builder.Services.AddSingleton<HomeAssistantWebSocketHandler>();
 builder.Services.AddSingleton<WebSocketRequestCoordinator>();
+builder.Services.AddHttpClient("OpenJiboFleetPeerSync", client => client.Timeout = TimeSpan.FromSeconds(10));
+builder.Services.AddHostedService<FleetPeerSyncService>();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 

@@ -55,6 +55,7 @@ $mediaConnectionString = az keyvault secret show --vault-name $KeyVaultName --na
 $openWeatherApiKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-openweather-api-key --query value -o tsv
 $newsApiKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-newsapi-key --query value -o tsv
 $portalStatusPassword = az keyvault secret show --vault-name $KeyVaultName --name openjibo-portal-status-password --query value -o tsv
+$peerSyncSharedKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-peer-sync-shared-key --query value -o tsv
 
 function Get-PostgresServerNameFromConnectionString {
     param([string]$ConnectionString)
@@ -134,7 +135,8 @@ function Set-ContainerAppSecretsFromKeyVault {
         [string]$ContainerAppName,
         [string]$StateConnectionString,
         [string]$PersonalMemoryConnectionString,
-        [string]$PortalStatusPassword
+        [string]$PortalStatusPassword,
+        [string]$PeerSyncSharedKey
     )
 
     if ([string]::IsNullOrWhiteSpace($ContainerAppName)) {
@@ -154,6 +156,7 @@ function Set-ContainerAppSecretsFromKeyVault {
             "--secrets", "state-connection-string=$StateConnectionString",
             "personal-memory-connection-string=$PersonalMemoryConnectionString",
             "portal-status-password=$PortalStatusPassword",
+            "peer-sync-shared-key=$PeerSyncSharedKey",
             "--output", "none"
         ) `
         -Description "Container App secret refresh for '$ContainerAppName'" `
@@ -252,7 +255,8 @@ $arguments = @(
     "--parameters", "mediaConnectionString=$mediaConnectionString",
     "--parameters", "openWeatherApiKey=$openWeatherApiKey",
     "--parameters", "newsApiKey=$newsApiKey",
-    "--parameters", "portalStatusPassword=$portalStatusPassword"
+    "--parameters", "portalStatusPassword=$portalStatusPassword",
+    "--parameters", "peerSyncSharedKey=$peerSyncSharedKey"
 )
 
 if (-not [string]::IsNullOrWhiteSpace($Location)) {
@@ -365,7 +369,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 
 $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
 $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
-Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -PortalStatusPassword $portalStatusPassword
+Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -PortalStatusPassword $portalStatusPassword -PeerSyncSharedKey $peerSyncSharedKey
 Restart-ContainerAppRevision -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value
 Start-Sleep -Seconds 20
 

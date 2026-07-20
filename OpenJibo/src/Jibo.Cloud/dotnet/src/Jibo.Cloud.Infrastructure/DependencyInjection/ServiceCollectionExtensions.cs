@@ -239,6 +239,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<RobotPendingNotificationStore>();
         services.AddSingleton<RobotNotificationRegistry>();
         services.AddSingleton<RobotPresenceRegistry>();
+        services.AddSingleton(provider => new OpenJiboServerIdentity(
+            configuration?["OpenJibo:CanonicalApiHostname"]));
+        services.AddSingleton<FleetNetworkPresenceRegistry>();
         services.AddSingleton<LoopUpdatedPushService>();
         services.AddSingleton<HomeAssistantCommandService>();
 

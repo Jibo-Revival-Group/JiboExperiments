@@ -204,6 +204,9 @@ async function renderStatus(message = "", tone = "success") {
   }
 
   const fleet = summary.fleet || {};
+  const serverFleet = summary.serverFleet || {};
+  const localServer = serverFleet.localServer || {};
+  const networkFleet = serverFleet.network || {};
   const service = summary.service || {};
   const robots = summary.robots || [];
   const recentSessions = summary.recentSessions || [];
@@ -228,6 +231,7 @@ async function renderStatus(message = "", tone = "success") {
           <span class="badge success">${escapeHtml(fleet.connectedRobots ?? 0)} online</span>
           <span class="badge neutral">${escapeHtml(fleet.sleepingRobots ?? 0)} sleeping</span>
           <span class="badge neutral">${escapeHtml(fleet.recentlySeenRobots ?? 0)} recently seen</span>
+          <span class="badge neutral">${escapeHtml(networkFleet.connectedRobots ?? 0)} network online</span>
           <span class="badge neutral">${escapeHtml(fleet.registeredRobots ?? 0)} registered</span>
           <span class="badge warning">${escapeHtml(fleet.hiddenRobots ?? 0)} archived</span>
           <span class="badge warning">${escapeHtml(fleet.staleSessions ?? 0)} stale sessions</span>
@@ -251,14 +255,15 @@ async function renderStatus(message = "", tone = "success") {
             <span class="detail">Started ${formatDate(service.startedAtUtc)}.</span>
           </div>
           <div class="stat-card">
-            <span class="label">Heartbeat age</span>
-            <span class="value">${formatFloat(fleet.averageHeartbeatAgeSeconds, 0)}s</span>
-            <span class="detail">Average of live sessions.</span>
+            <span class="label">Network fleet</span>
+            <span class="value">${networkFleet.connectedRobots ?? 0}</span>
+            <span class="detail">${networkFleet.reportingServers ?? 0}/${networkFleet.knownServers ?? 0} trusted servers reporting.</span>
           </div>
         </div>
 
         <div class="status-footer">
           <span>Generated ${formatDate(summary.generatedAtUtc)}</span>
+          <span>This server ${escapeHtml(localServer.canonicalHost || "—")} · ${localServer.connectedRobots ?? 0} robots</span>
           <span>Persistence rev ${escapeHtml(summary.persistence?.revision ?? "—")}</span>
         </div>
       </section>
@@ -268,7 +273,7 @@ async function renderStatus(message = "", tone = "success") {
           <div class="panel-header">
             <div>
               <p class="eyebrow">Fleet</p>
-              <h2>Robot inventory</h2>
+              <h2>Robot inventory on this server</h2>
             </div>
             <label class="toggle-control"><input id="includeHiddenToggle" type="checkbox" ${includeHidden ? "checked" : ""}> Show archived</label>
           </div>

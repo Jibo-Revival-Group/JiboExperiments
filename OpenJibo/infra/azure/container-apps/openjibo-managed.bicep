@@ -73,6 +73,10 @@ param newsApiKey string = ''
 @secure()
 param portalStatusPassword string = ''
 
+@description('Shared HMAC key used by trusted OpenJibo servers to exchange fleet presence reports.')
+@secure()
+param peerSyncSharedKey string = ''
+
 @description('Minimum number of replicas for the runtime container.')
 param minReplicas int = 1
 
@@ -134,6 +138,10 @@ var managedSecrets = concat([
   {
     name: 'portal-status-password'
     value: portalStatusPassword
+  }
+  {
+    name: 'peer-sync-shared-key'
+    value: peerSyncSharedKey
   }
 ])
 var azureSpeechEnvEntries = enableAzureSpeech ? [
@@ -250,6 +258,10 @@ var managedEnvVars = concat([
   {
     name: 'OpenJibo__Portal__StatusPassword'
     secretRef: 'portal-status-password'
+  }
+  {
+    name: 'OpenJibo__FleetNetwork__PeerSyncSharedKey'
+    secretRef: 'peer-sync-shared-key'
   }
 ], azureSpeechEnvEntries)
 

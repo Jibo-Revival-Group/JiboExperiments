@@ -2,10 +2,12 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
+using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Domain.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -340,6 +342,54 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Contains(archivedSummary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "physical-status-robot" &&
             robot.GetProperty("isHidden").GetBoolean());
+
+        var remoteServer = store.UpsertTrustedServer(new TrustedServerRecord
+        {
+            CanonicalHost = "fleet.example.openjibo.com",
+            DisplayName = "Fleet server",
+            ServerKind = "managed",
+            IsActive = true,
+            ParticipatesInCloudSync = true
+        });
+        var reportResponse = await client.PostAsJsonAsync("/api/portal/status/network/reports", new
+        {
+            serverId = remoteServer.ServerId,
+            canonicalHost = remoteServer.CanonicalHost,
+            instanceId = "fleet-server-1",
+            connectedRobotIds = new[] { "remote-jibo-001", "remote-jibo-002" },
+            connectionCount = 3
+        });
+        Assert.Equal(HttpStatusCode.OK, reportResponse.StatusCode);
+
+        var networkSummary = await (await client.GetAsync("/api/portal/status/summary"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, networkSummary.GetProperty("serverFleet").GetProperty("network")
+            .GetProperty("connectedRobots").GetInt32());
+        Assert.Contains(networkSummary.GetProperty("serverFleet").GetProperty("servers").EnumerateArray(), server =>
+            server.GetProperty("canonicalHost").GetString() == remoteServer.CanonicalHost);
+
+        var peerPayload = new FleetPeerPresencePayload(
+            remoteServer.ServerId,
+            remoteServer.CanonicalHost,
+            "fleet-server-2",
+            new[] { "remote-jibo-003" },
+            1,
+            DateTimeOffset.UtcNow);
+        var peerPayloadBytes = JsonSerializer.SerializeToUtf8Bytes(peerPayload);
+        var peerPayloadHash = Convert.ToHexString(SHA256.HashData(peerPayloadBytes)).ToLowerInvariant();
+        var peerTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+        using var peerRequest = new HttpRequestMessage(HttpMethod.Post, "/api/network/fleet-presence")
+        {
+            Content = new ByteArrayContent(peerPayloadBytes)
+        };
+        peerRequest.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        peerRequest.Headers.Add(FleetPeerSyncAuthentication.ServerIdHeader, remoteServer.ServerId);
+        peerRequest.Headers.Add(FleetPeerSyncAuthentication.TimestampHeader, peerTimestamp);
+        peerRequest.Headers.Add(FleetPeerSyncAuthentication.PayloadHashHeader, peerPayloadHash);
+        peerRequest.Headers.Add(FleetPeerSyncAuthentication.SignatureHeader,
+            FleetPeerSyncAuthentication.Sign(remoteServer.ServerId, peerTimestamp, peerPayloadHash, "test-peer-key"));
+        var peerResponse = await client.SendAsync(peerRequest);
+        Assert.Equal(HttpStatusCode.OK, peerResponse.StatusCode);
     }
 
     [Fact]
@@ -894,6 +944,7 @@ public sealed class HomeAssistantPortalApiTests
                     Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
                 builder.UseSetting("OpenJibo:Portal:StatusPassword", "test-admin-password");
+                builder.UseSetting("OpenJibo:FleetNetwork:PeerSyncSharedKey", "test-peer-key");
             });
     }
 }

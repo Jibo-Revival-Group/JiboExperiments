@@ -866,7 +866,9 @@ internal static class PortalEndpoints
             HttpRequest request,
             PortalSessionService portalSessionService,
             ICloudStateStore cloudStateStore,
-            RobotPresenceRegistry robotPresenceRegistry) =>
+            RobotPresenceRegistry robotPresenceRegistry,
+            FleetNetworkPresenceRegistry fleetNetworkPresenceRegistry,
+            OpenJiboServerIdentity serverIdentity) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session))
@@ -874,7 +876,8 @@ internal static class PortalEndpoints
 
             var includeHidden = bool.TryParse(request.Query["includeHidden"], out var requestedIncludeHidden) &&
                                 requestedIncludeHidden;
-            return Results.Json(BuildStatusSummaryPayload(cloudStateStore, robotPresenceRegistry, includeHidden));
+            return Results.Json(BuildStatusSummaryPayload(cloudStateStore, robotPresenceRegistry,
+                fleetNetworkPresenceRegistry, serverIdentity, includeHidden));
         });
 
         app.MapPost("/api/portal/status/robots/{deviceId}/archive", (
@@ -897,6 +900,84 @@ internal static class PortalEndpoints
             var updated = CopyDevice(device, isHidden, isHidden ? DateTimeOffset.UtcNow : null);
             cloudStateStore.UpsertDevice(updated);
             return Results.Json(new { ok = true, deviceId = updated.DeviceId, hidden = updated.IsHidden });
+        });
+
+        app.MapPost("/api/portal/status/network/reports", (
+            [FromBody] FleetServerPresenceReportRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore,
+            FleetNetworkPresenceRegistry fleetNetworkPresenceRegistry) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(request.ServerId) || string.IsNullOrWhiteSpace(request.CanonicalHost))
+                return Results.BadRequest(new { error = "serverId and canonicalHost are required." });
+
+            var trustedServer = cloudStateStore.FindTrustedServer(request.CanonicalHost);
+            if (trustedServer is null || !trustedServer.IsActive || !trustedServer.ParticipatesInCloudSync ||
+                !trustedServer.ServerId.Equals(request.ServerId, StringComparison.OrdinalIgnoreCase))
+                return Results.BadRequest(new { error = "Reports require an active trusted cloud-sync server." });
+
+            var report = new FleetServerPresenceReport(
+                trustedServer.ServerId,
+                trustedServer.CanonicalHost,
+                request.InstanceId?.Trim() ?? string.Empty,
+                request.ConnectedRobotIds ?? [],
+                request.ConnectionCount ?? 0,
+                DateTimeOffset.UtcNow);
+            fleetNetworkPresenceRegistry.Report(report);
+            return Results.Json(new { ok = true, report });
+        });
+
+        app.MapPost("/api/network/fleet-presence", (
+            [FromBody] FleetPeerPresencePayload payload,
+            HttpRequest request,
+            IConfiguration configuration,
+            ICloudStateStore cloudStateStore,
+            FleetNetworkPresenceRegistry fleetNetworkPresenceRegistry) =>
+        {
+            var sharedKey = configuration["OpenJibo:FleetNetwork:PeerSyncSharedKey"];
+            if (string.IsNullOrWhiteSpace(sharedKey))
+                return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+
+            var senderId = request.Headers[FleetPeerSyncAuthentication.ServerIdHeader].FirstOrDefault();
+            var timestamp = request.Headers[FleetPeerSyncAuthentication.TimestampHeader].FirstOrDefault();
+            var suppliedHash = request.Headers[FleetPeerSyncAuthentication.PayloadHashHeader].FirstOrDefault();
+            var signature = request.Headers[FleetPeerSyncAuthentication.SignatureHeader].FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(senderId) || string.IsNullOrWhiteSpace(timestamp) ||
+                string.IsNullOrWhiteSpace(suppliedHash) || string.IsNullOrWhiteSpace(signature) ||
+                !senderId.Equals(payload.ServerId, StringComparison.OrdinalIgnoreCase) ||
+                !long.TryParse(timestamp, out var timestampSeconds))
+                return Results.Unauthorized();
+
+            var signedAtUtc = DateTimeOffset.FromUnixTimeSeconds(timestampSeconds);
+            if (Math.Abs((DateTimeOffset.UtcNow - signedAtUtc).TotalMinutes) > 2)
+                return Results.Unauthorized();
+
+            var payloadBytes = JsonSerializer.SerializeToUtf8Bytes(payload);
+            var computedHash = Convert.ToHexString(SHA256.HashData(payloadBytes)).ToLowerInvariant();
+            if (!computedHash.Equals(suppliedHash, StringComparison.OrdinalIgnoreCase) ||
+                !FleetPeerSyncAuthentication.Verify(senderId, timestamp, computedHash, signature, sharedKey))
+                return Results.Unauthorized();
+
+            var trustedServer = cloudStateStore.FindTrustedServer(payload.CanonicalHost);
+            // Trusted-server records may have a locally generated ServerId. The canonical host is the
+            // cross-deployment identity, and the signed sender id must agree with the payload.
+            if (trustedServer is null || !trustedServer.IsActive || !trustedServer.ParticipatesInCloudSync)
+                return Results.Forbid();
+
+            var report = new FleetServerPresenceReport(
+                trustedServer.ServerId,
+                trustedServer.CanonicalHost,
+                payload.InstanceId?.Trim() ?? string.Empty,
+                payload.ConnectedRobotIds ?? [],
+                payload.ConnectionCount,
+                DateTimeOffset.UtcNow);
+            fleetNetworkPresenceRegistry.Report(report);
+            return Results.Json(new { ok = true, report });
         });
 
         app.MapPost("/api/portal/logout", (
@@ -930,7 +1011,8 @@ internal static class PortalEndpoints
     }
 
     private static object BuildStatusSummaryPayload(ICloudStateStore cloudStateStore,
-        RobotPresenceRegistry robotPresenceRegistry, bool includeHidden)
+        RobotPresenceRegistry robotPresenceRegistry, FleetNetworkPresenceRegistry fleetNetworkPresenceRegistry,
+        OpenJiboServerIdentity serverIdentity, bool includeHidden)
     {
         var now = DateTimeOffset.UtcNow;
         using var process = Process.GetCurrentProcess();
@@ -942,6 +1024,27 @@ internal static class PortalEndpoints
             .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
             .ToArray();
         var liveConnections = robotPresenceRegistry.GetLiveConnections();
+        var localConnectedRobotIds = devices
+            .Where(device => liveConnections.Any(connection => ConnectionMatchesDevice(connection, device)))
+            .Select(device => device.DeviceId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        fleetNetworkPresenceRegistry.Report(new FleetServerPresenceReport(
+            serverIdentity.ServerId,
+            serverIdentity.CanonicalHost,
+            serverIdentity.InstanceId,
+            localConnectedRobotIds,
+            liveConnections.Count,
+            now,
+            IsLocal: true));
+        var serverReports = fleetNetworkPresenceRegistry.GetFreshReports(TimeSpan.FromMinutes(2), now);
+        var networkConnectedRobotIds = serverReports
+            .SelectMany(report => report.ConnectedRobotIds)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var trustedCloudSyncServers = cloudStateStore.GetTrustedServers()
+            .Where(server => server.IsActive && server.ParticipatesInCloudSync)
+            .ToArray();
 
         var robots = devices
             .Select(device =>
@@ -1030,6 +1133,35 @@ internal static class PortalEndpoints
                 averageHeartbeatAgeSeconds = recentSessions.Length > 0
                     ? recentSessions.Average(session => (now - session.LastSeenUtc).TotalSeconds)
                     : (double?)null
+            },
+            serverFleet = new
+            {
+                localServer = new
+                {
+                    serverIdentity.ServerId,
+                    serverIdentity.CanonicalHost,
+                    serverIdentity.InstanceId,
+                    connectedRobots = localConnectedRobotIds.Length,
+                    liveConnections = liveConnections.Count
+                },
+                network = new
+                {
+                    knownServers = trustedCloudSyncServers.Length,
+                    reportingServers = serverReports.Count,
+                    connectedRobots = networkConnectedRobotIds.Length,
+                    reportFreshnessSeconds = 120
+                },
+                servers = serverReports.Select(report => new
+                {
+                    report.ServerId,
+                    report.CanonicalHost,
+                    report.InstanceId,
+                    report.IsLocal,
+                    connectedRobots = report.ConnectedRobotIds.Count,
+                    report.ConnectionCount,
+                    report.ReportedAtUtc,
+                    reportAgeSeconds = (now - report.ReportedAtUtc).TotalSeconds
+                })
             },
             robots,
             recentSessions = recentSessions
@@ -1537,6 +1669,14 @@ internal static class PortalEndpoints
     private sealed record AdminStatusLoginRequest(string? Password);
 
     private sealed record ArchiveStatusRobotRequest(string? PortalSessionToken, bool Hidden);
+
+    private sealed record FleetServerPresenceReportRequest(
+        string? PortalSessionToken,
+        string? ServerId,
+        string? CanonicalHost,
+        string? InstanceId,
+        string[]? ConnectedRobotIds,
+        int? ConnectionCount);
 
     private sealed record UpsertTrustedServerRequest(
         string? PortalSessionToken,

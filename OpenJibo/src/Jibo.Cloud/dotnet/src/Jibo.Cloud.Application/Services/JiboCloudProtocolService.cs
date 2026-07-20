@@ -443,26 +443,28 @@ public sealed class JiboCloudProtocolService(
         var isDeploymentSmoke = RobotRegistrationSources.Normalize(registeredDevice.RegistrationSource,
             registeredDevice.DeviceId).Equals(RobotRegistrationSources.DeploymentSmoke,
             StringComparison.OrdinalIgnoreCase);
-        if (!isDeploymentSmoke)
+        var updatedRegistration = new DeviceRegistration
         {
-            stateStore.UpdateRobot(new DeviceRegistration
-            {
-                DeviceId = registeredDevice.DeviceId,
-                RobotId = registeredDevice.RobotId,
-                FriendlyName = registeredDevice.FriendlyName,
-                FirmwareVersion = registeredDevice.FirmwareVersion,
-                ApplicationVersion = registeredDevice.ApplicationVersion,
-                IsActive = registeredDevice.IsActive,
-                CertificateThumbprint = registeredDevice.CertificateThumbprint,
-                IssuedIdentityId = registeredDevice.IssuedIdentityId,
-                BuildHash = registeredDevice.BuildHash,
-                ConfigHash = registeredDevice.ConfigHash,
-                RegistrationSource = registeredDevice.RegistrationSource,
-                IsHidden = registeredDevice.IsHidden,
-                ArchivedUtc = registeredDevice.ArchivedUtc,
-                HostMappings = BuildRobotHostMappings(state.TargetMode, state.TargetHost, envelope.HostName)
-            });
-        }
+            DeviceId = registeredDevice.DeviceId,
+            RobotId = registeredDevice.RobotId,
+            FriendlyName = registeredDevice.FriendlyName,
+            FirmwareVersion = registeredDevice.FirmwareVersion,
+            ApplicationVersion = registeredDevice.ApplicationVersion,
+            IsActive = registeredDevice.IsActive,
+            CertificateThumbprint = registeredDevice.CertificateThumbprint,
+            IssuedIdentityId = registeredDevice.IssuedIdentityId,
+            BuildHash = registeredDevice.BuildHash,
+            ConfigHash = registeredDevice.ConfigHash,
+            RegistrationSource = registeredDevice.RegistrationSource,
+            IsHidden = registeredDevice.IsHidden,
+            ArchivedUtc = registeredDevice.ArchivedUtc,
+            HostMappings = BuildRobotHostMappings(state.TargetMode, state.TargetHost, envelope.HostName)
+        };
+
+        if (isDeploymentSmoke)
+            stateStore.UpsertDevice(updatedRegistration);
+        else
+            stateStore.UpdateRobot(updatedRegistration);
 
         var acceptedReadiness = EvaluateConversionReadiness(state, false, envelope.HostName);
         var acceptedTargetHost = ResolveOpenJiboTargetHost(state.TargetMode, state.TargetHost, envelope.HostName);

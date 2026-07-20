@@ -97,6 +97,28 @@ The managed Container App now expects a Key Vault secret named `openjibo-portal-
 
 For trusted-server fleet presence synchronization, every participating deployment must also have the same Key Vault secret named `openjibo-peer-sync-shared-key`. The runtime uses it to HMAC-sign short-lived presence reports; each server still accepts reports only from active trusted-server entries with cloud sync enabled.
 
+## Managed knowledge-search runbook
+
+Hosted deployments can enable Wolfram Alpha, ChatGPT, or another supported knowledge backend by storing the backend spec string in the `openjibo-managed` GitHub Actions environment.
+
+Use these two secrets:
+
+- `OPENJIBO_SEARCH_BACKEND`
+- `OPENJIBO_SEARCH_FALLBACK`
+
+The workflow seeds those values into Key Vault as `openjibo-search-backend` and `openjibo-search-fallback`, then copies them into the Container App as `OPENJIBO_SEARCH_BACKEND` and `OPENJIBO_SEARCH_FALLBACK`.
+
+Use the same spec format the app already understands: `backend!credential!model`.
+
+Examples:
+
+- Wolfram only: `Wolfram!<wolfram-app-id>`
+- ChatGPT only: `ChatGPT!<openai-api-key>`
+- ChatGPT with explicit model: `ChatGPT!<openai-api-key>!gpt-5.4-nano`
+- Primary plus fallback: set `OPENJIBO_SEARCH_BACKEND` and `OPENJIBO_SEARCH_FALLBACK` independently, for example `Wolfram!<wolfram-app-id>` as primary and `ChatGPT!<openai-api-key>!gpt-5.4-nano` as fallback.
+
+If you do not want hosted AI search enabled, leave both secrets empty. The deploy path will still work, and the runtime will keep using its other configured providers.
+
 ## Managed hostname binding
 
 `deploy-openjibo-managed.sh` and `Deploy-OpenJiboManaged.ps1` bind the requested host trio after the Container App deployment. Azure Container Apps managed certificates require DNS to point directly at the generated Container App hostname before certificate issuance can succeed. For subdomains such as `api.openjibo.com`, `open-jibo-socket.openjibo.com`, and `neohub.openjibo.com`, create a CNAME from each custom hostname to the generated Container App FQDN returned by the deployment output.

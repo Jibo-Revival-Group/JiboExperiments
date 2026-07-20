@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.7"
+SCRIPT_VERSION="2026-07-19.1"
 echo "apply-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -72,6 +72,10 @@ trap cleanup EXIT
 cat > "$tmp_js" <<'NODE'
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
+
+const STOCK_SERVER_LIBRARY_MD5 = "ae82f1dd7407f8d74b287917cb9a8b24";
+const PATCHED_SERVER_LIBRARY_MD5 = "e55e18e92aa6365569f13214e0118745";
 
 const robotRoot = path.resolve(process.argv[2]);
 const planPath = path.resolve(process.argv[3]);
@@ -124,6 +128,7 @@ function backupFile(filePath) {
   const backupPath = path.resolve(backupRoot, relative);
   ensureDir(path.dirname(backupPath));
   fs.writeFileSync(backupPath, fs.readFileSync(filePath));
+  fs.chmodSync(backupPath, 384);
   return backupPath;
 }
 
@@ -195,6 +200,50 @@ function patchSourceMapFile(filePath, replacements) {
   return changed;
 }
 
+function countBufferOccurrences(buffer, needle) {
+  let count = 0;
+  let offset = 0;
+  while ((offset = buffer.indexOf(needle, offset)) !== -1) {
+    count += 1;
+    offset += needle.length;
+  }
+  return count;
+}
+
+function patchServerLibrary(filePath) {
+  const stockDomain = Buffer.from("jibo.com", "ascii");
+  const compatibilityDomain = Buffer.from("jibo.pro", "ascii");
+  if (stockDomain.length !== compatibilityDomain.length) {
+    throw new Error("Native compatibility-domain patch must remain length-preserving.");
+  }
+
+  const buffer = fs.readFileSync(filePath);
+  const beforeMd5 = crypto.createHash("md5").update(buffer).digest("hex");
+  const stockCount = countBufferOccurrences(buffer, stockDomain);
+  const compatibilityCount = countBufferOccurrences(buffer, compatibilityDomain);
+
+  if (beforeMd5 === PATCHED_SERVER_LIBRARY_MD5 && stockCount === 0 && compatibilityCount === 2) {
+    return { Changed: false, BeforeMd5: beforeMd5, AfterMd5: beforeMd5, Replacements: 0, State: "already-patched" };
+  }
+  if (beforeMd5 !== STOCK_SERVER_LIBRARY_MD5 || stockCount !== 2 || compatibilityCount !== 0) {
+    throw new Error(`Unsupported libJiboServerService.so state: md5=${beforeMd5}, jibo.com=${stockCount}, jibo.pro=${compatibilityCount}`);
+  }
+
+  let replacements = 0;
+  let offset = 0;
+  while ((offset = buffer.indexOf(stockDomain, offset)) !== -1) {
+    compatibilityDomain.copy(buffer, offset);
+    replacements += 1;
+    offset += stockDomain.length;
+  }
+  const afterMd5 = crypto.createHash("md5").update(buffer).digest("hex");
+  if (replacements !== 2 || afterMd5 !== PATCHED_SERVER_LIBRARY_MD5) {
+    throw new Error(`Native server library patch verification failed: replacements=${replacements}, md5=${afterMd5}`);
+  }
+  fs.writeFileSync(filePath, buffer);
+  return { Changed: true, BeforeMd5: beforeMd5, AfterMd5: afterMd5, Replacements: replacements, State: "patched" };
+}
+
 function collectExisting(relativePaths) {
   const found = [];
   for (const relativePath of relativePaths) {
@@ -239,6 +288,9 @@ const oobeConfigPath = firstExisting(candidatePaths([
   "skills/jibo/Jibo/Skills/oobe-config/config.json",
   "opt/jibo/Jibo/Skills/oobe-config/config.json",
 ]));
+const serverLibraryPath = firstExisting(candidatePaths([
+  "usr/local/lib/libJiboServerService.so",
+]));
 const regionConfigFiles = collectExisting([
   "usr/lib/node_modules/@jibo/jibo-server-client/lib/region_config.json",
   "usr/lib/node/@jibo/jibo-server-client/lib/region_config.json",
@@ -270,7 +322,7 @@ const jiboStsRuntimeMapFiles = collectExisting([
   "usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib/jibo-service-clients.js.map",
 ]);
 
-if (!jetstreamPath || !serverServicePath || !credentialsPath || !oobeConfigPath) {
+if (!jetstreamPath || !serverServicePath || !credentialsPath || !oobeConfigPath || !serverLibraryPath) {
   throw new Error("Expected conversion files were not found on the robot root.");
 }
 
@@ -279,10 +331,13 @@ const backups = {
   serverService: backupFile(serverServicePath),
   credentials: backupFile(credentialsPath),
   oobe: backupFile(oobeConfigPath),
+  serverLibrary: backupFile(serverLibraryPath),
   regionConfigFiles: regionConfigFiles.map(backupFile).filter(Boolean),
   awsSdkAllFiles: awsSdkAllFiles.map(backupFile).filter(Boolean),
   jiboSsmRuntimeJsFiles: jiboSsmRuntimeJsFiles.map(backupFile).filter(Boolean),
   jiboSsmRuntimeMapFiles: jiboSsmRuntimeMapFiles.map(backupFile).filter(Boolean),
+  jiboStsRuntimeJsFiles: jiboStsRuntimeJsFiles.map(backupFile).filter(Boolean),
+  jiboStsRuntimeMapFiles: jiboStsRuntimeMapFiles.map(backupFile).filter(Boolean),
 };
 
 const jetstream = readJson(jetstreamPath);
@@ -290,10 +345,13 @@ const serverService = serverServicePath ? readJson(serverServicePath) : null;
 const currentRegion = readJson(credentialsPath).region || "api";
 const oobe = readJson(oobeConfigPath);
 
-jetstream["region-settings"] = jetstream["region-settings"] || jetstream.regions || {};
-jetstream.regions = jetstream.regions || jetstream["region-settings"];
+jetstream.HubClient = jetstream.HubClient || {};
+const regionSettings = jetstream.HubClient["region-settings"] || jetstream["region-settings"] || jetstream.regions || {};
+jetstream.HubClient["region-settings"] = regionSettings;
+delete jetstream["region-settings"];
+delete jetstream.regions;
 
-const baseRegion = jetstream["region-settings"].api || jetstream.regions.api || {
+const baseRegion = regionSettings.api || {
   hub_port: 443,
   entrypoint_port: 443,
 };
@@ -306,8 +364,7 @@ openJiboRegion.entrypoint_port = baseRegion.entrypoint_port || 443;
 openJiboRegion.hub_hostname = hubHostname;
 openJiboRegion.entrypoint_hostname = apiHostname;
 
-jetstream["region-settings"]["open-jibo"] = openJiboRegion;
-jetstream.regions["open-jibo"] = openJiboRegion;
+regionSettings["open-jibo"] = openJiboRegion;
 
 if (serverService && typeof serverService === "object") {
   serverService.NotificationSubsystem = serverService.NotificationSubsystem || {};
@@ -381,6 +438,8 @@ for (const filePath of jiboStsRuntimeMapFiles) {
   patchSourceMapFile(filePath, runtimeJsReplacements);
 }
 
+const nativeServerLibraryPatch = patchServerLibrary(serverLibraryPath);
+
 const conversionMarkerPath = path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");
 writeJson(conversionMarkerPath, {
   targetMode,
@@ -389,6 +448,9 @@ writeJson(conversionMarkerPath, {
   apiHostname,
   hubHostname,
   notificationSocketSuffix: "-socket.openjibo.com",
+  nativeCompatibilityApiHostname: "open-jibo.jibo.pro",
+  nativeCompatibilitySocketHostname: "open-jibo-socket.jibo.pro",
+  nativeServerLibraryPatch,
   createdUtc: new Date().toISOString(),
   backups,
   robotRoot,
@@ -402,6 +464,9 @@ const applyManifest = {
   ApiHostname: apiHostname,
   HubHostname: hubHostname,
   NotificationSocketSuffix: "-socket.openjibo.com",
+  NativeCompatibilityApiHostname: "open-jibo.jibo.pro",
+  NativeCompatibilitySocketHostname: "open-jibo-socket.jibo.pro",
+  NativeServerLibraryPatch: nativeServerLibraryPatch,
   Backups: plan.Backups || [],
   BackupRoot: backupRoot,
   CreatedBackups: backups,
@@ -415,13 +480,22 @@ const applyManifest = {
   "The helper also normalizes bundled jibo-server-client region templates in live robot bundles, including api, service-scoped api, and socket host forms.",
   "The helper now also normalizes the live jibo-ssm runtime bundle when it hardcodes region + .jibo.com or api.jibo.com.",
   "The nearby source map is parsed, backed up, and rewritten through sourcesContent so the embedded source text stays aligned with the JS bundle.",
+  "The native server library is hash-gated and receives exactly two equal-length jibo.com to jibo.pro byte replacements for token signing and transport.",
   ],
   WrittenFiles: [
     jetstreamPath,
     serverServicePath,
     oobeConfigPath,
+    serverLibraryPath,
     conversionMarkerPath,
   ].concat(regionConfigFiles, awsSdkAllFiles, jiboSsmRuntimeJsFiles, jiboSsmRuntimeMapFiles, jiboStsRuntimeJsFiles, jiboStsRuntimeMapFiles),
+  WrittenFileRoles: {
+    Jetstream: jetstreamPath,
+    ServerService: serverServicePath,
+    OobeConfig: oobeConfigPath,
+    ServerLibrary: serverLibraryPath,
+    ConversionMarker: conversionMarkerPath,
+  },
 };
 
 const json = JSON.stringify(applyManifest, null, 2);

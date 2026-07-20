@@ -141,6 +141,7 @@ Additional files to audit:
 - `/usr/local/etc/jibo-ssm/*.json`
 - `/usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/region_config.json`
 - `/usr/local/bin/jibo-ssm/lib/skills-service-manager.js`
+- `/usr/local/lib/libJiboServerService.so`
 - `/skills/jibo/Jibo/Skills/@be/be/node_modules/language-subtag-registry/data/json/registry.json`
 - `/skills/jibo/Jibo/Skills/oobe-config/config.json`
 - local skill manifest/config locations for menu visibility and first-boot behavior
@@ -162,6 +163,16 @@ Live `jibo-ssm` runtime bundle replacements the conversion scripts now also targ
 - `data.region + ".jibo.com"` -> `data.region + ".openjibo.com"`
 - `this._wifiService.options.region + ".jibo.com"` -> `this._wifiService.options.region + ".openjibo.com"`
 - `API: 'api.jibo.com'` -> `API: 'api.openjibo.com'`
+
+Native `jibo-server-service` compatibility patch:
+
+- stock library MD5: `ae82f1dd7407f8d74b287917cb9a8b24`
+- patched library MD5: `e55e18e92aa6365569f13214e0118745`
+- replace exactly two equal-length ASCII occurrences of `jibo.com` with `jibo.pro`
+- `NotificationSubsystem::getSignedHeaders()` then signs `https://open-jibo.jibo.pro`
+- `NotificationSubsystem::getRobotToken()` then connects to `open-jibo.jibo.pro:443`
+- no decompilation, recompilation, ELF resizing, or ARM instruction changes are required
+- the cloud binds `open-jibo.jibo.pro` and `open-jibo-socket.jibo.pro` directly; do not use HTTP redirects for signed POST or WebSocket traffic
 
 The script coverage should include every discovered copy under:
 

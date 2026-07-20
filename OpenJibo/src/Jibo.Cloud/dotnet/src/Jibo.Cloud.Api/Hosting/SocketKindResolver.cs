@@ -4,6 +4,7 @@ internal static class SocketKindResolver
 {
     private const string ApiSocketHost = "api-socket.jibo.com";
     private const string OpenJiboSocketHost = "open-jibo-socket.openjibo.com";
+    private const string NativeCompatibilitySocketHost = "open-jibo-socket.jibo.pro";
     private const string NeoHubHost = "neo-hub.jibo.com";
     private const string OpenJiboNeoHubHost = "neohub.openjibo.com";
 
@@ -26,7 +27,8 @@ internal static class SocketKindResolver
     internal static string Resolve(string host, PathString path)
     {
         if (string.Equals(host, ApiSocketHost, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(host, OpenJiboSocketHost, StringComparison.OrdinalIgnoreCase))
+            string.Equals(host, OpenJiboSocketHost, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(host, NativeCompatibilitySocketHost, StringComparison.OrdinalIgnoreCase))
             return "api-socket";
 
         if (string.Equals(host, NeoHubHost, StringComparison.OrdinalIgnoreCase) ||

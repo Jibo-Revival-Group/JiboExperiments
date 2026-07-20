@@ -108,6 +108,9 @@ For the working path:
 - `api` also maps the hub to `neohub.openjibo.com`
 - notification WebSocket host becomes `api-socket.jibo.com`
 - the Open Jibo managed path uses `api.openjibo.com`, `neohub.openjibo.com`, and `open-jibo-socket.openjibo.com`
+- `libJiboServerService.so` does not use those JSON endpoint templates for `Notification.NewRobotToken`; it constructs both the signed URI and HTTPS destination as `credentials.region + ".jibo.com"`
+- the supported conversion patches the two equal-length native `jibo.com` literals to `jibo.pro`, yielding `open-jibo.jibo.pro` when the active region is `open-jibo`
+- `open-jibo.jibo.pro` is a direct API compatibility binding, not a redirect; the canonical configured API remains `api.openjibo.com`
 
 Do not switch the credentials region to `openjibo-local` on this build. That
 causes derived hosts like `openjibo-local.jibo.com`, which do not exist.

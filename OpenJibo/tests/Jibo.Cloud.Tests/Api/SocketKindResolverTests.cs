@@ -9,6 +9,7 @@ public sealed class SocketKindResolverTests
     [InlineData("api-socket.jibo.com", "/", "api-socket")]
     [InlineData("api-socket.jibo.com", "/token-Ghost-Instance-Onion-Silk-123", "api-socket")]
     [InlineData("open-jibo-socket.openjibo.com", "/token-abc", "api-socket")]
+    [InlineData("open-jibo-socket.jibo.pro", "/token-abc", "api-socket")]
     [InlineData("neo-hub.jibo.com", "/", "neo-hub-listen")]
     [InlineData("neo-hub.jibo.com", "/v1/proactive", "neo-hub-proactive")]
     [InlineData("neo-hub.jibo.com", "/token-should-not-reclassify", "neo-hub-listen")]

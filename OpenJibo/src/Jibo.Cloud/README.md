@@ -43,7 +43,7 @@ Human-facing entry points will live on domains such as:
 - `openjibo.com`
 - `openjibo.ai`
 
-Robot traffic may still arrive using legacy hostnames routed to the OpenJibo service.
+Robot traffic may still arrive using legacy hostnames routed to the OpenJibo service. The managed deployment also binds `open-jibo.jibo.pro` and `open-jibo-socket.jibo.pro` for the equal-length native server-library compatibility patch; these route directly to the API and notification socket handlers rather than redirecting signed or WebSocket traffic.
 
 ## Azure Storage Wiring Sample
 

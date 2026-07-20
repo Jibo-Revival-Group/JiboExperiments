@@ -13,7 +13,7 @@ These scripts support the first OpenJibo recovery path:
 
 Windows PowerShell wrappers remain available for local staging and analysis, but the robot-facing conversion path is shell-based.
 
-They are intentionally non-destructive.
+Audit and plan are read-only. Apply and rollback are intentionally narrow, hash-gated, and backup-first.
 
 ## Harness Scaffold
 
@@ -26,6 +26,21 @@ The intended flow is:
 3. reset the overlay from the source snapshot when you want a clean run
 
 On a physical robot, run `jibo-mount --rw` before any helper that writes robot partitions. The helpers are safe to inspect against a mounted copy, but the real device must be remounted writable first.
+
+The apply helper also patches `/usr/local/lib/libJiboServerService.so`. It accepts only the supported stock MD5 `ae82f1dd7407f8d74b287917cb9a8b24` or the already-patched MD5 `e55e18e92aa6365569f13214e0118745`, and replaces exactly two equal-length `jibo.com` byte sequences with `jibo.pro`. The resulting native token host is `open-jibo.jibo.pro`; Azure must bind that hostname directly to the API service.
+
+Physical-robot apply command:
+
+```sh
+jibo-mount --rw
+sh ./invoke-openjibo-conversion.sh \
+  --robot-root / \
+  --output-directory /var/jibo/openjibo-conversion \
+  --apply \
+  --strict
+```
+
+Keep physical-device output and backups under `/var/jibo`, not `/tmp`, so rollback evidence survives reboot.
 
 The scaffold normalizes the extracted image layout into robot-root paths such as `var/jibo`, `usr/local/etc`, `skills`, `etc`, and `boot` so the conversion helpers can run against the overlay without special-case path handling.
 

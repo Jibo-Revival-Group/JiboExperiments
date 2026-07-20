@@ -59,6 +59,8 @@ The audit scripts should read, not write:
 - `4.var/jibo/mode.json`
 - `3.services/etc/jibo-jetstream-service.json`
 - `3.services/etc/jibo-system-manager.json`
+- `3.services/etc/jibo-server-service.json`
+- `3.services/lib/libJiboServerService.so`
 - `3.services/etc/jibo-ssm/jibo-ssm-normal.json`
 - `3.services/etc/jibo-ssm/jibo-ssm-oobe.json`
 - `3.services/etc/jibo-ssm/jibo-ssm-developer.json`
@@ -89,9 +91,11 @@ Plan output should describe:
 
 ### Apply helpers
 
-The apply scripts should write only the minimum staged conversion state for now:
+The apply scripts should write only the minimum staged conversion state:
 
 - `3.services/etc/jibo-jetstream-service.json`
+- `3.services/etc/jibo-server-service.json`
+- `3.services/lib/libJiboServerService.so`, translated on-robot to `/usr/local/lib/libJiboServerService.so`
 - `5.skills/jibo/Jibo/Skills/oobe-config/config.json`
 - `4.var/jibo/identity/openjibo-conversion.json`
 
@@ -143,7 +147,10 @@ The composer should leave a `filesystem-progress.json` checkpoint while copying 
 ### Network and runtime
 
 - `3.services/etc/jibo-jetstream-service.json`
-  - region routing and hub/entrypoint definitions
+  - region routing and hub/entrypoint definitions under `HubClient.region-settings`
+- `3.services/lib/libJiboServerService.so`
+  - native token signing and HTTPS transport
+  - contains exactly two supported `jibo.com` byte sequences patched to the equal-length `jibo.pro`
 - `3.services/etc/jibo-system-manager.json`
   - service launch order and mode layout
 - `3.services/etc/jibo-ssm/*.json`

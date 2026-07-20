@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.7"
+SCRIPT_VERSION="2026-07-19.1"
 echo "audit-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -43,6 +43,10 @@ trap cleanup EXIT
 cat > "$tmp_js" <<'NODE'
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
+
+const STOCK_SERVER_LIBRARY_MD5 = "ae82f1dd7407f8d74b287917cb9a8b24";
+const PATCHED_SERVER_LIBRARY_MD5 = "e55e18e92aa6365569f13214e0118745";
 
 const robotRoot = path.resolve(process.argv[2]);
 const outputPath = (process.argv[3] || "").trim();
@@ -92,6 +96,41 @@ const oobeConfigPath = resolveCandidate([
   "skills/jibo/Jibo/Skills/oobe-config/config.json",
   "opt/jibo/Jibo/Skills/oobe-config/config.json",
 ]);
+const serverLibraryPath = resolveCandidate([
+  "usr/local/lib/libJiboServerService.so",
+]);
+
+function countBufferOccurrences(buffer, needle) {
+  let count = 0;
+  let offset = 0;
+  while ((offset = buffer.indexOf(needle, offset)) !== -1) {
+    count += 1;
+    offset += needle.length;
+  }
+  return count;
+}
+
+function inspectServerLibrary(filePath) {
+  if (!filePath) return null;
+  const buffer = fs.readFileSync(filePath);
+  const md5 = crypto.createHash("md5").update(buffer).digest("hex");
+  const stockDomainCount = countBufferOccurrences(buffer, Buffer.from("jibo.com", "ascii"));
+  const compatibilityDomainCount = countBufferOccurrences(buffer, Buffer.from("jibo.pro", "ascii"));
+  const state = md5 === STOCK_SERVER_LIBRARY_MD5 && stockDomainCount === 2 && compatibilityDomainCount === 0
+    ? "stock-supported"
+    : md5 === PATCHED_SERVER_LIBRARY_MD5 && stockDomainCount === 0 && compatibilityDomainCount === 2
+      ? "patched-supported"
+      : "unsupported";
+  return {
+    Path: filePath,
+    Md5: md5,
+    State: state,
+    StockDomainCount: stockDomainCount,
+    CompatibilityDomainCount: compatibilityDomainCount,
+    ExpectedStockMd5: STOCK_SERVER_LIBRARY_MD5,
+    ExpectedPatchedMd5: PATCHED_SERVER_LIBRARY_MD5,
+  };
+}
 
 function collectExisting(relativePaths) {
   const found = [];
@@ -260,15 +299,19 @@ const jetstream = readJsonFile(jetstreamPath);
 const serverService = readJsonFile(serverServicePath);
 const credentials = readJsonFile(credentialsPath);
 const oobeConfig = readJsonFile(oobeConfigPath);
+const serverLibrary = inspectServerLibrary(serverLibraryPath);
 
 const region = getField(credentials, "region");
 const accessKeyId = getField(credentials, "accessKeyId");
 const secretAccessKey = getField(credentials, "secretAccessKey");
 
-const jetstreamRegionNames = [];
-if (jetstream && typeof jetstream === "object" && jetstream.regions && typeof jetstream.regions === "object") {
-  jetstreamRegionNames.push(...Object.keys(jetstream.regions));
-}
+const hubClient = getField(jetstream, "HubClient");
+const nestedRegionSettings = getField(hubClient, "region-settings");
+const legacyTopLevelRegionSettings = getField(jetstream, "region-settings") || getField(jetstream, "regions");
+const activeRegionSettings = nestedRegionSettings || legacyTopLevelRegionSettings;
+const jetstreamRegionNames = activeRegionSettings && typeof activeRegionSettings === "object"
+  ? Object.keys(activeRegionSettings)
+  : [];
 
 const recommendations = [];
 if (!jetstreamPath) recommendations.push("Add or mount a jetstream region config file before conversion.");
@@ -276,6 +319,8 @@ if (!serverServicePath) recommendations.push("Add or mount jibo-server-service.j
 if (!credentialsPath) recommendations.push("Locate credentials.json before attempting any mode switch.");
 if (!oobeConfigPath) recommendations.push("Confirm the oobe-config bundle before wiring first-boot behavior.");
 if (!region) recommendations.push("Region is not set yet; that needs to be recorded before any write helper runs.");
+if (!serverLibraryPath) recommendations.push("Locate /usr/local/lib/libJiboServerService.so before conversion so the native robot-token hostname can be patched.");
+if (serverLibrary && serverLibrary.State === "unsupported") recommendations.push(`Refuse to patch unknown libJiboServerService.so variant ${serverLibrary.Md5}; expected the supported stock or patched MD5.`);
 
 const audit = {
   RobotRoot: robotRoot,
@@ -284,6 +329,7 @@ const audit = {
     ServerService: serverServicePath,
     Credentials: credentialsPath,
     OobeConfig: oobeConfigPath,
+    ServerLibrary: serverLibraryPath,
     SsmCount: ssmFiles.length,
     RegionConfigCount: regionConfigFiles.length,
     AwsSdkAllCount: awsSdkAllFiles.length,
@@ -295,6 +341,8 @@ const audit = {
   },
   Jetstream: {
     RegionNames: jetstreamRegionNames,
+    RegionSettingsLocation: nestedRegionSettings ? "HubClient.region-settings" : legacyTopLevelRegionSettings ? "legacy-top-level" : null,
+    LegacyTopLevelRegionSettingsPresent: Boolean(legacyTopLevelRegionSettings),
   },
   ServerService: {
     NotificationSubsystemSuffix: getField(getField(serverService, "NotificationSubsystem"), "serverURLSuffix") || null,
@@ -314,6 +362,7 @@ const audit = {
   TemplateMatches: scanTemplateMatches(regionConfigFiles.concat(awsSdkAllFiles)),
   RuntimeJsMatches: scanRuntimeJsMatches(jiboRuntimeJsFiles),
   RuntimeMapMatches: scanRuntimeSourceMapMatches(jiboRuntimeMapFiles),
+  NativeServerLibrary: serverLibrary,
   Recommendations: recommendations,
   CanProceed: recommendations.length === 0,
   BlockingIssues: recommendations,

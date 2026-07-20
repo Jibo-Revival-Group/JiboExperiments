@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.7"
+SCRIPT_VERSION="2026-07-19.1"
 echo "invoke-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -69,11 +69,23 @@ plan_script="$script_dir/plan-openjibo-conversion.sh"
 apply_script="$script_dir/apply-openjibo-conversion.sh"
 
 if [ -z "$output_directory" ]; then
-  output_directory="$(mktemp -d "${TMPDIR:-/tmp}/openjibo-conversion.XXXXXX")"
+  if [ "$robot_root" = "/" ] && [ "$apply" = true ]; then
+    output_directory="/var/jibo/openjibo-conversion"
+  else
+    output_directory="$(mktemp -d "${TMPDIR:-/tmp}/openjibo-conversion.XXXXXX")"
+  fi
 else
   case "$output_directory" in
     /*) : ;;
     *) output_directory="$(pwd)/$output_directory" ;;
+  esac
+fi
+
+if [ "$robot_root" = "/" ] && [ "$apply" = true ]; then
+  case "$output_directory" in
+    /tmp|/tmp/*)
+      echo "WARNING: $output_directory is temporary; use /var/jibo/openjibo-conversion so the native library backup survives reboot." >&2
+      ;;
   esac
 fi
 
@@ -131,6 +143,8 @@ const summary = {
   TargetMode: process.argv[3],
   ApiHostname: process.argv[4],
   HubHostname: process.argv[5],
+  NativeCompatibilityApiHostname: "open-jibo.jibo.pro",
+  NativeCompatibilitySocketHostname: "open-jibo-socket.jibo.pro",
   OutputDirectory: path.resolve(process.argv[6]),
   AuditPath: path.resolve(process.argv[7]),
   PlanPath: path.resolve(process.argv[8]),

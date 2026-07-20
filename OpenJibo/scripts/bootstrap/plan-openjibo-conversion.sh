@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-18.7"
+SCRIPT_VERSION="2026-07-19.1"
 echo "plan-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -102,9 +102,20 @@ const proposedChanges = [
     Action: "add or update region-settings entries",
     Details: [
       "preserve stock region where possible",
+      "write region-settings only under HubClient and remove conversion-created top-level duplicates",
       `add target mode region entry for ${targetMode}`,
       `set entrypoint_hostname to ${apiHostname}`,
       `set hub_hostname to ${hubHostname}`,
+    ],
+  },
+  {
+    File: "/usr/local/lib/libJiboServerService.so",
+    Action: "apply the equal-length native compatibility-domain patch",
+    Details: [
+      "require the supported stock or already-patched MD5 before proceeding",
+      "replace exactly two ASCII jibo.com byte sequences with jibo.pro",
+      "preserve ELF layout and ARM instructions because both domains are eight bytes",
+      "route open-jibo.jibo.pro and open-jibo-socket.jibo.pro to the managed Open Jibo service",
     ],
   },
   {
@@ -193,6 +204,7 @@ const proposedChanges = [
 const rollbackPlan = [
   "restore the recorded jetstream config snapshot",
   "restore the recorded jibo-server-service config snapshot",
+  "restore /usr/local/lib/libJiboServerService.so from the hash-verified pre-conversion backup",
   "restore /var/jibo/credentials.json from the pre-conversion backup",
   "clear first-boot pending state if onboarding is abandoned",
   "leave the Open Jibo skill visible so the owner can retry conversion later",
@@ -203,6 +215,8 @@ const plan = {
   TargetMode: targetMode,
   ApiHostname: apiHostname,
   HubHostname: hubHostname,
+  NativeCompatibilityApiHostname: "open-jibo.jibo.pro",
+  NativeCompatibilitySocketHostname: "open-jibo-socket.jibo.pro",
   ExistingMode: existingMode,
   RequiresAttention: requiresAttention,
   CanApply: canApply,
@@ -211,11 +225,13 @@ const plan = {
     ServerServicePath: audit.Files && audit.Files.ServerService ? audit.Files.ServerService : null,
     CredentialsPath: audit.Files && audit.Files.Credentials ? audit.Files.Credentials : null,
     OobeConfigPath: audit.Files && audit.Files.OobeConfig ? audit.Files.OobeConfig : null,
+    ServerLibraryPath: audit.Files && audit.Files.ServerLibrary ? audit.Files.ServerLibrary : null,
     SsmCount: audit.Files ? audit.Files.SsmCount : 0,
     Region: audit.Credentials ? audit.Credentials.Region : null,
     ServerServiceSuffix: audit.ServerService ? audit.ServerService.NotificationSubsystemSuffix : null,
     OobeServerRegion: audit.Oobe ? audit.Oobe.ServerRegion : null,
     OobeOtaFilter: audit.Oobe ? audit.Oobe.OtaFilter : null,
+    NativeServerLibrary: audit.NativeServerLibrary || null,
     Recommendations: recommendations,
   },
   Backups: [
@@ -223,6 +239,7 @@ const plan = {
     audit.Files && audit.Files.ServerService,
     audit.Files && audit.Files.Credentials,
     audit.Files && audit.Files.OobeConfig,
+    audit.Files && audit.Files.ServerLibrary,
     ...(audit.NodeBundles && audit.NodeBundles.RegionConfigFiles ? audit.NodeBundles.RegionConfigFiles : []),
     ...(audit.NodeBundles && audit.NodeBundles.AwsSdkAllFiles ? audit.NodeBundles.AwsSdkAllFiles : []),
     ...(audit.NodeBundles && audit.NodeBundles.JiboSsmRuntimeJsFiles ? audit.NodeBundles.JiboSsmRuntimeJsFiles : []),

@@ -1,12 +1,12 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 robot_root=""
 apply_path=""
 output_path=""
 strict=false
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
     --robot-root)
       robot_root="${2:-}"
@@ -31,7 +31,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$robot_root" || -z "$apply_path" ]]; then
+if [ -z "$robot_root" ] || [ -z "$apply_path" ]; then
   echo "--robot-root and --apply-path are required" >&2
   exit 2
 fi
@@ -51,7 +51,18 @@ if (!fs.existsSync(applyPath)) {
 
 const manifest = JSON.parse(fs.readFileSync(applyPath, "utf8"));
 const createdBackups = manifest.CreatedBackups || {};
-const writtenFiles = Array.isArray(manifest.WrittenFiles) ? manifest.WrittenFiles : [];
+const writtenFileRoles = manifest.WrittenFileRoles || {};
+const backupRoot = manifest.BackupRoot ? path.resolve(manifest.BackupRoot) : null;
+
+function ensureDir(dirPath) {
+  if (!dirPath || fs.existsSync(dirPath)) return;
+  ensureDir(path.dirname(dirPath));
+  try {
+    fs.mkdirSync(dirPath);
+  } catch (error) {
+    if (!fs.existsSync(dirPath)) throw error;
+  }
+}
 
 function restoreFromBackup(backupPath, targetPath) {
   if (!backupPath) {
@@ -66,24 +77,47 @@ function restoreFromBackup(backupPath, targetPath) {
     }
     return false;
   }
-  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  fs.copyFileSync(backupPath, targetPath);
+  ensureDir(path.dirname(targetPath));
+  fs.writeFileSync(targetPath, fs.readFileSync(backupPath));
   return true;
 }
 
-const jetstreamTarget = writtenFiles[0] || path.resolve(robotRoot, "usr/local/etc/jibo-jetstream-service.json");
-const oobeTarget = writtenFiles[1] || path.resolve(robotRoot, "skills/jibo/Jibo/Skills/oobe-config/config.json");
-const markerTarget = writtenFiles[2] || path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");
-const credentialsTarget = path.resolve(robotRoot, "var/jibo/credentials.json");
+function collectBackupPaths(value, found) {
+  if (!value) return;
+  if (typeof value === "string") {
+    found.push(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectBackupPaths(item, found);
+    return;
+  }
+  if (typeof value === "object") {
+    for (const key of Object.keys(value)) collectBackupPaths(value[key], found);
+  }
+}
 
 const restored = [];
-if (restoreFromBackup(createdBackups.jetstream, jetstreamTarget)) restored.push(jetstreamTarget);
-if (restoreFromBackup(createdBackups.credentials, credentialsTarget)) restored.push(credentialsTarget);
-if (restoreFromBackup(createdBackups.oobe, oobeTarget)) restored.push(oobeTarget);
+const backupPaths = [];
+collectBackupPaths(createdBackups, backupPaths);
+for (const backupPath of backupPaths) {
+  if (!backupRoot) {
+    if (strict) throw new Error("Apply manifest does not contain BackupRoot.");
+    continue;
+  }
+  const relative = path.relative(backupRoot, path.resolve(backupPath));
+  if (!relative || relative.indexOf("..") === 0 || path.isAbsolute(relative)) {
+    if (strict) throw new Error(`Backup path is outside BackupRoot: ${backupPath}`);
+    continue;
+  }
+  const targetPath = path.resolve(robotRoot, relative);
+  if (restoreFromBackup(backupPath, targetPath)) restored.push(targetPath);
+}
 
+const markerTarget = writtenFileRoles.ConversionMarker || path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");
 const markerExisted = fs.existsSync(markerTarget);
 if (fs.existsSync(markerTarget)) {
-  fs.rmSync(markerTarget, { force: true });
+  fs.unlinkSync(markerTarget);
 }
 
 const rollbackManifest = {
@@ -100,7 +134,7 @@ const rollbackManifest = {
 const json = JSON.stringify(rollbackManifest, null, 2);
 if (outputPath) {
   const resolvedOutput = path.resolve(outputPath);
-  fs.mkdirSync(path.dirname(resolvedOutput), { recursive: true });
+  ensureDir(path.dirname(resolvedOutput));
   fs.writeFileSync(resolvedOutput, json);
   console.log(`Saved conversion rollback manifest to ${resolvedOutput}`);
 } else {

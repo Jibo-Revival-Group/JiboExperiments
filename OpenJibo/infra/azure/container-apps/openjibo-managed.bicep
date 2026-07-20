@@ -33,6 +33,12 @@ param socketHostname string = 'open-jibo-socket.openjibo.com'
 @description('Canonical robot-facing neo-hub hostname for listen and proactive traffic.')
 param neoHubHostname string = 'neohub.openjibo.com'
 
+@description('Compatibility API hostname produced by the native libJiboServerService.so region suffix patch.')
+param nativeCompatibilityApiHostname string = 'open-jibo.jibo.pro'
+
+@description('Compatibility socket hostname produced when native code uses the patched socket suffix.')
+param nativeCompatibilitySocketHostname string = 'open-jibo-socket.jibo.pro'
+
 @description('Enables Azure Speech STT for hosted deployments.')
 param enableAzureSpeech bool = true
 
@@ -186,6 +192,14 @@ var managedEnvVars = concat([
     value: neoHubHostname
   }
   {
+    name: 'OpenJibo__NativeCompatibilityApiHostname'
+    value: nativeCompatibilityApiHostname
+  }
+  {
+    name: 'OpenJibo__NativeCompatibilitySocketHostname'
+    value: nativeCompatibilitySocketHostname
+  }
+  {
     name: 'OpenJibo__State__Backend'
     value: 'PostgreSql'
   }
@@ -328,3 +342,5 @@ output canonicalSocketHostname string = socketHostname
 output canonicalSocketBaseUrl string = canonicalSocketBaseUrl
 output canonicalNeoHubHostname string = neoHubHostname
 output canonicalNeoHubBaseUrl string = canonicalNeoHubBaseUrl
+output nativeCompatibilityApiHostname string = nativeCompatibilityApiHostname
+output nativeCompatibilitySocketHostname string = nativeCompatibilitySocketHostname

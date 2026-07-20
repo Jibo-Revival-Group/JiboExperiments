@@ -16,6 +16,12 @@
     },
     "neoHubHostname": {
       "value": "neohub.openjibo.com"
+    },
+    "nativeCompatibilityApiHostname": {
+      "value": "open-jibo.jibo.pro"
+    },
+    "nativeCompatibilitySocketHostname": {
+      "value": "open-jibo-socket.jibo.pro"
     }
   }
 }

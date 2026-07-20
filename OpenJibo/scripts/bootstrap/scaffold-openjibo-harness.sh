@@ -81,6 +81,16 @@ const requiredItems = [
     type: "file",
   },
   {
+    source: "3.services/etc/jibo-server-service.json",
+    target: "usr/local/etc/jibo-server-service.json",
+    type: "file",
+  },
+  {
+    source: "3.services/lib/libJiboServerService.so",
+    target: "usr/local/lib/libJiboServerService.so",
+    type: "file",
+  },
+  {
     source: "3.services/etc/jibo-ssm",
     target: "usr/local/etc/jibo-ssm",
     type: "directory",

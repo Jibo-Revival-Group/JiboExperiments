@@ -10,6 +10,8 @@ param(
     [string]$ApiHostname = "api.openjibo.com",
     [string]$SocketHostname = "open-jibo-socket.openjibo.com",
     [string]$NeoHubHostname = "neohub.openjibo.com",
+    [string]$NativeCompatibilityApiHostname = "open-jibo.jibo.pro",
+    [string]$NativeCompatibilitySocketHostname = "open-jibo-socket.jibo.pro",
     [Parameter(Mandatory = $true)]
     [string]$RegistryName,
     [bool]$EnableAzureSpeech = $true,
@@ -243,6 +245,8 @@ $arguments = @(
     "--parameters", "apiHostname=$ApiHostname",
     "--parameters", "socketHostname=$SocketHostname",
     "--parameters", "neoHubHostname=$NeoHubHostname",
+    "--parameters", "nativeCompatibilityApiHostname=$NativeCompatibilityApiHostname",
+    "--parameters", "nativeCompatibilitySocketHostname=$NativeCompatibilitySocketHostname",
     "--parameters", "stateConnectionString=$stateConnectionString",
     "--parameters", "personalMemoryConnectionString=$personalMemoryConnectionString",
     "--parameters", "mediaConnectionString=$mediaConnectionString",
@@ -289,6 +293,8 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
     Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $ApiHostname
     Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $SocketHostname
     Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $NeoHubHostname
+    Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $NativeCompatibilityApiHostname
+    Bind-ContainerAppHostname -ContainerAppName $containerAppName -ManagedEnvironmentName $managedEnvironmentName -Hostname $NativeCompatibilitySocketHostname
 
     $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
     $postgresServerName = Get-PostgresServerNameFromConnectionString -ConnectionString $stateConnectionString

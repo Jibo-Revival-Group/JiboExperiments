@@ -101,7 +101,7 @@ The apply scripts should write only the minimum staged conversion state:
 
 The current conversion design intentionally keeps:
 
-- `4.var/jibo/credentials.json` on the proven `api` region until onboarding completes
+- `4.var/jibo/credentials.json` rewritten to `region: open-jibo` during conversion apply
 - stock identity files untouched unless the owner explicitly requests a repair step
 
 ### Verify helpers

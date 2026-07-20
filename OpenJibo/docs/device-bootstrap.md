@@ -68,7 +68,7 @@ The "easy button" recovery appliance should follow the same staged sequence ever
 6. Snapshot the robot before any conversion writes.
 7. Run the predictive conversion audit and plan helpers before any write step.
 8. Install the Open Jibo skill and conversion assets.
-9. Apply the staged region/mode entries and the first-boot/OOBE pending state while keeping the proven live credentials region intact until onboarding finishes.
+9. Apply the staged region/mode entries and the first-boot/OOBE pending state while rewriting `/var/jibo/credentials.json` to `region: open-jibo`.
 10. Reboot into the Open Jibo mode.
 11. Let the skill complete the onboarding and conversion.
 12. If onboarding is abandoned or a write step fails, restore the snapshot and return to stock behavior.

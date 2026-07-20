@@ -14,7 +14,7 @@ The working device path is:
 Mac runs OpenJibo .NET cloud on 443
 Jibo resolves api.jibo.com, api-socket.jibo.com, open-jibo-socket.openjibo.com,
 and neohub.openjibo.com to the Mac
-Jibo keeps /var/jibo/credentials.json region as api
+Jibo keeps /var/jibo/credentials.json region as open-jibo
 Jetstream uses api region settings for api.jibo.com and neohub.openjibo.com
 Jibo boot script reapplies local hosts, CA, writable key overlay, and TLS patch
 .NET cloud is configured with the robot id Jibo expects in its local KB
@@ -51,7 +51,7 @@ prefix. Setting it to `openjibo-local` made STS and server-service try to reach
 The working value is:
 
 ```json
-{"region":"api"}
+{"region":"open-jibo"}
 ```
 
 Local routing is handled by hosts/DNS and Jetstream host settings, not by

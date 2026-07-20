@@ -105,7 +105,7 @@ Checks:
 - proposed backup paths are correct
 - staged conversion marker is planned
 - rollback plan is present
-- `credentials.json` is still treated as the baseline until onboarding completes
+- `credentials.json` is planned for rewrite to `open-jibo` during apply
 
 ### 3. Apply fidelity
 
@@ -119,7 +119,7 @@ Checks:
 - Jetstream gets the `open-jibo` entry
 - OOBE gets the pending conversion marker
 - conversion metadata is written under `/var/jibo/identity`
-- `credentials.json` remains on `api`
+- `credentials.json` is rewritten to `open-jibo`
 - backup copies land in the output tree
 
 ### 4. Rollback fidelity

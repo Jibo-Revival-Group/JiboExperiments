@@ -254,6 +254,20 @@ internal sealed class WebSocketRequestCoordinator(
             }
         }
 
+        var registeredDeviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredValue)
+            ? registeredValue?.ToString()
+            : null;
+        if (!string.IsNullOrWhiteSpace(registeredDeviceId))
+        {
+            keys.Add(registeredDeviceId.Trim());
+            var registeredDevice = cloudStateStore.FindDeviceByFriendlyId(registeredDeviceId);
+            if (registeredDevice is not null)
+            {
+                keys.Add(registeredDevice.DeviceId);
+                keys.Add(registeredDevice.RobotId);
+            }
+        }
+
         return keys;
     }
 

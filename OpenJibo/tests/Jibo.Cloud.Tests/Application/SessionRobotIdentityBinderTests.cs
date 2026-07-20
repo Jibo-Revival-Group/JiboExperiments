@@ -119,6 +119,25 @@ public sealed class SessionRobotIdentityBinderTests
     }
 
     [Fact]
+    public void TryBindFromContextPayload_PreservesTokenBoundRegistrationIdentity()
+    {
+        var session = new CloudSession
+        {
+            Kind = "neo-hub-proactive",
+            DeviceId = "Royal-Current-Sage-Canvas",
+            Token = "hub-token"
+        };
+
+        var bound = SessionRobotIdentityBinder.TryBindFromContextPayload(
+            session,
+            """{"runtime":{"loop":{"jibo":{"id":"5c0b221fdf9d450019c5e254"}}}}""");
+
+        Assert.True(bound);
+        Assert.Equal("5c0b221fdf9d450019c5e254", session.DeviceId);
+        Assert.Equal("Royal-Current-Sage-Canvas", session.Metadata["registeredDeviceId"]?.ToString());
+    }
+
+    [Fact]
     public void TryReadGeneralRobotIdentity_FallsBackToLoopId_WhenJiboIdMissing()
     {
         var ok = SessionRobotIdentityBinder.TryReadGeneralRobotIdentity(

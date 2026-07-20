@@ -25,6 +25,7 @@ public interface ICloudStateStore
     string IssueRobotToken(string deviceId);
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
     CloudSession? FindSessionByToken(string token);
+    bool BindSessionToDevice(string sessionId, string deviceId);
     /// <summary>
     /// Copies dialog-continuation metadata from other sessions that share this session's DeviceId
     /// (same robot reconnecting on a new path-token websocket).

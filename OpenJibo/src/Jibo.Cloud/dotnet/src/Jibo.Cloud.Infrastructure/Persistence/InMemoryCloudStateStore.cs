@@ -589,6 +589,27 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _sessionsByToken.GetValueOrDefault(token);
     }
 
+    public bool BindSessionToDevice(string sessionId, string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId) || string.IsNullOrWhiteSpace(deviceId)) return false;
+
+        lock (_syncRoot)
+        {
+            var device = FindDeviceByFriendlyId(deviceId);
+            var session = _sessionsByToken.Values.FirstOrDefault(candidate =>
+                candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
+            if (device is null || session is null) return false;
+
+            // Keep the runtime loop identifier as DeviceId, and persist the explicitly selected
+            // inventory identity separately so both hardware identifiers remain traceable.
+            session.Metadata["registeredDeviceId"] = device.DeviceId;
+            session.Metadata["registeredRobotId"] = device.RobotId;
+        }
+
+        TouchState();
+        return true;
+    }
+
     public IReadOnlyList<LoopRecord> GetLoops()
     {
         return _loops.ToArray();

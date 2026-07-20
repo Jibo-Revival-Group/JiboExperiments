@@ -10,6 +10,25 @@ namespace Jibo.Cloud.Tests.Infrastructure;
 public sealed class PersistenceStoreTests
 {
     [Fact]
+    public void BindSessionToDevice_PersistsExplicitInventoryIdentityWithoutReplacingRuntimeIdentity()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Royal-Current-Sage-Canvas",
+            RobotId = "Royal-Current-Sage-Canvas",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var session = store.OpenSession("hub", "5c0b221fdf9d450019c5e254", "hub-test", "neohub", "/v1/listen");
+
+        var linked = store.BindSessionToDevice(session.SessionId, "Royal-Current-Sage-Canvas");
+
+        Assert.True(linked);
+        Assert.Equal("5c0b221fdf9d450019c5e254", session.DeviceId);
+        Assert.Equal("Royal-Current-Sage-Canvas", session.Metadata["registeredDeviceId"]?.ToString());
+    }
+
+    [Fact]
     public void SnapshotStoreFactory_DefaultsToFileBackend()
     {
         var factory = new PersistenceSnapshotStoreFactory();

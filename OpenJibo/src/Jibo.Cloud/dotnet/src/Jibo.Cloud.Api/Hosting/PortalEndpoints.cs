@@ -915,6 +915,32 @@ internal static class PortalEndpoints
             return Results.Json(new { ok = true, deviceId = updated.DeviceId, hidden = updated.IsHidden });
         });
 
+        app.MapPost("/api/portal/status/sessions/{sessionId}/link", (
+            string sessionId,
+            [FromBody] LinkStatusSessionRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            var liveSession = cloudStateStore.GetSessions().FirstOrDefault(candidate =>
+                candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
+            if (liveSession is null)
+                return Results.NotFound(new { error = "Live session was not found." });
+            if (DateTimeOffset.UtcNow - liveSession.LastSeenUtc > StatusHeartbeatWindow)
+                return Results.BadRequest(new { error = "Only a currently live session can be linked." });
+            if (string.IsNullOrWhiteSpace(request.DeviceId) ||
+                cloudStateStore.FindDeviceByFriendlyId(request.DeviceId) is null)
+                return Results.BadRequest(new { error = "Choose a registered robot record." });
+
+            return cloudStateStore.BindSessionToDevice(sessionId, request.DeviceId)
+                ? Results.Json(new { ok = true, sessionId, deviceId = request.DeviceId })
+                : Results.NotFound(new { error = "Live session or robot record was not found." });
+        });
+
         app.MapPost("/api/portal/status/network/reports", (
             [FromBody] FleetServerPresenceReportRequest request,
             HttpRequest httpRequest,
@@ -1195,6 +1221,7 @@ internal static class PortalEndpoints
                     session.SessionId,
                     session.Kind,
                     session.DeviceId,
+                    registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId"),
                     session.HostName,
                     session.Path,
                     session.CreatedUtc,
@@ -1207,7 +1234,11 @@ internal static class PortalEndpoints
 
     private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device) =>
         string.Equals(session.DeviceId, device.DeviceId, StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(session.DeviceId, device.RobotId, StringComparison.OrdinalIgnoreCase);
+        string.Equals(session.DeviceId, device.RobotId, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(ReadSessionMetadata(session, "registeredDeviceId"), device.DeviceId,
+            StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(ReadSessionMetadata(session, "registeredDeviceId"), device.RobotId,
+            StringComparison.OrdinalIgnoreCase);
 
     private static bool ConnectionMatchesDevice(RobotPresenceConnection connection, DeviceRegistration device) =>
         connection.RobotKeys.Contains(device.DeviceId) || connection.RobotKeys.Contains(device.RobotId);
@@ -1696,6 +1727,7 @@ internal static class PortalEndpoints
     private sealed record AdminStatusLoginRequest(string? Password);
 
     private sealed record ArchiveStatusRobotRequest(string? PortalSessionToken, bool Hidden);
+    private sealed record LinkStatusSessionRequest(string? PortalSessionToken, string? DeviceId);
 
     private sealed record FleetServerPresenceReportRequest(
         string? PortalSessionToken,

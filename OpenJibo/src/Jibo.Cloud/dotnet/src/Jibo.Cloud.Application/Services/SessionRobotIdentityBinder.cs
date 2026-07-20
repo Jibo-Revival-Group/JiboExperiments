@@ -17,6 +17,15 @@ public static class SessionRobotIdentityBinder
         if (!TryReadGeneralRobotIdentity(contextPayloadOrEnvelopeText, out var robotId, out var accountId))
             return false;
 
+        if (!string.Equals(session.DeviceId, robotId, StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrWhiteSpace(session.DeviceId) &&
+            !session.Metadata.ContainsKey("registeredDeviceId"))
+        {
+            // Hub-token identity and runtime loop identity differ on physical Jibos. Preserve
+            // the token-bound identity before replacing DeviceId with the live runtime identity.
+            session.Metadata["registeredDeviceId"] = session.DeviceId;
+        }
+
         session.DeviceId = robotId;
         session.Metadata["robotID"] = robotId;
         session.Metadata["robotId"] = robotId;

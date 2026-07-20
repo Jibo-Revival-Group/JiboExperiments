@@ -179,18 +179,43 @@ async function setRobotArchive(deviceId, hidden) {
   await renderStatus(hidden ? "Robot archived from the default view." : "Robot restored to the default view.");
 }
 
-function renderRecentSessions(rows = []) {
+function renderRecentSessions(rows = [], robots = []) {
   if (!rows.length) {
     return `<li class="muted-row">No recent live sessions.</li>`;
   }
+
+  const robotOptions = robots.map((robot) =>
+    `<option value="${escapeHtml(robot.deviceId)}">${escapeHtml(robot.friendlyName || robot.robotId || robot.deviceId)}</option>`
+  ).join("");
 
   return rows.map((session) => `
     <li>
       <strong>${escapeHtml(session.kind || "unknown")}</strong>
       <span>${escapeHtml(session.deviceId || "—")} · ${escapeHtml(session.hostName || "—")}${session.path ? ` · ${escapeHtml(session.path)}` : ""}</span>
       <div class="muted-row">${formatDate(session.lastSeenUtc)} · heartbeat ${formatFloat(session.heartbeatAgeSeconds, 0)}s ago</div>
+      ${session.registeredDeviceId ? `<div class="muted-row">Linked inventory identity: ${escapeHtml(session.registeredDeviceId)}</div>` : `
+        <div class="button-row session-link-row">
+          <select class="session-device-select" data-session-id="${escapeHtml(session.sessionId)}" aria-label="Robot record for live session">
+            <option value="">Link to robot...</option>${robotOptions}
+          </select>
+          <button class="button secondary compact link-session" data-session-id="${escapeHtml(session.sessionId)}" type="button">Link</button>
+        </div>`}
     </li>
   `).join("");
+}
+
+async function linkLiveSession(sessionId) {
+  const select = document.querySelector(`.session-device-select[data-session-id="${CSS.escape(sessionId)}"]`);
+  if (!select?.value) {
+    await renderStatus("Choose the inventory record that this live session belongs to.", "error");
+    return;
+  }
+
+  await apiFetch(`/api/portal/status/sessions/${encodeURIComponent(sessionId)}/link`, {
+    method: "POST",
+    body: JSON.stringify({ deviceId: select.value }),
+  });
+  await renderStatus("Live session linked to the selected robot record.");
 }
 
 async function renderStatus(message = "", tone = "success") {
@@ -309,7 +334,7 @@ async function renderStatus(message = "", tone = "success") {
             <span class="badge neutral">${fleet.totalSessions ?? 0} tracked</span>
           </div>
           <ol class="steps">
-            ${renderRecentSessions(recentSessions)}
+            ${renderRecentSessions(recentSessions, robots)}
           </ol>
           <div class="status-divider"></div>
           <div class="meta-list compact">
@@ -333,6 +358,9 @@ async function renderStatus(message = "", tone = "success") {
   });
   document.querySelectorAll(".archive-robot").forEach((button) => {
     button.addEventListener("click", () => setRobotArchive(button.dataset.deviceId, button.dataset.hidden === "true"));
+  });
+  document.querySelectorAll(".link-session").forEach((button) => {
+    button.addEventListener("click", () => linkLiveSession(button.dataset.sessionId));
   });
 }
 

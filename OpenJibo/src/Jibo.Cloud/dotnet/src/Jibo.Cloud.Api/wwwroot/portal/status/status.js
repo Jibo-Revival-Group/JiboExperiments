@@ -1,6 +1,25 @@
 const SESSION_KEY = "openjibo_status_session";
 const app = document.getElementById("app");
+const REFRESH_INTERVAL_MS = 20000;
+const ROBOT_PAGE_SIZE_OPTIONS = [10, 25, 50];
+
 let includeHidden = false;
+let robotSearchQuery = "";
+let robotSortKey = "lastSeenUtc";
+let robotSortDirection = "desc";
+let robotPageSize = 10;
+let robotPage = 1;
+let recentSessionPageSize = 5;
+let recentSessionPage = 1;
+let autoRefreshEnabled = true;
+let lastRefreshAt = null;
+let lastRefreshError = "";
+let previousSummary = null;
+let latestSummary = null;
+let bannerMessage = "";
+let bannerTone = "success";
+let refreshTimer = null;
+let refreshInFlight = false;
 
 function escapeHtml(value) {
   return String(value)
@@ -41,19 +60,43 @@ async function apiFetch(path, options = {}) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || `Request failed (${response.status})`);
+    const error = new Error(payload.error || `Request failed (${response.status})`);
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
   }
 
   return payload;
 }
 
 function formatDate(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString();
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString();
+}
+
+function formatRelativeTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  const deltaSeconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (deltaSeconds < 5) return "just now";
+  if (deltaSeconds < 60) return `${deltaSeconds}s ago`;
+
+  const deltaMinutes = Math.floor(deltaSeconds / 60);
+  if (deltaMinutes < 60) return `${deltaMinutes}m ago`;
+
+  const deltaHours = Math.floor(deltaMinutes / 60);
+  if (deltaHours < 24) return `${deltaHours}h ago`;
+
+  const deltaDays = Math.floor(deltaHours / 24);
+  return `${deltaDays}d ago`;
 }
 
 function formatDuration(seconds) {
-  if (seconds == null || Number.isNaN(Number(seconds))) return "—";
+  if (seconds == null || Number.isNaN(Number(seconds))) return "-";
 
   const total = Math.max(0, Math.floor(Number(seconds)));
   if (total >= 86400) {
@@ -78,9 +121,9 @@ function formatDuration(seconds) {
 }
 
 function formatFloat(value, digits = 1) {
-  if (value == null || value === "") return "—";
+  if (value == null || value === "") return "-";
   const num = Number(value);
-  if (Number.isNaN(num)) return "—";
+  if (Number.isNaN(num)) return "-";
   return num.toFixed(digits);
 }
 
@@ -97,6 +140,183 @@ function statusBadge(presence) {
   return `<span class="badge ${tone}">${label}</span>`;
 }
 
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function robotDisplayName(robot) {
+  return robot.friendlyName || robot.robotId || robot.deviceId || "-";
+}
+
+function robotSearchHaystack(robot) {
+  return normalizeText([
+    robot.friendlyName,
+    robot.robotId,
+    robot.deviceId,
+    robot.registrationSource,
+    robot.presence,
+    robot.firmwareVersion,
+    robot.applicationVersion,
+  ].join(" "));
+}
+
+function robotPresenceRank(presence) {
+  const rank = {
+    online: 0,
+    sleeping: 1,
+    "recently-seen": 2,
+    offline: 3,
+    "never-connected": 4,
+    inactive: 5,
+  };
+
+  return rank[presence] ?? 99;
+}
+
+function compareRobots(left, right) {
+  const direction = robotSortDirection === "asc" ? 1 : -1;
+  let comparison = 0;
+
+  switch (robotSortKey) {
+    case "name":
+      comparison = normalizeText(robotDisplayName(left)).localeCompare(normalizeText(robotDisplayName(right)));
+      break;
+    case "presence":
+      comparison = robotPresenceRank(left.presence) - robotPresenceRank(right.presence);
+      break;
+    case "sessions":
+      comparison = (left.liveConnectionCount ?? 0) - (right.liveConnectionCount ?? 0);
+      break;
+    case "heartbeat":
+      comparison = (left.lastHeartbeatAgeSeconds ?? Number.POSITIVE_INFINITY) -
+        (right.lastHeartbeatAgeSeconds ?? Number.POSITIVE_INFINITY);
+      break;
+    case "lastSeenUtc":
+    default:
+      comparison = new Date(left.lastSeenUtc || 0).getTime() - new Date(right.lastSeenUtc || 0).getTime();
+      break;
+  }
+
+  if (comparison === 0) {
+    comparison = normalizeText(robotDisplayName(left)).localeCompare(normalizeText(robotDisplayName(right)));
+  }
+
+  return comparison * direction;
+}
+
+function robotRowSnapshot(robot) {
+  return JSON.stringify({
+    friendlyName: robot.friendlyName || "",
+    robotId: robot.robotId || "",
+    deviceId: robot.deviceId || "",
+    presence: robot.presence || "",
+    liveConnectionCount: robot.liveConnectionCount ?? 0,
+    connectionKinds: [...(robot.connectionKinds || [])].join(","),
+    lastSeenUtc: robot.lastSeenUtc || "",
+    lastHeartbeatAgeSeconds: robot.lastHeartbeatAgeSeconds ?? null,
+    firmwareVersion: robot.firmwareVersion || "",
+    applicationVersion: robot.applicationVersion || "",
+    registrationSource: robot.registrationSource || "",
+    isHidden: Boolean(robot.isHidden),
+  });
+}
+
+function sessionRowSnapshot(session) {
+  return JSON.stringify({
+    sessionId: session.sessionId || "",
+    kind: session.kind || "",
+    deviceId: session.deviceId || "",
+    hostName: session.hostName || "",
+    path: session.path || "",
+    registeredDeviceId: session.registeredDeviceId || "",
+    lastSeenUtc: session.lastSeenUtc || "",
+    heartbeatAgeSeconds: session.heartbeatAgeSeconds ?? null,
+  });
+}
+
+function buildChangeSet(currentRows = [], previousRows = [], keySelector, snapshotSelector) {
+  const previousMap = new Map(previousRows.map((row) => [keySelector(row), snapshotSelector(row)]));
+  const changed = new Set();
+
+  currentRows.forEach((row) => {
+    const key = keySelector(row);
+    if (previousMap.get(key) !== snapshotSelector(row)) {
+      changed.add(key);
+    }
+  });
+
+  return changed;
+}
+
+function setStatusBanner(message = "", tone = "success") {
+  bannerMessage = message;
+  bannerTone = tone;
+}
+
+function renderRobotRows(robots = [], changedRobotIds = new Set()) {
+  if (!robots.length) {
+    return `<tr><td colspan="8" class="muted-row empty-state">No robot records match the current filters.</td></tr>`;
+  }
+
+  return robots.map((robot) => `
+    <tr class="${changedRobotIds.has(robot.deviceId) ? "changed-row" : ""}">
+      <td>
+        <div class="mono">${escapeHtml(robotDisplayName(robot))}</div>
+        <div class="muted-row">${escapeHtml(robot.deviceId || "-")}</div>
+      </td>
+      <td>${statusBadge(robot.presence)}</td>
+      <td>
+        <div class="mono">${escapeHtml(robot.robotId || "-")}</div>
+        <div class="muted-row">${escapeHtml(robot.registrationSource || "unknown")}</div>
+      </td>
+      <td>${robot.liveConnectionCount ?? 0} live<br><span class="muted-row">${escapeHtml((robot.connectionKinds || []).join(", ") || "-")}</span></td>
+      <td>${formatDate(robot.lastSeenUtc)}</td>
+      <td>${formatFloat(robot.lastHeartbeatAgeSeconds, 0)}s</td>
+      <td>
+        <div class="muted-row">${escapeHtml(robot.firmwareVersion || "-")}</div>
+        <div class="muted-row">${escapeHtml(robot.applicationVersion || "-")}</div>
+      </td>
+      <td><button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button></td>
+    </tr>
+  `).join("");
+}
+
+function filterAndSortRobots(robots = []) {
+  const query = normalizeText(robotSearchQuery);
+  const filtered = query
+    ? robots.filter((robot) => robotSearchHaystack(robot).includes(query))
+    : [...robots];
+
+  filtered.sort(compareRobots);
+  return filtered;
+}
+
+function shouldAutoRefreshNow() {
+  if (!autoRefreshEnabled || !getSessionToken()) return false;
+  if (document.visibilityState !== "visible") return false;
+
+  const active = document.activeElement;
+  if (!active || active === document.body) return true;
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(active.tagName)) return false;
+
+  return true;
+}
+
+function syncAutoRefreshTimer() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+
+  if (shouldAutoRefreshNow()) {
+    refreshTimer = setInterval(() => {
+      if (shouldAutoRefreshNow()) {
+        refreshStatus("", "success", { silent: true });
+      }
+    }, REFRESH_INTERVAL_MS);
+  }
+}
+
 async function login(password) {
   if (!password) {
     await renderLogin("Enter the admin password.", true);
@@ -109,13 +329,14 @@ async function login(password) {
       body: JSON.stringify({ password }),
     });
     setSessionToken(payload.portalSessionToken);
-    await renderStatus();
+    await refreshStatus("Signed in.", "success", { force: true });
   } catch (error) {
     await renderLogin(error.message, true);
   }
 }
 
 async function renderLogin(message = "", isError = false) {
+  syncAutoRefreshTimer();
   app.innerHTML = `
     <div class="center-shell">
       <section class="card login-card">
@@ -143,55 +364,27 @@ async function renderLogin(message = "", isError = false) {
   input.focus();
 }
 
-function renderRobotRows(robots = []) {
-  if (!robots.length) {
-    return `<tr><td colspan="7" class="muted-row">No robot records found yet.</td></tr>`;
-  }
-
-  return robots.map((robot) => `
-    <tr>
-      <td>
-        <div class="mono">${escapeHtml(robot.friendlyName || robot.robotId || robot.deviceId || "—")}</div>
-        <div class="muted-row">${escapeHtml(robot.deviceId || "—")}</div>
-      </td>
-      <td>${statusBadge(robot.presence)}</td>
-      <td>
-        <div class="mono">${escapeHtml(robot.robotId || "—")}</div>
-        <div class="muted-row">${escapeHtml(robot.registrationSource || "unknown")}</div>
-      </td>
-      <td>${robot.liveConnectionCount ?? 0} live<br><span class="muted-row">${escapeHtml((robot.connectionKinds || []).join(", ") || "—")}</span></td>
-      <td>${formatDate(robot.lastSeenUtc)}</td>
-      <td>${formatFloat(robot.lastHeartbeatAgeSeconds, 0)}s</td>
-      <td>
-        <div class="muted-row">${escapeHtml(robot.firmwareVersion || "—")}</div>
-        <div class="muted-row">${escapeHtml(robot.applicationVersion || "—")}</div>
-      </td>
-      <td><button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button></td>
-    </tr>
-  `).join("");
-}
-
 async function setRobotArchive(deviceId, hidden) {
   await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/archive`, {
     method: "POST",
     body: JSON.stringify({ hidden }),
   });
-  await renderStatus(hidden ? "Robot archived from the default view." : "Robot restored to the default view.");
+  await refreshStatus(hidden ? "Robot archived from the default view." : "Robot restored to the default view.");
 }
 
-function renderRecentSessions(rows = [], robots = []) {
+function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Set()) {
   if (!rows.length) {
     return `<li class="muted-row">No recent live sessions.</li>`;
   }
 
   const robotOptions = robots.map((robot) =>
-    `<option value="${escapeHtml(robot.deviceId)}">${escapeHtml(robot.friendlyName || robot.robotId || robot.deviceId)}</option>`
+    `<option value="${escapeHtml(robot.deviceId)}">${escapeHtml(robotDisplayName(robot))}</option>`
   ).join("");
 
   return rows.map((session) => `
-    <li>
+    <li class="${changedSessionIds.has(session.sessionId) ? "changed-row" : ""}">
       <strong>${escapeHtml(session.kind || "unknown")}</strong>
-      <span>${escapeHtml(session.deviceId || "—")} · ${escapeHtml(session.hostName || "—")}${session.path ? ` · ${escapeHtml(session.path)}` : ""}</span>
+      <span>${escapeHtml(session.deviceId || "-")} · ${escapeHtml(session.hostName || "-")}${session.path ? ` · ${escapeHtml(session.path)}` : ""}</span>
       <div class="muted-row">${formatDate(session.lastSeenUtc)} · heartbeat ${formatFloat(session.heartbeatAgeSeconds, 0)}s ago</div>
       ${session.registeredDeviceId ? `<div class="muted-row">Linked inventory identity: ${escapeHtml(session.registeredDeviceId)}</div>
         <button class="button secondary compact unlink-session" data-session-id="${escapeHtml(session.sessionId)}" type="button">Unlink</button>` : `
@@ -208,7 +401,7 @@ function renderRecentSessions(rows = [], robots = []) {
 async function linkLiveSession(sessionId) {
   const select = document.querySelector(`.session-device-select[data-session-id="${CSS.escape(sessionId)}"]`);
   if (!select?.value) {
-    await renderStatus("Choose the inventory record that this live session belongs to.", "error");
+    await refreshStatus("Choose the inventory record that this live session belongs to.", "error", { preserveBanner: false });
     return;
   }
 
@@ -216,26 +409,107 @@ async function linkLiveSession(sessionId) {
     method: "POST",
     body: JSON.stringify({ deviceId: select.value }),
   });
-  await renderStatus("Live session linked to the selected robot record.");
+  await refreshStatus("Live session linked to the selected robot record.");
 }
 
 async function unlinkLiveSession(sessionId) {
   await apiFetch(`/api/portal/status/sessions/${encodeURIComponent(sessionId)}/link`, {
     method: "DELETE",
   });
-  await renderStatus("Live session link removed.");
+  await refreshStatus("Live session link removed.");
 }
 
-async function renderStatus(message = "", tone = "success") {
-  let summary;
-  try {
-    summary = await apiFetch(`/api/portal/status/summary?includeHidden=${includeHidden}`);
-  } catch (error) {
-    clearSessionToken();
-    await renderLogin(error.message, true);
-    return;
-  }
+function renderRobotControls(filteredCount, totalCount, totalPages) {
+  const options = ROBOT_PAGE_SIZE_OPTIONS.map((size) => `
+    <option value="${size}" ${robotPageSize === size ? "selected" : ""}>${size} / page</option>
+  `).join("");
 
+  const sortDirectionLabel = robotSortDirection === "asc" ? "Ascending" : "Descending";
+  const sortDirectionClass = robotSortDirection === "asc" ? "secondary" : "secondary";
+
+  return `
+    <div class="robot-toolbar">
+      <label class="toolbar-field">
+        <span>Search robots</span>
+        <input id="robotSearchInput" type="search" placeholder="Name, device ID, robot ID, version..." value="${escapeHtml(robotSearchQuery)}">
+      </label>
+
+      <label class="toolbar-field">
+        <span>Sort by</span>
+        <select id="robotSortSelect">
+          <option value="lastSeenUtc" ${robotSortKey === "lastSeenUtc" ? "selected" : ""}>Last seen</option>
+          <option value="heartbeat" ${robotSortKey === "heartbeat" ? "selected" : ""}>Heartbeat age</option>
+          <option value="name" ${robotSortKey === "name" ? "selected" : ""}>Name</option>
+          <option value="presence" ${robotSortKey === "presence" ? "selected" : ""}>Presence</option>
+          <option value="sessions" ${robotSortKey === "sessions" ? "selected" : ""}>Live sessions</option>
+        </select>
+      </label>
+
+      <label class="toolbar-field">
+        <span>Rows per page</span>
+        <select id="robotPageSizeSelect">
+          ${options}
+        </select>
+      </label>
+
+      <div class="toolbar-actions">
+        <button class="button secondary compact" id="robotSortDirectionButton" type="button">${sortDirectionLabel}</button>
+        <button class="button secondary compact" id="robotClearSearchButton" type="button">Clear search</button>
+      </div>
+
+      <div class="toolbar-summary">
+        <span>${filteredCount} of ${totalCount} robots</span>
+        <span>${totalPages} page${totalPages === 1 ? "" : "s"}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderPagination(filteredCount) {
+  const totalPages = Math.max(1, Math.ceil(filteredCount / robotPageSize));
+  const currentPage = Math.min(robotPage, totalPages);
+  const start = filteredCount ? ((currentPage - 1) * robotPageSize) + 1 : 0;
+  const end = filteredCount ? Math.min(filteredCount, currentPage * robotPageSize) : 0;
+
+  return `
+    <div class="pagination-bar">
+      <span class="muted-row">Showing ${start}-${end} of ${filteredCount}</span>
+      <div class="pagination-actions">
+        <button class="button secondary compact" id="robotPrevPageButton" type="button" ${currentPage <= 1 ? "disabled" : ""}>Prev</button>
+        <span class="pagination-label">Page ${currentPage} of ${totalPages}</span>
+        <button class="button secondary compact" id="robotNextPageButton" type="button" ${currentPage >= totalPages ? "disabled" : ""}>Next</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderRecentSessionPagination(filteredCount) {
+  const totalPages = Math.max(1, Math.ceil(filteredCount / recentSessionPageSize));
+  const currentPage = Math.min(recentSessionPage, totalPages);
+  const start = filteredCount ? ((currentPage - 1) * recentSessionPageSize) + 1 : 0;
+  const end = filteredCount ? Math.min(filteredCount, currentPage * recentSessionPageSize) : 0;
+
+  return `
+    <div class="pagination-bar">
+      <span class="muted-row">Showing ${start}-${end} of ${filteredCount}</span>
+      <div class="pagination-actions">
+        <label class="toolbar-field compact-field">
+          <span>Rows per page</span>
+          <select id="recentSessionPageSizeSelect">
+            <option value="5" ${recentSessionPageSize === 5 ? "selected" : ""}>5 / page</option>
+            <option value="10" ${recentSessionPageSize === 10 ? "selected" : ""}>10 / page</option>
+            <option value="25" ${recentSessionPageSize === 25 ? "selected" : ""}>25 / page</option>
+          </select>
+        </label>
+        <button class="button secondary compact" id="recentSessionPrevPageButton" type="button" ${currentPage <= 1 ? "disabled" : ""}>Prev</button>
+        <span class="pagination-label">Page ${currentPage} of ${totalPages}</span>
+        <button class="button secondary compact" id="recentSessionNextPageButton" type="button" ${currentPage >= totalPages ? "disabled" : ""}>Next</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderStatusView(summary, previous = previousSummary) {
   const fleet = summary.fleet || {};
   const serverFleet = summary.serverFleet || {};
   const localServer = serverFleet.localServer || {};
@@ -243,6 +517,35 @@ async function renderStatus(message = "", tone = "success") {
   const service = summary.service || {};
   const robots = summary.robots || [];
   const recentSessions = summary.recentSessions || [];
+  const previousRobots = previous?.robots || [];
+  const previousRecentSessions = previous?.recentSessions || [];
+  const changedRobotIds = buildChangeSet(robots, previousRobots, (robot) => robot.deviceId || robot.robotId || "", robotRowSnapshot);
+  const changedSessionIds = buildChangeSet(recentSessions, previousRecentSessions, (session) => session.sessionId || "", sessionRowSnapshot);
+  const activeElement = document.activeElement;
+  const activeSnapshot = activeElement && ["INPUT", "SELECT", "TEXTAREA"].includes(activeElement.tagName)
+    ? {
+      id: activeElement.id,
+      value: activeElement.value,
+      selectionStart: typeof activeElement.selectionStart === "number" ? activeElement.selectionStart : null,
+      selectionEnd: typeof activeElement.selectionEnd === "number" ? activeElement.selectionEnd : null,
+    }
+    : null;
+
+  const filteredRobots = filterAndSortRobots(robots);
+  const totalRobotPages = Math.max(1, Math.ceil(filteredRobots.length / robotPageSize));
+  robotPage = Math.min(Math.max(robotPage, 1), totalRobotPages);
+  const startIndex = filteredRobots.length ? (robotPage - 1) * robotPageSize : 0;
+  const pageRobots = filteredRobots.slice(startIndex, startIndex + robotPageSize);
+
+  const totalRecentSessionPages = Math.max(1, Math.ceil(recentSessions.length / recentSessionPageSize));
+  recentSessionPage = Math.min(Math.max(recentSessionPage, 1), totalRecentSessionPages);
+  const recentSessionStartIndex = recentSessions.length ? (recentSessionPage - 1) * recentSessionPageSize : 0;
+  const pageRecentSessions = recentSessions.slice(recentSessionStartIndex, recentSessionStartIndex + recentSessionPageSize);
+
+  const liveTone = lastRefreshError ? "warning" : "success";
+  const liveLabel = lastRefreshError ? "Sync issue" : autoRefreshEnabled ? "Live updates" : "Static";
+  const refreshLabel = lastRefreshAt ? `Updated ${formatRelativeTime(lastRefreshAt)}` : "Not yet refreshed";
+  const errorBanner = lastRefreshError ? `<p class="status error">${escapeHtml(lastRefreshError)}</p>` : "";
 
   app.innerHTML = `
     <div class="status-shell">
@@ -263,6 +566,9 @@ async function renderStatus(message = "", tone = "success") {
         </div>
 
         <div class="status-meta">
+          <span class="badge ${liveTone}">${escapeHtml(liveLabel)}</span>
+          <span class="badge neutral">${escapeHtml(refreshLabel)}</span>
+          <span class="badge neutral">${escapeHtml(REFRESH_INTERVAL_MS / 1000)}s polling</span>
           <span class="badge success">${escapeHtml(fleet.connectedRobots ?? 0)} online</span>
           <span class="badge neutral">${escapeHtml(fleet.sleepingRobots ?? 0)} sleeping</span>
           <span class="badge neutral">${escapeHtml(fleet.recentlySeenRobots ?? 0)} recently seen</span>
@@ -270,7 +576,7 @@ async function renderStatus(message = "", tone = "success") {
           <span class="badge neutral">${escapeHtml(fleet.registeredRobots ?? 0)} registered</span>
           <span class="badge warning">${escapeHtml(fleet.hiddenRobots ?? 0)} archived</span>
           <span class="badge warning">${escapeHtml(fleet.staleSessions ?? 0)} stale sessions</span>
-          <span class="badge neutral">Uptime ${escapeHtml(service.uptimeLabel || "—")}</span>
+          <span class="badge neutral">Uptime ${escapeHtml(service.uptimeLabel || "-")}</span>
         </div>
 
         <div class="stat-grid">
@@ -286,7 +592,7 @@ async function renderStatus(message = "", tone = "success") {
           </div>
           <div class="stat-card">
             <span class="label">Service uptime</span>
-            <span class="value">${escapeHtml(service.uptimeLabel || "—")}</span>
+            <span class="value">${escapeHtml(service.uptimeLabel || "-")}</span>
             <span class="detail">Started ${formatDate(service.startedAtUtc)}.</span>
           </div>
           <div class="stat-card">
@@ -298,8 +604,8 @@ async function renderStatus(message = "", tone = "success") {
 
         <div class="status-footer">
           <span>Generated ${formatDate(summary.generatedAtUtc)}</span>
-          <span>This server ${escapeHtml(localServer.canonicalHost || "—")} · ${localServer.connectedRobots ?? 0} robots</span>
-          <span>Persistence rev ${escapeHtml(summary.persistence?.revision ?? "—")}</span>
+          <span>This server ${escapeHtml(localServer.canonicalHost || "-")} · ${localServer.connectedRobots ?? 0} robots</span>
+          <span>Persistence rev ${escapeHtml(summary.persistence?.revision ?? "-")}</span>
         </div>
       </section>
 
@@ -312,6 +618,9 @@ async function renderStatus(message = "", tone = "success") {
             </div>
             <label class="toggle-control"><input id="includeHiddenToggle" type="checkbox" ${includeHidden ? "checked" : ""}> Show archived</label>
           </div>
+
+          ${renderRobotControls(filteredRobots.length, robots.length, totalRobotPages)}
+
           <div class="table-wrap">
             <table class="status-table">
               <thead>
@@ -327,10 +636,12 @@ async function renderStatus(message = "", tone = "success") {
                 </tr>
               </thead>
               <tbody>
-                ${renderRobotRows(robots)}
+                ${renderRobotRows(pageRobots, changedRobotIds)}
               </tbody>
             </table>
           </div>
+
+          ${renderPagination(filteredRobots.length)}
         </section>
 
         <section class="card panel tight">
@@ -342,8 +653,9 @@ async function renderStatus(message = "", tone = "success") {
             <span class="badge neutral">${fleet.totalSessions ?? 0} tracked</span>
           </div>
           <ol class="steps">
-            ${renderRecentSessions(recentSessions, robots)}
+            ${renderRecentSessions(pageRecentSessions, robots, changedSessionIds)}
           </ol>
+          ${renderRecentSessionPagination(recentSessions.length)}
           <div class="status-divider"></div>
           <div class="meta-list compact">
             <div class="meta-item"><span>Latest seen</span><span>${formatDate(fleet.latestSeenUtc)}</span></div>
@@ -354,16 +666,84 @@ async function renderStatus(message = "", tone = "success") {
         </section>
       </div>
 
-      ${message ? `<p class="status ${tone}" style="margin-top: 1rem;">${escapeHtml(message)}</p>` : ""}
+      ${errorBanner}
+      ${bannerMessage && !lastRefreshError ? `<p class="status ${bannerTone}" style="margin-top: 1rem;">${escapeHtml(bannerMessage)}</p>` : ""}
     </div>
   `;
 
-  document.getElementById("refreshButton").addEventListener("click", () => renderStatus("Status refreshed."));
+  document.getElementById("refreshButton").addEventListener("click", () => refreshStatus("Status refreshed."));
   document.getElementById("logoutButton").addEventListener("click", logout);
   document.getElementById("includeHiddenToggle").addEventListener("change", (event) => {
     includeHidden = event.target.checked;
-    renderStatus();
+    robotPage = 1;
+    refreshStatus();
   });
+  document.getElementById("robotSearchInput").addEventListener("input", (event) => {
+    robotSearchQuery = event.target.value;
+    robotPage = 1;
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+  document.getElementById("robotSortSelect").addEventListener("change", (event) => {
+    robotSortKey = event.target.value;
+    robotPage = 1;
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+  document.getElementById("robotPageSizeSelect").addEventListener("change", (event) => {
+    robotPageSize = Number(event.target.value) || 10;
+    robotPage = 1;
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+  document.getElementById("robotSortDirectionButton").addEventListener("click", () => {
+    robotSortDirection = robotSortDirection === "asc" ? "desc" : "asc";
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+  document.getElementById("robotClearSearchButton").addEventListener("click", () => {
+    robotSearchQuery = "";
+    robotPage = 1;
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+  document.getElementById("robotPrevPageButton").addEventListener("click", () => {
+    robotPage = Math.max(1, robotPage - 1);
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+  document.getElementById("robotNextPageButton").addEventListener("click", () => {
+    robotPage += 1;
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+  document.getElementById("recentSessionPrevPageButton").addEventListener("click", () => {
+    recentSessionPage = Math.max(1, recentSessionPage - 1);
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+  document.getElementById("recentSessionNextPageButton").addEventListener("click", () => {
+    recentSessionPage += 1;
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+  document.getElementById("recentSessionPageSizeSelect").addEventListener("change", (event) => {
+    recentSessionPageSize = Number(event.target.value) || 5;
+    recentSessionPage = 1;
+    if (latestSummary) {
+      renderStatusView(latestSummary);
+    }
+  });
+
   document.querySelectorAll(".archive-robot").forEach((button) => {
     button.addEventListener("click", () => setRobotArchive(button.dataset.deviceId, button.dataset.hidden === "true"));
   });
@@ -373,11 +753,78 @@ async function renderStatus(message = "", tone = "success") {
   document.querySelectorAll(".unlink-session").forEach((button) => {
     button.addEventListener("click", () => unlinkLiveSession(button.dataset.sessionId));
   });
+
+  if (activeSnapshot?.id) {
+    const restored = document.getElementById(activeSnapshot.id);
+    if (restored) {
+      restored.focus();
+      if (typeof restored.setSelectionRange === "function" && activeSnapshot.selectionStart != null && activeSnapshot.selectionEnd != null) {
+        restored.setSelectionRange(activeSnapshot.selectionStart, activeSnapshot.selectionEnd);
+      }
+    }
+  }
+}
+
+async function refreshStatus(message = "", tone = "success", options = {}) {
+  if (refreshInFlight && !options.force) {
+    return;
+  }
+
+  const hadRefreshError = Boolean(lastRefreshError);
+  if (message || options.replaceBanner) {
+    setStatusBanner(message, tone);
+  }
+
+  refreshInFlight = true;
+  try {
+    const summary = await apiFetch(`/api/portal/status/summary?includeHidden=${includeHidden}`);
+    previousSummary = latestSummary;
+    latestSummary = summary;
+    lastRefreshAt = new Date().toISOString();
+    lastRefreshError = "";
+    if (message && !options.preserveBanner) {
+      setStatusBanner(message, tone);
+    } else if (hadRefreshError && !options.preserveBanner) {
+      setStatusBanner("", "success");
+    }
+    renderStatusView(summary);
+  } catch (error) {
+    if (error.status === 401 || error.status === 403) {
+      clearSessionToken();
+      latestSummary = null;
+      lastRefreshError = "";
+      await renderLogin(error.message, true);
+      return;
+    }
+
+    lastRefreshError = error.message;
+    if (!latestSummary) {
+      await renderLogin(error.message, true);
+      return;
+    }
+
+    if (!options.preserveBanner) {
+      setStatusBanner(error.message, "error");
+    }
+    renderStatusView(latestSummary);
+  } finally {
+    refreshInFlight = false;
+    syncAutoRefreshTimer();
+  }
 }
 
 async function logout() {
   const token = getSessionToken();
   clearSessionToken();
+  previousSummary = null;
+  latestSummary = null;
+  lastRefreshError = "";
+  lastRefreshAt = null;
+
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
 
   if (token) {
     try {
@@ -394,8 +841,20 @@ async function logout() {
 }
 
 async function bootstrap() {
+  document.addEventListener("visibilitychange", () => {
+    syncAutoRefreshTimer();
+    if (document.visibilityState === "visible" && getSessionToken()) {
+      refreshStatus("", "success", { silent: true });
+    }
+  });
+  document.addEventListener("focusin", syncAutoRefreshTimer);
+  document.addEventListener("focusout", () => {
+    setTimeout(syncAutoRefreshTimer, 0);
+  });
+
   if (getSessionToken()) {
-    await renderStatus();
+    previousSummary = null;
+    await refreshStatus("", "success", { force: true, silent: true });
     return;
   }
 

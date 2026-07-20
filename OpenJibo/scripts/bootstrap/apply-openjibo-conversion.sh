@@ -63,7 +63,6 @@ if [ -z "$hub_hostname" ] && { [ "$target_mode" = "open-jibo" ] || [ "$target_mo
   hub_hostname="neohub.openjibo.com"
 fi
 
-script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 tmp_js="$(mktemp "${TMPDIR:-/tmp}/apply-openjibo-conversion.XXXXXX")"
 cleanup() {
   rm -f "$tmp_js"
@@ -88,15 +87,13 @@ const SERVER_LIBRARY_VARIANTS = [
   },
 ];
 
-const scriptDir = path.resolve(process.argv[2]);
-const robotRoot = path.resolve(process.argv[3]);
-const planPath = path.resolve(process.argv[4]);
-const targetMode = process.argv[5];
-const apiHostname = (process.argv[6] || "api.openjibo.com").trim() || "api.openjibo.com";
-const hubHostname = (process.argv[7] || "").trim() || apiHostname;
-const outputPath = (process.argv[8] || "").trim();
-const strict = String(process.argv[9]).toLowerCase() === "true";
-const conversionHelpers = require(path.join(scriptDir, "openjibo-conversion-region.js"));
+const robotRoot = path.resolve(process.argv[2]);
+const planPath = path.resolve(process.argv[3]);
+const targetMode = process.argv[4];
+const apiHostname = (process.argv[5] || "api.openjibo.com").trim() || "api.openjibo.com";
+const hubHostname = (process.argv[6] || "").trim() || apiHostname;
+const outputPath = (process.argv[7] || "").trim();
+const strict = String(process.argv[8]).toLowerCase() === "true";
 
 function ensureDir(dirPath) {
   if (!dirPath || fs.existsSync(dirPath)) return;
@@ -366,7 +363,9 @@ const serverService = serverServicePath ? readJson(serverServicePath) : null;
 const credentials = readJson(credentialsPath);
 const currentRegion = credentials.region || "api";
 const oobe = readJson(oobeConfigPath);
-const nextCredentialsRegion = conversionHelpers.selectNextCredentialsRegion(targetMode, currentRegion);
+const nextCredentialsRegion = (targetMode === "open-jibo" || targetMode === "open-jibo-ai")
+  ? "open-jibo"
+  : (currentRegion || "api");
 
 jetstream.HubClient = jetstream.HubClient || {};
 const regionSettings = jetstream.HubClient["region-settings"] || jetstream["region-settings"] || jetstream.regions || {};
@@ -547,4 +546,4 @@ if (outputPath) {
   console.log(json);
 }
 NODE
-node "$tmp_js" "$script_dir" "$robot_root" "$plan_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"
+node "$tmp_js" "$robot_root" "$plan_path" "$target_mode" "$api_hostname" "$hub_hostname" "$output_path" "$strict"

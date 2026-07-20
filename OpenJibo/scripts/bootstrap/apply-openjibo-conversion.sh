@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-19.1"
+SCRIPT_VERSION="2026-07-19.2"
 echo "apply-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -401,18 +401,31 @@ const endpointReplacements = [
 ];
 
 const runtimeJsReplacements = [
-  [".jibo.com", ".openjibo.com"],
-  ['data.region + ".jibo.com"', 'data.region + ".openjibo.com"'],
-  ['this._wifiService.options.region + ".jibo.com"', 'this._wifiService.options.region + ".openjibo.com"'],
+  ['data.region + ".jibo.com"', '"api.openjibo.com"'],
+  ['data.region+".jibo.com"', '"api.openjibo.com"'],
+  ['data.region + ".openjibo.com"', '"api.openjibo.com"'],
+  ['data.region+".openjibo.com"', '"api.openjibo.com"'],
+  ['this._wifiService.options.region + ".jibo.com"', '"api.openjibo.com"'],
+  ['this._wifiService.options.region+".jibo.com"', '"api.openjibo.com"'],
+  ['this._wifiService.options.region + ".openjibo.com"', '"api.openjibo.com"'],
+  ['this._wifiService.options.region+".openjibo.com"', '"api.openjibo.com"'],
   ["API: 'api.jibo.com'", "API: 'api.openjibo.com'"],
+  [".jibo.com", ".openjibo.com"],
 ];
 
 const runtimeMapReplacements = [
-  [".jibo.com", ".openjibo.com"],
-  ['data.region + \\".jibo.com\\"', 'data.region + \\".openjibo.com\\"'],
-  ['this._wifiService.options.region + \\".jibo.com\\"', 'this._wifiService.options.region + \\".openjibo.com\\"'],
+  ['data.region + \\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['data.region+\\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['data.region + \\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['data.region+\\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['this._wifiService.options.region + \\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['this._wifiService.options.region+\\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['this._wifiService.options.region + \\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['this._wifiService.options.region+\\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
   ["API: 'api.jibo.com'", "API: 'api.openjibo.com'"],
+  [".jibo.com", ".openjibo.com"],
 ];
+const runtimeSourceMapReplacements = runtimeJsReplacements.concat(runtimeMapReplacements);
 
 for (const filePath of regionConfigFiles) {
   patchTextFile(filePath, endpointReplacements);
@@ -427,7 +440,7 @@ for (const filePath of jiboSsmRuntimeJsFiles) {
 }
 
 for (const filePath of jiboSsmRuntimeMapFiles) {
-  patchSourceMapFile(filePath, runtimeJsReplacements);
+  patchSourceMapFile(filePath, runtimeSourceMapReplacements);
 }
 
 for (const filePath of jiboStsRuntimeJsFiles) {
@@ -435,7 +448,7 @@ for (const filePath of jiboStsRuntimeJsFiles) {
 }
 
 for (const filePath of jiboStsRuntimeMapFiles) {
-  patchSourceMapFile(filePath, runtimeJsReplacements);
+  patchSourceMapFile(filePath, runtimeSourceMapReplacements);
 }
 
 const nativeServerLibraryPatch = patchServerLibrary(serverLibraryPath);

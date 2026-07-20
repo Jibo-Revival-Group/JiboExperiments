@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-19.1"
+SCRIPT_VERSION="2026-07-19.2"
 echo "plan-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -152,10 +152,10 @@ const proposedChanges = [
     File: "usr/local/bin/jibo-ssm/lib/skills-service-manager.js and other scanned jibo-ssm runtime JS files",
     Action: "replace the hardcoded server hostname builder inside the live jibo-ssm bundle",
     Details: [
-      'change data.region + ".jibo.com" to data.region + ".openjibo.com"',
-      'change this._wifiService.options.region + ".jibo.com" to this._wifiService.options.region + ".openjibo.com"',
+      'replace stock and previously converted data.region hostname concatenations with fixed "api.openjibo.com"',
+      'replace stock and previously converted this._wifiService.options.region hostname concatenations with fixed "api.openjibo.com"',
       "change API: 'api.jibo.com' to API: 'api.openjibo.com'",
-      "keep the runtime bundle aligned with the region_config.json and AWS SDK template rewrites",
+      "keep credentials.region as open-jibo for Jetstream selection while the SSM HTTPS connectivity probe uses the canonical API host",
     ],
   },
   {

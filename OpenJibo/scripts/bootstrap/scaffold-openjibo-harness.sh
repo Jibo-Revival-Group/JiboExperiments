@@ -91,6 +91,16 @@ const requiredItems = [
     type: "file",
   },
   {
+    source: "3.services/bin/jibo-ssm/lib/skills-service-manager.js",
+    target: "usr/local/bin/jibo-ssm/lib/skills-service-manager.js",
+    type: "file",
+  },
+  {
+    source: "3.services/bin/jibo-ssm/lib/skills-service-manager.js.map",
+    target: "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
+    type: "file",
+  },
+  {
     source: "3.services/etc/jibo-ssm",
     target: "usr/local/etc/jibo-ssm",
     type: "directory",

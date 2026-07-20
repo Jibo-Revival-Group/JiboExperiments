@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-19.1"
+SCRIPT_VERSION="2026-07-19.2"
 echo "audit-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -219,7 +219,13 @@ const templateNeedles = [
 const runtimeJsNeedles = [
   ".jibo.com",
   'data.region + ".jibo.com"',
+  'data.region+".jibo.com"',
+  'data.region + ".openjibo.com"',
+  'data.region+".openjibo.com"',
   'this._wifiService.options.region + ".jibo.com"',
+  'this._wifiService.options.region+".jibo.com"',
+  'this._wifiService.options.region + ".openjibo.com"',
+  'this._wifiService.options.region+".openjibo.com"',
   "API: 'api.jibo.com'",
 ];
 

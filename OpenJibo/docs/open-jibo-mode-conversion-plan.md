@@ -160,9 +160,12 @@ Region-template replacements the conversion scripts now target in every discover
 
 Live `jibo-ssm` runtime bundle replacements the conversion scripts now also target:
 
-- `data.region + ".jibo.com"` -> `data.region + ".openjibo.com"`
-- `this._wifiService.options.region + ".jibo.com"` -> `this._wifiService.options.region + ".openjibo.com"`
+- `data.region + ".jibo.com"` -> `"api.openjibo.com"`
+- `this._wifiService.options.region + ".jibo.com"` -> `"api.openjibo.com"`
+- previously converted `.openjibo.com` concatenations and compact no-space forms -> `"api.openjibo.com"`
 - `API: 'api.jibo.com'` -> `API: 'api.openjibo.com'`
+
+The SSM value is an HTTPS `GET /` connectivity probe, not the Jetstream region endpoint. Keep `credentials.region` set to `open-jibo` for region selection, but make this probe use the canonical `api.openjibo.com` host rather than deriving `open-jibo.openjibo.com`.
 
 Native `jibo-server-service` compatibility patch:
 

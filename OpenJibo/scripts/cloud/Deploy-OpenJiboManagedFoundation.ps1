@@ -7,6 +7,8 @@ param(
     [string]$PersonalMemoryConnectionString = "",
     [string]$OpenWeatherApiKey = "",
     [string]$NewsApiKey = "",
+    [string]$SearchBackend = "",
+    [string]$SearchFallback = "",
     [string]$PostgresAdminLogin = "openjiboadmin",
     [string]$PostgresAdminPassword = "",
     [string]$PostgresServerName = ""
@@ -300,5 +302,9 @@ Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name
 Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-openweather-api-key -Value $OpenWeatherApiKey
 
 Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-newsapi-key -Value $NewsApiKey
+
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-search-backend -Value $SearchBackend
+
+Set-OpenJiboKeyVaultSecretIfChanged -VaultName $outputs.keyVaultName.value -Name openjibo-search-fallback -Value $SearchFallback
 
 $deploymentJson

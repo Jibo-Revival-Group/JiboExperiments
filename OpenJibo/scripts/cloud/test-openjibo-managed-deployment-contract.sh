@@ -99,19 +99,27 @@ required_managed_markers=(
   "param mediaConnectionString string = ''"
   "param openWeatherApiKey string = ''"
   "param newsApiKey string = ''"
+  "param searchBackend string = ''"
+  "param searchFallback string = ''"
   "param portalStatusPassword string = ''"
   "value: stateConnectionString"
   "value: personalMemoryConnectionString"
   "value: mediaConnectionString"
   "value: openWeatherApiKey"
   "value: newsApiKey"
+  "value: searchBackend"
+  "value: searchFallback"
   "value: portalStatusPassword"
   "OpenJibo__Portal__StatusPassword"
   "portal-status-password"
+  "search-backend"
+  "search-fallback"
   "var logAnalyticsWorkspaceKey"
   "value: 'PostgreSql'"
   "value: 'AzureBlob'"
   "keyVaultContainerAppSecretAccessPolicy"
+  "OPENJIBO_SEARCH_BACKEND"
+  "OPENJIBO_SEARCH_FALLBACK"
 )
 
 required_workflow_markers=(
@@ -129,11 +137,15 @@ required_workflow_markers=(
   "api.openjibo.com"
   "open-jibo-socket.openjibo.com"
   "neohub.openjibo.com"
+  "OPENJIBO_SEARCH_BACKEND"
+  "OPENJIBO_SEARCH_FALLBACK"
   "--api-hostname"
   "--socket-hostname"
   "--neohub-hostname"
   "enable_azure_speech"
   "azure_speech_region"
+  "--search-backend"
+  "--search-fallback"
   "--run-migration"
   "--run-smoke"
 )
@@ -159,7 +171,7 @@ for marker in "${required_workflow_markers[@]}"; do
   fi
 done
 
-for marker in "openjibo-media-connection-string" "azure-speech-subscription-key" "cognitiveservices account keys list" "speechServicesAccountName" "openjibo-postgres-admin-password" "postgresFullyQualifiedDomainName" "Invoke-OpenJiboAzWithRetry"; do
+for marker in "openjibo-media-connection-string" "azure-speech-subscription-key" "cognitiveservices account keys list" "speechServicesAccountName" "openjibo-postgres-admin-password" "openjibo-search-backend" "openjibo-search-fallback" "postgresFullyQualifiedDomainName" "Invoke-OpenJiboAzWithRetry"; do
   if [[ "$foundation_script_text" != *"$marker"* ]]; then
     echo "Foundation script is missing expected marker: $marker" >&2
     exit 1
@@ -171,21 +183,21 @@ if [[ "$foundation_script_text" != *"seedPrincipalObjectId"* ]]; then
   exit 1
 fi
 
-for marker in "RegistryName" "ApiHostname" "SocketHostname" "NeoHubHostname" "NativeCompatibilityApiHostname" "NativeCompatibilitySocketHostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "containerapp hostname add" "containerapp hostname bind" "SkipHostnameBinding" "EnableAzureSpeech" "AzureSpeechRegion" "portalStatusPassword" "openjibo-portal-status-password"; do
+for marker in "RegistryName" "ApiHostname" "SocketHostname" "NeoHubHostname" "NativeCompatibilityApiHostname" "NativeCompatibilitySocketHostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "containerapp hostname add" "containerapp hostname bind" "SkipHostnameBinding" "EnableAzureSpeech" "AzureSpeechRegion" "portalStatusPassword" "openjibo-portal-status-password" "searchBackend" "searchFallback" "openjibo-search-backend" "openjibo-search-fallback"; do
   if [[ "$managed_script_text" != *"$marker"* ]]; then
     echo "Managed deploy script is missing expected marker: $marker" >&2
     exit 1
   fi
 done
 
-for marker in "managedEnvironmentName" "--environment" "--validation-method CNAME"; do
+for marker in "managedEnvironmentName" "--environment" "--validation-method CNAME" "search-backend" "search-fallback"; do
   if [[ "$managed_script_text" != *"$marker"* ]]; then
     echo "Managed deploy script is missing hostname binding environment marker: $marker" >&2
     exit 1
   fi
 done
 
-for marker in "seedPrincipalObjectId" "openjibo-media-connection-string" "openjibo-postgres-admin-password" "postgresFullyQualifiedDomainName" "run_command_with_retry"; do
+for marker in "seedPrincipalObjectId" "openjibo-media-connection-string" "openjibo-postgres-admin-password" "openjibo-search-backend" "openjibo-search-fallback" "postgresFullyQualifiedDomainName" "run_command_with_retry"; do
   if [[ "$linux_foundation_script_text" != *"$marker"* ]]; then
     echo "Linux foundation script is missing expected marker: $marker" >&2
     exit 1
@@ -203,14 +215,14 @@ if [[ "$linux_publish_script_text" != *"az acr build"* ]]; then
   exit 1
 fi
 
-for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "--native-compatibility-api-hostname" "--native-compatibility-socket-hostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "az containerapp hostname add" "az containerapp hostname bind" 'bash "${script_dir}/invoke-openjibo-migration.sh"' "--skip-hostname-binding" "portal-status-password" "openjibo-portal-status-password"; do
+for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "--native-compatibility-api-hostname" "--native-compatibility-socket-hostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "az containerapp hostname add" "az containerapp hostname bind" 'bash "${script_dir}/invoke-openjibo-migration.sh"' "--skip-hostname-binding" "portal-status-password" "openjibo-portal-status-password" "searchBackend" "searchFallback" "openjibo-search-backend" "openjibo-search-fallback"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing expected marker: $marker" >&2
     exit 1
   fi
 done
 
-for marker in "managedEnvironmentName" "--environment" "--validation-method CNAME"; do
+for marker in "managedEnvironmentName" "--environment" "--validation-method CNAME" "search-backend" "search-fallback"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing hostname binding environment marker: $marker" >&2
     exit 1

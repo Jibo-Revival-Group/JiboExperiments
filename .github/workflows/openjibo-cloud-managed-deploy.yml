@@ -71,7 +71,9 @@ jobs:
           bash ./scripts/cloud/deploy-openjibo-managed-foundation.sh \
             --resource-group-name "$OPENJIBO_RESOURCE_GROUP" \
             --open-weather-api-key "$OPENWEATHER_API_KEY" \
-            --news-api-key "$NEWSAPI_KEY" | tee "$deployment_output"
+            --news-api-key "$NEWSAPI_KEY" \
+            --search-backend "$OPENJIBO_SEARCH_BACKEND" \
+            --search-fallback "$OPENJIBO_SEARCH_FALLBACK" | tee "$deployment_output"
 
           cat > "$extract_outputs" <<'PY'
           import json
@@ -90,6 +92,8 @@ jobs:
           OPENJIBO_RESOURCE_GROUP: ${{ secrets.OPENJIBO_RESOURCE_GROUP }}
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          OPENJIBO_SEARCH_BACKEND: ${{ secrets.OPENJIBO_SEARCH_BACKEND }}
+          OPENJIBO_SEARCH_FALLBACK: ${{ secrets.OPENJIBO_SEARCH_FALLBACK }}
 
       - name: Build and push managed image
         shell: bash

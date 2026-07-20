@@ -214,6 +214,8 @@ personal_memory_connection_string="$(az keyvault secret show --vault-name "$key_
 media_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-media-connection-string --query value -o tsv)"
 open_weather_api_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-openweather-api-key --query value -o tsv)"
 news_api_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-newsapi-key --query value -o tsv)"
+search_backend="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-search-backend --query value -o tsv 2>/dev/null || true)"
+search_fallback="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-search-fallback --query value -o tsv 2>/dev/null || true)"
 portal_status_password="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-portal-status-password --query value -o tsv)"
 peer_sync_shared_key="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-peer-sync-shared-key --query value -o tsv)"
 
@@ -256,6 +258,14 @@ fi
 
 if [[ -n "$location" ]]; then
   deployment_args+=(--parameters "location=${location}")
+fi
+
+if [[ -n "$search_backend" ]]; then
+  deployment_args+=(--parameters "searchBackend=${search_backend}")
+fi
+
+if [[ -n "$search_fallback" ]]; then
+  deployment_args+=(--parameters "searchFallback=${search_fallback}")
 fi
 
 deployment_args+=(--output json)
@@ -371,10 +381,25 @@ state_connection_string="$(az keyvault secret show --vault-name "$key_vault_name
 personal_memory_connection_string="$(az keyvault secret show --vault-name "$key_vault_name" --name openjibo-personal-memory-connection-string --query value -o tsv)"
 if [[ -n "${container_app_name:-}" ]]; then
   echo "Refreshing Container App '${container_app_name}' PostgreSQL secrets from Key Vault to force the latest database credentials into the revision." >&2
+  secret_args=(
+    "state-connection-string=${state_connection_string}"
+    "personal-memory-connection-string=${personal_memory_connection_string}"
+    "portal-status-password=${portal_status_password}"
+    "peer-sync-shared-key=${peer_sync_shared_key}"
+  )
+
+  if [[ -n "$search_backend" ]]; then
+    secret_args+=("search-backend=${search_backend}")
+  fi
+
+  if [[ -n "$search_fallback" ]]; then
+    secret_args+=("search-fallback=${search_fallback}")
+  fi
+
   az containerapp secret set \
     --resource-group "$resource_group_name" \
     --name "$container_app_name" \
-    --secrets "state-connection-string=${state_connection_string}" "personal-memory-connection-string=${personal_memory_connection_string}" "portal-status-password=${portal_status_password}" "peer-sync-shared-key=${peer_sync_shared_key}" \
+    --secrets "${secret_args[@]}" \
     --output none
   echo "Container App PostgreSQL secrets refreshed for '${container_app_name}'." >&2
 

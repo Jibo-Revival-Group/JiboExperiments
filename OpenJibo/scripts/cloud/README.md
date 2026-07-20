@@ -34,6 +34,10 @@ These scripts help exercise the new .NET hosted cloud locally.
   Manual workflow that deploys the foundation, builds the managed image, deploys the ACA stack, binds the canonical API/socket/neohub hostnames, runs migrations, and smokes the deployed endpoint. The workflow defaults the robot-facing host trio to `api.openjibo.com`, `open-jibo-socket.openjibo.com`, and `neohub.openjibo.com`.
 - `OPENJIBO_POSTGRES_PASSWORD`
   Required when running the self-hosted PostgreSQL stack locally or in CI so the database password stays out of source control.
+- Managed Azure deploy secrets:
+  - `OPENJIBO_SEARCH_BACKEND`
+  - `OPENJIBO_SEARCH_FALLBACK`
+  Store the backend spec string in the `openjibo-managed` GitHub Actions environment. The deploy workflow seeds those values into Azure Key Vault and then copies them into the Container App as `OPENJIBO_SEARCH_BACKEND` and `OPENJIBO_SEARCH_FALLBACK`.
 - `initialize-openjibo-compose-env.sh`
   Copies `.env.example` to `.env` when the compose env file is missing and keeps `OPENJIBO_POSTGRES_PASSWORD` in sync when the file already exists.
 - `Initialize-OpenJiboComposeEnv.ps1`

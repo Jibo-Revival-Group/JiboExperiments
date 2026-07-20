@@ -7,6 +7,8 @@ state_connection_string=""
 personal_memory_connection_string=""
 open_weather_api_key=""
 news_api_key=""
+search_backend=""
+search_fallback=""
 postgres_admin_login="openjiboadmin"
 postgres_admin_password=""
 postgres_server_name=""
@@ -35,6 +37,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --news-api-key)
       news_api_key="${2:-}"
+      shift 2
+      ;;
+    --search-backend)
+      search_backend="${2:-}"
+      shift 2
+      ;;
+    --search-fallback)
+      search_fallback="${2:-}"
       shift 2
       ;;
     --postgres-admin-login)
@@ -173,7 +183,7 @@ deployment_args+=(--output json)
 echo "Deploying Open Jibo managed foundation to resource group '${resource_group_name}'" >&2
 deployment_json="$("${deployment_args[@]}")"
 
-python3 - "$deployment_json" "$resource_group_name" "$state_connection_string" "$personal_memory_connection_string" "$open_weather_api_key" "$news_api_key" "$current_principal_id" "$postgres_admin_password" <<'PY'
+python3 - "$deployment_json" "$resource_group_name" "$state_connection_string" "$personal_memory_connection_string" "$open_weather_api_key" "$news_api_key" "$search_backend" "$search_fallback" "$current_principal_id" "$postgres_admin_password" <<'PY'
 import json
 import subprocess
 import sys
@@ -185,8 +195,10 @@ state_connection_string = sys.argv[3]
 personal_memory_connection_string = sys.argv[4]
 open_weather_api_key = sys.argv[5]
 news_api_key = sys.argv[6]
-current_principal_id = sys.argv[7]
-postgres_admin_password = sys.argv[8]
+search_backend = sys.argv[7]
+search_fallback = sys.argv[8]
+current_principal_id = sys.argv[9]
+postgres_admin_password = sys.argv[10]
 outputs = deployment_json["properties"]["outputs"]
 key_vault_name = outputs["keyVaultName"]["value"]
 storage_account_name = outputs["storageAccountName"]["value"]
@@ -326,6 +338,8 @@ set_secret_if_changed("azure-speech-subscription-key", speech_subscription_key)
 set_secret_if_changed("openjibo-postgres-admin-password", postgres_admin_password)
 set_secret_if_changed("openjibo-openweather-api-key", open_weather_api_key)
 set_secret_if_changed("openjibo-newsapi-key", news_api_key)
+set_secret_if_changed("openjibo-search-backend", search_backend)
+set_secret_if_changed("openjibo-search-fallback", search_fallback)
 
 print(json.dumps(deployment_json, indent=2))
 PY

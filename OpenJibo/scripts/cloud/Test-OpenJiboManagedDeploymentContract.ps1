@@ -104,19 +104,27 @@ $requiredManagedMarkers = @(
     "param mediaConnectionString string = ''",
     "param openWeatherApiKey string = ''",
     "param newsApiKey string = ''",
+    "param searchBackend string = ''",
+    "param searchFallback string = ''",
     "param portalStatusPassword string = ''",
     "value: stateConnectionString",
     "value: personalMemoryConnectionString",
     "value: mediaConnectionString",
     "value: openWeatherApiKey",
     "value: newsApiKey",
+    "value: searchBackend",
+    "value: searchFallback",
     "value: portalStatusPassword",
     "OpenJibo__Portal__StatusPassword",
     "portal-status-password",
+    "search-backend",
+    "search-fallback",
     "var logAnalyticsWorkspaceKey",
     "value: 'PostgreSql'",
     "value: 'AzureBlob'",
-    "keyVaultContainerAppSecretAccessPolicy"
+    "keyVaultContainerAppSecretAccessPolicy",
+    "OPENJIBO_SEARCH_BACKEND",
+    "OPENJIBO_SEARCH_FALLBACK"
 )
 
 $requiredWorkflowMarkers = @(
@@ -134,11 +142,15 @@ $requiredWorkflowMarkers = @(
     "api.openjibo.com",
     "open-jibo-socket.openjibo.com",
     "neohub.openjibo.com",
+    "OPENJIBO_SEARCH_BACKEND",
+    "OPENJIBO_SEARCH_FALLBACK",
     "--api-hostname",
     "--socket-hostname",
     "--neohub-hostname",
     "enable_azure_speech",
     "azure_speech_region",
+    "--search-backend",
+    "--search-fallback",
     "--run-migration",
     "--run-smoke"
 )
@@ -155,15 +167,15 @@ foreach ($marker in $requiredWorkflowMarkers) {
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing expected marker"
 }
 
-foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscription-key", "cognitiveservices account keys list", "speechServicesAccountName", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
+foreach ($marker in @("openjibo-media-connection-string", "azure-speech-subscription-key", "cognitiveservices account keys list", "speechServicesAccountName", "openjibo-postgres-admin-password", "openjibo-search-backend", "openjibo-search-fallback", "postgresFullyQualifiedDomainName", "Invoke-OpenJiboAzWithRetry", "seedPrincipalObjectId")) {
     Assert-ContainsMarker -Text $foundationScriptText -Marker $marker -FailurePrefix "Foundation script is missing expected marker"
 }
 
-foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion", "portalStatusPassword", "openjibo-portal-status-password")) {
+foreach ($marker in @("RegistryName", "ApiHostname", "SocketHostname", "NeoHubHostname", "containerapp hostname add", "containerapp hostname bind", "SkipHostnameBinding", "EnableAzureSpeech", "AzureSpeechRegion", "portalStatusPassword", "openjibo-portal-status-password", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing expected marker"
 }
 
-foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-method CNAME")) {
+foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-method CNAME", "search-backend", "search-fallback")) {
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing hostname binding environment marker"
 }
 
@@ -178,11 +190,11 @@ foreach ($marker in @("seedPrincipalObjectId", "openjibo-media-connection-string
 Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker '"az", "storage", "account", "show-connection-string"' -FailurePrefix "Linux foundation script does not resolve the storage connection string outside Bicep outputs"
 Assert-ContainsMarker -Text $linuxPublishScriptText -Marker "az acr build" -FailurePrefix "Linux publish script is missing the ACR build path"
 
-foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "--socket-hostname", "--neohub-hostname", "az containerapp hostname add", "az containerapp hostname bind", "--skip-hostname-binding", "portal-status-password", "openjibo-portal-status-password")) {
+foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "--socket-hostname", "--neohub-hostname", "az containerapp hostname add", "az containerapp hostname bind", "--skip-hostname-binding", "portal-status-password", "openjibo-portal-status-password", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing expected marker"
 }
 
-foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-method CNAME")) {
+foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-method CNAME", "search-backend", "search-fallback")) {
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing hostname binding environment marker"
 }
 

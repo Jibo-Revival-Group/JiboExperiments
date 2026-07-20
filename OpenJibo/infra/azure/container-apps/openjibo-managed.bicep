@@ -69,6 +69,14 @@ param openWeatherApiKey string = ''
 @secure()
 param newsApiKey string = ''
 
+@description('Knowledge search backend configuration used by the runtime. Expected format is backend!credential!model, where model is optional.')
+@secure()
+param searchBackend string = ''
+
+@description('Optional fallback knowledge search backend configuration used by the runtime.')
+@secure()
+param searchFallback string = ''
+
 @description('Password used to gate the OpenJibo admin status page.')
 @secure()
 param portalStatusPassword string = ''
@@ -109,12 +117,24 @@ var azureSpeechSecretEntries = enableAzureSpeech ? [
     value: azureSpeechSubscriptionKey
   }
 ] : []
+var searchSecretEntries = !empty(searchBackend) ? [
+  {
+    name: 'search-backend'
+    value: searchBackend
+  }
+] : []
+var searchFallbackSecretEntries = !empty(searchFallback) ? [
+  {
+    name: 'search-fallback'
+    value: searchFallback
+  }
+] : []
 var managedSecrets = concat([
   {
     name: 'acr-password'
     value: registryCredentials.passwords[0].value
   }
-], azureSpeechSecretEntries, [
+], azureSpeechSecretEntries, searchSecretEntries, searchFallbackSecretEntries, [
   {
     name: 'state-connection-string'
     value: stateConnectionString
@@ -160,6 +180,18 @@ var azureSpeechEnvEntries = enableAzureSpeech ? [
   {
     name: 'OpenJibo__Stt__AzureSpeechSubscriptionKey'
     secretRef: 'azure-speech-subscription-key'
+  }
+] : []
+var searchEnvEntries = !empty(searchBackend) ? [
+  {
+    name: 'OPENJIBO_SEARCH_BACKEND'
+    secretRef: 'search-backend'
+  }
+] : []
+var searchFallbackEnvEntries = !empty(searchFallback) ? [
+  {
+    name: 'OPENJIBO_SEARCH_FALLBACK'
+    secretRef: 'search-fallback'
   }
 ] : []
 var managedEnvVars = concat([
@@ -263,7 +295,7 @@ var managedEnvVars = concat([
     name: 'OpenJibo__FleetNetwork__PeerSyncSharedKey'
     secretRef: 'peer-sync-shared-key'
   }
-], azureSpeechEnvEntries)
+], azureSpeechEnvEntries, searchEnvEntries, searchFallbackEnvEntries)
 
 resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: managedEnvironmentName

@@ -54,8 +54,30 @@ $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVault
 $mediaConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-media-connection-string --query value -o tsv
 $openWeatherApiKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-openweather-api-key --query value -o tsv
 $newsApiKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-newsapi-key --query value -o tsv
+$searchBackend = ""
+$searchFallback = ""
 $portalStatusPassword = az keyvault secret show --vault-name $KeyVaultName --name openjibo-portal-status-password --query value -o tsv
 $peerSyncSharedKey = az keyvault secret show --vault-name $KeyVaultName --name openjibo-peer-sync-shared-key --query value -o tsv
+
+function Get-OptionalKeyVaultSecretValue {
+    param(
+        [string]$VaultName,
+        [string]$Name
+    )
+
+    try {
+        return Invoke-OpenJiboAzWithRetry `
+            -Arguments @("keyvault", "secret", "show", "--vault-name", $VaultName, "--name", $Name, "--query", "value", "--output", "tsv") `
+            -Description "Optional Key Vault secret lookup for '$Name'" `
+            -Attempts 4
+    }
+    catch {
+        return ""
+    }
+}
+
+$searchBackend = Get-OptionalKeyVaultSecretValue -VaultName $KeyVaultName -Name openjibo-search-backend
+$searchFallback = Get-OptionalKeyVaultSecretValue -VaultName $KeyVaultName -Name openjibo-search-fallback
 
 function Get-PostgresServerNameFromConnectionString {
     param([string]$ConnectionString)
@@ -135,6 +157,8 @@ function Set-ContainerAppSecretsFromKeyVault {
         [string]$ContainerAppName,
         [string]$StateConnectionString,
         [string]$PersonalMemoryConnectionString,
+        [string]$SearchBackend,
+        [string]$SearchFallback,
         [string]$PortalStatusPassword,
         [string]$PeerSyncSharedKey
     )
@@ -148,17 +172,33 @@ function Set-ContainerAppSecretsFromKeyVault {
     }
 
     Write-Host "Refreshing Container App '$ContainerAppName' secrets from Key Vault to force the latest managed values into the revision."
-    Invoke-OpenJiboAzWithRetry `
-        -Arguments @(
-            "containerapp", "secret", "set",
-            "--resource-group", $ResourceGroupName,
-            "--name", $ContainerAppName,
-            "--secrets", "state-connection-string=$StateConnectionString",
+    $secretArgs = @(
+            "state-connection-string=$StateConnectionString",
             "personal-memory-connection-string=$PersonalMemoryConnectionString",
             "portal-status-password=$PortalStatusPassword",
-            "peer-sync-shared-key=$PeerSyncSharedKey",
-            "--output", "none"
-        ) `
+            "peer-sync-shared-key=$PeerSyncSharedKey"
+        )
+
+    if (-not [string]::IsNullOrWhiteSpace($SearchBackend)) {
+        $secretArgs += "search-backend=$SearchBackend"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($SearchFallback)) {
+        $secretArgs += "search-fallback=$SearchFallback"
+    }
+
+    $containerAppSecretArguments = @(
+        "containerapp", "secret", "set",
+        "--resource-group", $ResourceGroupName,
+        "--name", $ContainerAppName,
+        "--secrets"
+    )
+    $containerAppSecretArguments += $secretArgs
+    $containerAppSecretArguments += "--output"
+    $containerAppSecretArguments += "none"
+
+    Invoke-OpenJiboAzWithRetry `
+        -Arguments $containerAppSecretArguments `
         -Description "Container App secret refresh for '$ContainerAppName'" `
         -Attempts 6 | Out-Null
     Write-Host "Container App managed secrets refreshed for '$ContainerAppName'."
@@ -261,6 +301,14 @@ $arguments = @(
 
 if (-not [string]::IsNullOrWhiteSpace($Location)) {
     $arguments += @("--parameters", "location=$Location")
+}
+
+if (-not [string]::IsNullOrWhiteSpace($searchBackend)) {
+    $arguments += @("--parameters", "searchBackend=$searchBackend")
+}
+
+if (-not [string]::IsNullOrWhiteSpace($searchFallback)) {
+    $arguments += @("--parameters", "searchFallback=$searchFallback")
 }
 
 if ($DisableAzureSpeech) {
@@ -369,7 +417,7 @@ if (-not $SkipHostnameBinding -and -not [string]::IsNullOrWhiteSpace($ApiHostnam
 
 $stateConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-state-connection-string --query value -o tsv
 $personalMemoryConnectionString = az keyvault secret show --vault-name $KeyVaultName --name openjibo-personal-memory-connection-string --query value -o tsv
-Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -PortalStatusPassword $portalStatusPassword -PeerSyncSharedKey $peerSyncSharedKey
+Set-ContainerAppSecretsFromKeyVault -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value -StateConnectionString $stateConnectionString -PersonalMemoryConnectionString $personalMemoryConnectionString -SearchBackend $searchBackend -SearchFallback $searchFallback -PortalStatusPassword $portalStatusPassword -PeerSyncSharedKey $peerSyncSharedKey
 Restart-ContainerAppRevision -ContainerAppName $deploymentJson.properties.outputs.containerAppName.value
 Start-Sleep -Seconds 20
 

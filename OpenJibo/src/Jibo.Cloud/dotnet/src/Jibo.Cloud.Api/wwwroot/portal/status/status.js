@@ -242,7 +242,7 @@ async function renderStatus(message = "", tone = "success") {
           <div class="stat-card">
             <span class="label">Online robots</span>
             <span class="value">${fleet.connectedRobots ?? 0}</span>
-            <span class="detail">Open robot sockets right now.</span>
+            <span class="detail">Open sockets or robot traffic in the last two minutes.</span>
           </div>
           <div class="stat-card">
             <span class="label">Visible robots</span>

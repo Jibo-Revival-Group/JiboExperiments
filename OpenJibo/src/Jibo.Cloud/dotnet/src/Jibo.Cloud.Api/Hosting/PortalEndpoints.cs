@@ -17,6 +17,7 @@ internal static class PortalEndpoints
 {
     private const string AdminSessionDeviceId = "portal-admin";
     private static readonly TimeSpan StatusHeartbeatWindow = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan StatusActiveActivityWindow = TimeSpan.FromMinutes(2);
     private static readonly string[] RequiredLegacyHostMappings =
     [
         "api.jibo.com",
@@ -1024,27 +1025,6 @@ internal static class PortalEndpoints
             .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
             .ToArray();
         var liveConnections = robotPresenceRegistry.GetLiveConnections();
-        var localConnectedRobotIds = devices
-            .Where(device => liveConnections.Any(connection => ConnectionMatchesDevice(connection, device)))
-            .Select(device => device.DeviceId)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        fleetNetworkPresenceRegistry.Report(new FleetServerPresenceReport(
-            serverIdentity.ServerId,
-            serverIdentity.CanonicalHost,
-            serverIdentity.InstanceId,
-            localConnectedRobotIds,
-            liveConnections.Count,
-            now,
-            IsLocal: true));
-        var serverReports = fleetNetworkPresenceRegistry.GetFreshReports(TimeSpan.FromMinutes(2), now);
-        var networkConnectedRobotIds = serverReports
-            .SelectMany(report => report.ConnectedRobotIds)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        var trustedCloudSyncServers = cloudStateStore.GetTrustedServers()
-            .Where(server => server.IsActive && server.ParticipatesInCloudSync)
-            .ToArray();
 
         var robots = devices
             .Select(device =>
@@ -1075,7 +1055,8 @@ internal static class PortalEndpoints
                     registrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
                     isSynthetic = RobotRegistrationSources.IsSynthetic(device.RegistrationSource),
                     presence,
-                    connected = deviceConnections.Length > 0,
+                    connected = presence is "online" or "sleeping",
+                    hasOpenSocket = deviceConnections.Length > 0,
                     sessionCount = deviceSessions.Length,
                     liveConnectionCount = deviceConnections.Length,
                     firstSeenUtc,
@@ -1099,6 +1080,28 @@ internal static class PortalEndpoints
             .ThenBy(robot => robot.presence == "recently-seen" ? 0 : 1)
             .ThenBy(robot => robot.FriendlyName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(robot => robot.DeviceId, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var localConnectedRobotIds = robots
+            .Where(robot => robot.connected)
+            .Select(robot => robot.DeviceId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        fleetNetworkPresenceRegistry.Report(new FleetServerPresenceReport(
+            serverIdentity.ServerId,
+            serverIdentity.CanonicalHost,
+            serverIdentity.InstanceId,
+            localConnectedRobotIds,
+            liveConnections.Count,
+            now,
+            IsLocal: true));
+        var serverReports = fleetNetworkPresenceRegistry.GetFreshReports(TimeSpan.FromMinutes(2), now);
+        var networkConnectedRobotIds = serverReports
+            .SelectMany(report => report.ConnectedRobotIds)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var trustedCloudSyncServers = cloudStateStore.GetTrustedServers()
+            .Where(server => server.IsActive && server.ParticipatesInCloudSync)
             .ToArray();
 
         var latestSeenUtc = recentSessions.Length > 0 ? recentSessions.Max(session => session.LastSeenUtc) : (DateTimeOffset?)null;
@@ -1199,7 +1202,7 @@ internal static class PortalEndpoints
         if (!device.IsActive) return "inactive";
         if (string.Equals(sleepState, "sleeping", StringComparison.OrdinalIgnoreCase) &&
             (liveConnections.Count > 0 || lastSeenUtc >= now.AddHours(-24))) return "sleeping";
-        if (liveConnections.Count > 0) return "online";
+        if (liveConnections.Count > 0 || lastSeenUtc >= now - StatusActiveActivityWindow) return "online";
         if (lastSeenUtc >= now.AddMinutes(-30)) return "recently-seen";
         return lastSeenUtc is null ? "never-connected" : "offline";
     }

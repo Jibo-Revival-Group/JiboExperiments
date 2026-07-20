@@ -28,6 +28,19 @@ public sealed class CloudAuthProtocolHandler(
                   ?? ReadString(body, "cpuId")
                   ?? ReadString(body, "robotId");
 
+            // Real hardware often reaches the cloud through the hub-token flow before it has
+            // completed a separate registration exchange. Preserve that observed identity so
+            // dashboard activity can be joined to a concrete robot record.
+            if (!string.IsNullOrWhiteSpace(deviceId))
+            {
+                var registrationSource = envelope.Headers.TryGetValue("X-OpenJibo-Registration-Source",
+                    out var sourceHeader)
+                    ? sourceHeader
+                    : null;
+                stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion,
+                    registrationSource);
+            }
+
             return ProtocolDispatchResult.Ok(new
             {
                 token = stateStore.IssueHubToken(deviceId),

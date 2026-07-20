@@ -311,6 +311,11 @@ public sealed class HomeAssistantPortalApiTests
             FriendlyName = "Living Room Jibo",
             RegistrationSource = RobotRegistrationSources.Physical
         });
+        var authHandler = factory.Services.GetRequiredService<ICloudAuthProtocolHandler>();
+        authHandler.HandleAccount("CreateHubToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"live-hub-jibo"}"""
+        });
 
         var loginResponse = await client.PostAsJsonAsync(
             "/api/portal/status/login",
@@ -331,6 +336,10 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "physical-status-robot" &&
             robot.GetProperty("presence").GetString() == "never-connected");
+        Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
+            robot.GetProperty("deviceId").GetString() == "live-hub-jibo" &&
+            robot.GetProperty("presence").GetString() == "online" &&
+            !robot.GetProperty("hasOpenSocket").GetBoolean());
 
         var archiveResponse = await client.PostAsJsonAsync(
             "/api/portal/status/robots/physical-status-robot/archive",
@@ -363,7 +372,7 @@ public sealed class HomeAssistantPortalApiTests
 
         var networkSummary = await (await client.GetAsync("/api/portal/status/summary"))
             .Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal(2, networkSummary.GetProperty("serverFleet").GetProperty("network")
+        Assert.Equal(3, networkSummary.GetProperty("serverFleet").GetProperty("network")
             .GetProperty("connectedRobots").GetInt32());
         Assert.Contains(networkSummary.GetProperty("serverFleet").GetProperty("servers").EnumerateArray(), server =>
             server.GetProperty("canonicalHost").GetString() == remoteServer.CanonicalHost);

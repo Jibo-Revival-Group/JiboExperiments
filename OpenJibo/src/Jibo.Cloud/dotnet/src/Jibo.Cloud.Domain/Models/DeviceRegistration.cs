@@ -38,7 +38,8 @@ public static class RobotRegistrationSources
         var id = deviceId?.Trim() ?? string.Empty;
         if (id.StartsWith("fake-jibo-", StringComparison.OrdinalIgnoreCase)) return BrowserHarness;
         if (id.StartsWith("open-jibo-smoke-", StringComparison.OrdinalIgnoreCase)) return DeploymentSmoke;
-        if (id.StartsWith("openjibo-dev-", StringComparison.OrdinalIgnoreCase)) return Bootstrap;
+        if (id.StartsWith("openjibo-dev-", StringComparison.OrdinalIgnoreCase) ||
+            id.StartsWith("openjibo-bootstrap-", StringComparison.OrdinalIgnoreCase)) return Bootstrap;
         return Unknown;
     }
 

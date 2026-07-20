@@ -42,6 +42,8 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("BOJW-KITCHEN-0001", kitchenSession.DeviceId);
         Assert.Equal("BOJW-OFFICE-0002", officeSession.DeviceId);
         Assert.NotEqual(kitchenSession.DeviceId, officeSession.DeviceId);
+        Assert.Contains(store.GetDevices(), device => device.DeviceId == "BOJW-KITCHEN-0001");
+        Assert.Contains(store.GetDevices(), device => device.DeviceId == "BOJW-OFFICE-0002");
     }
 
     [Fact]

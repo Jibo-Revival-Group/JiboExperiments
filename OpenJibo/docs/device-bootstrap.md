@@ -86,7 +86,7 @@ Confirmed paths:
 - `/var/jibo/credentials.json`
   Set the robot `region` field to the injected OpenJibo region.
 - `/usr/local/lib/libJiboServerService.so`
-  The supported build has stock MD5 `ae82f1dd7407f8d74b287917cb9a8b24`. The conversion helper replaces its two ASCII `jibo.com` occurrences with the equal-length `jibo.pro`, producing MD5 `e55e18e92aa6365569f13214e0118745`. Unknown builds are rejected rather than patched by offset.
+  Supported native builds are v1 (`ae82f1dd7407f8d74b287917cb9a8b24` -> `e55e18e92aa6365569f13214e0118745`) and v2/lastdance (`a863a238d6f2531446d0eb0d1d358c19` -> `688ec2940ed1fc7d1b86d2fd29bc6b30`). The conversion helper replaces exactly two ASCII `jibo.com` occurrences with the equal-length `jibo.pro`. Unknown builds are rejected rather than patched by offset.
 
 Observed additional region-related files worth documenting and auditing:
 

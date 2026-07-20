@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-19.2"
+SCRIPT_VERSION="2026-07-19.3"
 echo "audit-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -45,8 +45,18 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-const STOCK_SERVER_LIBRARY_MD5 = "ae82f1dd7407f8d74b287917cb9a8b24";
-const PATCHED_SERVER_LIBRARY_MD5 = "e55e18e92aa6365569f13214e0118745";
+const SERVER_LIBRARY_VARIANTS = [
+  {
+    Name: "v1",
+    StockMd5: "ae82f1dd7407f8d74b287917cb9a8b24",
+    PatchedMd5: "e55e18e92aa6365569f13214e0118745",
+  },
+  {
+    Name: "v2-lastdance",
+    StockMd5: "a863a238d6f2531446d0eb0d1d358c19",
+    PatchedMd5: "688ec2940ed1fc7d1b86d2fd29bc6b30",
+  },
+];
 
 const robotRoot = path.resolve(process.argv[2]);
 const outputPath = (process.argv[3] || "").trim();
@@ -110,25 +120,35 @@ function countBufferOccurrences(buffer, needle) {
   return count;
 }
 
+function findServerLibraryVariant(md5) {
+  for (const variant of SERVER_LIBRARY_VARIANTS) {
+    if (variant.StockMd5 === md5 || variant.PatchedMd5 === md5) return variant;
+  }
+  return null;
+}
+
 function inspectServerLibrary(filePath) {
   if (!filePath) return null;
   const buffer = fs.readFileSync(filePath);
   const md5 = crypto.createHash("md5").update(buffer).digest("hex");
   const stockDomainCount = countBufferOccurrences(buffer, Buffer.from("jibo.com", "ascii"));
   const compatibilityDomainCount = countBufferOccurrences(buffer, Buffer.from("jibo.pro", "ascii"));
-  const state = md5 === STOCK_SERVER_LIBRARY_MD5 && stockDomainCount === 2 && compatibilityDomainCount === 0
+  const variant = findServerLibraryVariant(md5);
+  const state = variant && md5 === variant.StockMd5 && stockDomainCount === 2 && compatibilityDomainCount === 0
     ? "stock-supported"
-    : md5 === PATCHED_SERVER_LIBRARY_MD5 && stockDomainCount === 0 && compatibilityDomainCount === 2
+    : variant && md5 === variant.PatchedMd5 && stockDomainCount === 0 && compatibilityDomainCount === 2
       ? "patched-supported"
       : "unsupported";
   return {
     Path: filePath,
     Md5: md5,
     State: state,
+    Variant: variant ? variant.Name : null,
     StockDomainCount: stockDomainCount,
     CompatibilityDomainCount: compatibilityDomainCount,
-    ExpectedStockMd5: STOCK_SERVER_LIBRARY_MD5,
-    ExpectedPatchedMd5: PATCHED_SERVER_LIBRARY_MD5,
+    ExpectedStockMd5: variant ? variant.StockMd5 : null,
+    ExpectedPatchedMd5: variant ? variant.PatchedMd5 : null,
+    SupportedVariants: SERVER_LIBRARY_VARIANTS,
   };
 }
 

@@ -169,8 +169,8 @@ The SSM value is an HTTPS `GET /` connectivity probe, not the Jetstream region e
 
 Native `jibo-server-service` compatibility patch:
 
-- stock library MD5: `ae82f1dd7407f8d74b287917cb9a8b24`
-- patched library MD5: `e55e18e92aa6365569f13214e0118745`
+- v1 stock/patched MD5: `ae82f1dd7407f8d74b287917cb9a8b24` -> `e55e18e92aa6365569f13214e0118745`
+- v2/lastdance stock/patched MD5: `a863a238d6f2531446d0eb0d1d358c19` -> `688ec2940ed1fc7d1b86d2fd29bc6b30`
 - replace exactly two equal-length ASCII occurrences of `jibo.com` with `jibo.pro`
 - `NotificationSubsystem::getSignedHeaders()` then signs `https://open-jibo.jibo.pro`
 - `NotificationSubsystem::getRobotToken()` then connects to `open-jibo.jibo.pro:443`

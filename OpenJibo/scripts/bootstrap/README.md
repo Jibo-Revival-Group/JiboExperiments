@@ -27,7 +27,7 @@ The intended flow is:
 
 On a physical robot, run `jibo-mount --rw` before any helper that writes robot partitions. The helpers are safe to inspect against a mounted copy, but the real device must be remounted writable first.
 
-The apply helper also patches `/usr/local/lib/libJiboServerService.so`. It accepts only the supported stock MD5 `ae82f1dd7407f8d74b287917cb9a8b24` or the already-patched MD5 `e55e18e92aa6365569f13214e0118745`, and replaces exactly two equal-length `jibo.com` byte sequences with `jibo.pro`. The resulting native token host is `open-jibo.jibo.pro`; Azure must bind that hostname directly to the API service.
+The apply helper also patches `/usr/local/lib/libJiboServerService.so`. It accepts only an explicitly supported stock or already-patched hash pair: v1 (`ae82f1dd7407f8d74b287917cb9a8b24` -> `e55e18e92aa6365569f13214e0118745`) or v2/lastdance (`a863a238d6f2531446d0eb0d1d358c19` -> `688ec2940ed1fc7d1b86d2fd29bc6b30`). For either build it replaces exactly two equal-length `jibo.com` byte sequences with `jibo.pro`. The resulting native token host is `open-jibo.jibo.pro`; Azure must bind that hostname directly to the API service.
 
 Physical-robot apply command:
 

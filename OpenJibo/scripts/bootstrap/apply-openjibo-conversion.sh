@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SCRIPT_VERSION="2026-07-19.2"
+SCRIPT_VERSION="2026-07-19.3"
 echo "apply-openjibo-conversion.sh $SCRIPT_VERSION" >&2
 
 robot_root=""
@@ -74,8 +74,18 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-const STOCK_SERVER_LIBRARY_MD5 = "ae82f1dd7407f8d74b287917cb9a8b24";
-const PATCHED_SERVER_LIBRARY_MD5 = "e55e18e92aa6365569f13214e0118745";
+const SERVER_LIBRARY_VARIANTS = [
+  {
+    Name: "v1",
+    StockMd5: "ae82f1dd7407f8d74b287917cb9a8b24",
+    PatchedMd5: "e55e18e92aa6365569f13214e0118745",
+  },
+  {
+    Name: "v2-lastdance",
+    StockMd5: "a863a238d6f2531446d0eb0d1d358c19",
+    PatchedMd5: "688ec2940ed1fc7d1b86d2fd29bc6b30",
+  },
+];
 
 const robotRoot = path.resolve(process.argv[2]);
 const planPath = path.resolve(process.argv[3]);
@@ -210,6 +220,13 @@ function countBufferOccurrences(buffer, needle) {
   return count;
 }
 
+function findServerLibraryVariant(md5) {
+  for (const variant of SERVER_LIBRARY_VARIANTS) {
+    if (variant.StockMd5 === md5 || variant.PatchedMd5 === md5) return variant;
+  }
+  return null;
+}
+
 function patchServerLibrary(filePath) {
   const stockDomain = Buffer.from("jibo.com", "ascii");
   const compatibilityDomain = Buffer.from("jibo.pro", "ascii");
@@ -221,11 +238,12 @@ function patchServerLibrary(filePath) {
   const beforeMd5 = crypto.createHash("md5").update(buffer).digest("hex");
   const stockCount = countBufferOccurrences(buffer, stockDomain);
   const compatibilityCount = countBufferOccurrences(buffer, compatibilityDomain);
+  const variant = findServerLibraryVariant(beforeMd5);
 
-  if (beforeMd5 === PATCHED_SERVER_LIBRARY_MD5 && stockCount === 0 && compatibilityCount === 2) {
-    return { Changed: false, BeforeMd5: beforeMd5, AfterMd5: beforeMd5, Replacements: 0, State: "already-patched" };
+  if (variant && beforeMd5 === variant.PatchedMd5 && stockCount === 0 && compatibilityCount === 2) {
+    return { Changed: false, BeforeMd5: beforeMd5, AfterMd5: beforeMd5, Replacements: 0, State: "already-patched", Variant: variant.Name };
   }
-  if (beforeMd5 !== STOCK_SERVER_LIBRARY_MD5 || stockCount !== 2 || compatibilityCount !== 0) {
+  if (!variant || beforeMd5 !== variant.StockMd5 || stockCount !== 2 || compatibilityCount !== 0) {
     throw new Error(`Unsupported libJiboServerService.so state: md5=${beforeMd5}, jibo.com=${stockCount}, jibo.pro=${compatibilityCount}`);
   }
 
@@ -237,11 +255,11 @@ function patchServerLibrary(filePath) {
     offset += stockDomain.length;
   }
   const afterMd5 = crypto.createHash("md5").update(buffer).digest("hex");
-  if (replacements !== 2 || afterMd5 !== PATCHED_SERVER_LIBRARY_MD5) {
+  if (replacements !== 2 || afterMd5 !== variant.PatchedMd5) {
     throw new Error(`Native server library patch verification failed: replacements=${replacements}, md5=${afterMd5}`);
   }
   fs.writeFileSync(filePath, buffer);
-  return { Changed: true, BeforeMd5: beforeMd5, AfterMd5: afterMd5, Replacements: replacements, State: "patched" };
+  return { Changed: true, BeforeMd5: beforeMd5, AfterMd5: afterMd5, Replacements: replacements, State: "patched", Variant: variant.Name };
 }
 
 function collectExisting(relativePaths) {

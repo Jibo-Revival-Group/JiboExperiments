@@ -941,6 +941,21 @@ internal static class PortalEndpoints
                 : Results.NotFound(new { error = "Live session or robot record was not found." });
         });
 
+        app.MapDelete("/api/portal/status/sessions/{sessionId}/link", (
+            string sessionId,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            return cloudStateStore.ClearSessionDeviceBinding(sessionId)
+                ? Results.Json(new { ok = true, sessionId })
+                : Results.NotFound(new { error = "Live session was not found." });
+        });
+
         app.MapPost("/api/portal/status/network/reports", (
             [FromBody] FleetServerPresenceReportRequest request,
             HttpRequest httpRequest,

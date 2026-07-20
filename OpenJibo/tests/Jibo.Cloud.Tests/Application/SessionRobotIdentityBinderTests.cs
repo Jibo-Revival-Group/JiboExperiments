@@ -119,7 +119,7 @@ public sealed class SessionRobotIdentityBinderTests
     }
 
     [Fact]
-    public void TryBindFromContextPayload_PreservesTokenBoundRegistrationIdentity()
+    public void TryBindFromContextPayload_DoesNotCreateAnInventoryLink()
     {
         var session = new CloudSession
         {
@@ -134,7 +134,7 @@ public sealed class SessionRobotIdentityBinderTests
 
         Assert.True(bound);
         Assert.Equal("5c0b221fdf9d450019c5e254", session.DeviceId);
-        Assert.Equal("Royal-Current-Sage-Canvas", session.Metadata["registeredDeviceId"]?.ToString());
+        Assert.False(session.Metadata.ContainsKey("registeredDeviceId"));
     }
 
     [Fact]

@@ -28,6 +28,10 @@ public sealed class CloudAuthProtocolHandler(
                   ?? ReadString(body, "cpuId")
                   ?? ReadString(body, "robotId");
 
+            var defaultRobotIsSynthetic = RobotRegistrationSources.IsSynthetic(
+                RobotRegistrationSources.Normalize(stateStore.GetRobot().RegistrationSource,
+                    stateStore.GetRobot().DeviceId));
+
             // Real hardware often reaches the cloud through the hub-token flow before it has
             // completed a separate registration exchange. Preserve that observed identity so
             // dashboard activity can be joined to a concrete robot record.
@@ -43,7 +47,9 @@ public sealed class CloudAuthProtocolHandler(
 
             return ProtocolDispatchResult.Ok(new
             {
-                token = stateStore.IssueHubToken(deviceId),
+                // An empty request must not inherit a deployment-smoke robot as its identity.
+                // Leave it unassigned until the physical client provides a real identity signal.
+                token = stateStore.IssueHubToken(deviceId, useDefaultRobot: !defaultRobotIsSynthetic),
                 expires = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeMilliseconds()
             });
         }

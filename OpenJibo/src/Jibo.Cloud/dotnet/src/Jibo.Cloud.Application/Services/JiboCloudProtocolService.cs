@@ -299,7 +299,11 @@ public sealed class JiboCloudProtocolService(
             OobeTokenState? current = null;
             var hasTokenState = token is not null && _oobeTokens.TryGetValue(token, out current);
             var expired = hasTokenState && current!.ExpiresUtc <= DateTimeOffset.UtcNow;
-            var robot = stateStore.GetRobot();
+            // OOBE verification is scoped to its prepared robot. Do not read the service-wide
+            // primary registration here: deployment smoke must not take ownership of it.
+            var robot = hasTokenState && !string.IsNullOrWhiteSpace(current!.DeviceId)
+                ? stateStore.FindDeviceByFriendlyId(current.DeviceId) ?? stateStore.GetRobot()
+                : stateStore.GetRobot();
             var targetMode = hasTokenState ? current!.TargetMode : "open-jibo";
             var targetHost = hasTokenState
                 ? ResolveOpenJiboTargetHost(current!.TargetMode, current.TargetHost, envelope.HostName)
@@ -436,23 +440,29 @@ public sealed class JiboCloudProtocolService(
             state.LoopId = robotLoop.LoopId;
         }
 
-        stateStore.UpdateRobot(new DeviceRegistration
+        var isDeploymentSmoke = RobotRegistrationSources.Normalize(registeredDevice.RegistrationSource,
+            registeredDevice.DeviceId).Equals(RobotRegistrationSources.DeploymentSmoke,
+            StringComparison.OrdinalIgnoreCase);
+        if (!isDeploymentSmoke)
         {
-            DeviceId = registeredDevice.DeviceId,
-            RobotId = registeredDevice.RobotId,
-            FriendlyName = registeredDevice.FriendlyName,
-            FirmwareVersion = registeredDevice.FirmwareVersion,
-            ApplicationVersion = registeredDevice.ApplicationVersion,
-            IsActive = registeredDevice.IsActive,
-            CertificateThumbprint = registeredDevice.CertificateThumbprint,
-            IssuedIdentityId = registeredDevice.IssuedIdentityId,
-            BuildHash = registeredDevice.BuildHash,
-            ConfigHash = registeredDevice.ConfigHash,
-            RegistrationSource = registeredDevice.RegistrationSource,
-            IsHidden = registeredDevice.IsHidden,
-            ArchivedUtc = registeredDevice.ArchivedUtc,
-            HostMappings = BuildRobotHostMappings(state.TargetMode, state.TargetHost, envelope.HostName)
-        });
+            stateStore.UpdateRobot(new DeviceRegistration
+            {
+                DeviceId = registeredDevice.DeviceId,
+                RobotId = registeredDevice.RobotId,
+                FriendlyName = registeredDevice.FriendlyName,
+                FirmwareVersion = registeredDevice.FirmwareVersion,
+                ApplicationVersion = registeredDevice.ApplicationVersion,
+                IsActive = registeredDevice.IsActive,
+                CertificateThumbprint = registeredDevice.CertificateThumbprint,
+                IssuedIdentityId = registeredDevice.IssuedIdentityId,
+                BuildHash = registeredDevice.BuildHash,
+                ConfigHash = registeredDevice.ConfigHash,
+                RegistrationSource = registeredDevice.RegistrationSource,
+                IsHidden = registeredDevice.IsHidden,
+                ArchivedUtc = registeredDevice.ArchivedUtc,
+                HostMappings = BuildRobotHostMappings(state.TargetMode, state.TargetHost, envelope.HostName)
+            });
+        }
 
         var acceptedReadiness = EvaluateConversionReadiness(state, false, envelope.HostName);
         var acceptedTargetHost = ResolveOpenJiboTargetHost(state.TargetMode, state.TargetHost, envelope.HostName);

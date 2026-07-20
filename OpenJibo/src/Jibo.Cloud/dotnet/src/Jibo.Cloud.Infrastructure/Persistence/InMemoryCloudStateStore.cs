@@ -471,9 +471,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _users.First(u => u.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 
-    public string IssueHubToken(string? deviceId = null)
+    public string IssueHubToken(string? deviceId = null, bool useDefaultRobot = true)
     {
-        var resolvedDeviceId = string.IsNullOrWhiteSpace(deviceId) ? _robot.DeviceId : deviceId.Trim();
+        var resolvedDeviceId = !string.IsNullOrWhiteSpace(deviceId)
+            ? deviceId.Trim()
+            : useDefaultRobot
+                ? _robot.DeviceId
+                : null;
         var token = $"hub-{_account.AccountId}-{Guid.NewGuid():N}";
         _sessionsByToken[token] = new CloudSession
         {
@@ -604,6 +608,24 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             // inventory identity separately so both hardware identifiers remain traceable.
             session.Metadata["registeredDeviceId"] = device.DeviceId;
             session.Metadata["registeredRobotId"] = device.RobotId;
+        }
+
+        TouchState();
+        return true;
+    }
+
+    public bool ClearSessionDeviceBinding(string sessionId)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId)) return false;
+
+        lock (_syncRoot)
+        {
+            var session = _sessionsByToken.Values.FirstOrDefault(candidate =>
+                candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
+            if (session is null) return false;
+
+            session.Metadata.Remove("registeredDeviceId");
+            session.Metadata.Remove("registeredRobotId");
         }
 
         TouchState();

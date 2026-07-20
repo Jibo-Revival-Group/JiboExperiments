@@ -29,6 +29,21 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void ClearSessionDeviceBinding_RemovesOnlyTheExplicitInventoryIdentity()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "Royal", RobotId = "Royal" });
+        var session = store.OpenSession("hub", "runtime-id", "hub-test", "neohub", "/v1/listen");
+        Assert.True(store.BindSessionToDevice(session.SessionId, "Royal"));
+
+        var cleared = store.ClearSessionDeviceBinding(session.SessionId);
+
+        Assert.True(cleared);
+        Assert.Equal("runtime-id", session.DeviceId);
+        Assert.False(session.Metadata.ContainsKey("registeredDeviceId"));
+    }
+
+    [Fact]
     public void SnapshotStoreFactory_DefaultsToFileBackend()
     {
         var factory = new PersistenceSnapshotStoreFactory();

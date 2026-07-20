@@ -193,7 +193,8 @@ function renderRecentSessions(rows = [], robots = []) {
       <strong>${escapeHtml(session.kind || "unknown")}</strong>
       <span>${escapeHtml(session.deviceId || "—")} · ${escapeHtml(session.hostName || "—")}${session.path ? ` · ${escapeHtml(session.path)}` : ""}</span>
       <div class="muted-row">${formatDate(session.lastSeenUtc)} · heartbeat ${formatFloat(session.heartbeatAgeSeconds, 0)}s ago</div>
-      ${session.registeredDeviceId ? `<div class="muted-row">Linked inventory identity: ${escapeHtml(session.registeredDeviceId)}</div>` : `
+      ${session.registeredDeviceId ? `<div class="muted-row">Linked inventory identity: ${escapeHtml(session.registeredDeviceId)}</div>
+        <button class="button secondary compact unlink-session" data-session-id="${escapeHtml(session.sessionId)}" type="button">Unlink</button>` : `
         <div class="button-row session-link-row">
           <select class="session-device-select" data-session-id="${escapeHtml(session.sessionId)}" aria-label="Robot record for live session">
             <option value="">Link to robot...</option>${robotOptions}
@@ -216,6 +217,13 @@ async function linkLiveSession(sessionId) {
     body: JSON.stringify({ deviceId: select.value }),
   });
   await renderStatus("Live session linked to the selected robot record.");
+}
+
+async function unlinkLiveSession(sessionId) {
+  await apiFetch(`/api/portal/status/sessions/${encodeURIComponent(sessionId)}/link`, {
+    method: "DELETE",
+  });
+  await renderStatus("Live session link removed.");
 }
 
 async function renderStatus(message = "", tone = "success") {
@@ -361,6 +369,9 @@ async function renderStatus(message = "", tone = "success") {
   });
   document.querySelectorAll(".link-session").forEach((button) => {
     button.addEventListener("click", () => linkLiveSession(button.dataset.sessionId));
+  });
+  document.querySelectorAll(".unlink-session").forEach((button) => {
+    button.addEventListener("click", () => unlinkLiveSession(button.dataset.sessionId));
   });
 }
 

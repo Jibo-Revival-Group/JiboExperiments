@@ -21,11 +21,12 @@ public interface ICloudStateStore
     UserRecord? GetUserById(string id);
     UserRecord? GetUserByEmail(string email);
     UserRecord UpdateUser(string id, string? firstName, string? lastName, string? gender, long? birthday);
-    string IssueHubToken(string? deviceId = null);
+    string IssueHubToken(string? deviceId = null, bool useDefaultRobot = true);
     string IssueRobotToken(string deviceId);
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
     CloudSession? FindSessionByToken(string token);
     bool BindSessionToDevice(string sessionId, string deviceId);
+    bool ClearSessionDeviceBinding(string sessionId);
     /// <summary>
     /// Copies dialog-continuation metadata from other sessions that share this session's DeviceId
     /// (same robot reconnecting on a new path-token websocket).

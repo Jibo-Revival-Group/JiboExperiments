@@ -58,6 +58,7 @@ class Result:
 
 def request_json(name: str, method: str, url: str, headers: Optional[Dict[str, str]] = None, body: Optional[Dict[str, Any]] = None) -> Result:
     request_headers = dict(headers or {})
+    request_headers.setdefault("X-OpenJibo-Registration-Source", "deployment-smoke")
     data = None
     if body is not None:
         data = json.dumps(body).encode("utf-8")

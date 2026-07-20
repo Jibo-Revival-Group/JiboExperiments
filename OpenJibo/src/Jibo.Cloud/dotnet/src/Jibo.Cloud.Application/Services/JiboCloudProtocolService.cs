@@ -424,8 +424,11 @@ public sealed class JiboCloudProtocolService(
         state.RollbackSnapshotId = setupState.RollbackSnapshotId;
         state.BaselineEvidence = setupState.BaselineEvidence;
 
-        var registeredDevice =
-            stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        var registeredDevice = stateStore.GetOrCreateDevice(robotId, envelope.FirmwareVersion,
+            envelope.ApplicationVersion,
+            envelope.Headers.TryGetValue("X-OpenJibo-Registration-Source", out var sourceHeader)
+                ? sourceHeader
+                : null);
         if (string.IsNullOrWhiteSpace(state.LoopId))
         {
             var robotLoop = stateStore.AddLoop(null, stateStore.GetAccount().AccountId, registeredDevice.RobotId,
@@ -445,6 +448,9 @@ public sealed class JiboCloudProtocolService(
             IssuedIdentityId = registeredDevice.IssuedIdentityId,
             BuildHash = registeredDevice.BuildHash,
             ConfigHash = registeredDevice.ConfigHash,
+            RegistrationSource = registeredDevice.RegistrationSource,
+            IsHidden = registeredDevice.IsHidden,
+            ArchivedUtc = registeredDevice.ArchivedUtc,
             HostMappings = BuildRobotHostMappings(state.TargetMode, state.TargetHost, envelope.HostName)
         });
 
@@ -1378,6 +1384,9 @@ public sealed class JiboCloudProtocolService(
                 IssuedIdentityId = robot.IssuedIdentityId,
                 BuildHash = robot.BuildHash,
                 ConfigHash = robot.ConfigHash,
+                RegistrationSource = robot.RegistrationSource,
+                IsHidden = robot.IsHidden,
+                ArchivedUtc = robot.ArchivedUtc,
                 HostMappings = robot.HostMappings
             };
 
@@ -1409,6 +1418,9 @@ public sealed class JiboCloudProtocolService(
                 IssuedIdentityId = robot.IssuedIdentityId,
                 BuildHash = robot.BuildHash,
                 ConfigHash = robot.ConfigHash,
+                RegistrationSource = robot.RegistrationSource,
+                IsHidden = robot.IsHidden,
+                ArchivedUtc = robot.ArchivedUtc,
                 HostMappings = robot.HostMappings
             });
 
@@ -1589,6 +1601,9 @@ public sealed class JiboCloudProtocolService(
             IssuedIdentityId = robot.IssuedIdentityId,
             BuildHash = robot.BuildHash,
             ConfigHash = robot.ConfigHash,
+            RegistrationSource = robot.RegistrationSource,
+            IsHidden = robot.IsHidden,
+            ArchivedUtc = robot.ArchivedUtc,
             HostMappings = robot.HostMappings
         });
 

@@ -194,7 +194,11 @@ public sealed class CloudAuthProtocolHandler(
                 ? presentedRobotId!
                 : "unknown-device";
 
-        var existing = stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion);
+        var registrationSource = envelope.Headers.TryGetValue("X-OpenJibo-Registration-Source", out var sourceHeader)
+            ? sourceHeader
+            : null;
+        var existing = stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion,
+            registrationSource);
         if (!string.IsNullOrWhiteSpace(presentedRobotId))
         {
             var resolvedRobotId = presentedRobotId.Trim();
@@ -208,6 +212,9 @@ public sealed class CloudAuthProtocolHandler(
                 FirmwareVersion = existing.FirmwareVersion ?? envelope.FirmwareVersion,
                 ApplicationVersion = existing.ApplicationVersion ?? envelope.ApplicationVersion,
                 IsActive = true,
+                RegistrationSource = existing.RegistrationSource,
+                IsHidden = existing.IsHidden,
+                ArchivedUtc = existing.ArchivedUtc,
                 HostMappings = new Dictionary<string, string>(existing.HostMappings, StringComparer.OrdinalIgnoreCase)
             });
         }

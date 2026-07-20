@@ -35,6 +35,10 @@ function Invoke-JsonRequest {
         [string]$Body
     )
 
+    if (-not $Headers.ContainsKey("X-OpenJibo-Registration-Source")) {
+        $Headers["X-OpenJibo-Registration-Source"] = "deployment-smoke"
+    }
+
     $request = @{
         Uri = $Url
         Method = $Method

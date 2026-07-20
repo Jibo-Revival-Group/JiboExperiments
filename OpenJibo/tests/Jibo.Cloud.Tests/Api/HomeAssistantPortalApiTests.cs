@@ -301,6 +301,14 @@ public sealed class HomeAssistantPortalApiTests
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "physical-status-robot",
+            RobotId = "physical-status-robot",
+            FriendlyName = "Living Room Jibo",
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
 
         var loginResponse = await client.PostAsJsonAsync(
             "/api/portal/status/login",
@@ -316,8 +324,22 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
         var summary = await summaryResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(summary.GetProperty("fleet").GetProperty("registeredRobots").GetInt32() >= 1);
+        Assert.Equal(1, summary.GetProperty("fleet").GetProperty("hiddenRobots").GetInt32());
         Assert.True(summary.GetProperty("service").GetProperty("uptimeSeconds").GetInt64() >= 0);
-        Assert.NotEmpty(summary.GetProperty("robots").EnumerateArray());
+        Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
+            robot.GetProperty("deviceId").GetString() == "physical-status-robot" &&
+            robot.GetProperty("presence").GetString() == "never-connected");
+
+        var archiveResponse = await client.PostAsJsonAsync(
+            "/api/portal/status/robots/physical-status-robot/archive",
+            new { hidden = true });
+        Assert.Equal(HttpStatusCode.OK, archiveResponse.StatusCode);
+
+        var archivedSummary = await (await client.GetAsync("/api/portal/status/summary?includeHidden=true"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains(archivedSummary.GetProperty("robots").EnumerateArray(), robot =>
+            robot.GetProperty("deviceId").GetString() == "physical-status-robot" &&
+            robot.GetProperty("isHidden").GetBoolean());
     }
 
     [Fact]

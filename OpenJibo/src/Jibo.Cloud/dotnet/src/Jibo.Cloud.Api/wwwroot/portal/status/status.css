@@ -161,6 +161,21 @@ body {
   justify-content: space-between;
 }
 
+.toggle-control {
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.toggle-control input {
+  accent-color: var(--status-accent);
+}
+
+.button.compact {
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+}
+
 .status-divider {
   height: 1px;
   margin: 1rem 0;

@@ -238,6 +238,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<HomeAssistantConnectionRegistry>();
         services.AddSingleton<RobotPendingNotificationStore>();
         services.AddSingleton<RobotNotificationRegistry>();
+        services.AddSingleton<RobotPresenceRegistry>();
         services.AddSingleton<LoopUpdatedPushService>();
         services.AddSingleton<HomeAssistantCommandService>();
 

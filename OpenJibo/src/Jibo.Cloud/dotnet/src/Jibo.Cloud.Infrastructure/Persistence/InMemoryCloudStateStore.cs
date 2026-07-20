@@ -92,6 +92,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             DeviceId = bootstrapDeviceId,
             RobotId = bootstrapDeviceId,
             FriendlyName = "OpenJibo Dev Robot",
+            RegistrationSource = RobotRegistrationSources.Bootstrap,
+            IsHidden = true,
+            ArchivedUtc = DateTimeOffset.UtcNow,
             HostMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["api.jibo.com"] = "openjibo.com",
@@ -212,8 +215,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return _robotProfile;
     }
 
-    public DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion)
+    public DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion,
+        string? registrationSource = null)
     {
+        var source = RobotRegistrationSources.Normalize(registrationSource, deviceId);
         var device = _devices.AddOrUpdate(
             deviceId,
             _ => new DeviceRegistration
@@ -222,7 +227,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 RobotId = $"robot-{deviceId}",
                 FriendlyName = "OpenJibo Registered Robot",
                 FirmwareVersion = firmwareVersion,
-                ApplicationVersion = applicationVersion
+                ApplicationVersion = applicationVersion,
+                RegistrationSource = source,
+                IsHidden = RobotRegistrationSources.IsSynthetic(source),
+                ArchivedUtc = RobotRegistrationSources.IsSynthetic(source) ? DateTimeOffset.UtcNow : null
             },
             (_, current) => new DeviceRegistration
             {
@@ -235,6 +243,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 IssuedIdentityId = current.IssuedIdentityId,
                 BuildHash = current.BuildHash,
                 ConfigHash = current.ConfigHash,
+                RegistrationSource = current.RegistrationSource == RobotRegistrationSources.Unknown &&
+                                     source != RobotRegistrationSources.Unknown
+                    ? source
+                    : current.RegistrationSource,
+                IsHidden = current.IsHidden,
+                ArchivedUtc = current.ArchivedUtc,
                 HostMappings = new Dictionary<string, string>(current.HostMappings, StringComparer.OrdinalIgnoreCase)
             });
 
@@ -2846,6 +2860,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             IssuedIdentityId = device.IssuedIdentityId,
             BuildHash = device.BuildHash,
             ConfigHash = device.ConfigHash,
+            RegistrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+            IsHidden = device.IsHidden,
+            ArchivedUtc = device.ArchivedUtc,
             HostMappings = new Dictionary<string, string>(device.HostMappings, StringComparer.OrdinalIgnoreCase)
         };
     }
@@ -2910,11 +2927,15 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private void ApplySnapshot(PersistentStateSnapshot snapshot)
     {
         _account = snapshot.Account ?? _account;
-        _robot = snapshot.Robot ?? _robot;
+        _robot = snapshot.Robot is null ? _robot : NormalizePersistedDevice(snapshot.Robot);
         _robotProfile = snapshot.RobotProfile ?? _robotProfile;
 
         _devices.Clear();
-        foreach (var device in snapshot.Devices ?? []) _devices[device.DeviceId] = device;
+        foreach (var device in snapshot.Devices ?? [])
+        {
+            var normalizedDevice = NormalizePersistedDevice(device);
+            _devices[normalizedDevice.DeviceId] = normalizedDevice;
+        }
 
         if (_devices.IsEmpty || !_devices.ContainsKey(_robot.DeviceId)) _devices[_robot.DeviceId] = _robot;
 
@@ -3000,6 +3021,32 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         Interlocked.Exchange(ref _revision, snapshot.Revision);
         _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
         _lastSavedUtc = snapshot.LastSavedUtc;
+    }
+
+    private static DeviceRegistration NormalizePersistedDevice(DeviceRegistration device)
+    {
+        var source = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId);
+        var inferredSynthetic = device.RegistrationSource == RobotRegistrationSources.Unknown &&
+                               RobotRegistrationSources.IsSynthetic(source);
+        var hidden = device.IsHidden || inferredSynthetic;
+
+        return new DeviceRegistration
+        {
+            DeviceId = device.DeviceId,
+            RobotId = device.RobotId,
+            FriendlyName = device.FriendlyName,
+            FirmwareVersion = device.FirmwareVersion,
+            ApplicationVersion = device.ApplicationVersion,
+            IsActive = device.IsActive,
+            CertificateThumbprint = device.CertificateThumbprint,
+            IssuedIdentityId = device.IssuedIdentityId,
+            BuildHash = device.BuildHash,
+            ConfigHash = device.ConfigHash,
+            RegistrationSource = source,
+            IsHidden = hidden,
+            ArchivedUtc = hidden ? device.ArchivedUtc ?? DateTimeOffset.UtcNow : null,
+            HostMappings = new Dictionary<string, string>(device.HostMappings, StringComparer.OrdinalIgnoreCase)
+        };
     }
 
     private sealed class PersistentStateSnapshot

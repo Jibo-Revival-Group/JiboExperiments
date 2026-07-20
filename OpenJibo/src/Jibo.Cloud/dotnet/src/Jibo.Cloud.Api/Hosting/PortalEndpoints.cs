@@ -865,13 +865,38 @@ internal static class PortalEndpoints
         app.MapGet("/api/portal/status/summary", (
             HttpRequest request,
             PortalSessionService portalSessionService,
-            ICloudStateStore cloudStateStore) =>
+            ICloudStateStore cloudStateStore,
+            RobotPresenceRegistry robotPresenceRegistry) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session))
                 return Results.Unauthorized();
 
-            return Results.Json(BuildStatusSummaryPayload(cloudStateStore));
+            var includeHidden = bool.TryParse(request.Query["includeHidden"], out var requestedIncludeHidden) &&
+                                requestedIncludeHidden;
+            return Results.Json(BuildStatusSummaryPayload(cloudStateStore, robotPresenceRegistry, includeHidden));
+        });
+
+        app.MapPost("/api/portal/status/robots/{deviceId}/archive", (
+            string deviceId,
+            [FromBody] ArchiveStatusRobotRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            var device = cloudStateStore.GetDevices().FirstOrDefault(candidate =>
+                candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
+            if (device is null)
+                return Results.NotFound(new { error = "Robot record was not found." });
+
+            var isHidden = request.Hidden;
+            var updated = CopyDevice(device, isHidden, isHidden ? DateTimeOffset.UtcNow : null);
+            cloudStateStore.UpsertDevice(updated);
+            return Results.Json(new { ok = true, deviceId = updated.DeviceId, hidden = updated.IsHidden });
         });
 
         app.MapPost("/api/portal/logout", (
@@ -904,38 +929,35 @@ internal static class PortalEndpoints
         });
     }
 
-    private static object BuildStatusSummaryPayload(ICloudStateStore cloudStateStore)
+    private static object BuildStatusSummaryPayload(ICloudStateStore cloudStateStore,
+        RobotPresenceRegistry robotPresenceRegistry, bool includeHidden)
     {
         var now = DateTimeOffset.UtcNow;
         using var process = Process.GetCurrentProcess();
         var processStartUtc = process.StartTime.ToUniversalTime();
-        var devices = cloudStateStore.GetDevices();
+        var allDevices = cloudStateStore.GetDevices();
+        var devices = allDevices.Where(device => includeHidden || !device.IsHidden).ToArray();
         var sessions = cloudStateStore.GetSessions();
-        var liveSessions = sessions
+        var recentSessions = sessions
             .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
             .ToArray();
-        var liveDeviceIds = liveSessions
-            .Where(session => !string.IsNullOrWhiteSpace(session.DeviceId))
-            .Select(session => session.DeviceId!.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        var sessionsByDevice = liveSessions
-            .Where(session => !string.IsNullOrWhiteSpace(session.DeviceId))
-            .GroupBy(session => session.DeviceId!, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.OrdinalIgnoreCase);
+        var liveConnections = robotPresenceRegistry.GetLiveConnections();
 
         var robots = devices
             .Select(device =>
             {
-                sessionsByDevice.TryGetValue(device.DeviceId, out var deviceSessions);
-                deviceSessions ??= [];
-
-                var lastSeenUtc = deviceSessions.Length > 0
-                    ? deviceSessions.Max(session => session.LastSeenUtc)
+                var deviceSessions = sessions.Where(session => SessionMatchesDevice(session, device)).ToArray();
+                var deviceConnections = liveConnections.Where(connection => ConnectionMatchesDevice(connection, device))
+                    .ToArray();
+                var lastSession = deviceSessions.OrderByDescending(session => session.LastSeenUtc).FirstOrDefault();
+                var lastSeenUtc = lastSession is not null
+                    ? lastSession.LastSeenUtc
                     : (DateTimeOffset?)null;
                 var firstSeenUtc = deviceSessions.Length > 0
                     ? deviceSessions.Min(session => session.CreatedUtc)
                     : (DateTimeOffset?)null;
+                var sleepState = lastSession is null ? null : ReadSessionMetadata(lastSession, "sleepState");
+                var presence = ResolveRobotPresence(device, deviceConnections, lastSeenUtc, sleepState, now);
 
                 return new
                 {
@@ -945,8 +967,14 @@ internal static class PortalEndpoints
                     device.FirmwareVersion,
                     device.ApplicationVersion,
                     device.IsActive,
-                    connected = deviceSessions.Length > 0,
+                    device.IsHidden,
+                    device.ArchivedUtc,
+                    registrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+                    isSynthetic = RobotRegistrationSources.IsSynthetic(device.RegistrationSource),
+                    presence,
+                    connected = deviceConnections.Length > 0,
                     sessionCount = deviceSessions.Length,
+                    liveConnectionCount = deviceConnections.Length,
                     firstSeenUtc,
                     lastSeenUtc,
                     lastHeartbeatAgeSeconds = lastSeenUtc is null ? (double?)null : (now - lastSeenUtc.Value).TotalSeconds,
@@ -955,16 +983,23 @@ internal static class PortalEndpoints
                         .Where(kind => !string.IsNullOrWhiteSpace(kind))
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .OrderBy(kind => kind, StringComparer.OrdinalIgnoreCase)
-                        .ToArray()
+                        .ToArray(),
+                    connectionKinds = deviceConnections
+                        .Select(connection => connection.Kind)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(kind => kind, StringComparer.OrdinalIgnoreCase)
+                        .ToArray(),
+                    sleepState
                 };
             })
             .OrderByDescending(robot => robot.connected)
+            .ThenBy(robot => robot.presence == "recently-seen" ? 0 : 1)
             .ThenBy(robot => robot.FriendlyName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(robot => robot.DeviceId, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        var latestSeenUtc = liveSessions.Length > 0 ? liveSessions.Max(session => session.LastSeenUtc) : (DateTimeOffset?)null;
-        var oldestLiveSessionCreatedUtc = liveSessions.Length > 0 ? liveSessions.Min(session => session.CreatedUtc) : (DateTimeOffset?)null;
+        var latestSeenUtc = recentSessions.Length > 0 ? recentSessions.Max(session => session.LastSeenUtc) : (DateTimeOffset?)null;
+        var oldestLiveSessionCreatedUtc = recentSessions.Length > 0 ? recentSessions.Min(session => session.CreatedUtc) : (DateTimeOffset?)null;
 
         return new
         {
@@ -979,20 +1014,25 @@ internal static class PortalEndpoints
             persistence = cloudStateStore.GetPersistenceStateInfo(),
             fleet = new
             {
-                registeredRobots = devices.Count,
+                registeredRobots = allDevices.Count,
+                visibleRobots = devices.Length,
+                hiddenRobots = allDevices.Count(device => device.IsHidden),
+                syntheticRobots = allDevices.Count(device => RobotRegistrationSources.IsSynthetic(device.RegistrationSource)),
                 activeRobots = devices.Count(device => device.IsActive),
-                connectedRobots = liveDeviceIds.Length,
+                connectedRobots = robots.Count(robot => robot.connected),
+                sleepingRobots = robots.Count(robot => robot.presence == "sleeping"),
+                recentlySeenRobots = robots.Count(robot => robot.presence == "recently-seen"),
                 totalSessions = sessions.Count,
-                liveSessions = liveSessions.Length,
+                liveSessions = recentSessions.Length,
                 staleSessions = sessions.Count(session => now - session.LastSeenUtc > StatusHeartbeatWindow),
                 latestSeenUtc,
                 oldestLiveSessionCreatedUtc,
-                averageHeartbeatAgeSeconds = liveSessions.Length > 0
-                    ? liveSessions.Average(session => (now - session.LastSeenUtc).TotalSeconds)
+                averageHeartbeatAgeSeconds = recentSessions.Length > 0
+                    ? recentSessions.Average(session => (now - session.LastSeenUtc).TotalSeconds)
                     : (double?)null
             },
             robots,
-            recentSessions = liveSessions
+            recentSessions = recentSessions
                 .OrderByDescending(session => session.LastSeenUtc)
                 .Take(10)
                 .Select(session => new
@@ -1009,6 +1049,47 @@ internal static class PortalEndpoints
                 .ToArray()
         };
     }
+
+    private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device) =>
+        string.Equals(session.DeviceId, device.DeviceId, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(session.DeviceId, device.RobotId, StringComparison.OrdinalIgnoreCase);
+
+    private static bool ConnectionMatchesDevice(RobotPresenceConnection connection, DeviceRegistration device) =>
+        connection.RobotKeys.Contains(device.DeviceId) || connection.RobotKeys.Contains(device.RobotId);
+
+    private static string? ReadSessionMetadata(CloudSession session, string key) =>
+        session.Metadata.TryGetValue(key, out var value) ? value?.ToString() : null;
+
+    private static string ResolveRobotPresence(DeviceRegistration device,
+        IReadOnlyCollection<RobotPresenceConnection> liveConnections, DateTimeOffset? lastSeenUtc, string? sleepState,
+        DateTimeOffset now)
+    {
+        if (!device.IsActive) return "inactive";
+        if (string.Equals(sleepState, "sleeping", StringComparison.OrdinalIgnoreCase) &&
+            (liveConnections.Count > 0 || lastSeenUtc >= now.AddHours(-24))) return "sleeping";
+        if (liveConnections.Count > 0) return "online";
+        if (lastSeenUtc >= now.AddMinutes(-30)) return "recently-seen";
+        return lastSeenUtc is null ? "never-connected" : "offline";
+    }
+
+    private static DeviceRegistration CopyDevice(DeviceRegistration device, bool isHidden, DateTimeOffset? archivedUtc) =>
+        new()
+        {
+            DeviceId = device.DeviceId,
+            RobotId = device.RobotId,
+            FriendlyName = device.FriendlyName,
+            FirmwareVersion = device.FirmwareVersion,
+            ApplicationVersion = device.ApplicationVersion,
+            IsActive = device.IsActive,
+            CertificateThumbprint = device.CertificateThumbprint,
+            IssuedIdentityId = device.IssuedIdentityId,
+            BuildHash = device.BuildHash,
+            ConfigHash = device.ConfigHash,
+            RegistrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+            IsHidden = isHidden,
+            ArchivedUtc = archivedUtc,
+            HostMappings = new Dictionary<string, string>(device.HostMappings, StringComparer.OrdinalIgnoreCase)
+        };
 
 
     private static IReadOnlyList<string> BuildAdminConversionBlockers(
@@ -1138,6 +1219,9 @@ internal static class PortalEndpoints
             IssuedIdentityId = existing?.IssuedIdentityId,
             BuildHash = existing?.BuildHash,
             ConfigHash = existing?.ConfigHash,
+            RegistrationSource = existing?.RegistrationSource ?? RobotRegistrationSources.Portal,
+            IsHidden = existing?.IsHidden ?? false,
+            ArchivedUtc = existing?.ArchivedUtc,
             HostMappings = existing is null
                 ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, string>(existing.HostMappings, StringComparer.OrdinalIgnoreCase)
@@ -1451,6 +1535,8 @@ internal static class PortalEndpoints
     private sealed record RevokeIdentityGraphAnchorRequest(string? Anchor, string? PortalSessionToken);
 
     private sealed record AdminStatusLoginRequest(string? Password);
+
+    private sealed record ArchiveStatusRobotRequest(string? PortalSessionToken, bool Hidden);
 
     private sealed record UpsertTrustedServerRequest(
         string? PortalSessionToken,

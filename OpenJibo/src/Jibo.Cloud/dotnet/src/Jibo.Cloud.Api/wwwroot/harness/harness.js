@@ -53,6 +53,7 @@ async function sendRobotCall(service, operation, body) {
       "X-Amz-Target": `${service}.${operation}`,
       "X-OpenJibo-Harness-Host": $("hostName").value.trim(),
       "X-OpenJibo-AppVersion": "1.0.20",
+      "X-OpenJibo-Registration-Source": "browser-harness",
     },
     body: JSON.stringify(body),
   });

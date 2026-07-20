@@ -12,6 +12,7 @@ internal sealed class WebSocketRequestCoordinator(
     HomeAssistantWebSocketHandler homeAssistantWebSocketHandler,
     IWebSocketTelemetrySink telemetrySink,
     RobotNotificationRegistry robotNotificationRegistry,
+    RobotPresenceRegistry robotPresenceRegistry,
     ICloudStateStore cloudStateStore,
     ILogger<WebSocketRequestCoordinator> logger)
 {
@@ -30,8 +31,27 @@ internal sealed class WebSocketRequestCoordinator(
             homeAssistantWebSocketHandler,
             telemetrySink,
             new RobotNotificationRegistry(),
+            new RobotPresenceRegistry(),
             cloudStateStore,
             NullLogger<WebSocketRequestCoordinator>.Instance)
+    {
+    }
+
+    internal WebSocketRequestCoordinator(
+        JiboWebSocketService webSocketService,
+        HomeAssistantWebSocketHandler homeAssistantWebSocketHandler,
+        IWebSocketTelemetrySink telemetrySink,
+        RobotNotificationRegistry robotNotificationRegistry,
+        ICloudStateStore cloudStateStore,
+        ILogger<WebSocketRequestCoordinator> logger)
+        : this(
+            webSocketService,
+            homeAssistantWebSocketHandler,
+            telemetrySink,
+            robotNotificationRegistry,
+            new RobotPresenceRegistry(),
+            cloudStateStore,
+            logger)
     {
     }
 
@@ -71,9 +91,10 @@ internal sealed class WebSocketRequestCoordinator(
         await telemetrySink.RecordConnectionOpenedAsync(openEnvelope, session, context.RequestAborted);
 
         var registeredApiSocket = false;
+        var presenceConnectionId = robotPresenceRegistry.Register(kind, socket, ResolveRobotKeys(token, session));
         if (string.Equals(kind, "api-socket", StringComparison.OrdinalIgnoreCase))
         {
-            var robotKeys = ResolveApiSocketRobotKeys(token, session);
+            var robotKeys = ResolveRobotKeys(token, session);
             robotNotificationRegistry.Register(robotKeys, socket);
             registeredApiSocket = true;
             var drained = await robotNotificationRegistry.DrainPendingAsync(
@@ -158,6 +179,7 @@ internal sealed class WebSocketRequestCoordinator(
                     received.MessageType == WebSocketMessageType.Binary ? received.Buffer : null);
 
                 var replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);
+                robotPresenceRegistry.UpdateRobotKeys(presenceConnectionId, ResolveRobotKeys(token, session));
                 if (!string.IsNullOrWhiteSpace(session.TurnState.TransId))
                     loopTransId = session.TurnState.TransId;
                 logger.LogDebug(
@@ -177,6 +199,7 @@ internal sealed class WebSocketRequestCoordinator(
         {
             if (registeredApiSocket)
                 robotNotificationRegistry.Remove(socket);
+            robotPresenceRegistry.Remove(presenceConnectionId);
         }
 
         var closeEnvelope = CreateEnvelope(context, kind, token, connectionId);
@@ -189,7 +212,7 @@ internal sealed class WebSocketRequestCoordinator(
             isPrematureClose);
     }
 
-    private HashSet<string> ResolveApiSocketRobotKeys(string? token, CloudSession session)
+    private HashSet<string> ResolveRobotKeys(string? token, CloudSession session)
     {
         var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(token))

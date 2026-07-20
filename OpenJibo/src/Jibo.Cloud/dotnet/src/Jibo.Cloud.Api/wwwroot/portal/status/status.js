@@ -1,5 +1,6 @@
 const SESSION_KEY = "openjibo_status_session";
 const app = document.getElementById("app");
+let includeHidden = false;
 
 function escapeHtml(value) {
   return String(value)
@@ -83,10 +84,17 @@ function formatFloat(value, digits = 1) {
   return num.toFixed(digits);
 }
 
-function statusBadge(isConnected, isActive) {
-  if (isConnected) return `<span class="badge success">Connected</span>`;
-  if (!isActive) return `<span class="badge warning">Inactive</span>`;
-  return `<span class="badge neutral">Idle</span>`;
+function statusBadge(presence) {
+  const badges = {
+    online: ["success", "Online"],
+    sleeping: ["neutral", "Sleeping"],
+    "recently-seen": ["neutral", "Recently seen"],
+    offline: ["warning", "Offline"],
+    "never-connected": ["warning", "Never connected"],
+    inactive: ["warning", "Inactive"],
+  };
+  const [tone, label] = badges[presence] || ["neutral", "Unknown"];
+  return `<span class="badge ${tone}">${label}</span>`;
 }
 
 async function login(password) {
@@ -146,20 +154,29 @@ function renderRobotRows(robots = []) {
         <div class="mono">${escapeHtml(robot.friendlyName || robot.robotId || robot.deviceId || "—")}</div>
         <div class="muted-row">${escapeHtml(robot.deviceId || "—")}</div>
       </td>
-      <td>${statusBadge(robot.connected, robot.isActive)}</td>
+      <td>${statusBadge(robot.presence)}</td>
       <td>
         <div class="mono">${escapeHtml(robot.robotId || "—")}</div>
-        <div class="muted-row">${escapeHtml((robot.sessionKinds || []).join(", ") || "—")}</div>
+        <div class="muted-row">${escapeHtml(robot.registrationSource || "unknown")}</div>
       </td>
-      <td>${robot.sessionCount ?? 0}</td>
+      <td>${robot.liveConnectionCount ?? 0} live<br><span class="muted-row">${escapeHtml((robot.connectionKinds || []).join(", ") || "—")}</span></td>
       <td>${formatDate(robot.lastSeenUtc)}</td>
       <td>${formatFloat(robot.lastHeartbeatAgeSeconds, 0)}s</td>
       <td>
         <div class="muted-row">${escapeHtml(robot.firmwareVersion || "—")}</div>
         <div class="muted-row">${escapeHtml(robot.applicationVersion || "—")}</div>
       </td>
+      <td><button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button></td>
     </tr>
   `).join("");
+}
+
+async function setRobotArchive(deviceId, hidden) {
+  await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/archive`, {
+    method: "POST",
+    body: JSON.stringify({ hidden }),
+  });
+  await renderStatus(hidden ? "Robot archived from the default view." : "Robot restored to the default view.");
 }
 
 function renderRecentSessions(rows = []) {
@@ -179,7 +196,7 @@ function renderRecentSessions(rows = []) {
 async function renderStatus(message = "", tone = "success") {
   let summary;
   try {
-    summary = await apiFetch("/api/portal/status/summary");
+    summary = await apiFetch(`/api/portal/status/summary?includeHidden=${includeHidden}`);
   } catch (error) {
     clearSessionToken();
     await renderLogin(error.message, true);
@@ -198,7 +215,7 @@ async function renderStatus(message = "", tone = "success") {
           <div class="status-title">
             <p class="status-kicker">OpenJibo Status</p>
             <h1>Fleet health at a glance</h1>
-            <p class="status-lede">Password-protected admin view for connected robots, live sessions, and service uptime.</p>
+            <p class="status-lede">Live socket presence, recent activity, and a clean fleet inventory.</p>
           </div>
           <div class="button-row" style="margin-top: 0;">
             <a class="secondary-button" href="/portal">Portal dashboard</a>
@@ -208,22 +225,25 @@ async function renderStatus(message = "", tone = "success") {
         </div>
 
         <div class="status-meta">
-          <span class="badge success">${escapeHtml(fleet.connectedRobots ?? 0)} connected</span>
+          <span class="badge success">${escapeHtml(fleet.connectedRobots ?? 0)} online</span>
+          <span class="badge neutral">${escapeHtml(fleet.sleepingRobots ?? 0)} sleeping</span>
+          <span class="badge neutral">${escapeHtml(fleet.recentlySeenRobots ?? 0)} recently seen</span>
           <span class="badge neutral">${escapeHtml(fleet.registeredRobots ?? 0)} registered</span>
+          <span class="badge warning">${escapeHtml(fleet.hiddenRobots ?? 0)} archived</span>
           <span class="badge warning">${escapeHtml(fleet.staleSessions ?? 0)} stale sessions</span>
           <span class="badge neutral">Uptime ${escapeHtml(service.uptimeLabel || "—")}</span>
         </div>
 
         <div class="stat-grid">
           <div class="stat-card">
-            <span class="label">Connected robots</span>
+            <span class="label">Online robots</span>
             <span class="value">${fleet.connectedRobots ?? 0}</span>
-            <span class="detail">Seen in the last five minutes.</span>
+            <span class="detail">Open robot sockets right now.</span>
           </div>
           <div class="stat-card">
-            <span class="label">Registered robots</span>
-            <span class="value">${fleet.registeredRobots ?? 0}</span>
-            <span class="detail">${fleet.activeRobots ?? 0} currently active.</span>
+            <span class="label">Visible robots</span>
+            <span class="value">${fleet.visibleRobots ?? 0}</span>
+            <span class="detail">${fleet.syntheticRobots ?? 0} known synthetic records.</span>
           </div>
           <div class="stat-card">
             <span class="label">Service uptime</span>
@@ -250,7 +270,7 @@ async function renderStatus(message = "", tone = "success") {
               <p class="eyebrow">Fleet</p>
               <h2>Robot inventory</h2>
             </div>
-            <span class="badge ${fleet.connectedRobots ? "success" : "warning"}">${fleet.liveSessions ?? 0} live sessions</span>
+            <label class="toggle-control"><input id="includeHiddenToggle" type="checkbox" ${includeHidden ? "checked" : ""}> Show archived</label>
           </div>
           <div class="table-wrap">
             <table class="status-table">
@@ -263,6 +283,7 @@ async function renderStatus(message = "", tone = "success") {
                   <th>Last seen</th>
                   <th>Age</th>
                   <th>Version</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -299,6 +320,13 @@ async function renderStatus(message = "", tone = "success") {
 
   document.getElementById("refreshButton").addEventListener("click", () => renderStatus("Status refreshed."));
   document.getElementById("logoutButton").addEventListener("click", logout);
+  document.getElementById("includeHiddenToggle").addEventListener("change", (event) => {
+    includeHidden = event.target.checked;
+    renderStatus();
+  });
+  document.querySelectorAll(".archive-robot").forEach((button) => {
+    button.addEventListener("click", () => setRobotArchive(button.dataset.deviceId, button.dataset.hidden === "true"));
+  });
 }
 
 async function logout() {

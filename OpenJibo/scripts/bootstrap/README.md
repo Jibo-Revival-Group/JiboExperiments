@@ -53,6 +53,7 @@ Entry points:
 - `Validate-OpenJiboHarnessRoundTrip.ps1`
 - `Demo-OpenJiboHarness.ps1`
 - `Recommend-OpenJiboHarnessMode.ps1`
+- `test-openjibo-conversion-region.sh`
 - `record-openjibo-conversion-demo.sh`
 - `Build-LinuxFilesystemFromCopies.ps1`
 - `Inspect-LinuxFilesystemDemo.ps1`

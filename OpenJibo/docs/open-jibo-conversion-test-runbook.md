@@ -4,7 +4,7 @@ Use this checklist for the next robot session after the Linux-first conversion h
 
 ## Goal
 
-Prove the staged conversion flow on the real robot root without breaking the known-good `api` baseline.
+Prove the staged conversion flow on the real robot root while verifying the credentials region is rewritten from `api` to `open-jibo` during apply.
 
 In this runbook, `open-jibo` is the staged conversion target label used by the helpers. It is not a robot boot mode. The robot still boots through stock modes like `normal`, `oobe`, and `int-developer`, while the managed production cloud contract stays on `api.openjibo.com`, `open-jibo-socket.openjibo.com`, and `neohub.openjibo.com`.
 
@@ -52,7 +52,7 @@ Expected result:
 - OOBE config gets the pending conversion marker
 - `var/jibo/identity/openjibo-conversion.json` is written
 - backup files are written under a sibling `backups/` directory
-- `/var/jibo/credentials.json` still remains on `api`
+- `/var/jibo/credentials.json` now says `region: open-jibo`
 
 ### 4. Verify
 
@@ -82,7 +82,7 @@ Capture the following for the session record:
 - plan passes
 - apply passes
 - backups are created
-- `credentials.json` stays on `api`
+- `credentials.json` is rewritten to `open-jibo`
 - the conversion state is staged cleanly
 
 ## Failure Handling
@@ -102,7 +102,7 @@ The video-ready path should show one continuous operator story rather than a vag
 
 1. **Baseline proof**: show the strict audit output with `credentials.json` still on `api` and the robot root recognized.
 2. **Conversion intent**: show the plan output with `CanApply: true`, target mode `open-jibo`, and rollback entries.
-3. **Safe conversion write**: run apply, then show that `credentials.json` remains on `api` while the staged Open Jibo marker and backups were created.
+3. **Safe conversion write**: run apply, then show that `credentials.json` is rewritten to `open-jibo` while the staged Open Jibo marker and backups were created.
 4. **Cloud connection**: start the local or managed Open Jibo cloud, connect the converted robot/harness to the robot-facing API host, and capture at least one websocket turn.
 5. **Loop and member proof**: open the portal dashboard or API response and show the loop, robot, registered device, and loop member relationships.
 6. **Recognition observation proof**: record one recognition observation from a known source. Until live robot metadata is mapped, seed this with the demo/smoke source and label it as a manual/demo observation rather than live face/voice recognition.

@@ -148,6 +148,15 @@ function robotDisplayName(robot) {
   return robot.friendlyName || robot.robotId || robot.deviceId || "-";
 }
 
+function robotSelectorLabel(robot) {
+  const primary = robot.robotId || robot.friendlyName || robot.deviceId || "-";
+  const secondary = primary === robot.friendlyName
+    ? robot.deviceId && robot.deviceId !== primary ? robot.deviceId : ""
+    : robot.friendlyName || robot.deviceId || "";
+
+  return secondary ? `${primary} · ${secondary}` : primary;
+}
+
 function robotSearchHaystack(robot) {
   return normalizeText([
     robot.friendlyName,
@@ -378,7 +387,7 @@ function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Se
   }
 
   const robotOptions = robots.map((robot) =>
-    `<option value="${escapeHtml(robot.deviceId)}">${escapeHtml(robotDisplayName(robot))}</option>`
+    `<option value="${escapeHtml(robot.deviceId)}">${escapeHtml(robotSelectorLabel(robot))}</option>`
   ).join("");
 
   return rows.map((session) => `

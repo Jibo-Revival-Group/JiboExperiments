@@ -1236,7 +1236,10 @@ internal static class PortalEndpoints
                     session.SessionId,
                     session.Kind,
                     session.DeviceId,
-                    registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId"),
+                    registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId")
+                        ?? FindMatchingDevice(session, allDevices)?.DeviceId,
+                    registeredRobotId = ReadSessionMetadata(session, "registeredRobotId")
+                        ?? FindMatchingDevice(session, allDevices)?.RobotId,
                     session.HostName,
                     session.Path,
                     session.CreatedUtc,
@@ -1247,13 +1250,43 @@ internal static class PortalEndpoints
         };
     }
 
-    private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device) =>
-        string.Equals(session.DeviceId, device.DeviceId, StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(session.DeviceId, device.RobotId, StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(ReadSessionMetadata(session, "registeredDeviceId"), device.DeviceId,
-            StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(ReadSessionMetadata(session, "registeredDeviceId"), device.RobotId,
-            StringComparison.OrdinalIgnoreCase);
+    private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device)
+    {
+        foreach (var value in GetSessionIdentityValues(session))
+        {
+            if (string.Equals(value, device.DeviceId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, device.RobotId, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static DeviceRegistration? FindMatchingDevice(CloudSession session, IReadOnlyList<DeviceRegistration> devices)
+    {
+        return devices.FirstOrDefault(device => SessionMatchesDevice(session, device));
+    }
+
+    private static IEnumerable<string> GetSessionIdentityValues(CloudSession session)
+    {
+        var values = new[]
+        {
+            session.DeviceId,
+            ReadSessionMetadata(session, "registeredDeviceId"),
+            ReadSessionMetadata(session, "registeredRobotId"),
+            ReadSessionMetadata(session, "robotID"),
+            ReadSessionMetadata(session, "robotId"),
+            ReadSessionMetadata(session, "robotFriendlyId"),
+            ReadSessionMetadata(session, "friendlyId"),
+            ReadSessionMetadata(session, "deviceId")
+        };
+
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                yield return value.Trim();
+        }
+    }
 
     private static bool ConnectionMatchesDevice(RobotPresenceConnection connection, DeviceRegistration device) =>
         connection.RobotKeys.Contains(device.DeviceId) || connection.RobotKeys.Contains(device.RobotId);

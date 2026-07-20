@@ -254,21 +254,48 @@ internal sealed class WebSocketRequestCoordinator(
             }
         }
 
-        var registeredDeviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredValue)
-            ? registeredValue?.ToString()
-            : null;
-        if (!string.IsNullOrWhiteSpace(registeredDeviceId))
+        foreach (var identityValue in GetSessionIdentityValues(session))
         {
-            keys.Add(registeredDeviceId.Trim());
-            var registeredDevice = cloudStateStore.FindDeviceByFriendlyId(registeredDeviceId);
-            if (registeredDevice is not null)
-            {
-                keys.Add(registeredDevice.DeviceId);
-                keys.Add(registeredDevice.RobotId);
-            }
+            keys.Add(identityValue);
+            var registeredDevice = cloudStateStore.FindDeviceByFriendlyId(identityValue);
+            if (registeredDevice is null)
+                continue;
+
+            if (!string.IsNullOrWhiteSpace(registeredDevice.DeviceId))
+                keys.Add(registeredDevice.DeviceId.Trim());
+            if (!string.IsNullOrWhiteSpace(registeredDevice.RobotId))
+                keys.Add(registeredDevice.RobotId.Trim());
+            if (!string.IsNullOrWhiteSpace(registeredDevice.FriendlyName))
+                keys.Add(registeredDevice.FriendlyName.Trim());
         }
 
         return keys;
+    }
+
+    private static IEnumerable<string> GetSessionIdentityValues(CloudSession session)
+    {
+        var values = new[]
+        {
+            session.DeviceId,
+            ReadSessionMetadata(session, "registeredDeviceId"),
+            ReadSessionMetadata(session, "registeredRobotId"),
+            ReadSessionMetadata(session, "robotID"),
+            ReadSessionMetadata(session, "robotId"),
+            ReadSessionMetadata(session, "robotFriendlyId"),
+            ReadSessionMetadata(session, "friendlyId"),
+            ReadSessionMetadata(session, "deviceId")
+        };
+
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                yield return value.Trim();
+        }
+    }
+
+    private static string? ReadSessionMetadata(CloudSession session, string key)
+    {
+        return session.Metadata.TryGetValue(key, out var value) ? value?.ToString() : null;
     }
 
     /// <summary>

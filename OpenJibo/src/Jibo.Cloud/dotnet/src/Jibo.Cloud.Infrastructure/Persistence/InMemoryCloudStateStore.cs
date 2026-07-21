@@ -273,8 +273,36 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         var trimmed = friendlyId.Trim();
         return _devices.Values.FirstOrDefault(device =>
-            device.RobotId.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
-            device.DeviceId.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+            IdentityMatches(device.DeviceId, trimmed) ||
+            IdentityMatches(device.RobotId, trimmed) ||
+            IdentityMatches(device.FriendlyName, trimmed));
+    }
+
+    private static bool IdentityMatches(string? left, string? right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+            return false;
+
+        if (left.Trim().Equals(right.Trim(), StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return GetIdentityAliases(left).Any(alias => alias.Equals(right.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+               GetIdentityAliases(right).Any(alias => alias.Equals(left.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IEnumerable<string> GetIdentityAliases(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            yield break;
+
+        var trimmed = value.Trim();
+        yield return trimmed;
+
+        if (trimmed.StartsWith("robot-", StringComparison.OrdinalIgnoreCase) && trimmed.Length > "robot-".Length)
+            yield return trimmed["robot-".Length..];
+
+        if (trimmed.StartsWith("hub-", StringComparison.OrdinalIgnoreCase) && trimmed.Length > "hub-".Length)
+            yield return trimmed["hub-".Length..];
     }
 
     public IReadOnlyList<TrustedServerRecord> GetTrustedServers()

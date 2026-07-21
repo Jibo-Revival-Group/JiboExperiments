@@ -1254,8 +1254,9 @@ internal static class PortalEndpoints
     {
         foreach (var value in GetSessionIdentityValues(session))
         {
-            if (string.Equals(value, device.DeviceId, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(value, device.RobotId, StringComparison.OrdinalIgnoreCase))
+            if (IdentityMatches(value, device.DeviceId) ||
+                IdentityMatches(value, device.RobotId) ||
+                IdentityMatches(value, device.FriendlyName))
                 return true;
         }
 
@@ -1297,6 +1298,33 @@ internal static class PortalEndpoints
 
     private static string? ReadSessionMetadata(CloudSession session, string key) =>
         session.Metadata.TryGetValue(key, out var value) ? value?.ToString() : null;
+
+    private static bool IdentityMatches(string? left, string? right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+            return false;
+
+        if (left.Trim().Equals(right.Trim(), StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return GetIdentityAliases(left).Any(alias => alias.Equals(right.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+               GetIdentityAliases(right).Any(alias => alias.Equals(left.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IEnumerable<string> GetIdentityAliases(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            yield break;
+
+        var trimmed = value.Trim();
+        yield return trimmed;
+
+        if (trimmed.StartsWith("robot-", StringComparison.OrdinalIgnoreCase) && trimmed.Length > "robot-".Length)
+            yield return trimmed["robot-".Length..];
+
+        if (trimmed.StartsWith("hub-", StringComparison.OrdinalIgnoreCase) && trimmed.Length > "hub-".Length)
+            yield return trimmed["hub-".Length..];
+    }
 
     private static string ResolveRobotPresence(DeviceRegistration device,
         IReadOnlyCollection<RobotPresenceConnection> liveConnections, DateTimeOffset? lastSeenUtc, string? sleepState,

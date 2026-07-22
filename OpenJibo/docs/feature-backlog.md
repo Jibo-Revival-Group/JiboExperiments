@@ -1112,6 +1112,11 @@ These are the carryover items that need a clean proof pass first:
   - robot-side DNS resolved `open-jibo-socket.openjibo.com` to the Azure Container App, and a robot-side HTTPS request to port `443` returned `204 No Content`; this rules out a missing public DNS record or closed public port as the observed failure
   - after a targeted `jibo-server-service` restart, a new process logged `NotificationSubsystem::connect established connection to server` at `2026-07-22 10:08:43 CDT` (`15:08:43 UTC`)
   - temporary `ECONNREFUSED 127.0.0.1:8888` entries from local consumers occurred during that restart window and cleared when the local server service returned
+  - on `2026-07-22`, the separate Neo Hub voice socket closed at an exact two-minute cadence: the robot logged `Hub Client connection opened` and then `Hubclient: received zero bytes` 120 seconds later; the local fallback opened `@be/greetings`, set `SLEEP` false, and woke the robot
+- Current mitigation:
+  - the cloud WebSocket middleware now sends keep-alive frames every 30 seconds, rather than relying on the ASP.NET Core two-minute default that coincided with the observed Neo Hub cutoff
+- Live proof needed:
+  - deploy the 30-second keepalive and keep a robot asleep for more than three minutes; confirm no `Hubclient: received zero bytes`, `@be/greetings` fallback, or unsolicited `SLEEP` false event
 - Investigation scope:
   - reproduce an idle/stale notification WebSocket and determine whether the failure begins on the robot, Azure Container Apps ingress, or the cloud WebSocket handler
   - correlate robot timestamps with cloud telemetry for connection acceptance, close reason, and any `socket-loop-ended-prematurely` event

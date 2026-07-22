@@ -192,6 +192,11 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     intent = outboundIntent,
                     rule = outboundRules.FirstOrDefault() ?? string.Empty,
                     score = 0.95,
+                    // Sleep is consumed by the robot-local circadian manager. This must be in
+                    // the initial LISTEN match: a later SKILL_REDIRECT loses to Nimbus once the
+                    // global-command dispatcher has selected its default cloud-skill launch.
+                    skillID = isSleepCommand ? "@be/idle" : null,
+                    onRobot = isSleepCommand ? true : (bool?)null,
                     cloudSkill,
                     skipSurprises = true
                 }

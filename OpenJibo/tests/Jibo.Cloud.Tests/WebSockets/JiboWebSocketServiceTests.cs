@@ -3988,6 +3988,9 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("sleep", nlu.GetProperty("intent").GetString());
         Assert.Equal("global_commands", nlu.GetProperty("domain").GetString());
         Assert.Equal("globals/global_commands_launch", nlu.GetProperty("rules")[0].GetString());
+        var match = listenPayload.RootElement.GetProperty("data").GetProperty("match");
+        Assert.Equal("@be/idle", match.GetProperty("skillID").GetString());
+        Assert.True(match.GetProperty("onRobot").GetBoolean());
 
         using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
         Assert.Equal("@be/idle",

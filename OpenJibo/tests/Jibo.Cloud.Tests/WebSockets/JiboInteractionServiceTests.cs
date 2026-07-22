@@ -5180,6 +5180,26 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("sleeping", decision.ContextUpdates!["sleepState"]);
     }
 
+    [Theory]
+    [InlineData("wake up")]
+    [InlineData("please wake back up")]
+    public async Task BuildDecisionAsync_WakeUp_MapsToLocalGreetingsWakeCommand(string transcript)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal("wake_up", decision.IntentName);
+        Assert.Equal("@be/greetings", decision.SkillName);
+        Assert.Equal("@be/greetings", decision.SkillPayload!["skillId"]);
+        Assert.Equal("RA_JBO_WakeUp", decision.SkillPayload["legacyMimId"]);
+        Assert.Equal("awake", decision.ContextUpdates!["sleepState"]);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_TurnAround_MapsToIdleTurnAroundCommand()
     {

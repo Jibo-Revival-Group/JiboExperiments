@@ -976,6 +976,16 @@ public sealed partial class JiboInteractionService
                    "please sleep";
     }
 
+    private static bool IsWakeUpCommand(string loweredTranscript)
+    {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        return normalized is
+            "wake up" or
+            "please wake up" or
+            "wake back up" or
+            "please wake back up";
+    }
+
     private static bool IsDanceQuestion(string loweredTranscript)
     {
         var normalized = NormalizeCommandPhrase(loweredTranscript);

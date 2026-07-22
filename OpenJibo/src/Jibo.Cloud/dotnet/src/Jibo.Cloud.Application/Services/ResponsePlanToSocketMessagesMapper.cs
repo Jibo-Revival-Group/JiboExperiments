@@ -41,6 +41,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             StringComparison.OrdinalIgnoreCase);
         var isSettingsLaunch = string.Equals(skill?.SkillName, "@be/settings", StringComparison.OrdinalIgnoreCase);
         var isSleepCommand = string.Equals(plan.IntentName, "sleep", StringComparison.OrdinalIgnoreCase);
+        var isWakeUpCommand = string.Equals(plan.IntentName, "wake_up", StringComparison.OrdinalIgnoreCase);
         var isTurnAroundCommand = string.Equals(plan.IntentName, "turn_around", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(plan.IntentName, "spin_around", StringComparison.OrdinalIgnoreCase);
         var isGlobalCommand = isStopCommand || isSleepCommand || isTurnAroundCommand || isVolumeControl;
@@ -195,8 +196,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     // Sleep is consumed by the robot-local circadian manager. This must be in
                     // the initial LISTEN match: a later SKILL_REDIRECT loses to Nimbus once the
                     // global-command dispatcher has selected its default cloud-skill launch.
-                    skillID = isSleepCommand ? "@be/idle" : null,
-                    onRobot = isSleepCommand ? true : (bool?)null,
+                    skillID = isSleepCommand ? "@be/idle" : isWakeUpCommand ? "@be/greetings" : null,
+                    onRobot = isSleepCommand || isWakeUpCommand ? true : (bool?)null,
                     cloudSkill,
                     skipSurprises = true
                 }
@@ -256,6 +257,14 @@ public sealed class ResponsePlanToSocketMessagesMapper
             // The initial LISTEN match routes sleep directly to @be/idle. Do not also send a
             // delayed redirect: stock BE treats it as a second local launch and briefly refreshes
             // the circadian state from ASLEEP through SELECT_INTENT.
+            return messages;
+        }
+
+        if (isWakeUpCommand)
+        {
+            // @be/greetings is the stock robot's own wake fallback. As with
+            // sleep, send it only in the initial LISTEN match: a delayed second
+            // launch can interrupt the local circadian wake transition.
             return messages;
         }
 

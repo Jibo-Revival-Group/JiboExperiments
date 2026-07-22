@@ -86,6 +86,26 @@ public sealed partial class JiboInteractionService
             });
     }
 
+    private static JiboInteractionDecision BuildWakeUpDecision()
+    {
+        // Stock BE's own Hub-disconnect fallback launches @be/greetings and
+        // clears SLEEP. Use that same local route for the legacy requestWakeUp
+        // command rather than trying to manufacture a cloud-side circadian event.
+        return new JiboInteractionDecision(
+            "wake_up",
+            "Okay, I'm awake.",
+            "@be/greetings",
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/greetings",
+                ["legacyMimId"] = "RA_JBO_WakeUp"
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["sleepState"] = "awake"
+            });
+    }
+
     private static JiboInteractionDecision BuildIdleGlobalCommandDecision(
         string intentName,
         string globalIntent,

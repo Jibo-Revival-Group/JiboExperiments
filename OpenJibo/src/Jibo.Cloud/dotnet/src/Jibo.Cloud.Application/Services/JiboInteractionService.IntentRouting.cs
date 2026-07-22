@@ -420,6 +420,8 @@ public sealed partial class JiboInteractionService
 
         if (IsSleepCommand(loweredTranscript)) return "sleep";
 
+        if (IsWakeUpCommand(loweredTranscript)) return "wake_up";
+
         if (MatchesAny(
                 loweredTranscript,
                 "snap a picture",

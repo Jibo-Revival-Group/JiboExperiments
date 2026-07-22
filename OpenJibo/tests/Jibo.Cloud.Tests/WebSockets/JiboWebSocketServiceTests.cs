@@ -3998,6 +3998,44 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_WakeUp_RoutesDirectlyToLocalGreetings()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-wake-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-wake","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-wake-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-wake","data":{"text":"please wake back up"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
+        Assert.Equal("wake_up", nlu.GetProperty("intent").GetString());
+        var match = listenPayload.RootElement.GetProperty("data").GetProperty("match");
+        Assert.Equal("@be/greetings", match.GetProperty("skillID").GetString());
+        Assert.True(match.GetProperty("onRobot").GetBoolean());
+
+        var session = _store.FindSessionByToken("hub-wake-token");
+        Assert.NotNull(session);
+        Assert.Equal("awake", session!.Metadata["sleepState"]);
+    }
+
+    [Fact]
     public async Task ClientAsr_TurnAround_EmitsIdleSpinAroundRedirect()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope

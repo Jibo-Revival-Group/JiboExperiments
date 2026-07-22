@@ -82,7 +82,17 @@ internal sealed class WebSocketRequestCoordinator(
                 return;
         }
 
-        using var socket = await context.WebSockets.AcceptWebSocketAsync();
+        // Stock OS 1.9's Neo Hub client closes when ASP.NET sends a WebSocket
+        // control-frame keepalive: first at the default two-minute interval,
+        // then at 30 seconds when that interval was trialled. Limit the
+        // compatibility behavior to the legacy Hub routes; other sockets keep
+        // the framework default.
+        var acceptContext = kind is "neo-hub-listen" or "neo-hub-proactive"
+            ? new WebSocketAcceptContext { KeepAliveInterval = Timeout.InfiniteTimeSpan }
+            : null;
+        using var socket = acceptContext is null
+            ? await context.WebSockets.AcceptWebSocketAsync()
+            : await context.WebSockets.AcceptWebSocketAsync(acceptContext);
         logger.LogDebug("WebSocket accepted kind={Kind} token={Token}", kind, token);
 
         var connectionId = Guid.NewGuid().ToString("N");

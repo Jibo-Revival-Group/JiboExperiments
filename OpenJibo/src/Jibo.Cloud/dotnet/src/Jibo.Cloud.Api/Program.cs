@@ -54,13 +54,7 @@ app.Logger.LogInformation("Starting Open Jibo Cloud Api version {Version}", Open
 app.UseCors();
 app.UseDefaultFiles();
 app.UseStaticFiles();
-// Stock Jibo's Hub client drops an otherwise idle connection at the two-minute
-// boundary. The middleware default heartbeat uses that same interval, so send
-// keep-alive frames well before the Azure/robot idle cutoff.
-app.UseWebSockets(new WebSocketOptions
-{
-    KeepAliveInterval = TimeSpan.FromSeconds(30)
-});
+app.UseWebSockets();
 
 app.Use(async (context, next) =>
 {

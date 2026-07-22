@@ -1113,15 +1113,19 @@ These are the carryover items that need a clean proof pass first:
   - after a targeted `jibo-server-service` restart, a new process logged `NotificationSubsystem::connect established connection to server` at `2026-07-22 10:08:43 CDT` (`15:08:43 UTC`)
   - temporary `ECONNREFUSED 127.0.0.1:8888` entries from local consumers occurred during that restart window and cleared when the local server service returned
   - on `2026-07-22`, the separate Neo Hub voice socket closed at an exact two-minute cadence: the robot logged `Hub Client connection opened` and then `Hubclient: received zero bytes` 120 seconds later; the local fallback opened `@be/greetings`, set `SLEEP` false, and woke the robot
-- Current mitigation:
-  - the cloud WebSocket middleware now sends keep-alive frames every 30 seconds, rather than relying on the ASP.NET Core two-minute default that coincided with the observed Neo Hub cutoff
-- Live proof needed:
-  - deploy the 30-second keepalive and keep a robot asleep for more than three minutes; confirm no `Hubclient: received zero bytes`, `@be/greetings` fallback, or unsolicited `SLEEP` false event
+- 30-second heartbeat trial outcome (`2026-07-22`):
+  - the Hub connection opened at `21:33:04.489Z` and logged `Hubclient: received zero bytes` at `21:33:34.479Z`—`29.990` seconds later, precisely matching the trial interval
+  - the stock Hub client or its TLS/WebSocket path is not compatible with the ASP.NET Core middleware heartbeat
+- Current compatibility mitigation:
+  - disable ASP.NET Core WebSocket control-frame keepalives for the Neo Hub route. This removes the observed trigger; it is not an application-level heartbeat.
+- Next proof needed:
+  - deploy the disabled-control-frame configuration and keep a robot asleep for more than three minutes; confirm no `Hubclient: received zero bytes`, `@be/greetings` fallback, or unsolicited `SLEEP` false event
+  - trace Pegasus's Hub/application-level heartbeat and reconnect behavior before adding a new heartbeat; do not send WebSocket ping/keep-alive frames to stock OS `1.9` clients
 - Investigation scope:
   - reproduce an idle/stale notification WebSocket and determine whether the failure begins on the robot, Azure Container Apps ingress, or the cloud WebSocket handler
   - correlate robot timestamps with cloud telemetry for connection acceptance, close reason, and any `socket-loop-ended-prematurely` event
   - inspect the legacy client reconnect state machine to determine why a failed TLS write is retried indefinitely rather than disposing and recreating its connection
-  - evaluate a compatible server-side WebSocket keepalive/ping interval and confirm it does not disturb stock OS `1.9` clients
+  - identify a protocol-compatible Hub heartbeat/reconnect path and confirm it does not disturb stock OS `1.9` clients
   - define an operator-safe, targeted recovery path for `jibo-server-service`, with post-restart health evidence
 - Exit criteria:
   - a broken notification connection automatically reconnects within a bounded, documented interval

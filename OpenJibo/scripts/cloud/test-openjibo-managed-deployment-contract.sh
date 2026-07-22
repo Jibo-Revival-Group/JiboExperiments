@@ -215,7 +215,7 @@ if [[ "$linux_publish_script_text" != *"az acr build"* ]]; then
   exit 1
 fi
 
-for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "--native-compatibility-api-hostname" "--native-compatibility-socket-hostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "az containerapp hostname add" "az containerapp hostname bind" 'bash "${script_dir}/invoke-openjibo-migration.sh"' "--skip-hostname-binding" "portal-status-password" "openjibo-portal-status-password" "searchBackend" "searchFallback" "openjibo-search-backend" "openjibo-search-fallback"; do
+for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "--native-compatibility-api-hostname" "--native-compatibility-socket-hostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "az containerapp hostname add" "az containerapp hostname bind" 'bash "${script_dir}/invoke-openjibo-migration.sh"' "--skip-hostname-binding" "portal-status-password" "openjibo-portal-status-password" "searchBackend" "searchFallback" "openjibo-search-backend" "openjibo-search-fallback" "run_command_with_retry"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing expected marker: $marker" >&2
     exit 1

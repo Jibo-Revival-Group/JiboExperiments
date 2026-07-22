@@ -196,6 +196,36 @@ remove_postgres_firewall_rule() {
     --output none >/dev/null 2>&1 || true
 }
 
+run_command_with_retry() {
+  local description="$1"
+  local attempts="${2:-6}"
+  shift 2
+  local attempt
+  local exit_code
+  local output
+  for attempt in $(seq 1 "$attempts"); do
+    output="$("$@" 2>&1)"
+    exit_code=$?
+    if [[ $exit_code -eq 0 ]]; then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    if [[ $attempt -eq $attempts ]]; then
+      printf '%s\n' "$output" >&2
+      return $exit_code
+    fi
+    local wait_seconds=$(( attempt < 9 ? attempt * 10 : 90 ))
+    local last_line
+    last_line="$(tail -1 <<<"$output" | tr -d '\r')"
+    local suffix=""
+    if [[ -n "$last_line" ]]; then
+      suffix=" Last Azure CLI message: ${last_line}"
+    fi
+    echo "${description} failed; retrying in ${wait_seconds} seconds.${suffix}" >&2
+    sleep "$wait_seconds"
+  done
+}
+
 if [[ ! -f "$resolved_template_path" ]]; then
   echo "Could not find Bicep template at $resolved_template_path" >&2
   exit 1
@@ -396,14 +426,18 @@ if [[ -n "${container_app_name:-}" ]]; then
     secret_args+=("search-fallback=${search_fallback}")
   fi
 
-  az containerapp secret set \
+  run_command_with_retry \
+    "Container App secret refresh for '${container_app_name}'" 6 \
+    az containerapp secret set \
     --resource-group "$resource_group_name" \
     --name "$container_app_name" \
     --secrets "${secret_args[@]}" \
-    --output none
+    --output none >/dev/null
   echo "Container App PostgreSQL secrets refreshed for '${container_app_name}'." >&2
 
-  latest_revision_name="$(az containerapp show \
+  latest_revision_name="$(run_command_with_retry \
+    "Container App latest revision lookup for '${container_app_name}'" 4 \
+    az containerapp show \
     --resource-group "$resource_group_name" \
     --name "$container_app_name" \
     --query properties.latestRevisionName \
@@ -414,11 +448,13 @@ if [[ -n "${container_app_name:-}" ]]; then
   fi
 
   echo "Restarting Container App revision '${latest_revision_name}' so the refreshed secrets take effect." >&2
-  az containerapp revision restart \
+  run_command_with_retry \
+    "Container App revision restart for '${container_app_name}'" 4 \
+    az containerapp revision restart \
     --resource-group "$resource_group_name" \
     --name "$container_app_name" \
     --revision "$latest_revision_name" \
-    --output none
+    --output none >/dev/null
   echo "Container App revision '${latest_revision_name}' restarted." >&2
 fi
 

@@ -25,6 +25,7 @@ Tags:
 - `docs`: operator docs, runbooks, or capture process
 - `stt`: transcript reliability
 - `storage`: persistence, media, backups, or hosted export
+- `reliability`: connection recovery, service lifecycle, or production resilience
 
 ## Historical `1.0.18` Snapshot
 
@@ -1097,6 +1098,30 @@ These are the carryover items that need a clean proof pass first:
   - a small song backlog exists with candidate phrases listed
   - the release plan has a clear place for musical personality without crowding out weather/news/report work
   - the current source-backed singing slice is implemented and test-covered
+
+### 34. Robot Notification Socket Recovery
+
+- Status: `discovery`
+- Tags: `protocol`, `reliability`
+- Why now:
+  - on `2026-07-22`, the robot's `jibo-server-service` held a dead notification TLS connection for roughly 60 hours instead of rebuilding it
+  - this can prevent the hosted cloud from delivering loop/circadian notifications and risks confusing cloud-versus-local diagnosis of behavior such as sleep returning to idle
+- Evidence:
+  - the robot repeatedly logged `ServerPort::onTimer Haven't had contact from the server` followed by `SSL Exception: ... ssl3_write_pending:bad write retry` every three seconds
+  - the stale contact counter reached about `216,000,000ms`; it did not recover autonomously
+  - robot-side DNS resolved `open-jibo-socket.openjibo.com` to the Azure Container App, and a robot-side HTTPS request to port `443` returned `204 No Content`; this rules out a missing public DNS record or closed public port as the observed failure
+  - after a targeted `jibo-server-service` restart, a new process logged `NotificationSubsystem::connect established connection to server` at `2026-07-22 10:08:43 CDT` (`15:08:43 UTC`)
+  - temporary `ECONNREFUSED 127.0.0.1:8888` entries from local consumers occurred during that restart window and cleared when the local server service returned
+- Investigation scope:
+  - reproduce an idle/stale notification WebSocket and determine whether the failure begins on the robot, Azure Container Apps ingress, or the cloud WebSocket handler
+  - correlate robot timestamps with cloud telemetry for connection acceptance, close reason, and any `socket-loop-ended-prematurely` event
+  - inspect the legacy client reconnect state machine to determine why a failed TLS write is retried indefinitely rather than disposing and recreating its connection
+  - evaluate a compatible server-side WebSocket keepalive/ping interval and confirm it does not disturb stock OS `1.9` clients
+  - define an operator-safe, targeted recovery path for `jibo-server-service`, with post-restart health evidence
+- Exit criteria:
+  - a broken notification connection automatically reconnects within a bounded, documented interval
+  - cloud and robot logs identify each connect, disconnect, and close reason with correlatable timestamps
+  - a sustained live test shows the notification connection remains healthy without recurring TLS write failures
 
 ## Suggested Order
 

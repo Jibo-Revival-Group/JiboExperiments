@@ -299,6 +299,8 @@ public static class BufferedAudioSttPathResolver
         if (string.IsNullOrWhiteSpace(path)) return false;
 
         var normalizedPath = NormalizeConfiguredPath(path, null);
+        if (string.IsNullOrWhiteSpace(normalizedPath)) return false;
+
         if (Path.IsPathRooted(normalizedPath) || ContainsDirectorySeparator(normalizedPath))
             return fileExists(normalizedPath);
 
@@ -310,6 +312,8 @@ public static class BufferedAudioSttPathResolver
         if (string.IsNullOrWhiteSpace(path)) return false;
 
         var normalizedPath = NormalizeConfiguredPath(path, null);
+        if (string.IsNullOrWhiteSpace(normalizedPath)) return false;
+
         return fileExists(normalizedPath);
     }
 

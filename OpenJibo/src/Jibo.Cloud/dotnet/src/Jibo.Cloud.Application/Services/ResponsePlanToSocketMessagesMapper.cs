@@ -253,19 +253,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
         if (isSleepCommand)
         {
-            messages.Add(new SocketReplyPlan(
-                JsonSerializer.Serialize(BuildSkillRedirectPayload(
-                    transId,
-                    "@be/idle",
-                    outboundIntent,
-                    outboundAsrText,
-                    outboundRules,
-                    entities)),
-                idleRedirectDelayMs));
-
-            // The idle skill owns the persistent ASLEEP state after this redirect. A completion
-            // action or cloud chat action would compete with its local circadian state machine
-            // and can immediately return the robot to its normal idle session.
+            // The initial LISTEN match routes sleep directly to @be/idle. Do not also send a
+            // delayed redirect: stock BE treats it as a second local launch and briefly refreshes
+            // the circadian state from ASLEEP through SELECT_INTENT.
             return messages;
         }
 

@@ -3957,7 +3957,7 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
-    public async Task ClientAsr_GoToSleep_EmitsIdleSleepRedirect()
+    public async Task ClientAsr_GoToSleep_RoutesDirectlyToLocalIdle()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -3978,10 +3978,9 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-sleep","data":{"text":"go to sleep"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
-        Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
@@ -3991,12 +3990,6 @@ public sealed class JiboWebSocketServiceTests
         var match = listenPayload.RootElement.GetProperty("data").GetProperty("match");
         Assert.Equal("@be/idle", match.GetProperty("skillID").GetString());
         Assert.True(match.GetProperty("onRobot").GetBoolean());
-
-        using var redirectPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.Equal("@be/idle",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
-        Assert.Equal("sleep",
-            redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
 
         var session = _store.FindSessionByToken("hub-sleep-token");
         Assert.NotNull(session);

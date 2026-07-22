@@ -49,8 +49,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                   string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase);
         var isClockSkillLaunch = string.Equals(skill?.SkillName, "@be/clock", StringComparison.OrdinalIgnoreCase);
         var isReportSkillLaunch = string.Equals(skill?.SkillName, "report-skill", StringComparison.OrdinalIgnoreCase);
-        var idleRedirectDelayMs = isSleepCommand ? 150 : 75;
-        var idleCompletionDelayMs = isSleepCommand ? 1000 : isTurnAroundCommand ? 750 : 125;
+        var idleRedirectDelayMs = 75;
+        var idleCompletionDelayMs = isTurnAroundCommand ? 750 : 125;
         var localIntent = ReadSkillPayloadString(skill, "localIntent");
         var clockIntent = ReadSkillPayloadString(skill, "clockIntent");
         var clockDomain = ReadSkillPayloadString(skill, "domain");
@@ -246,7 +246,25 @@ public sealed class ResponsePlanToSocketMessagesMapper
         if (isStopCommand)
             return messages;
 
-        if (isSleepCommand || isTurnAroundCommand)
+        if (isSleepCommand)
+        {
+            messages.Add(new SocketReplyPlan(
+                JsonSerializer.Serialize(BuildSkillRedirectPayload(
+                    transId,
+                    "@be/idle",
+                    outboundIntent,
+                    outboundAsrText,
+                    outboundRules,
+                    entities)),
+                idleRedirectDelayMs));
+
+            // The idle skill owns the persistent ASLEEP state after this redirect. A completion
+            // action or cloud chat action would compete with its local circadian state machine
+            // and can immediately return the robot to its normal idle session.
+            return messages;
+        }
+
+        if (isTurnAroundCommand)
         {
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillRedirectPayload(

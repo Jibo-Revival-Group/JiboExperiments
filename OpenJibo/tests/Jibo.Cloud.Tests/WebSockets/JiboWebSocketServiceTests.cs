@@ -3978,12 +3978,10 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-sleep","data":{"text":"go to sleep"}}"""
         });
 
-        Assert.Equal(5, replies.Count);
+        Assert.Equal(3, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
         Assert.Equal("SKILL_REDIRECT", ReadReplyType(replies[2]));
-        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[3]));
-        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[4]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         var nlu = listenPayload.RootElement.GetProperty("data").GetProperty("nlu");
@@ -3996,20 +3994,6 @@ public sealed class JiboWebSocketServiceTests
             redirectPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
         Assert.Equal("sleep",
             redirectPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-
-        using var completionPayload = JsonDocument.Parse(replies[3].Text!);
-        Assert.Equal("@be/idle",
-            completionPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
-        Assert.Equal("runtime-silent-complete",
-            completionPayload.RootElement.GetProperty("data").GetProperty("action").GetProperty("config")
-                .GetProperty("jcp").GetProperty("config").GetProperty("play").GetProperty("meta")
-                .GetProperty("mim_id").GetString());
-
-        using var speechPayload = JsonDocument.Parse(replies[4].Text!);
-        Assert.Equal("runtime-chat",
-            speechPayload.RootElement.GetProperty("data").GetProperty("action").GetProperty("config")
-                .GetProperty("jcp").GetProperty("config").GetProperty("play").GetProperty("meta")
-                .GetProperty("mim_id").GetString());
 
         var session = _store.FindSessionByToken("hub-sleep-token");
         Assert.NotNull(session);

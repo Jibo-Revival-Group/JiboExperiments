@@ -32,6 +32,7 @@ public static class HomeAssistantLightCommandParser
         "erm",
         "ah",
         "please",
+        "can you",
         "ok jibo",
         "okay jibo"
     ];
@@ -48,6 +49,16 @@ public static class HomeAssistantLightCommandParser
         "switch off the light",
         "switch the lights off",
         "switch the light off",
+        "kill the lights",
+        "kill the light",
+        "shut off the lights",
+        "shut off the light",
+        "shut the lights off",
+        "shut the light off",
+        "turn all the lights off",
+        "turn all the light off",
+        "all lights off",
+        "all light off",
         "turn on the lights",
         "turn on the light",
         "turn the lights on",
@@ -57,11 +68,31 @@ public static class HomeAssistantLightCommandParser
         "switch on the lights",
         "switch on the light",
         "switch the lights on",
-        "switch the light on"
+        "switch the light on",
+        "turn all the lights on",
+        "turn all the light on",
+        "all lights on",
+        "all light on"
     };
 
-    private static readonly Regex NamedLightPattern = new(
+    // turn/switch on|off [the] <target> [light(s)|lamp(s)]
+    private static readonly Regex NamedLightActionFirstPattern = new(
         @"^(?:turn|switch)\s+(?<action>on|off)\s+(?:the\s+)?(?<target>.+?)(?:\s+(?:light|lights|lamp|lamps))?\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    // turn/switch [the] <target> light(s)|lamp(s) on|off
+    private static readonly Regex NamedLightActionLastPattern = new(
+        @"^(?:turn|switch)\s+(?:the\s+)?(?<target>.+?)\s+(?:light|lights|lamp|lamps)\s+(?<action>on|off)\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    // turn/switch [the] light(s)|lamp(s) on|off in <target>
+    private static readonly Regex NamedLightInRoomWithVerbPattern = new(
+        @"^(?:turn|switch)\s+(?:the\s+)?(?:light|lights|lamp|lamps)\s+(?<action>on|off)\s+in\s+(?<target>.+?)\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    // light(s) on|off in <target>
+    private static readonly Regex NamedLightInRoomPattern = new(
+        @"^(?:light|lights)\s+(?<action>on|off)\s+in\s+(?<target>.+?)\s*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public static bool TryParse(string? transcript, out LightCommand command)
@@ -82,17 +113,10 @@ public static class HomeAssistantLightCommandParser
             return true;
         }
 
-        var match = NamedLightPattern.Match(normalized);
-        if (!match.Success) return false;
+        if (!TryMatchNamedLight(normalized, out var action, out var target))
+            return false;
 
-        var target = StripTrailingCourtesyWords(match.Groups["target"].Value.Trim());
-        if (string.IsNullOrWhiteSpace(target) || IsGenericLightsTarget(target)) return false;
-
-        var actionToken = match.Groups["action"].Value;
-        command = new LightCommand(
-            string.Equals(actionToken, "on", StringComparison.OrdinalIgnoreCase) ? LightAction.On : LightAction.Off,
-            LightScope.Named,
-            target);
+        command = new LightCommand(action, LightScope.Named, target);
         return true;
     }
 
@@ -108,27 +132,50 @@ public static class HomeAssistantLightCommandParser
         return $"{trimmed} light";
     }
 
+    private static bool TryMatchNamedLight(string normalized, out LightAction action, out string target)
+    {
+        action = default;
+        target = string.Empty;
+
+        foreach (var pattern in new[]
+                 {
+                     NamedLightActionLastPattern,
+                     NamedLightInRoomWithVerbPattern,
+                     NamedLightInRoomPattern,
+                     NamedLightActionFirstPattern
+                 })
+        {
+            var match = pattern.Match(normalized);
+            if (!match.Success) continue;
+
+            var targetName = TranscriptTextNormalizer.StripTrailingCourtesyWords(
+                match.Groups["target"].Value.Trim());
+            if (string.IsNullOrWhiteSpace(targetName) || IsGenericLightsTarget(targetName))
+                continue;
+
+            var actionToken = match.Groups["action"].Value;
+            action = string.Equals(actionToken, "on", StringComparison.OrdinalIgnoreCase)
+                ? LightAction.On
+                : LightAction.Off;
+            target = targetName;
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool IsGenericLightsTarget(string target)
     {
         return target.Equals("lights", StringComparison.OrdinalIgnoreCase) ||
                target.Equals("the lights", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals("light", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals("the light", StringComparison.OrdinalIgnoreCase) ||
                target.Equals("lamps", StringComparison.OrdinalIgnoreCase) ||
-               target.Equals("the lamps", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string StripTrailingCourtesyWords(string target)
-    {
-        var normalized = TranscriptTextNormalizer.NormalizeLooseText(target);
-        if (string.IsNullOrWhiteSpace(normalized)) return string.Empty;
-
-        foreach (var suffix in new[] { "please", "thanks", "thank you" })
-        {
-            if (normalized.Equals(suffix, StringComparison.Ordinal)) return string.Empty;
-            if (normalized.EndsWith($" {suffix}", StringComparison.Ordinal))
-                return normalized[..^(suffix.Length + 1)].Trim();
-        }
-
-        return normalized;
+               target.Equals("the lamps", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals("lamp", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals("the lamp", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals("all", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals("all the", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string NormalizeCommandPhrase(string? value)
@@ -138,7 +185,8 @@ public static class HomeAssistantLightCommandParser
             normalized.StartsWith("uh huh ", StringComparison.Ordinal))
             return normalized;
 
-        return TranscriptTextNormalizer.StripLeadingPhrases(normalized, CommandLeadPhrases);
+        normalized = TranscriptTextNormalizer.StripLeadingPhrases(normalized, CommandLeadPhrases);
+        return TranscriptTextNormalizer.StripTrailingCourtesyWords(normalized);
     }
 
     public readonly record struct LightCommand(LightAction Action, LightScope Scope, string? TargetName);

@@ -88,6 +88,21 @@ internal static class TranscriptTextNormalizer
         return normalized;
     }
 
+    internal static string StripTrailingCourtesyWords(string value)
+    {
+        var normalized = NormalizeLooseText(value);
+        if (string.IsNullOrWhiteSpace(normalized)) return string.Empty;
+
+        foreach (var suffix in new[] { "please", "thanks", "thank you" })
+        {
+            if (normalized.Equals(suffix, StringComparison.Ordinal)) return string.Empty;
+            if (normalized.EndsWith($" {suffix}", StringComparison.Ordinal))
+                return normalized[..^(suffix.Length + 1)].Trim();
+        }
+
+        return normalized;
+    }
+
     internal static string StripLeadingWakePhrase(string? value)
     {
         var normalized = NormalizeLooseText(value);

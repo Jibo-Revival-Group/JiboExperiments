@@ -13,6 +13,20 @@ public sealed class HomeAssistantClimateCommandParserTests
         HomeAssistantClimateCommandParser.ClimateScope.Room, null, 68)]
     [InlineData("change the temp to 70", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
         HomeAssistantClimateCommandParser.ClimateScope.Room, null, 70)]
+    [InlineData("make it 72", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
+        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 72)]
+    [InlineData("make it to 69 degrees", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
+        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 69)]
+    [InlineData("make the temperature 70", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
+        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 70)]
+    [InlineData("make thermostat to 68", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
+        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 68)]
+    [InlineData("temperature to 72", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
+        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 72)]
+    [InlineData("temp to 65", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
+        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 65)]
+    [InlineData("thermostat to 71 degrees", HomeAssistantClimateCommandParser.ClimateAction.SetTemperature,
+        HomeAssistantClimateCommandParser.ClimateScope.Room, null, 71)]
     public void TryParse_SetTemperatureRoomCommands_ReturnExpected(
         string transcript,
         HomeAssistantClimateCommandParser.ClimateAction expectedAction,
@@ -52,6 +66,11 @@ public sealed class HomeAssistantClimateCommandParserTests
     [InlineData("too hot", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
     [InlineData("make it cooler", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
     [InlineData("turn down the heat", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
+    [InlineData("it's too hot", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
+    [InlineData("way too hot", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
+    [InlineData("can you cool it down", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
+    [InlineData("cool down", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
+    [InlineData("make it cooler please", HomeAssistantClimateCommandParser.ClimateAction.CoolDown)]
     public void TryParse_CoolDownPhrases_ReturnExpected(string transcript,
         HomeAssistantClimateCommandParser.ClimateAction expectedAction)
     {
@@ -69,6 +88,10 @@ public sealed class HomeAssistantClimateCommandParserTests
     [InlineData("too cold", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
     [InlineData("make it warmer", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
     [InlineData("turn up the heat", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
+    [InlineData("it's too cold", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
+    [InlineData("way too cold", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
+    [InlineData("can you warm it up", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
+    [InlineData("heat it up", HomeAssistantClimateCommandParser.ClimateAction.WarmUp)]
     public void TryParse_WarmUpPhrases_ReturnExpected(string transcript,
         HomeAssistantClimateCommandParser.ClimateAction expectedAction)
     {
@@ -83,6 +106,8 @@ public sealed class HomeAssistantClimateCommandParserTests
     [Theory]
     [InlineData("set the temperature to 30")]
     [InlineData("set the temperature to 100")]
+    [InlineData("make it 30")]
+    [InlineData("72 degrees")]
     [InlineData("hello jibo")]
     public void TryParse_InvalidOrUnrelatedPhrases_ReturnFalse(string transcript)
     {

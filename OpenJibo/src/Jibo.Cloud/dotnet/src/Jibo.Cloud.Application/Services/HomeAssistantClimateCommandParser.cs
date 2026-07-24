@@ -37,6 +37,7 @@ public static class HomeAssistantClimateCommandParser
         "erm",
         "ah",
         "please",
+        "can you",
         "ok jibo",
         "okay jibo"
     ];
@@ -51,8 +52,14 @@ public static class HomeAssistantClimateCommandParser
         "i am hot",
         "too hot",
         "too hot in here",
+        "it's too hot",
+        "its too hot",
+        "it is too hot",
+        "way too hot",
         "make it cooler",
         "cool it down",
+        "cool down",
+        "can you cool it down",
         "turn down the heat",
         "turn the heat down",
         "lower the heat",
@@ -69,8 +76,14 @@ public static class HomeAssistantClimateCommandParser
         "i am cold",
         "too cold",
         "too cold in here",
+        "it's too cold",
+        "its too cold",
+        "it is too cold",
+        "way too cold",
         "make it warmer",
         "warm it up",
+        "heat it up",
+        "can you warm it up",
         "turn up the heat",
         "turn the heat up",
         "raise the heat",
@@ -83,6 +96,21 @@ public static class HomeAssistantClimateCommandParser
 
     private static readonly Regex NamedSetTemperaturePattern = new(
         @"^(?:set|change|adjust)\s+(?:the\s+)?(?<target>.+?)\s+(?:temperature|temp(?:erature)?|thermostat)\s+to\s+(?<temp>\d+(?:\.\d+)?)\s*(?:degrees?|fahrenheit|celsius)?\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    // make it [to] N [degrees]
+    private static readonly Regex MakeItTemperaturePattern = new(
+        @"^make\s+it\s+(?:to\s+)?(?<temp>\d+(?:\.\d+)?)\s*(?:degrees?|fahrenheit|celsius)?\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    // make [the] temperature|temp|thermostat [to] N [degrees]
+    private static readonly Regex MakeTemperaturePattern = new(
+        @"^make\s+(?:the\s+)?(?:temperature|temp(?:erature)?|thermostat)\s+(?:to\s+)?(?<temp>\d+(?:\.\d+)?)\s*(?:degrees?|fahrenheit|celsius)?\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    // temperature|temp|thermostat to N [degrees] (no set/change/adjust)
+    private static readonly Regex BareTemperatureToPattern = new(
+        @"^(?:temperature|temp(?:erature)?|thermostat)\s+to\s+(?<temp>\d+(?:\.\d+)?)\s*(?:degrees?|fahrenheit|celsius)?\s*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public static bool TryParse(string? transcript, out ClimateCommand command)
@@ -120,29 +148,51 @@ public static class HomeAssistantClimateCommandParser
         }
 
         var match = SetTemperaturePattern.Match(normalized);
-        if (!match.Success || !TryParseTemperature(match.Groups["temp"].Value, out var temperature))
-            return false;
-
-        var targetName = match.Groups["target"].Success
-            ? match.Groups["target"].Value.Trim()
-            : null;
-
-        if (!string.IsNullOrWhiteSpace(targetName) && !IsGenericClimateTarget(targetName))
+        if (match.Success && TryParseTemperature(match.Groups["temp"].Value, out var temperature))
         {
+            var targetName = match.Groups["target"].Success
+                ? match.Groups["target"].Value.Trim()
+                : null;
+
+            if (!string.IsNullOrWhiteSpace(targetName) && !IsGenericClimateTarget(targetName))
+            {
+                command = new ClimateCommand(
+                    ClimateAction.SetTemperature,
+                    ClimateScope.Named,
+                    targetName,
+                    temperature);
+                return true;
+            }
+
             command = new ClimateCommand(
                 ClimateAction.SetTemperature,
-                ClimateScope.Named,
-                targetName,
+                ClimateScope.Room,
+                null,
                 temperature);
             return true;
         }
 
-        command = new ClimateCommand(
-            ClimateAction.SetTemperature,
-            ClimateScope.Room,
-            null,
-            temperature);
-        return true;
+        foreach (var informalPattern in new[]
+                 {
+                     MakeItTemperaturePattern,
+                     MakeTemperaturePattern,
+                     BareTemperatureToPattern
+                 })
+        {
+            var informalMatch = informalPattern.Match(normalized);
+            if (!informalMatch.Success ||
+                !TryParseTemperature(informalMatch.Groups["temp"].Value, out var informalTemp))
+                continue;
+
+            command = new ClimateCommand(
+                ClimateAction.SetTemperature,
+                ClimateScope.Room,
+                null,
+                informalTemp);
+            return true;
+        }
+
+        return false;
     }
 
     public static string FormatTargetForSpeech(string? targetName)
@@ -200,7 +250,8 @@ public static class HomeAssistantClimateCommandParser
             normalized.StartsWith("uh huh ", StringComparison.Ordinal))
             return normalized;
 
-        return TranscriptTextNormalizer.StripLeadingPhrases(normalized, CommandLeadPhrases);
+        normalized = TranscriptTextNormalizer.StripLeadingPhrases(normalized, CommandLeadPhrases);
+        return TranscriptTextNormalizer.StripTrailingCourtesyWords(normalized);
     }
 
     public readonly record struct ClimateCommand(

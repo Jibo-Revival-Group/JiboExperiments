@@ -16,7 +16,10 @@ public sealed class HomeAssistantInteractionServiceTests
     [InlineData("lights on", "ha_lights_on", "Okay, turning on the lights.")]
     [InlineData("turn off zanes light", "ha_lights_off", "Okay, turning off zanes light.")]
     [InlineData("turn on zane's light", "ha_lights_on", "Okay, turning on zane's light.")]
+    [InlineData("kill the lights", "ha_lights_off", "Okay, turning off the lights.")]
+    [InlineData("lights off in bedroom", "ha_lights_off", "Okay, turning off bedroom light.")]
     [InlineData("set the temperature to 69", "ha_climate_set_temp", "Okay, setting the temperature to 69 degrees.")]
+    [InlineData("make it 72", "ha_climate_set_temp", "Okay, setting the temperature to 72 degrees.")]
     [InlineData("set the bedroom thermostat to 72", "ha_climate_set_temp",
         "Okay, setting the bedroom thermostat to 72 degrees.")]
     [InlineData("it's hot in here", "ha_climate_cool_down", "Okay, I'll cool things down a bit.")]

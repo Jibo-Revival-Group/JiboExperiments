@@ -843,6 +843,20 @@ public sealed class WebSocketTurnFinalizationService(
         turnState.AutoFinalizeBlockedUntilUtc = null;
     }
 
+    private bool ShouldFireAndForgetHomeAssistantCommand(TurnContext turn, string intentName)
+    {
+        if (homeAssistantCommandService is null) return false;
+
+        if (string.Equals(intentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(intentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase))
+            return !homeAssistantCommandService.IsNamedLightCommand(turn, intentName);
+
+        if (string.Equals(intentName, "ha_climate_set_temp", StringComparison.OrdinalIgnoreCase))
+            return !homeAssistantCommandService.IsRoomClimateCommand(turn, intentName);
+
+        return false;
+    }
+
     private static bool TryReadMilliseconds(JsonElement source, string propertyName, out TimeSpan timeout)
     {
         timeout = TimeSpan.Zero;
@@ -1405,11 +1419,7 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             if (homeAssistantCommandService is not null &&
-                (string.Equals(intentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(intentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(intentName, "ha_climate_set_temp", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(intentName, "ha_climate_cool_down", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(intentName, "ha_climate_warm_up", StringComparison.OrdinalIgnoreCase)))
+                ShouldFireAndForgetHomeAssistantCommand(finalizedTurn, intentName))
             {
                 var dispatched = string.Equals(intentName, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(intentName, "ha_lights_on", StringComparison.OrdinalIgnoreCase)

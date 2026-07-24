@@ -87,6 +87,10 @@ internal sealed class HomeAssistantWebSocketHandler(
                     case "ping":
                         await registry.SendPongAsync(socket, context.RequestAborted);
                         break;
+                    case "command_result":
+                        if (!registry.TryCompleteCommandResult(root))
+                            logger.LogDebug("Ignored unmatched Home Assistant command_result");
+                        break;
                     default:
                         await registry.SendErrorAsync(socket, "Unsupported message type.", context.RequestAborted);
                         break;

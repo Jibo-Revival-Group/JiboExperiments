@@ -60,6 +60,9 @@ public sealed partial class JiboInteractionService
             isTimerValueTurn,
             isAlarmValueTurn);
 
+        if (ShouldTreatAsHaClimateClarify(turn, lowered, semanticIntent))
+            semanticIntent = "ha_climate_clarify";
+
         var personalReportDecision = await PersonalReportOrchestrator.TryBuildDecisionAsync(
             turn,
             semanticIntent,
@@ -1300,11 +1303,12 @@ public sealed partial class JiboInteractionService
             "memory_set_affinity" => BuildRememberAffinityDecision(turn, transcript),
             "memory_get_affinity" => BuildRecallAffinityDecision(turn, transcript),
             "verify_me" => BuildVerifyMeDecision(turn),
-            "ha_lights_off" => BuildHaLightsOffDecision(turn),
-            "ha_lights_on" => BuildHaLightsOnDecision(turn),
-            "ha_climate_set_temp" => BuildHaClimateSetTempDecision(turn),
-            "ha_climate_cool_down" => BuildHaClimateCoolDownDecision(turn),
-            "ha_climate_warm_up" => BuildHaClimateWarmUpDecision(turn),
+            "ha_lights_off" => await BuildHaLightsOffDecisionAsync(turn, cancellationToken),
+            "ha_lights_on" => await BuildHaLightsOnDecisionAsync(turn, cancellationToken),
+            "ha_climate_set_temp" => await BuildHaClimateSetTempDecisionAsync(turn, cancellationToken),
+            "ha_climate_cool_down" => await BuildHaClimateCoolDownDecisionAsync(turn, cancellationToken),
+            "ha_climate_warm_up" => await BuildHaClimateWarmUpDecisionAsync(turn, cancellationToken),
+            "ha_climate_clarify" => await BuildHaClimateClarifyDecisionAsync(turn, cancellationToken),
             "pizza" => BuildPizzaDecision(),
             "order_pizza" => BuildOrderPizzaDecision(),
             "proactive_pizza_day" => BuildProactivePizzaDayDecision(referenceLocalTime),

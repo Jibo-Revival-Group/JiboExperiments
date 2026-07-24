@@ -21,11 +21,21 @@ public sealed class HomeAssistantCommandService(
         string intentName,
         CancellationToken cancellationToken = default)
     {
+        var result = await DispatchLightCommandAsync(turn, intentName, waitForResult: false, cancellationToken);
+        return result is not null;
+    }
+
+    public async Task<HomeAssistantCommandResult?> DispatchLightCommandAsync(
+        TurnContext turn,
+        string intentName,
+        bool waitForResult,
+        CancellationToken cancellationToken = default)
+    {
         var lightCommand = ResolveLightCommand(turn, intentName);
-        if (lightCommand is null) return false;
+        if (lightCommand is null) return null;
 
         var link = FindLink(turn);
-        if (link is null || !registry.IsInstanceConnected(link.HaInstanceId)) return false;
+        if (link is null || !registry.IsInstanceConnected(link.HaInstanceId)) return null;
 
         var command = BuildHaCommand(lightCommand.Value);
         IReadOnlyDictionary<string, string>? parameters = null;
@@ -36,7 +46,19 @@ public sealed class HomeAssistantCommandService(
                 ["targetName"] = lightCommand.Value.TargetName
             };
 
-        return await registry.SendCommandAsync(link.HaInstanceId, command, parameters, cancellationToken);
+        if (!waitForResult)
+        {
+            var sent = await registry.SendCommandAsync(link.HaInstanceId, command, parameters, cancellationToken);
+            return sent
+                ? new HomeAssistantCommandResult("fire-and-forget", "ok")
+                : null;
+        }
+
+        return await registry.SendCommandAndWaitAsync(
+            link.HaInstanceId,
+            command,
+            parameters,
+            cancellationToken);
     }
 
     public async Task<bool> TryDispatchClimateCommandAsync(
@@ -44,15 +66,81 @@ public sealed class HomeAssistantCommandService(
         string intentName,
         CancellationToken cancellationToken = default)
     {
+        var result = await DispatchClimateCommandAsync(turn, intentName, waitForResult: false, cancellationToken);
+        return result is not null;
+    }
+
+    public async Task<HomeAssistantCommandResult?> DispatchClimateCommandAsync(
+        TurnContext turn,
+        string intentName,
+        bool waitForResult,
+        CancellationToken cancellationToken = default)
+    {
         var climateCommand = ResolveClimateCommand(turn, intentName);
-        if (climateCommand is null) return false;
+        if (climateCommand is null) return null;
 
         var link = FindLink(turn);
-        if (link is null || !registry.IsInstanceConnected(link.HaInstanceId)) return false;
+        if (link is null || !registry.IsInstanceConnected(link.HaInstanceId)) return null;
 
         var command = BuildHaClimateCommand(climateCommand.Value);
         var parameters = BuildHaClimateParameters(climateCommand.Value);
-        return await registry.SendCommandAsync(link.HaInstanceId, command, parameters, cancellationToken);
+
+        if (!waitForResult)
+        {
+            var sent = await registry.SendCommandAsync(link.HaInstanceId, command, parameters, cancellationToken);
+            return sent
+                ? new HomeAssistantCommandResult("fire-and-forget", "ok")
+                : null;
+        }
+
+        return await registry.SendCommandAndWaitAsync(
+            link.HaInstanceId,
+            command,
+            parameters,
+            cancellationToken);
+    }
+
+    public async Task<HomeAssistantCommandResult?> DispatchClimateApplyEntityAsync(
+        TurnContext turn,
+        string entityId,
+        string action,
+        string? temperature,
+        string? delta,
+        CancellationToken cancellationToken = default)
+    {
+        var link = FindLink(turn);
+        if (link is null || !registry.IsInstanceConnected(link.HaInstanceId)) return null;
+
+        var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["entityId"] = entityId,
+            ["action"] = action
+        };
+        if (!string.IsNullOrWhiteSpace(temperature))
+            parameters["temperature"] = temperature;
+        if (!string.IsNullOrWhiteSpace(delta))
+            parameters["delta"] = delta;
+
+        return await registry.SendCommandAndWaitAsync(
+            link.HaInstanceId,
+            "climate_apply_entity",
+            parameters,
+            cancellationToken);
+    }
+
+    public bool IsNamedLightCommand(TurnContext turn, string intentName)
+    {
+        var lightCommand = ResolveLightCommand(turn, intentName);
+        return lightCommand is { Scope: HomeAssistantLightCommandParser.LightScope.Named };
+    }
+
+    public bool IsRoomClimateCommand(TurnContext turn, string intentName)
+    {
+        var climateCommand = ResolveClimateCommand(turn, intentName);
+        if (climateCommand is null) return false;
+        return climateCommand.Value.Scope == HomeAssistantClimateCommandParser.ClimateScope.Room ||
+               climateCommand.Value.Action is HomeAssistantClimateCommandParser.ClimateAction.CoolDown
+                   or HomeAssistantClimateCommandParser.ClimateAction.WarmUp;
     }
 
     private HomeAssistantLinkRecord? FindLink(TurnContext turn)

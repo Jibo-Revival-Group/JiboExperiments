@@ -9,6 +9,7 @@ namespace Jibo.Cloud.Application.Services;
 public sealed class HomeAssistantConnectionRegistry
 {
     private static readonly TimeSpan VerificationLifetime = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan CommandResultTimeout = TimeSpan.FromSeconds(3);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly ConcurrentDictionary<string, string> _codeByInstanceId =
@@ -19,6 +20,9 @@ public sealed class HomeAssistantConnectionRegistry
 
     private readonly ConcurrentDictionary<string, PendingHomeAssistantVerification> _pendingByCode =
         new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<HomeAssistantCommandResult>>
+        _pendingCommandResults = new(StringComparer.OrdinalIgnoreCase);
 
     public PendingHomeAssistantVerification RegisterConnection(string instanceId, WebSocket socket)
     {
@@ -123,29 +127,56 @@ public sealed class HomeAssistantConnectionRegistry
     {
         if (!_connections.TryGetValue(instanceId, out var connection)) return false;
 
-        if (parameters is null || parameters.Count == 0)
-        {
-            await SendJsonAsync(connection.Socket, new
-            {
-                type = "command",
-                command
-            }, cancellationToken);
-            return true;
-        }
-
-        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["type"] = "command",
-            ["command"] = command
-        };
-
-        foreach (var pair in parameters)
-            if (!string.IsNullOrWhiteSpace(pair.Value))
-                payload[pair.Key] = pair.Value;
-
+        var payload = BuildCommandPayload(command, parameters, requestId: null);
         await SendJsonAsync(connection.Socket, payload, cancellationToken);
-
         return true;
+    }
+
+    public async Task<HomeAssistantCommandResult?> SendCommandAndWaitAsync(
+        string instanceId,
+        string command,
+        IReadOnlyDictionary<string, string>? parameters = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_connections.TryGetValue(instanceId, out var connection)) return null;
+
+        var requestId = Guid.NewGuid().ToString("N");
+        var completion = new TaskCompletionSource<HomeAssistantCommandResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        _pendingCommandResults[requestId] = completion;
+
+        try
+        {
+            var payload = BuildCommandPayload(command, parameters, requestId);
+            await SendJsonAsync(connection.Socket, payload, cancellationToken);
+
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(CommandResultTimeout);
+
+            try
+            {
+                return await completion.Task.WaitAsync(timeoutCts.Token);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                return HomeAssistantCommandResult.Timeout(requestId);
+            }
+        }
+        finally
+        {
+            _pendingCommandResults.TryRemove(requestId, out _);
+        }
+    }
+
+    public bool TryCompleteCommandResult(JsonElement root)
+    {
+        var result = HomeAssistantCommandResult.FromJson(root);
+        if (string.IsNullOrWhiteSpace(result.RequestId)) return false;
+
+        if (!_pendingCommandResults.TryRemove(result.RequestId, out var completion))
+            return false;
+
+        return completion.TrySetResult(result);
     }
 
     public async Task SendUnpairedAsync(
@@ -163,6 +194,29 @@ public sealed class HomeAssistantConnectionRegistry
             type = "unpaired",
             linkId
         }, cancellationToken);
+    }
+
+    private static Dictionary<string, object?> BuildCommandPayload(
+        string command,
+        IReadOnlyDictionary<string, string>? parameters,
+        string? requestId)
+    {
+        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = "command",
+            ["command"] = command
+        };
+
+        if (!string.IsNullOrWhiteSpace(requestId))
+            payload["requestId"] = requestId;
+
+        if (parameters is null) return payload;
+
+        foreach (var pair in parameters)
+            if (!string.IsNullOrWhiteSpace(pair.Value))
+                payload[pair.Key] = pair.Value;
+
+        return payload;
     }
 
     private static async Task SendJsonAsync(WebSocket socket, object payload, CancellationToken cancellationToken)

@@ -110,6 +110,12 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
             "news" => false,
             "trigger_ignored" => false,
             "proactive_greeting" => false,
+            "ha_lights_off" => false,
+            "ha_lights_on" => false,
+            "ha_climate_set_temp" => true,
+            "ha_climate_cool_down" => true,
+            "ha_climate_warm_up" => true,
+            "ha_climate_clarify" => true,
             _ => true
         };
     }

@@ -748,6 +748,36 @@ internal static class PortalEndpoints
             });
         });
 
+        app.MapPut("/api/portal/home-assistant/climate-options", (
+            [FromBody] UpdateHomeAssistantClimateOptionsRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            IUserIntegrationStore integrationStore,
+            HomeAssistantConnectionRegistry registry) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var link = integrationStore.FindLinkForJibo(session.FriendlyId, session.FriendlyId);
+            if (link is null)
+                return Results.NotFound(new { error = "No Home Assistant link exists for this Jibo." });
+
+            var updated = integrationStore.UpdateHomeAssistantClimateBlacklist(
+                link.LinkId,
+                request.BlacklistHeat ?? false,
+                request.BlacklistCool ?? false);
+
+            if (updated is null)
+                return Results.NotFound(new { error = "No Home Assistant link exists for this Jibo." });
+
+            return Results.Json(new
+            {
+                ok = true,
+                homeAssistant = BuildHomeAssistantPayload(updated, registry)
+            });
+        });
+
 
         app.MapGet("/api/portal/admin/summary", (
             HttpRequest request,
@@ -1766,6 +1796,8 @@ internal static class PortalEndpoints
             jiboFriendlyId = link.JiboFriendlyName,
             jiboDeviceId = link.JiboDeviceId,
             haInstanceId = link.HaInstanceId,
+            blacklistHeat = link.BlacklistHeat,
+            blacklistCool = link.BlacklistCool,
             pairedAtUtc = link.PairedAtUtc,
             lastSeenUtc = link.LastSeenUtc
         };
@@ -1774,6 +1806,11 @@ internal static class PortalEndpoints
     private sealed record ConfirmJiboVerificationRequest(string? Code);
 
     private sealed record LinkHomeAssistantRequest(string? PortalSessionToken, string? HaCode);
+
+    private sealed record UpdateHomeAssistantClimateOptionsRequest(
+        string? PortalSessionToken,
+        bool? BlacklistHeat,
+        bool? BlacklistCool);
 
     private sealed record UpsertMemberCalendarFeedRequest(
         string? PortalSessionToken,

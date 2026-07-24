@@ -17,6 +17,11 @@ public interface IUserIntegrationStore
     HomeAssistantLinkRecord? RemoveHomeAssistantLink(string linkId);
     void UpdateHomeAssistantLastSeen(string linkId, DateTimeOffset lastSeenUtc);
 
+    HomeAssistantLinkRecord? UpdateHomeAssistantClimateBlacklist(
+        string linkId,
+        bool blacklistHeat,
+        bool blacklistCool);
+
     IReadOnlyList<MemberCalendarFeedRecord> GetMemberCalendarFeeds(string? loopId = null);
     MemberCalendarFeedRecord? FindMemberCalendarFeed(string loopId, string memberId);
 

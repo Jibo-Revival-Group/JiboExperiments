@@ -242,6 +242,25 @@ function bindPortalControls() {
     });
   }
 
+  const saveHaClimateOptionsButton = document.getElementById("saveHaClimateOptionsButton");
+  if (saveHaClimateOptionsButton) {
+    saveHaClimateOptionsButton.addEventListener("click", async () => {
+      const status = document.getElementById("haActionStatus");
+      const blacklistHeat = document.getElementById("haBlacklistHeat")?.checked === true;
+      const blacklistCool = document.getElementById("haBlacklistCool")?.checked === true;
+      try {
+        await apiFetch("/api/portal/home-assistant/climate-options", {
+          method: "PUT",
+          body: JSON.stringify({ blacklistHeat, blacklistCool }),
+        });
+        await renderDashboard("Climate options saved.");
+      } catch (error) {
+        status.textContent = error.message;
+        status.className = "status error";
+      }
+    });
+  }
+
   const saveCalendarFeedButton = document.getElementById("saveCalendarFeedButton");
   if (saveCalendarFeedButton) {
     saveCalendarFeedButton.addEventListener("click", async () => {
@@ -869,6 +888,23 @@ function renderHomeAssistantPanel(dashboard) {
         <div class="meta-item"><span>Paired</span><span>${formatDate(ha.pairedAtUtc)}</span></div>
         <div class="meta-item"><span>Last seen</span><span>${formatDate(ha.lastSeenUtc)}</span></div>
         <div class="meta-item"><span>Instance ID</span><span>${escapeHtml(ha.haInstanceId || "—")}</span></div>
+      </div>
+
+      <div class="climate-options" style="margin-top: 1rem;">
+        <p class="eyebrow">Climate controls</p>
+        <p class="muted">Choose which HVAC modes Jibo is allowed to switch to when changing temperature.</p>
+        <label class="checkbox-row" style="display:flex; gap:0.5rem; align-items:center; margin:0.5rem 0;">
+          <input id="haBlacklistHeat" type="checkbox" ${ha.blacklistHeat ? "checked" : ""}>
+          <span>Blacklist heating (Jibo will never set heat / heat_cool)</span>
+        </label>
+        <label class="checkbox-row" style="display:flex; gap:0.5rem; align-items:center; margin:0.5rem 0;">
+          <input id="haBlacklistCool" type="checkbox" ${ha.blacklistCool ? "checked" : ""}>
+          <span>Blacklist cooling (Jibo will never set cool / heat_cool)</span>
+        </label>
+        <p class="muted">If both are checked, Jibo will not turn climate on from off; it can still change the setpoint.</p>
+        <div class="button-row">
+          <button class="button secondary" id="saveHaClimateOptionsButton" type="button">Save climate options</button>
+        </div>
       </div>
 
       ${ha.connected ? "" : `

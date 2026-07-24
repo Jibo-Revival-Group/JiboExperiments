@@ -108,6 +108,8 @@ public sealed class HomeAssistantCommandServiceTests
         Assert.Equal("climate_set_temperature_current_room",
             socket.LastPayload!.Value.GetProperty("command").GetString());
         Assert.Equal("69", socket.LastPayload.Value.GetProperty("temperature").GetString());
+        Assert.Equal("false", socket.LastPayload.Value.GetProperty("blacklistHeat").GetString());
+        Assert.Equal("false", socket.LastPayload.Value.GetProperty("blacklistCool").GetString());
     }
 
     [Fact]

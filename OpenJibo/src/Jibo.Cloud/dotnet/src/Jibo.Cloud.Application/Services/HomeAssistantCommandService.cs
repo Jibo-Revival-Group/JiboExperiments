@@ -83,7 +83,7 @@ public sealed class HomeAssistantCommandService(
         if (link is null || !registry.IsInstanceConnected(link.HaInstanceId)) return null;
 
         var command = BuildHaClimateCommand(climateCommand.Value);
-        var parameters = BuildHaClimateParameters(climateCommand.Value);
+        var parameters = BuildHaClimateParameters(climateCommand.Value, link);
 
         if (!waitForResult)
         {
@@ -114,7 +114,9 @@ public sealed class HomeAssistantCommandService(
         var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["entityId"] = entityId,
-            ["action"] = action
+            ["action"] = action,
+            ["blacklistHeat"] = link.BlacklistHeat ? "true" : "false",
+            ["blacklistCool"] = link.BlacklistCool ? "true" : "false"
         };
         if (!string.IsNullOrWhiteSpace(temperature))
             parameters["temperature"] = temperature;
@@ -232,7 +234,8 @@ public sealed class HomeAssistantCommandService(
     }
 
     private static IReadOnlyDictionary<string, string>? BuildHaClimateParameters(
-        HomeAssistantClimateCommandParser.ClimateCommand climateCommand)
+        HomeAssistantClimateCommandParser.ClimateCommand climateCommand,
+        HomeAssistantLinkRecord link)
     {
         Dictionary<string, string>? parameters = null;
 
@@ -256,6 +259,16 @@ public sealed class HomeAssistantCommandService(
             parameters["delta"] = "2";
         }
 
+        AppendClimateBlacklist(link, ref parameters);
         return parameters;
+    }
+
+    private static void AppendClimateBlacklist(
+        HomeAssistantLinkRecord link,
+        ref Dictionary<string, string>? parameters)
+    {
+        parameters ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        parameters["blacklistHeat"] = link.BlacklistHeat ? "true" : "false";
+        parameters["blacklistCool"] = link.BlacklistCool ? "true" : "false";
     }
 }

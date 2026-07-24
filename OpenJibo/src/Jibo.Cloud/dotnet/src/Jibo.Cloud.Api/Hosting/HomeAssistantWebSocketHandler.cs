@@ -188,6 +188,14 @@ internal sealed class HomeAssistantWebSocketHandler(
         {
         }
 
+        public HomeAssistantLinkRecord? UpdateHomeAssistantClimateBlacklist(
+            string linkId,
+            bool blacklistHeat,
+            bool blacklistCool)
+        {
+            return null;
+        }
+
         public IReadOnlyList<MemberCalendarFeedRecord> GetMemberCalendarFeeds(string? loopId = null)
         {
             return [];

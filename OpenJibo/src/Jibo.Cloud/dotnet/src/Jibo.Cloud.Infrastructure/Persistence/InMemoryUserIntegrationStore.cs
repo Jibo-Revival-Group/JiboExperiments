@@ -69,6 +69,8 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
                     JiboDeviceId = jiboDeviceId,
                     JiboFriendlyName = jiboFriendlyName,
                     HaInstanceId = haInstanceId,
+                    BlacklistHeat = existing.BlacklistHeat,
+                    BlacklistCool = existing.BlacklistCool,
                     PairedAtUtc = existing.PairedAtUtc,
                     LastSeenUtc = DateTimeOffset.UtcNow
                 };
@@ -106,10 +108,40 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
                 JiboDeviceId = current.JiboDeviceId,
                 JiboFriendlyName = current.JiboFriendlyName,
                 HaInstanceId = current.HaInstanceId,
+                BlacklistHeat = current.BlacklistHeat,
+                BlacklistCool = current.BlacklistCool,
                 PairedAtUtc = current.PairedAtUtc,
                 LastSeenUtc = lastSeenUtc
             };
             PersistLocked();
+        }
+    }
+
+    public HomeAssistantLinkRecord? UpdateHomeAssistantClimateBlacklist(
+        string linkId,
+        bool blacklistHeat,
+        bool blacklistCool)
+    {
+        lock (_syncRoot)
+        {
+            var index = _links.FindIndex(link => link.LinkId.Equals(linkId, StringComparison.OrdinalIgnoreCase));
+            if (index < 0) return null;
+
+            var current = _links[index];
+            var updated = new HomeAssistantLinkRecord
+            {
+                LinkId = current.LinkId,
+                JiboDeviceId = current.JiboDeviceId,
+                JiboFriendlyName = current.JiboFriendlyName,
+                HaInstanceId = current.HaInstanceId,
+                BlacklistHeat = blacklistHeat,
+                BlacklistCool = blacklistCool,
+                PairedAtUtc = current.PairedAtUtc,
+                LastSeenUtc = current.LastSeenUtc
+            };
+            _links[index] = updated;
+            PersistLocked();
+            return updated;
         }
     }
 

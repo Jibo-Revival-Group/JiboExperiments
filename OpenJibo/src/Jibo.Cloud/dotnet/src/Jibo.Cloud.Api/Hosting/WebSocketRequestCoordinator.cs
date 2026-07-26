@@ -188,7 +188,14 @@ internal sealed class WebSocketRequestCoordinator(
                     received.MessageType == WebSocketMessageType.Text ? Encoding.UTF8.GetString(received.Buffer) : null,
                     received.MessageType == WebSocketMessageType.Binary ? received.Buffer : null);
 
-                var replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);
+                IReadOnlyList<WebSocketReply> replies;
+                using (AmbientTurnProgressPublisher.Begin(
+                           () => session.TurnState.TransId ?? session.LastTransId ?? string.Empty,
+                           (reply, cancellationToken) => SendRepliesAsync(socket, [reply], cancellationToken)))
+                {
+                    replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);
+                }
+
                 robotPresenceRegistry.UpdateRobotKeys(presenceConnectionId, ResolveRobotKeys(token, session));
                 if (!string.IsNullOrWhiteSpace(session.TurnState.TransId))
                     loopTransId = session.TurnState.TransId;

@@ -1,5 +1,6 @@
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
+using Jibo.Cloud.Domain.Models;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Runtime.Abstractions;
@@ -91,16 +92,113 @@ public sealed class WikipediaInteractionServiceTests
             decision.ReplyText);
     }
 
+    [Fact]
+    public async Task BuildDecisionAsync_WikipediaLookup_PublishesThinkingBeforeSummaryReturns()
+    {
+        var progress = new CapturingTurnProgressPublisher();
+        var wikipedia = new OrderingWikipediaSummaryProvider(
+            "James Abram Garfield was the 20th president of the United States.",
+            onLookup: () => progress.PublishCount);
+        var service = CreateService(
+            wikipediaSummaryProvider: wikipedia,
+            turnProgressPublisher: progress);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Who is James Garfield",
+            NormalizedTranscript = "Who is James Garfield"
+        });
+
+        Assert.Equal("knowledge_search", decision.IntentName);
+        Assert.Equal(1, progress.PublishCount);
+        Assert.Equal(1, wikipedia.PublishCountSeenAtLookupStart);
+        Assert.Contains("eye_thinking_01", progress.LastPayload, StringComparison.Ordinal);
+        Assert.Contains("\"final\":false", progress.LastPayload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_KnowledgeSearch_PublishesThinkingBeforeBackendReturns()
+    {
+        var progress = new CapturingTurnProgressPublisher();
+        var knowledgeSearch = new OrderingKnowledgeSearchService(
+            new KnowledgeSearchResult("Forty two.", SearchBackendKind.Wolfram),
+            onSearch: () => progress.PublishCount);
+        var service = CreateService(
+            knowledgeSearchService: knowledgeSearch,
+            turnProgressPublisher: progress);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "blargh",
+            NormalizedTranscript = "blargh"
+        });
+
+        Assert.Equal("knowledge_search", decision.IntentName);
+        Assert.Equal(1, progress.PublishCount);
+        Assert.Equal(1, knowledgeSearch.PublishCountSeenAtSearchStart);
+        Assert.Contains("eye_thinking_01", progress.LastPayload, StringComparison.Ordinal);
+    }
+
     private static JiboInteractionService CreateService(
         IWikipediaSummaryProvider? wikipediaSummaryProvider = null,
-        IKnowledgeSearchService? knowledgeSearchService = null)
+        IKnowledgeSearchService? knowledgeSearchService = null,
+        ITurnProgressPublisher? turnProgressPublisher = null)
     {
         return new JiboInteractionService(
             new JiboExperienceContentCache(new InMemoryJiboExperienceContentRepository()),
             new FirstItemRandomizer(),
             new InMemoryPersonalMemoryStore(),
             wikipediaSummaryProvider: wikipediaSummaryProvider,
-            knowledgeSearchService: knowledgeSearchService);
+            knowledgeSearchService: knowledgeSearchService,
+            turnProgressPublisher: turnProgressPublisher);
+    }
+
+    private sealed class CapturingTurnProgressPublisher : ITurnProgressPublisher
+    {
+        public int PublishCount { get; private set; }
+        public string LastPayload { get; private set; } = string.Empty;
+
+        public Task PublishAsync(WebSocketReply reply, CancellationToken cancellationToken = default)
+        {
+            PublishCount += 1;
+            LastPayload = reply.Text ?? string.Empty;
+            return Task.CompletedTask;
+        }
+
+        public Task PublishSearchThinkingAsync(CancellationToken cancellationToken = default)
+        {
+            return PublishAsync(
+                new WebSocketReply { Text = SearchThinkingSkillActionFactory.CreateJson("trans-thinking") },
+                cancellationToken);
+        }
+    }
+
+    private sealed class OrderingWikipediaSummaryProvider(
+        string? summary,
+        Func<int> onLookup) : IWikipediaSummaryProvider
+    {
+        public int PublishCountSeenAtLookupStart { get; private set; }
+
+        public Task<string?> GetSummaryAsync(string subject, CancellationToken cancellationToken = default)
+        {
+            PublishCountSeenAtLookupStart = onLookup();
+            return Task.FromResult(summary);
+        }
+    }
+
+    private sealed class OrderingKnowledgeSearchService(
+        KnowledgeSearchResult? result,
+        Func<int> onSearch) : IKnowledgeSearchService
+    {
+        public bool IsConfigured => true;
+
+        public int PublishCountSeenAtSearchStart { get; private set; }
+
+        public Task<KnowledgeSearchResult?> SearchAsync(string query, CancellationToken cancellationToken = default)
+        {
+            PublishCountSeenAtSearchStart = onSearch();
+            return Task.FromResult(result);
+        }
     }
 
     private sealed class StubWikipediaSummaryProvider(string? summary) : IWikipediaSummaryProvider

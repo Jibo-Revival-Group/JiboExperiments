@@ -53,6 +53,7 @@ public sealed class KnowledgeSearchSocketMappingTests
             .GetString();
 
         Assert.Contains("Thinking_Eye_Loop_01", esml, StringComparison.Ordinal);
+        Assert.DoesNotContain("nonBlocking", esml, StringComparison.Ordinal);
         Assert.Contains("According to wikipedia.", esml, StringComparison.Ordinal);
         Assert.True(skillAction.RootElement.GetProperty("data").GetProperty("final").GetBoolean());
     }

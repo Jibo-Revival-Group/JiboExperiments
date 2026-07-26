@@ -423,7 +423,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
         if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
-                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill)),
+                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill, outboundAsrText)),
                 75));
 
         return messages;
@@ -749,7 +749,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
     }
 
     private static object BuildSkillPayload(ResponsePlan plan, string transId, SpeakAction speak,
-        InvokeNativeSkillAction? skill)
+        InvokeNativeSkillAction? skill, string heardTranscript = "")
     {
         var skillPayload = skill?.Payload;
         if (skillPayload is null && IsHouseholdListFollowUpIntent(plan.IntentName ?? string.Empty))
@@ -764,6 +764,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var isJoke = string.Equals(plan.IntentName, "joke", StringComparison.OrdinalIgnoreCase) ||
                      string.Equals(skill?.SkillName, "@be/joke", StringComparison.OrdinalIgnoreCase);
         var isDance = string.Equals(plan.IntentName, "dance", StringComparison.OrdinalIgnoreCase);
+        var isKnowledgeSearchNotFound = string.Equals(
+            plan.IntentName,
+            "knowledge_search_not_found",
+            StringComparison.OrdinalIgnoreCase);
         var payloadSkill = ReadPayloadString(skillPayload, "skillId");
         var skillId = string.IsNullOrWhiteSpace(payloadSkill)
             ? isJoke ? "@be/joke" : skill?.SkillName ?? "chitchat-skill"
@@ -814,6 +818,11 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
             jcpConfig["listen"] = listenConfig;
         }
+
+        // Answer/Nimbus clears the eye during Thinking_Eye, so LISTEN asr.text alone never
+        // paints Idle's quoted "heard" Label. Attach that view on not-found speak instead.
+        if (isKnowledgeSearchNotFound && !string.IsNullOrWhiteSpace(heardTranscript))
+            AttachHeardTranscriptDisplay(jcpConfig, heardTranscript.Trim());
 
         var weatherHiLoView = BuildWeatherHiLoView(skillPayload);
         var weeklyWeatherCards = BuildWeatherHiLoSequenceCards(skillPayload);
@@ -1390,6 +1399,90 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 ["type"] = "Javascript",
                 ["data"] = view,
                 ["pause"] = true,
+                ["context"] = resolvedGuiContext
+            }
+        };
+        config["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            [viewName] = view
+        };
+        config["local"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["views"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                [viewName] = view
+            }
+        };
+    }
+
+    /// <summary>
+    /// Idle HJNoMatch Label — quoted ASR text centered on the face while speaking not-found.
+    /// Nimbus ProcessCloud reads display.view.context as the MIM gui.
+    /// </summary>
+    private static void AttachHeardTranscriptDisplay(IDictionary<string, object?> config, string transcript)
+    {
+        const string viewName = "heardTranscript";
+        // FaceRenderer.WIDTH/HEIGHT on stock robot.
+        const int faceWidth = 1280;
+        const int faceHeight = 720;
+        var view = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["viewConfig"] = new
+            {
+                type = "View",
+                id = "global_not_matched_text"
+            },
+            ["componentConfigs"] = new object[]
+            {
+                new
+                {
+                    id = "bottom",
+                    type = "Label",
+                    text = $"\"{transcript}\"",
+                    style = new
+                    {
+                        fontSize = "120",
+                        fontFamily = "Proxima Nova Soft",
+                        fontStyle = "bold",
+                        fill = "#b6b6c2",
+                        wordWrap = true,
+                        wordWrapWidth = 1240,
+                        align = "center"
+                    },
+                    position = new
+                    {
+                        x = faceWidth / 2,
+                        y = faceHeight / 2
+                    },
+                    targetAnchor = new
+                    {
+                        x = 0.5,
+                        y = 0.5
+                    }
+                }
+            }
+        };
+
+        // pause:false so the Label clears with the announcement (Mim treats undefined pause as true).
+        var resolvedGuiContext = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = "Javascript",
+            ["data"] = view,
+            ["pause"] = false
+        };
+        config["gui"] = new
+        {
+            type = "Javascript",
+            data = $"views.{viewName}",
+            pause = false
+        };
+        config["display"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["view"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["type"] = "Javascript",
+                ["data"] = view,
+                ["pause"] = false,
                 ["context"] = resolvedGuiContext
             }
         };

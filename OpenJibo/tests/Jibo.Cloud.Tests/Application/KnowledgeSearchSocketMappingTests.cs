@@ -129,7 +129,7 @@ public sealed class KnowledgeSearchSocketMappingTests
     }
 
     [Fact]
-    public void Map_KnowledgeSearchNotFound_ShowsHeardTranscriptOnListen()
+    public void Map_KnowledgeSearchNotFound_ShowsHeardTranscriptOnDisplay()
     {
         var plan = new ResponsePlan
         {
@@ -177,6 +177,31 @@ public sealed class KnowledgeSearchSocketMappingTests
         Assert.Equal(
             SearchThinkingPreludeFactory.AnswerSkillId,
             listen.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
+
+        var skillAction = replies
+            .Select(reply => reply.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .Select(text => JsonDocument.Parse(text!))
+            .First(document => document.RootElement.GetProperty("type").GetString() == "SKILL_ACTION");
+        var display = skillAction.RootElement
+            .GetProperty("data")
+            .GetProperty("action")
+            .GetProperty("config")
+            .GetProperty("jcp")
+            .GetProperty("config")
+            .GetProperty("display");
+        var labelText = display
+            .GetProperty("view")
+            .GetProperty("data")
+            .GetProperty("componentConfigs")[0]
+            .GetProperty("text")
+            .GetString();
+
+        Assert.Equal("\"who is zzxxyyqq\"", labelText);
+        Assert.Equal(
+            "global_not_matched_text",
+            display.GetProperty("view").GetProperty("data").GetProperty("viewConfig").GetProperty("id").GetString());
+        Assert.False(display.GetProperty("view").GetProperty("pause").GetBoolean());
     }
 }
 

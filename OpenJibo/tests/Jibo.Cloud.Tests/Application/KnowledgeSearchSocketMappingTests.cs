@@ -116,4 +116,62 @@ public sealed class KnowledgeSearchSocketMappingTests
         Assert.Contains("Thinking_Eye_Loop_01", esml, StringComparison.Ordinal);
         Assert.DoesNotContain("nonBlocking", esml, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Map_KnowledgeSearch_AfterPrelude_SpeaksWithoutSecondThinkingAnim()
+    {
+        var plan = new ResponsePlan
+        {
+            IntentName = "knowledge_search",
+            Actions =
+            {
+                new SpeakAction
+                {
+                    Sequence = 0,
+                    Text = "According to wikipedia. James Abram Garfield was the 20th president.",
+                    Voice = "griffin"
+                }
+            }
+        };
+        var session = new CloudSession();
+        session.Metadata[SearchThinkingSkillActionFactory.PreludeMetadataKey] = "trans-knowledge";
+        var turn = new TurnContext
+        {
+            NormalizedTranscript = "who is james garfield",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["transID"] = "trans-knowledge",
+                ["messageType"] = "LISTEN",
+                ["listenRules"] = new[] { "launch" }
+            }
+        };
+
+        var replies = ResponsePlanToSocketMessagesMapper.Map(plan, turn, session, emitSkillActions: true);
+        var types = replies
+            .Select(reply => reply.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .Select(text => JsonDocument.Parse(text!).RootElement.GetProperty("type").GetString())
+            .ToArray();
+
+        Assert.DoesNotContain("LISTEN", types);
+        Assert.DoesNotContain("EOS", types);
+
+        var skillAction = replies
+            .Select(reply => reply.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .Select(text => JsonDocument.Parse(text!))
+            .First(document => document.RootElement.GetProperty("type").GetString() == "SKILL_ACTION");
+        var esml = skillAction.RootElement
+            .GetProperty("data")
+            .GetProperty("action")
+            .GetProperty("config")
+            .GetProperty("jcp")
+            .GetProperty("config")
+            .GetProperty("play")
+            .GetProperty("esml")
+            .GetString();
+
+        Assert.DoesNotContain("Thinking_Eye_Loop_01", esml, StringComparison.Ordinal);
+        Assert.Contains("According to wikipedia.", esml, StringComparison.Ordinal);
+    }
 }

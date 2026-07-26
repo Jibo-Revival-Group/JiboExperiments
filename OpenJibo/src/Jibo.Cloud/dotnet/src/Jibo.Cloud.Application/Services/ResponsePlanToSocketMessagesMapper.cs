@@ -204,18 +204,26 @@ public sealed class ResponsePlanToSocketMessagesMapper
             }
         };
 
-        var messages = new List<SocketReplyPlan>
+        var skipListenAndEos = session.Metadata.TryGetValue(
+                                    SearchThinkingSkillActionFactory.PreludeMetadataKey,
+                                    out var preludeTransId) &&
+                                string.Equals(preludeTransId?.ToString(), transId, StringComparison.Ordinal);
+        if (skipListenAndEos)
+            session.Metadata.Remove(SearchThinkingSkillActionFactory.PreludeMetadataKey);
+
+        var messages = new List<SocketReplyPlan>();
+        if (!skipListenAndEos)
         {
-            new(JsonSerializer.Serialize(listenMessage)),
-            new(JsonSerializer.Serialize(new
+            messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(listenMessage)));
+            messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(new
             {
                 type = "EOS",
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 msgID = CloudMessageIdFactory.CreateHubMessageId(),
                 transID = transId,
                 data = new { }
-            }))
-        };
+            })));
+        }
 
         if (isWordOfDayLaunch)
         {
@@ -347,7 +355,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
         if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
-                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill)),
+                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill, skipListenAndEos)),
                 75));
 
         return messages;
@@ -672,8 +680,12 @@ public sealed class ResponsePlanToSocketMessagesMapper
         return WordOfDayGuessResolver.Resolve(transcript, hints, nluGuess);
     }
 
-    private static object BuildSkillPayload(ResponsePlan plan, string transId, SpeakAction speak,
-        InvokeNativeSkillAction? skill)
+    private static object BuildSkillPayload(
+        ResponsePlan plan,
+        string transId,
+        SpeakAction speak,
+        InvokeNativeSkillAction? skill,
+        bool thinkingAlreadyPlayed = false)
     {
         var skillPayload = skill?.Payload;
         if (skillPayload is null && IsHouseholdListFollowUpIntent(plan.IntentName ?? string.Empty))
@@ -695,11 +707,13 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var skillId = string.IsNullOrWhiteSpace(payloadSkill)
             ? isJoke ? "@be/joke" : skill?.SkillName ?? "chitchat-skill"
             : payloadSkill;
+        // When thinking already played mid-turn, speak the answer only (no second thinking anim).
+        var includeSearchThinkingAnim = isKnowledgeSearch && !thinkingAlreadyPlayed;
         var esml = ReadPayloadString(skillPayload, "esml") ?? (isDance
             ? "<speak>Okay.<break size='0.2'/> Watch this.<anim cat='dance' filter='music, rom-upbeat' /></speak>"
             : isJoke
                 ? $"<speak><es cat='happy' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>"
-                : isKnowledgeSearch
+                : includeSearchThinkingAnim
                     ? $"<speak><anim name='Thinking_Eye_Loop_01'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>"
                     : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>");
         var mimId = ReadPayloadString(skillPayload, "mim_id") ?? (isJoke ? "runtime-joke" : "runtime-chat");

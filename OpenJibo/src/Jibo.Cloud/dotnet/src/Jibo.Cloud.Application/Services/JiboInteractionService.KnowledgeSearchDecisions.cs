@@ -21,6 +21,13 @@ public sealed partial class JiboInteractionService
         if (emotionDecision is not null) return emotionDecision;
 
         var isWhoWhatLookup = WikipediaLookupParser.TryParse(transcript, out _);
+        var willSearch =
+            isWhoWhatLookup ||
+            (knowledgeSearchService?.IsConfigured == true);
+
+        if (willSearch)
+            await EnsureSearchThinkingStartedAsync(cancellationToken);
+
         var wikipediaLookup = await TryLookupWikipediaAsync(transcript, cancellationToken);
         if (IsWikipediaFound(wikipediaLookup))
             return BuildWikipediaFoundDecision(wikipediaLookup!);
@@ -53,6 +60,18 @@ public sealed partial class JiboInteractionService
         return ChitchatStateMachine.BuildChatErrorResponseDecision(
             BuildGenericReply(catalog, transcript, lowered),
             transcript);
+    }
+
+    private async Task EnsureSearchThinkingStartedAsync(CancellationToken cancellationToken)
+    {
+        if (turnProgressPublisher is null) return;
+
+        await turnProgressPublisher.PublishSearchThinkingAsync(cancellationToken);
+
+        // Give the robot time to begin the thinking anim before HTTP work starts.
+        // We cannot await CMD_RESULT while the receive loop is blocked in HandleMessageAsync.
+        if (SearchThinkingSkillActionFactory.AnimStartGrace > TimeSpan.Zero)
+            await Task.Delay(SearchThinkingSkillActionFactory.AnimStartGrace, cancellationToken);
     }
 
     private async Task<WikipediaSummaryResult?> TryLookupWikipediaAsync(

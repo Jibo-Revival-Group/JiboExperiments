@@ -1406,6 +1406,7 @@ public sealed class WebSocketTurnFinalizationService(
                 return [];
             }
 
+            AmbientTurnProgressPublisher.BindTurn(finalizedTurn, session);
             var plan = await conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken);
 
             var intentName = plan.IntentName;

@@ -6274,6 +6274,7 @@ public sealed class JiboInteractionServiceTests
         IHolidayCountdownCatalog? holidayCountdownCatalog = null,
         IMeasurementConversionCatalog? measurementConversionCatalog = null,
         IKnowledgeSearchService? knowledgeSearchService = null,
+        ITurnProgressPublisher? turnProgressPublisher = null,
         IJiboExperienceContentRepository? contentRepository = null,
         IJiboRandomizer? randomizer = null)
     {
@@ -6291,6 +6292,7 @@ public sealed class JiboInteractionServiceTests
             holidayCountdownCatalog,
             measurementConversionCatalog,
             knowledgeSearchService,
+            turnProgressPublisher,
             cloudStateStore);
     }
 

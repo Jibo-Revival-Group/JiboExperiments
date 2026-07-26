@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net;
 using Jibo.Cloud.Application.Abstractions;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +16,8 @@ public sealed class WolframAlphaSearchProvider(
         "did not understand",
         "cannot answer",
         "can't answer",
-        "no spoken result available"
+        "no spoken result available",
+        "no short answer available"
     ];
 
     private readonly ConcurrentDictionary<string, CacheEntry> _cache =
@@ -41,14 +43,14 @@ public sealed class WolframAlphaSearchProvider(
         {
             var requestUri = BuildRequestUri(request.BackendSpec.Credential, normalizedQuery);
             using var response = await httpClient.GetAsync(requestUri, cancellationToken);
+            var answerText = (await response.Content.ReadAsStringAsync(cancellationToken)).Trim();
             if (!response.IsSuccessStatusCode)
             {
-                SetCachedValue(cacheKey, KnowledgeSearchResult.Unavailable(SearchBackendKind.Wolfram),
-                    options.FailureCacheTtlSeconds);
-                return KnowledgeSearchResult.Unavailable(SearchBackendKind.Wolfram);
+                var failed = ClassifyHttpFailure(response.StatusCode, answerText);
+                SetCachedValue(cacheKey, failed, options.FailureCacheTtlSeconds);
+                return failed;
             }
 
-            var answerText = (await response.Content.ReadAsStringAsync(cancellationToken)).Trim();
             if (!IsUsableAnswer(answerText))
             {
                 var notFound = KnowledgeSearchResult.NotFound(SearchBackendKind.Wolfram);
@@ -68,6 +70,18 @@ public sealed class WolframAlphaSearchProvider(
             return unavailable;
         }
     }
+
+    private static KnowledgeSearchResult ClassifyHttpFailure(HttpStatusCode statusCode, string responseBody)
+    {
+        // Spoken/Short Answers APIs return 501 when the service is up but has no spoken/short answer.
+        if (statusCode == HttpStatusCode.NotImplemented || LooksLikeNoAnswer(responseBody))
+            return KnowledgeSearchResult.NotFound(SearchBackendKind.Wolfram);
+
+        return KnowledgeSearchResult.Unavailable(SearchBackendKind.Wolfram);
+    }
+
+    private static bool LooksLikeNoAnswer(string responseBody) =>
+        !string.IsNullOrWhiteSpace(responseBody) && !IsUsableAnswer(responseBody);
 
     private static Uri BuildRequestUri(string appId, string query)
     {

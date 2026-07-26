@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Wikipedia;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -36,7 +37,8 @@ public sealed class WikipediaSummaryProviderTests
 
         var summary = await provider.GetSummaryAsync("James Garfield");
 
-        Assert.Equal("James Abram Garfield was the 20th president of the United States.", summary);
+        Assert.Equal(WikipediaSummaryOutcome.Found, summary.Outcome);
+        Assert.Equal("James Abram Garfield was the 20th president of the United States.", summary.Summary);
         Assert.Equal(1, handler.GetCallCountContaining("opensearch"));
         Assert.Equal(1, handler.GetCallCountContaining("page/summary"));
     }
@@ -52,7 +54,8 @@ public sealed class WikipediaSummaryProviderTests
 
         var summary = await provider.GetSummaryAsync("Jibo");
 
-        Assert.Null(summary);
+        Assert.Equal(WikipediaSummaryOutcome.NotFound, summary.Outcome);
+        Assert.Null(summary.Summary);
         Assert.Equal(1, handler.GetCallCountContaining("opensearch"));
         Assert.Equal(0, handler.GetCallCountContaining("page/summary"));
     }
@@ -83,7 +86,56 @@ public sealed class WikipediaSummaryProviderTests
 
         var summary = await provider.GetSummaryAsync("Jibo");
 
-        Assert.Null(summary);
+        Assert.Equal(WikipediaSummaryOutcome.NotFound, summary.Outcome);
+        Assert.Null(summary.Summary);
+    }
+
+    [Fact]
+    public async Task GetSummaryAsync_ReturnsNotFound_WhenSummaryReturns404()
+    {
+        var handler = new RoutingHttpMessageHandler(request =>
+        {
+            if (request.RequestUri?.Query.Contains("action=opensearch", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return JsonResponse(
+                    """
+                    ["Zzxxyyqq",["Zzxxyyqq"],[""],["https://en.wikipedia.org/wiki/Zzxxyyqq"]]
+                    """);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.NotFound)
+            {
+                Content = new StringContent("""{"type":"https://mediawiki.org/wiki/HyperSwitch/errors/not_found"}""", Encoding.UTF8, "application/json")
+            };
+        });
+        var provider = CreateProvider(handler);
+
+        var summary = await provider.GetSummaryAsync("Zzxxyyqq");
+
+        Assert.Equal(WikipediaSummaryOutcome.NotFound, summary.Outcome);
+        Assert.Null(summary.Summary);
+    }
+
+    [Fact]
+    public async Task GetSummaryAsync_ReturnsUnavailable_WhenSummaryReturns503()
+    {
+        var handler = new RoutingHttpMessageHandler(request =>
+        {
+            if (request.RequestUri?.Query.Contains("action=opensearch", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return JsonResponse(
+                    """
+                    ["Jibo",["Jibo"],["Robot"],["https://en.wikipedia.org/wiki/Jibo"]]
+                    """);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        });
+        var provider = CreateProvider(handler);
+
+        var summary = await provider.GetSummaryAsync("Jibo");
+
+        Assert.Equal(WikipediaSummaryOutcome.Unavailable, summary.Outcome);
     }
 
     [Fact]
@@ -112,7 +164,8 @@ public sealed class WikipediaSummaryProviderTests
 
         var summary = await provider.GetSummaryAsync("Mercury");
 
-        Assert.Null(summary);
+        Assert.Equal(WikipediaSummaryOutcome.NotFound, summary.Outcome);
+        Assert.Null(summary.Summary);
     }
 
     [Fact]
@@ -142,7 +195,8 @@ public sealed class WikipediaSummaryProviderTests
         var first = await provider.GetSummaryAsync("Jibo");
         var second = await provider.GetSummaryAsync("Jibo");
 
-        Assert.Equal("Jibo was a social robot.", first);
+        Assert.Equal(WikipediaSummaryOutcome.Found, first.Outcome);
+        Assert.Equal("Jibo was a social robot.", first.Summary);
         Assert.Equal(first, second);
         Assert.Equal(1, handler.GetCallCountContaining("opensearch"));
         Assert.Equal(1, handler.GetCallCountContaining("page/summary"));

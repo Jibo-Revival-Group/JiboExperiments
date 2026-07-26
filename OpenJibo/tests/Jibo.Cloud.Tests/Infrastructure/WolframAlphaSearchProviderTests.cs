@@ -56,6 +56,24 @@ public sealed class WolframAlphaSearchProviderTests
     }
 
     [Fact]
+    public async Task SearchAsync_ReturnsNotFound_WhenSpokenApiReturns501()
+    {
+        var handler = new RecordingHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.NotImplemented)
+        {
+            Content = new StringContent(
+                "Wolfram|Alpha did not understand your input",
+                Encoding.UTF8,
+                "text/plain")
+        });
+        var provider = CreateProvider(handler);
+
+        var result = await provider.SearchAsync(CreateRequest("blargh"));
+
+        Assert.NotNull(result);
+        Assert.Equal(KnowledgeSearchOutcome.NotFound, result!.Outcome);
+    }
+
+    [Fact]
     public async Task SearchAsync_ReturnsNotFound_WhenWolframDoesNotUnderstand()
     {
         var handler = new RecordingHttpMessageHandler(_ =>

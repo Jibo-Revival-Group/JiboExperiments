@@ -20,21 +20,33 @@ public sealed partial class JiboInteractionService
             preferredName);
         if (emotionDecision is not null) return emotionDecision;
 
-        var wikipediaDecision = await TryBuildWikipediaLookupDecisionAsync(transcript, cancellationToken);
-        if (wikipediaDecision is not null) return wikipediaDecision;
+        var wikipediaLookup = await TryLookupWikipediaAsync(transcript, cancellationToken);
+        if (wikipediaLookup?.Outcome == WikipediaSummaryOutcome.Found &&
+            !string.IsNullOrWhiteSpace(wikipediaLookup.Summary))
+        {
+            return ChitchatStateMachine.BuildKnowledgeSearchResponseDecision(
+                KnowledgeSearchSpokenReplyFormatter.FormatReply(
+                    wikipediaLookup.Summary,
+                    SearchBackendKind.Wikipedia));
+        }
 
         var searchDecision = await TryBuildKnowledgeSearchDecisionAsync(transcript, cancellationToken);
         if (searchDecision is not null) return searchDecision;
 
         if (WikipediaLookupParser.TryParse(transcript, out _))
+        {
+            if (wikipediaLookup?.Outcome == WikipediaSummaryOutcome.Unavailable)
+                return ChitchatStateMachine.BuildKnowledgeSearchUnavailableDecision();
+
             return ChitchatStateMachine.BuildKnowledgeSearchNotFoundDecision(transcript);
+        }
 
         return ChitchatStateMachine.BuildChatErrorResponseDecision(
             BuildGenericReply(catalog, transcript, lowered),
             transcript);
     }
 
-    private async Task<JiboInteractionDecision?> TryBuildWikipediaLookupDecisionAsync(
+    private async Task<WikipediaSummaryResult?> TryLookupWikipediaAsync(
         string transcript,
         CancellationToken cancellationToken)
     {
@@ -43,10 +55,9 @@ public sealed partial class JiboInteractionService
             string.IsNullOrWhiteSpace(subject))
             return null;
 
-        string? summary;
         try
         {
-            summary = await wikipediaSummaryProvider.GetSummaryAsync(subject, cancellationToken);
+            return await wikipediaSummaryProvider.GetSummaryAsync(subject, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -54,13 +65,8 @@ public sealed partial class JiboInteractionService
         }
         catch
         {
-            return null;
+            return WikipediaSummaryResult.Unavailable();
         }
-
-        if (string.IsNullOrWhiteSpace(summary)) return null;
-
-        return ChitchatStateMachine.BuildKnowledgeSearchResponseDecision(
-            KnowledgeSearchSpokenReplyFormatter.FormatReply(summary, SearchBackendKind.Wikipedia));
     }
 
     private async Task<JiboInteractionDecision?> TryBuildKnowledgeSearchDecisionAsync(

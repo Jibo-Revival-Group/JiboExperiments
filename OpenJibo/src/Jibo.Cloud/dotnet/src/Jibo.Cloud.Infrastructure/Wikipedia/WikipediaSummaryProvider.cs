@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
@@ -16,63 +17,77 @@ public sealed class WikipediaSummaryProvider(
     private readonly ConcurrentDictionary<string, CacheEntry> _cache =
         new(StringComparer.OrdinalIgnoreCase);
 
-    public async Task<string?> GetSummaryAsync(string subject, CancellationToken cancellationToken = default)
+    public async Task<WikipediaSummaryResult> GetSummaryAsync(
+        string subject,
+        CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(subject)) return null;
+        if (string.IsNullOrWhiteSpace(subject))
+            return WikipediaSummaryResult.NotFound();
 
         var cacheKey = NormalizeSubjectForCache(subject);
-        if (TryGetCachedValue(cacheKey, out var cachedSummary))
-            return cachedSummary;
+        if (TryGetCachedValue(cacheKey, out var cachedResult))
+            return cachedResult;
 
         try
         {
-            var matchedTitle = await FindMatchingTitleAsync(subject, cancellationToken);
-            if (string.IsNullOrWhiteSpace(matchedTitle))
+            var titleLookup = await FindMatchingTitleAsync(subject, cancellationToken);
+            if (titleLookup.Outcome == WikipediaSummaryOutcome.Unavailable)
             {
-                SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
-                return null;
+                SetCachedValue(cacheKey, WikipediaSummaryResult.Unavailable(), options.FailureCacheTtlSeconds);
+                return WikipediaSummaryResult.Unavailable();
             }
 
-            var summary = await FetchSummaryAsync(matchedTitle, subject, cancellationToken);
-            if (string.IsNullOrWhiteSpace(summary))
+            if (string.IsNullOrWhiteSpace(titleLookup.Title))
             {
-                SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
-                return null;
+                var notFound = WikipediaSummaryResult.NotFound();
+                SetCachedValue(cacheKey, notFound, options.FailureCacheTtlSeconds);
+                return notFound;
             }
 
-            SetCachedValue(cacheKey, summary, options.SuccessCacheTtlSeconds);
-            return summary;
+            var summaryLookup = await FetchSummaryAsync(titleLookup.Title, subject, cancellationToken);
+            SetCachedValue(
+                cacheKey,
+                summaryLookup,
+                summaryLookup.Outcome == WikipediaSummaryOutcome.Found
+                    ? options.SuccessCacheTtlSeconds
+                    : options.FailureCacheTtlSeconds);
+            return summaryLookup;
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(exception, "Wikipedia summary lookup failed for subject {Subject}.", subject);
-            SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
-            return null;
+            var unavailable = WikipediaSummaryResult.Unavailable();
+            SetCachedValue(cacheKey, unavailable, options.FailureCacheTtlSeconds);
+            return unavailable;
         }
     }
 
-    private async Task<string?> FindMatchingTitleAsync(string subject, CancellationToken cancellationToken)
+    private async Task<TitleLookupResult> FindMatchingTitleAsync(string subject, CancellationToken cancellationToken)
     {
         var requestUri = BuildOpenSearchUri(subject);
         using var request = CreateRequest(requestUri);
         using var response = await httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
+            if (IsNotFoundStatus(response.StatusCode))
+                return TitleLookupResult.NotFound();
+
             logger.LogWarning(
                 "Wikipedia OpenSearch failed for subject {Subject}. StatusCode={StatusCode}",
                 subject,
                 (int)response.StatusCode);
-            return null;
+            return TitleLookupResult.Unavailable();
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         if (document.RootElement.ValueKind != JsonValueKind.Array ||
             document.RootElement.GetArrayLength() < 2)
-            return null;
+            return TitleLookupResult.NotFound();
 
         var titlesElement = document.RootElement[1];
-        if (titlesElement.ValueKind != JsonValueKind.Array) return null;
+        if (titlesElement.ValueKind != JsonValueKind.Array)
+            return TitleLookupResult.NotFound();
 
         foreach (var titleElement in titlesElement.EnumerateArray())
         {
@@ -81,13 +96,13 @@ public sealed class WikipediaSummaryProvider(
             var title = titleElement.GetString();
             if (string.IsNullOrWhiteSpace(title)) continue;
             if (WikipediaTitleSimilarity.IsCloseMatch(subject, title))
-                return title;
+                return TitleLookupResult.Found(title);
         }
 
-        return null;
+        return TitleLookupResult.NotFound();
     }
 
-    private async Task<string?> FetchSummaryAsync(
+    private async Task<WikipediaSummaryResult> FetchSummaryAsync(
         string title,
         string subject,
         CancellationToken cancellationToken)
@@ -97,11 +112,15 @@ public sealed class WikipediaSummaryProvider(
         using var response = await httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
+            // REST summary returns 404 when Wikipedia is up but the page/title does not exist.
+            if (IsNotFoundStatus(response.StatusCode))
+                return WikipediaSummaryResult.NotFound();
+
             logger.LogWarning(
                 "Wikipedia summary request failed for title {Title}. StatusCode={StatusCode}",
                 title,
                 (int)response.StatusCode);
-            return null;
+            return WikipediaSummaryResult.Unavailable();
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -111,17 +130,18 @@ public sealed class WikipediaSummaryProvider(
         var pageType = ReadString(root, "type");
         if (string.Equals(pageType, "disambiguation", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(pageType, "redirect", StringComparison.OrdinalIgnoreCase))
-            return null;
+            return WikipediaSummaryResult.NotFound();
 
         var returnedTitle = ReadString(root, "title");
         if (string.IsNullOrWhiteSpace(returnedTitle) ||
             !WikipediaTitleSimilarity.IsCloseMatch(subject, returnedTitle))
-            return null;
+            return WikipediaSummaryResult.NotFound();
 
         var extract = ReadString(root, "extract");
-        if (string.IsNullOrWhiteSpace(extract)) return null;
+        if (string.IsNullOrWhiteSpace(extract))
+            return WikipediaSummaryResult.NotFound();
 
-        return CollapseWhitespace(extract);
+        return WikipediaSummaryResult.Found(CollapseWhitespace(extract));
     }
 
     private Uri BuildOpenSearchUri(string subject)
@@ -163,6 +183,9 @@ public sealed class WikipediaSummaryProvider(
         return $"OpenJibo/{OpenJiboCloudBuildInfo.Version} (jiborevived.com)";
     }
 
+    private static bool IsNotFoundStatus(HttpStatusCode statusCode) =>
+        statusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone;
+
     private static string? ReadString(JsonElement element, string propertyName)
     {
         if (!element.TryGetProperty(propertyName, out var property) ||
@@ -181,9 +204,9 @@ public sealed class WikipediaSummaryProvider(
 
     private static string NormalizeSubjectForCache(string subject) => subject.Trim().ToLowerInvariant();
 
-    private bool TryGetCachedValue(string cacheKey, out string? summary)
+    private bool TryGetCachedValue(string cacheKey, out WikipediaSummaryResult result)
     {
-        summary = null;
+        result = WikipediaSummaryResult.NotFound();
         if (!_cache.TryGetValue(cacheKey, out var entry))
             return false;
 
@@ -193,15 +216,27 @@ public sealed class WikipediaSummaryProvider(
             return false;
         }
 
-        summary = entry.Summary;
+        result = entry.Result;
         return true;
     }
 
-    private void SetCachedValue(string cacheKey, string? summary, int ttlSeconds)
+    private void SetCachedValue(string cacheKey, WikipediaSummaryResult result, int ttlSeconds)
     {
         var ttl = Math.Max(ttlSeconds, 1);
-        _cache[cacheKey] = new CacheEntry(summary, DateTimeOffset.UtcNow.AddSeconds(ttl));
+        _cache[cacheKey] = new CacheEntry(result, DateTimeOffset.UtcNow.AddSeconds(ttl));
     }
 
-    private sealed record CacheEntry(string? Summary, DateTimeOffset ExpiresUtc);
+    private sealed record CacheEntry(WikipediaSummaryResult Result, DateTimeOffset ExpiresUtc);
+
+    private sealed record TitleLookupResult(string? Title, WikipediaSummaryOutcome Outcome)
+    {
+        public static TitleLookupResult Found(string title) =>
+            new(title, WikipediaSummaryOutcome.Found);
+
+        public static TitleLookupResult NotFound() =>
+            new(null, WikipediaSummaryOutcome.NotFound);
+
+        public static TitleLookupResult Unavailable() =>
+            new(null, WikipediaSummaryOutcome.Unavailable);
+    }
 }

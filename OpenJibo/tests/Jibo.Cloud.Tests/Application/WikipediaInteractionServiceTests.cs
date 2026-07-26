@@ -37,7 +37,8 @@ public sealed class WikipediaInteractionServiceTests
                 "The 20th president of the United States was James Garfield.",
                 SearchBackendKind.Wolfram));
         var service = CreateService(
-            wikipediaSummaryProvider: new StubWikipediaSummaryProvider(null),
+            wikipediaSummaryProvider: new StubWikipediaSummaryProvider(
+                WikipediaSummaryResult.NotFound()),
             knowledgeSearchService: knowledgeSearch);
 
         var decision = await service.BuildDecisionAsync(new TurnContext
@@ -58,7 +59,8 @@ public sealed class WikipediaInteractionServiceTests
         var knowledgeSearch = new CapturingKnowledgeSearchService(
             new KnowledgeSearchResult("Jibo was a social home robot.", SearchBackendKind.ChatGPT));
         var service = CreateService(
-            wikipediaSummaryProvider: new StubWikipediaSummaryProvider(null),
+            wikipediaSummaryProvider: new StubWikipediaSummaryProvider(
+                WikipediaSummaryResult.NotFound()),
             knowledgeSearchService: knowledgeSearch);
 
         var decision = await service.BuildDecisionAsync(new TurnContext
@@ -95,7 +97,8 @@ public sealed class WikipediaInteractionServiceTests
     public async Task BuildDecisionAsync_WhoIsQuery_WithoutSearchConfigured_SaysCantFindAnything()
     {
         var service = CreateService(
-            wikipediaSummaryProvider: new StubWikipediaSummaryProvider(null));
+            wikipediaSummaryProvider: new StubWikipediaSummaryProvider(
+                WikipediaSummaryResult.NotFound()));
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -105,6 +108,25 @@ public sealed class WikipediaInteractionServiceTests
 
         Assert.Equal("knowledge_search_not_found", decision.IntentName);
         Assert.Equal("I can't find anything.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_WhoIsQuery_WikipediaUnavailableWithoutSearch_SaysSourcesAreDown()
+    {
+        var service = CreateService(
+            wikipediaSummaryProvider: new StubWikipediaSummaryProvider(
+                WikipediaSummaryResult.Unavailable()));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Who is James Garfield",
+            NormalizedTranscript = "Who is James Garfield"
+        });
+
+        Assert.Equal("knowledge_search_unavailable", decision.IntentName);
+        Assert.Equal(
+            "Huh, it seems like my info sources are down. Try asking me again a little later.",
+            decision.ReplyText);
     }
 
     private static JiboInteractionService CreateService(
@@ -119,11 +141,25 @@ public sealed class WikipediaInteractionServiceTests
             knowledgeSearchService: knowledgeSearchService);
     }
 
-    private sealed class StubWikipediaSummaryProvider(string? summary) : IWikipediaSummaryProvider
+    private sealed class StubWikipediaSummaryProvider : IWikipediaSummaryProvider
     {
-        public Task<string?> GetSummaryAsync(string subject, CancellationToken cancellationToken = default)
+        private readonly WikipediaSummaryResult _result;
+
+        public StubWikipediaSummaryProvider(string summary)
+            : this(WikipediaSummaryResult.Found(summary))
         {
-            return Task.FromResult(summary);
+        }
+
+        public StubWikipediaSummaryProvider(WikipediaSummaryResult result)
+        {
+            _result = result;
+        }
+
+        public Task<WikipediaSummaryResult> GetSummaryAsync(
+            string subject,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_result);
         }
     }
 

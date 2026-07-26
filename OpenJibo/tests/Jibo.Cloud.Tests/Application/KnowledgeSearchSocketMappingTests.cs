@@ -21,7 +21,7 @@ public sealed class KnowledgeSearchSocketMappingTests
                 new SpeakAction
                 {
                     Sequence = 0,
-                    Text = "According to wikipedia. James Abram Garfield was the 20th president.",
+                    Text = "According to wikipedia dot org. James Abram Garfield was the 20th president.",
                     Voice = "griffin"
                 },
                 new InvokeNativeSkillAction
@@ -75,7 +75,7 @@ public sealed class KnowledgeSearchSocketMappingTests
             .GetString();
 
         Assert.DoesNotContain("Thinking_Eye_Loop_01", esml, StringComparison.Ordinal);
-        Assert.Contains("According to wikipedia.", esml, StringComparison.Ordinal);
+        Assert.Contains("According to wikipedia dot org.", esml, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class KnowledgeSearchSocketMappingTests
                 new SpeakAction
                 {
                     Sequence = 0,
-                    Text = "According to wikipedia. James Abram Garfield was the 20th president.",
+                    Text = "According to wikipedia dot org. James Abram Garfield was the 20th president.",
                     Voice = "griffin"
                 },
                 new InvokeNativeSkillAction

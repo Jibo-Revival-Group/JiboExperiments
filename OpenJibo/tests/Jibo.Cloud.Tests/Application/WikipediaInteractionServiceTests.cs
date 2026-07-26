@@ -158,16 +158,14 @@ public sealed class WikipediaInteractionServiceTests
 
     private static JiboInteractionService CreateService(
         IWikipediaSummaryProvider? wikipediaSummaryProvider = null,
-        IKnowledgeSearchService? knowledgeSearchService = null,
-        ITurnProgressPublisher? turnProgressPublisher = null)
+        IKnowledgeSearchService? knowledgeSearchService = null)
     {
         return new JiboInteractionService(
             new JiboExperienceContentCache(new InMemoryJiboExperienceContentRepository()),
             new FirstItemRandomizer(),
             new InMemoryPersonalMemoryStore(),
             wikipediaSummaryProvider: wikipediaSummaryProvider,
-            knowledgeSearchService: knowledgeSearchService,
-            turnProgressPublisher: turnProgressPublisher);
+            knowledgeSearchService: knowledgeSearchService);
     }
 
     private sealed class StubWikipediaSummaryProvider : IWikipediaSummaryProvider

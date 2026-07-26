@@ -359,6 +359,8 @@ internal static class ChitchatStateMachine
         return new JiboInteractionDecision(
             "knowledge_search",
             replyText,
+            SkillName: "chitchat-skill",
+            SkillPayload: BuildKnowledgeSearchSkillPayload(),
             ContextUpdates: BuildContextUpdates(
                 KnowledgeSearchRoute,
                 null));
@@ -369,6 +371,8 @@ internal static class ChitchatStateMachine
         return new JiboInteractionDecision(
             "knowledge_search_not_found",
             KnowledgeSearchSpokenReplyFormatter.FormatNotFoundReply(),
+            SkillName: "chitchat-skill",
+            SkillPayload: BuildKnowledgeSearchSkillPayload(),
             ContextUpdates: BuildContextUpdates(
                 KnowledgeSearchRoute,
                 null,
@@ -380,10 +384,19 @@ internal static class ChitchatStateMachine
         return new JiboInteractionDecision(
             "knowledge_search_unavailable",
             KnowledgeSearchSpokenReplyFormatter.FormatUnavailableReply(),
+            SkillName: "chitchat-skill",
+            SkillPayload: BuildKnowledgeSearchSkillPayload(),
             ContextUpdates: BuildContextUpdates(
                 KnowledgeSearchRoute,
                 null));
     }
+
+    private static IDictionary<string, object?> BuildKnowledgeSearchSkillPayload() =>
+        new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Triggers Nimbus ProcessCloud Thinking_Eye_Loop_01 while awaiting SKILL_ACTION.
+            ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerCloudSkill
+        };
 
     public static bool IsLikelyEmotionUtterance(string transcript)
     {

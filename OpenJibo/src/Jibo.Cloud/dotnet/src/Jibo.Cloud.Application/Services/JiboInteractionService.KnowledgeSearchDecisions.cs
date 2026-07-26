@@ -26,7 +26,7 @@ public sealed partial class JiboInteractionService
             (knowledgeSearchService?.IsConfigured == true);
 
         if (willSearch)
-            await EnsureSearchThinkingStartedAsync(cancellationToken);
+            await EnsureSearchThinkingPreludeAsync(cancellationToken);
 
         var wikipediaLookup = await TryLookupWikipediaAsync(transcript, cancellationToken);
         if (IsWikipediaFound(wikipediaLookup))
@@ -38,7 +38,6 @@ public sealed partial class JiboInteractionService
 
         if (isWhoWhatLookup)
         {
-            // Other backends missed or failed — double-check Wikipedia once more before giving up.
             var wikipediaRecheck = await TryLookupWikipediaAsync(
                 transcript,
                 cancellationToken,
@@ -62,16 +61,14 @@ public sealed partial class JiboInteractionService
             transcript);
     }
 
-    private async Task EnsureSearchThinkingStartedAsync(CancellationToken cancellationToken)
+    private async Task EnsureSearchThinkingPreludeAsync(CancellationToken cancellationToken)
     {
         if (turnProgressPublisher is null) return;
 
-        await turnProgressPublisher.PublishSearchThinkingAsync(cancellationToken);
-
-        // Give the robot time to begin the thinking anim before HTTP work starts.
-        // We cannot await CMD_RESULT while the receive loop is blocked in HandleMessageAsync.
-        if (SearchThinkingSkillActionFactory.AnimStartGrace > TimeSpan.Zero)
-            await Task.Delay(SearchThinkingSkillActionFactory.AnimStartGrace, cancellationToken);
+        // Flush LISTEN+EOS with cloudSkill=answer so Nimbus starts Thinking_Eye_Loop_01,
+        // then begin HTTP search. Never send an interim SKILL_ACTION — the robot registry
+        // resolves only once per transID.
+        await turnProgressPublisher.PublishSearchThinkingPreludeAsync(cancellationToken);
     }
 
     private async Task<WikipediaSummaryResult?> TryLookupWikipediaAsync(

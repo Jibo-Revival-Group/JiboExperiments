@@ -4,19 +4,11 @@ using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
-public static class SearchThinkingSkillActionFactory
+public static class SearchThinkingPreludeFactory
 {
     public const string PreludeMetadataKey = "searchThinkingPreludeTransId";
-
-    public const string ThinkingAnimationEsml =
-        "<speak><anim name='Thinking_Eye_Loop_01' nonBlocking='true'/></speak>";
-
-    /// <summary>
-    /// Brief pause after flushing the thinking action so the robot can begin playback
-    /// before HTTP search starts. We cannot await CMD_RESULT (receive loop is blocked).
-    /// Tests may set this to <see cref="TimeSpan.Zero"/>.
-    /// </summary>
-    public static TimeSpan AnimStartGrace { get; set; } = TimeSpan.FromMilliseconds(350);
+    public const string NimbusSkillId = "@be/nimbus";
+    public const string AnswerCloudSkill = "answer";
 
     public static IReadOnlyList<WebSocketReply> CreateListenAndEos(
         string transId,
@@ -47,6 +39,11 @@ public static class SearchThinkingSkillActionFactory
                     intent = "knowledge_search",
                     rule = rules.FirstOrDefault() ?? string.Empty,
                     score = 0.95,
+                    // Stock Nimbus ProcessCloud plays Thinking_Eye_Loop_01 while awaiting
+                    // the single cloudSkillResponse when cloudSkill is answer/news.
+                    skillID = NimbusSkillId,
+                    onRobot = false,
+                    cloudSkill = AnswerCloudSkill,
                     skipSurprises = true
                 }
             }
@@ -66,53 +63,6 @@ public static class SearchThinkingSkillActionFactory
             new WebSocketReply { Text = JsonSerializer.Serialize(listenMessage) },
             new WebSocketReply { Text = JsonSerializer.Serialize(eosMessage) }
         ];
-    }
-
-    public static string CreateThinkingJson(string transId)
-    {
-        var payload = new
-        {
-            type = "SKILL_ACTION",
-            ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            msgID = CloudMessageIdFactory.CreateHubMessageId(),
-            transID = transId,
-            data = new
-            {
-                skill = new
-                {
-                    id = "chitchat-skill"
-                },
-                action = new
-                {
-                    config = new
-                    {
-                        jcp = new
-                        {
-                            type = "SLIM",
-                            config = new
-                            {
-                                play = new
-                                {
-                                    esml = ThinkingAnimationEsml,
-                                    meta = new
-                                    {
-                                        prompt_id = "RUNTIME_PROMPT",
-                                        prompt_sub_category = "AN",
-                                        mim_id = "runtime-search-thinking",
-                                        mim_type = "announcement"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                analytics = new Dictionary<string, object?>(),
-                final = false,
-                fireAndForget = true
-            }
-        };
-
-        return JsonSerializer.Serialize(payload);
     }
 
     public static IReadOnlyList<string> ResolveRules(TurnContext? turn)

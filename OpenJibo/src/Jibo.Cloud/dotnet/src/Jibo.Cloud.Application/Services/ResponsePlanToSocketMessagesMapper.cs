@@ -163,6 +163,14 @@ public sealed class ResponsePlanToSocketMessagesMapper
             isReportSkillLaunch,
             reportDate,
             reportWeatherCondition);
+        var isKnowledgeSearchIntent =
+            string.Equals(plan.IntentName, "knowledge_search", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(plan.IntentName, "knowledge_search_not_found", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(plan.IntentName, "knowledge_search_unavailable", StringComparison.OrdinalIgnoreCase);
+        var isAnswerCloudSkill = string.Equals(
+            cloudSkill,
+            SearchThinkingPreludeFactory.AnswerCloudSkill,
+            StringComparison.OrdinalIgnoreCase);
         var listenMessage = new
         {
             type = "LISTEN",
@@ -196,20 +204,32 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     // Sleep is consumed by the robot-local circadian manager. This must be in
                     // the initial LISTEN match: a later SKILL_REDIRECT loses to Nimbus once the
                     // global-command dispatcher has selected its default cloud-skill launch.
-                    skillID = isSleepCommand ? "@be/idle" : isWakeUpCommand ? "@be/greetings" : null,
-                    onRobot = isSleepCommand || isWakeUpCommand ? true : (bool?)null,
-                    cloudSkill,
+                    skillID = isSleepCommand
+                        ? "@be/idle"
+                        : isWakeUpCommand
+                            ? "@be/greetings"
+                            : isKnowledgeSearchIntent || isAnswerCloudSkill
+                                ? SearchThinkingPreludeFactory.NimbusSkillId
+                                : null,
+                    onRobot = isSleepCommand || isWakeUpCommand
+                        ? true
+                        : isKnowledgeSearchIntent || isAnswerCloudSkill
+                            ? false
+                            : (bool?)null,
+                    cloudSkill = isKnowledgeSearchIntent && string.IsNullOrWhiteSpace(cloudSkill)
+                        ? SearchThinkingPreludeFactory.AnswerCloudSkill
+                        : cloudSkill,
                     skipSurprises = true
                 }
             }
         };
 
         var skipListenAndEos = session.Metadata.TryGetValue(
-                                    SearchThinkingSkillActionFactory.PreludeMetadataKey,
+                                    SearchThinkingPreludeFactory.PreludeMetadataKey,
                                     out var preludeTransId) &&
                                 string.Equals(preludeTransId?.ToString(), transId, StringComparison.Ordinal);
         if (skipListenAndEos)
-            session.Metadata.Remove(SearchThinkingSkillActionFactory.PreludeMetadataKey);
+            session.Metadata.Remove(SearchThinkingPreludeFactory.PreludeMetadataKey);
 
         var messages = new List<SocketReplyPlan>();
         if (!skipListenAndEos)
@@ -355,7 +375,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
         if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
-                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill, skipListenAndEos)),
+                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill)),
                 75));
 
         return messages;
@@ -680,12 +700,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
         return WordOfDayGuessResolver.Resolve(transcript, hints, nluGuess);
     }
 
-    private static object BuildSkillPayload(
-        ResponsePlan plan,
-        string transId,
-        SpeakAction speak,
-        InvokeNativeSkillAction? skill,
-        bool thinkingAlreadyPlayed = false)
+    private static object BuildSkillPayload(ResponsePlan plan, string transId, SpeakAction speak,
+        InvokeNativeSkillAction? skill)
     {
         var skillPayload = skill?.Payload;
         if (skillPayload is null && IsHouseholdListFollowUpIntent(plan.IntentName ?? string.Empty))
@@ -700,22 +716,17 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var isJoke = string.Equals(plan.IntentName, "joke", StringComparison.OrdinalIgnoreCase) ||
                      string.Equals(skill?.SkillName, "@be/joke", StringComparison.OrdinalIgnoreCase);
         var isDance = string.Equals(plan.IntentName, "dance", StringComparison.OrdinalIgnoreCase);
-        var isKnowledgeSearch =
-            string.Equals(plan.IntentName, "knowledge_search", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(plan.IntentName, "knowledge_search_not_found", StringComparison.OrdinalIgnoreCase);
         var payloadSkill = ReadPayloadString(skillPayload, "skillId");
         var skillId = string.IsNullOrWhiteSpace(payloadSkill)
             ? isJoke ? "@be/joke" : skill?.SkillName ?? "chitchat-skill"
             : payloadSkill;
-        // When thinking already played mid-turn, speak the answer only (no second thinking anim).
-        var includeSearchThinkingAnim = isKnowledgeSearch && !thinkingAlreadyPlayed;
+        // Knowledge search thinking is owned by Nimbus (cloudSkill=answer) while awaiting this
+        // single SKILL_ACTION. Do not embed Thinking_Eye in the speak ESML.
         var esml = ReadPayloadString(skillPayload, "esml") ?? (isDance
             ? "<speak>Okay.<break size='0.2'/> Watch this.<anim cat='dance' filter='music, rom-upbeat' /></speak>"
             : isJoke
                 ? $"<speak><es cat='happy' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>"
-                : includeSearchThinkingAnim
-                    ? $"<speak><anim name='Thinking_Eye_Loop_01'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>"
-                    : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>");
+                : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>");
         var mimId = ReadPayloadString(skillPayload, "mim_id") ?? (isJoke ? "runtime-joke" : "runtime-chat");
         var mimType = ReadPayloadString(skillPayload, "mim_type") ?? "announcement";
         var promptId = ReadPayloadString(skillPayload, "prompt_id") ?? "RUNTIME_PROMPT";

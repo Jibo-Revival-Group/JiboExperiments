@@ -35,7 +35,7 @@ public sealed class AmbientTurnProgressPublisher(ILogger<AmbientTurnProgressPubl
         return scope.SendAsync(reply, cancellationToken);
     }
 
-    public async Task PublishSearchThinkingAsync(CancellationToken cancellationToken = default)
+    public async Task PublishSearchThinkingPreludeAsync(CancellationToken cancellationToken = default)
     {
         var scope = Current.Value;
         if (scope is null) return;
@@ -43,36 +43,26 @@ public sealed class AmbientTurnProgressPublisher(ILogger<AmbientTurnProgressPubl
         try
         {
             var transId = scope.ResolveTransId();
-            if (string.IsNullOrWhiteSpace(transId)) return;
-
-            if (scope.Session is null)
+            if (string.IsNullOrWhiteSpace(transId) || scope.Session is null)
                 return;
 
             var alreadySentPrelude = string.Equals(
                 scope.Session.Metadata.TryGetValue(
-                    SearchThinkingSkillActionFactory.PreludeMetadataKey,
+                    SearchThinkingPreludeFactory.PreludeMetadataKey,
                     out var existing)
                     ? existing?.ToString()
                     : null,
                 transId,
                 StringComparison.Ordinal);
+            if (alreadySentPrelude)
+                return;
 
-            if (!alreadySentPrelude)
-            {
-                var transcript = scope.ResolveTranscript();
-                var rules = SearchThinkingSkillActionFactory.ResolveRules(scope.Turn);
-                foreach (var reply in SearchThinkingSkillActionFactory.CreateListenAndEos(
-                             transId,
-                             transcript,
-                             rules))
-                    await scope.SendAsync(reply, cancellationToken);
+            var transcript = scope.ResolveTranscript();
+            var rules = SearchThinkingPreludeFactory.ResolveRules(scope.Turn);
+            foreach (var reply in SearchThinkingPreludeFactory.CreateListenAndEos(transId, transcript, rules))
+                await scope.SendAsync(reply, cancellationToken);
 
-                scope.Session.Metadata[SearchThinkingSkillActionFactory.PreludeMetadataKey] = transId;
-            }
-
-            await scope.SendAsync(
-                new WebSocketReply { Text = SearchThinkingSkillActionFactory.CreateThinkingJson(transId) },
-                cancellationToken);
+            scope.Session.Metadata[SearchThinkingPreludeFactory.PreludeMetadataKey] = transId;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -80,7 +70,7 @@ public sealed class AmbientTurnProgressPublisher(ILogger<AmbientTurnProgressPubl
         }
         catch (Exception exception)
         {
-            _logger.LogDebug(exception, "Failed to publish search thinking progress.");
+            _logger.LogDebug(exception, "Failed to publish search thinking prelude.");
         }
     }
 

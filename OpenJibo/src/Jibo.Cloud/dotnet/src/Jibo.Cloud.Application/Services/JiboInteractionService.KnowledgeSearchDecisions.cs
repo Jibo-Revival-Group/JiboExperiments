@@ -40,8 +40,6 @@ public sealed partial class JiboInteractionService
             string.IsNullOrWhiteSpace(subject))
             return null;
 
-        await PublishSearchThinkingAsync(cancellationToken);
-
         string? summary;
         try
         {
@@ -72,8 +70,6 @@ public sealed partial class JiboInteractionService
         var query = NormalizeCommandPhrase(transcript).Trim();
         if (string.IsNullOrWhiteSpace(query)) return null;
 
-        await PublishSearchThinkingAsync(cancellationToken);
-
         KnowledgeSearchResult? result;
         try
         {
@@ -92,11 +88,5 @@ public sealed partial class JiboInteractionService
 
         return ChitchatStateMachine.BuildKnowledgeSearchResponseDecision(
             KnowledgeSearchSpokenReplyFormatter.FormatReply(result.AnswerText, result.BackendKind));
-    }
-
-    private Task PublishSearchThinkingAsync(CancellationToken cancellationToken)
-    {
-        if (turnProgressPublisher is null) return Task.CompletedTask;
-        return turnProgressPublisher.PublishSearchThinkingAsync(cancellationToken);
     }
 }

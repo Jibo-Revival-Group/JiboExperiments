@@ -204,26 +204,18 @@ public sealed class ResponsePlanToSocketMessagesMapper
             }
         };
 
-        var skipListenAndEos = session.Metadata.TryGetValue(
-                                    SearchThinkingSkillActionFactory.PreludeMetadataKey,
-                                    out var preludeTransId) &&
-                                string.Equals(preludeTransId?.ToString(), transId, StringComparison.Ordinal);
-        if (skipListenAndEos)
-            session.Metadata.Remove(SearchThinkingSkillActionFactory.PreludeMetadataKey);
-
-        var messages = new List<SocketReplyPlan>();
-        if (!skipListenAndEos)
+        var messages = new List<SocketReplyPlan>
         {
-            messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(listenMessage)));
-            messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(new
+            new(JsonSerializer.Serialize(listenMessage)),
+            new(JsonSerializer.Serialize(new
             {
                 type = "EOS",
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 msgID = CloudMessageIdFactory.CreateHubMessageId(),
                 transID = transId,
                 data = new { }
-            })));
-        }
+            }))
+        };
 
         if (isWordOfDayLaunch)
         {
@@ -696,6 +688,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var isJoke = string.Equals(plan.IntentName, "joke", StringComparison.OrdinalIgnoreCase) ||
                      string.Equals(skill?.SkillName, "@be/joke", StringComparison.OrdinalIgnoreCase);
         var isDance = string.Equals(plan.IntentName, "dance", StringComparison.OrdinalIgnoreCase);
+        var isKnowledgeSearch =
+            string.Equals(plan.IntentName, "knowledge_search", StringComparison.OrdinalIgnoreCase);
         var payloadSkill = ReadPayloadString(skillPayload, "skillId");
         var skillId = string.IsNullOrWhiteSpace(payloadSkill)
             ? isJoke ? "@be/joke" : skill?.SkillName ?? "chitchat-skill"
@@ -704,7 +698,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ? "<speak>Okay.<break size='0.2'/> Watch this.<anim cat='dance' filter='music, rom-upbeat' /></speak>"
             : isJoke
                 ? $"<speak><es cat='happy' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>"
-                : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>");
+                : isKnowledgeSearch
+                    ? $"<speak><anim name='Thinking_Eye_Loop_01' nonBlocking='true'/><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>"
+                    : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>");
         var mimId = ReadPayloadString(skillPayload, "mim_id") ?? (isJoke ? "runtime-joke" : "runtime-chat");
         var mimType = ReadPayloadString(skillPayload, "mim_type") ?? "announcement";
         var promptId = ReadPayloadString(skillPayload, "prompt_id") ?? "RUNTIME_PROMPT";

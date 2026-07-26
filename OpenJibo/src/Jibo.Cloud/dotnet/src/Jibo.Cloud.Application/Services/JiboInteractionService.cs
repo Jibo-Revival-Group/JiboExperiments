@@ -18,7 +18,6 @@ public sealed partial class JiboInteractionService(
     IHolidayCountdownCatalog? holidayCountdownCatalog = null,
     IMeasurementConversionCatalog? measurementConversionCatalog = null,
     IKnowledgeSearchService? knowledgeSearchService = null,
-    ITurnProgressPublisher? turnProgressPublisher = null,
     ICloudStateStore? cloudStateStore = null,
     IUserIntegrationStore? userIntegrationStore = null,
     JiboVerificationService? jiboVerificationService = null,

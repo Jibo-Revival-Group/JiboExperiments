@@ -45,17 +45,11 @@ public sealed partial class JiboInteractionService
 
     private static DateTimeOffset? TryResolveReferenceLocalTime(TurnContext turn)
     {
-        if (!turn.Attributes.TryGetValue("context", out var value) || value is null) return null;
+        if (!TryGetContextRuntime(turn, out var runtime)) return null;
 
         try
         {
-            var contextJson = value.ToString();
-            if (string.IsNullOrWhiteSpace(contextJson)) return null;
-
-            using var document = JsonDocument.Parse(contextJson);
-            if (!document.RootElement.TryGetProperty("runtime", out var runtime) ||
-                runtime.ValueKind != JsonValueKind.Object ||
-                !runtime.TryGetProperty("location", out var location) ||
+            if (!runtime.TryGetProperty("location", out var location) ||
                 location.ValueKind != JsonValueKind.Object ||
                 !location.TryGetProperty("iso", out var iso) ||
                 iso.ValueKind != JsonValueKind.String)
@@ -70,6 +64,85 @@ public sealed partial class JiboInteractionService
         {
             return null;
         }
+    }
+
+    private static DateOnly ResolveRobotBirthdate(TurnContext turn)
+    {
+        return TryResolveRobotBirthdate(turn) ?? OpenJiboCloudBuildInfo.PersonaBirthday;
+    }
+
+    private static DateOnly? TryResolveRobotBirthdate(TurnContext turn)
+    {
+        if (!TryGetContextRuntime(turn, out var runtime)) return null;
+
+        try
+        {
+            if (!runtime.TryGetProperty("loop", out var loop) ||
+                loop.ValueKind != JsonValueKind.Object ||
+                !loop.TryGetProperty("jibo", out var jibo) ||
+                jibo.ValueKind != JsonValueKind.Object ||
+                !jibo.TryGetProperty("birthdate", out var birthdateElement))
+                return null;
+
+            long? epochMs = birthdateElement.ValueKind switch
+            {
+                JsonValueKind.Number when birthdateElement.TryGetInt64(out var number) => number,
+                JsonValueKind.String when long.TryParse(
+                    birthdateElement.GetString(),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var parsed) => parsed,
+                _ => null
+            };
+
+            if (epochMs is null || epochMs.Value <= 0) return null;
+
+            var utc = DateTimeOffset.FromUnixTimeMilliseconds(epochMs.Value);
+            return DateOnly.FromDateTime(utc.UtcDateTime);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static bool TryGetContextRuntime(TurnContext turn, out JsonElement runtime)
+    {
+        runtime = default;
+        if (!turn.Attributes.TryGetValue("context", out var value) || value is null) return false;
+
+        try
+        {
+            var contextJson = value.ToString();
+            if (string.IsNullOrWhiteSpace(contextJson)) return false;
+
+            using var document = JsonDocument.Parse(contextJson);
+            var root = document.RootElement;
+            var data = root.TryGetProperty("data", out var nestedData) && nestedData.ValueKind == JsonValueKind.Object
+                ? nestedData
+                : root;
+
+            if (!data.TryGetProperty("runtime", out var runtimeElement) ||
+                runtimeElement.ValueKind != JsonValueKind.Object)
+                return false;
+
+            runtime = runtimeElement.Clone();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsRobotBirthday(DateOnly referenceDate, DateOnly birthday)
+    {
+        return referenceDate.Month == birthday.Month && referenceDate.Day == birthday.Day;
+    }
+
+    private static string FormatBirthdateWords(DateOnly birthday)
+    {
+        return birthday.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture);
     }
 
     private static string DescribePersonaAge(DateOnly referenceDate, DateOnly birthday)
@@ -90,6 +163,18 @@ public sealed partial class JiboInteractionService
         return months == 0
             ? $"{FormatAgeUnit(years, "year")} old"
             : $"{FormatAgeUnit(years, "year")} and {FormatAgeUnit(months, "month")} old";
+    }
+
+    private static int ComputeAgeYears(DateOnly referenceDate, DateOnly birthday)
+    {
+        if (referenceDate < birthday) return 0;
+
+        var years = referenceDate.Year - birthday.Year;
+        if (referenceDate.Month < birthday.Month ||
+            (referenceDate.Month == birthday.Month && referenceDate.Day < birthday.Day))
+            years -= 1;
+
+        return Math.Max(years, 0);
     }
 
     private static string FormatAgeUnit(int value, string singular)

@@ -26,28 +26,34 @@ public sealed partial class JiboInteractionService
     ];
 
     private JiboInteractionDecision BuildRobotAgeDecision(
+        TurnContext turn,
         JiboExperienceCatalog catalog,
         DateTimeOffset? referenceLocalTime,
         string intentName)
     {
-        var ageReplies = catalog.AgeReplies.Count == 0 ? DefaultAgeReplies : catalog.AgeReplies;
-        var selected = SelectLegacyReply(
-            ageReplies,
-            "first powered up",
-            "today is my birthday",
-            "just getting started",
-            "who's counting");
+        var birthdate = ResolveRobotBirthdate(turn);
+        var referenceMoment = referenceLocalTime ?? DateTimeOffset.UtcNow;
+        var referenceDate = DateOnly.FromDateTime(referenceMoment.Date);
+        var isBirthday = IsRobotBirthday(referenceDate, birthdate);
+        var ageYears = ComputeAgeYears(referenceDate, birthdate);
+        var ageDays = Math.Max(0, referenceDate.DayNumber - birthdate.DayNumber);
 
-        var reply = RenderAgeTemplate(selected, referenceLocalTime);
+        var ageReplies = catalog.AgeReplies.Count == 0 ? DefaultAgeReplies : catalog.AgeReplies;
+        var eligibleReplies = FilterAgeReplies(ageReplies, isBirthday, ageYears, ageDays);
+        var preferredSnippets = isBirthday
+            ? new[] { "today is my birthday", "today's my birthday", "first powered up", "less than one day" }
+            : new[] { "who's counting", "first powered up on", "at the moment", "for now" };
+        var selected = SelectLegacyReply(eligibleReplies, preferredSnippets);
+
+        var reply = RenderAgeTemplate(selected, referenceLocalTime, birthdate);
         if (!string.IsNullOrWhiteSpace(reply))
             return new JiboInteractionDecision(
                 intentName,
                 reply,
                 ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
 
-        var referenceDate = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).Date);
-        var ageDescription = DescribePersonaAge(referenceDate, OpenJiboCloudBuildInfo.PersonaBirthday);
-        reply = $"I count {OpenJiboCloudBuildInfo.PersonaBirthdayWords} as my birthday, so I am {ageDescription}.";
+        var ageDescription = DescribePersonaAge(referenceDate, birthdate);
+        reply = $"I count {FormatBirthdateWords(birthdate)} as my birthday, so I am {ageDescription}.";
 
         return new JiboInteractionDecision(
             intentName,
@@ -55,40 +61,83 @@ public sealed partial class JiboInteractionService
             ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
     }
 
-    private static JiboInteractionDecision BuildRobotBirthdayDecision()
+    private static IReadOnlyList<string> FilterAgeReplies(
+        IReadOnlyList<string> replies,
+        bool isBirthday,
+        int ageYears,
+        int ageDays)
     {
-        return new JiboInteractionDecision(
-            "robot_birthday",
-            $"My birthday is {OpenJiboCloudBuildInfo.PersonaBirthdayWords}.");
+        static bool IsBirthdayLine(string reply)
+        {
+            return reply.Contains("birthday", StringComparison.OrdinalIgnoreCase) ||
+                   reply.Contains("ago today", StringComparison.OrdinalIgnoreCase) ||
+                   reply.Contains("less than one day", StringComparison.OrdinalIgnoreCase) ||
+                   reply.Contains("not even one day", StringComparison.OrdinalIgnoreCase);
+        }
+
+        static bool IsFirstDayLine(string reply)
+        {
+            return reply.Contains("less than one day", StringComparison.OrdinalIgnoreCase) ||
+                   reply.Contains("not even one day", StringComparison.OrdinalIgnoreCase);
+        }
+
+        var filtered = replies
+            .Where(reply =>
+            {
+                var birthdayLine = IsBirthdayLine(reply);
+                if (isBirthday)
+                {
+                    if (!birthdayLine) return false;
+                    if (ageYears == 0 && ageDays <= 1) return IsFirstDayLine(reply);
+                    if (ageDays > 1) return !IsFirstDayLine(reply);
+                    return true;
+                }
+
+                return !birthdayLine;
+            })
+            .ToArray();
+
+        return filtered.Length > 0 ? filtered : replies.Where(reply => !IsBirthdayLine(reply)).ToArray();
     }
 
-    private static string RenderAgeTemplate(string template, DateTimeOffset? referenceLocalTime)
+    private static JiboInteractionDecision BuildRobotBirthdayDecision(TurnContext turn)
+    {
+        var birthdate = ResolveRobotBirthdate(turn);
+        return new JiboInteractionDecision(
+            "robot_birthday",
+            $"My birthday is {FormatBirthdateWords(birthdate)}.");
+    }
+
+    private static string RenderAgeTemplate(
+        string template,
+        DateTimeOffset? referenceLocalTime,
+        DateOnly birthdate)
     {
         if (string.IsNullOrWhiteSpace(template)) return string.Empty;
 
         var referenceMoment = referenceLocalTime ?? DateTimeOffset.UtcNow;
         var referenceDate = DateOnly.FromDateTime(referenceMoment.Date);
-        var ageDescription = DescribePersonaAge(referenceDate, OpenJiboCloudBuildInfo.PersonaBirthday);
-        var ageDays = Math.Max(0, referenceDate.DayNumber - OpenJiboCloudBuildInfo.PersonaBirthday.DayNumber);
-        var ageMinutes = Math.Max(0, (int)Math.Round((referenceMoment.UtcDateTime -
-                                                      new DateTimeOffset(
-                                                          DateTime.SpecifyKind(
-                                                              OpenJiboCloudBuildInfo.PersonaBirthday
-                                                                  .ToDateTime(TimeOnly.MinValue),
-                                                              DateTimeKind.Utc)))
-            .TotalMinutes));
-        var zodiacLabel = DescribeZodiacSign(OpenJiboCloudBuildInfo.PersonaBirthday);
+        var ageYears = ComputeAgeYears(referenceDate, birthdate);
+        var ageDays = Math.Max(0, referenceDate.DayNumber - birthdate.DayNumber);
+        var birthMoment = new DateTimeOffset(
+            DateTime.SpecifyKind(birthdate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc));
+        var ageMinutes = Math.Max(0, (int)Math.Round((referenceMoment.UtcDateTime - birthMoment.UtcDateTime).TotalMinutes));
+        var yearsSupplemented = FormatAgeUnit(ageYears, "year");
+        var daysSupplemented = FormatAgeUnit(ageDays, "day");
+        var minutesSupplemented = FormatAgeUnit(ageMinutes, "minute");
+        var zodiacLabel = DescribeZodiacSign(birthdate);
         if (zodiacLabel.StartsWith("I'm ", StringComparison.OrdinalIgnoreCase))
             zodiacLabel = zodiacLabel[4..];
 
         return template
-            .Replace("${jibo.age.minutes.supplemented}", FormatAgeUnit(ageMinutes, "minute") + " old",
-                StringComparison.Ordinal)
-            .Replace("${jibo.age.days.supplemented}", ageDescription, StringComparison.Ordinal)
-            .Replace("${jibo.birthdate}", OpenJiboCloudBuildInfo.PersonaBirthdayWords, StringComparison.Ordinal)
+            .Replace("${jibo.age.minutes.supplemented}", minutesSupplemented, StringComparison.Ordinal)
+            .Replace("${jibo.age.days.supplemented}", daysSupplemented, StringComparison.Ordinal)
+            .Replace("${jibo.age.years.supplemented}", yearsSupplemented, StringComparison.Ordinal)
+            .Replace("${jibo.age.supplemented}", yearsSupplemented, StringComparison.Ordinal)
+            .Replace("${jibo.birthdate}", FormatBirthdateWords(birthdate), StringComparison.Ordinal)
             .Replace("${jibo.zodiac.supplemented}", zodiacLabel, StringComparison.Ordinal)
-            .Replace("${jibo.age.value}", ageDays.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
-            .Replace("${jibo.age}", ageDescription, StringComparison.Ordinal);
+            .Replace("${jibo.age.value}", ageYears.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
+            .Replace("${jibo.age}", ageYears.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
     }
 
     private static JiboInteractionDecision BuildTriggerIgnoredDecision()
@@ -498,14 +547,15 @@ public sealed partial class JiboInteractionService
             "No problem. We can save the pizza fact for another time.");
     }
 
-    private static JiboInteractionDecision BuildWhatIsYourSignDecision()
+    private static JiboInteractionDecision BuildWhatIsYourSignDecision(TurnContext turn)
     {
-        var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.Date);
-        var birthday = OpenJiboCloudBuildInfo.PersonaBirthday;
+        var today = DateOnly.FromDateTime(
+            (TryResolveReferenceLocalTime(turn) ?? DateTimeOffset.UtcNow).Date);
+        var birthday = ResolveRobotBirthdate(turn);
         var zodiac = DescribeZodiacSign(birthday);
-        var reply = birthday.Month == today.Month && birthday.Day == today.Day
+        var reply = IsRobotBirthday(today, birthday)
             ? $"{zodiac}. Today is my birthday."
-            : $"{zodiac}. I was first powered up on {OpenJiboCloudBuildInfo.PersonaBirthdayWords}.";
+            : $"{zodiac}. I was first powered up on {FormatBirthdateWords(birthday)}.";
 
         return new JiboInteractionDecision(
             "robot_what_is_your_sign",

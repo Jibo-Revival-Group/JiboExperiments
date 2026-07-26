@@ -152,7 +152,63 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("robot_how_old_are_you", decision.IntentName);
-        Assert.Contains("first powered up", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("birthday", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("old ago", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("old old", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.True(
+            decision.ReplyText.Contains("first powered up", StringComparison.OrdinalIgnoreCase) ||
+            decision.ReplyText.Contains("who's counting", StringComparison.OrdinalIgnoreCase) ||
+            decision.ReplyText.Contains("old", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_HowOldAreYou_UsesRobotBirthdateAndSkipsBirthdayLine()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "how old are you",
+            NormalizedTranscript = "how old are you",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-07-26T19:00:00-04:00"},"loop":{"jibo":{"id":"robot-1","birthdate":1544234645598}}}}"""
+            }
+        });
+
+        Assert.Equal("robot_how_old_are_you", decision.IntentName);
+        Assert.DoesNotContain("birthday", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("old ago", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("old old", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.True(
+            decision.ReplyText.Contains("December 8, 2018", StringComparison.OrdinalIgnoreCase) ||
+            decision.ReplyText.Contains(" days", StringComparison.OrdinalIgnoreCase) ||
+            decision.ReplyText.Contains("I'm 7", StringComparison.OrdinalIgnoreCase) ||
+            decision.ReplyText.Contains("I'm 7.", StringComparison.OrdinalIgnoreCase) ||
+            decision.ReplyText.Contains(" minutes", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_HowOldAreYou_OnBirthdayAllowsBirthdayLine()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "how old are you",
+            NormalizedTranscript = "how old are you",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] =
+                    """{"runtime":{"location":{"iso":"2026-12-08T19:00:00-05:00"},"loop":{"jibo":{"id":"robot-1","birthdate":1544234645598}}}}"""
+            }
+        });
+
+        Assert.Equal("robot_how_old_are_you", decision.IntentName);
+        Assert.Contains("birthday", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("old ago", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("old old", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -168,6 +224,26 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("robot_birthday", decision.IntentName);
         Assert.Equal("My birthday is March 22, 2026.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_WhenIsYourBirthday_UsesRobotBirthdateFromContext()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "when's your birthday",
+            NormalizedTranscript = "when's your birthday",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] =
+                    """{"runtime":{"loop":{"jibo":{"id":"robot-1","birthdate":1544234645598}}}}"""
+            }
+        });
+
+        Assert.Equal("robot_birthday", decision.IntentName);
+        Assert.Equal("My birthday is December 8, 2018.", decision.ReplyText);
     }
 
     [Fact]

@@ -14,6 +14,7 @@ using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Cloud.Infrastructure.Search;
 using Jibo.Cloud.Infrastructure.Telemetry;
 using Jibo.Cloud.Infrastructure.Weather;
+using Jibo.Cloud.Infrastructure.Wikipedia;
 using Jibo.Runtime.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,6 +61,9 @@ public static class ServiceCollectionExtensions
         var freeDictionaryApiOptions = new FreeDictionaryApiOptions();
         configuration?.GetSection("OpenJibo:Dictionary:FreeDictionaryApi").Bind(freeDictionaryApiOptions);
 
+        var wikipediaSummaryOptions = new WikipediaSummaryOptions();
+        configuration?.GetSection("OpenJibo:Wikipedia").Bind(wikipediaSummaryOptions);
+
         var searchSection = configuration?.GetSection("OpenJibo:Search");
         var llmInstructions = SearchInstructionsResolver.Resolve(
             Environment.GetEnvironmentVariable("OPENJIBO_SEARCH_INSTRUCTIONS")
@@ -83,11 +87,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(holidayOptions);
         services.AddSingleton(uselessFactsOptions);
         services.AddSingleton(freeDictionaryApiOptions);
+        services.AddSingleton(wikipediaSummaryOptions);
         services.AddSingleton(searchBackendOptions);
         services.AddHttpClient<IWeatherReportProvider, OpenWeatherReportProvider>();
         services.AddHttpClient<INewsBriefingProvider, NewsApiBriefingProvider>();
         services.AddHttpClient<IFunFactProvider, UselessFactsFunFactProvider>();
         services.AddHttpClient<IWordDefinitionProvider, FreeDictionaryApiDefinitionProvider>();
+        services.AddHttpClient<IWikipediaSummaryProvider, WikipediaSummaryProvider>();
         services.AddHttpClient<WolframAlphaSearchProvider>();
         services.AddHttpClient<OllamaSearchProvider>();
         services.AddHttpClient<ChatGptSearchProvider>();

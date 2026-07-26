@@ -1,0 +1,207 @@
+using System.Collections.Concurrent;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Services;
+using Microsoft.Extensions.Logging;
+
+namespace Jibo.Cloud.Infrastructure.Wikipedia;
+
+public sealed class WikipediaSummaryProvider(
+    HttpClient httpClient,
+    WikipediaSummaryOptions options,
+    ILogger<WikipediaSummaryProvider> logger)
+    : IWikipediaSummaryProvider
+{
+    private readonly ConcurrentDictionary<string, CacheEntry> _cache =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public async Task<string?> GetSummaryAsync(string subject, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(subject)) return null;
+
+        var cacheKey = NormalizeSubjectForCache(subject);
+        if (TryGetCachedValue(cacheKey, out var cachedSummary))
+            return cachedSummary;
+
+        try
+        {
+            var matchedTitle = await FindMatchingTitleAsync(subject, cancellationToken);
+            if (string.IsNullOrWhiteSpace(matchedTitle))
+            {
+                SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
+                return null;
+            }
+
+            var summary = await FetchSummaryAsync(matchedTitle, subject, cancellationToken);
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
+                return null;
+            }
+
+            SetCachedValue(cacheKey, summary, options.SuccessCacheTtlSeconds);
+            return summary;
+        }
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning(exception, "Wikipedia summary lookup failed for subject {Subject}.", subject);
+            SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
+            return null;
+        }
+    }
+
+    private async Task<string?> FindMatchingTitleAsync(string subject, CancellationToken cancellationToken)
+    {
+        var requestUri = BuildOpenSearchUri(subject);
+        using var request = CreateRequest(requestUri);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(
+                "Wikipedia OpenSearch failed for subject {Subject}. StatusCode={StatusCode}",
+                subject,
+                (int)response.StatusCode);
+            return null;
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        if (document.RootElement.ValueKind != JsonValueKind.Array ||
+            document.RootElement.GetArrayLength() < 2)
+            return null;
+
+        var titlesElement = document.RootElement[1];
+        if (titlesElement.ValueKind != JsonValueKind.Array) return null;
+
+        foreach (var titleElement in titlesElement.EnumerateArray())
+        {
+            if (titleElement.ValueKind != JsonValueKind.String) continue;
+
+            var title = titleElement.GetString();
+            if (string.IsNullOrWhiteSpace(title)) continue;
+            if (WikipediaTitleSimilarity.IsCloseMatch(subject, title))
+                return title;
+        }
+
+        return null;
+    }
+
+    private async Task<string?> FetchSummaryAsync(
+        string title,
+        string subject,
+        CancellationToken cancellationToken)
+    {
+        var requestUri = BuildSummaryUri(title);
+        using var request = CreateRequest(requestUri);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning(
+                "Wikipedia summary request failed for title {Title}. StatusCode={StatusCode}",
+                title,
+                (int)response.StatusCode);
+            return null;
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        var root = document.RootElement;
+
+        var pageType = ReadString(root, "type");
+        if (string.Equals(pageType, "disambiguation", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(pageType, "redirect", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var returnedTitle = ReadString(root, "title");
+        if (string.IsNullOrWhiteSpace(returnedTitle) ||
+            !WikipediaTitleSimilarity.IsCloseMatch(subject, returnedTitle))
+            return null;
+
+        var extract = ReadString(root, "extract");
+        if (string.IsNullOrWhiteSpace(extract)) return null;
+
+        return CollapseWhitespace(extract);
+    }
+
+    private Uri BuildOpenSearchUri(string subject)
+    {
+        var baseUrl = string.IsNullOrWhiteSpace(options.ApiBaseUrl)
+            ? "https://en.wikipedia.org/w/api.php"
+            : options.ApiBaseUrl.Trim();
+        var limit = Math.Clamp(options.OpenSearchLimit, 1, 10);
+        var builder = new UriBuilder(baseUrl)
+        {
+            Query =
+                $"action=opensearch&search={Uri.EscapeDataString(subject.Trim())}&limit={limit}&namespace=0&format=json"
+        };
+        return builder.Uri;
+    }
+
+    private Uri BuildSummaryUri(string title)
+    {
+        var baseUrl = string.IsNullOrWhiteSpace(options.RestBaseUrl)
+            ? "https://en.wikipedia.org/api/rest_v1"
+            : options.RestBaseUrl.Trim().TrimEnd('/');
+        var encodedTitle = Uri.EscapeDataString(title.Trim().Replace(' ', '_'));
+        return new Uri($"{baseUrl}/page/summary/{encodedTitle}?redirect=false");
+    }
+
+    private HttpRequestMessage CreateRequest(Uri requestUri)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+        request.Headers.TryAddWithoutValidation("User-Agent", ResolveUserAgent());
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        return request;
+    }
+
+    private string ResolveUserAgent()
+    {
+        if (!string.IsNullOrWhiteSpace(options.UserAgent))
+            return options.UserAgent.Trim();
+
+        return $"OpenJibo/{OpenJiboCloudBuildInfo.Version} (jiborevived.com)";
+    }
+
+    private static string? ReadString(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind != JsonValueKind.String)
+            return null;
+
+        return property.GetString();
+    }
+
+    private static string CollapseWhitespace(string value)
+    {
+        return string.Join(
+            ' ',
+            value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    }
+
+    private static string NormalizeSubjectForCache(string subject) => subject.Trim().ToLowerInvariant();
+
+    private bool TryGetCachedValue(string cacheKey, out string? summary)
+    {
+        summary = null;
+        if (!_cache.TryGetValue(cacheKey, out var entry))
+            return false;
+
+        if (entry.ExpiresUtc <= DateTimeOffset.UtcNow)
+        {
+            _cache.TryRemove(cacheKey, out _);
+            return false;
+        }
+
+        summary = entry.Summary;
+        return true;
+    }
+
+    private void SetCachedValue(string cacheKey, string? summary, int ttlSeconds)
+    {
+        var ttl = Math.Max(ttlSeconds, 1);
+        _cache[cacheKey] = new CacheEntry(summary, DateTimeOffset.UtcNow.AddSeconds(ttl));
+    }
+
+    private sealed record CacheEntry(string? Summary, DateTimeOffset ExpiresUtc);
+}

@@ -9,6 +9,7 @@ public sealed class KnowledgeSearchSpokenReplyFormatterTests
     [InlineData(SearchBackendKind.Wolfram, "wolf ram alpha")]
     [InlineData(SearchBackendKind.ChatGPT, "chat gee pee tee")]
     [InlineData(SearchBackendKind.Ollama, "ollama")]
+    [InlineData(SearchBackendKind.Wikipedia, "wikipedia")]
     public void FormatReply_PrefixesReplyWithSpokenSource(SearchBackendKind backendKind, string spokenSource)
     {
         var reply = KnowledgeSearchSpokenReplyFormatter.FormatReply(

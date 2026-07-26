@@ -5,5 +5,6 @@ public enum SearchBackendKind
     None,
     Wolfram,
     Ollama,
-    ChatGPT
+    ChatGPT,
+    Wikipedia
 }

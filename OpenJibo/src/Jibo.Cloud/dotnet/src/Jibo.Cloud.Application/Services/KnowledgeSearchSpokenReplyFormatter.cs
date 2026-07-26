@@ -34,6 +34,7 @@ internal static partial class KnowledgeSearchSpokenReplyFormatter
             SearchBackendKind.Wolfram => "wolf ram alpha",
             SearchBackendKind.ChatGPT => "chat gee pee tee",
             SearchBackendKind.Ollama => "ollama",
+            SearchBackendKind.Wikipedia => "wikipedia",
             _ => "my sources"
         };
     }

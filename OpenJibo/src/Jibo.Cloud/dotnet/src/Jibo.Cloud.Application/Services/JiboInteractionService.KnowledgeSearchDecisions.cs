@@ -20,26 +20,35 @@ public sealed partial class JiboInteractionService
             preferredName);
         if (emotionDecision is not null) return emotionDecision;
 
+        var isWhoWhatLookup = WikipediaLookupParser.TryParse(transcript, out _);
         var wikipediaLookup = await TryLookupWikipediaAsync(transcript, cancellationToken);
-        if (wikipediaLookup?.Outcome == WikipediaSummaryOutcome.Found &&
-            !string.IsNullOrWhiteSpace(wikipediaLookup.Summary))
-        {
-            return ChitchatStateMachine.BuildKnowledgeSearchResponseDecision(
-                KnowledgeSearchSpokenReplyFormatter.FormatReply(
-                    wikipediaLookup.Summary,
-                    SearchBackendKind.Wikipedia));
-        }
+        if (IsWikipediaFound(wikipediaLookup))
+            return BuildWikipediaFoundDecision(wikipediaLookup!);
 
         var searchDecision = await TryBuildKnowledgeSearchDecisionAsync(transcript, cancellationToken);
-        if (searchDecision is not null) return searchDecision;
+        if (IsKnowledgeSearchFound(searchDecision))
+            return searchDecision!;
 
-        if (WikipediaLookupParser.TryParse(transcript, out _))
+        if (isWhoWhatLookup)
         {
-            if (wikipediaLookup?.Outcome == WikipediaSummaryOutcome.Unavailable)
+            // Other backends missed or failed — double-check Wikipedia once more before giving up.
+            var wikipediaRecheck = await TryLookupWikipediaAsync(
+                transcript,
+                cancellationToken,
+                bypassCache: true);
+            if (IsWikipediaFound(wikipediaRecheck))
+                return BuildWikipediaFoundDecision(wikipediaRecheck!);
+
+            if (IsKnowledgeSearchUnavailable(searchDecision) ||
+                wikipediaRecheck?.Outcome == WikipediaSummaryOutcome.Unavailable ||
+                (searchDecision is null && wikipediaLookup?.Outcome == WikipediaSummaryOutcome.Unavailable))
                 return ChitchatStateMachine.BuildKnowledgeSearchUnavailableDecision();
 
             return ChitchatStateMachine.BuildKnowledgeSearchNotFoundDecision(transcript);
         }
+
+        if (searchDecision is not null)
+            return searchDecision;
 
         return ChitchatStateMachine.BuildChatErrorResponseDecision(
             BuildGenericReply(catalog, transcript, lowered),
@@ -48,7 +57,8 @@ public sealed partial class JiboInteractionService
 
     private async Task<WikipediaSummaryResult?> TryLookupWikipediaAsync(
         string transcript,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool bypassCache = false)
     {
         if (wikipediaSummaryProvider is null) return null;
         if (!WikipediaLookupParser.TryParse(transcript, out var subject) ||
@@ -57,7 +67,7 @@ public sealed partial class JiboInteractionService
 
         try
         {
-            return await wikipediaSummaryProvider.GetSummaryAsync(subject, cancellationToken);
+            return await wikipediaSummaryProvider.GetSummaryAsync(subject, cancellationToken, bypassCache);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -106,4 +116,20 @@ public sealed partial class JiboInteractionService
             _ => ChitchatStateMachine.BuildKnowledgeSearchNotFoundDecision(transcript)
         };
     }
+
+    private static bool IsWikipediaFound(WikipediaSummaryResult? result) =>
+        result?.Outcome == WikipediaSummaryOutcome.Found &&
+        !string.IsNullOrWhiteSpace(result.Summary);
+
+    private static JiboInteractionDecision BuildWikipediaFoundDecision(WikipediaSummaryResult result) =>
+        ChitchatStateMachine.BuildKnowledgeSearchResponseDecision(
+            KnowledgeSearchSpokenReplyFormatter.FormatReply(result.Summary!, SearchBackendKind.Wikipedia));
+
+    private static bool IsKnowledgeSearchFound(JiboInteractionDecision? decision) =>
+        decision is not null &&
+        string.Equals(decision.IntentName, "knowledge_search", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsKnowledgeSearchUnavailable(JiboInteractionDecision? decision) =>
+        decision is not null &&
+        string.Equals(decision.IntentName, "knowledge_search_unavailable", StringComparison.OrdinalIgnoreCase);
 }

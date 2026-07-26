@@ -689,7 +689,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
                      string.Equals(skill?.SkillName, "@be/joke", StringComparison.OrdinalIgnoreCase);
         var isDance = string.Equals(plan.IntentName, "dance", StringComparison.OrdinalIgnoreCase);
         var isKnowledgeSearch =
-            string.Equals(plan.IntentName, "knowledge_search", StringComparison.OrdinalIgnoreCase);
+            string.Equals(plan.IntentName, "knowledge_search", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(plan.IntentName, "knowledge_search_not_found", StringComparison.OrdinalIgnoreCase);
         var payloadSkill = ReadPayloadString(skillPayload, "skillId");
         var skillId = string.IsNullOrWhiteSpace(payloadSkill)
             ? isJoke ? "@be/joke" : skill?.SkillName ?? "chitchat-skill"

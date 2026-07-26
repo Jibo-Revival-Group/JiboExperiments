@@ -9,7 +9,10 @@ public enum WikipediaSummaryOutcome
 
 public interface IWikipediaSummaryProvider
 {
-    Task<WikipediaSummaryResult> GetSummaryAsync(string subject, CancellationToken cancellationToken = default);
+    Task<WikipediaSummaryResult> GetSummaryAsync(
+        string subject,
+        CancellationToken cancellationToken = default,
+        bool bypassCache = false);
 }
 
 public sealed record WikipediaSummaryResult(

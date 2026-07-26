@@ -113,6 +113,7 @@ public sealed class KnowledgeSearchSocketMappingTests
             .GetString();
 
         Assert.Contains("I can't find anything.", esml, StringComparison.Ordinal);
-        Assert.DoesNotContain("Thinking_Eye_Loop_01", esml, StringComparison.Ordinal);
+        Assert.Contains("Thinking_Eye_Loop_01", esml, StringComparison.Ordinal);
+        Assert.DoesNotContain("nonBlocking", esml, StringComparison.Ordinal);
     }
 }

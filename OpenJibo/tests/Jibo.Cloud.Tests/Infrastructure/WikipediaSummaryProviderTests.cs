@@ -272,6 +272,52 @@ public sealed class WikipediaSummaryProviderTests
         Assert.Equal("OpenJibo/custom (jiborevived.com)", userAgent);
     }
 
+    [Fact]
+    public async Task GetSummaryAsync_BypassCache_RefetchesAfterNotFound()
+    {
+        var callCount = 0;
+        var handler = new RoutingHttpMessageHandler(request =>
+        {
+            callCount++;
+            if (request.RequestUri?.Query.Contains("action=opensearch", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                if (callCount <= 1)
+                {
+                    return JsonResponse(
+                        """
+                        ["Jibo",["Cynthia Breazeal"],["Scientist"],["https://en.wikipedia.org/wiki/Cynthia_Breazeal"]]
+                        """);
+                }
+
+                return JsonResponse(
+                    """
+                    ["Jibo",["Jibo"],["Robot"],["https://en.wikipedia.org/wiki/Jibo"]]
+                    """);
+            }
+
+            return JsonResponse(
+                """
+                {
+                  "type": "standard",
+                  "title": "Jibo",
+                  "extract": "Jibo was a social robot."
+                }
+                """);
+        });
+        var provider = CreateProvider(handler);
+
+        var first = await provider.GetSummaryAsync("Jibo");
+        var cached = await provider.GetSummaryAsync("Jibo");
+        var retried = await provider.GetSummaryAsync("Jibo", bypassCache: true);
+
+        Assert.Equal(WikipediaSummaryOutcome.NotFound, first.Outcome);
+        Assert.Equal(first, cached);
+        Assert.Equal(WikipediaSummaryOutcome.Found, retried.Outcome);
+        Assert.Equal("Jibo was a social robot.", retried.Summary);
+        Assert.Equal(2, handler.GetCallCountContaining("opensearch"));
+        Assert.Equal(1, handler.GetCallCountContaining("page/summary"));
+    }
+
     private static WikipediaSummaryProvider CreateProvider(
         HttpMessageHandler handler,
         string? userAgent = null)

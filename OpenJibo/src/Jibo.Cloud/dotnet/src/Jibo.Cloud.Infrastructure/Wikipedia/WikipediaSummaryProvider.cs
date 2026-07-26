@@ -19,13 +19,14 @@ public sealed class WikipediaSummaryProvider(
 
     public async Task<WikipediaSummaryResult> GetSummaryAsync(
         string subject,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool bypassCache = false)
     {
         if (string.IsNullOrWhiteSpace(subject))
             return WikipediaSummaryResult.NotFound();
 
         var cacheKey = NormalizeSubjectForCache(subject);
-        if (TryGetCachedValue(cacheKey, out var cachedResult))
+        if (!bypassCache && TryGetCachedValue(cacheKey, out var cachedResult))
             return cachedResult;
 
         try

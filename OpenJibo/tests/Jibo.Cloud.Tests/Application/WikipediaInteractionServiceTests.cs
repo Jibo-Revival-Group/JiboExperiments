@@ -111,6 +111,33 @@ public sealed class WikipediaInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_WhoIsQuery_DoubleChecksWikipediaAfterSearchMiss()
+    {
+        var wikipedia = new SequencingWikipediaSummaryProvider(
+            WikipediaSummaryResult.NotFound(),
+            WikipediaSummaryResult.Found("James Abram Garfield was the 20th president of the United States."));
+        var knowledgeSearch = new CapturingKnowledgeSearchService(
+            KnowledgeSearchResult.NotFound(SearchBackendKind.Wolfram));
+        var service = CreateService(
+            wikipediaSummaryProvider: wikipedia,
+            knowledgeSearchService: knowledgeSearch);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Who is James Garfield",
+            NormalizedTranscript = "Who is James Garfield"
+        });
+
+        Assert.Equal("knowledge_search", decision.IntentName);
+        Assert.Equal(
+            "According to wikipedia. James Abram Garfield was the 20th president of the United States.",
+            decision.ReplyText);
+        Assert.Equal(2, wikipedia.CallCount);
+        Assert.True(wikipedia.LastBypassCache);
+        Assert.NotNull(knowledgeSearch.LastQuery);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_WhoIsQuery_WikipediaUnavailableWithoutSearch_SaysSourcesAreDown()
     {
         var service = CreateService(
@@ -157,9 +184,31 @@ public sealed class WikipediaInteractionServiceTests
 
         public Task<WikipediaSummaryResult> GetSummaryAsync(
             string subject,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            bool bypassCache = false)
         {
             return Task.FromResult(_result);
+        }
+    }
+
+    private sealed class SequencingWikipediaSummaryProvider(params WikipediaSummaryResult[] results)
+        : IWikipediaSummaryProvider
+    {
+        private int _index;
+
+        public int CallCount { get; private set; }
+
+        public bool LastBypassCache { get; private set; }
+
+        public Task<WikipediaSummaryResult> GetSummaryAsync(
+            string subject,
+            CancellationToken cancellationToken = default,
+            bool bypassCache = false)
+        {
+            CallCount++;
+            LastBypassCache = bypassCache;
+            var result = _index < results.Length ? results[_index++] : results[^1];
+            return Task.FromResult(result);
         }
     }
 

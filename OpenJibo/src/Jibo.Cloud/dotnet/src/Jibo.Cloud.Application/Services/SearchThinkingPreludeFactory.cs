@@ -7,48 +7,19 @@ namespace Jibo.Cloud.Application.Services;
 public static class SearchThinkingPreludeFactory
 {
     public const string PreludeMetadataKey = "searchThinkingPreludeTransId";
-    public const string NimbusSkillId = "@be/nimbus";
-    public const string AnswerCloudSkill = "answer";
+
+    /// <summary>
+    /// Pegasus answer skill id on the wire. The robot remaps this to
+    /// match.cloudSkill="answer" and match.skillID="@be/nimbus".
+    /// </summary>
+    public const string AnswerSkillId = "answer";
 
     public static IReadOnlyList<WebSocketReply> CreateListenAndEos(
         string transId,
         string transcript,
         IReadOnlyList<string> rules)
     {
-        var listenMessage = new
-        {
-            type = "LISTEN",
-            transID = transId,
-            data = new
-            {
-                asr = new
-                {
-                    confidence = 0.95,
-                    final = true,
-                    text = transcript
-                },
-                nlu = new
-                {
-                    confidence = 0.95,
-                    intent = "knowledge_search",
-                    rules,
-                    entities = new Dictionary<string, object?>()
-                },
-                match = new
-                {
-                    intent = "knowledge_search",
-                    rule = rules.FirstOrDefault() ?? string.Empty,
-                    score = 0.95,
-                    // Stock Nimbus ProcessCloud plays Thinking_Eye_Loop_01 while awaiting
-                    // the single cloudSkillResponse when cloudSkill is answer/news.
-                    skillID = NimbusSkillId,
-                    onRobot = false,
-                    cloudSkill = AnswerCloudSkill,
-                    skipSurprises = true
-                }
-            }
-        };
-
+        // Pegasus order for cloud skills: EOS, then non-final LISTEN, then (later) SKILL_ACTION.
         var eosMessage = new
         {
             type = "EOS",
@@ -58,10 +29,43 @@ public static class SearchThinkingPreludeFactory
             data = new { }
         };
 
+        var listenMessage = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = "LISTEN",
+            ["transID"] = transId,
+            // Cloud skill: more messages coming (SKILL_ACTION). Matches Pegasus hub.
+            ["final"] = false,
+            ["data"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["asr"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["confidence"] = 0.95,
+                    ["final"] = true,
+                    ["text"] = transcript
+                },
+                ["nlu"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["confidence"] = 0.95,
+                    ["intent"] = "knowledge_search",
+                    ["rules"] = rules,
+                    ["entities"] = new Dictionary<string, object?>()
+                },
+                // Do NOT put cloudSkill or @be/nimbus on the wire — robot remaps
+                // skillID "answer" → cloudSkill "answer" + skillID "@be/nimbus".
+                ["match"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["skillID"] = AnswerSkillId,
+                    ["launch"] = true,
+                    ["onRobot"] = false,
+                    ["skipSurprises"] = true
+                }
+            }
+        };
+
         return
         [
-            new WebSocketReply { Text = JsonSerializer.Serialize(listenMessage) },
-            new WebSocketReply { Text = JsonSerializer.Serialize(eosMessage) }
+            new WebSocketReply { Text = JsonSerializer.Serialize(eosMessage) },
+            new WebSocketReply { Text = JsonSerializer.Serialize(listenMessage) }
         ];
     }
 

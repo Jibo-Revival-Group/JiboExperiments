@@ -394,8 +394,8 @@ internal static class ChitchatStateMachine
     private static IDictionary<string, object?> BuildKnowledgeSearchSkillPayload() =>
         new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
-            // Triggers Nimbus ProcessCloud Thinking_Eye_Loop_01 while awaiting SKILL_ACTION.
-            ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerCloudSkill
+            // Triggers Pegasus-style answer cloud skill match (robot remaps to Nimbus + cloudSkill).
+            ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerSkillId
         };
 
     public static bool IsLikelyEmotionUtterance(string transcript)

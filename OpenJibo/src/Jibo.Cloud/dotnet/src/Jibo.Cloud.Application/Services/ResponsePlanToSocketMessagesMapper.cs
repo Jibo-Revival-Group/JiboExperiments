@@ -168,22 +168,76 @@ public sealed class ResponsePlanToSocketMessagesMapper
             string.Equals(plan.IntentName, "knowledge_search_not_found", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(plan.IntentName, "knowledge_search_unavailable", StringComparison.OrdinalIgnoreCase);
         var isAnswerCloudSkill = string.Equals(
-            cloudSkill,
-            SearchThinkingPreludeFactory.AnswerCloudSkill,
-            StringComparison.OrdinalIgnoreCase);
-        var listenMessage = new
+                                     cloudSkill,
+                                     SearchThinkingPreludeFactory.AnswerSkillId,
+                                     StringComparison.OrdinalIgnoreCase) ||
+                                 isKnowledgeSearchIntent;
+        // Pegasus answer LISTEN: skillID="answer", onRobot=false, launch=true, no cloudSkill on wire.
+        // Robot remaps skillID → match.cloudSkill and launches @be/nimbus (Thinking_Eye for answer/news).
+        object? listenMatch;
+        if (isSleepCommand)
         {
-            type = "LISTEN",
-            transID = transId,
-            data = new
+            listenMatch = new
             {
-                asr = new
+                intent = outboundIntent,
+                rule = outboundRules.FirstOrDefault() ?? string.Empty,
+                score = 0.95,
+                skillID = "@be/idle",
+                onRobot = true,
+                cloudSkill,
+                skipSurprises = true
+            };
+        }
+        else if (isWakeUpCommand)
+        {
+            listenMatch = new
+            {
+                intent = outboundIntent,
+                rule = outboundRules.FirstOrDefault() ?? string.Empty,
+                score = 0.95,
+                skillID = "@be/greetings",
+                onRobot = true,
+                cloudSkill,
+                skipSurprises = true
+            };
+        }
+        else if (isAnswerCloudSkill)
+        {
+            listenMatch = new
+            {
+                skillID = SearchThinkingPreludeFactory.AnswerSkillId,
+                launch = true,
+                onRobot = false,
+                skipSurprises = true
+            };
+        }
+        else
+        {
+            listenMatch = new
+            {
+                intent = outboundIntent,
+                rule = outboundRules.FirstOrDefault() ?? string.Empty,
+                score = 0.95,
+                skillID = (string?)null,
+                onRobot = (bool?)null,
+                cloudSkill,
+                skipSurprises = true
+            };
+        }
+
+        var listenPayload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = "LISTEN",
+            ["transID"] = transId,
+            ["data"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["asr"] = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {
-                    confidence = 0.95,
-                    final = true,
-                    text = outboundAsrText
+                    ["confidence"] = 0.95,
+                    ["final"] = true,
+                    ["text"] = outboundAsrText
                 },
-                nlu = BuildNluPayload(
+                ["nlu"] = BuildNluPayload(
                     outboundIntent,
                     outboundRules,
                     entities,
@@ -196,33 +250,11 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     isReportSkillLaunch ? "report-skill" :
                     null,
                     isGlobalCommand ? nluDomain ?? "global_commands" : null),
-                match = new
-                {
-                    intent = outboundIntent,
-                    rule = outboundRules.FirstOrDefault() ?? string.Empty,
-                    score = 0.95,
-                    // Sleep is consumed by the robot-local circadian manager. This must be in
-                    // the initial LISTEN match: a later SKILL_REDIRECT loses to Nimbus once the
-                    // global-command dispatcher has selected its default cloud-skill launch.
-                    skillID = isSleepCommand
-                        ? "@be/idle"
-                        : isWakeUpCommand
-                            ? "@be/greetings"
-                            : isKnowledgeSearchIntent || isAnswerCloudSkill
-                                ? SearchThinkingPreludeFactory.NimbusSkillId
-                                : null,
-                    onRobot = isSleepCommand || isWakeUpCommand
-                        ? true
-                        : isKnowledgeSearchIntent || isAnswerCloudSkill
-                            ? false
-                            : (bool?)null,
-                    cloudSkill = isKnowledgeSearchIntent && string.IsNullOrWhiteSpace(cloudSkill)
-                        ? SearchThinkingPreludeFactory.AnswerCloudSkill
-                        : cloudSkill,
-                    skipSurprises = true
-                }
+                ["match"] = listenMatch
             }
         };
+        if (isAnswerCloudSkill)
+            listenPayload["final"] = false;
 
         var skipListenAndEos = session.Metadata.TryGetValue(
                                     SearchThinkingPreludeFactory.PreludeMetadataKey,
@@ -234,15 +266,31 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var messages = new List<SocketReplyPlan>();
         if (!skipListenAndEos)
         {
-            messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(listenMessage)));
-            messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(new
+            // Pegasus cloud-skill order: EOS then non-final LISTEN, then SKILL_ACTION later.
+            if (isAnswerCloudSkill)
             {
-                type = "EOS",
-                ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                msgID = CloudMessageIdFactory.CreateHubMessageId(),
-                transID = transId,
-                data = new { }
-            })));
+                messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(new
+                {
+                    type = "EOS",
+                    ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    msgID = CloudMessageIdFactory.CreateHubMessageId(),
+                    transID = transId,
+                    data = new { }
+                })));
+                messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(listenPayload)));
+            }
+            else
+            {
+                messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(listenPayload)));
+                messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(new
+                {
+                    type = "EOS",
+                    ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    msgID = CloudMessageIdFactory.CreateHubMessageId(),
+                    transID = transId,
+                    data = new { }
+                })));
+            }
         }
 
         if (isWordOfDayLaunch)
@@ -720,8 +768,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var skillId = string.IsNullOrWhiteSpace(payloadSkill)
             ? isJoke ? "@be/joke" : skill?.SkillName ?? "chitchat-skill"
             : payloadSkill;
-        // Knowledge search thinking is owned by Nimbus (cloudSkill=answer) while awaiting this
-        // single SKILL_ACTION. Do not embed Thinking_Eye in the speak ESML.
+        // Knowledge search thinking is owned by Nimbus after the robot remaps skillID "answer".
+        // Do not embed Thinking_Eye in the speak ESML.
         var esml = ReadPayloadString(skillPayload, "esml") ?? (isDance
             ? "<speak>Okay.<break size='0.2'/> Watch this.<anim cat='dance' filter='music, rom-upbeat' /></speak>"
             : isJoke

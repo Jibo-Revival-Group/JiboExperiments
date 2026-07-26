@@ -11,7 +11,7 @@ namespace Jibo.Cloud.Tests.Application;
 public sealed class KnowledgeSearchSocketMappingTests
 {
     [Fact]
-    public void Map_KnowledgeSearch_LaunchesNimbusAnswerAndSpeaksWithoutEmbeddedThinkingAnim()
+    public void Map_KnowledgeSearch_UsesPegasusAnswerMatchWithoutCloudSkillOnWire()
     {
         var plan = new ResponsePlan
         {
@@ -30,7 +30,7 @@ public sealed class KnowledgeSearchSocketMappingTests
                     SkillName = "chitchat-skill",
                     Payload = new Dictionary<string, object?>
                     {
-                        ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerCloudSkill
+                        ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerSkillId
                     }
                 }
             }
@@ -47,23 +47,23 @@ public sealed class KnowledgeSearchSocketMappingTests
         };
 
         var replies = ResponsePlanToSocketMessagesMapper.Map(plan, turn, new CloudSession(), emitSkillActions: true);
+        Assert.Equal("EOS", JsonDocument.Parse(replies[0].Text!).RootElement.GetProperty("type").GetString());
+        Assert.Equal("LISTEN", JsonDocument.Parse(replies[1].Text!).RootElement.GetProperty("type").GetString());
 
-        var listen = replies
-            .Select(reply => reply.Text)
-            .Where(text => !string.IsNullOrWhiteSpace(text))
-            .Select(text => JsonDocument.Parse(text!))
-            .First(document => document.RootElement.GetProperty("type").GetString() == "LISTEN");
+        using var listen = JsonDocument.Parse(replies[1].Text!);
+        Assert.False(listen.RootElement.GetProperty("final").GetBoolean());
+
+        var match = listen.RootElement.GetProperty("data").GetProperty("match");
+        Assert.Equal(SearchThinkingPreludeFactory.AnswerSkillId, match.GetProperty("skillID").GetString());
+        Assert.False(match.GetProperty("onRobot").GetBoolean());
+        Assert.True(match.GetProperty("launch").GetBoolean());
+        Assert.False(match.TryGetProperty("cloudSkill", out _));
+
         var skillAction = replies
             .Select(reply => reply.Text)
             .Where(text => !string.IsNullOrWhiteSpace(text))
             .Select(text => JsonDocument.Parse(text!))
             .First(document => document.RootElement.GetProperty("type").GetString() == "SKILL_ACTION");
-
-        var match = listen.RootElement.GetProperty("data").GetProperty("match");
-        Assert.Equal(SearchThinkingPreludeFactory.NimbusSkillId, match.GetProperty("skillID").GetString());
-        Assert.Equal(SearchThinkingPreludeFactory.AnswerCloudSkill, match.GetProperty("cloudSkill").GetString());
-        Assert.False(match.GetProperty("onRobot").GetBoolean());
-
         var esml = skillAction.RootElement
             .GetProperty("data")
             .GetProperty("action")
@@ -76,7 +76,6 @@ public sealed class KnowledgeSearchSocketMappingTests
 
         Assert.DoesNotContain("Thinking_Eye_Loop_01", esml, StringComparison.Ordinal);
         Assert.Contains("According to wikipedia.", esml, StringComparison.Ordinal);
-        Assert.True(skillAction.RootElement.GetProperty("data").GetProperty("final").GetBoolean());
     }
 
     [Fact]
@@ -99,7 +98,7 @@ public sealed class KnowledgeSearchSocketMappingTests
                     SkillName = "chitchat-skill",
                     Payload = new Dictionary<string, object?>
                     {
-                        ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerCloudSkill
+                        ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerSkillId
                     }
                 }
             }
@@ -149,7 +148,7 @@ public sealed class KnowledgeSearchSocketMappingTests
                     SkillName = "chitchat-skill",
                     Payload = new Dictionary<string, object?>
                     {
-                        ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerCloudSkill
+                        ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerSkillId
                     }
                 }
             }
@@ -166,43 +165,25 @@ public sealed class KnowledgeSearchSocketMappingTests
         };
 
         var replies = ResponsePlanToSocketMessagesMapper.Map(plan, turn, new CloudSession(), emitSkillActions: true);
-
         var listen = replies
             .Select(reply => reply.Text)
             .Where(text => !string.IsNullOrWhiteSpace(text))
             .Select(text => JsonDocument.Parse(text!))
             .First(document => document.RootElement.GetProperty("type").GetString() == "LISTEN");
-        var skillAction = replies
-            .Select(reply => reply.Text)
-            .Where(text => !string.IsNullOrWhiteSpace(text))
-            .Select(text => JsonDocument.Parse(text!))
-            .First(document => document.RootElement.GetProperty("type").GetString() == "SKILL_ACTION");
 
         Assert.Equal(
             "who is zzxxyyqq",
             listen.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
         Assert.Equal(
-            SearchThinkingPreludeFactory.AnswerCloudSkill,
-            listen.RootElement.GetProperty("data").GetProperty("match").GetProperty("cloudSkill").GetString());
-        Assert.Contains(
-            "I can't find anything.",
-            skillAction.RootElement
-                .GetProperty("data")
-                .GetProperty("action")
-                .GetProperty("config")
-                .GetProperty("jcp")
-                .GetProperty("config")
-                .GetProperty("play")
-                .GetProperty("esml")
-                .GetString(),
-            StringComparison.Ordinal);
+            SearchThinkingPreludeFactory.AnswerSkillId,
+            listen.RootElement.GetProperty("data").GetProperty("match").GetProperty("skillID").GetString());
     }
 }
 
 public sealed class SearchThinkingPreludeFactoryTests
 {
     [Fact]
-    public void CreateListenAndEos_UsesNimbusAnswerMatch()
+    public void CreateListenAndEos_MatchesPegasusAnswerWireShape()
     {
         var replies = SearchThinkingPreludeFactory.CreateListenAndEos(
             "trans-123",
@@ -210,22 +191,24 @@ public sealed class SearchThinkingPreludeFactoryTests
             ["launch"]);
 
         Assert.Equal(2, replies.Count);
-        using var listen = JsonDocument.Parse(replies[0].Text!);
-        using var eos = JsonDocument.Parse(replies[1].Text!);
-        Assert.Equal("LISTEN", listen.RootElement.GetProperty("type").GetString());
+        using var eos = JsonDocument.Parse(replies[0].Text!);
+        using var listen = JsonDocument.Parse(replies[1].Text!);
         Assert.Equal("EOS", eos.RootElement.GetProperty("type").GetString());
+        Assert.Equal("LISTEN", listen.RootElement.GetProperty("type").GetString());
+        Assert.False(listen.RootElement.GetProperty("final").GetBoolean());
 
         var match = listen.RootElement.GetProperty("data").GetProperty("match");
-        Assert.Equal(SearchThinkingPreludeFactory.NimbusSkillId, match.GetProperty("skillID").GetString());
-        Assert.Equal(SearchThinkingPreludeFactory.AnswerCloudSkill, match.GetProperty("cloudSkill").GetString());
+        Assert.Equal(SearchThinkingPreludeFactory.AnswerSkillId, match.GetProperty("skillID").GetString());
         Assert.False(match.GetProperty("onRobot").GetBoolean());
+        Assert.True(match.GetProperty("launch").GetBoolean());
+        Assert.False(match.TryGetProperty("cloudSkill", out _));
     }
 }
 
 public sealed class AmbientTurnProgressPublisherTests
 {
     [Fact]
-    public async Task PublishSearchThinkingPreludeAsync_SendsListenAndEosOnce()
+    public async Task PublishSearchThinkingPreludeAsync_SendsEosThenListenOnce()
     {
         var sent = new List<string>();
         var session = new CloudSession();
@@ -252,12 +235,11 @@ public sealed class AmbientTurnProgressPublisherTests
         }
 
         Assert.Equal(2, sent.Count);
-        Assert.Contains("LISTEN", sent[0], StringComparison.Ordinal);
-        Assert.Contains("EOS", sent[1], StringComparison.Ordinal);
+        Assert.Contains("EOS", sent[0], StringComparison.Ordinal);
+        Assert.Contains("LISTEN", sent[1], StringComparison.Ordinal);
+        Assert.Contains("\"skillID\":\"answer\"", sent[1], StringComparison.Ordinal);
+        Assert.DoesNotContain("cloudSkill", sent[1], StringComparison.Ordinal);
         Assert.DoesNotContain("SKILL_ACTION", string.Join('\n', sent), StringComparison.Ordinal);
-        Assert.Equal(
-            "trans-abc",
-            session.Metadata[SearchThinkingPreludeFactory.PreludeMetadataKey]?.ToString());
     }
 }
 

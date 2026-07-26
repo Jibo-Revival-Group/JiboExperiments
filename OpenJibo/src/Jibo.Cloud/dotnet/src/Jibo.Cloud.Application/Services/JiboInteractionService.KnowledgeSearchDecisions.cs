@@ -65,9 +65,8 @@ public sealed partial class JiboInteractionService
     {
         if (turnProgressPublisher is null) return;
 
-        // Flush LISTEN+EOS with cloudSkill=answer so Nimbus starts Thinking_Eye_Loop_01,
-        // then begin HTTP search. Never send an interim SKILL_ACTION — the robot registry
-        // resolves only once per transID.
+        // Flush EOS + non-final LISTEN (skillID=answer) so the robot remaps to Nimbus and
+        // starts Thinking_Eye_Loop_01, then begin HTTP search. Never send an interim SKILL_ACTION.
         await turnProgressPublisher.PublishSearchThinkingPreludeAsync(cancellationToken);
     }
 

@@ -112,7 +112,7 @@ public sealed class WikipediaInteractionServiceTests
         Assert.Equal("knowledge_search", decision.IntentName);
         Assert.Equal(1, progress.PublishCount);
         Assert.Equal(1, wikipedia.PublishCountSeenAtLookupStart);
-        Assert.Contains("eye_thinking_01", progress.LastPayload, StringComparison.Ordinal);
+        Assert.Contains("Thinking_01", progress.LastPayload, StringComparison.Ordinal);
         Assert.Contains("\"final\":false", progress.LastPayload, StringComparison.Ordinal);
     }
 
@@ -136,7 +136,7 @@ public sealed class WikipediaInteractionServiceTests
         Assert.Equal("knowledge_search", decision.IntentName);
         Assert.Equal(1, progress.PublishCount);
         Assert.Equal(1, knowledgeSearch.PublishCountSeenAtSearchStart);
-        Assert.Contains("eye_thinking_01", progress.LastPayload, StringComparison.Ordinal);
+        Assert.Contains("Thinking_01", progress.LastPayload, StringComparison.Ordinal);
     }
 
     private static JiboInteractionService CreateService(
@@ -168,7 +168,7 @@ public sealed class WikipediaInteractionServiceTests
         public Task PublishSearchThinkingAsync(CancellationToken cancellationToken = default)
         {
             return PublishAsync(
-                new WebSocketReply { Text = SearchThinkingSkillActionFactory.CreateJson("trans-thinking") },
+                new WebSocketReply { Text = SearchThinkingSkillActionFactory.CreateThinkingJson("trans-thinking") },
                 cancellationToken);
         }
     }

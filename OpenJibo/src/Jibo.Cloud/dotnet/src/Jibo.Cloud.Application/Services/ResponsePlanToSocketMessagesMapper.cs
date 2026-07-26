@@ -204,18 +204,26 @@ public sealed class ResponsePlanToSocketMessagesMapper
             }
         };
 
-        var messages = new List<SocketReplyPlan>
+        var skipListenAndEos = session.Metadata.TryGetValue(
+                                    SearchThinkingSkillActionFactory.PreludeMetadataKey,
+                                    out var preludeTransId) &&
+                                string.Equals(preludeTransId?.ToString(), transId, StringComparison.Ordinal);
+        if (skipListenAndEos)
+            session.Metadata.Remove(SearchThinkingSkillActionFactory.PreludeMetadataKey);
+
+        var messages = new List<SocketReplyPlan>();
+        if (!skipListenAndEos)
         {
-            new(JsonSerializer.Serialize(listenMessage)),
-            new(JsonSerializer.Serialize(new
+            messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(listenMessage)));
+            messages.Add(new SocketReplyPlan(JsonSerializer.Serialize(new
             {
                 type = "EOS",
                 ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 msgID = CloudMessageIdFactory.CreateHubMessageId(),
                 transID = transId,
                 data = new { }
-            }))
-        };
+            })));
+        }
 
         if (isWordOfDayLaunch)
         {

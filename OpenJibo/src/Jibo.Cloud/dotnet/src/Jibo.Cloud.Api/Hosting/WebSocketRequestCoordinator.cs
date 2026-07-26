@@ -190,7 +190,6 @@ internal sealed class WebSocketRequestCoordinator(
 
                 IReadOnlyList<WebSocketReply> replies;
                 using (AmbientTurnProgressPublisher.Begin(
-                           () => session.TurnState.TransId ?? session.LastTransId ?? string.Empty,
                            (reply, cancellationToken) => SendRepliesAsync(socket, [reply], cancellationToken)))
                 {
                     replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);

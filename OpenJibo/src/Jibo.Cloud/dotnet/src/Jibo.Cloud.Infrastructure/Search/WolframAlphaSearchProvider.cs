@@ -43,15 +43,17 @@ public sealed class WolframAlphaSearchProvider(
             using var response = await httpClient.GetAsync(requestUri, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
-                return null;
+                SetCachedValue(cacheKey, KnowledgeSearchResult.Unavailable(SearchBackendKind.Wolfram),
+                    options.FailureCacheTtlSeconds);
+                return KnowledgeSearchResult.Unavailable(SearchBackendKind.Wolfram);
             }
 
             var answerText = (await response.Content.ReadAsStringAsync(cancellationToken)).Trim();
             if (!IsUsableAnswer(answerText))
             {
-                SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
-                return null;
+                var notFound = KnowledgeSearchResult.NotFound(SearchBackendKind.Wolfram);
+                SetCachedValue(cacheKey, notFound, options.FailureCacheTtlSeconds);
+                return notFound;
             }
 
             var result = new KnowledgeSearchResult(answerText, SearchBackendKind.Wolfram);
@@ -61,8 +63,9 @@ public sealed class WolframAlphaSearchProvider(
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(exception, "Wolfram Alpha lookup failed.");
-            SetCachedValue(cacheKey, null, options.FailureCacheTtlSeconds);
-            return null;
+            var unavailable = KnowledgeSearchResult.Unavailable(SearchBackendKind.Wolfram);
+            SetCachedValue(cacheKey, unavailable, options.FailureCacheTtlSeconds);
+            return unavailable;
         }
     }
 

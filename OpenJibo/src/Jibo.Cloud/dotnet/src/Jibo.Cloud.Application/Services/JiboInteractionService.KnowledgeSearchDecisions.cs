@@ -26,6 +26,9 @@ public sealed partial class JiboInteractionService
         var searchDecision = await TryBuildKnowledgeSearchDecisionAsync(transcript, cancellationToken);
         if (searchDecision is not null) return searchDecision;
 
+        if (WikipediaLookupParser.TryParse(transcript, out _))
+            return ChitchatStateMachine.BuildKnowledgeSearchNotFoundDecision(transcript);
+
         return ChitchatStateMachine.BuildChatErrorResponseDecision(
             BuildGenericReply(catalog, transcript, lowered),
             transcript);
@@ -81,12 +84,20 @@ public sealed partial class JiboInteractionService
         }
         catch
         {
-            return null;
+            return ChitchatStateMachine.BuildKnowledgeSearchUnavailableDecision();
         }
 
-        if (result is null || string.IsNullOrWhiteSpace(result.AnswerText)) return null;
+        if (result is null)
+            return ChitchatStateMachine.BuildKnowledgeSearchUnavailableDecision();
 
-        return ChitchatStateMachine.BuildKnowledgeSearchResponseDecision(
-            KnowledgeSearchSpokenReplyFormatter.FormatReply(result.AnswerText, result.BackendKind));
+        return result.Outcome switch
+        {
+            KnowledgeSearchOutcome.Found when !string.IsNullOrWhiteSpace(result.AnswerText) =>
+                ChitchatStateMachine.BuildKnowledgeSearchResponseDecision(
+                    KnowledgeSearchSpokenReplyFormatter.FormatReply(result.AnswerText, result.BackendKind)),
+            KnowledgeSearchOutcome.Unavailable =>
+                ChitchatStateMachine.BuildKnowledgeSearchUnavailableDecision(),
+            _ => ChitchatStateMachine.BuildKnowledgeSearchNotFoundDecision(transcript)
+        };
     }
 }

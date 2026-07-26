@@ -43,11 +43,16 @@ public sealed class OllamaSearchProvider(
             model,
             JiboKnowledgeSearchPrompts.BuildOllamaPrompt(request.Query.Trim(), options.LlmInstructions),
             cancellationToken);
-        SetCachedValue(cacheKey, result, result is null ? options.FailureCacheTtlSeconds : options.CacheTtlSeconds);
+        SetCachedValue(
+            cacheKey,
+            result,
+            result.Outcome == KnowledgeSearchOutcome.Found
+                ? options.CacheTtlSeconds
+                : options.FailureCacheTtlSeconds);
         return result;
     }
 
-    private async Task<KnowledgeSearchResult?> TryGenerateAsync(
+    private async Task<KnowledgeSearchResult> TryGenerateAsync(
         string endpoint,
         string model,
         string prompt,
@@ -63,19 +68,19 @@ public sealed class OllamaSearchProvider(
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogWarning("Ollama lookup failed with status {StatusCode}.", response.StatusCode);
-                return null;
+                return KnowledgeSearchResult.Unavailable(SearchBackendKind.Ollama);
             }
 
             var parsed = JsonSerializer.Deserialize<OllamaGenerateResponse>(body, JsonOptions);
             var answerText = KnowledgeSearchResponseFormatter.NormalizeForSpeech(parsed?.Response ?? string.Empty);
             return string.IsNullOrWhiteSpace(answerText)
-                ? null
+                ? KnowledgeSearchResult.NotFound(SearchBackendKind.Ollama)
                 : new KnowledgeSearchResult(answerText, SearchBackendKind.Ollama);
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(exception, "Ollama lookup failed for model {Model}.", model);
-            return null;
+            return KnowledgeSearchResult.Unavailable(SearchBackendKind.Ollama);
         }
     }
 

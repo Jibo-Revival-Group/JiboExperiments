@@ -19,6 +19,21 @@ public sealed class KnowledgeSearchSpokenReplyFormatterTests
         Assert.Equal($"According to {spokenSource}. The answer is forty two.", reply);
     }
 
+    [Fact]
+    public void FormatNotFoundReply_UsesCantFindAnything()
+    {
+        Assert.Equal("I can't find anything.", KnowledgeSearchSpokenReplyFormatter.FormatNotFoundReply());
+    }
+
+    [Fact]
+    public void FormatUnavailableReply_UsesSourcesAreDown()
+    {
+        Assert.Contains(
+            "info sources are down",
+            KnowledgeSearchSpokenReplyFormatter.FormatUnavailableReply(),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [InlineData("ChatGPT said AI is useful.", "chat gee pee tee said ae eye is useful.")]
     [InlineData("Wolfram Alpha and Ollama are sources.", "wolf ram alpha and ollama are sources.")]

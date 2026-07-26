@@ -47,11 +47,16 @@ public sealed class ChatGptSearchProvider(
             model,
             request.Query.Trim(),
             cancellationToken);
-        SetCachedValue(cacheKey, result, result is null ? options.FailureCacheTtlSeconds : options.CacheTtlSeconds);
+        SetCachedValue(
+            cacheKey,
+            result,
+            result.Outcome == KnowledgeSearchOutcome.Found
+                ? options.CacheTtlSeconds
+                : options.FailureCacheTtlSeconds);
         return result;
     }
 
-    private async Task<KnowledgeSearchResult?> TryCompleteAsync(
+    private async Task<KnowledgeSearchResult> TryCompleteAsync(
         string endpoint,
         string apiKey,
         string model,
@@ -77,7 +82,7 @@ public sealed class ChatGptSearchProvider(
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogWarning("ChatGPT lookup failed with status {StatusCode}.", response.StatusCode);
-                return null;
+                return KnowledgeSearchResult.Unavailable(SearchBackendKind.ChatGPT);
             }
 
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -85,13 +90,13 @@ public sealed class ChatGptSearchProvider(
             var answerText = KnowledgeSearchResponseFormatter.NormalizeForSpeech(
                 parsed?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty);
             return string.IsNullOrWhiteSpace(answerText)
-                ? null
+                ? KnowledgeSearchResult.NotFound(SearchBackendKind.ChatGPT)
                 : new KnowledgeSearchResult(answerText, SearchBackendKind.ChatGPT);
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(exception, "ChatGPT lookup failed for model {Model}.", model);
-            return null;
+            return KnowledgeSearchResult.Unavailable(SearchBackendKind.ChatGPT);
         }
     }
 

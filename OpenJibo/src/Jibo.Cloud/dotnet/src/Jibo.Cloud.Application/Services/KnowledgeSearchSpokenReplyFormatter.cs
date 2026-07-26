@@ -27,6 +27,11 @@ internal static partial class KnowledgeSearchSpokenReplyFormatter
         return $"According to {DescribeSource(backendKind)}. {spokenBody}";
     }
 
+    public static string FormatNotFoundReply() => "I can't find anything.";
+
+    public static string FormatUnavailableReply() =>
+        "Huh, it seems like my info sources are down. Try asking me again a little later.";
+
     internal static string DescribeSource(SearchBackendKind backendKind)
     {
         return backendKind switch

@@ -364,6 +364,27 @@ internal static class ChitchatStateMachine
                 null));
     }
 
+    public static JiboInteractionDecision BuildKnowledgeSearchNotFoundDecision(string transcript)
+    {
+        return new JiboInteractionDecision(
+            "knowledge_search_not_found",
+            KnowledgeSearchSpokenReplyFormatter.FormatNotFoundReply(),
+            ContextUpdates: BuildContextUpdates(
+                KnowledgeSearchRoute,
+                null,
+                rawTranscript: transcript));
+    }
+
+    public static JiboInteractionDecision BuildKnowledgeSearchUnavailableDecision()
+    {
+        return new JiboInteractionDecision(
+            "knowledge_search_unavailable",
+            KnowledgeSearchSpokenReplyFormatter.FormatUnavailableReply(),
+            ContextUpdates: BuildContextUpdates(
+                KnowledgeSearchRoute,
+                null));
+    }
+
     public static bool IsLikelyEmotionUtterance(string transcript)
     {
         var normalizedLoweredTranscript = NormalizeForPhraseMatching(transcript);

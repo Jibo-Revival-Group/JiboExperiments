@@ -1736,6 +1736,41 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_UnhandledChat_SearchNotFound_SaysCantFindAnything()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            KnowledgeSearchResult.NotFound(SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "blargh",
+            NormalizedTranscript = "blargh"
+        });
+
+        Assert.Equal("knowledge_search_not_found", decision.IntentName);
+        Assert.Equal("I can't find anything.", decision.ReplyText);
+        Assert.Equal("blargh", decision.ContextUpdates?["chitchatRawTranscript"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_UnhandledChat_SearchUnavailable_SaysSourcesAreDown()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            KnowledgeSearchResult.Unavailable(SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "blargh",
+            NormalizedTranscript = "blargh"
+        });
+
+        Assert.Equal("knowledge_search_unavailable", decision.IntentName);
+        Assert.Equal(
+            "Huh, it seems like my info sources are down. Try asking me again a little later.",
+            decision.ReplyText);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_UnhandledChat_WolframFails_FallsBackToGenericReply()
     {
         var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(null));
@@ -1746,9 +1781,10 @@ public sealed class JiboInteractionServiceTests
             NormalizedTranscript = "blargh"
         });
 
-        Assert.Equal("chat", decision.IntentName);
-        Assert.NotNull(decision.ContextUpdates);
-        Assert.Equal("ErrorResponse", decision.ContextUpdates![ChitchatRouteKey]);
+        Assert.Equal("knowledge_search_unavailable", decision.IntentName);
+        Assert.Equal(
+            "Huh, it seems like my info sources are down. Try asking me again a little later.",
+            decision.ReplyText);
     }
 
     [Fact]

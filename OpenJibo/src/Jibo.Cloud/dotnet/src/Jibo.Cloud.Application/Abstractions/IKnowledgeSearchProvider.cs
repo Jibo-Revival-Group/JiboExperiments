@@ -1,5 +1,12 @@
 namespace Jibo.Cloud.Application.Abstractions;
 
+public enum KnowledgeSearchOutcome
+{
+    Found,
+    NotFound,
+    Unavailable
+}
+
 public interface IKnowledgeSearchProvider
 {
     SearchBackendKind Kind { get; }
@@ -11,4 +18,12 @@ public interface IKnowledgeSearchProvider
 
 public sealed record KnowledgeSearchResult(
     string AnswerText,
-    SearchBackendKind BackendKind);
+    SearchBackendKind BackendKind,
+    KnowledgeSearchOutcome Outcome = KnowledgeSearchOutcome.Found)
+{
+    public static KnowledgeSearchResult NotFound(SearchBackendKind backendKind) =>
+        new(string.Empty, backendKind, KnowledgeSearchOutcome.NotFound);
+
+    public static KnowledgeSearchResult Unavailable(SearchBackendKind backendKind) =>
+        new(string.Empty, backendKind, KnowledgeSearchOutcome.Unavailable);
+}

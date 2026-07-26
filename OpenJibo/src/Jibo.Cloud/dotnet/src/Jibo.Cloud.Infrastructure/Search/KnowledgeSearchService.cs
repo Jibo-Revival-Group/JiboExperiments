@@ -21,16 +21,22 @@ public sealed class KnowledgeSearchService(
     {
         if (string.IsNullOrWhiteSpace(query)) return null;
 
+        KnowledgeSearchResult? primaryResult = null;
         if (options.Primary.IsUsable)
         {
-            var primaryResult = await TrySearchBackendAsync(options.Primary, query, cancellationToken);
-            if (primaryResult is not null) return primaryResult;
+            primaryResult = await TrySearchBackendAsync(options.Primary, query, cancellationToken);
+            if (primaryResult?.Outcome == KnowledgeSearchOutcome.Found)
+                return primaryResult;
         }
 
         if (options.Fallback is null || !options.Fallback.IsUsable)
-            return null;
+            return primaryResult ?? KnowledgeSearchResult.Unavailable(options.Primary.Kind);
 
-        return await TrySearchBackendAsync(options.Fallback, query, cancellationToken);
+        var fallbackResult = await TrySearchBackendAsync(options.Fallback, query, cancellationToken);
+        if (fallbackResult?.Outcome == KnowledgeSearchOutcome.Found)
+            return fallbackResult;
+
+        return CombineFailedAttempts(primaryResult, fallbackResult, options.Primary.Kind, options.Fallback.Kind);
     }
 
     private async Task<KnowledgeSearchResult?> TrySearchBackendAsync(
@@ -43,11 +49,28 @@ public sealed class KnowledgeSearchService(
             logger.LogDebug(
                 "Search backend {BackendKind} is configured but no provider is registered.",
                 backendSpec.Kind);
-            return null;
+            return KnowledgeSearchResult.Unavailable(backendSpec.Kind);
         }
 
-        return await provider.SearchAsync(
+        var result = await provider.SearchAsync(
             new KnowledgeSearchRequest(query, backendSpec),
             cancellationToken);
+        return result ?? KnowledgeSearchResult.Unavailable(backendSpec.Kind);
+    }
+
+    private static KnowledgeSearchResult CombineFailedAttempts(
+        KnowledgeSearchResult? primary,
+        KnowledgeSearchResult? fallback,
+        SearchBackendKind primaryKind,
+        SearchBackendKind fallbackKind)
+    {
+        var primaryOutcome = primary?.Outcome ?? KnowledgeSearchOutcome.Unavailable;
+        var fallbackOutcome = fallback?.Outcome ?? KnowledgeSearchOutcome.Unavailable;
+
+        if (primaryOutcome == KnowledgeSearchOutcome.Unavailable &&
+            fallbackOutcome == KnowledgeSearchOutcome.Unavailable)
+            return KnowledgeSearchResult.Unavailable(primary?.BackendKind ?? primaryKind);
+
+        return KnowledgeSearchResult.NotFound(fallback?.BackendKind ?? primary?.BackendKind ?? fallbackKind);
     }
 }

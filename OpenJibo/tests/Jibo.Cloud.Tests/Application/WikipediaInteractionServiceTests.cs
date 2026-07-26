@@ -91,6 +91,22 @@ public sealed class WikipediaInteractionServiceTests
             decision.ReplyText);
     }
 
+    [Fact]
+    public async Task BuildDecisionAsync_WhoIsQuery_WithoutSearchConfigured_SaysCantFindAnything()
+    {
+        var service = CreateService(
+            wikipediaSummaryProvider: new StubWikipediaSummaryProvider(null));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Who is Zzxxyyqq",
+            NormalizedTranscript = "Who is Zzxxyyqq"
+        });
+
+        Assert.Equal("knowledge_search_not_found", decision.IntentName);
+        Assert.Equal("I can't find anything.", decision.ReplyText);
+    }
+
     private static JiboInteractionService CreateService(
         IWikipediaSummaryProvider? wikipediaSummaryProvider = null,
         IKnowledgeSearchService? knowledgeSearchService = null)

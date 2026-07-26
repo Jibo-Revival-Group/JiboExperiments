@@ -44,18 +44,19 @@ public sealed class WolframAlphaSearchProviderTests
     }
 
     [Fact]
-    public async Task SearchAsync_ReturnsNull_WhenHttpUnauthorized()
+    public async Task SearchAsync_ReturnsUnavailable_WhenHttpUnauthorized()
     {
         var handler = new RecordingHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
         var provider = CreateProvider(handler);
 
         var result = await provider.SearchAsync(CreateRequest("What is two plus two"));
 
-        Assert.Null(result);
+        Assert.NotNull(result);
+        Assert.Equal(KnowledgeSearchOutcome.Unavailable, result!.Outcome);
     }
 
     [Fact]
-    public async Task SearchAsync_ReturnsNull_WhenWolframDoesNotUnderstand()
+    public async Task SearchAsync_ReturnsNotFound_WhenWolframDoesNotUnderstand()
     {
         var handler = new RecordingHttpMessageHandler(_ =>
             TextResponse("Wolfram Alpha did not understand your input"));
@@ -63,18 +64,20 @@ public sealed class WolframAlphaSearchProviderTests
 
         var result = await provider.SearchAsync(CreateRequest("blargh"));
 
-        Assert.Null(result);
+        Assert.NotNull(result);
+        Assert.Equal(KnowledgeSearchOutcome.NotFound, result!.Outcome);
     }
 
     [Fact]
-    public async Task SearchAsync_ReturnsNull_WhenResponseEmpty()
+    public async Task SearchAsync_ReturnsNotFound_WhenResponseEmpty()
     {
         var handler = new RecordingHttpMessageHandler(_ => TextResponse("   "));
         var provider = CreateProvider(handler);
 
         var result = await provider.SearchAsync(CreateRequest("What is two plus two"));
 
-        Assert.Null(result);
+        Assert.NotNull(result);
+        Assert.Equal(KnowledgeSearchOutcome.NotFound, result!.Outcome);
     }
 
     [Fact]

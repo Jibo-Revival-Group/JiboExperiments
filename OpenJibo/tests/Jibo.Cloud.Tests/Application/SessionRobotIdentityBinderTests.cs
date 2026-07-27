@@ -94,6 +94,58 @@ public sealed class SessionRobotIdentityBinderTests
         Assert.NotEqual(sessionOne.DeviceId, sessionTwo.DeviceId);
         Assert.Equal("jibo-unit-one", sessionOne.Metadata["friendlyId"]?.ToString());
         Assert.Equal("jibo-unit-two", sessionTwo.Metadata["friendlyId"]?.ToString());
+        Assert.Equal("1.9.2", sessionOne.Metadata["firmwareVersion"]?.ToString());
+        Assert.Equal("1.9.2", sessionTwo.Metadata["firmwareVersion"]?.ToString());
+    }
+
+    [Fact]
+    public void TryBindFromContextPayload_StampsFirmwareVersionFromGeneralRelease()
+    {
+        var session = new CloudSession
+        {
+            Kind = "neo-hub-listen",
+            DeviceId = null,
+            Token = "conn:xyz"
+        };
+
+        var bound = SessionRobotIdentityBinder.TryBindFromContextPayload(
+            session,
+            """{"runtime":{"loop":{"loopId":"loop-1","jibo":{"id":"jibo-beam-unit"},"users":[]}},"general":{"release":"BEam.1.1.0"}}""");
+
+        Assert.True(bound);
+        Assert.Equal("BEam.1.1.0", session.Metadata["firmwareVersion"]?.ToString());
+    }
+
+    [Fact]
+    public void MapListenMessage_UsesContextRelease_AsTurnFirmwareVersion()
+    {
+        var session = new CloudSession
+        {
+            Kind = "neo-hub-listen",
+            DeviceId = null,
+            Token = "conn:xyz"
+        };
+        session.TurnState.ContextPayload =
+            """{"runtime":{"loop":{"loopId":"loop-1","jibo":{"id":"jibo-unit-one"},"users":[]}},"general":{"release":"1.9.2"}}""";
+        SessionRobotIdentityBinder.TryBindFromContextPayload(session, session.TurnState.ContextPayload);
+
+        var turn = ProtocolToTurnContextMapper.MapListenMessage(
+            new WebSocketMessageEnvelope { HostName = "host", ConnectionId = "c1" },
+            session,
+            "AUTO_FINALIZE");
+
+        Assert.Equal("1.9.2", turn.FirmwareVersion);
+    }
+
+    [Fact]
+    public void TryReadRelease_ReadsGeneralRelease()
+    {
+        var ok = SessionRobotIdentityBinder.TryReadRelease(
+            """{"general":{"release":"2.0.1"}}""",
+            out var release);
+
+        Assert.True(ok);
+        Assert.Equal("2.0.1", release);
     }
 
     [Fact]

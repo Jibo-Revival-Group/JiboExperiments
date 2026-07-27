@@ -31,6 +31,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
             string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase);
         var isRadioLaunch = string.Equals(plan.IntentName, "radio", StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(plan.IntentName, "radio_genre", StringComparison.OrdinalIgnoreCase);
+        var isBadAppleLaunch = string.Equals(plan.IntentName, "bad_apple", StringComparison.OrdinalIgnoreCase) &&
+                               string.Equals(skill?.SkillName, "@be/bad-apple", StringComparison.OrdinalIgnoreCase);
         var isStopCommand = string.Equals(plan.IntentName, "stop", StringComparison.OrdinalIgnoreCase);
         var isVolumeControl = string.Equals(plan.IntentName, "volume_up", StringComparison.OrdinalIgnoreCase) ||
                               string.Equals(plan.IntentName, "volume_down", StringComparison.OrdinalIgnoreCase) ||
@@ -73,7 +75,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
             ? globalIntent
             : isWordOfDayLaunch
                 ? "menu"
-                : isRadioLaunch
+                : isRadioLaunch || isBadAppleLaunch
                     ? "menu"
                     : isSettingsLaunch && !string.IsNullOrWhiteSpace(localIntent)
                         ? localIntent
@@ -96,7 +98,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 ? string.Empty
                 : isGlobalCommand
                     ? transcript
-                    : isRadioLaunch
+                    : isRadioLaunch || isBadAppleLaunch
                         ? transcript
                         : isSettingsLaunch
                             ? transcript
@@ -120,7 +122,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 ? ["word-of-the-day/menu"]
                 : isGlobalCommand
                     ? BuildGlobalCommandRules(rules)
-                    : isRadioLaunch
+                    : isRadioLaunch || isBadAppleLaunch
                         ? []
                         : isSettingsLaunch
                             ? string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase)
@@ -243,6 +245,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     entities,
                     isWordOfDayLaunch ? "@be/word-of-the-day" :
                     isRadioLaunch ? "@be/radio" :
+                    isBadAppleLaunch ? "@be/bad-apple" :
                     isSettingsLaunch ? "@be/settings" :
                     isPhotoGalleryLaunch ? "@be/gallery" :
                     isPhotoCreateLaunch ? "@be/create" :
@@ -322,6 +325,22 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 75));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/radio")),
+                125));
+        }
+
+        if (isBadAppleLaunch)
+        {
+            messages.Add(new SocketReplyPlan(
+                JsonSerializer.Serialize(BuildSkillRedirectPayload(
+                    transId,
+                    "@be/bad-apple",
+                    outboundIntent,
+                    outboundAsrText,
+                    outboundRules,
+                    entities)),
+                75));
+            messages.Add(new SocketReplyPlan(
+                JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/bad-apple")),
                 125));
         }
 

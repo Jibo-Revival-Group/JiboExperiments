@@ -1,3 +1,5 @@
+using Jibo.Runtime.Abstractions;
+
 namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService
@@ -24,6 +26,23 @@ public sealed partial class JiboInteractionService
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
                 ["skillId"] = "@be/radio"
+            });
+    }
+
+    private static JiboInteractionDecision BuildBadAppleLaunchDecision(TurnContext turn)
+    {
+        if (!RobotFlavorClassifier.IsBeam(turn.FirmwareVersion))
+            return new JiboInteractionDecision(
+                "bad_apple",
+                "I can only play that on BEam.");
+
+        return new JiboInteractionDecision(
+            "bad_apple",
+            "Playing Bad Apple.",
+            "@be/bad-apple",
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/bad-apple"
             });
     }
 

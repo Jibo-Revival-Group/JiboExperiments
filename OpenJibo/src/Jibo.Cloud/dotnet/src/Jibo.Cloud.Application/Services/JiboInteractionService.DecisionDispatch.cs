@@ -159,6 +159,7 @@ public sealed partial class JiboInteractionService
             "day" => BuildClockLaunchDecision("day", "clock", "askForDay", "Showing the day."),
             "current_location" => BuildCurrentLocationDecision(turn),
             "cloud_version" => BuildCloudVersionDecision(),
+            "robot_flavor" => BuildRobotFlavorDecision(turn),
             "backup_help" => BuildScriptedSupportDecision(
                 catalog,
                 catalog.BackupHowReplies,
@@ -350,6 +351,7 @@ public sealed partial class JiboInteractionService
                 "stop staring at me"),
             "radio" => BuildRadioLaunchDecision(),
             "radio_genre" => BuildRadioGenreLaunchDecision(lowered),
+            "bad_apple" => BuildBadAppleLaunchDecision(turn),
             "stop" => BuildStopDecision(),
             "sleep" => BuildSleepDecision(),
             "wake_up" => BuildWakeUpDecision(),

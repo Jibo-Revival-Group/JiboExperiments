@@ -397,6 +397,9 @@ public sealed partial class JiboInteractionService
         if (MatchesAny(loweredTranscript, "open the radio", "play the radio", "turn on the radio", "radio"))
             return "radio";
 
+        if (MatchesAny(loweredTranscript, "play bad apple", "bad apple"))
+            return "bad_apple";
+
         if (MatchesAny(
                 loweredTranscript,
                 "do you like sleep",
@@ -1639,6 +1642,18 @@ public sealed partial class JiboInteractionService
                 "what are your super powers",
                 "what are your superpowers"))
             return "robot_do_you_have_super_powers";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what flavor are you",
+                "what's your flavor",
+                "what s your flavor",
+                "what flavour are you",
+                "what's your flavour",
+                "what s your flavour",
+                "what kind of flavor are you",
+                "what kind of flavour are you"))
+            return "robot_flavor";
 
         if (MatchesAny(
                 loweredTranscript,

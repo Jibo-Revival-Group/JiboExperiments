@@ -1,3 +1,5 @@
+using Jibo.Runtime.Abstractions;
+
 namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService
@@ -6,6 +8,13 @@ public sealed partial class JiboInteractionService
     {
         return new JiboInteractionDecision("cloud_version", OpenJiboCloudBuildInfo.SpokenVersion,
             SkillPayload: new Dictionary<string, object?> { ["esml"] = OpenJiboCloudBuildInfo.EsmlVersion });
+    }
+
+    private static JiboInteractionDecision BuildRobotFlavorDecision(TurnContext turn)
+    {
+        return new JiboInteractionDecision(
+            "robot_flavor",
+            RobotFlavorClassifier.ClassifySpokenReply(turn.FirmwareVersion));
     }
 
     private static string ResolveSemanticIntent(

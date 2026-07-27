@@ -28,7 +28,43 @@ public static class SessionRobotIdentityBinder
             session.Metadata["accountID"] = accountId;
         }
 
+        if (TryReadRelease(contextPayloadOrEnvelopeText, out var release) &&
+            !string.IsNullOrWhiteSpace(release))
+            session.Metadata["firmwareVersion"] = release;
+
         return true;
+    }
+
+    /// <summary>
+    /// Reads <c>data.general.release</c> from a CONTEXT payload (real BE firmware always sends it).
+    /// </summary>
+    public static bool TryReadRelease(string? json, out string? release)
+    {
+        release = null;
+        if (string.IsNullOrWhiteSpace(json)) return false;
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            var data = root.TryGetProperty("data", out var nestedData) && nestedData.ValueKind == JsonValueKind.Object
+                ? nestedData
+                : root;
+
+            if (data.TryGetProperty("general", out var general) &&
+                general.ValueKind == JsonValueKind.Object &&
+                TryReadString(general, "release", out var value))
+            {
+                release = value;
+                return true;
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static string? ResolveRobotFriendlyId(CloudSession session, string? contextPayload = null)

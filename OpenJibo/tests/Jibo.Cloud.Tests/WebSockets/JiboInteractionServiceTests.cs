@@ -6244,6 +6244,86 @@ public sealed class JiboInteractionServiceTests
         Assert.DoesNotContain("Jibo", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("what flavor are you", "1.9.2", RobotFlavorClassifier.Stock)]
+    [InlineData("what's your flavor", "2.0.0", RobotFlavorClassifier.Stock)]
+    [InlineData("what flavour are you", "0.9.0", RobotFlavorClassifier.BetaStock)]
+    [InlineData("what flavor are you", "BEam.1.1.0", RobotFlavorClassifier.Beam)]
+    [InlineData("what flavor are you", "2.0.1", RobotFlavorClassifier.OldBeam)]
+    [InlineData("what flavor are you", null, RobotFlavorClassifier.UnsureReply)]
+    public async Task BuildDecisionAsync_RobotFlavor_UsesFirmwareVersion(
+        string transcript,
+        string? firmwareVersion,
+        string expectedReply)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            FirmwareVersion = firmwareVersion
+        });
+
+        Assert.Equal("robot_flavor", decision.IntentName);
+        Assert.Equal(expectedReply, decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_WhatFlavorAreYou_DoesNotFallThroughToRobotIdentity()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what flavor are you",
+            NormalizedTranscript = "what flavor are you",
+            FirmwareVersion = "1.9.2"
+        });
+
+        Assert.Equal("robot_flavor", decision.IntentName);
+        Assert.NotEqual("robot_identity", decision.IntentName);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PlayBadApple_LaunchesSkillOnBeam()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "play bad apple",
+            NormalizedTranscript = "play bad apple",
+            FirmwareVersion = "BEam.1.1.0"
+        });
+
+        Assert.Equal("bad_apple", decision.IntentName);
+        Assert.Equal("@be/bad-apple", decision.SkillName);
+        Assert.Equal("Playing Bad Apple.", decision.ReplyText);
+    }
+
+    [Theory]
+    [InlineData("1.9.2")]
+    [InlineData("2.0.0")]
+    [InlineData("2.0.1")]
+    [InlineData("0.9.0")]
+    [InlineData(null)]
+    public async Task BuildDecisionAsync_PlayBadApple_RefusesWhenNotBeam(string? firmwareVersion)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "play bad apple",
+            NormalizedTranscript = "play bad apple",
+            FirmwareVersion = firmwareVersion
+        });
+
+        Assert.Equal("bad_apple", decision.IntentName);
+        Assert.Null(decision.SkillName);
+        Assert.Equal("I can only play that on BEam.", decision.ReplyText);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_HeyJiboTime_StillRoutesToTime()
     {

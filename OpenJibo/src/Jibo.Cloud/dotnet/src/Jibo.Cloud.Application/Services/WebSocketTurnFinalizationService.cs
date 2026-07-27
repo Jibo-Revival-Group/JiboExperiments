@@ -12,7 +12,8 @@ public sealed class WebSocketTurnFinalizationService(
     ISttStrategySelector sttStrategySelector,
     ITurnTelemetrySink sink,
     ILogger<WebSocketTurnFinalizationService> logger,
-    HomeAssistantCommandService? homeAssistantCommandService = null
+    HomeAssistantCommandService? homeAssistantCommandService = null,
+    ICloudStateStore? cloudStateStore = null
 )
 {
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
@@ -424,6 +425,7 @@ public sealed class WebSocketTurnFinalizationService(
             SessionRobotIdentityBinder.TryBindFromContextPayload(
                 session,
                 turnState.ContextPayload ?? envelope.Text);
+            PersistContextRelease(session, turnState.ContextPayload ?? envelope.Text);
 
             if (TryReadContextProperty(envelope.Text, "audioTranscriptHint", out var transcriptHint) &&
                 !string.IsNullOrWhiteSpace(transcriptHint))
@@ -482,6 +484,18 @@ public sealed class WebSocketTurnFinalizationService(
         {
             await TrackGlsmPhaseAsync(session, envelope, "context", cancellationToken);
         }
+    }
+
+    private void PersistContextRelease(CloudSession session, string? contextPayload)
+    {
+        if (cloudStateStore is null ||
+            string.IsNullOrWhiteSpace(session.DeviceId) ||
+            !SessionRobotIdentityBinder.TryReadRelease(contextPayload, out var release) ||
+            string.IsNullOrWhiteSpace(release))
+            return;
+
+        session.Metadata["firmwareVersion"] = release;
+        cloudStateStore.GetOrCreateDevice(session.DeviceId, release, null);
     }
 
     public async Task<IReadOnlyList<WebSocketReply>> HandleTurnAsync(
@@ -1550,6 +1564,7 @@ public sealed class WebSocketTurnFinalizationService(
                 !string.Equals(plan.IntentName, "word_of_the_day", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "radio", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "radio_genre", StringComparison.OrdinalIgnoreCase) &&
+                !IsBadAppleSkillLaunch(plan) &&
                 !string.Equals(plan.IntentName, "stop", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "volume_up", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "volume_down", StringComparison.OrdinalIgnoreCase) &&
@@ -2240,6 +2255,13 @@ public sealed class WebSocketTurnFinalizationService(
     {
         return !string.IsNullOrWhiteSpace(intentName) &&
                intentName.StartsWith("personal_report_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsBadAppleSkillLaunch(ResponsePlan plan)
+    {
+        return string.Equals(plan.IntentName, "bad_apple", StringComparison.OrdinalIgnoreCase) &&
+               plan.Actions.OfType<InvokeNativeSkillAction>().Any(action =>
+                   string.Equals(action.SkillName, "@be/bad-apple", StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool ShouldHandleAsLocalNoInput(TurnContext turn)

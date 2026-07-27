@@ -400,6 +400,9 @@ public static class LegacyMimCatalogImporter
             fileName.StartsWith("RN_WhatAreYouFeeling", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.Emotion;
 
+        if (fileName.StartsWith("PartOfDayCorrection", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.PartOfDayCorrection;
+
         if (fileName.Contains("Greeting", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("RN_", StringComparison.OrdinalIgnoreCase) ||
             fileName.Contains("Welcome", StringComparison.OrdinalIgnoreCase))
@@ -443,6 +446,8 @@ public static class LegacyMimCatalogImporter
             HolidaySingReplies = Merge(baseCatalog.HolidaySingReplies, importedCatalog.HolidaySingReplies),
             DanceAnimations = Merge(baseCatalog.DanceAnimations, importedCatalog.DanceAnimations),
             GreetingReplies = Merge(baseCatalog.GreetingReplies, importedCatalog.GreetingReplies),
+            PartOfDayCorrectionReplies = Merge(baseCatalog.PartOfDayCorrectionReplies,
+                importedCatalog.PartOfDayCorrectionReplies),
             HolidayReplies = Merge(baseCatalog.HolidayReplies, importedCatalog.HolidayReplies),
             HolidaySeasonReplies = Merge(baseCatalog.HolidaySeasonReplies, importedCatalog.HolidaySeasonReplies),
             HolidayGreetingReplies = Merge(baseCatalog.HolidayGreetingReplies, importedCatalog.HolidayGreetingReplies),
@@ -659,6 +664,7 @@ public static class LegacyMimCatalogImporter
     {
         GenericFallback,
         Greeting,
+        PartOfDayCorrection,
         Holiday,
         HolidaySeason,
         HolidayGreeting,
@@ -817,6 +823,7 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _newsCategoryIntroReplies = [];
         private readonly List<string> _newsIntroReplies = [];
         private readonly List<string> _newsOutroReplies = [];
+        private readonly List<JiboConditionedReply> _partOfDayCorrectionReplies = [];
         private readonly List<string> _personalities = [];
         private readonly List<string> _personalReportKickOffReplies = [];
         private readonly List<string> _personalReportOutroReplies = [];
@@ -852,6 +859,9 @@ public static class LegacyMimCatalogImporter
                     if (_greetings.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
 
                     _greetings.Add(text);
+                    return;
+                case LegacyMimBucket.PartOfDayCorrection:
+                    AddDistinct(_partOfDayCorrectionReplies, condition, text);
                     return;
                 case LegacyMimBucket.Jokes:
                     if (_jokes.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
@@ -1164,6 +1174,7 @@ public static class LegacyMimCatalogImporter
                 SingReplies = [.. _singReplies],
                 HolidaySingReplies = [.. _holidaySingReplies],
                 GreetingReplies = [.. _greetings],
+                PartOfDayCorrectionReplies = [.. _partOfDayCorrectionReplies],
                 HolidayReplies = [.. _holidayReplies],
                 HolidaySeasonReplies = [.. _holidaySeasonReplies],
                 HolidayGreetingReplies = [.. _holidayGreetingReplies],

@@ -155,17 +155,41 @@ public sealed partial class JiboInteractionService
 
     private JiboInteractionDecision BuildReactiveGreetingDecision(
         TurnContext turn,
+        JiboExperienceCatalog catalog,
         string greetingIntent,
         DateTimeOffset? referenceLocalTime)
     {
         var presence = ResolveGreetingPresenceProfile(turn);
         var displayName = ResolvePreferredGreetingName(turn, presence);
-        var replyText = BuildReactiveGreetingReply(greetingIntent, displayName, referenceLocalTime);
-        RecordGreetingPresence(turn, presence, "ReactiveGreeting", greetingIntent, displayName, false);
+        string replyText;
+        string route;
+
+        if (JiboPartOfDayExtensions.TryGetClaimedPartOfDay(greetingIntent, out var claimed))
+        {
+            var localTime = referenceLocalTime ?? DateTimeOffset.UtcNow;
+            var actual = JiboPartOfDayExtensions.GetPartOfDay(localTime);
+            if (!JiboPartOfDayExtensions.MatchesClaim(actual, claimed))
+            {
+                replyText = PartOfDayCorrectionReplyBuilder.BuildReply(catalog, randomizer, claimed, displayName);
+                route = "PartOfDayCorrection";
+            }
+            else
+            {
+                replyText = BuildReactiveGreetingReply(greetingIntent, displayName, referenceLocalTime);
+                route = "ReactiveGreeting";
+            }
+        }
+        else
+        {
+            replyText = BuildReactiveGreetingReply(greetingIntent, displayName, referenceLocalTime);
+            route = "ReactiveGreeting";
+        }
+
+        RecordGreetingPresence(turn, presence, route, greetingIntent, displayName, false);
         return new JiboInteractionDecision(
             greetingIntent,
             replyText,
-            ContextUpdates: BuildGreetingContextUpdates("ReactiveGreeting", presence.PrimaryPersonId, false));
+            ContextUpdates: BuildGreetingContextUpdates(route, presence.PrimaryPersonId, false));
     }
 
     private JiboInteractionDecision BuildProactiveGreetingDecision(

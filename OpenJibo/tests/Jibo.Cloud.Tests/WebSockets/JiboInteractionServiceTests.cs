@@ -293,7 +293,7 @@ public sealed class JiboInteractionServiceTests
                 ["accountId"] = "acct-a",
                 ["loopId"] = "loop-a",
                 ["context"] =
-                    """{"runtime":{"perception":{"speaker":"person-a","peoplePresent":[{"id":"person-a"}]},"loop":{"users":[{"id":"person-a","firstName":"jake"}]}}}"""
+                    """{"runtime":{"location":{"iso":"2026-07-27T08:00:00-04:00"},"perception":{"speaker":"person-a","peoplePresent":[{"id":"person-a"}]},"loop":{"users":[{"id":"person-a","firstName":"jake"}]}}}"""
             },
             DeviceId = "device-a"
         });
@@ -325,13 +325,42 @@ public sealed class JiboInteractionServiceTests
                 ["accountId"] = "acct-a",
                 ["loopId"] = "loop-a",
                 ["context"] =
-                    """{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
+                    """{"runtime":{"location":{"iso":"2026-07-27T08:00:00-04:00"},"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
             },
             DeviceId = "device-a"
         });
 
         Assert.Equal("good_morning", decision.IntentName);
         Assert.Equal("Good morning, Alex. It is great to see you.", decision.ReplyText);
+    }
+
+    [Theory]
+    [InlineData("good morning", "2026-07-27T08:00:00-04:00", "ReactiveGreeting", "Good morning. It is great to see you.")]
+    [InlineData("good morning", "2026-07-27T20:00:00-04:00", "PartOfDayCorrection", "any time of day")]
+    [InlineData("good afternoon", "2026-07-27T15:00:00-04:00", "ReactiveGreeting", "Good afternoon. I am glad you are here.")]
+    [InlineData("good afternoon", "2026-07-27T21:00:00-04:00", "PartOfDayCorrection", "afternoon somewhere")]
+    [InlineData("good evening", "2026-07-27T08:00:00-04:00", "PartOfDayCorrection", "don't think it's evening")]
+    [InlineData("good night", "2026-07-27T08:00:00-04:00", "ReactiveGreeting", "Good night. Sleep well.")]
+    public async Task BuildDecisionAsync_TimeGreetings_UsePartOfDayCorrectionWhenClaimDoesNotMatch(
+        string transcript,
+        string localIsoTime,
+        string expectedRoute,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = $"{{\"runtime\":{{\"location\":{{\"iso\":\"{localIsoTime}\"}}}}}}"
+            }
+        });
+
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(expectedRoute, decision.ContextUpdates![GreetingRouteKey]);
     }
 
     [Fact]

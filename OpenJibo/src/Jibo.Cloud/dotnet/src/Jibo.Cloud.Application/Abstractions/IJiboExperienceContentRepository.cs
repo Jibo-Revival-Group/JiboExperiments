@@ -25,6 +25,7 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> HolidaySingReplies { get; init; } = [];
     public IReadOnlyList<string> DanceAnimations { get; init; } = [];
     public IReadOnlyList<string> GreetingReplies { get; init; } = [];
+    public IReadOnlyList<JiboConditionedReply> PartOfDayCorrectionReplies { get; init; } = [];
     public IReadOnlyList<string> StoryReplies { get; init; } = [];
     public IReadOnlyList<string> HolidayReplies { get; init; } = [];
     public IReadOnlyList<string> HolidaySeasonReplies { get; init; } = [];

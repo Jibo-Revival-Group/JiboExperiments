@@ -3047,10 +3047,26 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
-                "how are you",
                 "what's up",
                 "what s up",
                 "what up",
+                "whats up",
+                "sup"))
+            return "whats_up";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "goodbye",
+                "good bye",
+                "see you later",
+                "see ya",
+                "bye bye",
+                "bye"))
+            return "goodbye";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how are you",
                 "how is it going",
                 "how's it going",
                 "how are things",

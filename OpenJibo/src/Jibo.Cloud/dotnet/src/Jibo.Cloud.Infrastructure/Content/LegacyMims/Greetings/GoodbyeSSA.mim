@@ -1,0 +1,35 @@
+{
+	"mim_id": "GoodbyeSSA",
+	"skill_id": "greetings",
+	"mim_type": "announcement",
+	"rule_name": "N/A",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"timeout": 0,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "",
+	"prompts": [
+		{
+			"mim_id": "GoodbyeSSA",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<ssa cat='goodbye' nonBlocking='true'/><anim cat='greeting' filter='goodbye'/>",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "GoodbyeSSA_AN_01",
+			"weight": 1
+		}
+	],
+	"es_auto_tagging": true,
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false
+}

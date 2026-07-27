@@ -40,12 +40,15 @@ internal static class JiboPartOfDayExtensions
 
     internal static bool MatchesClaim(JiboPartOfDay actual, JiboPartOfDay claimed) => actual == claimed;
 
-    internal static string ToClaimToken(this JiboPartOfDay partOfDay) =>
+    internal static string ToClaimToken(this JiboPartOfDay partOfDay) => partOfDay.ToPodToken();
+
+    internal static string ToPodToken(this JiboPartOfDay partOfDay) =>
         partOfDay switch
         {
             JiboPartOfDay.Morning => "morning",
             JiboPartOfDay.Afternoon => "afternoon",
             JiboPartOfDay.Evening => "evening",
+            JiboPartOfDay.Night => "night",
             _ => string.Empty
         };
 }

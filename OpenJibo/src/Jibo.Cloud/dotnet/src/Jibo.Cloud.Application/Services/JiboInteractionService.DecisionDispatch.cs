@@ -1290,6 +1290,8 @@ public sealed partial class JiboInteractionService
             "good_afternoon" => BuildReactiveGreetingDecision(turn, catalog, "good_afternoon", referenceLocalTime),
             "good_evening" => BuildReactiveGreetingDecision(turn, catalog, "good_evening", referenceLocalTime),
             "good_night" => BuildReactiveGreetingDecision(turn, catalog, "good_night", referenceLocalTime),
+            "whats_up" => BuildWhatsUpDecision(turn, catalog, referenceLocalTime),
+            "goodbye" => BuildGoodbyeDecision(turn, catalog, referenceLocalTime),
             "welcome_back" => BuildScriptedGreetingDecision(
                 catalog,
                 "welcome_back",

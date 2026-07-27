@@ -1,0 +1,41 @@
+{
+	"mim_id": "GenericAfternoonSalutation",
+	"skill_id": "greetings",
+	"mim_type": "announcement",
+	"rule_name": "N/A",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 0,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "",
+	"prompts": [
+		{
+			"mim_id": "GenericAfternoonSalutation",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='greeting' filter='hello' nonBlocking='true' />Good afternoon!",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "GenericAfternoonSalutation_AN_01"
+		},
+		{
+			"mim_id": "GenericAfternoonSalutation",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<anim cat='happy' filter='eye-only' nonBlocking='true' />Afternoon!",
+			"media": "TTS",
+			"extra": "",
+			"prompt_id": "GenericAfternoonSalutation_AN_02"
+		}
+	],
+	"num_tries_for_gui": 2,
+	"es_auto_tagging": true
+}

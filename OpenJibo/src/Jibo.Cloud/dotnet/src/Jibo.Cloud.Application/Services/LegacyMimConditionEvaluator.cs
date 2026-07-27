@@ -2,7 +2,14 @@ namespace Jibo.Cloud.Application.Services;
 
 internal static class LegacyMimConditionEvaluator
 {
-    internal readonly record struct Context(string? HolidayClaim, string? Holiday, DateOnly CurrentDate);
+    internal readonly record struct Context(
+        string? HolidayClaim,
+        string? Holiday,
+        DateOnly CurrentDate,
+        string? PodClaim = null,
+        string? Pod = null,
+        bool HasSpeaker = false,
+        string? Emotion = null);
 
     internal static bool Matches(string? condition, Context context)
     {
@@ -30,17 +37,60 @@ internal static class LegacyMimConditionEvaluator
         if (atom.StartsWith('(') && atom.EndsWith(')'))
             return Matches(atom[1..^1].Trim(), context);
 
-        if (atom.StartsWith("holidayclaim===", StringComparison.OrdinalIgnoreCase))
-            return StringEquals(Unquote(atom["holidayclaim===".Length..]), context.HolidayClaim);
+        if (string.Equals(atom, "loopMember", StringComparison.OrdinalIgnoreCase))
+            return context.HasSpeaker;
 
-        if (atom.StartsWith("holiday===", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(atom, "!speaker", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(atom, "!loopMember", StringComparison.OrdinalIgnoreCase))
+            return !context.HasSpeaker;
+
+        if (string.Equals(atom, "!!speaker", StringComparison.OrdinalIgnoreCase))
+            return context.HasSpeaker;
+
+        if (string.Equals(atom, "!jibo.emotion", StringComparison.OrdinalIgnoreCase))
+            return string.IsNullOrWhiteSpace(context.Emotion);
+
+        if (TryMatchEquality(atom, "holidayclaim", out var holidayClaimExpected))
+            return StringEquals(holidayClaimExpected, context.HolidayClaim);
+
+        if (TryMatchEquality(atom, "holiday", out var holidayExpected))
         {
             var holiday = context.Holiday ?? context.HolidayClaim;
-            return StringEquals(Unquote(atom["holiday===".Length..]), holiday);
+            return StringEquals(holidayExpected, holiday);
+        }
+
+        if (TryMatchEquality(atom, "podclaim", out var podClaimExpected))
+            return StringEquals(podClaimExpected, context.PodClaim);
+
+        if (TryMatchEquality(atom, "pod", out var podExpected))
+        {
+            var pod = context.PodClaim ?? context.Pod;
+            return StringEquals(podExpected, pod);
+        }
+
+        if (TryMatchEquality(atom, "jibo.emotion", out var emotionExpected))
+        {
+            var actual = string.IsNullOrWhiteSpace(context.Emotion) ? "NEUTRAL" : context.Emotion;
+            return StringEquals(emotionExpected, actual);
         }
 
         if (atom.Contains("isinrange(", StringComparison.OrdinalIgnoreCase))
             return JiboLegacyDateRange.MatchesDateRangeCondition(atom, context.CurrentDate);
+
+        return false;
+    }
+
+    private static bool TryMatchEquality(string atom, string key, out string expected)
+    {
+        expected = string.Empty;
+        foreach (var op in new[] { "===", "==" })
+        {
+            var prefix = key + op;
+            if (!atom.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+
+            expected = Unquote(atom[prefix.Length..]);
+            return true;
+        }
 
         return false;
     }

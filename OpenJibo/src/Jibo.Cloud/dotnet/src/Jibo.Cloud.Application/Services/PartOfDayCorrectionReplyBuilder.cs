@@ -4,24 +4,39 @@ namespace Jibo.Cloud.Application.Services;
 
 internal static class PartOfDayCorrectionReplyBuilder
 {
+    internal static LegacyMimSelection BuildSelection(
+        JiboExperienceCatalog catalog,
+        IJiboRandomizer randomizer,
+        JiboPartOfDay claimed,
+        string? displayName,
+        DateTimeOffset? referenceLocalTime = null)
+    {
+        var localTime = referenceLocalTime ?? DateTimeOffset.UtcNow;
+        var context = new LegacyMimConditionEvaluator.Context(
+            HolidayClaim: null,
+            Holiday: null,
+            CurrentDate: DateOnly.FromDateTime(localTime.LocalDateTime),
+            PodClaim: claimed.ToClaimToken(),
+            Pod: JiboPartOfDayExtensions.GetPartOfDay(localTime).ToPodToken(),
+            HasSpeaker: !string.IsNullOrWhiteSpace(displayName));
+
+        return LegacyMimReplySelector.Select(
+            catalog.PartOfDayCorrectionReplies,
+            randomizer,
+            context,
+            displayName,
+            GetFallbackReply(claimed),
+            "PartOfDayCorrection");
+    }
+
     internal static string BuildReply(
         JiboExperienceCatalog catalog,
         IJiboRandomizer randomizer,
         JiboPartOfDay claimed,
-        string? displayName)
+        string? displayName,
+        DateTimeOffset? referenceLocalTime = null)
     {
-        var claimToken = claimed.ToClaimToken();
-        var matchingReplies = catalog.PartOfDayCorrectionReplies
-            .Where(reply => MatchesPodClaim(reply.Condition, claimToken))
-            .Select(reply => reply.Reply)
-            .Where(reply => !string.IsNullOrWhiteSpace(reply))
-            .ToArray();
-
-        var selected = matchingReplies.Length > 0
-            ? randomizer.Choose(matchingReplies)
-            : GetFallbackReply(claimed);
-
-        return RenderTemplate(selected, displayName);
+        return BuildSelection(catalog, randomizer, claimed, displayName, referenceLocalTime).ReplyText;
     }
 
     private static string GetFallbackReply(JiboPartOfDay claimed) =>
@@ -32,22 +47,4 @@ internal static class PartOfDayCorrectionReplyBuilder
             JiboPartOfDay.Evening => "I may be wrong, but I don't think it's evening.",
             _ => "Hello."
         };
-
-    private static bool MatchesPodClaim(string? condition, string claimToken)
-    {
-        if (string.IsNullOrWhiteSpace(condition) || string.IsNullOrWhiteSpace(claimToken)) return false;
-
-        return condition.Contains($"PODclaim=='{claimToken}'", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string RenderTemplate(string template, string? displayName)
-    {
-        var speakerName = string.IsNullOrWhiteSpace(displayName) ? string.Empty : displayName.Trim();
-        return template
-            .Replace("${loopMember}", speakerName, StringComparison.OrdinalIgnoreCase)
-            .Replace(" ,", ",", StringComparison.Ordinal)
-            .Replace(",,", ",", StringComparison.Ordinal)
-            .Replace("  ", " ", StringComparison.Ordinal)
-            .Trim();
-    }
 }

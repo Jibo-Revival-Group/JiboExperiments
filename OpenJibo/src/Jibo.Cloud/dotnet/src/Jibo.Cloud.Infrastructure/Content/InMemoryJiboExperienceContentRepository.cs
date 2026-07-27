@@ -191,6 +191,49 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                     Weight = 1
                 }
             ],
+            ReactiveGreetingReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Condition = "POD=='morning'",
+                    Reply = "Good morning!",
+                    MimId = "GenericMorningSalutation"
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "POD=='afternoon'",
+                    Reply = "Good afternoon!",
+                    MimId = "GenericAfternoonSalutation"
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "POD=='evening'",
+                    Reply = "Good evening!",
+                    MimId = "GenericEveningSalutation"
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "POD=='night'",
+                    Reply = "Good night!",
+                    MimId = "GenericNightSalutation"
+                }
+            ],
+            WhatsUpReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Reply = "Not much. Just being Jibo.",
+                    MimId = "WhatsUpResp"
+                }
+            ],
+            GoodbyeReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Reply = "Goodbye. Break a leg.",
+                    MimId = "GoodbyeRespCM"
+                }
+            ],
             StoryReplies =
             [
                 "I don't have any stories for you just yet. But I'd really like to learn some soon.",

@@ -17,60 +17,45 @@ internal static class ReactiveHolidayReplyBuilder
 
         var currentDate = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).LocalDateTime);
         var isHolidayToday = JiboHolidayGreeting.IsClaimedHolidayToday(holidayClaim, todaysHolidayNames);
+        var context = new LegacyMimConditionEvaluator.Context(
+            holidayClaim,
+            holidayClaim,
+            currentDate);
 
         if (isHolidayToday)
         {
-            var reply = SelectReply(
+            var selection = LegacyMimReplySelector.Select(
                 catalog.HolidayResponseReplies,
                 randomizer,
-                new LegacyMimConditionEvaluator.Context(holidayClaim, holidayClaim, currentDate),
-                GetHolidayResponseFallback(holidayClaim));
+                context,
+                displayName: null,
+                GetHolidayResponseFallback(holidayClaim),
+                "HolidayResponse");
 
             return new JiboInteractionDecision(
                 intentName,
-                reply,
-                ContextUpdates: BuildContextUpdates("HolidayResponse"));
+                selection.ReplyText,
+                SkillPayload: LegacyMimDecisionMetadata.BuildSkillPayload(selection, "HolidayResponse"),
+                ContextUpdates: LegacyMimDecisionMetadata.ApplyEmotion(
+                    BuildContextUpdates("HolidayResponse"),
+                    selection.Emotion));
         }
 
-        var notHolidayReply = SelectReply(
+        var notHolidaySelection = LegacyMimReplySelector.Select(
             catalog.NotHolidayReplies,
             randomizer,
-            new LegacyMimConditionEvaluator.Context(holidayClaim, holidayClaim, currentDate),
-            GetNotHolidayFallback(holidayClaim));
+            context,
+            displayName: null,
+            GetNotHolidayFallback(holidayClaim),
+            "NotHoliday");
 
         return new JiboInteractionDecision(
             intentName,
-            notHolidayReply,
-            ContextUpdates: BuildContextUpdates("NotHoliday"));
-    }
-
-    private static string SelectReply(
-        IReadOnlyList<JiboConditionedReply> replies,
-        IJiboRandomizer randomizer,
-        LegacyMimConditionEvaluator.Context context,
-        string fallback)
-    {
-        var matchingReplies = replies
-            .Where(reply => LegacyMimConditionEvaluator.Matches(reply.Condition, context))
-            .ToArray();
-
-        if (matchingReplies.Length == 0) return fallback;
-
-        return ChooseWeighted(randomizer, matchingReplies);
-    }
-
-    private static string ChooseWeighted(IJiboRandomizer randomizer, IReadOnlyList<JiboConditionedReply> replies)
-    {
-        var maxWeight = replies.Max(reply => reply.Weight <= 0 ? 0.1 : reply.Weight);
-        var topTier = replies
-            .Where(reply => Math.Abs((reply.Weight <= 0 ? 0.1 : reply.Weight) - maxWeight) < 0.001)
-            .Select(reply => reply.Reply)
-            .Where(reply => !string.IsNullOrWhiteSpace(reply))
-            .ToArray();
-
-        return topTier.Length == 0
-            ? string.Empty
-            : randomizer.Choose(topTier);
+            notHolidaySelection.ReplyText,
+            SkillPayload: LegacyMimDecisionMetadata.BuildSkillPayload(notHolidaySelection, "NotHoliday"),
+            ContextUpdates: LegacyMimDecisionMetadata.ApplyEmotion(
+                BuildContextUpdates("NotHoliday"),
+                notHolidaySelection.Emotion));
     }
 
     private static string GetHolidayResponseFallback(string? holidayClaim) =>

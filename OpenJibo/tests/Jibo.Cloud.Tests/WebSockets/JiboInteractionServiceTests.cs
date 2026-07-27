@@ -299,7 +299,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("good_morning", decision.IntentName);
-        Assert.Equal("Good morning, Jake. It is great to see you.", decision.ReplyText);
+        Assert.Contains("Good morning", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("ReactiveGreeting", decision.ContextUpdates![GreetingRouteKey]);
         Assert.Equal("person-a", decision.ContextUpdates[GreetingSpeakerKey]);
@@ -331,16 +331,16 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("good_morning", decision.IntentName);
-        Assert.Equal("Good morning, Alex. It is great to see you.", decision.ReplyText);
+        Assert.Contains("Good morning", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Theory]
-    [InlineData("good morning", "2026-07-27T08:00:00-04:00", "ReactiveGreeting", "Good morning. It is great to see you.")]
+    [InlineData("good morning", "2026-07-27T08:00:00-04:00", "ReactiveGreeting", "Good morning")]
     [InlineData("good morning", "2026-07-27T20:00:00-04:00", "PartOfDayCorrection", "any time of day")]
-    [InlineData("good afternoon", "2026-07-27T15:00:00-04:00", "ReactiveGreeting", "Good afternoon. I am glad you are here.")]
+    [InlineData("good afternoon", "2026-07-27T15:00:00-04:00", "ReactiveGreeting", "Good afternoon")]
     [InlineData("good afternoon", "2026-07-27T21:00:00-04:00", "PartOfDayCorrection", "afternoon somewhere")]
     [InlineData("good evening", "2026-07-27T08:00:00-04:00", "PartOfDayCorrection", "don't think it's evening")]
-    [InlineData("good night", "2026-07-27T08:00:00-04:00", "ReactiveGreeting", "Good night. Sleep well.")]
+    [InlineData("good night", "2026-07-27T08:00:00-04:00", "ReactiveGreeting", "Good night")]
     public async Task BuildDecisionAsync_TimeGreetings_UsePartOfDayCorrectionWhenClaimDoesNotMatch(
         string transcript,
         string localIsoTime,

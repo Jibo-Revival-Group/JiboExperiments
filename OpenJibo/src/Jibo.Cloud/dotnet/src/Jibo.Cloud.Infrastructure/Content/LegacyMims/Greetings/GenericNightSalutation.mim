@@ -1,0 +1,39 @@
+{
+	"mim_id": "GenericNightSalutation",
+	"skill_id": "greetings",
+	"mim_type": "announcement",
+	"rule_name": "N/A",
+	"rule_slots": "",
+	"screen_slots_available": false,
+	"sample_utterances": "",
+	"timeout": 0,
+	"max_tries": null,
+	"force_confirmation": false,
+	"barge_in": false,
+	"photo_quality_light": false,
+	"notes": "",
+	"prompts": [
+		{
+			"mim_id": "GenericNightSalutation",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Hey!",
+			"media": "TTS",
+			"extra": "Must be whispered",
+			"prompt_id": "GenericNightSalutation_AN_01"
+		},
+		{
+			"mim_id": "GenericNightSalutation",
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "He there!",
+			"media": "TTS",
+			"extra": "Must be whispered",
+			"prompt_id": "GenericNightSalutation_AN_02"
+		}
+	]
+}

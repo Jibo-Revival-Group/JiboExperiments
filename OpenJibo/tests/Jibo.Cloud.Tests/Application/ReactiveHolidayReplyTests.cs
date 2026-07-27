@@ -46,6 +46,16 @@ public sealed class ReactiveHolidayReplyTests
         Assert.False(JiboHolidayGreeting.TryExtractHolidayClaim(transcript, out _));
     }
 
+    [Theory]
+    [InlineData("Christmas", "Christmas Day")]
+    [InlineData("Thanksgiving", "Thanksgiving Day")]
+    public void JiboHolidayGreeting_IsClaimedHolidayToday_MatchesNagerStyleNames(
+        string holidayClaim,
+        string calendarName)
+    {
+        Assert.True(JiboHolidayGreeting.IsClaimedHolidayToday(holidayClaim, [calendarName]));
+    }
+
     [Fact]
     public async Task ReactiveHolidayReplyBuilder_UsesImportedChristmasLinesFromMergedCatalog()
     {

@@ -80,6 +80,8 @@ internal static class JiboHolidayGreeting
             ["Valentine's Day"] = ["Valintines Day", "Valentines Day"],
             ["St. Patrick's Day"] = ["St Patricks Day", "Saint Patrick's Day"],
             ["Independence Day"] = ["July 4th", "Fourth of July"],
+            ["Christmas"] = ["Christmas Day"],
+            ["Thanksgiving"] = ["Thanksgiving Day"],
             ["Hanukkah"] = ["Hannukah", "Chanukah"]
         };
 

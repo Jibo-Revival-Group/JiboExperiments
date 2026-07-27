@@ -829,11 +829,21 @@ public sealed partial class JiboInteractionService
     }
 
     private JiboInteractionDecision BuildScriptedSupportDecision(
+        JiboExperienceCatalog catalog,
         IReadOnlyList<string> replies,
         string intentName,
         params string[] preferredSnippets)
     {
-        var selected = SelectLegacyReply(replies, preferredSnippets);
+        var selected = LegacyMimScriptedReplyBuilder.SelectFromBucketOrMim(
+            catalog,
+            randomizer,
+            intentName,
+            replies,
+            LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
+            displayName: null,
+            explicitMimId: null,
+            preferredSnippets);
+
         if (string.IsNullOrWhiteSpace(selected))
             selected = GetSupportFallbackReply(intentName);
 

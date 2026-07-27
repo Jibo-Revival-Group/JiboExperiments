@@ -1,3 +1,4 @@
+using Jibo.Cloud.Tests.Application;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.Content;
@@ -363,7 +364,7 @@ public sealed class DialogParsingGuardrailTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
     }
 
     [Theory]

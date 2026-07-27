@@ -35,6 +35,8 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<JiboConditionedReply> ReactiveGreetingReplies { get; init; } = [];
     public IReadOnlyList<JiboConditionedReply> WhatsUpReplies { get; init; } = [];
     public IReadOnlyList<JiboConditionedReply> GoodbyeReplies { get; init; } = [];
+    public IReadOnlyDictionary<string, IReadOnlyList<JiboConditionedReply>> MimReplies { get; init; }
+        = new Dictionary<string, IReadOnlyList<JiboConditionedReply>>(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyList<string> StoryReplies { get; init; } = [];
     public IReadOnlyList<string> HolidayReplies { get; init; } = [];
     public IReadOnlyList<string> HolidaySeasonReplies { get; init; } = [];

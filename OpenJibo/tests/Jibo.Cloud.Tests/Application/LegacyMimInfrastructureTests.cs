@@ -72,6 +72,7 @@ public sealed class LegacyMimInfrastructureTests
         Assert.Contains(catalog.GoodbyeReplies, reply =>
             reply.MimId == "GoodbyeRespCM" &&
             reply.Reply.Contains("Goodbye", StringComparison.OrdinalIgnoreCase));
+        Assert.True(catalog.MimReplies.ContainsKey("WhatsUpResp"));
     }
 
     [Fact]
@@ -102,8 +103,83 @@ public sealed class LegacyMimInfrastructureTests
         Assert.Equal("Hello Alex.", selection.ReplyText);
     }
 
+    [Fact]
+    public void LegacyMimReplySelector_RandomlySelectsAmongEqualWeightMatches()
+    {
+        var replies = new[]
+        {
+            new JiboConditionedReply { Condition = string.Empty, Reply = "First.", Weight = 1, PromptId = "p1" },
+            new JiboConditionedReply { Condition = string.Empty, Reply = "Second.", Weight = 1, PromptId = "p2" },
+            new JiboConditionedReply { Condition = string.Empty, Reply = "Third.", Weight = 1, PromptId = "p3" }
+        };
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < 30; i++)
+        {
+            var selection = LegacyMimReplySelector.Select(
+                replies,
+                new DefaultJiboRandomizer(),
+                new LegacyMimConditionEvaluator.Context(null, null, DateOnly.Parse("2026-07-27")),
+                displayName: null,
+                "Fallback.",
+                "TestMim");
+            seen.Add(selection.ReplyText);
+        }
+
+        Assert.True(seen.Count > 1);
+    }
+
+    [Fact]
+    public async Task ImportedCatalog_IndexesFavoriteColorMimWithMultiplePrompts()
+    {
+        var catalog = await new InMemoryJiboExperienceContentRepository().GetCatalogAsync();
+        Assert.True(catalog.MimReplies.TryGetValue("RI_JBO_HasFavoriteColor", out var replies));
+        Assert.True(replies.Count > 1);
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < 20; i++)
+        {
+            var selection = LegacyMimReplySelector.Select(
+                replies,
+                new DefaultJiboRandomizer(),
+                new LegacyMimConditionEvaluator.Context(null, null, DateOnly.Parse("2026-07-27")),
+                displayName: null,
+                "Blue is my favorite color.",
+                "RI_JBO_HasFavoriteColor");
+            seen.Add(selection.ReplyText);
+        }
+
+        Assert.True(seen.Count > 1);
+    }
+
+    [Fact]
+    public async Task TrySelectMimReply_RandomlySelectsAmongAllConditionedStoryPrompts()
+    {
+        var catalog = await new InMemoryJiboExperienceContentRepository().GetCatalogAsync();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        for (var i = 0; i < 30; i++)
+        {
+            Assert.True(LegacyMimScriptedReplyBuilder.TrySelectMimReply(
+                catalog,
+                new DefaultJiboRandomizer(),
+                "robot_story",
+                new LegacyMimConditionEvaluator.Context(null, null, DateOnly.Parse("2026-07-27")),
+                displayName: null,
+                explicitMimId: "RA_JBO_Story",
+                ["story, that sounds fun", "don't have any stories"],
+                out var selection));
+
+            seen.Add(selection!.ReplyText);
+        }
+
+        Assert.True(seen.Count > 1);
+    }
+
     private sealed class FirstReplyRandomizer : IJiboRandomizer
     {
         public T Choose<T>(IReadOnlyList<T> items) => items[0];
+
+        public double NextUnitInterval() => 0.0;
     }
 }

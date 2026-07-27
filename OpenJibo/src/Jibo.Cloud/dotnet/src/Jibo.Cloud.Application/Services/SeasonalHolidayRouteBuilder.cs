@@ -613,8 +613,8 @@ internal static class SeasonalHolidayRouteBuilder
                 randomizer,
                 semanticIntent,
                 referenceLocalTime,
-                "santa tracker",
                 "let's see if i can spot him",
+                "santa tracker",
                 "deliveries",
                 "north pole"),
             "birthday_celebration" => BuildHolidayDecision(

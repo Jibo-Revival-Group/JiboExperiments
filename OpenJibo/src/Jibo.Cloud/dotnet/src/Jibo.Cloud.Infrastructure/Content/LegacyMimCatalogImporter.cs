@@ -70,8 +70,16 @@ public static class LegacyMimCatalogImporter
                 if (string.IsNullOrWhiteSpace(normalizedPrompt.Text)) continue;
 
                 var condition = NormalizeImportedCondition(prompt.Condition, filePath, bucket.Value);
-                var mimId = prompt.MimId ?? definition.MimId;
+                var mimId = prompt.MimId ?? definition.MimId ?? Path.GetFileNameWithoutExtension(filePath);
                 var emotion = normalizedPrompt.Emotion;
+
+                builder.RegisterMimPrompt(
+                    mimId,
+                    condition,
+                    normalizedPrompt.Text,
+                    prompt.Weight,
+                    prompt.PromptId,
+                    emotion);
 
                 builder.Add(
                     bucket.Value,
@@ -527,6 +535,7 @@ public static class LegacyMimCatalogImporter
                 importedCatalog.ReactiveGreetingReplies),
             WhatsUpReplies = Merge(baseCatalog.WhatsUpReplies, importedCatalog.WhatsUpReplies),
             GoodbyeReplies = Merge(baseCatalog.GoodbyeReplies, importedCatalog.GoodbyeReplies),
+            MimReplies = MergeMimReplies(baseCatalog.MimReplies, importedCatalog.MimReplies),
             HolidayReplies = Merge(baseCatalog.HolidayReplies, importedCatalog.HolidayReplies),
             HolidaySeasonReplies = Merge(baseCatalog.HolidaySeasonReplies, importedCatalog.HolidaySeasonReplies),
             HolidayGreetingReplies = Merge(baseCatalog.HolidayGreetingReplies, importedCatalog.HolidayGreetingReplies),
@@ -670,6 +679,27 @@ public static class LegacyMimCatalogImporter
                 PromptId = value.PromptId,
                 Emotion = value.Emotion
             }).ToArray();
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<JiboConditionedReply>> MergeMimReplies(
+        IReadOnlyDictionary<string, IReadOnlyList<JiboConditionedReply>> baseCatalog,
+        IReadOnlyDictionary<string, IReadOnlyList<JiboConditionedReply>> importedCatalog)
+    {
+        var merged = new Dictionary<string, IReadOnlyList<JiboConditionedReply>>(baseCatalog,
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (mimId, importedReplies) in importedCatalog)
+        {
+            if (!merged.TryGetValue(mimId, out var baseReplies) || baseReplies.Count == 0)
+            {
+                merged[mimId] = importedReplies;
+                continue;
+            }
+
+            merged[mimId] = Merge(baseReplies, importedReplies);
+        }
+
+        return merged;
     }
 
     private static string NormalizeCondition(string? condition)
@@ -942,6 +972,8 @@ public static class LegacyMimCatalogImporter
         private readonly List<JiboConditionedReply> _reactiveGreetingReplies = [];
         private readonly List<JiboConditionedReply> _whatsUpReplies = [];
         private readonly List<JiboConditionedReply> _goodbyeReplies = [];
+        private readonly Dictionary<string, List<JiboConditionedReply>> _mimReplies =
+            new(StringComparer.OrdinalIgnoreCase);
         private readonly List<string> _personalities = [];
         private readonly List<string> _personalReportKickOffReplies = [];
         private readonly List<string> _personalReportOutroReplies = [];
@@ -963,6 +995,25 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _weatherTodayHighLowReplies = [];
         private readonly List<string> _weatherTomorrowHighLowReplies = [];
         private readonly List<string> _weatherTomorrowIntroReplies = [];
+
+        public void RegisterMimPrompt(
+            string? mimId,
+            string? condition,
+            string text,
+            double? weight = null,
+            string? promptId = null,
+            string? emotion = null)
+        {
+            if (string.IsNullOrWhiteSpace(mimId)) return;
+
+            if (!_mimReplies.TryGetValue(mimId, out var replies))
+            {
+                replies = [];
+                _mimReplies[mimId] = replies;
+            }
+
+            AddDistinct(replies, condition, text, weight, mimId, promptId, emotion);
+        }
 
         public void Add(
             LegacyMimBucket bucket,
@@ -1324,6 +1375,10 @@ public static class LegacyMimCatalogImporter
                 ReactiveGreetingReplies = [.. _reactiveGreetingReplies],
                 WhatsUpReplies = [.. _whatsUpReplies],
                 GoodbyeReplies = [.. _goodbyeReplies],
+                MimReplies = _mimReplies.ToDictionary(
+                    pair => pair.Key,
+                    pair => (IReadOnlyList<JiboConditionedReply>)pair.Value.ToArray(),
+                    StringComparer.OrdinalIgnoreCase),
                 HolidayReplies = [.. _holidayReplies],
                 HolidaySeasonReplies = [.. _holidaySeasonReplies],
                 HolidayGreetingReplies = [.. _holidayGreetingReplies],

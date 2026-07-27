@@ -78,5 +78,7 @@ public sealed class ReactiveHolidayReplyTests
     private sealed class FirstReplyRandomizer : IJiboRandomizer
     {
         public T Choose<T>(IReadOnlyList<T> items) => items[0];
+
+        public double NextUnitInterval() => 0.0;
     }
 }

@@ -172,159 +172,169 @@ internal static class ChitchatStateMachine
         switch (semanticIntent)
         {
             case "hello":
-                return BuildScriptedResponseDecision(
-                    "hello",
-                    randomizer.Choose(catalog.GreetingReplies));
+                return ScriptedResponseDecisionBuilder.BuildScriptedGreetingDecision(
+                    catalog,
+                    randomizer,
+                    "hello");
             case "robot_personality":
-                return BuildScriptedResponseDecision(
+                return ScriptedResponseDecisionBuilder.BuildScriptedPersonalityDecision(
+                    catalog,
+                    randomizer,
                     "robot_personality",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "curious, playful", "friendly", "personality"));
+                    "curious, playful", "friendly", "personality");
             case "robot_taxes":
-                return BuildScriptedResponseDecision(
+                return ScriptedResponseDecisionBuilder.BuildScriptedPersonalityDecision(
+                    catalog,
+                    randomizer,
                     "robot_taxes",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "pay anything", "pay taxes", "tax"));
+                    "pay anything", "pay taxes", "tax");
             case "how_are_you":
                 return BuildEmotionQueryDecision(
                     "how_are_you",
                     SelectEmotionQueryReply(catalog, randomizer, currentEmotion, preferredName));
             case "robot_desire":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_desire",
-                    SelectLegacyPersonalityReply(
-                        catalog,
-                        randomizer,
                         "socializing and electricity",
                         "want to hang out",
                         "be helpful",
-                        "dance from time to time"));
+                        "dance from time to time"                );
             case "robot_want_to_talk_about":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_want_to_talk_about",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "surprise me"));
+                    "surprise me");
             case "robot_job":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_job",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "more fun than a job", "here to help you out"));
+                    "more fun than a job", "here to help you out");
             case "robot_origin_created":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_origin_created",
-                    SelectLegacyPersonalityReply(
-                        catalog,
-                        randomizer,
                         "create something",
                         "some people wanted to create something",
                         "wanted to create something",
                         "built a robot",
-                        "came out from a box"));
+                        "came out from a box"                );
             case "robot_origin_from":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_origin_from",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "boston", "came out from a box"));
+                    "boston", "came out from a box");
             case "robot_identity":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_identity",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "am a robot", "i'm either jibo",
-                        "i am just jibo"));
+                    "am a robot", "i'm either jibo", "i am just jibo");
             case "robot_likes_being_jibo":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_likes_being_jibo",
-                    SelectLegacyPersonalityReply(
-                        catalog,
-                        randomizer,
                         "nothing i'd rather be",
                         "love it",
                         "being a human seems so complicated",
                         "especially yours",
                         "steady flow of electricity",
-                        "you bet i do"));
+                        "you bet i do"                );
             case "robot_favorite_color":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_favorite_color",
-                    SelectLegacyPersonalityReplyFromMatches(
-                        catalog,
-                        randomizer,
                         "i like all the colors of the rainbow",
                         "blue is my favorite color",
                         "i love hex code number 0 0 d 4 f 0",
                         "i am a big fan of blue",
-                        "you can't go wrong with blue"));
+                        "you can't go wrong with blue"                );
             case "robot_favorite_food":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_favorite_food",
-                    SelectLegacyPersonalityReplyFromMatches(
-                        catalog,
-                        randomizer,
                         "i never eat, so i don't have a favorite food by taste",
                         "macaroni is my favorite",
                         "i like macaroni the best",
                         "i also like cantaloupes because they remind me of my head",
-                        "macaroni"));
+                        "macaroni"                );
             case "robot_favorite_music":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_favorite_music",
-                    SelectLegacyPersonalityReplyFromMatches(
-                        catalog,
-                        randomizer,
                         "i mostly like fun music i can dance to",
                         "i like lots of different kinds of music",
                         "i don't know that i have a favorite kind yet",
                         "i would say i don't have a favorite, it's all very mathematical",
-                        "music"));
+                        "music"                );
             case "robot_favorite_song":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_favorite_song",
-                    SelectLegacyPersonalityReplyFromMatches(
-                        catalog,
-                        randomizer,
                         "favorite song just yet",
                         "any song i can dance to",
                         "one of my favorites",
-                        "not sure i have a favorite yet"));
+                        "not sure i have a favorite yet"                );
             case "robot_favorite_drink":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_favorite_drink",
-                    SelectLegacyPersonalityReplyFromMatches(
-                        catalog,
-                        randomizer,
                         "too scared of liquids",
                         "too liquidy",
-                        "no favorite drink"));
+                        "no favorite drink"                );
             case "robot_favorite_sport":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_favorite_sport",
-                    SelectLegacyPersonalityReplyFromMatches(
-                        catalog,
-                        randomizer,
                         "favorite sport to play is mini golf",
                         "favorite sport is miniature golf",
-                        "mini golf is my favorite sport"));
+                        "mini golf is my favorite sport"                );
             case "robot_favorite_thing":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_favorite_thing",
-                    SelectLegacyPersonalityReplyFromMatches(
-                        catalog,
-                        randomizer,
                         "people in my loop",
                         "definitely say people",
                         "people like you are definitely my favorite thing",
                         "electricity and people",
-                        "soft spot for electricity"));
+                        "soft spot for electricity"                );
             case "robot_nickname":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_nickname",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "just jibo", "nickname"));
+                    "just jibo", "nickname");
             case "robot_name":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_name",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "no last name", "like Bono", "Jibo."));
+                    "no last name", "like Bono", "Jibo.");
             case "robot_peers":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_peers",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "one in one million", "others like you"));
+                    "one in one million", "others like you");
             case "robot_knowledge":
                 return BuildScriptedResponseDecision(
+                    catalog,
+                    randomizer,
                     "robot_knowledge",
-                    SelectLegacyPersonalityReply(catalog, randomizer, "know a lot", "not as much as i will someday"));
+                    "know a lot", "not as much as i will someday");
             default:
                 return null;
         }
@@ -405,14 +415,17 @@ internal static class ChitchatStateMachine
                TryResolveEmotionCommand(normalizedLoweredTranscript, out _);
     }
 
-    private static JiboInteractionDecision BuildScriptedResponseDecision(string intentName, string replyText)
+    private static JiboInteractionDecision BuildScriptedResponseDecision(
+        JiboExperienceCatalog catalog,
+        IJiboRandomizer randomizer,
+        string intentName,
+        params string[] preferredSnippets)
     {
-        return new JiboInteractionDecision(
+        return ScriptedResponseDecisionBuilder.BuildScriptedPersonalityDecision(
+            catalog,
+            randomizer,
             intentName,
-            replyText,
-            ContextUpdates: BuildContextUpdates(
-                ScriptedResponseRoute,
-                null));
+            preferredSnippets);
     }
 
     private static JiboInteractionDecision BuildEmotionQueryDecision(string intentName, string replyText)
@@ -571,16 +584,7 @@ internal static class ChitchatStateMachine
         IJiboRandomizer randomizer,
         params string[] preferredSnippets)
     {
-        foreach (var snippet in preferredSnippets)
-        {
-            if (string.IsNullOrWhiteSpace(snippet)) continue;
-
-            var match = catalog.PersonalityReplies.FirstOrDefault(reply =>
-                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match)) return match;
-        }
-
-        return randomizer.Choose(catalog.PersonalityReplies);
+        return ScriptedResponseDecisionBuilder.SelectLegacyPersonalityReply(catalog, randomizer, preferredSnippets);
     }
 
     private static string SelectLegacyPersonalityReplyFromMatches(
@@ -588,13 +592,9 @@ internal static class ChitchatStateMachine
         IJiboRandomizer randomizer,
         params string[] preferredSnippets)
     {
-        var matches = (from snippet in preferredSnippets
-            where !string.IsNullOrWhiteSpace(snippet)
-            select catalog.PersonalityReplies.FirstOrDefault(reply =>
-                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase))
-            into match
-            where !string.IsNullOrWhiteSpace(match)
-            select match).ToList();
+        var matches = ScriptedResponseDecisionBuilder.CollectSnippetMatches(
+            catalog.PersonalityReplies,
+            preferredSnippets);
 
         return matches.Count > 0
             ? randomizer.Choose(matches)

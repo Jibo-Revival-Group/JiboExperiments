@@ -4,19 +4,71 @@ namespace Jibo.Cloud.Application.Services;
 
 internal static class JiboHolidayGreeting
 {
-    private static readonly (string Phrase, string? Claim)[] HolidayPhrases =
+    private static readonly string[] GreetingPrefixes =
     [
-        ("merry christmas", "Christmas"),
-        ("happy christmas", "Christmas"),
-        ("happy new year", "New Year's Day"),
-        ("happy halloween", "Halloween"),
-        ("happy thanksgiving", "Thanksgiving"),
-        ("happy easter", "Easter"),
-        ("happy hanukkah", "Hanukkah"),
+        "have a good ",
+        "have a happy ",
+        "have a merry ",
+        "happy ",
+        "merry "
+    ];
+
+    private static readonly (string Phrase, string? Claim)[] ExplicitGreetingPhrases =
+    [
         ("happy holidays", null),
         ("season's greetings", null),
         ("seasons greetings", null),
         ("season s greetings", null)
+    ];
+
+    private static readonly (string Phrase, string Claim)[] HolidayNamePhrases =
+    [
+        ("christmas eve", "Christmas Eve"),
+        ("christmas", "Christmas"),
+        ("thanksgiving", "Thanksgiving"),
+        ("good friday", "Good Friday"),
+        ("ash wednesday", "Ash Wednesday"),
+        ("palm sunday", "Palm Sunday"),
+        ("easter", "Easter"),
+        ("halloween", "Halloween"),
+        ("hanukkah", "Hanukkah"),
+        ("chanukah", "Hanukkah"),
+        ("valentine's day", "Valentine's Day"),
+        ("valentines day", "Valentine's Day"),
+        ("st. patrick's day", "St. Patrick's Day"),
+        ("st patricks day", "St. Patrick's Day"),
+        ("independence day", "Independence Day"),
+        ("fourth of july", "Independence Day"),
+        ("july 4th", "Independence Day"),
+        ("new year's day", "New Year's Day"),
+        ("new years day", "New Year's Day"),
+        ("new year", "New Year's Day"),
+        ("kwanzaa", "Kwanzaa"),
+        ("passover", "Passover"),
+        ("memorial day", "Memorial Day"),
+        ("labor day", "Labor Day"),
+        ("veterans day", "Veterans Day"),
+        ("presidents day", "Presidents Day"),
+        ("president's day", "Presidents Day"),
+        ("mlk day", "MLK Day"),
+        ("martin luther king day", "MLK Day"),
+        ("mother's day", "Mother's Day"),
+        ("mothers day", "Mother's Day"),
+        ("father's day", "Father's Day"),
+        ("fathers day", "Father's Day"),
+        ("flag day", "Flag Day"),
+        ("groundhog day", "Groundhog Day"),
+        ("april fool's day", "April Fool's Day"),
+        ("april fools day", "April Fool's Day"),
+        ("cinco de mayo", "Cinco de Mayo"),
+        ("chinese new year", "Chinese New Year"),
+        ("mardi gras", "Mardi Gras"),
+        ("columbus day", "Columbus Day"),
+        ("canadian thanksgiving", "Canadian Thanksgiving"),
+        ("canada day", "Canada Day"),
+        ("purim", "Purim"),
+        ("diwali", "Diwali"),
+        ("holi", "Holi")
     ];
 
     private static readonly Dictionary<string, string[]> HolidayAliases =
@@ -36,12 +88,25 @@ internal static class JiboHolidayGreeting
         holidayClaim = null;
         if (string.IsNullOrWhiteSpace(loweredTranscript)) return false;
 
-        foreach (var (phrase, claim) in HolidayPhrases)
+        var normalized = NormalizeTranscript(loweredTranscript);
+
+        foreach (var (phrase, claim) in ExplicitGreetingPhrases)
         {
-            if (!loweredTranscript.Contains(phrase, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!normalized.Contains(phrase, StringComparison.OrdinalIgnoreCase)) continue;
 
             holidayClaim = claim;
             return true;
+        }
+
+        foreach (var (holidayPhrase, claim) in HolidayNamePhrases)
+        {
+            foreach (var prefix in GreetingPrefixes)
+            {
+                if (!normalized.Contains(prefix + holidayPhrase, StringComparison.OrdinalIgnoreCase)) continue;
+
+                holidayClaim = claim;
+                return true;
+            }
         }
 
         return false;
@@ -67,6 +132,15 @@ internal static class JiboHolidayGreeting
 
         return todaysHolidayNames.Any(name => NamesMatch(holidayClaim, name));
     }
+
+    private static string NormalizeTranscript(string loweredTranscript) =>
+        loweredTranscript
+            .Replace(",", " ", StringComparison.Ordinal)
+            .Replace(".", " ", StringComparison.Ordinal)
+            .Replace("!", " ", StringComparison.Ordinal)
+            .Replace("?", " ", StringComparison.Ordinal)
+            .Replace("  ", " ", StringComparison.Ordinal)
+            .Trim();
 
     private static bool IsHolidayOnDate(HolidayRecord holiday, DateOnly date)
     {

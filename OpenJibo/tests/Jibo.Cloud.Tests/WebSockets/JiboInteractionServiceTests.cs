@@ -368,6 +368,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("happy holidays", "2026-07-27T12:00:00-04:00", "NotHoliday", "don't think that's today")]
     [InlineData("merry christmas", "2026-12-25T12:00:00-05:00", "HolidayResponse", "Merry Christmas to you too")]
     [InlineData("merry christmas", "2026-12-20T12:00:00-05:00", "NotHoliday", "You too")]
+    [InlineData("happy thanksgiving", "2026-07-27T12:00:00-04:00", "NotHoliday", "Thanksgiving")]
     public async Task BuildDecisionAsync_HolidayGreetings_UseNotHolidayWhenClaimDoesNotMatchToday(
         string transcript,
         string localIsoTime,

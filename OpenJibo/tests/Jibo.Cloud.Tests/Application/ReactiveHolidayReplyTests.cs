@@ -27,6 +27,25 @@ public sealed class ReactiveHolidayReplyTests
         Assert.Equal("Christmas", claim);
     }
 
+    [Theory]
+    [InlineData("happy thanksgiving", "Thanksgiving")]
+    [InlineData("merry christmas", "Christmas")]
+    [InlineData("have a happy easter", "Easter")]
+    [InlineData("happy holidays", null)]
+    public void JiboHolidayGreeting_ExtractsReactiveHolidayClaims(string transcript, string? expectedClaim)
+    {
+        Assert.True(JiboHolidayGreeting.TryExtractHolidayClaim(transcript, out var claim));
+        Assert.Equal(expectedClaim, claim);
+    }
+
+    [Theory]
+    [InlineData("how is thanksgiving")]
+    [InlineData("do you like thanksgiving")]
+    public void JiboHolidayGreeting_DoesNotTreatHolidayQuestionsAsGreetings(string transcript)
+    {
+        Assert.False(JiboHolidayGreeting.TryExtractHolidayClaim(transcript, out _));
+    }
+
     [Fact]
     public async Task ReactiveHolidayReplyBuilder_UsesImportedChristmasLinesFromMergedCatalog()
     {

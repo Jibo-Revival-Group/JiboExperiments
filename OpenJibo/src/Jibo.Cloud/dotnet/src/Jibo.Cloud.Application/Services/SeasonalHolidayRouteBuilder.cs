@@ -107,13 +107,7 @@ internal static class SeasonalHolidayRouteBuilder
             return true;
         }
 
-        if (MatchesAny(
-                loweredTranscript,
-                "happy holidays",
-                "merry christmas",
-                "happy new year",
-                "season s greetings",
-                "seasons greetings"))
+        if (JiboHolidayGreeting.TryExtractHolidayClaim(loweredTranscript, out _))
         {
             semanticIntent = "seasonal_holiday_greeting";
             return true;

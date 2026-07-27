@@ -137,6 +137,103 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "Hello there. I am glad you said hi.",
                 "Hello. I am happy to see you."
             ],
+            PartOfDayCorrectionReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Condition = "PODclaim=='morning'",
+                    Reply = "And a good morning to you, any time of day."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "PODclaim=='afternoon'",
+                    Reply = "Sure. I guess it is afternoon somewhere."
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "PODclaim=='evening'",
+                    Reply = "I may be wrong, but I don't think it's evening."
+                }
+            ],
+            NotHolidayReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Sorry, I don't think that's today.",
+                    Weight = 0.1
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "holidayClaim===\"Christmas\" && _now.isInRange('1/1', '11/30')",
+                    Reply = "Um, unless my calendar is off, it isn't Christmastime.",
+                    Weight = 10
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "holidayClaim===\"Christmas\" && _now.isInRange('12/1', '12/31')",
+                    Reply = "Thank you, Merry Christmas to you too.",
+                    Weight = 10
+                }
+            ],
+            HolidayResponseReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Thank you. Same to you.",
+                    Weight = 0.1
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "holiday===\"Christmas\"",
+                    Reply = "Thank you, Merry Christmas to you too.",
+                    Weight = 1
+                }
+            ],
+            ReactiveGreetingReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Condition = "POD=='morning'",
+                    Reply = "Good morning!",
+                    MimId = "GenericMorningSalutation"
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "POD=='afternoon'",
+                    Reply = "Good afternoon!",
+                    MimId = "GenericAfternoonSalutation"
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "POD=='evening'",
+                    Reply = "Good evening!",
+                    MimId = "GenericEveningSalutation"
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "POD=='night'",
+                    Reply = "Good night!",
+                    MimId = "GenericNightSalutation"
+                }
+            ],
+            WhatsUpReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Reply = "Not much. Just being Jibo.",
+                    MimId = "WhatsUpResp"
+                }
+            ],
+            GoodbyeReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Reply = "Goodbye. Break a leg.",
+                    MimId = "GoodbyeRespCM"
+                }
+            ],
             StoryReplies =
             [
                 "I don't have any stories for you just yet. But I'd really like to learn some soon.",
@@ -674,6 +771,7 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
         {
             Path.Combine(AppContext.BaseDirectory, "Content", "LegacyMims", "BuildA"),
             Path.Combine(AppContext.BaseDirectory, "Content", "LegacyMims", "BuildB"),
+            Path.Combine(AppContext.BaseDirectory, "Content", "LegacyMims", "Greetings"),
             Path.Combine(AppContext.BaseDirectory, "Content", "LegacyMims", "ReportSkill"),
             Path.GetFullPath(Path.Combine(
                 AppContext.BaseDirectory,
@@ -705,6 +803,21 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                 "Content",
                 "LegacyMims",
                 "BuildB")),
+            Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "..",
+                "src",
+                "Jibo.Cloud",
+                "dotnet",
+                "src",
+                "Jibo.Cloud.Infrastructure",
+                "Content",
+                "LegacyMims",
+                "Greetings")),
             Path.GetFullPath(Path.Combine(
                 AppContext.BaseDirectory,
                 "..",

@@ -3,6 +3,8 @@ namespace Jibo.Cloud.Application.Services;
 public interface IJiboRandomizer
 {
     T Choose<T>(IReadOnlyList<T> items);
+
+    double NextUnitInterval() => Random.Shared.NextDouble();
 }
 
 public sealed class DefaultJiboRandomizer : IJiboRandomizer

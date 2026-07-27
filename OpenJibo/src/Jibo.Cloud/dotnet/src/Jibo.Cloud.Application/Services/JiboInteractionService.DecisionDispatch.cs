@@ -108,10 +108,12 @@ public sealed partial class JiboInteractionService
 
         if (SeasonalHolidayRouteBuilder.TryBuildDecision(
                 semanticIntent,
+                lowered,
                 catalog,
                 randomizer,
                 selected => RenderHolidayTemplate(selected, turn, greetingPresence),
                 referenceLocalTime,
+                ResolveTodaysHolidayNames(turn, referenceLocalTime),
                 out var seasonalHolidayDecision))
             return seasonalHolidayDecision!;
 
@@ -158,140 +160,171 @@ public sealed partial class JiboInteractionService
             "current_location" => BuildCurrentLocationDecision(turn),
             "cloud_version" => BuildCloudVersionDecision(),
             "backup_help" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.BackupHowReplies,
                 "backup_help",
                 "cloud backup",
                 "back up",
                 "restore"),
             "restore_backup" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.RestoreHowReplies,
                 "restore_backup",
                 "restore you from a backup",
                 "restore from a backup"),
             "update_next" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.UpdateNextReplies,
                 "update_next",
                 "next update"),
             "update_last" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.UpdateLastReplies,
                 "update_last",
                 "last update"),
             "robot_story" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.StoryReplies,
                 "robot_story",
                 "story, that sounds fun",
                 "don't have any stories"),
             "robot_recommend_movie" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.RecommendMovieReplies,
                 "robot_recommend_movie",
                 "Back to the Future",
                 "Toy Story",
                 "Spaceballs"),
             "robot_search_web" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.SearchWebReplies,
                 "robot_search_web",
                 "can't exactly search the web",
                 "direct questions"),
             "robot_can_walk" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanWalkReplies,
                 "robot_can_walk",
                 "only in my imagination",
                 "can't walk"),
             "robot_can_walk_dog" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanWalkDogReplies,
                 "robot_can_walk_dog",
                 "walk anything"),
             "robot_can_watch_movies" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanWatchMoviesReplies,
                 "robot_can_watch_movies",
                 "watch movies"),
             "robot_can_watch_tv" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanWatchTVReplies,
                 "robot_can_watch_tv",
                 "watch TV"),
             "robot_can_dream" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanDreamReplies,
                 "robot_can_dream",
                 "dreams about flying",
                 "parking meter",
                 "nightmare"),
             "robot_can_exercise" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanExerciseReplies,
                 "robot_can_exercise",
                 "do exercise"),
             "robot_can_fly" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanFlyReplies,
                 "robot_can_fly",
                 "fly",
                 "airplane",
                 "jetpack"),
             "robot_can_learn" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanLearnReplies,
                 "robot_can_learn",
                 "learn"),
             "robot_can_laugh" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanLaughReplies,
                 "robot_can_laugh",
                 "happy"),
             "robot_can_read" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanReadReplies,
                 "robot_can_read",
                 "read in a robot kind of way"),
             "robot_can_hear" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanHearReplies,
                 "robot_can_hear",
                 "hear, usually"),
             "robot_can_talk" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanTalkReplies,
                 "robot_can_talk",
                 "trick question"),
             "robot_can_see" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanSeeReplies,
                 "robot_can_see",
                 "see faces and movement"),
             "robot_can_wink" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanWinkReplies,
                 "robot_can_wink",
                 "wink"),
             "robot_can_move" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanMoveReplies,
                 "robot_can_move",
                 "move the body parts"),
             "robot_can_work" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanWorkReplies,
                 "robot_can_work",
                 "function",
                 "working right"),
             "robot_can_breathe" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanBreatheReplies,
                 "robot_can_breathe",
                 "breathe air"),
             "robot_can_get_tired" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanGetTiredReplies,
                 "robot_can_get_tired",
                 "sleep at night",
                 "go to sleep"),
             "robot_can_have_emotions" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanHaveEmotionsReplies,
                 "robot_can_have_emotions",
                 "robot emotions"),
             "robot_can_whistle" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanWhistleReplies,
                 "robot_can_whistle",
                 "whistling"),
             "robot_can_cook" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanCookReplies,
                 "robot_can_cook",
                 "cook"),
             "robot_can_make_coffee" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanMakeCoffeeReplies,
                 "robot_can_make_coffee",
                 "make coffee"),
             "robot_can_make_breakfast" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanMakeBreakfastReplies,
                 "robot_can_make_breakfast",
                 "breakfast"),
             "robot_can_jump" => BuildScriptedSupportDecision(
+                catalog,
                 catalog.CanJumpReplies,
                 "robot_can_jump",
                 "jump",
@@ -1284,10 +1317,12 @@ public sealed partial class JiboInteractionService
                 "robot stuff",
                 "wires, motors, belts, gears, processors, cameras",
                 "baboon part"),
-            "good_morning" => BuildReactiveGreetingDecision(turn, "good_morning", referenceLocalTime),
-            "good_afternoon" => BuildReactiveGreetingDecision(turn, "good_afternoon", referenceLocalTime),
-            "good_evening" => BuildReactiveGreetingDecision(turn, "good_evening", referenceLocalTime),
-            "good_night" => BuildReactiveGreetingDecision(turn, "good_night", referenceLocalTime),
+            "good_morning" => BuildReactiveGreetingDecision(turn, catalog, "good_morning", referenceLocalTime),
+            "good_afternoon" => BuildReactiveGreetingDecision(turn, catalog, "good_afternoon", referenceLocalTime),
+            "good_evening" => BuildReactiveGreetingDecision(turn, catalog, "good_evening", referenceLocalTime),
+            "good_night" => BuildReactiveGreetingDecision(turn, catalog, "good_night", referenceLocalTime),
+            "whats_up" => BuildWhatsUpDecision(turn, catalog, referenceLocalTime),
+            "goodbye" => BuildGoodbyeDecision(turn, catalog, referenceLocalTime),
             "welcome_back" => BuildScriptedGreetingDecision(
                 catalog,
                 "welcome_back",

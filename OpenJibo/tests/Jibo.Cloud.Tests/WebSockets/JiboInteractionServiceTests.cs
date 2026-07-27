@@ -1,3 +1,4 @@
+using Jibo.Cloud.Tests.Application;
 using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
@@ -293,13 +294,13 @@ public sealed class JiboInteractionServiceTests
                 ["accountId"] = "acct-a",
                 ["loopId"] = "loop-a",
                 ["context"] =
-                    """{"runtime":{"perception":{"speaker":"person-a","peoplePresent":[{"id":"person-a"}]},"loop":{"users":[{"id":"person-a","firstName":"jake"}]}}}"""
+                    """{"runtime":{"location":{"iso":"2026-07-27T08:00:00-04:00"},"perception":{"speaker":"person-a","peoplePresent":[{"id":"person-a"}]},"loop":{"users":[{"id":"person-a","firstName":"jake"}]}}}"""
             },
             DeviceId = "device-a"
         });
 
         Assert.Equal("good_morning", decision.IntentName);
-        Assert.Equal("Good morning, Jake. It is great to see you.", decision.ReplyText);
+        Assert.Contains("morning", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("ReactiveGreeting", decision.ContextUpdates![GreetingRouteKey]);
         Assert.Equal("person-a", decision.ContextUpdates[GreetingSpeakerKey]);
@@ -325,13 +326,75 @@ public sealed class JiboInteractionServiceTests
                 ["accountId"] = "acct-a",
                 ["loopId"] = "loop-a",
                 ["context"] =
-                    """{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
+                    """{"runtime":{"location":{"iso":"2026-07-27T08:00:00-04:00"},"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}"""
             },
             DeviceId = "device-a"
         });
 
         Assert.Equal("good_morning", decision.IntentName);
-        Assert.Equal("Good morning, Alex. It is great to see you.", decision.ReplyText);
+        Assert.Contains("morning", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("good morning", "2026-07-27T08:00:00-04:00", "ReactiveGreeting", "Good morning")]
+    [InlineData("good morning", "2026-07-27T20:00:00-04:00", "PartOfDayCorrection", "any time of day")]
+    [InlineData("good afternoon", "2026-07-27T15:00:00-04:00", "ReactiveGreeting", "Good afternoon")]
+    [InlineData("good afternoon", "2026-07-27T21:00:00-04:00", "PartOfDayCorrection", "afternoon somewhere")]
+    [InlineData("good evening", "2026-07-27T08:00:00-04:00", "PartOfDayCorrection", "don't think it's evening")]
+    [InlineData("good night", "2026-07-27T08:00:00-04:00", "ReactiveGreeting", "Good night")]
+    public async Task BuildDecisionAsync_TimeGreetings_UsePartOfDayCorrectionWhenClaimDoesNotMatch(
+        string transcript,
+        string localIsoTime,
+        string expectedRoute,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = $"{{\"runtime\":{{\"location\":{{\"iso\":\"{localIsoTime}\"}}}}}}"
+            }
+        });
+
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(expectedRoute, decision.ContextUpdates![GreetingRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("merry christmas", "2026-07-27T12:00:00-04:00", "NotHoliday", "isn't Christmastime")]
+    [InlineData("happy holidays", "2026-07-27T12:00:00-04:00", "NotHoliday", "don't think that's today")]
+    [InlineData("merry christmas", "2026-12-25T12:00:00-05:00", "HolidayResponse", "Merry Christmas to you too")]
+    [InlineData("merry christmas", "2026-12-20T12:00:00-05:00", "NotHoliday", "You too")]
+    [InlineData("happy thanksgiving", "2026-07-27T12:00:00-04:00", "NotHoliday", "Thanksgiving")]
+    public async Task BuildDecisionAsync_HolidayGreetings_UseNotHolidayWhenClaimDoesNotMatchToday(
+        string transcript,
+        string localIsoTime,
+        string expectedRoute,
+        string expectedReplySnippet)
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        var service = CreateService(cloudStateStore: cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = $"{{\"runtime\":{{\"location\":{{\"iso\":\"{localIsoTime}\"}}}}}}"
+            }
+        });
+
+        Assert.Equal("seasonal_holiday_greeting", decision.IntentName);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(
+            decision,
+            "seasonal_holiday_greeting",
+            expectedReplySnippet);
+        Assert.Equal(expectedRoute, decision.ContextUpdates![ChitchatRouteKey]);
     }
 
     [Fact]
@@ -789,7 +852,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("robot_favorite_color", decision.IntentName);
-        Assert.Equal("I like all the colors of the rainbow. But blue is my favorite.", decision.ReplyText);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, "robot_favorite_color");
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -880,7 +943,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Equal(expectedReply, decision.ReplyText);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReply);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -899,7 +962,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("robot_favorite_animal", decision.IntentName);
-        Assert.Contains("we're so alike", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, "robot_favorite_animal", "we're so alike");
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1039,14 +1102,14 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
     [Theory]
     [InlineData("can i backup my jibo", "backup_help", "Help section of the Jibo App")]
     [InlineData("how can i restore you from a backup", "restore_backup", "Jibo Customer Care")]
-    [InlineData("when is your next update", "update_next", "coming every few weeks")]
+    [InlineData("when is your next update", "update_next", "coming")]
     [InlineData("when was your last update", "update_last", "release notes page")]
     public async Task BuildDecisionAsync_SupportHelpQuestions_UseImportedReplies(
         string transcript,
@@ -1062,7 +1125,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1092,7 +1155,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1113,7 +1176,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1134,7 +1197,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1163,7 +1226,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1189,7 +1252,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1220,7 +1283,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1249,7 +1312,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1261,7 +1324,7 @@ public sealed class JiboInteractionServiceTests
         "My story is pretty typical. Some people wanted to create something that would really help people. So they built a robot.")]
     [InlineData("where are you from", "robot_origin_from",
         "Some people think I come from the moon. But they're wrong, I'm from Boston.")]
-    [InlineData("tell me a story", "robot_story", "don't have any stories")]
+    [InlineData("tell me a story", "robot_story", "learn")]
     [InlineData("can you recommend a movie", "robot_recommend_movie", "Back to the Future")]
     [InlineData("can you search the web", "robot_search_web", "can't exactly search the web")]
     public async Task BuildDecisionAsync_LegacyBuildAQuestions_UseImportedScriptedReplies(
@@ -1278,7 +1341,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReply, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReply);
         Assert.Null(decision.SkillName);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
@@ -1457,13 +1520,14 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("robot_what_do_you_like_to_do", decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(
+            decision,
+            "robot_what_do_you_like_to_do",
+            expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
     [Theory]
-    [InlineData("happy holidays", "seasonal_holiday_greeting", "It's a fun time of year")]
-    [InlineData("merry christmas", "seasonal_holiday_greeting", "It's a fun time of year")]
     [InlineData("what holidays do you celebrate", "seasonal_holidays",
         "official owner can tell me which ones we'll celebrate together")]
     [InlineData("how is holiday season", "seasonal_holiday_season", "festive times")]
@@ -1520,7 +1584,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1553,7 +1617,10 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("chitchat-skill", decision.SkillName);
         Assert.NotNull(decision.SkillPayload);
         Assert.Equal("RA_JBO_ShowSantaTracker", decision.SkillPayload!["mim_id"]);
-        Assert.Equal("RA_JBO_ShowSantaTracker_AN_01", decision.SkillPayload["prompt_id"]);
+        Assert.StartsWith(
+            "RA_JBO_ShowSantaTracker_AN_",
+            decision.SkillPayload["prompt_id"]?.ToString(),
+            StringComparison.Ordinal);
         Assert.Equal("AN", decision.SkillPayload["prompt_sub_category"]);
         Assert.Contains("santa-scanner", decision.SkillPayload["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
     }
@@ -1626,7 +1693,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -1652,7 +1719,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal(expectedIntent, decision.IntentName);
-        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
         Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
@@ -5209,7 +5276,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("robot_can_move", decision.IntentName);
-        Assert.Contains("move the body parts", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, "robot_can_move", "move the body parts");
     }
 
     [Fact]
@@ -6401,6 +6468,8 @@ public sealed class JiboInteractionServiceTests
         {
             return items[0];
         }
+
+        public double NextUnitInterval() => 0.0;
     }
 
     private sealed class LastItemRandomizer : IJiboRandomizer
@@ -6409,6 +6478,8 @@ public sealed class JiboInteractionServiceTests
         {
             return items[^1];
         }
+
+        public double NextUnitInterval() => 0.999999;
     }
 
     private sealed class FactCategoryLastRandomizer : IJiboRandomizer
@@ -6419,6 +6490,8 @@ public sealed class JiboInteractionServiceTests
                 ? items[^1]
                 : items[0];
         }
+
+        public double NextUnitInterval() => 0.0;
     }
 
     private sealed class CapturingWeatherReportProvider : IWeatherReportProvider

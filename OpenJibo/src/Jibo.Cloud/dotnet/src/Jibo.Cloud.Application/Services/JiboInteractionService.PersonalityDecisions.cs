@@ -155,17 +155,96 @@ public sealed partial class JiboInteractionService
 
     private JiboInteractionDecision BuildReactiveGreetingDecision(
         TurnContext turn,
+        JiboExperienceCatalog catalog,
         string greetingIntent,
         DateTimeOffset? referenceLocalTime)
     {
         var presence = ResolveGreetingPresenceProfile(turn);
         var displayName = ResolvePreferredGreetingName(turn, presence);
-        var replyText = BuildReactiveGreetingReply(greetingIntent, displayName, referenceLocalTime);
-        RecordGreetingPresence(turn, presence, "ReactiveGreeting", greetingIntent, displayName, false);
+
+        if (JiboPartOfDayExtensions.TryGetClaimedPartOfDay(greetingIntent, out var claimed))
+        {
+            var localTime = referenceLocalTime ?? DateTimeOffset.UtcNow;
+            var actual = JiboPartOfDayExtensions.GetPartOfDay(localTime);
+            if (!JiboPartOfDayExtensions.MatchesClaim(actual, claimed))
+            {
+                var correction = PartOfDayCorrectionReplyBuilder.BuildSelection(
+                    catalog,
+                    randomizer,
+                    claimed,
+                    displayName,
+                    referenceLocalTime);
+                const string correctionRoute = "PartOfDayCorrection";
+                RecordGreetingPresence(turn, presence, correctionRoute, greetingIntent, displayName, false);
+                return new JiboInteractionDecision(
+                    greetingIntent,
+                    correction.ReplyText,
+                    SkillPayload: LegacyMimDecisionMetadata.BuildSkillPayload(correction, "PartOfDayCorrection"),
+                    ContextUpdates: LegacyMimDecisionMetadata.ApplyEmotion(
+                        BuildGreetingContextUpdates(correctionRoute, presence.PrimaryPersonId, false),
+                        correction.Emotion));
+            }
+        }
+
+        var selection = LegacyMimGreetingReplyBuilder.BuildReactiveGreeting(
+            catalog,
+            randomizer,
+            greetingIntent,
+            displayName,
+            referenceLocalTime);
+        const string route = "ReactiveGreeting";
+        RecordGreetingPresence(turn, presence, route, greetingIntent, displayName, false);
         return new JiboInteractionDecision(
             greetingIntent,
-            replyText,
-            ContextUpdates: BuildGreetingContextUpdates("ReactiveGreeting", presence.PrimaryPersonId, false));
+            selection.ReplyText,
+            SkillPayload: LegacyMimDecisionMetadata.BuildSkillPayload(selection, "ReactiveGreeting"),
+            ContextUpdates: LegacyMimDecisionMetadata.ApplyEmotion(
+                BuildGreetingContextUpdates(route, presence.PrimaryPersonId, false),
+                selection.Emotion));
+    }
+
+    private JiboInteractionDecision BuildWhatsUpDecision(
+        TurnContext turn,
+        JiboExperienceCatalog catalog,
+        DateTimeOffset? referenceLocalTime)
+    {
+        var presence = ResolveGreetingPresenceProfile(turn);
+        var displayName = ResolvePreferredGreetingName(turn, presence);
+        var selection = LegacyMimGreetingReplyBuilder.BuildWhatsUp(
+            catalog,
+            randomizer,
+            displayName,
+            referenceLocalTime);
+
+        return new JiboInteractionDecision(
+            "whats_up",
+            selection.ReplyText,
+            SkillPayload: LegacyMimDecisionMetadata.BuildSkillPayload(selection, "WhatsUpResp"),
+            ContextUpdates: LegacyMimDecisionMetadata.ApplyEmotion(
+                BuildGreetingContextUpdates("WhatsUp", presence.PrimaryPersonId, false),
+                selection.Emotion));
+    }
+
+    private JiboInteractionDecision BuildGoodbyeDecision(
+        TurnContext turn,
+        JiboExperienceCatalog catalog,
+        DateTimeOffset? referenceLocalTime)
+    {
+        var presence = ResolveGreetingPresenceProfile(turn);
+        var displayName = ResolvePreferredGreetingName(turn, presence);
+        var selection = LegacyMimGreetingReplyBuilder.BuildGoodbye(
+            catalog,
+            randomizer,
+            displayName,
+            referenceLocalTime);
+
+        return new JiboInteractionDecision(
+            "goodbye",
+            selection.ReplyText,
+            SkillPayload: LegacyMimDecisionMetadata.BuildSkillPayload(selection, "GoodbyeRespCM"),
+            ContextUpdates: LegacyMimDecisionMetadata.ApplyEmotion(
+                BuildGreetingContextUpdates("Goodbye", presence.PrimaryPersonId, false),
+                selection.Emotion));
     }
 
     private JiboInteractionDecision BuildProactiveGreetingDecision(
@@ -187,28 +266,6 @@ public sealed partial class JiboInteractionService
             intentName,
             replyText,
             ContextUpdates: BuildGreetingContextUpdates(route, presence.PrimaryPersonId, true));
-    }
-
-    private static string BuildReactiveGreetingReply(
-        string greetingIntent,
-        string? displayName,
-        DateTimeOffset? referenceLocalTime)
-    {
-        var namePrefix = string.IsNullOrWhiteSpace(displayName)
-            ? string.Empty
-            : $", {displayName}";
-
-        return greetingIntent switch
-        {
-            "good_morning" => $"Good morning{namePrefix}. It is great to see you.",
-            "good_afternoon" => $"Good afternoon{namePrefix}. I am glad you are here.",
-            "good_evening" => $"Good evening{namePrefix}. It is nice to have you back.",
-            "good_night" => $"Good night{namePrefix}. Sleep well.",
-            "welcome_back" => string.IsNullOrWhiteSpace(displayName)
-                ? $"Welcome back. {ResolveTimeOfDayGreetingPrefix(referenceLocalTime)}."
-                : $"Welcome back, {displayName}. {ResolveTimeOfDayGreetingPrefix(referenceLocalTime)}.",
-            _ => $"Hello{namePrefix}. It is nice to see you."
-        };
     }
 
     private string? ResolvePreferredGreetingName(TurnContext turn, GreetingPresenceProfile presence)
@@ -429,6 +486,15 @@ public sealed partial class JiboInteractionService
             ? null
             : new SpecialGreetingPrefix("ProactiveHolidayGreeting", "proactive_holiday_greeting",
                 "Happy holidays");
+    }
+
+    private IReadOnlyList<string> ResolveTodaysHolidayNames(TurnContext turn, DateTimeOffset? referenceLocalTime)
+    {
+        if (cloudStateStore is null) return [];
+
+        var loopId = ReadTenantAttribute(turn, "loopId") ?? "openjibo-default-loop";
+        var today = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).LocalDateTime);
+        return JiboHolidayGreeting.GetTodaysHolidayNames(cloudStateStore.GetHolidays(loopId), today);
     }
 
     private JiboInteractionDecision BuildPizzaDecision()
@@ -763,11 +829,21 @@ public sealed partial class JiboInteractionService
     }
 
     private JiboInteractionDecision BuildScriptedSupportDecision(
+        JiboExperienceCatalog catalog,
         IReadOnlyList<string> replies,
         string intentName,
         params string[] preferredSnippets)
     {
-        var selected = SelectLegacyReply(replies, preferredSnippets);
+        var selected = LegacyMimScriptedReplyBuilder.SelectFromBucketOrMim(
+            catalog,
+            randomizer,
+            intentName,
+            replies,
+            LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
+            displayName: null,
+            explicitMimId: null,
+            preferredSnippets);
+
         if (string.IsNullOrWhiteSpace(selected))
             selected = GetSupportFallbackReply(intentName);
 

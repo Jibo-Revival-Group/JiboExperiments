@@ -10,10 +10,14 @@ internal static class ScriptedResponseDecisionBuilder
         string intentName,
         params string[] preferredSnippets)
     {
-        return new JiboInteractionDecision(
+        return LegacyMimScriptedReplyBuilder.BuildScriptedDecision(
+            catalog,
+            randomizer,
             intentName,
-            SelectLegacyPersonalityReply(catalog, randomizer, preferredSnippets),
-            ContextUpdates: BuildScriptedResponseContextUpdates());
+            LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
+            displayName: null,
+            explicitMimId: null,
+            preferredSnippets);
     }
 
     internal static JiboInteractionDecision BuildScriptedFavoriteAnimalDecision(
@@ -22,9 +26,19 @@ internal static class ScriptedResponseDecisionBuilder
         string intentName,
         params string[] preferredSnippets)
     {
+        var replyText = LegacyMimScriptedReplyBuilder.SelectFromBucketOrMim(
+            catalog,
+            randomizer,
+            intentName,
+            catalog.FavoriteAnimalReplies,
+            LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
+            displayName: null,
+            explicitMimId: null,
+            preferredSnippets);
+
         return new JiboInteractionDecision(
             intentName,
-            SelectLegacyReply(catalog.FavoriteAnimalReplies, randomizer, preferredSnippets),
+            replyText,
             ContextUpdates: BuildScriptedResponseContextUpdates());
     }
 
@@ -34,9 +48,19 @@ internal static class ScriptedResponseDecisionBuilder
         string intentName,
         params string[] preferredSnippets)
     {
+        var replyText = LegacyMimScriptedReplyBuilder.SelectFromBucketOrMim(
+            catalog,
+            randomizer,
+            intentName,
+            catalog.GreetingReplies,
+            LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
+            displayName: null,
+            explicitMimId: null,
+            preferredSnippets);
+
         return new JiboInteractionDecision(
             intentName,
-            SelectLegacyGreetingReply(catalog, randomizer, preferredSnippets),
+            replyText,
             ContextUpdates: BuildScriptedResponseContextUpdates());
     }
 
@@ -48,7 +72,7 @@ internal static class ScriptedResponseDecisionBuilder
     {
         return new JiboInteractionDecision(
             intentName,
-            SelectLegacyReply(replies, randomizer, preferredSnippets),
+            SelectLegacyReplyFromStrings(replies, randomizer, preferredSnippets),
             ContextUpdates: BuildScriptedResponseContextUpdates());
     }
 
@@ -59,13 +83,44 @@ internal static class ScriptedResponseDecisionBuilder
         DateTimeOffset? referenceLocalTime,
         params string[] preferredSnippets)
     {
-        var selectedReply = SelectLegacyReply(catalog.HolidayTrackerReplies, randomizer, preferredSnippets);
-        var trackerPayload = BuildSantaTrackerSkillPayload(selectedReply, referenceLocalTime);
+        var context = LegacyMimScriptedReplyBuilder.BuildScriptedContext(referenceLocalTime);
+        if (LegacyMimScriptedReplyBuilder.TrySelectMimReply(
+                catalog,
+                randomizer,
+                intentName,
+                context,
+                displayName: null,
+                explicitMimId: "RA_JBO_ShowSantaTracker",
+                preferredSnippets,
+                out var selection))
+        {
+            var trackerPayload = BuildSantaTrackerSkillPayload(
+                selection!.ReplyText,
+                selection.PromptId,
+                referenceLocalTime);
+            return new JiboInteractionDecision(
+                intentName,
+                selection.ReplyText,
+                "chitchat-skill",
+                trackerPayload,
+                BuildScriptedResponseContextUpdates());
+        }
+
+        var selectedReply = LegacyMimScriptedReplyBuilder.SelectFromBucketOrMim(
+            catalog,
+            randomizer,
+            intentName,
+            catalog.HolidayTrackerReplies,
+            context,
+            displayName: null,
+            explicitMimId: "RA_JBO_ShowSantaTracker",
+            preferredSnippets);
+        var fallbackPayload = BuildSantaTrackerSkillPayload(selectedReply, promptId: null, referenceLocalTime);
         return new JiboInteractionDecision(
             intentName,
             selectedReply,
             "chitchat-skill",
-            trackerPayload,
+            fallbackPayload,
             BuildScriptedResponseContextUpdates());
     }
 
@@ -77,7 +132,36 @@ internal static class ScriptedResponseDecisionBuilder
     {
         return new JiboInteractionDecision(
             intentName,
-            SelectLegacyReply(catalog.HolidayGreetingReplies, randomizer, preferredSnippets),
+            LegacyMimScriptedReplyBuilder.SelectFromBucketOrMim(
+                catalog,
+                randomizer,
+                intentName,
+                catalog.HolidayGreetingReplies,
+                LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
+                displayName: null,
+                explicitMimId: null,
+                preferredSnippets),
+            ContextUpdates: BuildScriptedResponseContextUpdates());
+    }
+
+    internal static JiboInteractionDecision BuildScriptedSupportDecision(
+        JiboExperienceCatalog catalog,
+        IJiboRandomizer randomizer,
+        IReadOnlyList<string> replies,
+        string intentName,
+        params string[] preferredSnippets)
+    {
+        return new JiboInteractionDecision(
+            intentName,
+            LegacyMimScriptedReplyBuilder.SelectFromBucketOrMim(
+                catalog,
+                randomizer,
+                intentName,
+                replies,
+                LegacyMimScriptedReplyBuilder.BuildScriptedContext(),
+                displayName: null,
+                explicitMimId: null,
+                preferredSnippets),
             ContextUpdates: BuildScriptedResponseContextUpdates());
     }
 
@@ -96,16 +180,7 @@ internal static class ScriptedResponseDecisionBuilder
         IJiboRandomizer randomizer,
         params string[] preferredSnippets)
     {
-        foreach (var snippet in preferredSnippets)
-        {
-            if (string.IsNullOrWhiteSpace(snippet)) continue;
-
-            var match = catalog.PersonalityReplies.FirstOrDefault(reply =>
-                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match)) return match;
-        }
-
-        return catalog.PersonalityReplies.Count == 0 ? string.Empty : randomizer.Choose(catalog.PersonalityReplies);
+        return SelectLegacyReplyFromStrings(catalog.PersonalityReplies, randomizer, preferredSnippets);
     }
 
     internal static string SelectLegacyGreetingReply(
@@ -113,16 +188,7 @@ internal static class ScriptedResponseDecisionBuilder
         IJiboRandomizer randomizer,
         params string[] preferredSnippets)
     {
-        foreach (var snippet in preferredSnippets)
-        {
-            if (string.IsNullOrWhiteSpace(snippet)) continue;
-
-            var match = catalog.GreetingReplies.FirstOrDefault(reply =>
-                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match)) return match;
-        }
-
-        return catalog.GreetingReplies.Count == 0 ? string.Empty : randomizer.Choose(catalog.GreetingReplies);
+        return SelectLegacyReplyFromStrings(catalog.GreetingReplies, randomizer, preferredSnippets);
     }
 
     internal static string SelectLegacyReply(
@@ -130,23 +196,51 @@ internal static class ScriptedResponseDecisionBuilder
         IJiboRandomizer randomizer,
         params string[] preferredSnippets)
     {
-        foreach (var snippet in preferredSnippets)
-        {
-            if (string.IsNullOrWhiteSpace(snippet)) continue;
+        return SelectLegacyReplyFromStrings(replies, randomizer, preferredSnippets);
+    }
 
-            var match = replies.FirstOrDefault(reply =>
-                reply.Contains(snippet, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(match)) return match;
-        }
+    internal static string SelectLegacyReplyFromStrings(
+        IReadOnlyList<string> replies,
+        IJiboRandomizer randomizer,
+        params string[] preferredSnippets)
+    {
+        var matches = CollectSnippetMatches(replies, preferredSnippets);
+        if (matches.Count > 0) return randomizer.Choose(matches);
 
         return replies.Count == 0 ? string.Empty : randomizer.Choose(replies);
     }
 
+    internal static List<string> CollectSnippetMatches(
+        IReadOnlyList<string> replies,
+        params string[] preferredSnippets)
+    {
+        var matches = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var snippet in preferredSnippets)
+        {
+            if (string.IsNullOrWhiteSpace(snippet)) continue;
+
+            foreach (var reply in replies)
+            {
+                if (string.IsNullOrWhiteSpace(reply) ||
+                    !reply.Contains(snippet, StringComparison.OrdinalIgnoreCase) ||
+                    !seen.Add(reply))
+                    continue;
+
+                matches.Add(reply);
+            }
+        }
+
+        return matches;
+    }
+
     private static IDictionary<string, object?> BuildSantaTrackerSkillPayload(
         string selectedReply,
+        string? promptId,
         DateTimeOffset? referenceLocalTime)
     {
-        var promptId = ResolveSantaTrackerPromptId(selectedReply);
+        var resolvedPromptId = promptId ?? ResolveSantaTrackerPromptId(selectedReply);
         var trackerAnim = ResolveSantaTrackerAnimation(selectedReply, referenceLocalTime);
         var spokenLine = string.IsNullOrWhiteSpace(selectedReply)
             ? "Let's see if I can spot him."
@@ -158,7 +252,7 @@ internal static class ScriptedResponseDecisionBuilder
                 $"<speak>{EscapeXml(spokenLine)} <anim cat='jiboji' filter='{trackerAnim}' nonBlocking='true'/></speak>",
             ["mim_id"] = "RA_JBO_ShowSantaTracker",
             ["mim_type"] = "announcement",
-            ["prompt_id"] = promptId,
+            ["prompt_id"] = resolvedPromptId,
             ["prompt_sub_category"] = "AN"
         };
     }

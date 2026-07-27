@@ -508,6 +508,47 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsGreetingsPartOfDayCorrectionReplies()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "Greetings");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.PartOfDayCorrectionReplies, reply =>
+            reply.Condition.Contains("PODclaim=='morning'", StringComparison.OrdinalIgnoreCase) &&
+            reply.Reply.Contains("any time of day", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PartOfDayCorrectionReplies, reply =>
+            reply.Condition.Contains("PODclaim=='afternoon'", StringComparison.OrdinalIgnoreCase) &&
+            reply.Reply.Contains("afternoon somewhere", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PartOfDayCorrectionReplies, reply =>
+            reply.Condition.Contains("PODclaim=='evening'", StringComparison.OrdinalIgnoreCase) &&
+            reply.Reply.Contains("don't think it's evening", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void ImportCatalog_ImportsGreetingsNotHolidayAndHolidayResponseReplies()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims",
+            "Greetings");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.NotHolidayReplies, reply =>
+            reply.Condition.Contains("holidayClaim===\"Christmas\"", StringComparison.OrdinalIgnoreCase) &&
+            reply.Reply.Contains("isn't Christmastime", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidayResponseReplies, reply =>
+            reply.Condition.Contains("holiday===\"Christmas\"", StringComparison.OrdinalIgnoreCase) &&
+            reply.Reply.Contains("Merry Christmas to you too", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBRnGreetingResponsesIntoGreetingBucket()
     {
         var rootDirectory = Path.Combine(

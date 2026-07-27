@@ -9,6 +9,10 @@ public sealed class JiboConditionedReply
 {
     public string Condition { get; init; } = string.Empty;
     public string Reply { get; init; } = string.Empty;
+    public double Weight { get; init; } = 1.0;
+    public string? MimId { get; init; }
+    public string? PromptId { get; init; }
+    public string? Emotion { get; init; }
 }
 
 public sealed class JiboExperienceCatalog
@@ -25,6 +29,14 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> HolidaySingReplies { get; init; } = [];
     public IReadOnlyList<string> DanceAnimations { get; init; } = [];
     public IReadOnlyList<string> GreetingReplies { get; init; } = [];
+    public IReadOnlyList<JiboConditionedReply> PartOfDayCorrectionReplies { get; init; } = [];
+    public IReadOnlyList<JiboConditionedReply> NotHolidayReplies { get; init; } = [];
+    public IReadOnlyList<JiboConditionedReply> HolidayResponseReplies { get; init; } = [];
+    public IReadOnlyList<JiboConditionedReply> ReactiveGreetingReplies { get; init; } = [];
+    public IReadOnlyList<JiboConditionedReply> WhatsUpReplies { get; init; } = [];
+    public IReadOnlyList<JiboConditionedReply> GoodbyeReplies { get; init; } = [];
+    public IReadOnlyDictionary<string, IReadOnlyList<JiboConditionedReply>> MimReplies { get; init; }
+        = new Dictionary<string, IReadOnlyList<JiboConditionedReply>>(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyList<string> StoryReplies { get; init; } = [];
     public IReadOnlyList<string> HolidayReplies { get; init; } = [];
     public IReadOnlyList<string> HolidaySeasonReplies { get; init; } = [];

@@ -107,13 +107,7 @@ internal static class SeasonalHolidayRouteBuilder
             return true;
         }
 
-        if (MatchesAny(
-                loweredTranscript,
-                "happy holidays",
-                "merry christmas",
-                "happy new year",
-                "season s greetings",
-                "seasons greetings"))
+        if (JiboHolidayGreeting.TryExtractHolidayClaim(loweredTranscript, out _))
         {
             semanticIntent = "seasonal_holiday_greeting";
             return true;
@@ -380,10 +374,12 @@ internal static class SeasonalHolidayRouteBuilder
 
     internal static bool TryBuildDecision(
         string semanticIntent,
+        string loweredTranscript,
         JiboExperienceCatalog catalog,
         IJiboRandomizer randomizer,
         Func<string, string> holidayTemplateRenderer,
         DateTimeOffset? referenceLocalTime,
+        IReadOnlyList<string> todaysHolidayNames,
         out JiboInteractionDecision? decision)
     {
         decision = semanticIntent switch
@@ -436,13 +432,13 @@ internal static class SeasonalHolidayRouteBuilder
                 "spingarn medal",
                 "langston hughes",
                 "maya angelou"),
-            "seasonal_holiday_greeting" => ScriptedResponseDecisionBuilder.BuildScriptedHolidayGreetingDecision(
+            "seasonal_holiday_greeting" => ReactiveHolidayReplyBuilder.BuildDecision(
                 catalog,
                 randomizer,
-                semanticIntent,
-                "fun time of year",
-                "right back at you",
-                "and to you too"),
+                loweredTranscript,
+                referenceLocalTime,
+                todaysHolidayNames,
+                semanticIntent),
             "seasonal_holidays" => BuildHolidayTemplateDecision(
                 catalog,
                 randomizer,
@@ -617,8 +613,8 @@ internal static class SeasonalHolidayRouteBuilder
                 randomizer,
                 semanticIntent,
                 referenceLocalTime,
-                "santa tracker",
                 "let's see if i can spot him",
+                "santa tracker",
                 "deliveries",
                 "north pole"),
             "birthday_celebration" => BuildHolidayDecision(

@@ -380,10 +380,12 @@ internal static class SeasonalHolidayRouteBuilder
 
     internal static bool TryBuildDecision(
         string semanticIntent,
+        string loweredTranscript,
         JiboExperienceCatalog catalog,
         IJiboRandomizer randomizer,
         Func<string, string> holidayTemplateRenderer,
         DateTimeOffset? referenceLocalTime,
+        IReadOnlyList<string> todaysHolidayNames,
         out JiboInteractionDecision? decision)
     {
         decision = semanticIntent switch
@@ -436,13 +438,13 @@ internal static class SeasonalHolidayRouteBuilder
                 "spingarn medal",
                 "langston hughes",
                 "maya angelou"),
-            "seasonal_holiday_greeting" => ScriptedResponseDecisionBuilder.BuildScriptedHolidayGreetingDecision(
+            "seasonal_holiday_greeting" => ReactiveHolidayReplyBuilder.BuildDecision(
                 catalog,
                 randomizer,
-                semanticIntent,
-                "fun time of year",
-                "right back at you",
-                "and to you too"),
+                loweredTranscript,
+                referenceLocalTime,
+                todaysHolidayNames,
+                semanticIntent),
             "seasonal_holidays" => BuildHolidayTemplateDecision(
                 catalog,
                 randomizer,

@@ -9,6 +9,7 @@ public sealed class JiboConditionedReply
 {
     public string Condition { get; init; } = string.Empty;
     public string Reply { get; init; } = string.Empty;
+    public double Weight { get; init; } = 1.0;
 }
 
 public sealed class JiboExperienceCatalog
@@ -26,6 +27,8 @@ public sealed class JiboExperienceCatalog
     public IReadOnlyList<string> DanceAnimations { get; init; } = [];
     public IReadOnlyList<string> GreetingReplies { get; init; } = [];
     public IReadOnlyList<JiboConditionedReply> PartOfDayCorrectionReplies { get; init; } = [];
+    public IReadOnlyList<JiboConditionedReply> NotHolidayReplies { get; init; } = [];
+    public IReadOnlyList<JiboConditionedReply> HolidayResponseReplies { get; init; } = [];
     public IReadOnlyList<string> StoryReplies { get; init; } = [];
     public IReadOnlyList<string> HolidayReplies { get; init; } = [];
     public IReadOnlyList<string> HolidaySeasonReplies { get; init; } = [];

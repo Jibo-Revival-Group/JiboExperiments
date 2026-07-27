@@ -108,10 +108,12 @@ public sealed partial class JiboInteractionService
 
         if (SeasonalHolidayRouteBuilder.TryBuildDecision(
                 semanticIntent,
+                lowered,
                 catalog,
                 randomizer,
                 selected => RenderHolidayTemplate(selected, turn, greetingPresence),
                 referenceLocalTime,
+                ResolveTodaysHolidayNames(turn, referenceLocalTime),
                 out var seasonalHolidayDecision))
             return seasonalHolidayDecision!;
 

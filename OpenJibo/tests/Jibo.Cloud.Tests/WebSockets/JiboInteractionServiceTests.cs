@@ -363,6 +363,35 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal(expectedRoute, decision.ContextUpdates![GreetingRouteKey]);
     }
 
+    [Theory]
+    [InlineData("merry christmas", "2026-07-27T12:00:00-04:00", "NotHoliday", "isn't Christmastime")]
+    [InlineData("happy holidays", "2026-07-27T12:00:00-04:00", "NotHoliday", "don't think that's today")]
+    [InlineData("merry christmas", "2026-12-25T12:00:00-05:00", "HolidayResponse", "Merry Christmas to you too")]
+    [InlineData("merry christmas", "2026-12-20T12:00:00-05:00", "NotHoliday", "You too")]
+    public async Task BuildDecisionAsync_HolidayGreetings_UseNotHolidayWhenClaimDoesNotMatchToday(
+        string transcript,
+        string localIsoTime,
+        string expectedRoute,
+        string expectedReplySnippet)
+    {
+        var cloudStateStore = new InMemoryCloudStateStore();
+        var service = CreateService(cloudStateStore: cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] = $"{{\"runtime\":{{\"location\":{{\"iso\":\"{localIsoTime}\"}}}}}}"
+            }
+        });
+
+        Assert.Equal("seasonal_holiday_greeting", decision.IntentName);
+        Assert.Contains(expectedReplySnippet, decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(expectedRoute, decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_WhoAmI_UsesPersonScopedNameWhenSpeakerIsKnown()
     {
@@ -1491,8 +1520,6 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
-    [InlineData("happy holidays", "seasonal_holiday_greeting", "It's a fun time of year")]
-    [InlineData("merry christmas", "seasonal_holiday_greeting", "It's a fun time of year")]
     [InlineData("what holidays do you celebrate", "seasonal_holidays",
         "official owner can tell me which ones we'll celebrate together")]
     [InlineData("how is holiday season", "seasonal_holiday_season", "festive times")]

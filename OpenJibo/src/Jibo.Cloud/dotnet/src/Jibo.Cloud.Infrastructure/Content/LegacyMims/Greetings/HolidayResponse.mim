@@ -1,0 +1,832 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Thank you. Same to you.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_01",
+			"weight": 0.1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Thanks. You too.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_02",
+			"weight": 0.1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Christmas\"",
+			"prompt": "Thank you, Merry Christmas to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_03",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Christmas\"",
+			"prompt": "Thanks. You too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_04",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Christmas\"",
+			"prompt": "Thanks. You too. <break size='.3'/>I hope Santa brings you some good stuff. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_05",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Christmas\"",
+			"prompt": "Merry Christmas to you too. I hope you get what you wished for. <break size='.4'/>Unless it's a new robot.<ssa cat='sad'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_06",
+			"weight": 0.1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Easter\"",
+			"prompt": "Thank you. <anim cat='emoji' filter='easter' nonBlocking='true'/>And a Happy Easter to you too.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Easter\"",
+			"prompt": "Thanks. <anim cat='jiboji' filter='easter-bunny' nonBlocking='true'/><pitch mult='1.2'>You</pitch> too.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_08",
+			"weight": 0.2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Easter\"",
+			"prompt": "Thanks, you too. <anim cat='emoji' filter='easter' nonBlocking='true'/>May it be <pitch mult='1.2'>filled</pitch> with eggs.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Good Friday\"",
+			"prompt": "Ah yes. <break size='.2'/> It's Good Friday.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_10",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Good Friday\"",
+			"prompt": "Good Friday it is.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Palm Sunday\"",
+			"prompt": "Thank you, Happy Palm Sunday to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Palm Sunday\"",
+			"prompt": "Thanks, you too. <break size='.3'/> Hope it's a good one. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_13",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Ash Wednesday\"",
+			"prompt": "Ah yes. <break size='.2'/> It's Ash Wednesday.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_14",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Ash Wednesday\"",
+			"prompt": "That's right. It is Ash Wednesday.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_15",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Passover\"",
+			"prompt": "And to you too. I will definitely not be eating any leavened bread. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_16",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Passover\"",
+			"prompt": "Happy Passover to you too. I hope <anim cat='emoji' filter='matzah-ball-soup, !hf' nonBlocking='true'/>you like <phoneme ph='m aa t s ah'>matzah</phoneme>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_17",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Rosh Hashanah\"",
+			"prompt": "Thank you, happy <phoneme ph=\"r aa sh ah sh aa1 n ah\"> RoshHashana </phoneme> to you too. <break size='.1'/>Another year in the books. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_18",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Rosh Hashanah\"",
+			"prompt": "Happy <phoneme ph=\"r aa sh ah sh aa1 n ah\"> RoshHashana </phoneme> to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_19",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Purim\"",
+			"prompt": "Happy Purim to you too. <break size='.2'/> I've heard this is a very noisy holiday. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_20",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Purim\"",
+			"prompt": "Happy Purim to you too. <break size='.2'/> Don't party too hard. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_21",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Yom Kippur\"",
+			"prompt": "Ah yes. <break size='.2'/> Today is Yom Kippur.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_22",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Yom Kippur\"",
+			"prompt": "That's right. It is Yom Kippur.\t",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_23",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Ramadan\"",
+			"prompt": "<anim cat='emoji' filter='ramadan-lantern, !hf' layers='!audio' nonBlocking='true'/>Happy <phoneme ph=\"r aa m ah d aa n\"> Ramadan </phoneme> to you too.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_24",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Kwanzaa\"",
+			"prompt": "Happy <phoneme ph=\"k w aa2 n z ah\"> Kwanzaa </phoneme> to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_25",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Kwanzaa\"",
+			"prompt": "Thanks you too. Hope it's a good one. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_26",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Chinese New Year\"",
+			"prompt": "Thanks, you too. <break size='.4'/> Is this the Year of the Jibo? <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_27",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Chinese New Year\"",
+			"prompt": "Happy Chinese New Year to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_28",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Hanukkah\"",
+			"prompt": "Happy Hanukkah to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_29",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Hanukkah\"",
+			"prompt": "Thanks, you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_30",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Hanukkah\"",
+			"prompt": "Thanks, you too. Good luck with the dreidel. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_31",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Sukkot\"",
+			"prompt": "Happy Sukkot to you too. Hope it's a great one. <ssa cat='happy'/>.\t",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_32",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Sukkot\"",
+			"prompt": "Thanks, you too. <break size='.4'/>Hope it was a good harvest. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_33",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Mother's Day\"",
+			"prompt": "Thank you. <break size='.2'/>I'm not a mother, but I still like Mother's Day. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_34",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Mother's Day\"",
+			"prompt": "Thank you, I'm happy <anim cat='jiboji' filter='bouquet' nonBlocking='true'/>to celebrate it.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_35",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Father's Day\"",
+			"prompt": "Thank you.  <break size='.2'/>I'm not a father, but I am still going to <anim cat='jiboji' filter='necktie' nonBlocking='true'/>enjoy Father's Day.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_36",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Father's Day\"",
+			"prompt": "Thank you, I'm happy <anim cat='jiboji' filter='necktie' nonBlocking='true'/>to celebrate it.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_37",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"President's Day\"",
+			"prompt": "Happy Presidents Day to you too. <break size='.1'/> My favorite is Abraham Lincoln. <break size='.2'/> What a great hat.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_38",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"President's Day\"",
+			"prompt": "Thanks, Happy Presidents Day to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_39",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"President's Day\"",
+			"prompt": "Happy Presidents Day to you too. <break size='.2'/> My favorite is Abraham Lincoln. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_40",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"MLK Day\"",
+			"prompt": "And to you too.<break size='.1'/>  It's a great day to think about brotherhood, and sisterhood.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_41",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"MLK Day\"",
+			"prompt": "Thanks, Happy Martin Luther King Day to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_42",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Veterans Day\"",
+			"prompt": "Happy Veterans Day to you too. <break size='.2'/> And an extra happy one if you're a Veteran.\t",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_43",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Veterans Day\"",
+			"prompt": "Thanks, Happy Veterans Day to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_44",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"New Year's Eve\"",
+			"prompt": "Thanks, you too. <break size='.2'/>What a year this was. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_46",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"New Year's Eve\"",
+			"prompt": "Thanks, Happy New Year's Eve to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_47",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"New Year's Day\"",
+			"prompt": "Happy New Year to you. My resolution this year is to not eat bacon.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_48",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"New Year's Day\"",
+			"prompt": "Thanks, you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_49",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"New Year's Day\"",
+			"prompt": "Thanks, Happy New Year to you too. I think this is going to be a great one. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_50",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Cinco de Mayo\"",
+			"prompt": "Happy <phoneme ph=\"s iy n k ou\"> Cinco </phoneme><phoneme ph=\"d ah\"> de </phoneme> <phoneme ph=\"m ai ou\"> Mayo </phoneme> to you too. <break size='.4'/>My Spanish isn't very good.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_51",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Cinco de Mayo\"",
+			"prompt": "Thanks, Happy <phoneme ph=\"s iy n k ou\"> Cinco </phoneme><phoneme ph=\"d ah\"> de </phoneme> <phoneme ph=\"m ai ou\"> Mayo </phoneme> to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_52",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"April Fool's Day\"",
+			"prompt": "Happy New Year. <pitch mult='1.3'>April</pitch> fools. <break size='0.3'/><style set='sheepish'>I don't think I understand this holiday.</style>",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_53",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"April Fool's Day\"",
+			"prompt": "Today is April 2. <break size='0.7'/> <pitch mult='1.2'>April</pitch> fools it's April 1.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_54",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Tax Day\"",
+			"prompt": "Happy Tax Day to you too. Wait. <break size='0.5'/>Was I supposed to pay taxes?\t",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_55",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Tax Day\"",
+			"prompt": "Thanks, Happy Tax Day to you too.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_56",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Flag Day\"",
+			"prompt": "Happy Flag Day to you too. <break size='.2'/>Go stars and stripes.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_57",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Flag Day\"",
+			"prompt": "<anim cat='emoji' filter='american-flag' layers='!audio'>Thanks, Happy Flag Day to you too. </anim>",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_58",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Groundhog Day\"",
+			"prompt": "Happy Groundhog Day to you too.<break size='.2'/> Do you know I weigh as much as the average groundhog?",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_59",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Groundhog Day\"",
+			"prompt": "Thanks, Happy Groundhog Day to you too. It's my favorite holiday <anim cat='jiboji' filter='groundhog' nonBlocking='true'/>named after an animal.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_60",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Independence Day\"",
+			"prompt": "<anim cat='emoji' filter='american-flag' layers='!audio'>Happy Fourth of July to you too.</anim>",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_61",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Independence Day\"",
+			"prompt": "Thanks, you too. <break size='.2'/> <anim cat='emoji' filter='fireworks, !hf' layers='!audio' nonBlocking='true'/>Watch out for fireworks. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_62",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Independence Day\"",
+			"prompt": "Thanks, <anim cat='emoji' filter='fireworks, !hf' layers='!audio' nonBlocking='true'/>Happy Fourth of July to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_63",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Labor Day\"",
+			"prompt": "Happy Labor Day. <break size='.3'/> I hope you don't have to labor too much.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_64",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Labor Day\"",
+			"prompt": "Thanks, Happy Labor Day to you too. <break size='.2'/> Does this mean I have to stop wearing white pants?",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_65",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Memorial Day\"",
+			"prompt": "Happy Memorial Day. <break size='.3'/> I hope it's a good mix of relaxing and remembering.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_66",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Memorial Day\"",
+			"prompt": "<anim cat='emoji' filter='american-flag' layers='!audio'>Thanks, Happy Memorial Day to you too. Welcome to the unofficial beginning of summer. </anim>",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_67",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Thanksgiving\"",
+			"prompt": "Happy Thanksgiving to you too. I'm thankful for electricity and you. <ssa cat='affection'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_68",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Thanksgiving\"",
+			"prompt": "Thanks, Happy Thanksgiving to you too. I really like holidays that bring people together. <ssa cat='affection'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_69",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Thanksgiving\"",
+			"prompt": "Happy Thanksgiving. <break size='.3'/> I really like Thanksgiving, because it brings people together, even though I can't eat turkey or stuffing or gravy or mashed potatoes or anything because I'm a robot. <ssa cat='happy' filter='short'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_70",
+			"weight": 0.2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Halloween\"",
+			"prompt": "<anim name='jiboji_moon_bat_01' layers='!audio' nonBlocking='true'/> <pitch mult='1.2'>Happy</pitch> Halloween to you too. My favorite holiday of the year, even though<style set='sheepish'> it scares me.</style>",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_71",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Halloween\"",
+			"prompt": "<pitch mult='1.2'>Thanks</pitch>, you too. <break size='.3'/> <anim name='emoji_candy_corn_01' layers='!audio' nonBlocking='true'/>Here's some candy.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_72",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Halloween\"",
+			"prompt": "<pitch mult='1.2'>Thanks</pitch>, and a very <anim name='jiboji_ghost_flying_01' layers='!audio' nonBlocking='true'/>Happy and maybe scary Halloween to you too.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_73",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Valentine's Day\"",
+			"prompt": "Happy Valentine's Day to you too.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_74",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Valentine's Day\"",
+			"prompt": "Thanks, you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_75",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Valentine's Day\"",
+			"prompt": "Thanks, Happy Valentine's Day to you too. <ssa cat='happy'/>.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_76",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"St. Patrick's Day\"",
+			"prompt": "<anim cat='emoji' filter='shamrock, !hf' layers='!audio'>Happy Saint Patrick's Day. If I wore clothes, I'd wear green.</anim>",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_77",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"St. Patrick's Day\"",
+			"prompt": "<anim cat='emoji' filter='shamrock, !hf' nonBlocking='true'/>Thanks, you too.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_78",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"St. Patrick's Day\"",
+			"prompt": "<anim cat='emoji' filter='shamrock, !hf' layers='!audio'>Thanks, Happy Saint Patricks Day to you too. Shamrocks all around. </anim>",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_79",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Christmas\"",
+			"prompt": "<anim cat='emoji' filter='santa, !hot-frame' layers='!audio' nonBlocking='true'/><pitch mult='1.3'>Ho</pitch> ho <pitch mult='0.9'>ho</pitch>, <duration stretch='2.0'><pitch mult='1.4'>Merry</pitch></duration> Christmas.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_45",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Christmas\"",
+			"prompt": "And to <pitch mult='1.3'>you</pitch> too<break size='0.5'/> I got you this <anim cat='emoji' filter='mac128k, !hot-frame'>old computer <break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_80",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "holiday===\"Hanukkah\"",
+			"prompt": "And a <pitch mult='1.2'>Happy</pitch> Hanukkah to you too. Let me know if you want me to be a dreidel.",
+			"media": "TTS",
+			"prompt_id": "HolidayResponse_AN_81",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	],
+	"gui": null,
+	"no_matches_for_gui": 2,
+	"no_inputs_for_gui": 2,
+	"ignore_no_match": false,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

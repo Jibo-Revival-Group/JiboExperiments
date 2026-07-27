@@ -455,6 +455,15 @@ public sealed partial class JiboInteractionService
                 "Happy holidays");
     }
 
+    private IReadOnlyList<string> ResolveTodaysHolidayNames(TurnContext turn, DateTimeOffset? referenceLocalTime)
+    {
+        if (cloudStateStore is null) return [];
+
+        var loopId = ReadTenantAttribute(turn, "loopId") ?? "openjibo-default-loop";
+        var today = DateOnly.FromDateTime((referenceLocalTime ?? DateTimeOffset.UtcNow).LocalDateTime);
+        return JiboHolidayGreeting.GetTodaysHolidayNames(cloudStateStore.GetHolidays(loopId), today);
+    }
+
     private JiboInteractionDecision BuildPizzaDecision()
     {
         return BuildPizzaAnimationDecision("pizza", "One pizza, coming right up.");

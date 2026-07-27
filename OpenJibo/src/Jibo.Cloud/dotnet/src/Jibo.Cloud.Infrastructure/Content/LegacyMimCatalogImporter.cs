@@ -63,7 +63,7 @@ public static class LegacyMimCatalogImporter
                 var text = NormalizePrompt(prompt.Prompt, IsTemplateBucket(bucket.Value));
                 if (string.IsNullOrWhiteSpace(text)) continue;
 
-                builder.Add(bucket.Value, prompt.Condition, text, prompt.Prompt);
+                builder.Add(bucket.Value, prompt.Condition, text, prompt.Weight, prompt.Prompt);
             }
         }
 
@@ -403,6 +403,12 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("PartOfDayCorrection", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.PartOfDayCorrection;
 
+        if (fileName.StartsWith("NotHoliday", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.NotHoliday;
+
+        if (fileName.StartsWith("HolidayResponse", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.HolidayResponse;
+
         if (fileName.Contains("Greeting", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("RN_", StringComparison.OrdinalIgnoreCase) ||
             fileName.Contains("Welcome", StringComparison.OrdinalIgnoreCase))
@@ -448,6 +454,9 @@ public static class LegacyMimCatalogImporter
             GreetingReplies = Merge(baseCatalog.GreetingReplies, importedCatalog.GreetingReplies),
             PartOfDayCorrectionReplies = Merge(baseCatalog.PartOfDayCorrectionReplies,
                 importedCatalog.PartOfDayCorrectionReplies),
+            NotHolidayReplies = Merge(baseCatalog.NotHolidayReplies, importedCatalog.NotHolidayReplies),
+            HolidayResponseReplies = Merge(baseCatalog.HolidayResponseReplies,
+                importedCatalog.HolidayResponseReplies),
             HolidayReplies = Merge(baseCatalog.HolidayReplies, importedCatalog.HolidayReplies),
             HolidaySeasonReplies = Merge(baseCatalog.HolidaySeasonReplies, importedCatalog.HolidaySeasonReplies),
             HolidayGreetingReplies = Merge(baseCatalog.HolidayGreetingReplies, importedCatalog.HolidayGreetingReplies),
@@ -582,7 +591,12 @@ public static class LegacyMimCatalogImporter
             let normalizedReply = value.Reply.Trim()
             let key = $"{normalizedCondition}::{normalizedReply}"
             where seen.Add(key)
-            select new JiboConditionedReply { Condition = normalizedCondition, Reply = normalizedReply }).ToArray();
+            select new JiboConditionedReply
+            {
+                Condition = normalizedCondition,
+                Reply = normalizedReply,
+                Weight = value.Weight
+            }).ToArray();
     }
 
     private static string NormalizeCondition(string? condition)
@@ -665,6 +679,8 @@ public static class LegacyMimCatalogImporter
         GenericFallback,
         Greeting,
         PartOfDayCorrection,
+        NotHoliday,
+        HolidayResponse,
         Holiday,
         HolidaySeason,
         HolidayGreeting,
@@ -824,6 +840,8 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _newsIntroReplies = [];
         private readonly List<string> _newsOutroReplies = [];
         private readonly List<JiboConditionedReply> _partOfDayCorrectionReplies = [];
+        private readonly List<JiboConditionedReply> _notHolidayReplies = [];
+        private readonly List<JiboConditionedReply> _holidayResponseReplies = [];
         private readonly List<string> _personalities = [];
         private readonly List<string> _personalReportKickOffReplies = [];
         private readonly List<string> _personalReportOutroReplies = [];
@@ -846,7 +864,8 @@ public static class LegacyMimCatalogImporter
         private readonly List<string> _weatherTomorrowHighLowReplies = [];
         private readonly List<string> _weatherTomorrowIntroReplies = [];
 
-        public void Add(LegacyMimBucket bucket, string? condition, string text, string? sourcePrompt = null)
+        public void Add(LegacyMimBucket bucket, string? condition, string text, double? weight = null,
+            string? sourcePrompt = null)
         {
             switch (bucket)
             {
@@ -861,7 +880,13 @@ public static class LegacyMimCatalogImporter
                     _greetings.Add(text);
                     return;
                 case LegacyMimBucket.PartOfDayCorrection:
-                    AddDistinct(_partOfDayCorrectionReplies, condition, text);
+                    AddDistinct(_partOfDayCorrectionReplies, condition, text, weight);
+                    return;
+                case LegacyMimBucket.NotHoliday:
+                    AddDistinct(_notHolidayReplies, condition, text, weight);
+                    return;
+                case LegacyMimBucket.HolidayResponse:
+                    AddDistinct(_holidayResponseReplies, condition, text, weight);
                     return;
                 case LegacyMimBucket.Jokes:
                     if (_jokes.Any(value => string.Equals(value, text, StringComparison.OrdinalIgnoreCase))) return;
@@ -1175,6 +1200,8 @@ public static class LegacyMimCatalogImporter
                 HolidaySingReplies = [.. _holidaySingReplies],
                 GreetingReplies = [.. _greetings],
                 PartOfDayCorrectionReplies = [.. _partOfDayCorrectionReplies],
+                NotHolidayReplies = [.. _notHolidayReplies],
+                HolidayResponseReplies = [.. _holidayResponseReplies],
                 HolidayReplies = [.. _holidayReplies],
                 HolidaySeasonReplies = [.. _holidaySeasonReplies],
                 HolidayGreetingReplies = [.. _holidayGreetingReplies],
@@ -1263,7 +1290,8 @@ public static class LegacyMimCatalogImporter
             target.Add(text);
         }
 
-        private static void AddDistinct(List<JiboConditionedReply> target, string? condition, string text)
+        private static void AddDistinct(List<JiboConditionedReply> target, string? condition, string text,
+            double? weight = null)
         {
             var normalizedCondition = NormalizeCondition(condition);
             if (target.Any(value =>
@@ -1275,7 +1303,8 @@ public static class LegacyMimCatalogImporter
             target.Add(new JiboConditionedReply
             {
                 Condition = normalizedCondition,
-                Reply = text
+                Reply = text,
+                Weight = weight ?? 1.0
             });
         }
 

@@ -155,6 +155,42 @@ public sealed class InMemoryJiboExperienceContentRepository : IJiboExperienceCon
                     Reply = "I may be wrong, but I don't think it's evening."
                 }
             ],
+            NotHolidayReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Sorry, I don't think that's today.",
+                    Weight = 0.1
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "holidayClaim===\"Christmas\" && _now.isInRange('1/1', '11/30')",
+                    Reply = "Um, unless my calendar is off, it isn't Christmastime.",
+                    Weight = 10
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "holidayClaim===\"Christmas\" && _now.isInRange('12/1', '12/31')",
+                    Reply = "Thank you, Merry Christmas to you too.",
+                    Weight = 10
+                }
+            ],
+            HolidayResponseReplies =
+            [
+                new JiboConditionedReply
+                {
+                    Condition = string.Empty,
+                    Reply = "Thank you. Same to you.",
+                    Weight = 0.1
+                },
+                new JiboConditionedReply
+                {
+                    Condition = "holiday===\"Christmas\"",
+                    Reply = "Thank you, Merry Christmas to you too.",
+                    Weight = 1
+                }
+            ],
             StoryReplies =
             [
                 "I don't have any stories for you just yet. But I'd really like to learn some soon.",

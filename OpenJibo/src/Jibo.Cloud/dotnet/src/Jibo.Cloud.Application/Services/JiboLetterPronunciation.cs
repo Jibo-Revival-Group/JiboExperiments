@@ -36,4 +36,22 @@ public static class JiboLetterPronunciation
     {
         return Pronunciations.TryGetValue(char.ToLowerInvariant(letter), out pronunciation!);
     }
+
+    /// <summary>
+    /// Spells an acronym letter-by-letter for TTS (e.g. "GPU" → "jee pee you").
+    /// Non-letter characters are skipped.
+    /// </summary>
+    public static string SpellAcronym(string acronym)
+    {
+        if (string.IsNullOrWhiteSpace(acronym)) return string.Empty;
+
+        var parts = new List<string>();
+        foreach (var character in acronym)
+        {
+            if (TryGetPronunciation(character, out var pronunciation))
+                parts.Add(pronunciation);
+        }
+
+        return string.Join(' ', parts);
+    }
 }

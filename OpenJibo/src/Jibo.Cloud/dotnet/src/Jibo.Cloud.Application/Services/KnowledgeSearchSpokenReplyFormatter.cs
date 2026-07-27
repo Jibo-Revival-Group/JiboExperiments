@@ -5,6 +5,18 @@ namespace Jibo.Cloud.Application.Services;
 
 internal static partial class KnowledgeSearchSpokenReplyFormatter
 {
+    /// <summary>
+    /// Common all-caps English words that should stay as words, not letter-spelled.
+    /// </summary>
+    private static readonly HashSet<string> AcronymDenylist = new(StringComparer.Ordinal)
+    {
+        "AM", "AN", "AS", "AT", "BE", "BY", "DO", "GO", "HE", "IF", "IN", "IS", "IT", "ME", "MY",
+        "NO", "OF", "ON", "OR", "SO", "TO", "UP", "US", "WE",
+        "ALL", "AND", "ARE", "BUT", "CAN", "DID", "FOR", "GET", "HAD", "HAS", "HER", "HIM", "HIS",
+        "HOW", "ITS", "LET", "MAY", "NEW", "NOT", "NOW", "OLD", "ONE", "OUR", "OUT", "OWN", "PUT",
+        "SAY", "SEE", "SHE", "THE", "TOO", "TWO", "USE", "WAS", "WAY", "WHO", "YOU"
+    };
+
     private static readonly (Regex Pattern, string Replacement)[] SpokenTermReplacements =
     [
         (WolframAlphaPattern(), "wolf ram alpha"),
@@ -50,7 +62,33 @@ internal static partial class KnowledgeSearchSpokenReplyFormatter
         foreach (var (pattern, replacement) in SpokenTermReplacements)
             spoken = pattern.Replace(spoken, replacement);
 
+        spoken = ParentheticalAcronymPattern().Replace(spoken, ExpandParentheticalAcronym);
+        spoken = StandaloneAcronymPattern().Replace(spoken, ExpandStandaloneAcronym);
         return spoken;
+    }
+
+    private static string ExpandParentheticalAcronym(Match match)
+    {
+        var letters = match.Groups[1].Value;
+        if (AcronymDenylist.Contains(letters)) return match.Value;
+
+        var spelled = JiboLetterPronunciation.SpellAcronym(letters);
+        if (string.IsNullOrEmpty(spelled)) return match.Value;
+
+        var plural = match.Groups[2].Success ? "s" : string.Empty;
+        return $"({spelled}{plural})";
+    }
+
+    private static string ExpandStandaloneAcronym(Match match)
+    {
+        var letters = match.Groups[1].Value;
+        if (AcronymDenylist.Contains(letters)) return match.Value;
+
+        var spelled = JiboLetterPronunciation.SpellAcronym(letters);
+        if (string.IsNullOrEmpty(spelled)) return match.Value;
+
+        var plural = match.Groups[2].Success ? "s" : string.Empty;
+        return spelled + plural;
     }
 
     [GeneratedRegex(@"\bWolfram\s*Alpha\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
@@ -82,4 +120,12 @@ internal static partial class KnowledgeSearchSpokenReplyFormatter
 
     [GeneratedRegex(@"\bAI\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex AiPattern();
+
+    // ALL-CAPS acronyms in parentheses, optional lowercase plural s: (GPU) / (CPUs)
+    [GeneratedRegex(@"\(([A-Z]{2,8})(s)?\)", RegexOptions.CultureInvariant)]
+    private static partial Regex ParentheticalAcronymPattern();
+
+    // Standalone ALL-CAPS acronyms (2–8 letters), optional lowercase plural s
+    [GeneratedRegex(@"\b([A-Z]{2,8})(s)?\b", RegexOptions.CultureInvariant)]
+    private static partial Regex StandaloneAcronymPattern();
 }

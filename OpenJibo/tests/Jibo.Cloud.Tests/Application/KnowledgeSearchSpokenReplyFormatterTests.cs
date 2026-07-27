@@ -46,6 +46,29 @@ public sealed class KnowledgeSearchSpokenReplyFormatterTests
         Assert.Equal($"According to chat gee pee tee. {expectedBody}", reply);
     }
 
+    [Theory]
+    [InlineData(
+        "A graphics processing unit (GPU) accelerates rendering.",
+        "A graphics processing unit (jee pee you) accelerates rendering.")]
+    [InlineData(
+        "The CPU and GPU work together.",
+        "The see pee you and jee pee you work together.")]
+    [InlineData(
+        "NASA launched a probe.",
+        "en ae es ae launched a probe.")]
+    [InlineData(
+        "Multiple GPUs can help.",
+        "Multiple jee pee yous can help.")]
+    [InlineData(
+        "THE answer is clear.",
+        "THE answer is clear.")]
+    public void FormatReply_SpellsAcronymsLetterByLetter(string input, string expectedBody)
+    {
+        var reply = KnowledgeSearchSpokenReplyFormatter.FormatReply(input, SearchBackendKind.Wikipedia);
+
+        Assert.Equal($"According to wikipedia dot org. {expectedBody}", reply);
+    }
+
     [Fact]
     public void FormatReply_ReturnsEmpty_WhenAnswerMissing()
     {

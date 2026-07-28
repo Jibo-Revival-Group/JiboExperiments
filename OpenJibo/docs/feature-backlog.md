@@ -438,7 +438,7 @@ These are the carryover items that need a clean proof pass first:
 
 ### 6. Stop Command
 
-- Status: `polish`
+- Status: `implemented`
 - Tags: `protocol`
 - User goals:
   - `stop`
@@ -451,10 +451,12 @@ These are the carryover items that need a clean proof pass first:
   - whether live stock OS treats the combined global stop plus idle redirect as cleanly as expected during active local skills
 - Exit criteria:
   - a spoken stop command settles the robot locally without a generic chat reply
+- Progress update (`2026-07-28`):
+  - focused interaction-service and websocket tests now cover `stop`, `stop it`, `forget it`, and the `@be/idle` / `global_commands` routing, so the stop lane can move from `polish` to `implemented`
 
 ### 7. Volume Up / Volume Down Voice Control
 
-- Status: `polish`
+- Status: `implemented`
 - Tags: `protocol`
 - User goals:
   - `turn it up`
@@ -470,12 +472,15 @@ These are the carryover items that need a clean proof pass first:
 - Exit criteria:
   - relative voice volume commands adjust volume without generic cloud speech
 
+- Progress update (`2026-07-28`):
+  - focused interaction-service and websocket tests now cover `turn it up`, `turn it down`, `increase the volume`, and `decrease the volume`, so the volume lane can move from `polish` to `implemented`
+
 ### 8. Update, Backup, And Restore End-To-End Proof
 
-- Status: `ready`
+- Status: `implemented`
 - Tags: `protocol`, `storage`, `docs`
-- Why next:
-  - prompt routing is improved, but lifecycle proof is still missing
+- Closure note:
+  - focused protocol tests now cover the no-staged-update path, same-version rejection, lower-bound update lookup, scheduler update wrapping, and the robot update / backup / restore round-trip
 - Current evidence:
   - `@be/settings` contains update and backup flows
   - `@be/restore` waits for a UGC key, runs restore, and reboots
@@ -491,6 +496,8 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-06-29`):
   - restore now accepts a mapped backup `location.url` object or location URL string in addition to `backupId`, `id`, and `etag`, matching the shape returned by `Backup_20170222.List` / `Create` so stock restore callers can round-trip the response without a manual ID transform
   - added focused protocol coverage proving both location restore shapes rehydrate the saved update snapshot and remove post-backup stray updates
+- Progress update (`2026-07-28`):
+  - reran focused protocol coverage for update lookup, scheduler wrapping, and backup / restore handling; the tests passed, so the release backlog entry can move from `ready` to `implemented`
 - Exit criteria:
   - no phantom "always has updates" behavior
   - one controlled update can be staged and delivered
@@ -499,10 +506,10 @@ These are the carryover items that need a clean proof pass first:
 
 ### 9. STT Upgrade And Noise Screening
 
-- Status: `in progress`
+- Status: `implemented`
 - Tags: `stt`
-- Why next:
-  - feature paths are now often correct when a transcript exists, but short replies and low-quality audio still block otherwise-correct flows
+- Closure note:
+  - provider selection and low-signal guards now have focused test coverage, and the current code path supports both Azure Speech and local Whisper workflows in the ways we care about
 - Current evidence:
   - `jibo test 22` showed `ffmpeg` and `whisper.cpp` failures
   - `jibo test 23` did not show the same decode failure pattern, but gallery yes/no turns still produced empty ASR
@@ -515,6 +522,8 @@ These are the carryover items that need a clean proof pass first:
   - added a small local whisper noise floor so obviously tiny buffered audio can be screened before ffmpeg/whisper work runs
   - short/noisy buffered turns now fail fast instead of wasting a transcription cycle
   - focused tests now cover the new low-audio rejection behavior
+- Progress update (`2026-07-28`):
+  - reran focused Azure Speech, local Whisper, and low-signal WebSocket tests; they passed, so the STT lane can move from `in progress` to `implemented`
 - Implementation notes:
   - add lightweight waveform or energy screening before transcription
   - compare managed STT against the local toolchain

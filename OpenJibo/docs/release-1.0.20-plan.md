@@ -27,6 +27,9 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - accept restore requests that carry the mapped backup `location.url` (or the location URL as a string) so stock callers can round-trip the `Backup_20170222.List` / `Create` response without manually extracting the `etag`
 - treat the current false-positive as robot-side OTA KB state first, especially `updatesAvailable`, rather than a cloud `GetUpdateFrom` bug
 
+- Progress update (`2026-07-28`):
+  - focused protocol coverage now passes for `GetUpdateFrom`, `ListUpdatesFrom`, scheduler update wrapping, and the backup / restore round-trip, so the lane has a test-backed closure point instead of just a planning note
+
 ### 2. Regression Carryover From The Latest Runs
 
 - grocery list now carries an explicit follow-up listen context in the cloud path, so the remaining work is live/hardware verification rather than inventing a new capture flow

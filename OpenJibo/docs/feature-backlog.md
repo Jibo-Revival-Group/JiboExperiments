@@ -407,10 +407,14 @@ These are the carryover items that need a clean proof pass first:
    - verify long add-item phrases still reach the list engine cleanly
    - cloud parser coverage now includes polite long-form inline adds such as `can you add ... for my grocery list`,
      `could you please add ... in my shopping list`, and `would you add ... for my to do list`
+   - status: `implemented`
+   - current progress: the cloud follow-up flow, inline add parsing, and focused websocket tests already cover the grocery/shopping/to-do capture path; any remaining check is live robot playback rather than backlog discovery
 3. Motion and personality command parity
 - keep `go to sleep` from drifting into the wrong visible state; the legacy path is a real sleep global, the ASLEEP state is event-driven rather than timer-driven, wake is driven by `dayStarts`, `headTouch`, or `hjHeard`, and the legacy sleep behavior tree includes a sleeping-idle loop that we need to preserve so the robot stays visibly asleep
    - keep `turn around` and other motion verbs source-backed; the legacy snapshot backs the lane through `spin around` / `twirl`
    - separate bare `twerk` from the greeting-looking fallback while preserving `can you twerk`; the intent is source-backed and the remaining gap is robot-side STT mishearing
+   - status: `polish`
+   - current progress: the cloud command routing and websocket coverage already prove `sleep`, `wake_up`, `turn around`, `spin around`, `twirl`, and `twerk` paths, but the live robot still shows the sleep-double-launch quirk and occasional motion no-op behavior that should stay on the review list
 4. Circadian sleep / wake state-machine parity
    - status: `ready`
    - tags: `protocol`, `docs`
@@ -425,6 +429,7 @@ These are the carryover items that need a clean proof pass first:
      - websocket diagnostics can report `ASLEEP`
    - missing piece:
      - explicit wake-event handling for `dayStarts`, `headTouch`, `hjHeard`, and related attention events
+   - review note: the cloud side does not currently model those robot circadian wake triggers by name, so the remaining Pegasus-source parity check should be done on the other machine before we decide whether to mirror them here or leave them as robot-local behavior
    - exit criteria:
      - sleep enters a persistent asleep mode
      - wake events clear that mode cleanly

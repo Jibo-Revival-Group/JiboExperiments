@@ -33,9 +33,11 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 ### 2. Regression Carryover From The Latest Runs
 
 - grocery list now carries an explicit follow-up listen context in the cloud path, so the remaining work is live/hardware verification rather than inventing a new capture flow
+- closed the grocery follow-up and add-item reliability slice in the server path: focused websocket and interaction tests already cover the follow-up prompt, the dedicated follow-up listen context, and inline grocery/shopping/to-do adds
 - keep the grocery alias on its dedicated listen/capture state so the robot stays active long enough to accept an item phrase
 - bare `twerk` is source-backed in Pegasus/OpenJibo and now has a cloud wire regression, so the remaining issue is the robot-side STT landing on `hello` instead of `twerk`
 - keep `sleep` and motion parity under review so the robot does not drift into an idle-looking state when the original skill should stay asleep; the cloud path now persists `sleepState=sleeping` and reports `ASLEEP` for the session, the legacy snapshot already has a real `GlobalCommand.SLEEP` path, wake is still event-driven rather than timer-driven, and the remaining blocker is wiring the explicit wake triggers (`dayStarts`, `headTouch`, `hjHeard`) so the parity path can leave sleep cleanly
+- motion command routing is now in `polish`: cloud tests already cover `sleep`, `wake_up`, `turn around`, `spin around`, `twirl`, and `twerk`, but the live robot still shows the sleep double-launch quirk and the occasional motion no-op that should stay on the review list
 - the Open Jibo cloud sleep replay path now has regression coverage for the legacy `@be/idle` redirect plus follow-up acknowledgment speech, so the remaining work is parity checking rather than contract discovery
 - keep `turn around` / `spin around` / `twirl` source-backed instead of relying on accidental matches
 - `turn around` is now reported as working on the robot, so the remaining command-gap work is the bare `twerk` short-turn and any other short-utterance mishears
@@ -140,6 +142,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - keep Loop advancement, family/friend recognition, and multiple Jibo support in the same platform track so the network and identity model stays future-proof
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
 - keep the next-tier integrations bucket as discovery for now; calendar/scheduling belongs with personal-report parity, smart-home control needs its own integration track, and concierge/LLM work should wait on the tiered-brain roadmap so the charm-first behavior stays intact
+- sleep command tracing so far shows the cloud already mirrors `sleep` and `wake_up` state changes, but the robot circadian wake events (`dayStarts`, `headTouch`, `hjHeard`) still need Pegasus-source confirmation on the other machine before we decide whether to reproduce them in the server or leave them robot-local
 
 
 ### Progress Update (`2026-07-09`)

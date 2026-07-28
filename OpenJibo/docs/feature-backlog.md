@@ -1197,14 +1197,15 @@ For `1.0.20` and beyond:
    - include first-boot/OOBE behavior so a converted robot can finish setup on the first launch after conversion
    - issue Open Jibo identities instead of blindly trusting stock robot identity values, especially for cloned or previously modified robots
    - planning anchor: [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md)
-   - status: `ready`
-   - note: the app-side onboarding sequence is now mapped, and the existing bootstrap / cloud contract scripts give us enough structure to start implementation rather than only discovery
+   - status: `implemented`
+   - note: the app-side onboarding sequence is now mapped, and the existing bootstrap / cloud contract scripts now have focused proof coverage rather than only discovery
    - current progress: required physical/harness `VerifyConnection` proof now distinguishes missing, partial, mismatched, and complete legacy DNS mapping evidence for the three stock Jibo hosts before the conversion path is considered connected
 2. Device compatibility matrix
    - prove the conversion path on the newest OOBE-capable devices
    - prove it on older stock devices such as the `1.9.2` baseline
    - test pre-`1.9.2` installs and alternate distributions such as NTT or MIT-special versions where available
    - status: `discovery`
+   - current progress: flavor-classifier and conversion-path tests already cover the `1.9.2` stock baseline plus Beam / old-Beam release labels, but the pre-`1.9.2`, NTT, and MIT-special rows still need real-device validation before the matrix can move out of discovery
 3. Hardware-assisted "easy button" conversion
    - work with the Jibo Revival Group on a USB/RCM-based helper path
    - keep the file-system modification flow repeatable and safe for owners or testers

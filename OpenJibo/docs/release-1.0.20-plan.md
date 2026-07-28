@@ -103,6 +103,9 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
   - self-hosted with no external cloud dependency
   - hybrid cloud with shared identity/storage
   - a managed cloud service
+
+- Progress update (`2026-07-28`):
+  - focused conversion and trusted-server tests now pass for the Open Jibo mode package, including non-destructive planning, rollback-safe preparation, baseline-gated setup, signed onboarding session binding, and `VerifyConnection` proof paths, so the named conversion package lane can move from `ready` to `implemented`
 - abstract storage so different server implementations can satisfy the same contract without the rest of the system caring
 - keep only transient session/onboarding artifacts and device-local secrets permanently local-only for now
 - define the network trust and consensus story for cloud peers, including bad-actor handling and revocation semantics

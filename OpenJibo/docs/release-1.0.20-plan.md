@@ -139,6 +139,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - allow HTTP only for developer/smoke-only self-hosted paths; owner-facing robot paths should default to HTTPS/self-signed or equivalent patched trust behavior until safe HTTP is proven
 - keep Loop advancement, family/friend recognition, and multiple Jibo support in the same platform track so the network and identity model stays future-proof
 - scope `1.0.20` to the identity graph and relationship model first; defer direct Jibo-to-Jibo transport and messaging until the peer model is ready
+- keep the next-tier integrations bucket as discovery for now; calendar/scheduling belongs with personal-report parity, smart-home control needs its own integration track, and concierge/LLM work should wait on the tiered-brain roadmap so the charm-first behavior stays intact
 
 
 ### Progress Update (`2026-07-09`)

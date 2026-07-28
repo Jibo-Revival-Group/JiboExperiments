@@ -399,6 +399,8 @@ These are the carryover items that need a clean proof pass first:
    - capture the minimum live or replayable path that shows update, backup, and restore without a phantom update announcement
    - hold the cloud compatibility bridge only for the updater helper until robot-local state is fully proven
    - exit criteria: the robot does not invent an update path when none exists, backup state is reported correctly, and restore is understood as persisted-state rehydration
+   - status: `implemented`
+   - current progress: focused protocol coverage now passes for `GetUpdateFrom`, `ListUpdatesFrom`, scheduler update wrapping, and the backup / restore round-trip, so the lane has a test-backed closure point instead of just a planning note
 2. Grocery list follow-up and add-item reliability
   - grocery follow-up listen is now emitted from the cloud path; finish hardware verification and any robot-side parity gaps rather than inventing a new capture flow
    - keep the list interaction listening for the follow-up item instead of dropping back to a passive state
@@ -1272,3 +1274,10 @@ For `1.0.20` and beyond:
    - advanced integrations such as pizza delivery, Uber/Lyft, calendar management, and smart home control
    - longer-term LLM integration for more natural dialog and content generation
    - tiered brain/orchestration planning from the README, added gradually without losing Jibo's charm
+   - status: `discovery`
+   - current progress: this remains a future modernization umbrella rather than a closeout slice; the nearer dependencies are already split into `roadmap.md` Phase 5, `personal-report-parity-plan.md`, and the tiered-brain notes in `support-tiers.md`
+   - next review path:
+     - keep calendar and scheduling aligned with the personal-report parity work
+     - keep smart-home control as a separate future integration track
+     - keep pizza, rideshare, and other concierge integrations behind provider and policy decisions
+     - keep LLM and orchestration work gated by the tiered brain roadmap so the charm-first behavior stays intact

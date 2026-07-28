@@ -57,6 +57,9 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - `turn around` is no longer part of the open STT cleanup because it passed on the robot
 - keep the shared yes/no and constrained follow-up flows stable while the new regression items are retested
 
+- Progress update (`2026-07-28`):
+  - focused interaction-service and websocket tests now cover sleep, wake, `turn around` / `spin around` / `twirl`, `twerk`, and the key no-input / misheard-wake boundaries, and the turn-boundary note is already recorded in [architecture/turn-boundary-eos-parity.md](architecture/turn-boundary-eos-parity.md)
+
 ### 5. Platform Conversion And Deployment Foundation
 
 Detailed planning starts in [open-jibo-mode-conversion-plan.md](open-jibo-mode-conversion-plan.md).

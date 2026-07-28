@@ -219,7 +219,7 @@ Current local state persistence:
 
 - default path: `App_Data/cloud-state.json` under the running API directory
 - current contents: media metadata, backup metadata, and staged update metadata
-- current limitation: media bodies are only preserved through the existing text-based HTTP body capture seam, so this is a hosted-gallery bridge, not final binary-safe media storage
+- current limitation: the gallery bridge still needs a later originals/thumbnails surfacing pass, but the media bodies themselves now flow through a binary-safe storage seam instead of being trapped in the text-only capture path
 
 ## Recent Protocol Fixes
 

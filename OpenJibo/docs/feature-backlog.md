@@ -283,7 +283,7 @@ Current release theme:
 - Follow-up:
   - live regression remains in the immediate queue
   - add fixture coverage for original gallery-test branches that are not yet mirrored in `.NET`: empty-gallery `yes` redirect to create, empty-gallery `no` exit, media-load failure exit, and delete confirmation `yes`/`no`
-  - binary-safe media storage remains future work
+  - final gallery original/thumbnails surfacing remains a later follow-up on top of the binary-safe storage seam
 
 ### Constrained Yes-No Cleanup
 
@@ -531,7 +531,7 @@ These are the carryover items that need a clean proof pass first:
 
 ### 10. Hosted Capture And Storage Plan
 
-- Status: `in progress`
+- Status: `implemented`
 - Tags: `docs`, `storage`
 - Why next:
   - repo-local captures work for single-operator testing, but group testing needs a cleaner archival/export boundary
@@ -545,10 +545,12 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-06-24`):
   - websocket turn diagnostics now append to `capture-index.ndjson`, not only the raw daily event log, so short-answer probes, turn-boundary decisions, and STT guardrail events are findable in the same manifest as connections, messages, HTTP protocol captures, and exported fixtures
   - this keeps the local capture shape closer to the eventual hosted-retention boundary while the group-submission workflow is still being designed
+- Progress update (`2026-07-28`):
+  - focused protocol, websocket, and turn telemetry sink tests now pass, so the capture-index and fixture-export path is proven enough to move this lane from `in progress` to `implemented`
 
 ### 11. Binary-Safe Media Storage
 
-- Status: `in progress`
+- Status: `implemented`
 - Tags: `storage`, `protocol`
 - Why next:
   - the first gallery bridge stores metadata and text-body placeholders, but final gallery support needs originals and thumbnails
@@ -559,6 +561,8 @@ These are the carryover items that need a clean proof pass first:
 - Implementation notes:
   - media content now flows through a storage seam with file and Azure Blob adapters
   - the protocol still serves the legacy text-body contract, but the original payload is now persisted separately and can be swapped to binary-native storage later
+- Progress update (`2026-07-28`):
+  - focused media-create and cloud-state persistence tests now pass, so the binary-safe storage seam is proven enough to move this lane from `in progress` to `implemented`
 
 ### Next Up (`2026-05-06`): Dialog Parsing Expansion And Ambiguity Guardrails
 

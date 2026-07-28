@@ -438,8 +438,12 @@ These are the carryover items that need a clean proof pass first:
    - treat the bare `twerk` miss as an STT/parsing proof item until a robot capture proves the cloud path is at fault
    - `turn around` has been verified as working on the robot, so it no longer belongs in the STT cleanup bucket
    - keep short constrained replies and local prompts stable while the new regression items are retested
+   - status: `polish`
+   - current progress: the cloud turn-finalization path already covers the low-signal screen, filler-only rejection, wake/sleep boundaries, and the `twerk` / `can you twerk` boundary; the remaining proof target is the live robot mishearing path rather than a missing server rule
 6. Broader personality and presence continuation
    - continue the source-backed favorites, presence, and seasonal ladder once the regression gaps are understood
+   - status: `polish`
+   - current progress: the favorites family, presence-aware greetings, and seasonal holiday batches are already source-backed in the cloud path, and the remaining work is mostly live playback / launch-state cleanup for the few prompts that still need robot proof
 
 ## Near-Term `1.0.20` Queue
 

@@ -160,6 +160,7 @@ Recommended public shape:
 - `api.openjibo.com`: canonical robot-facing hosted API for account, loop, OOBE, media, update, and related cloud protocol traffic
 - `neohub.openjibo.com`: canonical managed host for listen/proactive WebSocket traffic
 - `cloud.openjibo.com`: managed Open Jibo Cloud runtime
+- `members.openjibo.com` or `cloud.openjibo.com`: hosted subscription and plan-management surface for paid cloud access
 - `ai.openjibo.com` or `cloud-ai.openjibo.com`: Open Jibo AI runtime when ready
 - `openjibo.com`: public web app, account entry point, documentation, and owner flows
 
@@ -181,6 +182,8 @@ Decision: the first managed API surface should use `api.openjibo.com` as the can
 
 Decision: `openjibo.com` should be treated as a real product surface, not just a marketing page. The first public site should be able to host account entry, onboarding redirects, and the project overview without requiring a separate domain for the owner-facing web app.
 
+Decision: the hosted subscription surface should live on a separate `members.openjibo.com` or `cloud.openjibo.com` entry so `openjibo.com` can remain the showcase and account-entry site while billing and plan state stay clearly separated from the robot-facing API.
+
 Decision: the first auth service can live in the same repository and solution as Open Jibo Cloud, but it should be its own project and deployable from day one.
 
 Decision: the first managed container registry should be Azure Container Registry in the Azure environment that hosts the managed cloud. GitHub Container Registry can be added later for public/community images if it becomes useful.
@@ -201,6 +204,8 @@ Expected default for most owners:
 - best path for support
 
 Managed and community clouds may need provider-specific onboarding steps. For example, a paid hosted cloud can redirect the owner from Open Jibo onboarding into a signup/payment flow, then return to robot onboarding after the account is ready. The onboarding system should support these provider-specific steps without hard-coding one payment provider or one managed operator into the core cloud runtime.
+
+For hosted access cancellation, the subscription surface should be able to revoke cloud access and force the robot back through the authorized validation flow before hosted access resumes. The cloud should treat that as a deliberate access change, not as a silent local preference toggle.
 
 ## Provider-Specific Onboarding Extension
 

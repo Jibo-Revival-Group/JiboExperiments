@@ -104,6 +104,13 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
   - hybrid cloud with shared identity/storage
   - a managed cloud service
 
+- clarify the public-site split for the release:
+  - `jiborevived.com` remains the community-maintained Jibo Revival Group hub and status space
+  - `openjibo.com` is the Open Jibo showcase, account entry surface, and hosted-cloud landing page
+  - `auth.openjibo.com` owns authentication, robot/loop registration, and token issuance
+  - `cloud.openjibo.com` or `members.openjibo.com` carries subscription and plan management for hosted access
+  - onboarding must support signed provider callbacks/returns for signup/payment, success/failure handoff, and cancellation-driven hosted-access revocation
+
 - Progress update (`2026-07-28`):
   - trusted-server registry, self-hosted validation, and the managed/self-hosted deployment contracts now cover the hosting-mode topology well enough to move this lane from `ready` to `implemented`
 
@@ -405,6 +412,7 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 - expanded offline evidence bundle verification with a local revocation deny-list input so retained bundles can remain cryptographically valid while still producing an effective quarantine decision when a receiving peer has already revoked one of the signed device, robot, certificate, or issued-identity anchors
 - bound identity graph admission decisions and offline evidence bundles to a deterministic local revocation-list hash so retained peer-admission artifacts show which deny-list state was used when the admit/quarantine decision was signed
 - expanded multi-Jibo identity graph evidence so additional robot loop members resolve to their registered device and add explicit loop `served-by` plus robot `runs-on` relationships before direct peer transport is introduced
+- closed the loop advancement and multi-Jibo proof slice by verifying the family, friend, guardian, enrollment, `served-by`, and `runs-on` identity-graph paths in focused cloud tests, while still keeping direct robot-to-robot transport deferred
 - added explicit peer-transport, replication-readiness, and sync-direction fields to signed identity graph evidence bundles and the owner dashboard so retained admission artifacts state that direct peer transport is still disabled and snapshots are retention-only until admission succeeds
 - expanded the signed evidence bundle handoff contract with peer admission mode, owner-retention policy, and an explicit direct-peer-transport guard so offline retained artifacts cannot be mistaken for enabled peer replication
 - hardened the offline identity graph evidence bundle verifier so even a correctly signed retained artifact is rejected if it claims direct peer transport is enabled, changes the retention-only sync direction, or advertises a replication-ready transport state before peer admission is actually implemented

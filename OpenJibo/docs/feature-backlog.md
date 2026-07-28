@@ -1246,23 +1246,28 @@ For `1.0.20` and beyond:
    - planning anchor: [storage-trust-consensus-plan.md](storage-trust-consensus-plan.md)
    - status: `implemented`
 7. OpenJibo.com web UI and account surface
-   - provide a web UI for openjibo.com
+   - provide a web UI for `openjibo.com` as the Open Jibo showcase, account entry surface, and hosted-cloud landing page
+   - keep `jiborevived.com` separate as the community-maintained Jibo Revival Group hub and status space
    - support paid access on the hosted side while leaving room for free or self-hosted options elsewhere
-   - auth starts as a separate deployable under the Open Jibo domain family
+   - auth starts as a separate deployable under the Open Jibo domain family, with `auth.openjibo.com` handling authentication, robot/loop registration, and token issuance
    - auth can live in the shared repo/solution initially, but must be its own project
-   - onboarding needs provider-specific extension points for signup/payment, free community clouds, and self-hosted servers
+   - the hosted subscription surface should live on `cloud.openjibo.com` or `members.openjibo.com` so the billing/access flow stays separate from the showcase site
+   - onboarding needs provider-specific extension points for signup/payment, free community clouds, hosted plan selection, subscription cancellation, and self-hosted server enrollment
    - onboarding should expose a data-driven trusted-server registry API backed by cloud state so the app can present approved managed options, distinguish self-hosted hybrid servers that stay synced but private, write signed admission/revocation/reactivation audit records, and let the user enter a separate custom self-hosted server name/IP with a local-vs-hybrid trust validator
    - provider-specific onboarding must use signed event callbacks and signed returns
    - provider onboarding should use short-lived signed session tokens plus provider-signed callbacks/returns with nonce/state binding
    - later boots should prefer the selected provider cloud first and enter explicit recovery instead of silently switching clouds
+   - the subscription surface must be able to revoke hosted access on cancellation and force the robot back through the authorized validation flow before hosted access resumes
    - developer/smoke-only self-hosted paths can use HTTP locally; owner-facing robot paths should default to HTTPS/self-signed or equivalent patched trust behavior until safe HTTP is proven
    - status: `discovery`
+   - current progress: the site split is now explicit in the public-site and cloud-topology docs, and the open work is to implement the account, subscription, callback, and cancellation plumbing rather than deciding where the pieces belong
 8. Loop advancement and multi-Jibo support
    - support family/friend advancement, multiple user recognition, and multiple Jibo interaction
    - keep the identity model ready for Jibo-to-Jibo communication and shared household use
    - scope `1.0.20` to the identity graph and relationship model first, not direct robot-to-robot transport
    - model loops as households that can hold multiple people and multiple robots without assuming a single robot per loop forever
-   - status: `discovery`
+   - status: `implemented`
+   - current progress: the identity graph now carries family, friend, guardian, enrollment, `served-by`, and `runs-on` relationships for multi-member households, and the matching portal/session tests prove distinct robots stay bound to distinct loop identities
 9. Next-tier features after the platform is stable
    - advanced integrations such as pizza delivery, Uber/Lyft, calendar management, and smart home control
    - longer-term LLM integration for more natural dialog and content generation

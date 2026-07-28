@@ -353,6 +353,24 @@ Capture check:
 - stop-style phrases should emit `global_commands` `stop` behavior with the idle redirect
 - `go to sleep` should enter ASLEEP and stay visibly asleep until a wake event such as `dayStarts`, `headTouch`, or `hjHeard`; `turn around` should not no-op or fall through to generic chat
 
+#### Circadian Sleep/Wake
+
+- `go to sleep`
+- wake the robot with the normal circadian trigger points when they happen naturally during the session
+- `wake up`
+
+Expected:
+
+- `go to sleep` enters sleep once and does not visibly re-launch the sleep flow a second time
+- the robot stays asleep until either a wake command or a natural circadian wake trigger occurs
+- a wake trigger returns the robot to the awake state without leaving the session in a stale asleep mirror
+
+Capture check:
+
+- record whether the second sleep launch comes from a cloud replay, a robot-local retry, or a wake/sleep mismatch
+- note the first wake source that ends sleep (`wake up`, `dayStarts`, `headTouch`, or `hjHeard`)
+- keep the active `sleepState`, `ASLEEP`/`awake` phase, and visible robot posture together in the same artifact folder
+
 #### Twerk And Command Boundary
 
 - `twerk`

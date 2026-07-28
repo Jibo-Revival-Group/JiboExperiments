@@ -1221,7 +1221,8 @@ For `1.0.20` and beyond:
    - recorded onboarding/session replay is the preferred first CI-friendly smoke gate
    - PostgreSQL migrations should use a DbUp-style SQL runner with an Open Jibo wrapper for apply, preview, dry-run/report, and container-entrypoint modes
    - planning anchor: [cloud-deployment-topology-plan.md](cloud-deployment-topology-plan.md)
-   - status: `ready`
+   - status: `implemented`
+   - current progress: managed and self-hosted deployment contract checks now pass, including the Container Apps / ACR / host-binding markers and the explicit migration and smoke wrapper markers, so the cloud deployment foundation is proven enough to move this lane from `ready` to `implemented`
 5. Hosting modes and service topology
    - support self-hosted operation with no external cloud dependency
    - support hybrid operation where non-self-hosted servers sync to a main cloud service
@@ -1230,7 +1231,8 @@ For `1.0.20` and beyond:
    - first self-hosted target is Docker Compose
    - first Docker Compose database is PostgreSQL
    - PostgreSQL migrations should run through explicit CI/CD or admin commands, with self-hosted startup migration behind an intentional switch
-   - status: `ready`
+   - status: `implemented`
+   - current progress: trusted-server registry, self-hosted validation, managed/self-hosted deployment contracts, and the portal onboarding flows now cover the managed, hybrid, and self-hosted topology rules well enough to move this lane from `ready` to `implemented`
 6. Storage abstraction and sync
    - abstract storage so the rest of the system does not care which server implementation is backing it
    - keep only transient session/onboarding artifacts and device-local secrets permanently local-only for now
@@ -1240,9 +1242,9 @@ For `1.0.20` and beyond:
    - use deny-by-evidence admission and full versioned snapshots as the first sync model
    - sign trust-boundary records before replication, not every local write
    - use hardware-stable `DeviceId`, cert thumbprint, issued-identity lineage, and build/config hashes as corroborating clone-detection signals only
-   - current progress: signed identity graph admission decisions and offline evidence bundles now carry a deterministic local revocation-list hash, so retained artifacts can prove which deny-list state was used for the signed admit/quarantine decision
+   - current progress: signed identity graph admission decisions, offline evidence bundles, portal trusted-server validation, and loop sync paths now carry the revocation/admission/quarantine and mirror rules well enough to prove the storage/sync lane instead of just discussing it
    - planning anchor: [storage-trust-consensus-plan.md](storage-trust-consensus-plan.md)
-   - status: `discovery`
+   - status: `implemented`
 7. OpenJibo.com web UI and account surface
    - provide a web UI for openjibo.com
    - support paid access on the hosted side while leaving room for free or self-hosted options elsewhere

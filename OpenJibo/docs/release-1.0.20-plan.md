@@ -105,7 +105,16 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
   - a managed cloud service
 
 - Progress update (`2026-07-28`):
+  - trusted-server registry, self-hosted validation, and the managed/self-hosted deployment contracts now cover the hosting-mode topology well enough to move this lane from `ready` to `implemented`
+
+- Progress update (`2026-07-28`):
+  - managed and self-hosted deployment contract checks now pass, including the Azure Container Apps / Azure Container Registry / hostname-binding markers and the migration and smoke wrapper markers, so the deployment foundation lane is now test-backed instead of only aspirational
+
+- Progress update (`2026-07-28`):
   - focused conversion and trusted-server tests now pass for the Open Jibo mode package, including non-destructive planning, rollback-safe preparation, baseline-gated setup, signed onboarding session binding, and `VerifyConnection` proof paths, so the named conversion package lane can move from `ready` to `implemented`
+
+- Progress update (`2026-07-28`):
+  - identity graph admission, revocation, evidence-bundle, and loop sync tests now pass, so the storage abstraction and sync lane is proven enough to move from discovery into implemented status
 - abstract storage so different server implementations can satisfy the same contract without the rest of the system caring
 - keep only transient session/onboarding artifacts and device-local secrets permanently local-only for now
 - define the network trust and consensus story for cloud peers, including bad-actor handling and revocation semantics

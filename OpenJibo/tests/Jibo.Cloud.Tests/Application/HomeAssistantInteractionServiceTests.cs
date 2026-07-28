@@ -47,6 +47,49 @@ public sealed class HomeAssistantInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_IndoorTemperature_BeatsRequestWeatherClientIntent()
+    {
+        var integrationStore = CreateLinkedIntegrationStore();
+        var cloudStateStore = CreateCloudStateStore();
+        var service = CreateService(integrationStore, cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "whats the temperature in here",
+            NormalizedTranscript = "whats the temperature in here",
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "requestWeather"
+            }
+        });
+
+        Assert.Equal("ha_climate_get_temp", decision.IntentName);
+        Assert.Equal("Okay, I'll check the temperature.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_BareTemperature_KeepsWeather_WhenRequestWeatherClientIntent()
+    {
+        var integrationStore = CreateLinkedIntegrationStore();
+        var cloudStateStore = CreateCloudStateStore();
+        var service = CreateService(integrationStore, cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "whats the temperature",
+            NormalizedTranscript = "whats the temperature",
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "requestWeather"
+            }
+        });
+
+        Assert.Equal("weather", decision.IntentName);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_HaLightsOff_ReturnsFallback_WhenNotLinked()
     {
         var snapshotStore = new EncryptedUserDataSnapshotStore(

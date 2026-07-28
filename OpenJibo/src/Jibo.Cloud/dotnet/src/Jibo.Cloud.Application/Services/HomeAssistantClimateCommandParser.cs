@@ -95,31 +95,39 @@ public static class HomeAssistantClimateCommandParser
     {
         "what temperature is it in here",
         "what's the temperature in here",
+        "whats the temperature in here",
         "what s the temperature in here",
         "what is the temperature in here",
         "what tempature is it in here",
         "what's the tempature in here",
+        "whats the tempature in here",
         "what s the tempature in here",
         "what is the tempature in here",
         "what's the temp in here",
+        "whats the temp in here",
         "what s the temp in here",
         "what is the temp in here",
         "what temperature is it here",
         "what's the temperature here",
+        "whats the temperature here",
         "what s the temperature here",
         "what is the temperature here",
         "what's the temp here",
+        "whats the temp here",
         "what s the temp here",
         "what is the temp here",
         "what temperature is it inside",
         "what's the temperature inside",
+        "whats the temperature inside",
         "what s the temperature inside",
         "what is the temperature inside",
         "what's the temp inside",
+        "whats the temp inside",
         "what s the temp inside",
         "what is the temp inside",
         "what temperature is it indoors",
         "what's the temperature indoors",
+        "whats the temperature indoors",
         "what s the temperature indoors",
         "what is the temperature indoors",
         "how hot is it in here",
@@ -132,12 +140,24 @@ public static class HomeAssistantClimateCommandParser
         "how cold is it inside",
         "how warm is it inside",
         "what's the room temperature",
+        "whats the room temperature",
         "what s the room temperature",
         "what is the room temperature",
         "what's the room temp",
+        "whats the room temp",
         "what s the room temp",
-        "what is the room temp"
+        "what is the room temp",
+        "tell me the temperature in here",
+        "tell me the temp in here",
+        "check the temperature in here",
+        "check the temp in here"
     };
+
+    // Indoor thermostat reads only — bare "what's the temperature" stays weather.
+    private static readonly Regex GetTemperatureRoomPattern = new(
+        @"^(?:(?:what(?:'s|\s+is|\s+s)?|whats)\s+(?:the\s+)?(?:temperature|temp(?:erature)?|tempature)(?:\s+is\s+it)?|what\s+(?:temperature|temp(?:erature)?|tempature)\s+is\s+it|how\s+(?:hot|cold|warm)\s+is\s+it|(?:check|tell\s+me|give\s+me)\s+(?:the\s+)?(?:temperature|temp(?:erature)?|tempature))\s+(?:in\s+here|here|inside|indoors|in\s+this\s+room)\s*$|" +
+        @"^(?:what(?:'s|\s+is|\s+s)?|whats)\s+(?:the\s+)?room\s+(?:temperature|temp(?:erature)?|tempature)\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly Regex NamedGetTemperatureOnThermostatPattern = new(
         @"^(?:what(?:'s|\s+is|\s+s)?|whats)\s+(?:the\s+)?(?:temperature|temp(?:erature)?|tempature)\s+(?:on|of|for)\s+(?:the\s+)?(?<target>.+?)\s+thermostat\s*$",
@@ -188,7 +208,8 @@ public static class HomeAssistantClimateCommandParser
             return true;
         }
 
-        if (GetTemperatureRoomPhrases.Contains(normalized))
+        if (GetTemperatureRoomPhrases.Contains(normalized) ||
+            GetTemperatureRoomPattern.IsMatch(normalized))
         {
             command = new ClimateCommand(ClimateAction.GetTemperature, ClimateScope.Room, null, null);
             return true;

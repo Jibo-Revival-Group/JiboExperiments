@@ -106,6 +106,7 @@ public sealed class HomeAssistantClimateCommandParserTests
     [Theory]
     [InlineData("what temperature is it in here")]
     [InlineData("what's the temperature in here")]
+    [InlineData("whats the temperature in here")]
     [InlineData("what is the temperature in here")]
     [InlineData("what tempature is it in here")]
     [InlineData("what's the temp in here")]
@@ -115,6 +116,8 @@ public sealed class HomeAssistantClimateCommandParserTests
     [InlineData("what's the temperature here")]
     [InlineData("what temperature is it inside")]
     [InlineData("what's the room temperature")]
+    [InlineData("tell me the temperature in here")]
+    [InlineData("check the temperature in here")]
     public void TryParse_GetTemperatureRoomPhrases_ReturnExpected(string transcript)
     {
         var parsed = HomeAssistantClimateCommandParser.TryParse(transcript, out var command);
@@ -142,6 +145,12 @@ public sealed class HomeAssistantClimateCommandParserTests
     }
 
     [Theory]
+    [InlineData("whats the temperature")]
+    [InlineData("what's the temperature")]
+    [InlineData("what is the temperature")]
+    [InlineData("what's the temp")]
+    [InlineData("how hot is it")]
+    [InlineData("check the temperature")]
     [InlineData("what is the temperature in redmond oregon")]
     [InlineData("what's the temperature in boston")]
     [InlineData("set the temperature to 30")]

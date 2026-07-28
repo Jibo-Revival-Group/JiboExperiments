@@ -138,7 +138,15 @@ public sealed partial class JiboInteractionService
 
         if (string.Equals(clientIntent, "requestWeatherPR", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(clientIntent, "requestWeather", StringComparison.OrdinalIgnoreCase))
+        {
+            // Stock NLU classifies indoor thermostat reads as weather. Prefer HA climate when
+            // the transcript has an indoor cue (e.g. "in here"); bare temp stays weather.
+            if (HomeAssistantClimateCommandParser.TryParse(loweredTranscript, out var weatherClimate) &&
+                weatherClimate.Action == HomeAssistantClimateCommandParser.ClimateAction.GetTemperature)
+                return "ha_climate_get_temp";
+
             return "weather";
+        }
 
         if (string.Equals(clientIntent, "canJiboAction", StringComparison.OrdinalIgnoreCase) &&
             clientEntities.TryGetValue("Action", out var canAction))

@@ -117,6 +117,7 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
             "ha_climate_set_temp" => true,
             "ha_climate_cool_down" => true,
             "ha_climate_warm_up" => true,
+            "ha_climate_get_temp" => true,
             "ha_climate_clarify" => true,
             _ => true
         };

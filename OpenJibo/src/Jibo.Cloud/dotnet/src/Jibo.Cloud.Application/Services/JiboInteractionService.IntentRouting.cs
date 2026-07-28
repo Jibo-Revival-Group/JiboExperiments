@@ -85,6 +85,7 @@ public sealed partial class JiboInteractionService
                 HomeAssistantClimateCommandParser.ClimateAction.SetTemperature => "ha_climate_set_temp",
                 HomeAssistantClimateCommandParser.ClimateAction.CoolDown => "ha_climate_cool_down",
                 HomeAssistantClimateCommandParser.ClimateAction.WarmUp => "ha_climate_warm_up",
+                HomeAssistantClimateCommandParser.ClimateAction.GetTemperature => "ha_climate_get_temp",
                 _ => "chat"
             };
 

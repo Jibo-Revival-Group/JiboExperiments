@@ -24,6 +24,8 @@ public sealed class HomeAssistantInteractionServiceTests
         "Okay, setting the bedroom thermostat to 72 degrees.")]
     [InlineData("it's hot in here", "ha_climate_cool_down", "Okay, I'll cool things down a bit.")]
     [InlineData("it's cold in here", "ha_climate_warm_up", "Okay, I'll warm things up a bit.")]
+    [InlineData("what temperature is it in here", "ha_climate_get_temp", "Okay, I'll check the temperature.")]
+    [InlineData("what's the bedroom temperature", "ha_climate_get_temp", "Okay, I'll check the bedroom thermostat.")]
     public async Task BuildDecisionAsync_HaLights_RecognizesIntent(
         string transcript,
         string expectedIntent,

@@ -8,7 +8,9 @@ public sealed record HomeAssistantCommandResult(
     string? MatchedName = null,
     string? HeardName = null,
     IReadOnlyList<HomeAssistantCommandCandidate>? Candidates = null,
-    string? Message = null)
+    string? Message = null,
+    decimal? CurrentTemperature = null,
+    string? Unit = null)
 {
     public bool IsOk => string.Equals(Status, "ok", StringComparison.OrdinalIgnoreCase);
     public bool IsNotFound => string.Equals(Status, "not_found", StringComparison.OrdinalIgnoreCase);
@@ -36,6 +38,19 @@ public sealed record HomeAssistantCommandResult(
         var message = root.TryGetProperty("message", out var messageElement)
             ? messageElement.GetString()
             : null;
+        decimal? currentTemperature = null;
+        if (root.TryGetProperty("currentTemperature", out var currentTempElement) &&
+            currentTempElement.ValueKind is JsonValueKind.Number)
+        {
+            if (currentTempElement.TryGetDecimal(out var parsedDecimal))
+                currentTemperature = parsedDecimal;
+            else if (currentTempElement.TryGetDouble(out var parsedDouble))
+                currentTemperature = (decimal)parsedDouble;
+        }
+
+        var unit = root.TryGetProperty("unit", out var unitElement)
+            ? unitElement.GetString()
+            : null;
 
         List<HomeAssistantCommandCandidate>? candidates = null;
         if (root.TryGetProperty("candidates", out var candidatesElement) &&
@@ -62,7 +77,9 @@ public sealed record HomeAssistantCommandResult(
             matchedName,
             heardName,
             candidates,
-            message);
+            message,
+            currentTemperature,
+            unit);
     }
 }
 

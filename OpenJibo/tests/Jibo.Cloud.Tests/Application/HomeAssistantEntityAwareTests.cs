@@ -119,6 +119,82 @@ public sealed class HomeAssistantEntityAwareTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_ClimateGetTemp_SpeaksAmbientTemperature_WhenHaReturnsOk()
+    {
+        var (service, _) = CreateServiceWithRespondingHa(
+            status: "ok",
+            matchedName: "Living Room Thermostat",
+            currentTemperature: 72m,
+            unit: "°F");
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what temperature is it in here",
+            NormalizedTranscript = "what temperature is it in here",
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal("ha_climate_get_temp", decision.IntentName);
+        Assert.Equal("It's 72 degrees in here.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_ClimateGetTemp_AsksWhichThermostat_WhenNeedsClarification()
+    {
+        var (service, pendingStore) = CreateServiceWithRespondingHa(
+            status: "needs_clarification",
+            candidates:
+            [
+                new HomeAssistantCommandCandidate("climate.hall", "Hallway"),
+                new HomeAssistantCommandCandidate("climate.office", "Office")
+            ]);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what temperature is it in here",
+            NormalizedTranscript = "what temperature is it in here",
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal("ha_climate_get_temp", decision.IntentName);
+        Assert.Equal("Which thermostat should I use, Hallway or Office?", decision.ReplyText);
+        var pending = pendingStore.TryGet("BOJW-1000-0017-0820-0020", "Ghost-Instance-Onion-Silk");
+        Assert.NotNull(pending);
+        Assert.Equal("get_temperature", pending!.Action);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_ClimateClarify_SpeaksReading_WhenPendingGetTemperature()
+    {
+        var (service, pendingStore) = CreateServiceWithRespondingHa(
+            status: "ok",
+            matchedName: "Hallway",
+            currentTemperature: 71m,
+            unit: "°F",
+            autoRespondAction: "climate_apply_entity");
+
+        pendingStore.Set(
+            "Ghost-Instance-Onion-Silk",
+            new HomeAssistantPendingClimateStore.PendingClimateAction(
+                "get_temperature",
+                [
+                    new HomeAssistantCommandCandidate("climate.hall", "Hallway"),
+                    new HomeAssistantCommandCandidate("climate.office", "Office")
+                ]));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "hallway",
+            NormalizedTranscript = "hallway",
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal("ha_climate_clarify", decision.IntentName);
+        Assert.Equal("It's 71 degrees on the Hallway.", decision.ReplyText);
+        Assert.Null(pendingStore.TryGet("BOJW-1000-0017-0820-0020", "Ghost-Instance-Onion-Silk"));
+    }
+
+    [Fact]
     public void EntityNameMatcher_PicksClosestCandidate()
     {
         var match = HomeAssistantEntityNameMatcher.FindClosest(
@@ -138,7 +214,9 @@ public sealed class HomeAssistantEntityAwareTests
             string? matchedName = null,
             string? heardName = null,
             IReadOnlyList<HomeAssistantCommandCandidate>? candidates = null,
-            string? autoRespondAction = null)
+            string? autoRespondAction = null,
+            decimal? currentTemperature = null,
+            string? unit = null)
     {
         var snapshotStore = new EncryptedUserDataSnapshotStore(
             Path.Combine(Path.GetTempPath(), $"openjibo-ha-aware-{Guid.NewGuid():N}.json"),
@@ -164,7 +242,9 @@ public sealed class HomeAssistantEntityAwareTests
             matchedName,
             heardName,
             candidates,
-            autoRespondAction);
+            autoRespondAction,
+            currentTemperature,
+            unit);
         registry.RegisterPairedConnection("ha-instance-1", socket);
 
         var pendingStore = new HomeAssistantPendingClimateStore();
@@ -189,6 +269,8 @@ public sealed class HomeAssistantEntityAwareTests
         private readonly string? _heardName;
         private readonly IReadOnlyList<HomeAssistantCommandCandidate>? _candidates;
         private readonly string? _autoRespondAction;
+        private readonly decimal? _currentTemperature;
+        private readonly string? _unit;
 
         public CapturingWebSocket(
             HomeAssistantConnectionRegistry registry,
@@ -196,7 +278,9 @@ public sealed class HomeAssistantEntityAwareTests
             string? matchedName = "Zane's Lamp",
             string? heardName = null,
             IReadOnlyList<HomeAssistantCommandCandidate>? candidates = null,
-            string? autoRespondAction = null)
+            string? autoRespondAction = null,
+            decimal? currentTemperature = null,
+            string? unit = null)
         {
             _registry = registry;
             _status = status;
@@ -204,6 +288,8 @@ public sealed class HomeAssistantEntityAwareTests
             _heardName = heardName;
             _candidates = candidates;
             _autoRespondAction = autoRespondAction;
+            _currentTemperature = currentTemperature;
+            _unit = unit;
         }
 
         public override WebSocketCloseStatus? CloseStatus => null;
@@ -273,6 +359,10 @@ public sealed class HomeAssistantEntityAwareTests
                 payload["candidates"] = _candidates
                     .Select(candidate => new { entityId = candidate.EntityId, name = candidate.Name })
                     .ToArray();
+            if (_currentTemperature is not null)
+                payload["currentTemperature"] = _currentTemperature.Value;
+            if (!string.IsNullOrWhiteSpace(_unit))
+                payload["unit"] = _unit;
 
             var json = JsonSerializer.Serialize(payload);
             using var resultDoc = JsonDocument.Parse(json);

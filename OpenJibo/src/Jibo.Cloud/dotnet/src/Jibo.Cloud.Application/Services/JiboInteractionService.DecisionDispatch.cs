@@ -1346,6 +1346,7 @@ public sealed partial class JiboInteractionService
             "ha_climate_set_temp" => await BuildHaClimateSetTempDecisionAsync(turn, cancellationToken),
             "ha_climate_cool_down" => await BuildHaClimateCoolDownDecisionAsync(turn, cancellationToken),
             "ha_climate_warm_up" => await BuildHaClimateWarmUpDecisionAsync(turn, cancellationToken),
+            "ha_climate_get_temp" => await BuildHaClimateGetTempDecisionAsync(turn, cancellationToken),
             "ha_climate_clarify" => await BuildHaClimateClarifyDecisionAsync(turn, cancellationToken),
             "pizza" => BuildPizzaDecision(),
             "order_pizza" => BuildOrderPizzaDecision(),

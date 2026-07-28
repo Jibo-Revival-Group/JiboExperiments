@@ -9,7 +9,8 @@ public static class HomeAssistantClimateCommandParser
     {
         SetTemperature,
         CoolDown,
-        WarmUp
+        WarmUp,
+        GetTemperature
     }
 
     public enum ClimateScope
@@ -90,6 +91,62 @@ public static class HomeAssistantClimateCommandParser
         "raise the temperature"
     };
 
+    private static readonly HashSet<string> GetTemperatureRoomPhrases = new(StringComparer.Ordinal)
+    {
+        "what temperature is it in here",
+        "what's the temperature in here",
+        "what s the temperature in here",
+        "what is the temperature in here",
+        "what tempature is it in here",
+        "what's the tempature in here",
+        "what s the tempature in here",
+        "what is the tempature in here",
+        "what's the temp in here",
+        "what s the temp in here",
+        "what is the temp in here",
+        "what temperature is it here",
+        "what's the temperature here",
+        "what s the temperature here",
+        "what is the temperature here",
+        "what's the temp here",
+        "what s the temp here",
+        "what is the temp here",
+        "what temperature is it inside",
+        "what's the temperature inside",
+        "what s the temperature inside",
+        "what is the temperature inside",
+        "what's the temp inside",
+        "what s the temp inside",
+        "what is the temp inside",
+        "what temperature is it indoors",
+        "what's the temperature indoors",
+        "what s the temperature indoors",
+        "what is the temperature indoors",
+        "how hot is it in here",
+        "how cold is it in here",
+        "how warm is it in here",
+        "how hot is it here",
+        "how cold is it here",
+        "how warm is it here",
+        "how hot is it inside",
+        "how cold is it inside",
+        "how warm is it inside",
+        "what's the room temperature",
+        "what s the room temperature",
+        "what is the room temperature",
+        "what's the room temp",
+        "what s the room temp",
+        "what is the room temp"
+    };
+
+    private static readonly Regex NamedGetTemperatureOnThermostatPattern = new(
+        @"^(?:what(?:'s|\s+is|\s+s)?|whats)\s+(?:the\s+)?(?:temperature|temp(?:erature)?|tempature)\s+(?:on|of|for)\s+(?:the\s+)?(?<target>.+?)\s+thermostat\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex NamedGetTemperaturePossessivePattern = new(
+        @"^(?:what(?:'s|\s+is|\s+s)?|whats)\s+(?:the\s+)?(?<target>.+?)\s+(?:temperature|temp(?:erature)?|tempature|thermostat)\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
     private static readonly Regex SetTemperaturePattern = new(
         @"^(?:set|change|adjust)\s+(?:the\s+)?(?:temperature|temp(?:erature)?|thermostat)(?:\s+(?:in|for)\s+(?<target>.+?))?\s+to\s+(?<temp>\d+(?:\.\d+)?)\s*(?:degrees?|fahrenheit|celsius)?\s*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
@@ -129,6 +186,46 @@ public static class HomeAssistantClimateCommandParser
         {
             command = new ClimateCommand(ClimateAction.WarmUp, ClimateScope.Room, null, null);
             return true;
+        }
+
+        if (GetTemperatureRoomPhrases.Contains(normalized))
+        {
+            command = new ClimateCommand(ClimateAction.GetTemperature, ClimateScope.Room, null, null);
+            return true;
+        }
+
+        var namedGetOnThermostat = NamedGetTemperatureOnThermostatPattern.Match(normalized);
+        if (namedGetOnThermostat.Success)
+        {
+            var target = namedGetOnThermostat.Groups["target"].Value.Trim();
+            if (!string.IsNullOrWhiteSpace(target) &&
+                !IsGenericClimateTarget(target) &&
+                !IsRoomTemperatureAlias(target))
+            {
+                command = new ClimateCommand(
+                    ClimateAction.GetTemperature,
+                    ClimateScope.Named,
+                    target,
+                    null);
+                return true;
+            }
+        }
+
+        var namedGetPossessive = NamedGetTemperaturePossessivePattern.Match(normalized);
+        if (namedGetPossessive.Success)
+        {
+            var target = namedGetPossessive.Groups["target"].Value.Trim();
+            if (!string.IsNullOrWhiteSpace(target) &&
+                !IsGenericClimateTarget(target) &&
+                !IsRoomTemperatureAlias(target))
+            {
+                command = new ClimateCommand(
+                    ClimateAction.GetTemperature,
+                    ClimateScope.Named,
+                    target,
+                    null);
+                return true;
+            }
         }
 
         var namedMatch = NamedSetTemperaturePattern.Match(normalized);
@@ -241,6 +338,12 @@ public static class HomeAssistantClimateCommandParser
                target.Equals("the temperature", StringComparison.OrdinalIgnoreCase) ||
                target.Equals("heat", StringComparison.OrdinalIgnoreCase) ||
                target.Equals("the heat", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsRoomTemperatureAlias(string target)
+    {
+        return target.Equals("room", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals("the room", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string NormalizeCommandPhrase(string? value)

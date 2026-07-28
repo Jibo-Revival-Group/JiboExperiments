@@ -19,6 +19,25 @@ Run this plan:
 
 For small feature slices, run the automated `.NET` tests plus the smoke checks and only the live sections that share the same machinery. Before release closeout, run the full current-release suite.
 
+## Robot Proof Issue Loop
+
+Use this loop whenever a backlog item or live quirk still needs robot-only proof before we can move on:
+
+1. Pick exactly one issue to investigate and write down the phrase or behavior that triggered it.
+2. Run the smallest live turn that reproduces the issue, then keep the transcript, active listen rule, menu state, and visible robot state together.
+3. Save the websocket and HTTP captures in a named artifact folder such as `artifact-output/jibo-proof-<issue>-<date>`.
+4. Run the capture summary and recognition-candidate tools against the saved captures:
+   - `scripts/cloud/Get-WebSocketCaptureSummary.ps1`
+   - `scripts/cloud/inspect-websocket-recognition-candidates.py`
+   - `scripts/cloud/New-CaptureBundle.ps1`
+5. Classify the result as one of three outcomes:
+   - `proved`: the issue reproduces on the robot and the capture shows the failing path
+   - `disproved`: the capture shows the robot or cloud behaved correctly and the symptom came from something else
+   - `needs-pegasus`: the cloud evidence is not enough and the next check must come from the Pegasus/legacy source tree on the other machine
+6. Record the classification in the backlog or release plan before moving to the next item so the queue stays honest.
+
+Keep this loop narrow. It is meant to resolve one robot-proof issue at a time, not to replace the normal regression suite.
+
 ## Required Evidence
 
 For each live pass, keep these artifacts together under a named test folder such as `artifact-output/jibo-test-N`:

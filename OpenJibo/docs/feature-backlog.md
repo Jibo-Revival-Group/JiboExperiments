@@ -1032,6 +1032,9 @@ These are the carryover items that need a clean proof pass first:
   - keep adding 1-3 persona prompts per pass with tests
   - prefer source-backed MIM imports when the legacy text is available, and use a temporary runtime reply only when needed to unblock user value
   - keep a separate note for longer authored variants so we do not lose the multi-clause Peggy-style phrasing while importing the short-form packs
+  - keep the remaining support / awards / sports `who support` and `who will win` families on the next import list after the current edge-case batches land
+- Current progress:
+  - the imported Pegasus edge-case batch now covers `CC_Fallback`, `what is your sign`, `how many people do you know`, `what is the loop`, `what is personal report`, `what is your IQ`, `what is Be a Maker`, and `what is your groundhog's name`; those reply families are now source-backed in the live catalog instead of waiting on a later Pegasus pass
 - Mood follow-up work in flight:
   - source-backed happy/sad/angry response packs are now part of Build B
   - small-talk aliases like `what are you up to` and `how are things` now stay on the emotion-query path
@@ -1058,7 +1061,7 @@ These are the carryover items that need a clean proof pass first:
   - richer identity follow-ups like `who is this`, `do you know me`, `do you remember me`, and `can you recognize me`
   - mood and affect prompts like `how are you`, `are you happy`, `are you sad`, and `are you angry`
   - self-description charm like `what's your name`, `do you have a nickname`, `do you like being Jibo`, and `what is your favorite name`
-  - deeper personality follow-ups like `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` stays deferred until templated placeholder rendering exists
+  - deeper personality follow-ups like `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` is now source-backed through the templated importer and only needs live playback proof
   - the next identity / knowledge wave adds `are you god`, `are you here`, `do you have super powers`, `how much do you know`, `what does jibo mean`, `where do you get info`, `what are you forbidden to do`, `what color are you`, and `what do you do when alone`
 - additional legacy source-backed `RI_USR` prompts where the text is short and the behavior is easy to verify
 - the new `Can...` batch adds dream, exercise, fly, learn, laugh, read, hear, talk, see, and wink prompts so the capability lane keeps getting more of Pegasus's playful personality

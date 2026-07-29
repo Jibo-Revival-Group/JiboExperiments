@@ -148,6 +148,30 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
+    public void ImportCatalog_ImportsPegasusEdgeCaseMimsIntoDedicatedBuckets()
+    {
+        var rootDirectory = Path.Combine(
+            AppContext.BaseDirectory,
+            "Content",
+            "LegacyMims");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.GenericFallbackReplies, reply =>
+            reply.Contains("don't have an answer", StringComparison.OrdinalIgnoreCase) ||
+            reply.Contains("don't quite know enough", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Be a Maker", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("I don't know if I have an I Q", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("I haven't asked him", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalReportReplies, reply =>
+            reply.Contains("personalized updates on weather, news, calendar events, and your commute",
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ImportCatalog_ImportsBuildBSingResponsesIntoSingBuckets()
     {
         var rootDirectory = Path.Combine(

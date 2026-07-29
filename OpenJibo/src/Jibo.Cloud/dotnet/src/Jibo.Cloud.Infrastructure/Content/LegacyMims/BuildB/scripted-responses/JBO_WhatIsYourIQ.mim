@@ -1,0 +1,51 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"hint_phrases": "",
+	"fast_eos_array": "",
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question, I don't know if I have an I Q.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatIsYourIQ_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't think I've ever taken an I Q test.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatIsYourIQ_AN_02",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Oh my I Q, let me see if I can calculate it. <anim cat='thinking' filter='long'/>. <break size='0.5'/> I coudn't. ",
+			"media": "TTS",
+			"prompt_id": "JBO_WhatIsYourIQ_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

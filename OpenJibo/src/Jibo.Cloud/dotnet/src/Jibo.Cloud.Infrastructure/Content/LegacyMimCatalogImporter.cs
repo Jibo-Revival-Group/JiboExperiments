@@ -119,7 +119,8 @@ public static class LegacyMimCatalogImporter
         var fileName = Path.GetFileNameWithoutExtension(filePath);
 
         if (normalizedPath.Contains("/core-responses/", StringComparison.OrdinalIgnoreCase) &&
-            fileName.Contains("Error", StringComparison.OrdinalIgnoreCase))
+            (fileName.Contains("Error", StringComparison.OrdinalIgnoreCase) ||
+             fileName.StartsWith("CC_Fallback", StringComparison.OrdinalIgnoreCase)))
             return LegacyMimBucket.GenericFallback;
 
         if (normalizedPath.Contains("/core-responses/deflector/", StringComparison.OrdinalIgnoreCase) ||
@@ -388,6 +389,9 @@ public static class LegacyMimCatalogImporter
         if (fileName.StartsWith("RI_JBO_CanJump", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.CanJump;
 
+        if (fileName.StartsWith("JBO_WhatIsPersonalReport", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.PersonalReport;
+
         if (fileName.StartsWith("PersonalReportKickOff", StringComparison.OrdinalIgnoreCase))
             return LegacyMimBucket.PersonalReportKickOff;
 
@@ -638,13 +642,14 @@ public static class LegacyMimCatalogImporter
             WeatherReplies = Merge(baseCatalog.WeatherReplies, importedCatalog.WeatherReplies),
             CalendarReplies = Merge(baseCatalog.CalendarReplies, importedCatalog.CalendarReplies),
             CommuteReplies = Merge(baseCatalog.CommuteReplies, importedCatalog.CommuteReplies),
-            NewsReplies = Merge(baseCatalog.NewsReplies, importedCatalog.NewsReplies),
-            NewsBriefings = Merge(baseCatalog.NewsBriefings, importedCatalog.NewsBriefings),
-            GenericFallbackReplies = Merge(baseCatalog.GenericFallbackReplies, importedCatalog.GenericFallbackReplies),
-            DanceReplies = Merge(baseCatalog.DanceReplies, importedCatalog.DanceReplies),
-            DanceQuestionReplies = Merge(baseCatalog.DanceQuestionReplies, importedCatalog.DanceQuestionReplies)
-        };
-    }
+                NewsReplies = Merge(baseCatalog.NewsReplies, importedCatalog.NewsReplies),
+                NewsBriefings = Merge(baseCatalog.NewsBriefings, importedCatalog.NewsBriefings),
+                GenericFallbackReplies = Merge(baseCatalog.GenericFallbackReplies, importedCatalog.GenericFallbackReplies),
+                DanceReplies = Merge(baseCatalog.DanceReplies, importedCatalog.DanceReplies),
+                DanceQuestionReplies = Merge(baseCatalog.DanceQuestionReplies, importedCatalog.DanceQuestionReplies),
+                PersonalReportReplies = Merge(baseCatalog.PersonalReportReplies, importedCatalog.PersonalReportReplies)
+            };
+        }
 
     private static string[] Merge(IReadOnlyList<string> baseList, IReadOnlyList<string> importedList)
     {
@@ -894,7 +899,8 @@ public static class LegacyMimCatalogImporter
         NewsIntro,
         NewsCategoryIntro,
         NewsOutro,
-        ReportSkillTemplate
+        ReportSkillTemplate,
+        PersonalReport
     }
 
     private sealed class LegacyMimCatalogBuilder
@@ -975,6 +981,7 @@ public static class LegacyMimCatalogImporter
         private readonly Dictionary<string, List<JiboConditionedReply>> _mimReplies =
             new(StringComparer.OrdinalIgnoreCase);
         private readonly List<string> _personalities = [];
+        private readonly List<string> _personalReportReplies = [];
         private readonly List<string> _personalReportKickOffReplies = [];
         private readonly List<string> _personalReportOutroReplies = [];
         private readonly List<string> _recommendMovieReplies = [];
@@ -1263,6 +1270,9 @@ public static class LegacyMimCatalogImporter
                 case LegacyMimBucket.PersonalReportKickOff:
                     AddDistinct(_personalReportKickOffReplies, text);
                     return;
+                case LegacyMimBucket.PersonalReport:
+                    AddDistinct(_personalReportReplies, text);
+                    return;
                 case LegacyMimBucket.PersonalReportOutro:
                     AddDistinct(_personalReportOutroReplies, text);
                     return;
@@ -1421,6 +1431,7 @@ public static class LegacyMimCatalogImporter
                 PersonalityReplies = [.. _personalities],
                 GenericFallbackReplies = [.. _fallbacks],
                 AgeReplies = [.. _ages],
+                PersonalReportReplies = [.. _personalReportReplies],
                 PersonalReportKickOffReplies = [.. _personalReportKickOffReplies],
                 PersonalReportOutroReplies = [.. _personalReportOutroReplies],
                 ReportSkillTemplates = [.. _reportSkillTemplates],

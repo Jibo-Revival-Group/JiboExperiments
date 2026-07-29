@@ -1,0 +1,126 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"timeout": 6,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't <phoneme ph=\"th iy ng k ai\">thinki</phoneme> know about that.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "That is one <phoneme ph=\"th iy ng ai\">thingi</phoneme> don't have an answer to.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_03",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't <phoneme ph=\"th iy ng k ai\">thinki</phoneme> know enough about that to answer.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_04",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Honestly I <phoneme ph=\"th iy ng k ai\">thinki</phoneme>don't know enough to answer that.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_06",
+			"weight": 1,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can <phoneme ph='s e m ii'>semi</phoneme> confidently tell you that I don't have an answer to that yet.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_07",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't have an answer for you on that one.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_08",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I feel like I almost know how to answer that, but not quite.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_09",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "<style set='enthusiastic'>Oh that seems like it would be something I have an answer to.</style> <break size='0.7'/><style set='sheepish'>But I don't.</style>",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_10",
+			"weight": 0.1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I can't quite respond to that.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_11",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I think an answer to that is just out of my reach for now.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_12",
+			"weight": 1
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't quite know enough yet to have an answer.",
+			"media": "TTS",
+			"prompt_id": "CC_GQA_Failure_scripted_AN_13",
+			"weight": 1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

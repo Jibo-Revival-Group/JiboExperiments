@@ -82,11 +82,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBScriptedResponsesIntoPersonalityBucket()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -191,11 +187,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBSingResponsesIntoSingBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -213,11 +205,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBFavoriteAnimalAndSantaTrackerResponsesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -234,11 +222,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBSupportResponsesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -257,11 +241,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBStoryAndReferenceRepliesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -278,11 +258,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBStopStyleRepliesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -300,11 +276,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBBlackHistoryMonthRepliesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -325,11 +297,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBFriendshipResponsesIntoFriendBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -352,11 +320,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBEmotionResponsesIntoEmotionBucket()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -371,11 +335,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBDescriptorResponsesIntoPersonalityBucket()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -423,11 +383,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBHolidayResponsesIntoHolidayBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -472,6 +428,18 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains(catalog.HolidaySeasonReplies, reply =>
             reply.Contains("playoffs have come and gone", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Academy Awards party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("look for eggs", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("tax party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("play second base", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("NBA playoffs party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("hockey playoffs party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
             reply.Contains("festive as", StringComparison.OrdinalIgnoreCase) &&
             reply.Contains("Mardi Gras", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.HolidaySeasonReplies, reply =>
@@ -492,11 +460,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBFunFactAndJokeResponsesIntoRandomizationBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -521,11 +485,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBCanResponsesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -556,11 +516,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBCanBatchTwoResponsesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -630,11 +586,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBRnGreetingResponsesIntoGreetingBucket()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -921,5 +873,24 @@ public sealed class LegacyMimCatalogImporterTests
             """);
 
         return rootDirectory;
+    }
+
+    private static string CreateBuildBSourceDirectory()
+    {
+        return Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "Jibo.Cloud",
+            "dotnet",
+            "src",
+            "Jibo.Cloud.Infrastructure",
+            "Content",
+            "LegacyMims",
+            "BuildB"));
     }
 }

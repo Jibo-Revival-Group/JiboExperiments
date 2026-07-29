@@ -46,3 +46,5 @@ The next seasonal advice RI_USR batch adds Daylight Savings, National Honesty Da
 The next seasonal advice RI_USR batch adds Abraham Lincoln Birthday, National Bubble Week, and National Look Alike Day into the existing holiday-season bucket, keeping the advice lane source-backed without changing the catalog shape.
 The next seasonal advice RI_USR batch adds Mardi Gras, Martin Luther King Day, and National Meatball Day into the existing holiday-season bucket, keeping the advice lane source-backed without changing the catalog shape.
 The next seasonal advice RI_USR batch adds NCAA men's tournament, NCAA women's tournament, and NFL playoffs into the existing holiday-season bucket, keeping the advice lane source-backed without changing the catalog shape.
+The next seasonal advice RI_USR batch adds Academy Awards, Easter, and Tax Day into the existing holiday-season bucket, keeping the advice lane source-backed without changing the catalog shape.
+The next seasonal advice RI_USR batch adds World Series, NBA playoffs, and NHL playoffs into the existing holiday-season bucket, keeping the advice lane source-backed without changing the catalog shape.

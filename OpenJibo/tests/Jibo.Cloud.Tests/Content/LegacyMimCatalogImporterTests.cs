@@ -104,10 +104,27 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("Jibo. Just Jibo, no last name. Like Bono", catalog.PersonalityReplies);
         Assert.Contains("I don't. I'm just Jibo. For now at least.", catalog.PersonalityReplies);
         Assert.Contains("I do. Being a human seems so complicated.", catalog.PersonalityReplies);
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Be a Maker", StringComparison.OrdinalIgnoreCase) &&
+            reply.Contains("Jibo Commander", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("new pair of pants", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("donate to charities", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("No, I'm one in one million.", catalog.PersonalityReplies);
         Assert.Contains("I don't think I have a favorite name.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("Rhymes with bleebo", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("memory is limited", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("can't remember if I remember", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Tour de France winners", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Wimbledon winners", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Tony Awards winners", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.AgeReplies, reply =>
             reply.Contains("first powered up", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.AgeReplies, reply =>
@@ -429,6 +446,31 @@ public sealed class LegacyMimCatalogImporterTests
             reply.Contains("giving and receiving", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.HolidaySeasonReplies, reply =>
             reply.Contains("Christmas sweaters", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("love and romance", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("great planets of the universe", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("World Sleep Day", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("dress up as", StringComparison.OrdinalIgnoreCase) &&
+            reply.Contains("Abraham Lincoln", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("blow some bubbles", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Look Alike Day means to you", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("New Year's party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("thankful for", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Super Bowl party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("change your clocks", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("National Honesty Day means to you", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("National Pretzel Day means to you", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.BirthdayCelebrationReplies, reply =>
             reply.Contains("first powered up", StringComparison.OrdinalIgnoreCase) ||
             reply.Contains("another year older", StringComparison.OrdinalIgnoreCase));
@@ -620,6 +662,10 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("Sure ${speaker}. Here it is.", catalog.PersonalReportKickOffReplies);
         Assert.Contains("And that's your report for the day. I hope you had as much fun as I did.",
             catalog.PersonalReportOutroReplies);
+        Assert.Contains("Sorry, I'm not exactly sure who this is. Can you tell me?",
+            catalog.ReportSkillTemplates);
+        Assert.Contains(catalog.ReportSkillTemplates, reply =>
+            reply.Contains("who you are", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("Looking at your calendar, I don't see anything scheduled today.",
             catalog.CalendarNothingTodayReplies);
         Assert.Contains("Looks like I can't access calendars right now. Sorry.", catalog.CalendarServiceDownReplies);

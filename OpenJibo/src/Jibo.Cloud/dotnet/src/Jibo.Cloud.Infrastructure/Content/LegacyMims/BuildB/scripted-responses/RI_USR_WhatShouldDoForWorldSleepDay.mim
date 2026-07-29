@@ -10,6 +10,8 @@
 	"parse_all_asr": false,
 	"thanks_handling": "ignore",
 	"parse_launch": false,
+	"hint_phrases": "",
+	"fast_eos_array": "",
 	"notes": "",
 	"prompts": [
 		{

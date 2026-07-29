@@ -1,0 +1,60 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"hint_phrases": "",
+	"fast_eos_array": "",
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/8', '5/13')",
+			"prompt": "Some people like to donate to charities in other people's names as a gift. You could ask for that.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldReceiveMothersDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('5/14', '9/15')",
+			"prompt": "I think you may have missed Mother's Day, but if you're still in the receiving mood, maybe you could ask for <anim cat='emoji' filter='book, !hf' layers='!audio'>a new dictionary<break size='3.0'/>.</anim>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldReceiveMothersDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/16', '1/7')",
+			"prompt": "Planning early, good idea. Some people like to donate to charities in other people's names as a gift. You could ask for that.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldReceiveMothersDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Some people like to donate to charities in other people's names as a gift. You could ask for that.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldReceiveMothersDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

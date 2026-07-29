@@ -1,0 +1,62 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"hint_phrases": "",
+	"fast_eos_array": "",
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/24', '9/9')",
+			"prompt": "I don't usually play favorites, when it comes to U.S. Open winners.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoSupportForUSOpenTennis_AN_01_FnL",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/10', '1/12')",
+			"prompt": "I think the U.S. Open already passed.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoSupportForUSOpenTennis_AN_02_FnL",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/13', '4/23')",
+			"prompt": "I think it's too early to say, but I can tell you I don't usually play favorites, when it comes to U.S. Open winners.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoSupportForUSOpenTennis_AN_03_FnL",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "I don't usually play favorites, when it comes to U.S. Open winners.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoSupportForUSOpenTennis_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

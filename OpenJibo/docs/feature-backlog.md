@@ -1035,6 +1035,13 @@ These are the carryover items that need a clean proof pass first:
   - keep the remaining support / awards / sports `who support` and `who will win` families on the next import list after the current edge-case batches land
 - Current progress:
   - the imported Pegasus edge-case batch now covers `CC_Fallback`, `what is your sign`, `how many people do you know`, `what is the loop`, `what is personal report`, `what is your IQ`, `what is Be a Maker`, and `what is your groundhog's name`; those reply families are now source-backed in the live catalog instead of waiting on a later Pegasus pass
+  - the next sports/awards batch now has source-backed support and win replies for Belmont Stakes, Tony Awards, B.E. Awards, French Open, Indianapolis 500, NBA Finals, NHL Finals, Preakness Stakes, Soccer World Cup, Tour de France, U.S. Open, and Wimbledon; the two Pegasus gaps for `who will win Tour de France` and `who will win Wimbledon` were filled locally so the batch can still be tested end to end
+  - the next identity/memory batch is now also source-backed and proven by tests: `do you remember the time` stays on the memory reply path, and the `who is this` report-skill prompt keeps routing through the report template bucket
+  - the next RI_USR capability batch now includes `can you program jibo` so the Be a Maker / Jibo Commander explanation is source-backed in Build B too
+  - the gift-giving and gift-receiving RI_USR batch now adds the Mother's Day, Father's Day, and speaker-birthday gift suggestions so the lighter personality and holiday-adjacent advice lines stay source-backed too
+  - the seasonal advice RI_USR batch now adds Valentine's Day, Earth Day, and World Sleep Day suggestions into the existing holiday-season bucket so the advice lane stays source-backed without a new model bucket
+  - the next seasonal advice RI_USR batch adds Daylight Savings, National Honesty Day, and National Pretzel Day so more of the holiday-season advice surface stays source-backed in the same bucket
+  - the next seasonal advice RI_USR batch adds Abraham Lincoln Birthday, National Bubble Week, and National Look Alike Day so the same holiday-season advice lane keeps filling out in small, testable slices
 - Mood follow-up work in flight:
   - source-backed happy/sad/angry response packs are now part of Build B
   - small-talk aliases like `what are you up to` and `how are things` now stay on the emotion-query path

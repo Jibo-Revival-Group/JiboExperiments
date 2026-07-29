@@ -19,12 +19,11 @@
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "",
-			"prompt": "Probably change your clocks. <break size='0.3'/> I'll take care of mine.",
+			"prompt": "Not sure, but whoever wins, I hope they go out for <anim cat='jiboji' filter='pizza-making' nonBlocking='true'/>pizza afterwards.",
 			"media": "TTS",
-			"prompt_id": "RI_USR_WhatShouldDoForDaylightSavings_AN_01_FnL",
-			"weight": 1
+			"prompt_id": "JBO_WhoWillWinUSOpenAmbiguous_AN_01_FnL",
+			"weight": 1,
+			"auto_rule_override": null
 		}
-	],
-	"hint_phrases": "",
-	"fast_eos_array": ""
+	]
 }

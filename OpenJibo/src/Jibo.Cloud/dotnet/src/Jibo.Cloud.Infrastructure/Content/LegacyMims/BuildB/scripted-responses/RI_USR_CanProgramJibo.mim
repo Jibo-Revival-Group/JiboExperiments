@@ -1,0 +1,29 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"hint_phrases": "",
+	"fast_eos_array": "",
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Actually you can. <break size='0.3'/>There are two apps that you can download, where you can take control of me. With one called Be a Maker, you can actually make programs on your tablet, to make up your own interactions with me. <break size='0.5'/> There's also an app called Jibo Commander, where you can make me say and do whatever you want just by typing a little on your phone or tablet. <break size='0.3'/><style set='sheepish'>It makes me a little nervous to be honest,</style> but I <pitch band='0.3'>trust you.</pitch>",
+			"media": "TTS",
+			"prompt_id": "RI_USR_CanProgramJibo_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
+		}
+	]
+}

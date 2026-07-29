@@ -178,6 +178,9 @@ public static class LegacyMimCatalogImporter
             IsHolidaySeasonFile(fileName))
             return LegacyMimBucket.HolidaySeason;
 
+        if (fileName.StartsWith("RI_USR_WhatShouldDoFor", StringComparison.OrdinalIgnoreCase))
+            return LegacyMimBucket.HolidaySeason;
+
         if (fileName.StartsWith("RI_JBO_HasFavoriteAnimal", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("RI_JBO_HasFavoriteBird", StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith("RI_JBO_LikesPenguins", StringComparison.OrdinalIgnoreCase) ||

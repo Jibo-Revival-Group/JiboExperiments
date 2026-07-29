@@ -1042,6 +1042,7 @@ These are the carryover items that need a clean proof pass first:
   - the seasonal advice RI_USR batch now adds Valentine's Day, Earth Day, and World Sleep Day suggestions into the existing holiday-season bucket so the advice lane stays source-backed without a new model bucket
   - the next seasonal advice RI_USR batch adds Daylight Savings, National Honesty Day, and National Pretzel Day so more of the holiday-season advice surface stays source-backed in the same bucket
   - the next seasonal advice RI_USR batch adds Abraham Lincoln Birthday, National Bubble Week, and National Look Alike Day so the same holiday-season advice lane keeps filling out in small, testable slices
+  - the next seasonal advice RI_USR batch adds Mardi Gras, Martin Luther King Day, and National Meatball Day so the same holiday-season advice lane keeps filling out in small, testable slices
 - Mood follow-up work in flight:
   - source-backed happy/sad/angry response packs are now part of Build B
   - small-talk aliases like `what are you up to` and `how are things` now stay on the emotion-query path

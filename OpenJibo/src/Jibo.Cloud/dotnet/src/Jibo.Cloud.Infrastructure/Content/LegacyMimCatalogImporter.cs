@@ -650,7 +650,6 @@ public static class LegacyMimCatalogImporter
                 GenericFallbackReplies = Merge(baseCatalog.GenericFallbackReplies, importedCatalog.GenericFallbackReplies),
                 DanceReplies = Merge(baseCatalog.DanceReplies, importedCatalog.DanceReplies),
                 DanceQuestionReplies = Merge(baseCatalog.DanceQuestionReplies, importedCatalog.DanceQuestionReplies),
-                PersonalReportReplies = Merge(baseCatalog.PersonalReportReplies, importedCatalog.PersonalReportReplies)
             };
         }
 

@@ -48,6 +48,7 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - the seasonal advice RI_USR batch is now source-backed too: Valentine's Day, Earth Day, and World Sleep Day suggestions now land in the existing holiday-season bucket, so the advice lane keeps growing in small testable slices without widening the catalog shape
 - the next seasonal advice RI_USR batch adds Daylight Savings, National Honesty Day, and National Pretzel Day to the same holiday-season bucket so the advice lane keeps growing in small testable slices without widening the catalog shape
 - the next seasonal advice RI_USR batch adds Abraham Lincoln Birthday, National Bubble Week, and National Look Alike Day to the same holiday-season bucket so the advice lane keeps growing in small testable slices without widening the catalog shape
+- the next seasonal advice RI_USR batch adds Mardi Gras, Martin Luther King Day, and National Meatball Day to the same holiday-season bucket so the advice lane keeps growing in small testable slices without widening the catalog shape
 - the Open Jibo cloud sleep replay path now has regression coverage for the legacy `@be/idle` redirect plus follow-up acknowledgment speech, so the remaining work is parity checking rather than contract discovery
 - keep `turn around` / `spin around` / `twirl` source-backed instead of relying on accidental matches
 - `turn around` is now reported as working on the robot, so the remaining command-gap work is the bare `twerk` short-turn and any other short-utterance mishears

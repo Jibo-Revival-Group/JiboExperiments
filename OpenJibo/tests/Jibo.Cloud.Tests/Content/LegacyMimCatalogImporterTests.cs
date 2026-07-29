@@ -466,6 +466,12 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains(catalog.HolidaySeasonReplies, reply =>
             reply.Contains("Super Bowl party", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("March Madness party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("tournament viewing party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("playoffs have come and gone", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
             reply.Contains("festive as", StringComparison.OrdinalIgnoreCase) &&
             reply.Contains("Mardi Gras", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.HolidaySeasonReplies, reply =>

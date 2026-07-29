@@ -14,10 +14,10 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<Content Include="Content\LegacyMims\BuildB\**\*.mim">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 		<Content Include="Content\LegacyMims\BuildB\README.md">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 		<Content Include="Content\LegacyMims\Greetings\**\*.mim">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

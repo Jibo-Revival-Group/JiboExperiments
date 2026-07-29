@@ -162,6 +162,41 @@ public sealed class HomeAssistantCommandServiceTests
     }
 
     [Fact]
+    public async Task TryDispatchClimateCommandAsync_SendsRoomGetTemperatureCommand()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchClimateCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "what temperature is it in here"
+        }, "ha_climate_get_temp");
+
+        Assert.True(dispatched);
+        Assert.Equal(
+            "climate_get_temperature_current_room",
+            socket.LastPayload!.Value.GetProperty("command").GetString());
+    }
+
+    [Fact]
+    public async Task TryDispatchClimateCommandAsync_SendsNamedGetTemperatureCommand_WithTargetName()
+    {
+        var (service, socket) = CreateLinkedService();
+
+        var dispatched = await service.TryDispatchClimateCommandAsync(new TurnContext
+        {
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            NormalizedTranscript = "what's the bedroom temperature"
+        }, "ha_climate_get_temp");
+
+        Assert.True(dispatched);
+        Assert.Equal(
+            "climate_get_temperature_named",
+            socket.LastPayload!.Value.GetProperty("command").GetString());
+        Assert.Equal("bedroom", socket.LastPayload.Value.GetProperty("targetName").GetString());
+    }
+
+    [Fact]
     public void IsInstanceConnected_ReturnsFalse_WhenSocketNotRegistered()
     {
         var registry = new HomeAssistantConnectionRegistry();

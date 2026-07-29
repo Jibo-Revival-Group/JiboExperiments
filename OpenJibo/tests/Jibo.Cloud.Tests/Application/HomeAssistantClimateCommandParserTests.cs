@@ -104,6 +104,55 @@ public sealed class HomeAssistantClimateCommandParserTests
     }
 
     [Theory]
+    [InlineData("what temperature is it in here")]
+    [InlineData("what's the temperature in here")]
+    [InlineData("whats the temperature in here")]
+    [InlineData("what is the temperature in here")]
+    [InlineData("what tempature is it in here")]
+    [InlineData("what's the temp in here")]
+    [InlineData("how hot is it in here")]
+    [InlineData("how cold is it in here")]
+    [InlineData("how warm is it in here")]
+    [InlineData("what's the temperature here")]
+    [InlineData("what temperature is it inside")]
+    [InlineData("what's the room temperature")]
+    [InlineData("tell me the temperature in here")]
+    [InlineData("check the temperature in here")]
+    public void TryParse_GetTemperatureRoomPhrases_ReturnExpected(string transcript)
+    {
+        var parsed = HomeAssistantClimateCommandParser.TryParse(transcript, out var command);
+
+        Assert.True(parsed);
+        Assert.Equal(HomeAssistantClimateCommandParser.ClimateAction.GetTemperature, command.Action);
+        Assert.Equal(HomeAssistantClimateCommandParser.ClimateScope.Room, command.Scope);
+        Assert.Null(command.TargetName);
+        Assert.Null(command.Temperature);
+    }
+
+    [Theory]
+    [InlineData("what's the bedroom temperature", "bedroom")]
+    [InlineData("what is the living room temperature", "living room")]
+    [InlineData("what's the temperature on the bedroom thermostat", "bedroom")]
+    public void TryParse_GetTemperatureNamedCommands_ReturnTarget(string transcript, string expectedTarget)
+    {
+        var parsed = HomeAssistantClimateCommandParser.TryParse(transcript, out var command);
+
+        Assert.True(parsed);
+        Assert.Equal(HomeAssistantClimateCommandParser.ClimateAction.GetTemperature, command.Action);
+        Assert.Equal(HomeAssistantClimateCommandParser.ClimateScope.Named, command.Scope);
+        Assert.Equal(expectedTarget, command.TargetName);
+        Assert.Null(command.Temperature);
+    }
+
+    [Theory]
+    [InlineData("whats the temperature")]
+    [InlineData("what's the temperature")]
+    [InlineData("what is the temperature")]
+    [InlineData("what's the temp")]
+    [InlineData("how hot is it")]
+    [InlineData("check the temperature")]
+    [InlineData("what is the temperature in redmond oregon")]
+    [InlineData("what's the temperature in boston")]
     [InlineData("set the temperature to 30")]
     [InlineData("set the temperature to 100")]
     [InlineData("make it 30")]

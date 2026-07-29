@@ -123,6 +123,13 @@ public sealed partial class JiboInteractionService
         return BuildHaClimateDecisionAsync(turn, "ha_climate_warm_up", cancellationToken);
     }
 
+    private Task<JiboInteractionDecision> BuildHaClimateGetTempDecisionAsync(
+        TurnContext turn,
+        CancellationToken cancellationToken)
+    {
+        return BuildHaClimateDecisionAsync(turn, "ha_climate_get_temp", cancellationToken);
+    }
+
     private async Task<JiboInteractionDecision> BuildHaClimateDecisionAsync(
         TurnContext turn,
         string intentName,
@@ -180,6 +187,7 @@ public sealed partial class JiboInteractionService
             {
                 HomeAssistantClimateCommandParser.ClimateAction.CoolDown => "cool_down",
                 HomeAssistantClimateCommandParser.ClimateAction.WarmUp => "warm_up",
+                HomeAssistantClimateCommandParser.ClimateAction.GetTemperature => "get_temperature",
                 _ => "set_temperature"
             };
             homeAssistantPendingClimateStore.Set(
@@ -204,7 +212,12 @@ public sealed partial class JiboInteractionService
         if (!result.IsOk)
             return new JiboInteractionDecision(
                 intentName,
-                "I couldn't adjust the temperature right now.");
+                climateCommand.Action == HomeAssistantClimateCommandParser.ClimateAction.GetTemperature
+                    ? "I couldn't read the temperature right now."
+                    : "I couldn't adjust the temperature right now.");
+
+        if (climateCommand.Action == HomeAssistantClimateCommandParser.ClimateAction.GetTemperature)
+            return BuildGetTemperatureDecision(intentName, climateCommand, result);
 
         return BuildOptimisticClimateDecision(intentName, climateCommand);
     }
@@ -255,9 +268,14 @@ public sealed partial class JiboInteractionService
         if (result is null || !result.IsOk)
             return new JiboInteractionDecision(
                 intentName,
-                "I couldn't adjust that thermostat right now.");
+                pending.Action == "get_temperature"
+                    ? "I couldn't read that thermostat right now."
+                    : "I couldn't adjust that thermostat right now.");
 
         var name = string.IsNullOrWhiteSpace(result.MatchedName) ? match.Name : result.MatchedName;
+        if (pending.Action == "get_temperature")
+            return BuildGetTemperatureDecision(intentName, default, result, matchedNameOverride: name);
+
         if (pending.Action == "set_temperature" && !string.IsNullOrWhiteSpace(pending.Temperature))
         {
             var tempLabel = HomeAssistantClimateCommandParser.FormatTemperatureForSpeech(
@@ -285,7 +303,8 @@ public sealed partial class JiboInteractionService
             string.Equals(semanticIntent, "ha_lights_off", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(semanticIntent, "ha_climate_set_temp", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(semanticIntent, "ha_climate_cool_down", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(semanticIntent, "ha_climate_warm_up", StringComparison.OrdinalIgnoreCase))
+            string.Equals(semanticIntent, "ha_climate_warm_up", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(semanticIntent, "ha_climate_get_temp", StringComparison.OrdinalIgnoreCase))
             return false;
 
         var (deviceId, friendlyId) = JiboIdentityResolver.Resolve(turn, cloudStateStore);
@@ -298,10 +317,57 @@ public sealed partial class JiboInteractionService
         return true;
     }
 
+    private static JiboInteractionDecision BuildGetTemperatureDecision(
+        string intentName,
+        HomeAssistantClimateCommandParser.ClimateCommand climateCommand,
+        HomeAssistantCommandResult result,
+        string? matchedNameOverride = null)
+    {
+        if (result.CurrentTemperature is null)
+        {
+            return new JiboInteractionDecision(
+                intentName,
+                "I couldn't read the temperature right now.");
+        }
+
+        var tempLabel =
+            HomeAssistantClimateCommandParser.FormatTemperatureForSpeech(result.CurrentTemperature.Value);
+        var matchedName = matchedNameOverride ?? result.MatchedName;
+
+        if (climateCommand.Scope == HomeAssistantClimateCommandParser.ClimateScope.Named ||
+            !string.IsNullOrWhiteSpace(matchedNameOverride))
+        {
+            var targetLabel = string.IsNullOrWhiteSpace(matchedName)
+                ? HomeAssistantClimateCommandParser.FormatTargetForSpeech(climateCommand.TargetName)
+                : matchedName;
+            return new JiboInteractionDecision(
+                intentName,
+                $"It's {tempLabel} on the {targetLabel}.");
+        }
+
+        return new JiboInteractionDecision(
+            intentName,
+            $"It's {tempLabel} in here.");
+    }
+
     private static JiboInteractionDecision BuildOptimisticClimateDecision(
         string intentName,
         HomeAssistantClimateCommandParser.ClimateCommand climateCommand)
     {
+        if (climateCommand.Action == HomeAssistantClimateCommandParser.ClimateAction.GetTemperature)
+        {
+            if (climateCommand.Scope == HomeAssistantClimateCommandParser.ClimateScope.Named &&
+                !string.IsNullOrWhiteSpace(climateCommand.TargetName))
+            {
+                var targetLabel = HomeAssistantClimateCommandParser.FormatTargetForSpeech(climateCommand.TargetName);
+                return new JiboInteractionDecision(
+                    intentName,
+                    $"Okay, I'll check the {targetLabel}.");
+            }
+
+            return new JiboInteractionDecision(intentName, "Okay, I'll check the temperature.");
+        }
+
         if (climateCommand.Action == HomeAssistantClimateCommandParser.ClimateAction.SetTemperature &&
             climateCommand.Temperature is not null)
         {
@@ -331,6 +397,7 @@ public sealed partial class JiboInteractionService
         {
             "ha_climate_cool_down" => new JiboInteractionDecision(intentName, "Okay, I'll cool things down a bit."),
             "ha_climate_warm_up" => new JiboInteractionDecision(intentName, "Okay, I'll warm things up a bit."),
+            "ha_climate_get_temp" => new JiboInteractionDecision(intentName, "Okay, I'll check the temperature."),
             _ => new JiboInteractionDecision(intentName, "Okay, I'll adjust the temperature.")
         };
     }

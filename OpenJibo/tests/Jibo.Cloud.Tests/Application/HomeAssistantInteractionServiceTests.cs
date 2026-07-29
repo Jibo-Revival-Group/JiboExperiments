@@ -24,6 +24,8 @@ public sealed class HomeAssistantInteractionServiceTests
         "Okay, setting the bedroom thermostat to 72 degrees.")]
     [InlineData("it's hot in here", "ha_climate_cool_down", "Okay, I'll cool things down a bit.")]
     [InlineData("it's cold in here", "ha_climate_warm_up", "Okay, I'll warm things up a bit.")]
+    [InlineData("what temperature is it in here", "ha_climate_get_temp", "Okay, I'll check the temperature.")]
+    [InlineData("what's the bedroom temperature", "ha_climate_get_temp", "Okay, I'll check the bedroom thermostat.")]
     public async Task BuildDecisionAsync_HaLights_RecognizesIntent(
         string transcript,
         string expectedIntent,
@@ -42,6 +44,49 @@ public sealed class HomeAssistantInteractionServiceTests
 
         Assert.Equal(expectedIntent, decision.IntentName);
         Assert.Equal(expectedReply, decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_IndoorTemperature_BeatsRequestWeatherClientIntent()
+    {
+        var integrationStore = CreateLinkedIntegrationStore();
+        var cloudStateStore = CreateCloudStateStore();
+        var service = CreateService(integrationStore, cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "whats the temperature in here",
+            NormalizedTranscript = "whats the temperature in here",
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "requestWeather"
+            }
+        });
+
+        Assert.Equal("ha_climate_get_temp", decision.IntentName);
+        Assert.Equal("Okay, I'll check the temperature.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_BareTemperature_KeepsWeather_WhenRequestWeatherClientIntent()
+    {
+        var integrationStore = CreateLinkedIntegrationStore();
+        var cloudStateStore = CreateCloudStateStore();
+        var service = CreateService(integrationStore, cloudStateStore);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "whats the temperature",
+            NormalizedTranscript = "whats the temperature",
+            DeviceId = "Ghost-Instance-Onion-Silk",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "requestWeather"
+            }
+        });
+
+        Assert.Equal("weather", decision.IntentName);
     }
 
     [Fact]

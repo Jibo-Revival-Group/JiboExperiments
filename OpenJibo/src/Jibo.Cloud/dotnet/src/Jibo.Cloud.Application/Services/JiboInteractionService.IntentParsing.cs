@@ -296,6 +296,11 @@ public sealed partial class JiboInteractionService
 
     private static bool IsWeatherRequest(string loweredTranscript)
     {
+        // Indoor thermostat reads (e.g. "in here") are Home Assistant climate, not weather.
+        if (HomeAssistantClimateCommandParser.TryParse(loweredTranscript, out var climateCommand) &&
+            climateCommand.Action == HomeAssistantClimateCommandParser.ClimateAction.GetTemperature)
+            return false;
+
         var normalized = NormalizeCommandPhrase(loweredTranscript);
         if (IsWeatherTopicQuestion(normalized)) return true;
 

@@ -142,7 +142,8 @@ public sealed class HomeAssistantCommandService(
         if (climateCommand is null) return false;
         return climateCommand.Value.Scope == HomeAssistantClimateCommandParser.ClimateScope.Room ||
                climateCommand.Value.Action is HomeAssistantClimateCommandParser.ClimateAction.CoolDown
-                   or HomeAssistantClimateCommandParser.ClimateAction.WarmUp;
+                   or HomeAssistantClimateCommandParser.ClimateAction.WarmUp
+                   or HomeAssistantClimateCommandParser.ClimateAction.GetTemperature;
     }
 
     private HomeAssistantLinkRecord? FindLink(TurnContext turn)
@@ -209,6 +210,11 @@ public sealed class HomeAssistantCommandService(
                 HomeAssistantClimateCommandParser.ClimateScope.Room,
                 null,
                 null),
+            "ha_climate_get_temp" => new HomeAssistantClimateCommandParser.ClimateCommand(
+                HomeAssistantClimateCommandParser.ClimateAction.GetTemperature,
+                HomeAssistantClimateCommandParser.ClimateScope.Room,
+                null,
+                null),
             _ => null
         };
     }
@@ -229,6 +235,12 @@ public sealed class HomeAssistantCommandService(
             (HomeAssistantClimateCommandParser.ClimateAction.WarmUp,
                 HomeAssistantClimateCommandParser.ClimateScope.Room) =>
                 "climate_warm_up_current_room",
+            (HomeAssistantClimateCommandParser.ClimateAction.GetTemperature,
+                HomeAssistantClimateCommandParser.ClimateScope.Room) =>
+                "climate_get_temperature_current_room",
+            (HomeAssistantClimateCommandParser.ClimateAction.GetTemperature,
+                HomeAssistantClimateCommandParser.ClimateScope.Named) =>
+                "climate_get_temperature_named",
             _ => throw new InvalidOperationException("Unsupported climate command.")
         };
     }

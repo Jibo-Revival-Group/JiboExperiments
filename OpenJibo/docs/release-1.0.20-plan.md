@@ -90,6 +90,8 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
   - older stock devices such as the `1.9.2` baseline
   - alternate distributions such as NTT or MIT-special variants where available
 - design the hardware-assisted "easy button" path with the Jibo Revival Group so RCM/file-system setup can be repeated safely
+- the conversion plan and test runbook now define the staged RCM/SSH/OOBE path, but the easy-button lane still needs physical-device validation and the remaining provenance/safety blockers cleared before it can leave discovery
+- add the frankencable transport experiment to this lane as a separate discovery item: if private-LAN ethernet-over-USB gives us a stable local control surface, verify whether mode switching is reachable locally; the repo currently documents a local `systemManager.setMode(...)` path, but not a confirmed network-exposed SSM mode API
 - stand up the cloud deployment path with CI/CD into the Azure environment
 - use Azure Container Apps as the first managed deployment target unless robot compatibility proves it unsuitable
 - use Docker Compose as the first self-hosted packaging target

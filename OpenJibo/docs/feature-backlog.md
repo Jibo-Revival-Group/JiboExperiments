@@ -1221,8 +1221,10 @@ For `1.0.20` and beyond:
    - work with the Jibo Revival Group on a USB/RCM-based helper path
    - keep the file-system modification flow repeatable and safe for owners or testers
    - add Maaarcna's OOBE OTA bootstrap as a parallel candidate mode: QR-provided DNS, controlled LAN DNS/NTP/HTTPS, and stock OTA metadata may convert wiped/OOBE robots without SSH, while ShofEL/firewall/SSH remains required for rescue, rollback, non-wipe, and unproven variants
+   - add a frankencable variant to the test backlog: if a private LAN over ethernet-over-USB exposes a stable local control surface, check whether the stock SSM/system-manager mode path can be reached without RCM; so far we have a local `systemManager.setMode(...)` path in firmware notes, but no confirmed network-exposed SSM mode API
    - open blockers: certificate/key provenance and safe handling, repeatable request traces, legal stock package sourcing, first Open Jibo OTA package shape, multi-robot session handling, and whether normal-boot OOBE can run without wiping owner data
    - status: `discovery`
+   - current progress: the conversion plan and test runbook now define the staged RCM/SSH/OOBE path and the audit-first contract, but the live helper still needs physical-device validation and the remaining provenance/safety blockers resolved before this lane can leave discovery; the frankencable idea is now tracked as an additional transport experiment rather than an assumed mode-switch API
 4. Cloud deployment and CI/CD
    - set up the hosted cloud for deployment into the Azure environment
    - make the release path reproducible from source to deployed service

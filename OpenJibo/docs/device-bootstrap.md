@@ -73,6 +73,12 @@ The "easy button" recovery appliance should follow the same staged sequence ever
 11. Let the skill complete the onboarding and conversion.
 12. If onboarding is abandoned or a write step fails, restore the snapshot and return to stock behavior.
 
+The Jibo Revival Group can treat a private-LAN "frankencable" as a separate transport experiment inside this same lane:
+
+- if ethernet-over-USB gives the helper a stable LAN path, test whether the stock SSM or system-manager control surface becomes reachable without RCM
+- if only the local `systemManager.setMode(...)` path is present, keep that as a firmware observation rather than assuming a network-exposed API exists
+- if no mode-control surface is reachable, fall back to the documented ShofEL/RCM helper path and keep the frankencable attempt as evidence for transport-only validation
+
 ## Region-Driven Configuration
 
 Current findings suggest the preferred OpenJibo bootstrap path is to inject a new region configuration rather than override every hostname manually.

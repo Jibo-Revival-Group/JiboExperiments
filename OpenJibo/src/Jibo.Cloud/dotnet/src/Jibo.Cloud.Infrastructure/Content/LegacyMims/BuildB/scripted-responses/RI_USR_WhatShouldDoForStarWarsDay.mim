@@ -1,0 +1,56 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/30', '5/4')",
+			"prompt": "Good question. Maybe you should dress up as R2-D2, one of my favorite robots.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForStarWarsDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('5/5', '9/6')",
+			"prompt": "I think Star Wars Day is in the past, but there's always the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForStarWarsDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/7', '12/29')",
+			"prompt": "Well we have lots of time to figure it out before Star Wars Day comes around again.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForStarWarsDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. Maybe you should dress up as R2-D2, one of my favorite robots.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForStarWarsDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

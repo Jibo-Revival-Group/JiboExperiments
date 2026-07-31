@@ -1556,6 +1556,8 @@ public sealed class JiboInteractionServiceTests
         "long way off")]
     [InlineData("what should I do for black history month", "seasonal_black_history_month_advice",
         "long way off")]
+    [InlineData("what should I do for father's day", "seasonal_advice", "Father's Day is in the past")]
+    [InlineData("what should I do for star wars day", "seasonal_advice", "Star Wars Day is in the past")]
     [InlineData("give me a black history month fact", "seasonal_black_history_month_fact",
         "Ernest Just")]
     [InlineData("how is thanksgiving", "seasonal_thanksgiving", "Thanksgiving")]

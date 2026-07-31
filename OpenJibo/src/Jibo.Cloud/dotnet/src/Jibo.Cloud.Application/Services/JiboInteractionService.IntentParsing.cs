@@ -334,7 +334,17 @@ public sealed partial class JiboInteractionService
                 "what s today's weather look like",
                 "what s today s weather look like",
                 "what is today s weather look like",
-                "what is today's weather look like"))
+                "what is today's weather look like",
+                // ASR: "weather" → "leather"
+                "what's the leather",
+                "whats the leather",
+                "what s the leather",
+                "what is the leather",
+                "how's the leather",
+                "how s the leather",
+                "how is the leather",
+                "check the leather",
+                "the leather"))
             return true;
 
         return MatchesAny(
@@ -360,7 +370,9 @@ public sealed partial class JiboInteractionService
             normalizedTranscript.Contains("weather", StringComparison.Ordinal) ||
             normalizedTranscript.Contains("forecast", StringComparison.Ordinal) ||
             normalizedTranscript.Contains("temperature", StringComparison.Ordinal) ||
-            normalizedTranscript.Contains("humidity", StringComparison.Ordinal);
+            normalizedTranscript.Contains("humidity", StringComparison.Ordinal) ||
+            // ASR often hears "weather" as "leather"; require "the leather" so "what is leather" stays define.
+            normalizedTranscript.Contains("the leather", StringComparison.Ordinal);
         if (!mentionsWeatherTopic) return false;
 
         if (normalizedTranscript.StartsWith("what ", StringComparison.Ordinal) ||
@@ -1234,7 +1246,12 @@ public sealed partial class JiboInteractionService
             "verification code",
             "give me my verification code",
             "what is my verification code",
-            "what's my verification code");
+            "what's my verification code",
+            "whats my verification code",
+            "what s my verification code",
+            // ASR mishearings of "verify me"
+            "very fry me",
+            "terrify me");
     }
 
     private static string? TryExtractNameFact(string transcript)

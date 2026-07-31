@@ -296,6 +296,15 @@ public sealed partial class JiboInteractionService(
 
     private static readonly HashSet<string> GenericWeatherLocationTerms = new(StringComparer.OrdinalIgnoreCase)
     {
+        "here",
+        "hear",
+        "her",
+        "inside",
+        "indoors",
+        "this room",
+        "the room",
+        "my room",
+        "our room",
         "my area",
         "our area",
         "this area",

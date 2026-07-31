@@ -4273,6 +4273,9 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what's the weather in chicago tomorrow", "Chicago", 1, true)]
     [InlineData("what is the temperature in redmond oregon", "Redmond Oregon", 0, false)]
     [InlineData("will it rain tomorrow", null, 1, true)]
+    [InlineData("what's the weather in here", null, 0, false)]
+    [InlineData("what's the leather", null, 0, false)]
+    [InlineData("whats the leather", null, 0, false)]
     public async Task BuildDecisionAsync_WeatherPromptRegression_MatchesExpectedRouting(
         string transcript,
         string? expectedLocationQuery,

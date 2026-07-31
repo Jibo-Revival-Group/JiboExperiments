@@ -677,8 +677,9 @@ internal static class SeasonalHolidayRouteBuilder
         IJiboRandomizer randomizer,
         DateTimeOffset? referenceLocalTime)
     {
-        var mimId = $"RI_USR_WhatShouldDoFor{ToPascalCase(holidayPhrase)}";
-        if (!catalog.MimReplies.ContainsKey(mimId))
+        var mimId = SeasonalAdviceMimCandidates(holidayPhrase)
+            .FirstOrDefault(candidate => catalog.MimReplies.ContainsKey(candidate));
+        if (mimId is null)
             return null;
 
         return LegacyMimScriptedReplyBuilder.BuildScriptedDecision(
@@ -688,6 +689,26 @@ internal static class SeasonalHolidayRouteBuilder
             LegacyMimScriptedReplyBuilder.BuildScriptedContext(referenceLocalTime),
             displayName: null,
             explicitMimId: mimId);
+    }
+
+    private static IEnumerable<string> SeasonalAdviceMimCandidates(string holidayPhrase)
+    {
+        var normalized = holidayPhrase.Trim();
+        var directSuffix = ToPascalCase(normalized);
+        yield return $"RI_USR_WhatShouldDoFor{directSuffix}";
+
+        if (normalized.Contains("all star game", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("national championship", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("us open", StringComparison.OrdinalIgnoreCase))
+            yield return $"RI_USR_WhatShouldDoFor{directSuffix}Ambiguous";
+
+        if (normalized.Contains("ncaa", StringComparison.OrdinalIgnoreCase) &&
+            normalized.Contains("men", StringComparison.OrdinalIgnoreCase))
+            yield return "RI_USR_WhatShouldDoForNCAABasketballTournamentMen";
+
+        if (normalized.Contains("ncaa", StringComparison.OrdinalIgnoreCase) &&
+            normalized.Contains("women", StringComparison.OrdinalIgnoreCase))
+            yield return "RI_USR_WhatShouldDoForNCAABasketballTournamentWomen";
     }
 
     private static string ToPascalCase(string phrase)

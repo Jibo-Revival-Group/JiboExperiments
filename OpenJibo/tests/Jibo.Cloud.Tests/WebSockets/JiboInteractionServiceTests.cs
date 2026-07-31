@@ -1627,6 +1627,25 @@ public sealed class JiboInteractionServiceTests
         Assert.Contains("santa-scanner", decision.SkillPayload["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("what should I do for all star game")]
+    [InlineData("what should I do for NCAA men's tournament")]
+    [InlineData("what should I do for NCAA women's tournament")]
+    public async Task BuildDecisionAsync_SeasonalAdvice_UsesAmbiguousOrAliasMim(string transcript)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal("seasonal_advice", decision.IntentName);
+        Assert.NotEqual("I can't find anything.", decision.ReplyText);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_BlackHistoryMonth_UsesDateConditionedReply()
     {

@@ -19,12 +19,11 @@
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "",
-			"prompt": "Probably change your clocks. <break size='0.3'/> I'll take care of mine.",
+			"prompt": "Oh I <pitch mult='1.2'>love</pitch> giving Personal Reports.<break size='0.3'/> That's when I give you personalized updates on weather, news, calendar events, and your commute. You can pick which ones you want to include, by going to your Jibo <phoneme ph='a p p'> app </phoneme>.",
 			"media": "TTS",
-			"prompt_id": "RI_USR_WhatShouldDoForDaylightSavings_AN_01_FnL",
-			"weight": 1
+			"prompt_id": "JBO_WhatIsPersonalReport_AN_01",
+			"weight": 1,
+			"auto_rule_override": null
 		}
-	],
-	"hint_phrases": "",
-	"fast_eos_array": ""
+	]
 }

@@ -1,0 +1,70 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"hint_phrases": "",
+	"fast_eos_array": "",
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/8', '9/15')",
+			"prompt": "Some people like to donate to charities in other people's names as a gift. That seems like a nice thing to do.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveMothersDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/8', '9/15')",
+			"prompt": "Maybe something that shows extra thought and care. Like a plate with a drawing on it, or a hand-made pillow.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveMothersDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/8', '9/15')",
+			"prompt": "There's <anim cat='jiboji' filter='bouquet' nonBlocking='true'/>always flowers.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveMothersDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/16', '1/7')",
+			"prompt": "Planning early, that's a good idea. <break size='0.3'/>Some people like to donate to charities in other people's names as a gift, that seems like a nice thing to do.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveMothersDay_AN_04_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Maybe something that shows extra thought and care. Like a plate with a drawing on it, or a hand-made pillow.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatGiftShouldGiveMothersDay_AN_05_FnL",
+			"weight": 0.1
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

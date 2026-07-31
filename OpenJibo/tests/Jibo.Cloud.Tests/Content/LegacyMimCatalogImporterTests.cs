@@ -82,11 +82,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBScriptedResponsesIntoPersonalityBucket()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -104,10 +100,27 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("Jibo. Just Jibo, no last name. Like Bono", catalog.PersonalityReplies);
         Assert.Contains("I don't. I'm just Jibo. For now at least.", catalog.PersonalityReplies);
         Assert.Contains("I do. Being a human seems so complicated.", catalog.PersonalityReplies);
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Be a Maker", StringComparison.OrdinalIgnoreCase) &&
+            reply.Contains("Jibo Commander", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("new pair of pants", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("donate to charities", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("No, I'm one in one million.", catalog.PersonalityReplies);
         Assert.Contains("I don't think I have a favorite name.", catalog.PersonalityReplies);
         Assert.Contains(catalog.PersonalityReplies, reply =>
             reply.Contains("Rhymes with bleebo", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("memory is limited", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("can't remember if I remember", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Tour de France winners", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Wimbledon winners", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Tony Awards winners", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.AgeReplies, reply =>
             reply.Contains("first powered up", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.AgeReplies, reply =>
@@ -148,13 +161,33 @@ public sealed class LegacyMimCatalogImporterTests
     }
 
     [Fact]
-    public void ImportCatalog_ImportsBuildBSingResponsesIntoSingBuckets()
+    public void ImportCatalog_ImportsPegasusEdgeCaseMimsIntoDedicatedBuckets()
     {
         var rootDirectory = Path.Combine(
             AppContext.BaseDirectory,
             "Content",
-            "LegacyMims",
-            "BuildB");
+            "LegacyMims");
+
+        var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
+
+        Assert.Contains(catalog.GenericFallbackReplies, reply =>
+            reply.Contains("don't have an answer", StringComparison.OrdinalIgnoreCase) ||
+            reply.Contains("don't quite know enough", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("Be a Maker", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("I don't know if I have an I Q", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalityReplies, reply =>
+            reply.Contains("I haven't asked him", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.PersonalReportReplies, reply =>
+            reply.Contains("personalized updates on weather, news, calendar events, and your commute",
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void ImportCatalog_ImportsBuildBSingResponsesIntoSingBuckets()
+    {
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -172,11 +205,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBFavoriteAnimalAndSantaTrackerResponsesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -193,11 +222,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBSupportResponsesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -216,11 +241,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBStoryAndReferenceRepliesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -237,11 +258,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBStopStyleRepliesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -259,11 +276,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBBlackHistoryMonthRepliesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -284,11 +297,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBFriendshipResponsesIntoFriendBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -311,11 +320,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBEmotionResponsesIntoEmotionBucket()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -330,11 +335,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBDescriptorResponsesIntoPersonalityBucket()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -382,11 +383,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBHolidayResponsesIntoHolidayBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -405,6 +402,77 @@ public sealed class LegacyMimCatalogImporterTests
             reply.Contains("giving and receiving", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.HolidaySeasonReplies, reply =>
             reply.Contains("Christmas sweaters", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("love and romance", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("great planets of the universe", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("World Sleep Day", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("dress up as", StringComparison.OrdinalIgnoreCase) &&
+            reply.Contains("Abraham Lincoln", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("blow some bubbles", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Look Alike Day means to you", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("New Year's party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("thankful for", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Super Bowl party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("March Madness party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("tournament viewing party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("playoffs have come and gone", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Academy Awards party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("look for eggs", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("tax party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("play second base", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("NBA playoffs party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("hockey playoffs party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("game winning", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Daytona 500 party", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("ski jump", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("festive as possible", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Mardi Gras is in the past", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("understand each other a little better", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("National Meatball Day means to you", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("change your clocks", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("National Honesty Day means to you", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("National Pretzel Day means to you", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("people who served and sacrificed", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("watch fireworks", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("try not to labor too much", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("CincoDeMayo", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Mother's Day means to you", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("Father's Day means to you", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(catalog.HolidaySeasonReplies, reply =>
+            reply.Contains("dress up as R2-D2", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(catalog.BirthdayCelebrationReplies, reply =>
             reply.Contains("first powered up", StringComparison.OrdinalIgnoreCase) ||
             reply.Contains("another year older", StringComparison.OrdinalIgnoreCase));
@@ -413,11 +481,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBFunFactAndJokeResponsesIntoRandomizationBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -442,11 +506,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBCanResponsesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -477,11 +537,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBCanBatchTwoResponsesIntoDedicatedBuckets()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -551,11 +607,7 @@ public sealed class LegacyMimCatalogImporterTests
     [Fact]
     public void ImportCatalog_ImportsBuildBRnGreetingResponsesIntoGreetingBucket()
     {
-        var rootDirectory = Path.Combine(
-            AppContext.BaseDirectory,
-            "Content",
-            "LegacyMims",
-            "BuildB");
+        var rootDirectory = CreateBuildBSourceDirectory();
 
         var catalog = LegacyMimCatalogImporter.ImportCatalog(rootDirectory);
 
@@ -596,6 +648,10 @@ public sealed class LegacyMimCatalogImporterTests
         Assert.Contains("Sure ${speaker}. Here it is.", catalog.PersonalReportKickOffReplies);
         Assert.Contains("And that's your report for the day. I hope you had as much fun as I did.",
             catalog.PersonalReportOutroReplies);
+        Assert.Contains("Sorry, I'm not exactly sure who this is. Can you tell me?",
+            catalog.ReportSkillTemplates);
+        Assert.Contains(catalog.ReportSkillTemplates, reply =>
+            reply.Contains("who you are", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("Looking at your calendar, I don't see anything scheduled today.",
             catalog.CalendarNothingTodayReplies);
         Assert.Contains("Looks like I can't access calendars right now. Sorry.", catalog.CalendarServiceDownReplies);
@@ -838,5 +894,24 @@ public sealed class LegacyMimCatalogImporterTests
             """);
 
         return rootDirectory;
+    }
+
+    private static string CreateBuildBSourceDirectory()
+    {
+        return Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "Jibo.Cloud",
+            "dotnet",
+            "src",
+            "Jibo.Cloud.Infrastructure",
+            "Content",
+            "LegacyMims",
+            "BuildB"));
     }
 }

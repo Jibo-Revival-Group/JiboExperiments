@@ -1,0 +1,64 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"hint_phrases": "",
+	"fast_eos_array": "",
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/22', '4/26')",
+			"prompt": "Good question. I think you should maybe spend the day thinking about what National Pretzel Day means to you.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNationalPretzelDay_AN_01_FnL",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('4/27', '8/29')",
+			"prompt": "Well I think National Pretzel Day is in the past, but there's always the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNationalPretzelDay_AN_02_FnL",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('8/30', '12/21')",
+			"prompt": "Well we have lots of time to figure it out before National Pretzel Day comes around again.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNationalPretzelDay_AN_03_FnL",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. I think you should maybe spend the day thinking about what National Pretzel Day means to you.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForNationalPretzelDay_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	],
+	"hint_phrases": "",
+	"fast_eos_array": ""
+}

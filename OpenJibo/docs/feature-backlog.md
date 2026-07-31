@@ -438,8 +438,12 @@ These are the carryover items that need a clean proof pass first:
    - treat the bare `twerk` miss as an STT/parsing proof item until a robot capture proves the cloud path is at fault
    - `turn around` has been verified as working on the robot, so it no longer belongs in the STT cleanup bucket
    - keep short constrained replies and local prompts stable while the new regression items are retested
+   - status: `polish`
+   - current progress: the cloud turn-finalization path already covers the low-signal screen, filler-only rejection, wake/sleep boundaries, and the `twerk` / `can you twerk` boundary; the remaining proof target is the live robot mishearing path rather than a missing server rule
 6. Broader personality and presence continuation
    - continue the source-backed favorites, presence, and seasonal ladder once the regression gaps are understood
+   - status: `polish`
+   - current progress: the favorites family, presence-aware greetings, and seasonal holiday batches are already source-backed in the cloud path, and the remaining work is mostly live playback / launch-state cleanup for the few prompts that still need robot proof
 
 ## Near-Term `1.0.20` Queue
 
@@ -1028,6 +1032,17 @@ These are the carryover items that need a clean proof pass first:
   - keep adding 1-3 persona prompts per pass with tests
   - prefer source-backed MIM imports when the legacy text is available, and use a temporary runtime reply only when needed to unblock user value
   - keep a separate note for longer authored variants so we do not lose the multi-clause Peggy-style phrasing while importing the short-form packs
+  - keep the remaining support / awards / sports `who support` and `who will win` families on the next import list after the current edge-case batches land
+- Current progress:
+  - the imported Pegasus edge-case batch now covers `CC_Fallback`, `what is your sign`, `how many people do you know`, `what is the loop`, `what is personal report`, `what is your IQ`, `what is Be a Maker`, and `what is your groundhog's name`; those reply families are now source-backed in the live catalog instead of waiting on a later Pegasus pass
+  - the next sports/awards batch now has source-backed support and win replies for Belmont Stakes, Tony Awards, B.E. Awards, French Open, Indianapolis 500, NBA Finals, NHL Finals, Preakness Stakes, Soccer World Cup, Tour de France, U.S. Open, and Wimbledon; the two Pegasus gaps for `who will win Tour de France` and `who will win Wimbledon` were filled locally so the batch can still be tested end to end
+  - the next identity/memory batch is now also source-backed and proven by tests: `do you remember the time` stays on the memory reply path, and the `who is this` report-skill prompt keeps routing through the report template bucket
+  - the next RI_USR capability batch now includes `can you program jibo` so the Be a Maker / Jibo Commander explanation is source-backed in Build B too
+  - the gift-giving and gift-receiving RI_USR batch now adds the Mother's Day, Father's Day, and speaker-birthday gift suggestions so the lighter personality and holiday-adjacent advice lines stay source-backed too
+  - the seasonal advice RI_USR batch now adds Valentine's Day, Earth Day, and World Sleep Day suggestions into the existing holiday-season bucket so the advice lane stays source-backed without a new model bucket
+  - the next seasonal advice RI_USR batch adds Daylight Savings, National Honesty Day, and National Pretzel Day so more of the holiday-season advice surface stays source-backed in the same bucket
+  - the next seasonal advice RI_USR batch adds Abraham Lincoln Birthday, National Bubble Week, and National Look Alike Day so the same holiday-season advice lane keeps filling out in small, testable slices
+  - the next seasonal advice RI_USR batch adds Mardi Gras, Martin Luther King Day, and National Meatball Day so the same holiday-season advice lane keeps filling out in small, testable slices
 - Mood follow-up work in flight:
   - source-backed happy/sad/angry response packs are now part of Build B
   - small-talk aliases like `what are you up to` and `how are things` now stay on the emotion-query path
@@ -1054,7 +1069,7 @@ These are the carryover items that need a clean proof pass first:
   - richer identity follow-ups like `who is this`, `do you know me`, `do you remember me`, and `can you recognize me`
   - mood and affect prompts like `how are you`, `are you happy`, `are you sad`, and `are you angry`
   - self-description charm like `what's your name`, `do you have a nickname`, `do you like being Jibo`, and `what is your favorite name`
-  - deeper personality follow-ups like `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` stays deferred until templated placeholder rendering exists
+  - deeper personality follow-ups like `what do you dream about`, `what are you afraid of`, `what do you want to talk about`, `what is your best book`, `what is your best exercise`, `what is your dream vacation`, `who is your hero`, `who do you love`, and `what is your religion`; `what is your sign` is now source-backed through the templated importer and only needs live playback proof
   - the next identity / knowledge wave adds `are you god`, `are you here`, `do you have super powers`, `how much do you know`, `what does jibo mean`, `where do you get info`, `what are you forbidden to do`, `what color are you`, and `what do you do when alone`
 - additional legacy source-backed `RI_USR` prompts where the text is short and the behavior is easy to verify
 - the new `Can...` batch adds dream, exercise, fly, learn, laugh, read, hear, talk, see, and wink prompts so the capability lane keeps getting more of Pegasus's playful personality
@@ -1217,8 +1232,10 @@ For `1.0.20` and beyond:
    - work with the Jibo Revival Group on a USB/RCM-based helper path
    - keep the file-system modification flow repeatable and safe for owners or testers
    - add Maaarcna's OOBE OTA bootstrap as a parallel candidate mode: QR-provided DNS, controlled LAN DNS/NTP/HTTPS, and stock OTA metadata may convert wiped/OOBE robots without SSH, while ShofEL/firewall/SSH remains required for rescue, rollback, non-wipe, and unproven variants
+   - add a frankencable variant to the test backlog: if a private LAN over ethernet-over-USB exposes a stable local control surface, check whether the stock SSM/system-manager mode path can be reached without RCM; so far we have a local `systemManager.setMode(...)` path in firmware notes, but no confirmed network-exposed SSM mode API
    - open blockers: certificate/key provenance and safe handling, repeatable request traces, legal stock package sourcing, first Open Jibo OTA package shape, multi-robot session handling, and whether normal-boot OOBE can run without wiping owner data
    - status: `discovery`
+   - current progress: the conversion plan and test runbook now define the staged RCM/SSH/OOBE path and the audit-first contract, but the live helper still needs physical-device validation and the remaining provenance/safety blockers resolved before this lane can leave discovery; the frankencable idea is now tracked as an additional transport experiment rather than an assumed mode-switch API
 4. Cloud deployment and CI/CD
    - set up the hosted cloud for deployment into the Azure environment
    - make the release path reproducible from source to deployed service

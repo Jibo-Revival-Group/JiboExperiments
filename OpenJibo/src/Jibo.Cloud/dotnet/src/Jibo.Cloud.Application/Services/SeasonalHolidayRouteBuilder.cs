@@ -5,6 +5,8 @@ namespace Jibo.Cloud.Application.Services;
 
 internal static class SeasonalHolidayRouteBuilder
 {
+    private const string SeasonalAdviceIntentPrefix = "seasonal_advice:";
+
     internal static bool TryResolveSemanticIntent(string loweredTranscript, out string? semanticIntent)
     {
         if (MatchesAny(
@@ -368,8 +370,37 @@ internal static class SeasonalHolidayRouteBuilder
             return true;
         }
 
+        if (TryResolveSeasonalAdviceIntent(loweredTranscript, out var seasonalAdviceIntent))
+        {
+            semanticIntent = seasonalAdviceIntent;
+            return true;
+        }
+
         semanticIntent = null;
         return false;
+    }
+
+    private static bool TryResolveSeasonalAdviceIntent(
+        string loweredTranscript,
+        out string? semanticIntent)
+    {
+        const string prefix = "what should i do for ";
+        var normalized = loweredTranscript.Trim().TrimEnd('?', '.', '!');
+        if (!normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            semanticIntent = null;
+            return false;
+        }
+
+        var holidayPhrase = normalized[prefix.Length..].Trim();
+        if (string.IsNullOrWhiteSpace(holidayPhrase))
+        {
+            semanticIntent = null;
+            return false;
+        }
+
+        semanticIntent = SeasonalAdviceIntentPrefix + holidayPhrase;
+        return true;
     }
 
     internal static bool TryBuildDecision(
@@ -382,6 +413,16 @@ internal static class SeasonalHolidayRouteBuilder
         IReadOnlyList<string> todaysHolidayNames,
         out JiboInteractionDecision? decision)
     {
+        if (semanticIntent.StartsWith(SeasonalAdviceIntentPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            decision = TryBuildSeasonalAdviceDecision(
+                semanticIntent[SeasonalAdviceIntentPrefix.Length..],
+                catalog,
+                randomizer,
+                referenceLocalTime);
+            return decision is not null;
+        }
+
         decision = semanticIntent switch
         {
             "seasonal_black_history_month_celebrate" => BuildConditionedHolidayDecision(
@@ -628,6 +669,56 @@ internal static class SeasonalHolidayRouteBuilder
         };
 
         return decision is not null;
+    }
+
+    private static JiboInteractionDecision? TryBuildSeasonalAdviceDecision(
+        string holidayPhrase,
+        JiboExperienceCatalog catalog,
+        IJiboRandomizer randomizer,
+        DateTimeOffset? referenceLocalTime)
+    {
+        var mimId = SeasonalAdviceMimCandidates(holidayPhrase)
+            .FirstOrDefault(candidate => catalog.MimReplies.ContainsKey(candidate));
+        if (mimId is null)
+            return null;
+
+        return LegacyMimScriptedReplyBuilder.BuildScriptedDecision(
+            catalog,
+            randomizer,
+            "seasonal_advice",
+            LegacyMimScriptedReplyBuilder.BuildScriptedContext(referenceLocalTime),
+            displayName: null,
+            explicitMimId: mimId);
+    }
+
+    private static IEnumerable<string> SeasonalAdviceMimCandidates(string holidayPhrase)
+    {
+        var normalized = holidayPhrase.Trim();
+        var directSuffix = ToPascalCase(normalized);
+        yield return $"RI_USR_WhatShouldDoFor{directSuffix}";
+
+        if (normalized.Contains("all star game", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("national championship", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("us open", StringComparison.OrdinalIgnoreCase))
+            yield return $"RI_USR_WhatShouldDoFor{directSuffix}Ambiguous";
+
+        if (normalized.Contains("ncaa", StringComparison.OrdinalIgnoreCase) &&
+            normalized.Contains("men", StringComparison.OrdinalIgnoreCase))
+            yield return "RI_USR_WhatShouldDoForNCAABasketballTournamentMen";
+
+        if (normalized.Contains("ncaa", StringComparison.OrdinalIgnoreCase) &&
+            normalized.Contains("women", StringComparison.OrdinalIgnoreCase))
+            yield return "RI_USR_WhatShouldDoForNCAABasketballTournamentWomen";
+    }
+
+    private static string ToPascalCase(string phrase)
+    {
+        return string.Concat(
+            phrase
+                .Split([' ', '-', '_', '\'', '\u2019'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(part => part.Length == 0
+                    ? string.Empty
+                    : char.ToUpperInvariant(part[0]) + part[1..]));
     }
 
     private static JiboInteractionDecision BuildHolidayDecision(

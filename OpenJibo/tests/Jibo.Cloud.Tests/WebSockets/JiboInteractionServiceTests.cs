@@ -1556,6 +1556,8 @@ public sealed class JiboInteractionServiceTests
         "long way off")]
     [InlineData("what should I do for black history month", "seasonal_black_history_month_advice",
         "long way off")]
+    [InlineData("what should I do for father's day", "seasonal_advice", "Father's Day is in the past")]
+    [InlineData("what should I do for star wars day", "seasonal_advice", "Star Wars Day is in the past")]
     [InlineData("give me a black history month fact", "seasonal_black_history_month_fact",
         "Ernest Just")]
     [InlineData("how is thanksgiving", "seasonal_thanksgiving", "Thanksgiving")]
@@ -1623,6 +1625,25 @@ public sealed class JiboInteractionServiceTests
             StringComparison.Ordinal);
         Assert.Equal("AN", decision.SkillPayload["prompt_sub_category"]);
         Assert.Contains("santa-scanner", decision.SkillPayload["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("what should I do for all star game")]
+    [InlineData("what should I do for NCAA men's tournament")]
+    [InlineData("what should I do for NCAA women's tournament")]
+    public async Task BuildDecisionAsync_SeasonalAdvice_UsesAmbiguousOrAliasMim(string transcript)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal("seasonal_advice", decision.IntentName);
+        Assert.NotEqual("I can't find anything.", decision.ReplyText);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
     }
 
     [Fact]

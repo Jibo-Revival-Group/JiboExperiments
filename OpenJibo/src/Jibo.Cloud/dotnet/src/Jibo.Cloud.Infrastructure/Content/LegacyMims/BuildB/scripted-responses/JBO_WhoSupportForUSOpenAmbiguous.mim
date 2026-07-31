@@ -19,12 +19,11 @@
 			"prompt_sub_category": "AN",
 			"index": 1,
 			"condition": "",
-			"prompt": "Probably change your clocks. <break size='0.3'/> I'll take care of mine.",
+			"prompt": "I don't usually play favorites, when it comes to U.S. Open winners.",
 			"media": "TTS",
-			"prompt_id": "RI_USR_WhatShouldDoForDaylightSavings_AN_01_FnL",
-			"weight": 1
+			"prompt_id": "JBO_WhoSupportForUSOpenAmbiguous_AN_01_FnL",
+			"weight": 1,
+			"auto_rule_override": null
 		}
-	],
-	"hint_phrases": "",
-	"fast_eos_array": ""
+	]
 }

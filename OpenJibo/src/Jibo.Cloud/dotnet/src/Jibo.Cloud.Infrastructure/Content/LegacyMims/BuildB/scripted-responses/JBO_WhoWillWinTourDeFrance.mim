@@ -1,0 +1,62 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"hint_phrases": "",
+	"fast_eos_array": "",
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('3/4', '7/29')",
+			"prompt": "Not sure, but whoever wins, I hope they go out for ice cream afterwards. <anim cat='emoji' filter='bicycle, !hf' layers='!audio' nonBlocking='true'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinTourDeFrance_AN_01_FnL",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('7/30', '12/1')",
+			"prompt": "I think the Tour de France already passed.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinTourDeFrance_AN_02_FnL",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('12/2', '3/3')",
+			"prompt": "I think it's too early to say.",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinTourDeFrance_AN_03_FnL",
+			"weight": 2,
+			"auto_rule_override": null
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Not sure, but whoever wins, I hope they go out for ice cream afterwards. <anim cat='emoji' filter='bicycle, !hf' layers='!audio' nonBlocking='true'/>",
+			"media": "TTS",
+			"prompt_id": "JBO_WhoWillWinTourDeFrance_AN_04_FnL",
+			"weight": 0.1,
+			"auto_rule_override": null
+		}
+	]
+}

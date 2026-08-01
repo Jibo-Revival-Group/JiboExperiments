@@ -150,12 +150,34 @@ public static class HomeAssistantClimateCommandParser
         "tell me the temperature in here",
         "tell me the temp in here",
         "check the temperature in here",
-        "check the temp in here"
+        "check the temp in here",
+        // Common ASR mishearings of "in here"
+        "what temperature is it in hear",
+        "what's the temperature in hear",
+        "whats the temperature in hear",
+        "what is the temperature in hear",
+        "what's the temp in hear",
+        "whats the temp in hear",
+        "what is the temp in hear",
+        "how hot is it in hear",
+        "how cold is it in hear",
+        "how warm is it in hear",
+        "what temperature is it in her",
+        "what's the temperature in her",
+        "whats the temperature in her",
+        "what is the temperature in her",
+        "what's the temp in her",
+        "whats the temp in her",
+        "what is the temp in her",
+        "how hot is it in her",
+        "how cold is it in her",
+        "how warm is it in her"
     };
 
     // Indoor thermostat reads only — bare "what's the temperature" stays weather.
+    // Includes ASR near-misses of "here" ("hear" / "her") so weather never geocodes Here, Bosnia.
     private static readonly Regex GetTemperatureRoomPattern = new(
-        @"^(?:(?:what(?:'s|\s+is|\s+s)?|whats)\s+(?:the\s+)?(?:temperature|temp(?:erature)?|tempature)(?:\s+is\s+it)?|what\s+(?:temperature|temp(?:erature)?|tempature)\s+is\s+it|how\s+(?:hot|cold|warm)\s+is\s+it|(?:check|tell\s+me|give\s+me)\s+(?:the\s+)?(?:temperature|temp(?:erature)?|tempature))\s+(?:in\s+here|here|inside|indoors|in\s+this\s+room)\s*$|" +
+        @"^(?:(?:what(?:'s|\s+is|\s+s)?|whats)\s+(?:the\s+)?(?:temperature|temp(?:erature)?|tempature)(?:\s+is\s+it)?|what\s+(?:temperature|temp(?:erature)?|tempature)\s+is\s+it|how\s+(?:hot|cold|warm)\s+is\s+it|(?:check|tell\s+me|give\s+me)\s+(?:the\s+)?(?:temperature|temp(?:erature)?|tempature))\s+(?:in\s+(?:here|hear|her)|here|inside|indoors|in\s+this\s+room)\s*$|" +
         @"^(?:what(?:'s|\s+is|\s+s)?|whats)\s+(?:the\s+)?room\s+(?:temperature|temp(?:erature)?|tempature)\s*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 

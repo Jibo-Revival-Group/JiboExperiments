@@ -109,6 +109,34 @@ public sealed class HomeAssistantInteractionServiceTests
         Assert.Equal("I don't have Home Assistant set up for my room yet.", decision.ReplyText);
     }
 
+    [Theory]
+    [InlineData("verify me")]
+    [InlineData("what's my verification code")]
+    [InlineData("whats my verification code")]
+    [InlineData("what is my verification code")]
+    [InlineData("very fry me")]
+    [InlineData("terrify me")]
+    public async Task BuildDecisionAsync_VerifyMe_RecognizesPhrases(string transcript)
+    {
+        var service = new JiboInteractionService(
+            new JiboExperienceContentCache(new InMemoryJiboExperienceContentRepository()),
+            new FirstItemRandomizer(),
+            new InMemoryPersonalMemoryStore(),
+            jiboVerificationService: new JiboVerificationService());
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript,
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal("verify_me", decision.IntentName);
+        Assert.Matches(
+            @"^Your verification code is (?:zero|one|two|three|four|five|six|seven|eight|nine)(?: (?:zero|one|two|three|four|five|six|seven|eight|nine)){3}\.$",
+            decision.ReplyText);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_VerifyMe_SpeaksDigitsAsWords()
     {

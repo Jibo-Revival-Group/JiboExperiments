@@ -118,6 +118,8 @@ public sealed class HomeAssistantClimateCommandParserTests
     [InlineData("what's the room temperature")]
     [InlineData("tell me the temperature in here")]
     [InlineData("check the temperature in here")]
+    [InlineData("whats the temperature in hear")]
+    [InlineData("what is the temperature in her")]
     public void TryParse_GetTemperatureRoomPhrases_ReturnExpected(string transcript)
     {
         var parsed = HomeAssistantClimateCommandParser.TryParse(transcript, out var command);

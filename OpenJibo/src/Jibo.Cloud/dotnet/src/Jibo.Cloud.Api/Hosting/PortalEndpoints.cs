@@ -710,7 +710,8 @@ internal static class PortalEndpoints
             var delivered = await registry.SendPairedAsync(
                 pendingHa.InstanceId,
                 session.FriendlyId,
-                link.LinkId);
+                link.LinkId,
+                link.CommandSecret);
 
             if (!delivered)
                 return Results.BadRequest(new { error = "Home Assistant is not connected to this server right now." });

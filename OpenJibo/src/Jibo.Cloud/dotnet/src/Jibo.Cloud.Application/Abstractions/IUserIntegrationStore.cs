@@ -22,6 +22,11 @@ public interface IUserIntegrationStore
         bool blacklistHeat,
         bool blacklistCool);
 
+    /// <summary>
+    /// Ensures the link has a command secret (migrates older links created before per-command auth).
+    /// </summary>
+    HomeAssistantLinkRecord? EnsureHomeAssistantCommandSecret(string linkId);
+
     IReadOnlyList<MemberCalendarFeedRecord> GetMemberCalendarFeeds(string? loopId = null);
     MemberCalendarFeedRecord? FindMemberCalendarFeed(string loopId, string memberId);
 

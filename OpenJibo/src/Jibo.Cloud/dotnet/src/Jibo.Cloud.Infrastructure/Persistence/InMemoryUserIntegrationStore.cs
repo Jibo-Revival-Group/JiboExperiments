@@ -1,4 +1,5 @@
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 
 namespace Jibo.Cloud.Infrastructure.Persistence;
@@ -63,17 +64,15 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
                 link.HaInstanceId.Equals(haInstanceId, StringComparison.OrdinalIgnoreCase));
             if (existing is not null)
             {
-                var updated = new HomeAssistantLinkRecord
-                {
-                    LinkId = existing.LinkId,
-                    JiboDeviceId = jiboDeviceId,
-                    JiboFriendlyName = jiboFriendlyName,
-                    HaInstanceId = haInstanceId,
-                    BlacklistHeat = existing.BlacklistHeat,
-                    BlacklistCool = existing.BlacklistCool,
-                    PairedAtUtc = existing.PairedAtUtc,
-                    LastSeenUtc = DateTimeOffset.UtcNow
-                };
+                var updated = CloneLink(
+                    existing,
+                    jiboDeviceId: jiboDeviceId,
+                    jiboFriendlyName: jiboFriendlyName,
+                    haInstanceId: haInstanceId,
+                    commandSecret: string.IsNullOrWhiteSpace(existing.CommandSecret)
+                        ? HomeAssistantCommandAuthentication.GenerateCommandSecret()
+                        : existing.CommandSecret,
+                    lastSeenUtc: DateTimeOffset.UtcNow);
 
                 _links = _links
                     .Select(link => link.LinkId == existing.LinkId ? updated : link)
@@ -86,7 +85,8 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
             {
                 JiboDeviceId = jiboDeviceId,
                 JiboFriendlyName = jiboFriendlyName,
-                HaInstanceId = haInstanceId
+                HaInstanceId = haInstanceId,
+                CommandSecret = HomeAssistantCommandAuthentication.GenerateCommandSecret()
             };
             _links.Add(record);
             PersistLocked();
@@ -101,18 +101,7 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
             var index = _links.FindIndex(link => link.LinkId.Equals(linkId, StringComparison.OrdinalIgnoreCase));
             if (index < 0) return;
 
-            var current = _links[index];
-            _links[index] = new HomeAssistantLinkRecord
-            {
-                LinkId = current.LinkId,
-                JiboDeviceId = current.JiboDeviceId,
-                JiboFriendlyName = current.JiboFriendlyName,
-                HaInstanceId = current.HaInstanceId,
-                BlacklistHeat = current.BlacklistHeat,
-                BlacklistCool = current.BlacklistCool,
-                PairedAtUtc = current.PairedAtUtc,
-                LastSeenUtc = lastSeenUtc
-            };
+            _links[index] = CloneLink(_links[index], lastSeenUtc: lastSeenUtc);
             PersistLocked();
         }
     }
@@ -127,18 +116,30 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
             var index = _links.FindIndex(link => link.LinkId.Equals(linkId, StringComparison.OrdinalIgnoreCase));
             if (index < 0) return null;
 
+            var updated = CloneLink(
+                _links[index],
+                blacklistHeat: blacklistHeat,
+                blacklistCool: blacklistCool);
+            _links[index] = updated;
+            PersistLocked();
+            return updated;
+        }
+    }
+
+    public HomeAssistantLinkRecord? EnsureHomeAssistantCommandSecret(string linkId)
+    {
+        lock (_syncRoot)
+        {
+            var index = _links.FindIndex(link => link.LinkId.Equals(linkId, StringComparison.OrdinalIgnoreCase));
+            if (index < 0) return null;
+
             var current = _links[index];
-            var updated = new HomeAssistantLinkRecord
-            {
-                LinkId = current.LinkId,
-                JiboDeviceId = current.JiboDeviceId,
-                JiboFriendlyName = current.JiboFriendlyName,
-                HaInstanceId = current.HaInstanceId,
-                BlacklistHeat = blacklistHeat,
-                BlacklistCool = blacklistCool,
-                PairedAtUtc = current.PairedAtUtc,
-                LastSeenUtc = current.LastSeenUtc
-            };
+            if (!string.IsNullOrWhiteSpace(current.CommandSecret))
+                return current;
+
+            var updated = CloneLink(
+                current,
+                commandSecret: HomeAssistantCommandAuthentication.GenerateCommandSecret());
             _links[index] = updated;
             PersistLocked();
             return updated;
@@ -282,6 +283,30 @@ public sealed class InMemoryUserIntegrationStore : IUserIntegrationStore
             HomeAssistantLinks = _links.ToArray(),
             MemberCalendarFeeds = _calendarFeeds.ToArray()
         });
+    }
+
+    private static HomeAssistantLinkRecord CloneLink(
+        HomeAssistantLinkRecord source,
+        string? jiboDeviceId = null,
+        string? jiboFriendlyName = null,
+        string? haInstanceId = null,
+        string? commandSecret = null,
+        bool? blacklistHeat = null,
+        bool? blacklistCool = null,
+        DateTimeOffset? lastSeenUtc = null)
+    {
+        return new HomeAssistantLinkRecord
+        {
+            LinkId = source.LinkId,
+            JiboDeviceId = jiboDeviceId ?? source.JiboDeviceId,
+            JiboFriendlyName = jiboFriendlyName ?? source.JiboFriendlyName,
+            HaInstanceId = haInstanceId ?? source.HaInstanceId,
+            CommandSecret = commandSecret ?? source.CommandSecret ?? string.Empty,
+            BlacklistHeat = blacklistHeat ?? source.BlacklistHeat,
+            BlacklistCool = blacklistCool ?? source.BlacklistCool,
+            PairedAtUtc = source.PairedAtUtc,
+            LastSeenUtc = lastSeenUtc ?? source.LastSeenUtc
+        };
     }
 
     private static bool MatchesJiboIdentity(

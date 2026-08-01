@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -74,7 +75,11 @@ public sealed class HomeAssistantConnectionRegistry
             : null;
     }
 
-    public async Task<bool> SendPairedAsync(string instanceId, string jiboFriendlyName, string linkId,
+    public async Task<bool> SendPairedAsync(
+        string instanceId,
+        string jiboFriendlyName,
+        string linkId,
+        string commandSecret,
         CancellationToken cancellationToken = default)
     {
         if (!_connections.TryGetValue(instanceId, out var connection)) return false;
@@ -86,7 +91,8 @@ public sealed class HomeAssistantConnectionRegistry
         {
             type = "paired",
             jiboFriendlyName,
-            linkId
+            linkId,
+            commandSecret
         }, cancellationToken);
 
         return true;
@@ -121,24 +127,30 @@ public sealed class HomeAssistantConnectionRegistry
 
     public async Task<bool> SendCommandAsync(
         string instanceId,
+        string linkId,
+        string commandSecret,
         string command,
         IReadOnlyDictionary<string, string>? parameters = null,
         CancellationToken cancellationToken = default)
     {
         if (!_connections.TryGetValue(instanceId, out var connection)) return false;
+        if (string.IsNullOrWhiteSpace(commandSecret)) return false;
 
-        var payload = BuildCommandPayload(command, parameters, requestId: null);
+        var payload = BuildCommandPayload(command, parameters, requestId: null, linkId, commandSecret);
         await SendJsonAsync(connection.Socket, payload, cancellationToken);
         return true;
     }
 
     public async Task<HomeAssistantCommandResult?> SendCommandAndWaitAsync(
         string instanceId,
+        string linkId,
+        string commandSecret,
         string command,
         IReadOnlyDictionary<string, string>? parameters = null,
         CancellationToken cancellationToken = default)
     {
         if (!_connections.TryGetValue(instanceId, out var connection)) return null;
+        if (string.IsNullOrWhiteSpace(commandSecret)) return null;
 
         var requestId = Guid.NewGuid().ToString("N");
         var completion = new TaskCompletionSource<HomeAssistantCommandResult>(
@@ -147,7 +159,7 @@ public sealed class HomeAssistantConnectionRegistry
 
         try
         {
-            var payload = BuildCommandPayload(command, parameters, requestId);
+            var payload = BuildCommandPayload(command, parameters, requestId, linkId, commandSecret);
             await SendJsonAsync(connection.Socket, payload, cancellationToken);
 
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -199,22 +211,33 @@ public sealed class HomeAssistantConnectionRegistry
     private static Dictionary<string, object?> BuildCommandPayload(
         string command,
         IReadOnlyDictionary<string, string>? parameters,
-        string? requestId)
+        string? requestId,
+        string linkId,
+        string commandSecret)
     {
-        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        var fields = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["type"] = "command",
-            ["command"] = command
+            ["command"] = command,
+            ["linkId"] = linkId,
+            ["timestamp"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                .ToString(CultureInfo.InvariantCulture),
+            ["nonce"] = HomeAssistantCommandAuthentication.GenerateNonce()
         };
 
         if (!string.IsNullOrWhiteSpace(requestId))
-            payload["requestId"] = requestId;
+            fields["requestId"] = requestId;
 
-        if (parameters is null) return payload;
+        if (parameters is not null)
+            foreach (var pair in parameters)
+                if (!string.IsNullOrWhiteSpace(pair.Value))
+                    fields[pair.Key] = pair.Value;
 
-        foreach (var pair in parameters)
-            if (!string.IsNullOrWhiteSpace(pair.Value))
-                payload[pair.Key] = pair.Value;
+        fields["signature"] = HomeAssistantCommandAuthentication.Sign(fields, commandSecret);
+
+        var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pair in fields)
+            payload[pair.Key] = pair.Value;
 
         return payload;
     }

@@ -65,15 +65,19 @@ internal sealed class HomeAssistantWebSocketHandler(
                             integrationStore.UpdateHomeAssistantLastSeen(
                                 existingLink.LinkId,
                                 DateTimeOffset.UtcNow);
+                            var linkWithSecret = integrationStore.EnsureHomeAssistantCommandSecret(
+                                                   existingLink.LinkId) ??
+                                               existingLink;
                             await registry.SendPairedAsync(
                                 instanceId,
-                                existingLink.JiboFriendlyName,
-                                existingLink.LinkId,
+                                linkWithSecret.JiboFriendlyName,
+                                linkWithSecret.LinkId,
+                                linkWithSecret.CommandSecret,
                                 context.RequestAborted);
                             logger.LogInformation(
                                 "Home Assistant instance {InstanceId} reconnected as paired link {LinkId}",
                                 instanceId,
-                                existingLink.LinkId);
+                                linkWithSecret.LinkId);
                             break;
                         }
 
@@ -192,6 +196,11 @@ internal sealed class HomeAssistantWebSocketHandler(
             string linkId,
             bool blacklistHeat,
             bool blacklistCool)
+        {
+            return null;
+        }
+
+        public HomeAssistantLinkRecord? EnsureHomeAssistantCommandSecret(string linkId)
         {
             return null;
         }

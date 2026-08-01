@@ -48,7 +48,13 @@ public sealed class HomeAssistantCommandService(
 
         if (!waitForResult)
         {
-            var sent = await registry.SendCommandAsync(link.HaInstanceId, command, parameters, cancellationToken);
+            var sent = await registry.SendCommandAsync(
+                link.HaInstanceId,
+                link.LinkId,
+                link.CommandSecret,
+                command,
+                parameters,
+                cancellationToken);
             return sent
                 ? new HomeAssistantCommandResult("fire-and-forget", "ok")
                 : null;
@@ -56,6 +62,8 @@ public sealed class HomeAssistantCommandService(
 
         return await registry.SendCommandAndWaitAsync(
             link.HaInstanceId,
+            link.LinkId,
+            link.CommandSecret,
             command,
             parameters,
             cancellationToken);
@@ -87,7 +95,13 @@ public sealed class HomeAssistantCommandService(
 
         if (!waitForResult)
         {
-            var sent = await registry.SendCommandAsync(link.HaInstanceId, command, parameters, cancellationToken);
+            var sent = await registry.SendCommandAsync(
+                link.HaInstanceId,
+                link.LinkId,
+                link.CommandSecret,
+                command,
+                parameters,
+                cancellationToken);
             return sent
                 ? new HomeAssistantCommandResult("fire-and-forget", "ok")
                 : null;
@@ -95,6 +109,8 @@ public sealed class HomeAssistantCommandService(
 
         return await registry.SendCommandAndWaitAsync(
             link.HaInstanceId,
+            link.LinkId,
+            link.CommandSecret,
             command,
             parameters,
             cancellationToken);
@@ -125,6 +141,8 @@ public sealed class HomeAssistantCommandService(
 
         return await registry.SendCommandAndWaitAsync(
             link.HaInstanceId,
+            link.LinkId,
+            link.CommandSecret,
             "climate_apply_entity",
             parameters,
             cancellationToken);

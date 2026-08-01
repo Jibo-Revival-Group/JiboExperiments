@@ -82,6 +82,8 @@ public sealed class HomeAssistantPortalApiTests
 
         var pairedPayload = await ReadJsonFrameAsync(haSocket);
         Assert.Equal("paired", pairedPayload.GetProperty("type").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(pairedPayload.GetProperty("commandSecret").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(pairedPayload.GetProperty("linkId").GetString()));
 
         var linksResponse = await client.GetAsync("/api/portal/home-assistant/links");
         var linksPayload = await linksResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -185,9 +187,12 @@ public sealed class HomeAssistantPortalApiTests
         var reconnectPayload = await ReadJsonFrameAsync(reconnectedSocket);
         Assert.Equal("paired", reconnectPayload.GetProperty("type").GetString());
         Assert.Equal(linkId, reconnectPayload.GetProperty("linkId").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(reconnectPayload.GetProperty("commandSecret").GetString()));
 
         var link = integrationStore.FindLinkByLinkId(linkId!);
         Assert.NotNull(link);
+        Assert.False(string.IsNullOrWhiteSpace(link.CommandSecret));
+        Assert.Equal(link.CommandSecret, reconnectPayload.GetProperty("commandSecret").GetString());
         Assert.True(link.LastSeenUtc > link.PairedAtUtc);
     }
 

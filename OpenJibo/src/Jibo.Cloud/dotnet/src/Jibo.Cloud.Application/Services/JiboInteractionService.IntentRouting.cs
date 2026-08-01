@@ -264,7 +264,13 @@ public sealed partial class JiboInteractionService
                 "useless fact"))
             return "fun_fact";
 
-        if (MatchesAny(loweredTranscript, "joke", "funny", "make me laugh")) return "joke";
+        if (MatchesAny(
+                loweredTranscript,
+                "joke",
+                "knock knock",
+                "nock nock",
+                "funny",
+                "make me laugh")) return "joke";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -1642,7 +1648,15 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "what are you afraid of",
                 "what are you scared of",
-                "what are you worried about"))
+                "what are you worried about",
+                "what are you frightened of",
+                "what're you frightened of",
+                "what scares you",
+                "what worries you",
+                "what is your biggest fear",
+                "what's your biggest fear",
+                "what is your worst fear",
+                "what's your worst fear"))
             return "robot_what_are_you_afraid_of";
 
 

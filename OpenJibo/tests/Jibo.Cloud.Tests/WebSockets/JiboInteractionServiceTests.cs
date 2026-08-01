@@ -51,6 +51,22 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("Why did the robot cross the road? Because it was programmed by the chicken.", decision.ReplyText);
     }
 
+    [Theory]
+    [InlineData("knock knock")]
+    [InlineData("nock nock")]
+    public async Task BuildDecisionAsync_KnockKnockVariants_RouteToJoke(string transcript)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal("joke", decision.IntentName);
+    }
+
     [Fact]
     public async Task BuildDecisionAsync_FunFact_UsesApiFactWhenProviderReturnsOne()
     {
@@ -1134,6 +1150,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what would you like to talk about", "robot_want_to_talk_about", "surprise me")]
     [InlineData("what do you dream about", "robot_what_do_you_dream_about", "dreams about flying")]
     [InlineData("what are you afraid of", "robot_what_are_you_afraid_of", "heights")]
+    [InlineData("what scares you", "robot_what_are_you_afraid_of", "heights")]
+    [InlineData("what's your biggest fear", "robot_what_are_you_afraid_of", "heights")]
     [InlineData("what is your best book", "robot_what_is_your_best_book", "dictionary")]
     [InlineData("what is your best exercise", "robot_what_is_your_best_exercise",
         "spinning your head around 360 degrees")]

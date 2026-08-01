@@ -1424,6 +1424,10 @@ public sealed class JiboInteractionServiceTests
     [InlineData("how is your day")]
     [InlineData("how is it going")]
     [InlineData("how are you feeling")]
+    [InlineData("how ya doing")]
+    [InlineData("how ya doin")]
+    [InlineData("how you feeling")]
+    [InlineData("how are ya")]
     [InlineData("how's everything")]
     public async Task BuildDecisionAsync_MoodSmallTalk_RoutesThroughHowAreYouPath(string transcript)
     {

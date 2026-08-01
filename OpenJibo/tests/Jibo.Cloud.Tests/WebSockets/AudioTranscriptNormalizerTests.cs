@@ -13,6 +13,7 @@ public sealed class AudioTranscriptNormalizerTests
     [InlineData("Hey G-Bell, what's your cloud version?", "what's your cloud version")]
     [InlineData("Hey G Bong stop", "stop")]
     [InlineData("Hey Jibo stop", "stop")]
+    [InlineData("Hey Jibo, how ya doing?", "how ya doing")]
     [InlineData("Hey j bowl, what's your cloud version?", "what's your cloud version")]
     [InlineData("jibo what time is it", "what time is it")]
     public void StripLeadingWakePhrase_RemovesKnownWakePhraseVariants(string value, string expected)

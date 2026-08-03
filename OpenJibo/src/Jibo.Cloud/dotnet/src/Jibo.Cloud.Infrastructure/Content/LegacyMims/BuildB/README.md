@@ -51,3 +51,6 @@ The next seasonal advice RI_USR batch adds World Series, NBA playoffs, and NHL p
 The next seasonal advice RI_USR batch adds College Bowl, Daytona 500, Winter Olympics, and Winter X Games into the existing holiday-season bucket, keeping the advice lane source-backed without changing the catalog shape.
 The next civic-holiday advice RI_USR batch adds Memorial Day, Independence Day, and Labor Day into the existing holiday-season bucket, covering the U.S. holiday names already recognized by the calendar provider.
 The next Pegasus seasonal batch adds exact source-backed advice for Cinco de Mayo, Mother's Day, Father's Day, and Star Wars Day.
+The next Pegasus event-advice batch adds exact source-backed advice for the Belmont Stakes, B.E. Awards, French Open, and Indianapolis 500.
+The next Pegasus event-advice batch adds exact source-backed advice for Dance Like A Chicken Day, D-Day, Eid al-Fitr, and Flag Day.
+The next Pegasus sports event-advice batch adds exact source-backed advice for the NBA Finals, NHL Finals, Preakness Stakes, and Soccer World Cup.

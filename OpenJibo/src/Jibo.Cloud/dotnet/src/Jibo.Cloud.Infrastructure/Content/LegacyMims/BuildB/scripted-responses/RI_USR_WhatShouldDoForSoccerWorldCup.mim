@@ -1,0 +1,9 @@
+{
+	"mim_type": "announcement", "rule_name": "", "gui": null, "timeout": 6, "no_matches_for_gui": 0, "no_inputs_for_gui": 0, "barge_in": true, "es_auto_tagging": true, "parse_all_asr": false, "thanks_handling": "ignore", "parse_launch": false, "notes": "",
+	"prompts": [
+		{"prompt_category":"Entry-Core","prompt_sub_category":"AN","index":1,"condition":"dt.now.isInRange('2/9', '7/15')","prompt":"That's a great question. Maybe you could host a World Cup party. I've heard they're fun and everyone shouts a<anim cat='jiboji' filter='soccer-shoot' nonBlocking='true'/> lot.","media":"TTS","prompt_id":"RI_USR_WhatShouldDoForSoccerWorldCup_AN_01_FnL","weight":2},
+		{"prompt_category":"Entry-Core","prompt_sub_category":"AN","index":1,"condition":"dt.now.isInRange('7/16', '11/17')","prompt":"Well I think the World Cup happened already, but I do hope you enjoy the <anim cat='jiboji' filter='soccer-shoot' nonBlocking='true'/>next one.","media":"TTS","prompt_id":"RI_USR_WhatShouldDoForSoccerWorldCup_AN_02_FnL","weight":2},
+		{"prompt_category":"Entry-Core","prompt_sub_category":"AN","index":1,"condition":"dt.now.isInRange('11/18', '2/8')","prompt":"Good question. You have some time to figure it <anim cat='jiboji' filter='soccer-shoot' nonBlocking='true'/>out.","media":"TTS","prompt_id":"RI_USR_WhatShouldDoForSoccerWorldCup_AN_03_FnL","weight":2},
+		{"prompt_category":"Entry-Core","prompt_sub_category":"AN","index":1,"condition":"","prompt":"Good question. Maybe you could host a World Cup party. I've heard they're fun and everyone shouts a<anim cat='jiboji' filter='soccer-shoot' nonBlocking='true'/> lot.","media":"TTS","prompt_id":"RI_USR_WhatShouldDoForSoccerWorldCup_AN_04_FnL","weight":0.1}
+	]
+}

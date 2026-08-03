@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using System.Security.Cryptography;
 using System.Text;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
@@ -60,25 +61,42 @@ internal sealed class WebSocketRequestCoordinator(
         var kind = SocketKindResolver.Resolve(context.Request.Host.Host, context.Request.Path);
         if (string.Equals(kind, "home-assistant", StringComparison.OrdinalIgnoreCase))
         {
+            logger.LogInformation(
+                "WebSocket request routed to Home Assistant handler traceId={TraceId} host={Host} path={Path} remoteIp={RemoteIp}",
+                context.TraceIdentifier,
+                context.Request.Host.Host,
+                context.Request.Path,
+                context.Connection.RemoteIpAddress?.ToString());
             await homeAssistantWebSocketHandler.HandleAsync(context);
             return;
         }
 
         var token = TokenResolver.Resolve(context.Request);
-        logger.LogDebug("WebSocket request start kind={Kind} token={Token} host={Host} path={Path}", kind, token,
-            context.Request.Host.Host, context.Request.Path);
+        var tokenFingerprint = Fingerprint(token);
+        logger.LogInformation(
+            "WebSocket request received traceId={TraceId} kind={Kind} tokenFingerprint={TokenFingerprint} " +
+            "host={Host} path={Path} remoteIp={RemoteIp} userAgent={UserAgent}",
+            context.TraceIdentifier,
+            kind,
+            tokenFingerprint,
+            context.Request.Host.Host,
+            context.Request.Path,
+            context.Connection.RemoteIpAddress?.ToString(),
+            context.Request.Headers.UserAgent.ToString());
         switch (kind)
         {
             case "unknown":
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
-                logger.LogDebug("WebSocket request rejected as unknown kind host={Host} path={Path}",
-                    context.Request.Host.Host, context.Request.Path);
+                logger.LogWarning("WebSocket request rejected as unknown kind={Kind} host={Host} path={Path}",
+                    kind, context.Request.Host.Host, context.Request.Path);
                 return;
             case "api-socket" when string.IsNullOrWhiteSpace(token):
             case "neo-hub-listen" or "neo-hub-proactive" when string.IsNullOrWhiteSpace(token):
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                logger.LogDebug("WebSocket request rejected due to missing token kind={Kind} host={Host} path={Path}",
-                    kind, context.Request.Host.Host, context.Request.Path);
+                logger.LogWarning(
+                    "WebSocket request rejected due to missing token kind={Kind} host={Host} path={Path} remoteIp={RemoteIp}",
+                    kind, context.Request.Host.Host, context.Request.Path,
+                    context.Connection.RemoteIpAddress?.ToString());
                 return;
         }
 
@@ -93,15 +111,27 @@ internal sealed class WebSocketRequestCoordinator(
         using var socket = acceptContext is null
             ? await context.WebSockets.AcceptWebSocketAsync()
             : await context.WebSockets.AcceptWebSocketAsync(acceptContext);
-        logger.LogDebug("WebSocket accepted kind={Kind} token={Token}", kind, token);
-
         var connectionId = Guid.NewGuid().ToString("N");
         var openEnvelope = CreateEnvelope(context, kind, token, connectionId);
         var session = webSocketService.GetOrCreateSession(openEnvelope);
+        var initialRobotKeys = ResolveRobotKeys(token, session);
+        logger.LogInformation(
+            "WebSocket connection accepted connectionId={ConnectionId} traceId={TraceId} kind={Kind} " +
+            "tokenFingerprint={TokenFingerprint} sessionId={SessionId} deviceId={DeviceId} " +
+            "robotId={RobotId} friendlyName={FriendlyName} robotKeyCount={RobotKeyCount}",
+            connectionId,
+            context.TraceIdentifier,
+            kind,
+            tokenFingerprint,
+            session.SessionId,
+            session.DeviceId,
+            ReadSessionMetadata(session, "registeredRobotId") ?? ReadSessionMetadata(session, "robotId"),
+            ReadSessionMetadata(session, "robotFriendlyId") ?? ReadSessionMetadata(session, "friendlyId"),
+            initialRobotKeys.Count);
         await telemetrySink.RecordConnectionOpenedAsync(openEnvelope, session, context.RequestAborted);
 
         var registeredApiSocket = false;
-        var presenceConnectionId = robotPresenceRegistry.Register(kind, socket, ResolveRobotKeys(token, session));
+        var presenceConnectionId = robotPresenceRegistry.Register(kind, socket, initialRobotKeys);
         if (string.Equals(kind, "api-socket", StringComparison.OrdinalIgnoreCase))
         {
             var robotKeys = ResolveRobotKeys(token, session);
@@ -142,9 +172,9 @@ internal sealed class WebSocketRequestCoordinator(
                         if (idleReplies.Count > 0)
                         {
                             logger.LogInformation(
-                                "WebSocket turn watchdog reply batch ready kind={Kind} token={Token} replyCount={ReplyCount}",
+                                "WebSocket turn watchdog reply batch ready connectionId={ConnectionId} kind={Kind} replyCount={ReplyCount}",
+                                connectionId,
                                 kind,
-                                token,
                                 idleReplies.Count);
                             await SendRepliesAsync(socket, idleReplies, context.RequestAborted);
                             await telemetrySink.RecordOutboundAsync(
@@ -159,15 +189,16 @@ internal sealed class WebSocketRequestCoordinator(
                     received = await pendingReceive;
                     pendingReceive = null;
                     logger.LogDebug(
-                        "WebSocket frame received kind={Kind} token={Token} messageType={MessageType} bytes={Bytes}",
+                        "WebSocket frame received connectionId={ConnectionId} kind={Kind} messageType={MessageType} bytes={Bytes}",
+                        connectionId,
                         kind,
-                        token,
                         received.MessageType,
                         received.Buffer.Length);
                     if (received.MessageType == WebSocketMessageType.Close)
                     {
                         await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "bye", context.RequestAborted);
-                        logger.LogDebug("WebSocket close frame received kind={Kind} token={Token}", kind, token);
+                        logger.LogInformation("WebSocket close frame received connectionId={ConnectionId} kind={Kind}",
+                            connectionId, kind);
                         break;
                     }
                 }
@@ -176,7 +207,8 @@ internal sealed class WebSocketRequestCoordinator(
                     if (exception.WebSocketErrorCode != WebSocketError.ConnectionClosedPrematurely) throw;
                     isPrematureClose = true;
                     logger.LogDebug(exception,
-                        "WebSocket connection closed prematurely kind={Kind} token={Token}", kind, token);
+                        "WebSocket connection closed prematurely connectionId={ConnectionId} kind={Kind}",
+                        connectionId, kind);
                     break;
                 }
 
@@ -199,9 +231,12 @@ internal sealed class WebSocketRequestCoordinator(
                 if (!string.IsNullOrWhiteSpace(session.TurnState.TransId))
                     loopTransId = session.TurnState.TransId;
                 logger.LogDebug(
-                    "WebSocket reply batch ready kind={Kind} token={Token} messageType={MessageType} replyCount={ReplyCount}",
+                    "WebSocket reply batch ready connectionId={ConnectionId} kind={Kind} sessionId={SessionId} " +
+                    "deviceId={DeviceId} messageType={MessageType} replyCount={ReplyCount}",
+                    connectionId,
                     kind,
-                    token,
+                    session.SessionId,
+                    session.DeviceId,
                     SocketMessageTypeReader.Read(envelope.Text),
                     replies.Count);
                 await telemetrySink.RecordInboundAsync(envelope, session, SocketMessageTypeReader.Read(envelope.Text),
@@ -224,7 +259,14 @@ internal sealed class WebSocketRequestCoordinator(
 
         await telemetrySink.RecordConnectionClosedAsync(closeEnvelope, session,
             $"socket-loop-ended{(isPrematureClose ? "-prematurely" : string.Empty)}", context.RequestAborted);
-        logger.LogDebug("WebSocket request end kind={Kind} token={Token} prematureClose={PrematureClose}", kind, token,
+        logger.LogInformation(
+            "WebSocket connection closed connectionId={ConnectionId} kind={Kind} sessionId={SessionId} " +
+            "deviceId={DeviceId} tokenFingerprint={TokenFingerprint} prematureClose={PrematureClose}",
+            connectionId,
+            kind,
+            session.SessionId,
+            session.DeviceId,
+            tokenFingerprint,
             isPrematureClose);
     }
 
@@ -368,6 +410,14 @@ internal sealed class WebSocketRequestCoordinator(
             Text = text,
             Binary = binary
         };
+    }
+
+    private static string Fingerprint(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "none";
+
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(value.Trim()));
+        return Convert.ToHexString(hash)[..12].ToLowerInvariant();
     }
 
     private static async Task<ReceivedSocketMessage> ReceiveAsync(WebSocket socket, CancellationToken cancellationToken)

@@ -9,6 +9,7 @@ using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -927,6 +928,90 @@ public sealed class HomeAssistantPortalApiTests
         Assert.Contains("\"CanonicalHost\": \"export.example.openjibo.com\"", exportBody);
         Assert.Contains("\"Action\": \"admit\"", exportBody);
         Assert.Contains("\"SignatureKeyId\": \"open-jibo-local-trusted-server-admission-v1\"", exportBody);
+    }
+
+    [Fact]
+    public async Task StatusSummary_ReconcilesDuplicateRobotRecordsIntoOneOnlineRow()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+
+        var placeholder = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "5c0b221fdf9d450019c5e254",
+            RobotId = "robot-5c0b221fdf9d450019c5e254",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var verified = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Royal-Current-Sage-Canvas",
+            RobotId = "robot-Royal-Current-Sage-Canvas",
+            FriendlyName = "Royal-Current-Sage-Canvas"
+        });
+
+        var session = store.OpenSession("api-socket", placeholder.DeviceId, "token-test", "api-socket", "/token-test");
+        session.Metadata["registeredDeviceId"] = verified.DeviceId;
+        session.Metadata["registeredRobotId"] = verified.RobotId;
+        session.LastSeenUtc = DateTimeOffset.UtcNow.AddSeconds(-5);
+
+        await AuthenticateAdminAsync(client);
+
+        var summaryResponse = await client.GetAsync("/api/portal/status/summary");
+
+        Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
+        var summary = await summaryResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var reconciledRows = summary.GetProperty("robots")
+            .EnumerateArray()
+            .Where(robot =>
+                robot.GetProperty("deviceId").GetString() is "5c0b221fdf9d450019c5e254" or "Royal-Current-Sage-Canvas" ||
+                robot.GetProperty("robotId").GetString() is "robot-5c0b221fdf9d450019c5e254" or "robot-Royal-Current-Sage-Canvas")
+            .ToArray();
+
+        Assert.Single(reconciledRows);
+        Assert.Equal("Royal-Current-Sage-Canvas", reconciledRows[0].GetProperty("deviceId").GetString());
+        Assert.Equal("robot-Royal-Current-Sage-Canvas", reconciledRows[0].GetProperty("robotId").GetString());
+        Assert.Equal("online", reconciledRows[0].GetProperty("presence").GetString());
+        Assert.True(reconciledRows[0].GetProperty("connected").GetBoolean());
+    }
+
+    [Fact]
+    public void RegisterVerifiedRobotIdentity_ArchivesSupersededPlaceholderRecords()
+    {
+        var store = new InMemoryCloudStateStore();
+        var placeholder = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "5c0b221fdf9d450019c5e254",
+            RobotId = "robot-5c0b221fdf9d450019c5e254",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var verified = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Royal-Current-Sage-Canvas",
+            RobotId = "robot-Royal-Current-Sage-Canvas",
+            FriendlyName = "Royal-Current-Sage-Canvas",
+            RegistrationSource = RobotRegistrationSources.Portal
+        });
+
+        var archivedCount = PortalEndpoints.ArchiveSupersededRobotPlaceholders(
+            store,
+            verified.DeviceId,
+            placeholder.DeviceId,
+            verified.RobotId);
+
+        Assert.Equal(1, archivedCount);
+
+        var archivedPlaceholder = store.GetDevices().Single(device =>
+            device.DeviceId == placeholder.DeviceId);
+        Assert.NotNull(archivedPlaceholder);
+        Assert.True(archivedPlaceholder.IsHidden);
+        Assert.NotNull(archivedPlaceholder.ArchivedUtc);
+
+        var verifiedDevice = store.GetDevices().Single(device =>
+            device.DeviceId == verified.DeviceId);
+        Assert.NotNull(verifiedDevice);
+        Assert.False(verifiedDevice.IsHidden);
+        Assert.Null(verifiedDevice.ArchivedUtc);
     }
 
     private static async Task AuthenticateAdminAsync(HttpClient client)

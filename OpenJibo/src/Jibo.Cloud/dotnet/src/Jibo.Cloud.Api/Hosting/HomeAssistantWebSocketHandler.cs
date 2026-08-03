@@ -22,6 +22,16 @@ internal sealed class HomeAssistantWebSocketHandler(
 
     internal async Task HandleAsync(HttpContext context)
     {
+        var connectionId = Guid.NewGuid().ToString("N");
+        logger.LogInformation(
+            "Home Assistant WebSocket accepted connectionId={ConnectionId} traceId={TraceId} host={Host} " +
+            "path={Path} remoteIp={RemoteIp} userAgent={UserAgent}",
+            connectionId,
+            context.TraceIdentifier,
+            context.Request.Host.Host,
+            context.Request.Path,
+            context.Connection.RemoteIpAddress?.ToString(),
+            context.Request.Headers.UserAgent.ToString());
         using var socket = await context.WebSockets.AcceptWebSocketAsync();
         string? instanceId = null;
 
@@ -37,6 +47,12 @@ internal sealed class HomeAssistantWebSocketHandler(
                 var type = root.TryGetProperty("type", out var typeElement)
                     ? typeElement.GetString()
                     : null;
+                logger.LogInformation(
+                    "Home Assistant WebSocket message connectionId={ConnectionId} instanceId={InstanceId} messageType={MessageType} bytes={Bytes}",
+                    connectionId,
+                    instanceId,
+                    type ?? "unknown",
+                    message.Length);
 
                 switch (type?.ToLowerInvariant())
                 {
@@ -101,6 +117,11 @@ internal sealed class HomeAssistantWebSocketHandler(
         {
             if (!string.IsNullOrWhiteSpace(instanceId))
                 registry.RemoveConnection(instanceId);
+
+            logger.LogInformation(
+                "Home Assistant WebSocket closed connectionId={ConnectionId} instanceId={InstanceId}",
+                connectionId,
+                instanceId);
         }
     }
 

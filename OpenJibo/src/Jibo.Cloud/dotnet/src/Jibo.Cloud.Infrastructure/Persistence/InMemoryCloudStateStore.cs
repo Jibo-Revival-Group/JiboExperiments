@@ -171,19 +171,25 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public void LoadPersistedState()
     {
-        var snapshot = _snapshotStore.Load<PersistentStateSnapshot>();
-        if (snapshot is null) return;
-        ApplySnapshot(snapshot);
+        lock (_syncRoot)
+        {
+            var snapshot = _snapshotStore.Load<PersistentStateSnapshot>();
+            if (snapshot is null) return;
+
+            var cleanupApplied = ApplySnapshot(snapshot);
+            if (cleanupApplied)
+            {
+                Interlocked.Increment(ref _revision);
+                SavePersistedStateLocked(DateTimeOffset.UtcNow);
+            }
+        }
     }
 
     public void SavePersistedState()
     {
         lock (_syncRoot)
         {
-            var now = DateTimeOffset.UtcNow;
-            var snapshot = CaptureSnapshot(now);
-            _snapshotStore.Save(snapshot);
-            _lastSavedUtc = now;
+            SavePersistedStateLocked(DateTimeOffset.UtcNow);
         }
     }
 
@@ -1558,11 +1564,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             if (snapshot is null)
                 return null;
 
-            ApplySnapshot(snapshot);
+            var cleanupApplied = ApplySnapshot(snapshot);
             Interlocked.Increment(ref _revision);
+            if (cleanupApplied)
+            {
+                // Repair happened while loading the backup; the refreshed snapshot will be persisted below.
+            }
+            SavePersistedStateLocked(DateTimeOffset.UtcNow);
         }
-
-        SavePersistedState();
         return backup;
     }
 
@@ -2995,7 +3004,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         };
     }
 
-    private void ApplySnapshot(PersistentStateSnapshot snapshot)
+    private void SavePersistedStateLocked(DateTimeOffset now)
+    {
+        var snapshot = CaptureSnapshot(now);
+        _snapshotStore.Save(snapshot);
+        _lastSavedUtc = now;
+    }
+
+    private bool ApplySnapshot(PersistentStateSnapshot snapshot)
     {
         _account = snapshot.Account ?? _account;
         _robot = snapshot.Robot is null ? _robot : NormalizePersistedDevice(snapshot.Robot);
@@ -3089,9 +3105,169 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 UpdatedUtc = DateTimeOffset.UtcNow
             };
 
+        var cleanupApplied = RepairSupersededRobotPlaceholdersLocked();
+
         Interlocked.Exchange(ref _revision, snapshot.Revision);
         _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
         _lastSavedUtc = snapshot.LastSavedUtc;
+        return cleanupApplied;
+    }
+
+    private bool RepairSupersededRobotPlaceholdersLocked()
+    {
+        var devices = _devices.Values.ToArray();
+        if (devices.Length < 2)
+            return false;
+
+        var sessions = _sessionsByToken.Values.ToArray();
+        var disjointSet = new DisjointSet(devices.Length);
+
+        for (var sessionIndex = 0; sessionIndex < sessions.Length; sessionIndex++)
+        {
+            var matchingDeviceIndices = new List<int>();
+            for (var deviceIndex = 0; deviceIndex < devices.Length; deviceIndex++)
+            {
+                if (SessionMatchesDevice(sessions[sessionIndex], devices[deviceIndex]))
+                    matchingDeviceIndices.Add(deviceIndex);
+            }
+
+            if (matchingDeviceIndices.Count < 2)
+                continue;
+
+            var firstMatch = matchingDeviceIndices[0];
+            for (var i = 1; i < matchingDeviceIndices.Count; i++)
+                disjointSet.Union(firstMatch, matchingDeviceIndices[i]);
+        }
+
+        var changed = false;
+        foreach (var group in Enumerable.Range(0, devices.Length).GroupBy(disjointSet.Find))
+        {
+            var groupDevices = group.Select(index => devices[index]).ToArray();
+            if (groupDevices.Length < 2)
+                continue;
+
+            var hasVerifiedDevice = groupDevices.Any(device => !IsPlaceholderRobotRecord(device));
+            if (!hasVerifiedDevice)
+                continue;
+
+            foreach (var device in groupDevices.Where(device =>
+                         IsPlaceholderRobotRecord(device) && !device.IsHidden && device.ArchivedUtc is null))
+            {
+                var updated = new DeviceRegistration
+                {
+                    DeviceId = device.DeviceId,
+                    RobotId = device.RobotId,
+                    FriendlyName = device.FriendlyName,
+                    FirmwareVersion = device.FirmwareVersion,
+                    ApplicationVersion = device.ApplicationVersion,
+                    IsActive = device.IsActive,
+                    CertificateThumbprint = device.CertificateThumbprint,
+                    IssuedIdentityId = device.IssuedIdentityId,
+                    BuildHash = device.BuildHash,
+                    ConfigHash = device.ConfigHash,
+                    RegistrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+                    IsHidden = true,
+                    ArchivedUtc = device.ArchivedUtc ?? DateTimeOffset.UtcNow,
+                    HostMappings = new Dictionary<string, string>(device.HostMappings, StringComparer.OrdinalIgnoreCase)
+                };
+                _devices[updated.DeviceId] = updated;
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device)
+    {
+        foreach (var value in GetSessionIdentityValues(session))
+        {
+            if (IdentityMatches(value, device.DeviceId) ||
+                IdentityMatches(value, device.RobotId) ||
+                IdentityMatches(value, device.FriendlyName))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> GetSessionIdentityValues(CloudSession session)
+    {
+        var values = new[]
+        {
+            session.DeviceId,
+            ReadSessionMetadata(session, "registeredDeviceId"),
+            ReadSessionMetadata(session, "registeredRobotId"),
+            ReadSessionMetadata(session, "robotID"),
+            ReadSessionMetadata(session, "robotId"),
+            ReadSessionMetadata(session, "robotFriendlyId"),
+            ReadSessionMetadata(session, "friendlyId"),
+            ReadSessionMetadata(session, "deviceId")
+        };
+
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                yield return value.Trim();
+        }
+    }
+
+    private static string? ReadSessionMetadata(CloudSession session, string key) =>
+        session.Metadata.TryGetValue(key, out var value) ? value?.ToString() : null;
+
+    private static bool IsPlaceholderRobotRecord(DeviceRegistration device)
+    {
+        if (string.IsNullOrWhiteSpace(device.DeviceId) || string.IsNullOrWhiteSpace(device.RobotId))
+            return false;
+
+        var normalizedSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId);
+        return string.Equals(device.FriendlyName, "OpenJibo Registered Robot", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(device.RobotId.Trim(), $"robot-{device.DeviceId.Trim()}",
+                   StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(normalizedSource, RobotRegistrationSources.Unknown, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed class DisjointSet
+    {
+        private readonly int[] _parents;
+        private readonly int[] _ranks;
+
+        public DisjointSet(int size)
+        {
+            _parents = Enumerable.Range(0, size).ToArray();
+            _ranks = new int[size];
+        }
+
+        public int Find(int item)
+        {
+            if (_parents[item] != item)
+                _parents[item] = Find(_parents[item]);
+
+            return _parents[item];
+        }
+
+        public void Union(int left, int right)
+        {
+            var leftRoot = Find(left);
+            var rightRoot = Find(right);
+            if (leftRoot == rightRoot)
+                return;
+
+            if (_ranks[leftRoot] < _ranks[rightRoot])
+            {
+                _parents[leftRoot] = rightRoot;
+                return;
+            }
+
+            if (_ranks[leftRoot] > _ranks[rightRoot])
+            {
+                _parents[rightRoot] = leftRoot;
+                return;
+            }
+
+            _parents[rightRoot] = leftRoot;
+            _ranks[leftRoot]++;
+        }
     }
 
     private static DeviceRegistration NormalizePersistedDevice(DeviceRegistration device)

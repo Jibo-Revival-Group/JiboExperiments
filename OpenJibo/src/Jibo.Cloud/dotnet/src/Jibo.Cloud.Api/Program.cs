@@ -5,6 +5,7 @@ using Jibo.Cloud.Infrastructure.DependencyInjection;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
+using System.Diagnostics;
 
 OpenJiboEnvLoader.Load();
 
@@ -58,6 +59,59 @@ app.UseWebSockets();
 
 app.Use(async (context, next) =>
 {
+    var started = Stopwatch.GetTimestamp();
+    var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
+        .CreateLogger("Jibo.Cloud.Api.RequestDiagnostics");
+    var remoteIp = context.Connection.RemoteIpAddress?.ToString();
+    var userAgent = context.Request.Headers.UserAgent.ToString();
+
+    logger.LogInformation(
+        "HTTP request started traceId={TraceId} method={Method} host={Host} path={Path} " +
+        "query={Query} remoteIp={RemoteIp} userAgent={UserAgent} webSocket={WebSocket}",
+        context.TraceIdentifier,
+        context.Request.Method,
+        context.Request.Host.Host,
+        context.Request.Path,
+        context.Request.QueryString.HasValue ? context.Request.QueryString.Value : null,
+        remoteIp,
+        userAgent,
+        context.WebSockets.IsWebSocketRequest);
+
+    try
+    {
+        await next();
+    }
+    catch (Exception exception)
+    {
+        logger.LogError(
+            exception,
+            "HTTP request failed traceId={TraceId} method={Method} host={Host} path={Path} remoteIp={RemoteIp} webSocket={WebSocket}",
+            context.TraceIdentifier,
+            context.Request.Method,
+            context.Request.Host.Host,
+            context.Request.Path,
+            remoteIp,
+            context.WebSockets.IsWebSocketRequest);
+        throw;
+    }
+    finally
+    {
+        logger.LogInformation(
+            "HTTP request completed traceId={TraceId} method={Method} host={Host} path={Path} " +
+            "statusCode={StatusCode} elapsedMs={ElapsedMs} remoteIp={RemoteIp} webSocket={WebSocket}",
+            context.TraceIdentifier,
+            context.Request.Method,
+            context.Request.Host.Host,
+            context.Request.Path,
+            context.Response.StatusCode,
+            Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+            remoteIp,
+            context.WebSockets.IsWebSocketRequest);
+    }
+});
+
+app.Use(async (context, next) =>
+{
     if (!context.WebSockets.IsWebSocketRequest)
     {
         await next();
@@ -89,6 +143,20 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
     }
 
     var envelope = await ApiRequestEnvelopeFactory.CreateAsync(context, cancellationToken);
+    app.Logger.LogInformation(
+        "Protocol request received requestId={RequestId} traceId={TraceId} method={Method} host={Host} path={Path} " +
+        "servicePrefix={ServicePrefix} operation={Operation} deviceId={DeviceId} firmwareVersion={FirmwareVersion} " +
+        "applicationVersion={ApplicationVersion}",
+        envelope.RequestId,
+        context.TraceIdentifier,
+        envelope.Method,
+        envelope.HostName,
+        envelope.Path,
+        envelope.ServicePrefix,
+        envelope.Operation,
+        envelope.DeviceId,
+        envelope.FirmwareVersion,
+        envelope.ApplicationVersion);
     var result = await service.DispatchAsync(envelope);
     try
     {
@@ -105,6 +173,17 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
 
     context.Response.StatusCode = result.StatusCode;
     context.Response.ContentType = result.ContentType;
+
+    app.Logger.LogInformation(
+        "Protocol request completed requestId={RequestId} traceId={TraceId} operation={Operation} " +
+        "deviceId={DeviceId} statusCode={StatusCode} contentType={ContentType} responseBytes={ResponseBytes}",
+        envelope.RequestId,
+        context.TraceIdentifier,
+        envelope.Operation,
+        envelope.DeviceId,
+        result.StatusCode,
+        result.ContentType,
+        result.BodyText?.Length ?? 0);
 
     foreach (var header in result.Headers) context.Response.Headers[header.Key] = header.Value;
 

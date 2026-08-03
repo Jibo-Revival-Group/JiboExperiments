@@ -1,0 +1,56 @@
+{
+	"mim_type": "announcement",
+	"rule_name": "",
+	"gui": null,
+	"timeout": 6,
+	"no_matches_for_gui": 0,
+	"no_inputs_for_gui": 0,
+	"barge_in": true,
+	"es_auto_tagging": true,
+	"parse_all_asr": false,
+	"thanks_handling": "ignore",
+	"parse_launch": false,
+	"notes": "",
+	"prompts": [
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('1/9', '5/14')",
+			"prompt": "Good question. I think you should maybe spend the day dancing Like A Chicken.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForDanceLikeAChickenDay_AN_01_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('5/15', '9/16')",
+			"prompt": "Well I think Dance Like A Chicken Day is in the past, but there's always the next one.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForDanceLikeAChickenDay_AN_02_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "dt.now.isInRange('9/17', '1/8')",
+			"prompt": "Well we have lots of time to figure it out before Dance Like A Chicken Day comes around again.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForDanceLikeAChickenDay_AN_03_FnL",
+			"weight": 2
+		},
+		{
+			"prompt_category": "Entry-Core",
+			"prompt_sub_category": "AN",
+			"index": 1,
+			"condition": "",
+			"prompt": "Good question. I think you should maybe spend the day dancing Like A Chicken.",
+			"media": "TTS",
+			"prompt_id": "RI_USR_WhatShouldDoForDanceLikeAChickenDay_AN_04_FnL",
+			"weight": 0.1
+		}
+	]
+}

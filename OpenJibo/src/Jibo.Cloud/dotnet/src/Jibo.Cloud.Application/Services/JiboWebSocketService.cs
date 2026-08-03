@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
@@ -33,12 +35,13 @@ public sealed class JiboWebSocketService(
         var session = GetOrCreateSession(envelope);
         session.LastSeenUtc = DateTimeOffset.UtcNow;
         logger.LogDebug(
-            "WebSocket message received session={SessionId} kind={Kind} host={Host} path={Path} token={Token} isBinary={IsBinary} textBytes={TextBytes} binaryBytes={BinaryBytes}",
+            "WebSocket message received session={SessionId} kind={Kind} host={Host} path={Path} " +
+            "tokenFingerprint={TokenFingerprint} isBinary={IsBinary} textBytes={TextBytes} binaryBytes={BinaryBytes}",
             session.SessionId,
             envelope.Kind,
             envelope.HostName,
             envelope.Path,
-            envelope.Token,
+            Fingerprint(envelope.Token),
             envelope.IsBinary,
             envelope.Text?.Length ?? 0,
             envelope.Binary?.Length ?? 0);
@@ -234,6 +237,14 @@ public sealed class JiboWebSocketService(
         }
 
         return "UNKNOWN";
+    }
+
+    private static string Fingerprint(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "none";
+
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(value.Trim()));
+        return Convert.ToHexString(hash)[..12].ToLowerInvariant();
     }
 
     private static bool ContainsInlineTurnPayload(string? text)

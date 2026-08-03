@@ -119,6 +119,66 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void CloudStateStore_LoadsAndRepairsSupersededPlaceholderRobotRecords()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(),
+            $"openjibo-cloud-placeholder-repair-{Guid.NewGuid():N}.json");
+
+        try
+        {
+            var placeholderId = "5c0b221fdf9d450019c5e254";
+            var verifiedId = "Royal-Current-Sage-Canvas";
+
+            var firstStore = new InMemoryCloudStateStore(persistencePath);
+            firstStore.UpsertDevice(new DeviceRegistration
+            {
+                DeviceId = placeholderId,
+                RobotId = $"robot-{placeholderId}",
+                FriendlyName = "OpenJibo Registered Robot",
+                RegistrationSource = RobotRegistrationSources.Unknown
+            });
+            firstStore.UpsertDevice(new DeviceRegistration
+            {
+                DeviceId = verifiedId,
+                RobotId = verifiedId,
+                FriendlyName = verifiedId,
+                RegistrationSource = RobotRegistrationSources.Physical
+            });
+
+            var session = firstStore.OpenSession("hub", placeholderId, "repair-session", "neohub", "/v1/listen");
+            Assert.True(firstStore.BindSessionToDevice(session.SessionId, verifiedId));
+            firstStore.SavePersistedState();
+
+            var firstInfo = firstStore.GetPersistenceStateInfo();
+            Assert.NotNull(firstInfo.LastSavedUtc);
+
+            var secondStore = new InMemoryCloudStateStore(persistencePath);
+            var secondInfo = secondStore.GetPersistenceStateInfo();
+            var repairedDevices = secondStore.GetDevices();
+            var repairedPlaceholder = Assert.Single(repairedDevices, device => device.DeviceId == placeholderId);
+            var repairedVerified = Assert.Single(repairedDevices, device => device.DeviceId == verifiedId);
+
+            Assert.True(secondInfo.Revision > firstInfo.Revision);
+            Assert.True(repairedPlaceholder.IsHidden);
+            Assert.NotNull(repairedPlaceholder.ArchivedUtc);
+            Assert.False(repairedVerified.IsHidden);
+            Assert.Null(repairedVerified.ArchivedUtc);
+
+            var thirdStore = new InMemoryCloudStateStore(persistencePath);
+            var thirdInfo = thirdStore.GetPersistenceStateInfo();
+            var persistedPlaceholder = Assert.Single(thirdStore.GetDevices(), device => device.DeviceId == placeholderId);
+
+            Assert.Equal(secondInfo.Revision, thirdInfo.Revision);
+            Assert.True(persistedPlaceholder.IsHidden);
+            Assert.NotNull(persistedPlaceholder.ArchivedUtc);
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
+    [Fact]
     public void PersonalMemoryStore_RoundTripsStateAndRevision()
     {
         var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-personal-memory-{Guid.NewGuid():N}.json");

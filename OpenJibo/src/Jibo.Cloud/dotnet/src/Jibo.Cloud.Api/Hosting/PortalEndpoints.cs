@@ -1107,74 +1107,10 @@ internal static class PortalEndpoints
             .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
             .ToArray();
         var liveConnections = robotPresenceRegistry.GetLiveConnections();
-        var devices = allDevices.Where(device =>
-            includeHidden ||
-            !device.IsHidden ||
-            // Keep test/deployment records out of the operational view, but never hide a
-            // real robot that is currently communicating just because its old record was archived.
-            (!IsSyntheticDevice(device) &&
-             (recentSessions.Any(session => SessionMatchesDevice(session, device)) ||
-              liveConnections.Any(connection => ConnectionMatchesDevice(connection, device)))))
-            .ToArray();
-
-        var robots = devices
-            .Select(device =>
-            {
-                var deviceSessions = sessions.Where(session => SessionMatchesDevice(session, device)).ToArray();
-                var deviceConnections = liveConnections.Where(connection => ConnectionMatchesDevice(connection, device))
-                    .ToArray();
-                var lastSession = deviceSessions.OrderByDescending(session => session.LastSeenUtc).FirstOrDefault();
-                var lastSeenUtc = lastSession is not null
-                    ? lastSession.LastSeenUtc
-                    : (DateTimeOffset?)null;
-                var firstSeenUtc = deviceSessions.Length > 0
-                    ? deviceSessions.Min(session => session.CreatedUtc)
-                    : (DateTimeOffset?)null;
-                var sleepState = lastSession is null ? null : ReadSessionMetadata(lastSession, "sleepState");
-                var presence = ResolveRobotPresence(device, deviceConnections, lastSeenUtc, sleepState, now);
-
-                return new
-                {
-                    device.DeviceId,
-                    device.RobotId,
-                    device.FriendlyName,
-                    device.FirmwareVersion,
-                    device.ApplicationVersion,
-                    device.IsActive,
-                    device.IsHidden,
-                    device.ArchivedUtc,
-                    registrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
-                    isSynthetic = IsSyntheticDevice(device),
-                    presence,
-                    connected = presence is "online" or "sleeping",
-                    hasOpenSocket = deviceConnections.Length > 0,
-                    sessionCount = deviceSessions.Length,
-                    liveConnectionCount = deviceConnections.Length,
-                    firstSeenUtc,
-                    lastSeenUtc,
-                    lastHeartbeatAgeSeconds = lastSeenUtc is null ? (double?)null : (now - lastSeenUtc.Value).TotalSeconds,
-                    sessionKinds = deviceSessions
-                        .Select(session => session.Kind)
-                        .Where(kind => !string.IsNullOrWhiteSpace(kind))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .OrderBy(kind => kind, StringComparer.OrdinalIgnoreCase)
-                        .ToArray(),
-                    connectionKinds = deviceConnections
-                        .Select(connection => connection.Kind)
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .OrderBy(kind => kind, StringComparer.OrdinalIgnoreCase)
-                        .ToArray(),
-                    sleepState
-                };
-            })
-            .OrderByDescending(robot => robot.connected)
-            .ThenBy(robot => robot.presence == "recently-seen" ? 0 : 1)
-            .ThenBy(robot => robot.FriendlyName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(robot => robot.DeviceId, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        var robots = BuildReconciledRobotStatuses(allDevices, sessions, recentSessions, liveConnections, now, includeHidden);
 
         var localConnectedRobotIds = robots
-            .Where(robot => robot.connected)
+            .Where(robot => robot.Connected)
             .Select(robot => robot.DeviceId)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -1212,13 +1148,13 @@ internal static class PortalEndpoints
             fleet = new
             {
                 registeredRobots = allDevices.Count,
-                visibleRobots = devices.Length,
+                visibleRobots = robots.Count,
                 hiddenRobots = allDevices.Count(device => device.IsHidden),
                 syntheticRobots = allDevices.Count(device => RobotRegistrationSources.IsSynthetic(device.RegistrationSource)),
-                activeRobots = devices.Count(device => device.IsActive),
-                connectedRobots = robots.Count(robot => robot.connected),
-                sleepingRobots = robots.Count(robot => robot.presence == "sleeping"),
-                recentlySeenRobots = robots.Count(robot => robot.presence == "recently-seen"),
+                activeRobots = robots.Count(robot => robot.IsActive),
+                connectedRobots = robots.Count(robot => robot.Connected),
+                sleepingRobots = robots.Count(robot => robot.Presence == "sleeping"),
+                recentlySeenRobots = robots.Count(robot => robot.Presence == "recently-seen"),
                 totalSessions = sessions.Count,
                 liveSessions = recentSessions.Length,
                 staleSessions = sessions.Count(session => now - session.LastSeenUtc > StatusHeartbeatWindow),
@@ -1278,6 +1214,213 @@ internal static class PortalEndpoints
                 })
                 .ToArray()
         };
+    }
+
+    private static IReadOnlyList<RobotStatusRow> BuildReconciledRobotStatuses(
+        IReadOnlyList<DeviceRegistration> devices,
+        IReadOnlyList<CloudSession> sessions,
+        IReadOnlyList<CloudSession> recentSessions,
+        IReadOnlyList<RobotPresenceConnection> liveConnections,
+        DateTimeOffset now,
+        bool includeHidden)
+    {
+        if (devices.Count == 0)
+            return [];
+
+        var disjointSet = new DisjointSet(devices.Count);
+
+        for (var sessionIndex = 0; sessionIndex < sessions.Count; sessionIndex++)
+        {
+            var matchingDeviceIndices = new List<int>();
+            for (var deviceIndex = 0; deviceIndex < devices.Count; deviceIndex++)
+            {
+                if (SessionMatchesDevice(sessions[sessionIndex], devices[deviceIndex]))
+                    matchingDeviceIndices.Add(deviceIndex);
+            }
+
+            if (matchingDeviceIndices.Count < 2)
+                continue;
+
+            var firstMatch = matchingDeviceIndices[0];
+            for (var i = 1; i < matchingDeviceIndices.Count; i++)
+                disjointSet.Union(firstMatch, matchingDeviceIndices[i]);
+        }
+
+        for (var connectionIndex = 0; connectionIndex < liveConnections.Count; connectionIndex++)
+        {
+            var matchingDeviceIndices = new List<int>();
+            for (var deviceIndex = 0; deviceIndex < devices.Count; deviceIndex++)
+            {
+                if (ConnectionMatchesDevice(liveConnections[connectionIndex], devices[deviceIndex]))
+                    matchingDeviceIndices.Add(deviceIndex);
+            }
+
+            if (matchingDeviceIndices.Count < 2)
+                continue;
+
+            var firstMatch = matchingDeviceIndices[0];
+            for (var i = 1; i < matchingDeviceIndices.Count; i++)
+                disjointSet.Union(firstMatch, matchingDeviceIndices[i]);
+        }
+
+        var visibleRows = new List<RobotStatusRow>();
+        foreach (var group in Enumerable.Range(0, devices.Count).GroupBy(disjointSet.Find))
+        {
+            var groupDevices = group.Select(index => devices[index]).ToArray();
+            var groupSessions = sessions
+                .Where(session => groupDevices.Any(device => SessionMatchesDevice(session, device)))
+                .GroupBy(session => session.SessionId, StringComparer.OrdinalIgnoreCase)
+                .Select(sessionGroup => sessionGroup
+                    .OrderByDescending(session => session.LastSeenUtc)
+                    .ThenByDescending(session => session.CreatedUtc)
+                    .First())
+                .OrderByDescending(session => session.LastSeenUtc)
+                .ThenByDescending(session => session.CreatedUtc)
+                .ToArray();
+            var groupRecentSessions = recentSessions
+                .Where(session => groupDevices.Any(device => SessionMatchesDevice(session, device)))
+                .ToArray();
+            var groupConnections = liveConnections
+                .Where(connection => groupDevices.Any(device => ConnectionMatchesDevice(connection, device)))
+                .ToArray();
+
+            var groupIsSynthetic = groupDevices.All(IsSyntheticDevice);
+            var hasVisibleSignal = groupRecentSessions.Length > 0 || groupConnections.Length > 0;
+            var groupIsVisible = includeHidden ||
+                                 groupDevices.Any(device => !device.IsHidden) ||
+                                 (!groupIsSynthetic && hasVisibleSignal);
+            if (!groupIsVisible)
+                continue;
+
+            var primaryDevice = SelectPreferredRobotDevice(groupDevices, groupSessions, groupConnections);
+            var effectiveActive = groupDevices.Any(device => device.IsActive);
+            var mergedDevice = new DeviceRegistration
+            {
+                DeviceId = primaryDevice.DeviceId,
+                RobotId = primaryDevice.RobotId,
+                FriendlyName = primaryDevice.FriendlyName,
+                FirmwareVersion = primaryDevice.FirmwareVersion,
+                ApplicationVersion = primaryDevice.ApplicationVersion,
+                IsActive = effectiveActive
+            };
+
+            var lastSession = groupSessions.FirstOrDefault();
+            var lastSeenUtc = lastSession?.LastSeenUtc;
+            var firstSeenUtc = groupSessions.Length > 0
+                ? groupSessions.Min(session => session.CreatedUtc)
+                : (DateTimeOffset?)null;
+            var sleepState = lastSession is null ? null : ReadSessionMetadata(lastSession, "sleepState");
+            var presence = ResolveRobotPresence(mergedDevice, groupConnections, lastSeenUtc, sleepState, now);
+
+            visibleRows.Add(new RobotStatusRow(
+                primaryDevice.DeviceId,
+                primaryDevice.RobotId,
+                primaryDevice.FriendlyName,
+                FirstNonEmpty(primaryDevice.FirmwareVersion, groupDevices.Select(device => device.FirmwareVersion)),
+                FirstNonEmpty(primaryDevice.ApplicationVersion, groupDevices.Select(device => device.ApplicationVersion)),
+                effectiveActive,
+                groupDevices.All(device => device.IsHidden),
+                groupDevices.Select(device => device.ArchivedUtc)
+                    .Where(value => value.HasValue)
+                    .Cast<DateTimeOffset?>()
+                    .OrderByDescending(value => value)
+                    .FirstOrDefault(),
+                SelectPreferredRegistrationSource(primaryDevice, groupDevices),
+                groupIsSynthetic,
+                presence,
+                presence is "online" or "sleeping",
+                groupConnections.Length > 0,
+                groupSessions.Length,
+                groupConnections.Length,
+                firstSeenUtc,
+                lastSeenUtc,
+                lastSeenUtc is null ? null : (now - lastSeenUtc.Value).TotalSeconds,
+                groupSessions
+                    .Select(session => session.Kind)
+                    .Where(kind => !string.IsNullOrWhiteSpace(kind))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(kind => kind, StringComparer.OrdinalIgnoreCase)
+                    .ToArray(),
+                groupConnections
+                    .Select(connection => connection.Kind)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(kind => kind, StringComparer.OrdinalIgnoreCase)
+                    .ToArray(),
+                sleepState));
+        }
+
+        return visibleRows
+            .OrderByDescending(robot => robot.Connected)
+            .ThenBy(robot => robot.Presence == "recently-seen" ? 0 : 1)
+            .ThenBy(robot => robot.FriendlyName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(robot => robot.DeviceId, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string? FirstNonEmpty(string? seed, IEnumerable<string?> candidates)
+    {
+        if (!string.IsNullOrWhiteSpace(seed))
+            return seed;
+
+        foreach (var candidate in candidates)
+        {
+            if (!string.IsNullOrWhiteSpace(candidate))
+                return candidate;
+        }
+
+        return null;
+    }
+
+    private static string SelectPreferredRegistrationSource(
+        DeviceRegistration primaryDevice,
+        IEnumerable<DeviceRegistration> groupDevices)
+    {
+        var sources = groupDevices
+            .Append(primaryDevice)
+            .Select(device => RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId))
+            .Where(source => !string.Equals(source, RobotRegistrationSources.Unknown, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        return sources.FirstOrDefault()
+               ?? RobotRegistrationSources.Normalize(primaryDevice.RegistrationSource, primaryDevice.DeviceId);
+    }
+
+    private static DeviceRegistration SelectPreferredRobotDevice(
+        IReadOnlyList<DeviceRegistration> devices,
+        IReadOnlyList<CloudSession> sessions,
+        IReadOnlyList<RobotPresenceConnection> connections)
+    {
+        return devices
+            .OrderByDescending(device => !IsGenericRobotDisplayName(device.FriendlyName))
+            .ThenByDescending(device => !device.IsHidden)
+            .ThenByDescending(device => device.IsActive)
+            .ThenByDescending(device => !string.Equals(
+                RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+                RobotRegistrationSources.Unknown,
+                StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(device => connections.Any(connection => ConnectionMatchesDevice(connection, device)))
+            .ThenByDescending(device => GetLatestMatchedSessionUtc(device, sessions) ?? DateTimeOffset.MinValue)
+            .ThenBy(device => device.FriendlyName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(device => device.DeviceId, StringComparer.OrdinalIgnoreCase)
+            .First();
+    }
+
+    private static DateTimeOffset? GetLatestMatchedSessionUtc(
+        DeviceRegistration device,
+        IReadOnlyList<CloudSession> sessions)
+    {
+        var latest = sessions
+            .Where(session => SessionMatchesDevice(session, device))
+            .Select(session => session.LastSeenUtc)
+            .ToArray();
+
+        return latest.Length > 0 ? latest.Max() : null;
+    }
+
+    private static bool IsGenericRobotDisplayName(string? friendlyName)
+    {
+        return string.IsNullOrWhiteSpace(friendlyName) ||
+               friendlyName.Equals("OpenJibo Registered Robot", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device)
@@ -1366,6 +1509,72 @@ internal static class PortalEndpoints
         if (liveConnections.Count > 0 || lastSeenUtc >= now - StatusActiveActivityWindow) return "online";
         if (lastSeenUtc >= now.AddMinutes(-30)) return "recently-seen";
         return lastSeenUtc is null ? "never-connected" : "offline";
+    }
+
+    private sealed record RobotStatusRow(
+        string DeviceId,
+        string RobotId,
+        string FriendlyName,
+        string? FirmwareVersion,
+        string? ApplicationVersion,
+        bool IsActive,
+        bool IsHidden,
+        DateTimeOffset? ArchivedUtc,
+        string RegistrationSource,
+        bool IsSynthetic,
+        string Presence,
+        bool Connected,
+        bool HasOpenSocket,
+        int SessionCount,
+        int LiveConnectionCount,
+        DateTimeOffset? FirstSeenUtc,
+        DateTimeOffset? LastSeenUtc,
+        double? LastHeartbeatAgeSeconds,
+        IReadOnlyList<string> SessionKinds,
+        IReadOnlyList<string> ConnectionKinds,
+        string? SleepState);
+
+    private sealed class DisjointSet
+    {
+        private readonly int[] _parent;
+        private readonly int[] _rank;
+
+        public DisjointSet(int size)
+        {
+            _parent = Enumerable.Range(0, size).ToArray();
+            _rank = new int[size];
+        }
+
+        public int Find(int index)
+        {
+            if (_parent[index] != index)
+                _parent[index] = Find(_parent[index]);
+
+            return _parent[index];
+        }
+
+        public void Union(int left, int right)
+        {
+            var rootLeft = Find(left);
+            var rootRight = Find(right);
+            if (rootLeft == rootRight)
+                return;
+
+            if (_rank[rootLeft] < _rank[rootRight])
+            {
+                _parent[rootLeft] = rootRight;
+                return;
+            }
+
+            if (_rank[rootLeft] > _rank[rootRight])
+            {
+                _parent[rootRight] = rootLeft;
+                return;
+            }
+
+            _parent[rootRight] = rootLeft;
+            _rank[rootLeft]++;
+        }
     }
 
     private static DeviceRegistration CopyDevice(DeviceRegistration device, bool isHidden, DateTimeOffset? archivedUtc) =>
@@ -1475,7 +1684,7 @@ internal static class PortalEndpoints
         return $"{duration.Seconds}s";
     }
 
-    private static void RegisterVerifiedRobotIdentity(ICloudStateStore cloudStateStore, string deviceId,
+    internal static void RegisterVerifiedRobotIdentity(ICloudStateStore cloudStateStore, string deviceId,
         string friendlyId)
     {
         var resolvedFriendlyId = !string.IsNullOrWhiteSpace(friendlyId)
@@ -1522,6 +1731,47 @@ internal static class PortalEndpoints
                 ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, string>(existing.HostMappings, StringComparer.OrdinalIgnoreCase)
         });
+
+        ArchiveSupersededRobotPlaceholders(cloudStateStore, resolvedDeviceId, candidateDeviceId, resolvedFriendlyId,
+            singleton.DeviceId);
+    }
+
+    internal static int ArchiveSupersededRobotPlaceholders(ICloudStateStore cloudStateStore, string resolvedDeviceId,
+        string candidateDeviceId, string resolvedFriendlyId, string? singletonDeviceId = null)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var supersededDevices = cloudStateStore.GetDevices()
+            .Where(device =>
+                !string.Equals(device.DeviceId, resolvedDeviceId, StringComparison.OrdinalIgnoreCase) &&
+                (
+                    IdentityMatches(device.DeviceId, candidateDeviceId) ||
+                    IdentityMatches(device.RobotId, candidateDeviceId) ||
+                    IdentityMatches(device.DeviceId, resolvedFriendlyId) ||
+                    IdentityMatches(device.RobotId, resolvedFriendlyId) ||
+                    (!string.IsNullOrWhiteSpace(singletonDeviceId) &&
+                     IdentityMatches(device.DeviceId, singletonDeviceId))
+                ) &&
+                IsPlaceholderRobotRecord(device))
+            .ToArray();
+
+        foreach (var device in supersededDevices)
+        {
+            cloudStateStore.UpsertDevice(CopyDevice(device, true, device.ArchivedUtc ?? now));
+        }
+
+        return supersededDevices.Length;
+    }
+
+    private static bool IsPlaceholderRobotRecord(DeviceRegistration device)
+    {
+        if (string.IsNullOrWhiteSpace(device.DeviceId) || string.IsNullOrWhiteSpace(device.RobotId))
+            return false;
+
+        var expectedRobotId = $"robot-{device.DeviceId.Trim()}";
+        return string.Equals(device.RobotId.Trim(), expectedRobotId, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(device.FriendlyName, "OpenJibo Registered Robot", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+                   RobotRegistrationSources.Unknown, StringComparison.OrdinalIgnoreCase);
     }
 
     private static object BuildDashboardPayload(

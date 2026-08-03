@@ -697,6 +697,16 @@ internal static class SeasonalHolidayRouteBuilder
         var directSuffix = ToPascalCase(normalized);
         yield return $"RI_USR_WhatShouldDoFor{directSuffix}";
 
+        if (normalized.StartsWith("the ", StringComparison.OrdinalIgnoreCase))
+        {
+            var withoutArticle = normalized["the ".Length..].Trim();
+            if (!string.IsNullOrWhiteSpace(withoutArticle))
+                yield return $"RI_USR_WhatShouldDoFor{ToPascalCase(withoutArticle)}";
+        }
+
+        if (normalized.Contains("french open", StringComparison.OrdinalIgnoreCase))
+            yield return "RI_USR_WhatShouldDoForFrenchOpenTennis";
+
         if (normalized.Contains("all star game", StringComparison.OrdinalIgnoreCase) ||
             normalized.Contains("national championship", StringComparison.OrdinalIgnoreCase) ||
             normalized.Contains("us open", StringComparison.OrdinalIgnoreCase))

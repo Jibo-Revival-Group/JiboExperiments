@@ -35,6 +35,7 @@ public sealed class JiboCloudProtocolService(
         authHandler ?? new CloudAuthProtocolHandler(stateStore);
 
     private readonly string? _configuredRobotId = ReadConfiguredRobotId(configuration);
+    private readonly string? _canonicalApiBaseUrl = ReadCanonicalApiBaseUrl(configuration);
 
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private readonly RobotNotificationRegistry? _robotNotificationRegistry = robotNotificationRegistry;
@@ -60,6 +61,15 @@ public sealed class JiboCloudProtocolService(
     {
         var robotId = configuration?["OpenJibo:Robot:RobotId"];
         return string.IsNullOrWhiteSpace(robotId) ? null : robotId.Trim();
+    }
+
+    private static string? ReadCanonicalApiBaseUrl(IConfiguration? configuration)
+    {
+        var value = configuration?["OpenJibo:CanonicalApiBaseUrl"];
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+               uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            ? uri.GetLeftPart(UriPartial.Authority)
+            : null;
     }
 
     private static string? ReadTargetHost(JsonElement? body)
@@ -1163,19 +1173,19 @@ public sealed class JiboCloudProtocolService(
             "PutEventsAsync" => ProtocolDispatchResult.Ok(new
             {
                 contentEncoding = "gzip",
-                uploadUrl = BuildLogUploadUrl("log-events", uploadId)
+                uploadUrl = BuildLogUploadUrl(envelope, "log-events", uploadId)
             }),
             "PutEvents" => ProtocolDispatchResult.Ok(new { }),
             "PutBinaryAsync" => ProtocolDispatchResult.Ok(new
             {
-                url = $"https://api.jibo.com/log/binary/{uploadId}",
-                uploadUrl = BuildLogUploadUrl("log-binary", uploadId)
+                url = $"{ResolveApiBaseUrl(envelope)}/log/binary/{uploadId}",
+                uploadUrl = BuildLogUploadUrl(envelope, "log-binary", uploadId)
             }),
             "PutAsrBinary" => ProtocolDispatchResult.Ok(new
             {
                 bucketName = "openjibo-media",
                 key = $"logs/asr/{uploadId}",
-                uploadUrl = BuildLogUploadUrl("asr-binary", uploadId)
+                uploadUrl = BuildLogUploadUrl(envelope, "asr-binary", uploadId)
             }),
             "NewKinesisCredentials" => ProtocolDispatchResult.Ok(new { }),
             _ => ProtocolDispatchResult.Ok(new { })
@@ -1214,8 +1224,11 @@ public sealed class JiboCloudProtocolService(
             CancellationToken.None).GetAwaiter().GetResult();
     }
 
-    private static string BuildLogUploadUrl(string endpoint, string uploadId) =>
-        $"https://api.jibo.com/upload/{endpoint}/{uploadId}";
+    private string BuildLogUploadUrl(ProtocolEnvelope envelope, string endpoint, string uploadId) =>
+        $"{ResolveApiBaseUrl(envelope)}/upload/{endpoint}/{uploadId}";
+
+    private string ResolveApiBaseUrl(ProtocolEnvelope envelope) =>
+        _canonicalApiBaseUrl ?? $"https://{envelope.HostName}";
 
     private static string GetLogCategory(string operation) => operation switch
     {

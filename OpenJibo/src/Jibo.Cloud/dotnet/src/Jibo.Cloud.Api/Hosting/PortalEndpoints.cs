@@ -969,7 +969,11 @@ internal static class PortalEndpoints
                 device.FriendlyName
             };
             var logs = (await mediaContentStore.ListAsync("logs", 200, cancellationToken))
-                .Where(item => robotKeys.Contains(ReadArtifactMeta(item.Meta, "deviceId")))
+                .Where(item =>
+                {
+                    var artifactDeviceId = ReadArtifactMeta(item.Meta, "deviceId");
+                    return string.IsNullOrWhiteSpace(artifactDeviceId) || robotKeys.Contains(artifactDeviceId);
+                })
                 .OrderByDescending(item => ReadArtifactMeta(item.Meta, "storedUtc"))
                 .Take(50)
                 .Select(item => new
@@ -977,6 +981,7 @@ internal static class PortalEndpoints
                     item.Path,
                     item.ContentType,
                     category = ReadArtifactMeta(item.Meta, "category"),
+                    unassigned = string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")),
                     storedUtc = ReadArtifactMeta(item.Meta, "storedUtc"),
                     contentLength = ReadArtifactMeta(item.Meta, "contentLength"),
                     contentSha256 = ReadArtifactMeta(item.Meta, "contentSha256")
@@ -1005,7 +1010,8 @@ internal static class PortalEndpoints
                 { device.DeviceId, device.RobotId, device.FriendlyName };
             var artifact = (await mediaContentStore.ListAsync("logs", 200, cancellationToken))
                 .FirstOrDefault(item => item.Path.Equals(path, StringComparison.OrdinalIgnoreCase) &&
-                                        robotKeys.Contains(ReadArtifactMeta(item.Meta, "deviceId")));
+                                        (string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")) ||
+                                         robotKeys.Contains(ReadArtifactMeta(item.Meta, "deviceId"))));
             if (artifact is null) return Results.NotFound(new { error = "Log artifact was not found." });
 
             var content = await mediaContentStore.LoadAsync(path, cancellationToken);

@@ -422,7 +422,7 @@ function renderLogViewer() {
       ? `<p class="muted-row">No stored log artifacts for this robot yet.</p>`
       : `<div class="log-list">${items.map((log) => `
           <button class="log-item view-log-artifact" data-path="${escapeHtml(log.path)}" type="button">
-            <strong>${escapeHtml(log.category || "log")}</strong>
+            <strong>${escapeHtml(log.category || "log")}${log.unassigned ? " · Unassigned" : ""}</strong>
             <span>${escapeHtml(formatDate(log.storedUtc))} · ${escapeHtml(log.contentLength || "?")} bytes</span>
             <small class="mono">${escapeHtml(log.path)}</small>
           </button>`).join("")}</div>`;

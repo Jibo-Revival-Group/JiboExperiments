@@ -2718,6 +2718,30 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LogUploadNegotiation_UsesConfiguredCanonicalApiHost()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:CanonicalApiBaseUrl"] = "https://api.openjibo.com"
+            })
+            .Build();
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(), configuration: configuration);
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.openjibo.com",
+            Method = "POST",
+            ServicePrefix = "Log_20150309",
+            Operation = "PutEventsAsync"
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.StartsWith("https://api.openjibo.com/upload/log-events/",
+            payload.RootElement.GetProperty("uploadUrl").GetString());
+    }
+
+    [Fact]
     public async Task MediaCreate_WritesBinaryManifestMetadataForSync()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));

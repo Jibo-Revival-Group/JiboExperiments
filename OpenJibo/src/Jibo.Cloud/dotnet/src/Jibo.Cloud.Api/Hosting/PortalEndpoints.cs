@@ -1145,6 +1145,20 @@ internal static class PortalEndpoints
                 uptimeLabel = FormatDuration(now - processStartUtc)
             },
             persistence = cloudStateStore.GetPersistenceStateInfo(),
+            inventory = allDevices
+                .OrderBy(device => device.FriendlyName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(device => device.DeviceId, StringComparer.OrdinalIgnoreCase)
+                .Select(device => new
+                {
+                    deviceId = device.DeviceId,
+                    robotId = device.RobotId,
+                    friendlyName = device.FriendlyName,
+                    isHidden = device.IsHidden,
+                    registrationSource = RobotRegistrationSources.Normalize(
+                        device.RegistrationSource,
+                        device.DeviceId)
+                })
+                .ToArray(),
             fleet = new
             {
                 registeredRobots = allDevices.Count,

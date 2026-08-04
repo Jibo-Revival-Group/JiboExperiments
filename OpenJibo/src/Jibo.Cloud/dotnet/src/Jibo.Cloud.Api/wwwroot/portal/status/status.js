@@ -386,23 +386,21 @@ function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Se
     return `<li class="muted-row">No recent live sessions.</li>`;
   }
 
-  const robotOptions = robots.map((robot) =>
-    `<option value="${escapeHtml(robot.deviceId)}">${escapeHtml(robotSelectorLabel(robot))}</option>`
-  ).join("");
-
   return rows.map((session) => `
     <li class="${changedSessionIds.has(session.sessionId) ? "changed-row" : ""}">
       <strong>${escapeHtml(session.kind || "unknown")}</strong>
       <span>${escapeHtml(session.deviceId || "-")} · ${escapeHtml(session.hostName || "-")}${session.path ? ` · ${escapeHtml(session.path)}` : ""}</span>
       <div class="muted-row">${formatDate(session.lastSeenUtc)} · heartbeat ${formatFloat(session.heartbeatAgeSeconds, 0)}s ago</div>
-      ${session.registeredDeviceId ? `<div class="muted-row">Linked inventory identity: ${escapeHtml(session.registeredDeviceId)}</div>
-        <button class="button secondary compact unlink-session" data-session-id="${escapeHtml(session.sessionId)}" type="button">Unlink</button>` : `
-        <div class="button-row session-link-row">
-          <select class="session-device-select" data-session-id="${escapeHtml(session.sessionId)}" aria-label="Robot record for live session">
-            <option value="">Link to robot...</option>${robotOptions}
-          </select>
-          <button class="button secondary compact link-session" data-session-id="${escapeHtml(session.sessionId)}" type="button">Link</button>
-        </div>`}
+      ${session.registeredDeviceId ? `<div class="muted-row">Linked inventory identity: ${escapeHtml(session.registeredDeviceId)}</div>` : ""}
+      <div class="button-row session-link-row">
+        <select class="session-device-select" data-session-id="${escapeHtml(session.sessionId)}" aria-label="Robot record for live session">
+          <option value="">${session.registeredDeviceId ? "Replace linked robot..." : "Link to robot..."}</option>${robots.map((robot) =>
+            `<option value="${escapeHtml(robot.deviceId)}" ${robot.deviceId === session.registeredDeviceId ? "selected" : ""}>${escapeHtml(robotSelectorLabel(robot))}${robot.isHidden ? " (archived)" : ""}</option>`
+          ).join("")}
+        </select>
+        <button class="button secondary compact link-session" data-session-id="${escapeHtml(session.sessionId)}" type="button">${session.registeredDeviceId ? "Replace" : "Link"}</button>
+        ${session.registeredDeviceId ? `<button class="button secondary compact unlink-session" data-session-id="${escapeHtml(session.sessionId)}" type="button">Unlink</button>` : ""}
+      </div>
     </li>
   `).join("");
 }
@@ -525,6 +523,7 @@ function renderStatusView(summary, previous = previousSummary) {
   const networkFleet = serverFleet.network || {};
   const service = summary.service || {};
   const robots = summary.robots || [];
+  const inventory = summary.inventory || robots;
   const recentSessions = summary.recentSessions || [];
   const previousRobots = previous?.robots || [];
   const previousRecentSessions = previous?.recentSessions || [];
@@ -662,7 +661,7 @@ function renderStatusView(summary, previous = previousSummary) {
             <span class="badge neutral">${fleet.totalSessions ?? 0} tracked</span>
           </div>
           <ol class="steps">
-            ${renderRecentSessions(pageRecentSessions, robots, changedSessionIds)}
+            ${renderRecentSessions(pageRecentSessions, inventory, changedSessionIds)}
           </ol>
           ${renderRecentSessionPagination(recentSessions.length)}
           <div class="status-divider"></div>

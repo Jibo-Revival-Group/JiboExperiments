@@ -85,6 +85,11 @@ const SERVER_LIBRARY_VARIANTS = [
     StockMd5: "a863a238d6f2531446d0eb0d1d358c19",
     PatchedMd5: "688ec2940ed1fc7d1b86d2fd29bc6b30",
   },
+  {
+    Name: "early-model",
+    StockMd5: "e3f3e394815bebb37427f65ead579e0f",
+    PatchedMd5: "db55f99018e2348c2754b1daa6e1df39",
+  },
 ];
 
 const robotRoot = path.resolve(process.argv[2]);

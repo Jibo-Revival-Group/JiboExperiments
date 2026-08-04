@@ -171,6 +171,7 @@ Native `jibo-server-service` compatibility patch:
 
 - v1 stock/patched MD5: `ae82f1dd7407f8d74b287917cb9a8b24` -> `e55e18e92aa6365569f13214e0118745`
 - v2/lastdance stock/patched MD5: `a863a238d6f2531446d0eb0d1d358c19` -> `688ec2940ed1fc7d1b86d2fd29bc6b30`
+- early-model stock/patched MD5: `e3f3e394815bebb37427f65ead579e0f` -> `db55f99018e2348c2754b1daa6e1df39`
 - replace exactly two equal-length ASCII occurrences of `jibo.com` with `jibo.pro`
 - `NotificationSubsystem::getSignedHeaders()` then signs `https://open-jibo.jibo.pro`
 - `NotificationSubsystem::getRobotToken()` then connects to `open-jibo.jibo.pro:443`

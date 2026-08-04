@@ -88,4 +88,44 @@ internal sealed class FileMediaContentStore(string? directoryPath) : IMediaConte
             Meta = meta as IReadOnlyDictionary<string, object?> ?? new Dictionary<string, object?>(meta)
         };
     }
+
+    public async Task<IReadOnlyList<MediaContentItem>> ListAsync(string prefix, int maxCount = 100,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(DirectoryPath) || !Directory.Exists(DirectoryPath)) return [];
+
+        var normalizedPrefix = MediaPathHelper.GetRelativeStoragePath(prefix)
+            .Replace(Path.DirectorySeparatorChar, '/');
+        var items = new List<MediaContentItem>();
+        foreach (var metaPath in Directory.EnumerateFiles(DirectoryPath, "*.json", SearchOption.AllDirectories))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (items.Count >= Math.Max(1, maxCount)) break;
+
+            try
+            {
+                using var document = JsonDocument.Parse(await File.ReadAllTextAsync(metaPath, cancellationToken));
+                var root = document.RootElement;
+                var path = root.TryGetProperty("path", out var pathElement) ? pathElement.GetString() : null;
+                if (string.IsNullOrWhiteSpace(path) ||
+                    !MediaPathHelper.GetRelativeStoragePath(path).Replace(Path.DirectorySeparatorChar, '/')
+                        .StartsWith(normalizedPrefix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var contentType = root.TryGetProperty("contentType", out var typeElement)
+                    ? typeElement.GetString() ?? "application/octet-stream"
+                    : "application/octet-stream";
+                var meta = root.TryGetProperty("meta", out var metaElement) && metaElement.ValueKind == JsonValueKind.Object
+                    ? JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(), JsonOptions) ?? []
+                    : new Dictionary<string, object?>();
+                items.Add(new MediaContentItem { Path = path, ContentType = contentType, Meta = meta });
+            }
+            catch (JsonException)
+            {
+                // Skip malformed manifests while keeping the remaining diagnostics visible.
+            }
+        }
+
+        return items;
+    }
 }

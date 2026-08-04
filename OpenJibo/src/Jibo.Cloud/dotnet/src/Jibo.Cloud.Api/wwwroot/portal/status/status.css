@@ -101,10 +101,6 @@ body {
   gap: 1rem;
 }
 
-.status-grid.two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .panel.tight {
   padding: 1.1rem 1.25rem;
 }
@@ -240,6 +236,64 @@ body {
   font-size: 0.8rem;
 }
 
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.log-viewer {
+  margin-top: 1rem;
+}
+
+.log-viewer-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.log-list {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 30rem;
+  overflow: auto;
+}
+
+.log-item {
+  display: grid;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+  cursor: pointer;
+}
+
+.log-item:hover { border-color: var(--status-accent); }
+.log-item span, .log-item small { color: var(--muted); }
+
+.log-preview-panel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.log-preview {
+  max-height: 30rem;
+  margin: 0;
+  overflow: auto;
+  color: var(--status-ink);
+  font: 0.82rem/1.5 "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .status-divider {
   height: 1px;
   margin: 1rem 0;
@@ -295,13 +349,11 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .status-grid.two {
-    grid-template-columns: 1fr;
-  }
-
   .robot-toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .log-viewer-grid { grid-template-columns: 1fr; }
 
   .toolbar-summary {
     grid-column: 1 / -1;

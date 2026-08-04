@@ -2300,5 +2300,9 @@ public sealed class JiboCloudProtocolService(
         {
             return Task.FromResult<MediaContentSnapshot?>(null);
         }
+
+        public Task<IReadOnlyList<MediaContentItem>> ListAsync(string prefix, int maxCount = 100,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<MediaContentItem>>([]);
     }
 }

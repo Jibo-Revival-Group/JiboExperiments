@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using Azure;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Jibo.Cloud.Application.Abstractions;
 
 namespace Jibo.Cloud.Infrastructure.Media;
@@ -90,5 +92,47 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
             Content = content.Value.Content.ToArray(),
             Meta = meta as IReadOnlyDictionary<string, object?> ?? new Dictionary<string, object?>(meta)
         };
+    }
+
+    public async Task<IReadOnlyList<MediaContentItem>> ListAsync(string prefix, int maxCount = 100,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedPrefix = MediaPathHelper.GetRelativeStoragePath(prefix).Replace('\\', '/') + "/";
+        var items = new List<MediaContentItem>();
+        try
+        {
+            await foreach (var blob in _containerClient.GetBlobsAsync(BlobTraits.None, BlobStates.None,
+                               normalizedPrefix, cancellationToken))
+            {
+                if (items.Count >= Math.Max(1, maxCount)) break;
+                if (!blob.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
+
+                try
+                {
+                    var content = await _containerClient.GetBlobClient(blob.Name).DownloadContentAsync(cancellationToken);
+                    using var document = JsonDocument.Parse(content.Value.Content.ToStream());
+                    var root = document.RootElement;
+                    var path = root.TryGetProperty("path", out var pathElement) ? pathElement.GetString() : null;
+                    if (string.IsNullOrWhiteSpace(path)) continue;
+                    var contentType = root.TryGetProperty("contentType", out var typeElement)
+                        ? typeElement.GetString() ?? "application/octet-stream"
+                        : "application/octet-stream";
+                    var meta = root.TryGetProperty("meta", out var metaElement) && metaElement.ValueKind == JsonValueKind.Object
+                        ? JsonSerializer.Deserialize<Dictionary<string, object?>>(metaElement.GetRawText(), JsonOptions) ?? []
+                        : new Dictionary<string, object?>();
+                    items.Add(new MediaContentItem { Path = path, ContentType = contentType, Meta = meta });
+                }
+                catch (JsonException)
+                {
+                    // Keep listing healthy if one historic manifest cannot be parsed.
+                }
+            }
+        }
+        catch (RequestFailedException exception) when (exception.Status == 404)
+        {
+            return [];
+        }
+
+        return items;
     }
 }

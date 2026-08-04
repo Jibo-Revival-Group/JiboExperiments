@@ -20,6 +20,7 @@ let bannerMessage = "";
 let bannerTone = "success";
 let refreshTimer = null;
 let refreshInFlight = false;
+let activeLogViewer = null;
 
 function escapeHtml(value) {
   return String(value)
@@ -285,7 +286,12 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
         <div class="muted-row">${escapeHtml(robot.firmwareVersion || "-")}</div>
         <div class="muted-row">${escapeHtml(robot.applicationVersion || "-")}</div>
       </td>
-      <td><button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button></td>
+      <td>
+        <div class="row-actions">
+          <button class="button secondary compact view-logs" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Logs</button>
+          <button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button>
+        </div>
+      </td>
     </tr>
   `).join("");
 }
@@ -379,6 +385,62 @@ async function setRobotArchive(deviceId, hidden) {
     body: JSON.stringify({ hidden }),
   });
   await refreshStatus(hidden ? "Robot archived from the default view." : "Robot restored to the default view.");
+}
+
+async function openRobotLogs(deviceId, robotName) {
+  activeLogViewer = { deviceId, robotName, loading: true, logs: [], selected: null, error: "" };
+  renderStatusView(latestSummary);
+  try {
+    const payload = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/logs`);
+    activeLogViewer = { ...activeLogViewer, loading: false, logs: payload.logs || [] };
+  } catch (error) {
+    activeLogViewer = { ...activeLogViewer, loading: false, error: error.message };
+  }
+  renderStatusView(latestSummary);
+}
+
+async function openLogArtifact(path) {
+  if (!activeLogViewer) return;
+  activeLogViewer = { ...activeLogViewer, loadingContent: true, error: "" };
+  renderStatusView(latestSummary);
+  try {
+    const payload = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(activeLogViewer.deviceId)}/logs/content?path=${encodeURIComponent(path)}`);
+    activeLogViewer = { ...activeLogViewer, loadingContent: false, selected: payload };
+  } catch (error) {
+    activeLogViewer = { ...activeLogViewer, loadingContent: false, error: error.message };
+  }
+  renderStatusView(latestSummary);
+}
+
+function renderLogViewer() {
+  if (!activeLogViewer) return "";
+  const viewer = activeLogViewer;
+  const items = viewer.logs || [];
+  const list = viewer.loading
+    ? `<p class="muted-row">Loading stored logs…</p>`
+    : !items.length
+      ? `<p class="muted-row">No stored log artifacts for this robot yet.</p>`
+      : `<div class="log-list">${items.map((log) => `
+          <button class="log-item view-log-artifact" data-path="${escapeHtml(log.path)}" type="button">
+            <strong>${escapeHtml(log.category || "log")}</strong>
+            <span>${escapeHtml(formatDate(log.storedUtc))} · ${escapeHtml(log.contentLength || "?")} bytes</span>
+            <small class="mono">${escapeHtml(log.path)}</small>
+          </button>`).join("")}</div>`;
+  const preview = viewer.loadingContent
+    ? `<p class="muted-row">Loading log preview…</p>`
+    : viewer.selected
+      ? `<pre class="log-preview">${escapeHtml(viewer.selected.text || "")}</pre>`
+      : `<p class="muted-row">Select an artifact to inspect its decoded text preview.</p>`;
+
+  return `
+    <section class="card panel tight log-viewer" aria-live="polite">
+      <div class="panel-header">
+        <div><p class="eyebrow">Diagnostics</p><h2>Stored logs · ${escapeHtml(viewer.robotName)}</h2></div>
+        <button class="button secondary compact close-log-viewer" type="button">Close</button>
+      </div>
+      ${viewer.error ? `<p class="status error">${escapeHtml(viewer.error)}</p>` : ""}
+      <div class="log-viewer-grid"><div>${list}</div><div class="log-preview-panel">${preview}</div></div>
+    </section>`;
 }
 
 function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Set()) {
@@ -617,7 +679,7 @@ function renderStatusView(summary, previous = previousSummary) {
         </div>
       </section>
 
-      <div class="status-grid two">
+      <div class="status-grid">
         <section class="card panel tight">
           <div class="panel-header">
             <div>
@@ -673,6 +735,8 @@ function renderStatusView(summary, previous = previousSummary) {
           </div>
         </section>
       </div>
+
+      ${renderLogViewer()}
 
       ${errorBanner}
       ${bannerMessage && !lastRefreshError ? `<p class="status ${bannerTone}" style="margin-top: 1rem;">${escapeHtml(bannerMessage)}</p>` : ""}
@@ -754,6 +818,18 @@ function renderStatusView(summary, previous = previousSummary) {
 
   document.querySelectorAll(".archive-robot").forEach((button) => {
     button.addEventListener("click", () => setRobotArchive(button.dataset.deviceId, button.dataset.hidden === "true"));
+  });
+  document.querySelectorAll(".view-logs").forEach((button) => {
+    button.addEventListener("click", () => openRobotLogs(button.dataset.deviceId, button.dataset.robotName));
+  });
+  document.querySelectorAll(".view-log-artifact").forEach((button) => {
+    button.addEventListener("click", () => openLogArtifact(button.dataset.path));
+  });
+  document.querySelectorAll(".close-log-viewer").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeLogViewer = null;
+      renderStatusView(latestSummary);
+    });
   });
   document.querySelectorAll(".link-session").forEach((button) => {
     button.addEventListener("click", () => linkLiveSession(button.dataset.sessionId));

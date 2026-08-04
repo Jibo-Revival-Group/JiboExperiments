@@ -31,6 +31,8 @@ internal static class ApiRequestEnvelopeFactory
             ApplicationVersion = context.Request.Headers["X-OpenJibo-AppVersion"].ToString(),
             BodyText = bodyText,
             Headers = context.Request.Headers.ToDictionary(pair => pair.Key, pair => pair.Value.ToString(),
+                StringComparer.OrdinalIgnoreCase),
+            QueryParameters = context.Request.Query.ToDictionary(pair => pair.Key, pair => pair.Value.ToString(),
                 StringComparer.OrdinalIgnoreCase)
         };
     }

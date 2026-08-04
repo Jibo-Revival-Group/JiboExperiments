@@ -1225,6 +1225,13 @@ public sealed class JiboCloudProtocolService(
             ["uploadId"] = uploadId,
             ["deviceId"] = identity.DeviceId,
             ["identitySource"] = identity.Source,
+            ["authScheme"] = identity.Aws.AuthScheme,
+            ["awsSigV4"] = identity.Aws.IsSigV4,
+            ["awsSigV3"] = identity.Aws.IsSigV3,
+            ["awsAccessKeyFingerprint"] = identity.Aws.AccessKeyFingerprint,
+            ["awsSignedHeadersPresent"] = identity.Aws.SignedHeadersPresent,
+            ["awsSignsRobotHeader"] = identity.Aws.SignsRobotHeader,
+            ["awsSignsTransactionHeader"] = identity.Aws.SignsTransactionHeader,
             ["requestId"] = envelope.RequestId,
             ["correlationId"] = envelope.CorrelationId,
             ["firmwareVersion"] = envelope.FirmwareVersion,
@@ -1241,10 +1248,18 @@ public sealed class JiboCloudProtocolService(
             _logger.LogInformation(
                 "Protocol identity diagnostic requestId={RequestId} traceId={TraceId} operation={Operation} host={Host} " +
                 "path={Path} robotHeaderPresent={RobotHeaderPresent} bearerTokenPresent={BearerTokenPresent} " +
-                "bearerTokenResolved={BearerTokenResolved} identitySource={IdentitySource} resolvedDeviceId={ResolvedDeviceId} bodyBytes={BodyBytes}",
+                "bearerTokenResolved={BearerTokenResolved} identitySource={IdentitySource} resolvedDeviceId={ResolvedDeviceId} " +
+                "authScheme={AuthScheme} awsSigV4={AwsSigV4} awsSigV3={AwsSigV3} awsAccessKeyFingerprint={AwsAccessKeyFingerprint} " +
+                "awsSecurityTokenPresent={AwsSecurityTokenPresent} awsDatePresent={AwsDatePresent} awsSignaturePresent={AwsSignaturePresent} " +
+                "awsSignedHeadersPresent={AwsSignedHeadersPresent} awsSignsRobotHeader={AwsSignsRobotHeader} " +
+                "awsSignsTransactionHeader={AwsSignsTransactionHeader} bodyBytes={BodyBytes}",
                 envelope.RequestId, envelope.CorrelationId, operation, envelope.HostName, envelope.Path,
                 identity.HeaderPresent, identity.BearerTokenPresent, identity.BearerTokenResolved, identity.Source,
-                identity.DeviceId, Encoding.UTF8.GetByteCount(envelope.BodyText));
+                identity.DeviceId, identity.Aws.AuthScheme, identity.Aws.IsSigV4, identity.Aws.IsSigV3,
+                identity.Aws.AccessKeyFingerprint,
+                identity.Aws.SecurityTokenPresent, identity.Aws.DatePresent, identity.Aws.SignaturePresent,
+                identity.Aws.SignedHeadersPresent, identity.Aws.SignsRobotHeader, identity.Aws.SignsTransactionHeader,
+                Encoding.UTF8.GetByteCount(envelope.BodyText));
         return identity;
     }
 
@@ -1304,6 +1319,13 @@ public sealed class JiboCloudProtocolService(
         var meta = ReadObject(body, "meta") ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         meta["deviceId"] = identity.DeviceId;
         meta["identitySource"] = identity.Source;
+        meta["authScheme"] = identity.Aws.AuthScheme;
+        meta["awsSigV4"] = identity.Aws.IsSigV4;
+        meta["awsSigV3"] = identity.Aws.IsSigV3;
+        meta["awsAccessKeyFingerprint"] = identity.Aws.AccessKeyFingerprint;
+        meta["awsSignedHeadersPresent"] = identity.Aws.SignedHeadersPresent;
+        meta["awsSignsRobotHeader"] = identity.Aws.SignsRobotHeader;
+        meta["awsSignsTransactionHeader"] = identity.Aws.SignsTransactionHeader;
         var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
         meta["contentType"] = contentType;
         var bodyBytes = string.IsNullOrWhiteSpace(envelope.BodyText)

@@ -2785,6 +2785,76 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public void AwsSigV4Identity_IsObservedButDoesNotClaimARobot()
+    {
+        var resolver = new ProtocolRobotIdentityResolver(new InMemoryCloudStateStore());
+        var identity = resolver.Resolve(new ProtocolEnvelope
+        {
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Authorization"] = "AWS4-HMAC-SHA256 Credential=AKIAEXAMPLEKEY/20260804/us-east-1/s3/aws4_request, SignedHeaders=host;x-amz-date, Signature=secret-signature",
+                ["X-Amz-Date"] = "20260804T190000Z"
+            },
+            QueryParameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["X-Amz-Security-Token"] = "secret-session-token"
+            }
+        });
+
+        Assert.False(identity.IsResolved);
+        Assert.Equal("unresolved", identity.Source);
+        Assert.True(identity.Aws.IsSigV4);
+        Assert.Equal("aws4-hmac-sha256", identity.Aws.AuthScheme);
+        Assert.True(identity.Aws.DatePresent);
+        Assert.True(identity.Aws.SecurityTokenPresent);
+        Assert.False(string.IsNullOrWhiteSpace(identity.Aws.AccessKeyFingerprint));
+        Assert.DoesNotContain("AKIAEXAMPLEKEY", identity.Aws.AccessKeyFingerprint);
+    }
+
+    [Fact]
+    public void AwsSigV3Identity_UsesAccessKeyFingerprintWithoutClaimingARobot()
+    {
+        var resolver = new ProtocolRobotIdentityResolver(new InMemoryCloudStateStore());
+        var identity = resolver.Resolve(new ProtocolEnvelope
+        {
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Authorization"] = "AWS3 AWSAccessKeyId=robot-credential-key,Algorithm=HmacSHA256,SignedHeaders=host;x-jibo-transid,Signature=secret-signature"
+            }
+        });
+
+        Assert.False(identity.IsResolved);
+        Assert.True(identity.Aws.IsSigV3);
+        Assert.False(identity.Aws.IsSigV4);
+        Assert.Equal("aws3", identity.Aws.AuthScheme);
+        Assert.False(string.IsNullOrWhiteSpace(identity.Aws.AccessKeyFingerprint));
+        Assert.DoesNotContain("robot-credential-key", identity.Aws.AccessKeyFingerprint);
+        Assert.True(identity.Aws.SignaturePresent);
+        Assert.True(identity.Aws.SignedHeadersPresent);
+        Assert.False(identity.Aws.SignsRobotHeader);
+        Assert.True(identity.Aws.SignsTransactionHeader);
+    }
+
+    [Fact]
+    public void AwsSigV3HttpsIdentity_IsObservedWithoutClaimingARobot()
+    {
+        var resolver = new ProtocolRobotIdentityResolver(new InMemoryCloudStateStore());
+        var identity = resolver.Resolve(new ProtocolEnvelope
+        {
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Authorization"] = "AWS3-HTTPS AWSAccessKeyId=robot-credential-key,Algorithm=HmacSHA256,Signature=secret-signature"
+            }
+        });
+
+        Assert.False(identity.IsResolved);
+        Assert.True(identity.Aws.IsSigV3);
+        Assert.Equal("aws3-https", identity.Aws.AuthScheme);
+        Assert.True(identity.Aws.SignaturePresent);
+        Assert.False(identity.Aws.SignedHeadersPresent);
+    }
+
+    [Fact]
     public async Task MediaCreate_WritesBinaryManifestMetadataForSync()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));

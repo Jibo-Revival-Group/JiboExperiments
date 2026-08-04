@@ -21,6 +21,9 @@ public sealed class ProtocolEnvelope
     public IDictionary<string, string> Headers { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+    public IDictionary<string, string> QueryParameters { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
     public JsonElement? TryParseBody()
     {
         if (string.IsNullOrWhiteSpace(BodyText)) return null;

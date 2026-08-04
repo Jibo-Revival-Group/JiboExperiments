@@ -294,6 +294,26 @@ body {
   word-break: break-word;
 }
 
+.artifact-image {
+  display: block;
+  max-width: 100%;
+  max-height: 30rem;
+  border-radius: 8px;
+  margin-top: 0.75rem;
+}
+
+.artifact-audio {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.artifact-entries {
+  max-height: 30rem;
+  overflow: auto;
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
 .status-divider {
   height: 1px;
   margin: 1rem 0;

@@ -2855,6 +2855,29 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public void ClaimedAwsCredentialFingerprint_ResolvesTheClaimedRobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        var robot = store.GetOrCreateDevice("Royal-Current-Sage-Canvas", null, null,
+            RobotRegistrationSources.Physical);
+        var resolver = new ProtocolRobotIdentityResolver(store);
+        var envelope = new ProtocolEnvelope
+        {
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Authorization"] = "AWS4-HMAC-SHA256 Credential=test-access-key/20260804/us-east-1/log/aws4_request, SignedHeaders=host;x-amz-date, Signature=test"
+            }
+        };
+        var observed = resolver.Resolve(envelope);
+        store.BindAwsCredentialFingerprint(robot.DeviceId, observed.Aws.AccessKeyFingerprint!, "test-claim");
+        var identity = resolver.Resolve(envelope);
+
+        Assert.True(identity.IsResolved);
+        Assert.Equal(robot.DeviceId, identity.DeviceId);
+        Assert.Equal("aws-credential-binding", identity.Source);
+    }
+
+    [Fact]
     public async Task MediaCreate_WritesBinaryManifestMetadataForSync()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));

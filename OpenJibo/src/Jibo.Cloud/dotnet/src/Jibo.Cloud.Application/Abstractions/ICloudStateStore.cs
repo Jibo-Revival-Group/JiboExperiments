@@ -16,6 +16,10 @@ public interface ICloudStateStore
         string? registrationSource = null);
     DeviceRegistration UpsertDevice(DeviceRegistration registration);
     DeviceRegistration? FindDeviceByFriendlyId(string friendlyId);
+    DeviceRegistration? FindDeviceByAwsCredentialFingerprint(string accessKeyFingerprint);
+    IReadOnlyList<RobotCredentialBinding> GetRobotCredentialBindings();
+    RobotCredentialBinding BindAwsCredentialFingerprint(string deviceId, string accessKeyFingerprint,
+        string claimSource);
     UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);
     UserRecord? AuthenticateUser(string email, string password);
     UserRecord? GetUserById(string id);

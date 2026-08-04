@@ -33,6 +33,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly List<CalendarEventRecord> _calendarEvents = [];
     private readonly List<CommuteProfileRecord> _commuteProfiles = [];
     private readonly ConcurrentDictionary<string, DeviceRegistration> _devices = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, RobotCredentialBinding> _robotCredentialBindings = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<GreetingPresenceRecord> _greetingPresences = [];
 
     private readonly IHolidayCalendarProvider _holidayCalendarProvider;
@@ -282,6 +283,37 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             IdentityMatches(device.DeviceId, trimmed) ||
             IdentityMatches(device.RobotId, trimmed) ||
             IdentityMatches(device.FriendlyName, trimmed));
+    }
+
+    public DeviceRegistration? FindDeviceByAwsCredentialFingerprint(string accessKeyFingerprint)
+    {
+        if (string.IsNullOrWhiteSpace(accessKeyFingerprint)) return null;
+        return _robotCredentialBindings.TryGetValue(accessKeyFingerprint.Trim(), out var binding) &&
+               _devices.TryGetValue(binding.DeviceId, out var device)
+            ? CloneDeviceRegistration(device)
+            : null;
+    }
+
+    public IReadOnlyList<RobotCredentialBinding> GetRobotCredentialBindings() =>
+        _robotCredentialBindings.Values.OrderByDescending(binding => binding.ClaimedUtc).ToArray();
+
+    public RobotCredentialBinding BindAwsCredentialFingerprint(string deviceId, string accessKeyFingerprint,
+        string claimSource)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId)) throw new ArgumentException("Device ID is required.", nameof(deviceId));
+        if (string.IsNullOrWhiteSpace(accessKeyFingerprint))
+            throw new ArgumentException("Credential fingerprint is required.", nameof(accessKeyFingerprint));
+        if (!_devices.ContainsKey(deviceId.Trim()))
+            throw new KeyNotFoundException("Robot record was not found.");
+
+        var binding = new RobotCredentialBinding(accessKeyFingerprint.Trim(), deviceId.Trim(), DateTimeOffset.UtcNow,
+            string.IsNullOrWhiteSpace(claimSource) ? "admin-claim" : claimSource.Trim());
+        _robotCredentialBindings.AddOrUpdate(binding.AccessKeyFingerprint, binding,
+            (_, existing) => existing.DeviceId.Equals(binding.DeviceId, StringComparison.OrdinalIgnoreCase)
+                ? binding with { ClaimedUtc = existing.ClaimedUtc, ClaimSource = existing.ClaimSource }
+                : throw new InvalidOperationException("Credential fingerprint is already claimed by another robot."));
+        TouchState();
+        return binding;
     }
 
     private static bool IdentityMatches(string? left, string? right)
@@ -2982,6 +3014,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Robot = _robot,
             RobotProfile = _robotProfile,
             Devices = _devices.Values.ToArray(),
+            RobotCredentialBindings = _robotCredentialBindings.Values.ToArray(),
             Sessions = _sessionsByToken.Values.Select(MapSessionSnapshot).ToArray(),
             SymmetricKeys = _symmetricKeys.ToDictionary(entry => entry.Key, entry => entry.Value,
                 StringComparer.OrdinalIgnoreCase),
@@ -3025,6 +3058,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         }
 
         if (_devices.IsEmpty || !_devices.ContainsKey(_robot.DeviceId)) _devices[_robot.DeviceId] = _robot;
+
+        _robotCredentialBindings.Clear();
+        foreach (var binding in snapshot.RobotCredentialBindings ?? [])
+            if (!string.IsNullOrWhiteSpace(binding.AccessKeyFingerprint) &&
+                !string.IsNullOrWhiteSpace(binding.DeviceId) && _devices.ContainsKey(binding.DeviceId))
+                _robotCredentialBindings.TryAdd(binding.AccessKeyFingerprint, binding);
 
         _sessionsByToken.Clear();
         foreach (var session in snapshot.Sessions ?? [])
@@ -3306,6 +3345,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public DeviceRegistration? Robot { get; init; }
         public RobotProfile? RobotProfile { get; init; }
         public DeviceRegistration[]? Devices { get; init; }
+        public RobotCredentialBinding[]? RobotCredentialBindings { get; init; }
         public CloudSessionSnapshot[]? Sessions { get; init; }
         public Dictionary<string, string>? SymmetricKeys { get; init; }
         public KeyRequestRecord[]? KeyRequests { get; init; }

@@ -980,7 +980,9 @@ internal static class PortalEndpoints
                 {
                     item.Path,
                     item.ContentType,
-                    category = ReadArtifactMeta(item.Meta, "category"),
+                    category = item.Path.StartsWith("logs/", StringComparison.OrdinalIgnoreCase)
+                        ? ReadArtifactMeta(item.Meta, "category")
+                        : "media",
                     unassigned = string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")),
                     storedUtc = ReadArtifactMeta(item.Meta, "storedUtc"),
                     contentLength = ReadArtifactMeta(item.Meta, "contentLength"),
@@ -1024,6 +1026,116 @@ internal static class PortalEndpoints
                 text = ReadLogText(content.Content, content.ContentType),
                 contentLength = content.Content.Length
             });
+        });
+
+        app.MapGet("/api/portal/status/robots/{deviceId}/artifacts", async (
+            string deviceId,
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore,
+            IMediaContentStore mediaContentStore,
+            CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            var device = cloudStateStore.GetDevices().FirstOrDefault(candidate =>
+                candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
+            if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
+
+            var robotKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                { device.DeviceId, device.RobotId, device.FriendlyName };
+            var artifacts = (await mediaContentStore.ListAsync(string.Empty, 400, cancellationToken))
+                .Where(item =>
+                {
+                    var artifactDeviceId = ReadArtifactMeta(item.Meta, "deviceId");
+                    return string.IsNullOrWhiteSpace(artifactDeviceId) || robotKeys.Contains(artifactDeviceId);
+                })
+                .OrderByDescending(item => ReadArtifactMeta(item.Meta, "storedUtc"))
+                .Take(100)
+                .Select(item => new
+                {
+                    item.Path,
+                    item.ContentType,
+                    source = item.Path.StartsWith("logs/", StringComparison.OrdinalIgnoreCase) ? "log" : "media",
+                    category = ReadArtifactMeta(item.Meta, "category"),
+                    unassigned = string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")),
+                    storedUtc = ReadArtifactMeta(item.Meta, "storedUtc"),
+                    contentLength = ReadArtifactMeta(item.Meta, "contentLength"),
+                    contentSha256 = ReadArtifactMeta(item.Meta, "contentSha256")
+                });
+            return Results.Json(new { artifacts });
+        });
+
+        app.MapGet("/api/portal/status/robots/{deviceId}/artifacts/content", async (
+            string deviceId,
+            string path,
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore,
+            IMediaContentStore mediaContentStore,
+            CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            var device = cloudStateStore.GetDevices().FirstOrDefault(candidate =>
+                candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
+            if (device is null || string.IsNullOrWhiteSpace(path))
+                return Results.NotFound(new { error = "Artifact was not found." });
+
+            var robotKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                { device.DeviceId, device.RobotId, device.FriendlyName };
+            var artifact = (await mediaContentStore.ListAsync(string.Empty, 400, cancellationToken))
+                .FirstOrDefault(item => item.Path.Equals(path, StringComparison.OrdinalIgnoreCase) &&
+                    (string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")) ||
+                     robotKeys.Contains(ReadArtifactMeta(item.Meta, "deviceId"))));
+            if (artifact is null) return Results.NotFound(new { error = "Artifact was not found." });
+
+            var content = await mediaContentStore.LoadAsync(path, cancellationToken);
+            if (content is null) return Results.NotFound(new { error = "Artifact content was not found." });
+            var preview = ReadArtifactPreview(content.Content, content.ContentType);
+            return Results.Json(new
+            {
+                artifact.Path,
+                artifact.ContentType,
+                contentLength = content.Content.Length,
+                preview.Kind,
+                preview.Summary,
+                preview.Text,
+                preview.DataUrl,
+                preview.ArchiveEntries
+            });
+        });
+
+        app.MapPost("/api/portal/status/robots/{deviceId}/credential-bindings", (
+            string deviceId,
+            [FromBody] BindRobotCredentialRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            if (string.IsNullOrWhiteSpace(request.AccessKeyFingerprint) ||
+                !System.Text.RegularExpressions.Regex.IsMatch(request.AccessKeyFingerprint, "^[a-f0-9]{16}$",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                return Results.BadRequest(new { error = "A 16-character credential fingerprint is required." });
+
+            try
+            {
+                var robot = cloudStateStore.FindDeviceByFriendlyId(deviceId);
+                if (robot is null) return Results.NotFound(new { error = "Robot record was not found." });
+                var binding = cloudStateStore.BindAwsCredentialFingerprint(robot.DeviceId, request.AccessKeyFingerprint,
+                    "portal-admin-claim");
+                return Results.Json(new { ok = true, binding });
+            }
+            catch (KeyNotFoundException)
+            {
+                return Results.NotFound(new { error = "Robot record was not found." });
+            }
+            catch (InvalidOperationException)
+            {
+                return Results.Conflict(new { error = "Credential fingerprint is already claimed by another robot." });
+            }
         });
 
         app.MapPost("/api/portal/status/sessions/{sessionId}/link", (
@@ -1338,6 +1450,77 @@ internal static class PortalEndpoints
             return $"Binary log artifact ({content.Length:N0} bytes); preview is unavailable.";
         }
     }
+
+    private static ArtifactPreview ReadArtifactPreview(byte[] content, string contentType)
+    {
+        if (HasPrefix(content, 0x89, 0x50, 0x4E, 0x47))
+            return BinaryPreview("image", "PNG image", content, "image/png");
+        if (HasPrefix(content, 0x4F, 0x67, 0x67, 0x53))
+            return BinaryPreview("audio", "Ogg audio", content, "audio/ogg");
+        if (HasPrefix(content, 0x50, 0x4B, 0x03, 0x04) || HasPrefix(content, 0x50, 0x4B, 0x05, 0x06))
+            return ZipPreview(content);
+        if (HasPrefix(content, 0x1F, 0x8B))
+        {
+            try
+            {
+                using var input = new MemoryStream(content, writable: false);
+                using var gzip = new GZipStream(input, CompressionMode.Decompress);
+                using var output = new MemoryStream();
+                gzip.CopyTo(output);
+                var decompressed = output.ToArray();
+                return IsLikelyText(decompressed)
+                    ? new ArtifactPreview("text", "Gzip-compressed text", ReadTextPreview(decompressed), null, [])
+                    : new ArtifactPreview("gzip", "Gzip-compressed binary data", null, null, []);
+            }
+            catch (InvalidDataException)
+            {
+                return new ArtifactPreview("binary", "Invalid gzip data", null, null, []);
+            }
+        }
+
+        if (contentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase) ||
+            contentType.Contains("json", StringComparison.OrdinalIgnoreCase) || IsLikelyText(content))
+            return new ArtifactPreview("text", "Text", ReadTextPreview(content), null, []);
+        return new ArtifactPreview("binary", "Unknown binary data", null, null, []);
+    }
+
+    private static ArtifactPreview BinaryPreview(string kind, string summary, byte[] content, string contentType) =>
+        content.Length <= 4 * 1024 * 1024
+            ? new ArtifactPreview(kind, summary, null, $"data:{contentType};base64,{Convert.ToBase64String(content)}", [])
+            : new ArtifactPreview(kind, $"{summary} ({content.Length:N0} bytes; preview exceeds 4 MB)", null, null, []);
+
+    private static ArtifactPreview ZipPreview(byte[] content)
+    {
+        try
+        {
+            using var stream = new MemoryStream(content, writable: false);
+            using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+            var entries = archive.Entries.Take(100).Select(entry => new ArtifactArchiveEntry(entry.FullName, entry.Length)).ToArray();
+            return new ArtifactPreview("zip", $"ZIP archive with {archive.Entries.Count} entries", null, null, entries);
+        }
+        catch (InvalidDataException)
+        {
+            return new ArtifactPreview("binary", "Invalid ZIP data", null, null, []);
+        }
+    }
+
+    private static bool HasPrefix(byte[] content, params byte[] prefix) =>
+        content.Length >= prefix.Length && content.AsSpan(0, prefix.Length).SequenceEqual(prefix);
+
+    private static bool IsLikelyText(byte[] content) =>
+        content.Length == 0 || (!content.Take(Math.Min(content.Length, 4096)).Contains((byte)0) &&
+                               content.Take(Math.Min(content.Length, 4096)).Count(value => value < 0x09) < 8);
+
+    private static string ReadTextPreview(byte[] content)
+    {
+        const int maxPreviewCharacters = 32_000;
+        var text = Encoding.UTF8.GetString(content);
+        return text.Length <= maxPreviewCharacters ? text : text[..maxPreviewCharacters] + "\n\n[preview truncated]";
+    }
+
+    private sealed record ArtifactPreview(string Kind, string Summary, string? Text, string? DataUrl,
+        IReadOnlyList<ArtifactArchiveEntry> ArchiveEntries);
+    private sealed record ArtifactArchiveEntry(string Name, long Length);
 
     private static IReadOnlyList<RobotStatusRow> BuildReconciledRobotStatuses(
         IReadOnlyList<DeviceRegistration> devices,
@@ -2227,6 +2410,7 @@ internal static class PortalEndpoints
 
     private sealed record ArchiveStatusRobotRequest(string? PortalSessionToken, bool Hidden);
     private sealed record LinkStatusSessionRequest(string? PortalSessionToken, string? DeviceId);
+    private sealed record BindRobotCredentialRequest(string? PortalSessionToken, string? AccessKeyFingerprint);
 
     private sealed record FleetServerPresenceReportRequest(
         string? PortalSessionToken,

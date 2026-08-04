@@ -288,7 +288,7 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
       </td>
       <td>
         <div class="row-actions">
-          <button class="button secondary compact view-logs" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Logs</button>
+          <button class="button secondary compact view-artifacts" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Artifacts</button>
           <button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button>
         </div>
       </td>
@@ -387,24 +387,24 @@ async function setRobotArchive(deviceId, hidden) {
   await refreshStatus(hidden ? "Robot archived from the default view." : "Robot restored to the default view.");
 }
 
-async function openRobotLogs(deviceId, robotName) {
-  activeLogViewer = { deviceId, robotName, loading: true, logs: [], selected: null, error: "" };
+async function openRobotArtifacts(deviceId, robotName) {
+  activeLogViewer = { deviceId, robotName, loading: true, artifacts: [], selected: null, error: "" };
   renderStatusView(latestSummary);
   try {
-    const payload = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/logs`);
-    activeLogViewer = { ...activeLogViewer, loading: false, logs: payload.logs || [] };
+    const payload = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/artifacts`);
+    activeLogViewer = { ...activeLogViewer, loading: false, artifacts: payload.artifacts || [] };
   } catch (error) {
     activeLogViewer = { ...activeLogViewer, loading: false, error: error.message };
   }
   renderStatusView(latestSummary);
 }
 
-async function openLogArtifact(path) {
+async function openArtifact(path) {
   if (!activeLogViewer) return;
   activeLogViewer = { ...activeLogViewer, loadingContent: true, error: "" };
   renderStatusView(latestSummary);
   try {
-    const payload = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(activeLogViewer.deviceId)}/logs/content?path=${encodeURIComponent(path)}`);
+    const payload = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(activeLogViewer.deviceId)}/artifacts/content?path=${encodeURIComponent(path)}`);
     activeLogViewer = { ...activeLogViewer, loadingContent: false, selected: payload };
   } catch (error) {
     activeLogViewer = { ...activeLogViewer, loadingContent: false, error: error.message };
@@ -415,13 +415,13 @@ async function openLogArtifact(path) {
 function renderLogViewer() {
   if (!activeLogViewer) return "";
   const viewer = activeLogViewer;
-  const items = viewer.logs || [];
+  const items = viewer.artifacts || [];
   const list = viewer.loading
     ? `<p class="muted-row">Loading stored logs…</p>`
     : !items.length
       ? `<p class="muted-row">No stored log artifacts for this robot yet.</p>`
       : `<div class="log-list">${items.map((log) => `
-          <button class="log-item view-log-artifact" data-path="${escapeHtml(log.path)}" type="button">
+          <button class="log-item view-artifact" data-path="${escapeHtml(log.path)}" type="button">
             <strong>${escapeHtml(log.category || "log")}${log.unassigned ? " · Unassigned" : ""}</strong>
             <span>${escapeHtml(formatDate(log.storedUtc))} · ${escapeHtml(log.contentLength || "?")} bytes</span>
             <small class="mono">${escapeHtml(log.path)}</small>
@@ -429,7 +429,7 @@ function renderLogViewer() {
   const preview = viewer.loadingContent
     ? `<p class="muted-row">Loading log preview…</p>`
     : viewer.selected
-      ? `<pre class="log-preview">${escapeHtml(viewer.selected.text || "")}</pre>`
+      ? renderArtifactPreview(viewer.selected)
       : `<p class="muted-row">Select an artifact to inspect its decoded text preview.</p>`;
 
   return `
@@ -441,6 +441,19 @@ function renderLogViewer() {
       ${viewer.error ? `<p class="status error">${escapeHtml(viewer.error)}</p>` : ""}
       <div class="log-viewer-grid"><div>${list}</div><div class="log-preview-panel">${preview}</div></div>
     </section>`;
+}
+
+function renderArtifactPreview(artifact) {
+  const summary = `<p class="muted-row">${escapeHtml(artifact.summary || artifact.contentType || "Artifact")}</p>`;
+  if (artifact.kind === "image" && artifact.dataUrl)
+    return `${summary}<img class="artifact-image" src="${artifact.dataUrl}" alt="Stored robot artifact">`;
+  if (artifact.kind === "audio" && artifact.dataUrl)
+    return `${summary}<audio class="artifact-audio" controls src="${artifact.dataUrl}"></audio>`;
+  if (artifact.kind === "zip") {
+    const entries = artifact.archiveEntries || [];
+    return `${summary}<ul class="artifact-entries">${entries.map((entry) => `<li><span class="mono">${escapeHtml(entry.name)}</span> <span class="muted-row">${escapeHtml(entry.length)} bytes</span></li>`).join("")}</ul>`;
+  }
+  return `${summary}${artifact.text ? `<pre class="log-preview">${escapeHtml(artifact.text)}</pre>` : `<p class="muted-row">Preview unavailable for this binary artifact.</p>`}`;
 }
 
 function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Set()) {
@@ -819,11 +832,11 @@ function renderStatusView(summary, previous = previousSummary) {
   document.querySelectorAll(".archive-robot").forEach((button) => {
     button.addEventListener("click", () => setRobotArchive(button.dataset.deviceId, button.dataset.hidden === "true"));
   });
-  document.querySelectorAll(".view-logs").forEach((button) => {
-    button.addEventListener("click", () => openRobotLogs(button.dataset.deviceId, button.dataset.robotName));
+  document.querySelectorAll(".view-artifacts").forEach((button) => {
+    button.addEventListener("click", () => openRobotArtifacts(button.dataset.deviceId, button.dataset.robotName));
   });
-  document.querySelectorAll(".view-log-artifact").forEach((button) => {
-    button.addEventListener("click", () => openLogArtifact(button.dataset.path));
+  document.querySelectorAll(".view-artifact").forEach((button) => {
+    button.addEventListener("click", () => openArtifact(button.dataset.path));
   });
   document.querySelectorAll(".close-log-viewer").forEach((button) => {
     button.addEventListener("click", () => {

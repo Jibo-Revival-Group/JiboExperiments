@@ -14,10 +14,20 @@ public sealed class ProtocolRobotIdentityResolver(ICloudStateStore stateStore)
         var aws = ReadAwsSignature(envelope);
         var tokenSession = string.IsNullOrWhiteSpace(bearerToken) ? null : stateStore.FindSessionByToken(bearerToken);
         var tokenIdentity = Normalize(tokenSession?.DeviceId);
+        var credentialIdentity = Normalize(aws.AccessKeyFingerprint is null
+            ? null
+            : stateStore.FindDeviceByAwsCredentialFingerprint(aws.AccessKeyFingerprint)?.DeviceId);
 
         if (!string.IsNullOrWhiteSpace(headerIdentity) && !string.IsNullOrWhiteSpace(tokenIdentity) &&
             !headerIdentity.Equals(tokenIdentity, StringComparison.OrdinalIgnoreCase))
             return new ProtocolRobotIdentity(null, "conflict", true, true, true, aws);
+
+        if ((!string.IsNullOrWhiteSpace(headerIdentity) && !string.IsNullOrWhiteSpace(credentialIdentity) &&
+             !headerIdentity.Equals(credentialIdentity, StringComparison.OrdinalIgnoreCase)) ||
+            (!string.IsNullOrWhiteSpace(tokenIdentity) && !string.IsNullOrWhiteSpace(credentialIdentity) &&
+             !tokenIdentity.Equals(credentialIdentity, StringComparison.OrdinalIgnoreCase)))
+            return new ProtocolRobotIdentity(null, "conflict", !string.IsNullOrWhiteSpace(headerIdentity),
+                !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws);
 
         if (!string.IsNullOrWhiteSpace(headerIdentity))
             return new ProtocolRobotIdentity(headerIdentity, "robot-header", true,
@@ -25,6 +35,10 @@ public sealed class ProtocolRobotIdentityResolver(ICloudStateStore stateStore)
 
         if (!string.IsNullOrWhiteSpace(tokenIdentity))
             return new ProtocolRobotIdentity(tokenIdentity, "bearer-token", false, true, true, aws);
+
+        if (!string.IsNullOrWhiteSpace(credentialIdentity))
+            return new ProtocolRobotIdentity(credentialIdentity, "aws-credential-binding", false,
+                !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws);
 
         return new ProtocolRobotIdentity(null, "unresolved", false,
             !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws);

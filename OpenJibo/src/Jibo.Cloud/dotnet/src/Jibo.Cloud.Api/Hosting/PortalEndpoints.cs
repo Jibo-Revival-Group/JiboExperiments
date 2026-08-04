@@ -1389,14 +1389,17 @@ internal static class PortalEndpoints
         DeviceRegistration primaryDevice,
         IEnumerable<DeviceRegistration> groupDevices)
     {
-        var sources = groupDevices
-            .Append(primaryDevice)
-            .Select(device => RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId))
-            .Where(source => !string.Equals(source, RobotRegistrationSources.Unknown, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+        var primarySource = RobotRegistrationSources.Normalize(primaryDevice.RegistrationSource, primaryDevice.DeviceId);
+        if (!string.Equals(primarySource, RobotRegistrationSources.Unknown, StringComparison.OrdinalIgnoreCase))
+            return primarySource;
 
-        return sources.FirstOrDefault()
-               ?? RobotRegistrationSources.Normalize(primaryDevice.RegistrationSource, primaryDevice.DeviceId);
+        var nonSyntheticSource = groupDevices
+            .Select(device => RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId))
+            .FirstOrDefault(source =>
+                !string.Equals(source, RobotRegistrationSources.Unknown, StringComparison.OrdinalIgnoreCase) &&
+                !RobotRegistrationSources.IsSynthetic(source));
+
+        return nonSyntheticSource ?? RobotRegistrationSources.Unknown;
     }
 
     private static DeviceRegistration SelectPreferredRobotDevice(

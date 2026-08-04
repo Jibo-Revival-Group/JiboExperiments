@@ -51,6 +51,11 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 var app = builder.Build();
 
 app.Logger.LogInformation("Starting Open Jibo Cloud Api version {Version}", OpenJiboCloudBuildInfo.Version);
+app.Logger.LogInformation(
+    "Protocol auth diagnostics effectiveEnabled={Enabled} containerAppRevision={Revision}",
+    bool.TryParse(builder.Configuration["OpenJibo:ProtocolAuthDiagnostics:Enabled"], out var protocolAuthDiagnosticsEnabled) &&
+    protocolAuthDiagnosticsEnabled,
+    Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? "local");
 
 app.UseCors();
 app.UseDefaultFiles();

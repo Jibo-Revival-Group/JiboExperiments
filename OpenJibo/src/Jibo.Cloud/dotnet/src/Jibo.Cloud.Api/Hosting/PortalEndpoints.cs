@@ -1406,6 +1406,7 @@ internal static class PortalEndpoints
     {
         return devices
             .OrderByDescending(device => !IsGenericRobotDisplayName(device.FriendlyName))
+            .ThenByDescending(device => !IsPlaceholderRobotIdentity(device))
             .ThenByDescending(device => !device.IsHidden)
             .ThenByDescending(device => device.IsActive)
             .ThenByDescending(device => !string.Equals(
@@ -1435,6 +1436,15 @@ internal static class PortalEndpoints
     {
         return string.IsNullOrWhiteSpace(friendlyName) ||
                friendlyName.Equals("OpenJibo Registered Robot", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPlaceholderRobotIdentity(DeviceRegistration device)
+    {
+        var deviceId = device.DeviceId?.Trim();
+        return !string.IsNullOrWhiteSpace(deviceId) &&
+               deviceId.Length == 24 &&
+               deviceId.All(Uri.IsHexDigit) &&
+               IdentityMatches(device.RobotId, $"robot-{deviceId}");
     }
 
     private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device)

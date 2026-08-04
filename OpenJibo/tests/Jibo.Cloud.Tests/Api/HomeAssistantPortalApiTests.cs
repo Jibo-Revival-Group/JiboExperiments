@@ -976,6 +976,45 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task StatusSummary_PrefersNamedIdentityOverGenericHashPlaceholder()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+
+        var placeholder = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "5c0b221fdf9d450019c5e254",
+            RobotId = "robot-5c0b221fdf9d450019c5e254",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var namedIdentity = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Royal-Current-Sage-Canvas",
+            RobotId = "robot-Royal-Current-Sage-Canvas",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+
+        var session = store.OpenSession("neo-hub-listen", placeholder.DeviceId, "token-test", "neo-hub-listen", "/token-test");
+        session.Metadata["registeredDeviceId"] = namedIdentity.DeviceId;
+        session.Metadata["registeredRobotId"] = namedIdentity.RobotId;
+        session.LastSeenUtc = DateTimeOffset.UtcNow.AddSeconds(-5);
+
+        await AuthenticateAdminAsync(client);
+
+        var summaryResponse = await client.GetAsync("/api/portal/status/summary");
+
+        Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
+        var summary = await summaryResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var reconciledRow = summary.GetProperty("robots")
+            .EnumerateArray()
+            .Single(robot => robot.GetProperty("presence").GetString() == "online");
+
+        Assert.Equal(namedIdentity.DeviceId, reconciledRow.GetProperty("deviceId").GetString());
+        Assert.Equal(namedIdentity.RobotId, reconciledRow.GetProperty("robotId").GetString());
+    }
+
+    [Fact]
     public void RegisterVerifiedRobotIdentity_ArchivesSupersededPlaceholderRecords()
     {
         var store = new InMemoryCloudStateStore();

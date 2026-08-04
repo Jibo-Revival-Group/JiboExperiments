@@ -99,13 +99,15 @@ const existingMode = audit.Credentials && audit.Credentials.Region ? String(audi
 const proposedChanges = [
   {
     File: "/usr/local/etc/jibo-jetstream-service.json",
-    Action: "add or update region-settings entries",
+    Action: "add or update region-settings entries and HubClient.override",
     Details: [
       "preserve stock region where possible",
       "write region-settings only under HubClient and remove conversion-created top-level duplicates",
       `add target mode region entry for ${targetMode}`,
       `set entrypoint_hostname to ${apiHostname}`,
       `set hub_hostname to ${hubHostname}`,
+      "add HubClient.override section to directly override hub and entrypoint hostnames",
+      "this bypasses library hostname construction and prevents open-jibo.openjibo.com issues",
     ],
   },
   {

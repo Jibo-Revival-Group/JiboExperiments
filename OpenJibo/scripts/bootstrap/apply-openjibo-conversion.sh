@@ -333,6 +333,8 @@ const awsSdkAllFiles = collectExisting([
 ]);
 const jiboSsmRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/lib");
 const jiboStsRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib");
+const jiboServerClientJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib");
+const jiboBeServerClientJsFiles = collectJsFilesUnder("opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib");
 const jiboSsmRuntimeMapFiles = collectExisting([
   "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
 ]);
@@ -419,8 +421,8 @@ const endpointReplacements = [
   ["{service}.{region}.api.jibo.com", "{service}.{region}.api.openjibo.com"],
   ["https://api.jibo.com", "https://api.openjibo.com"],
   ["http://api.jibo.com:8080", "http://api.openjibo.com:8080"],
-  ["https://{region}.jibo.com", "https://{region}.openjibo.com"],
-  ["http://{region}.jibo.com:8080", "http://{region}.openjibo.com:8080"],
+  ["https://{region}.jibo.com", "https://api.openjibo.com"],
+  ["http://{region}.jibo.com:8080", "http://api.openjibo.com:8080"],
   ["wss://{region}-socket.jibo.com", "wss://{region}-socket.openjibo.com"],
   ["ws://{region}-socket.jibo.com:8090", "ws://{region}-socket.openjibo.com:8090"],
 ];

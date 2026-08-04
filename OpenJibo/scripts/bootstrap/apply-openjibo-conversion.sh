@@ -358,6 +358,8 @@ const backups = {
   jiboSsmRuntimeMapFiles: jiboSsmRuntimeMapFiles.map(backupFile).filter(Boolean),
   jiboStsRuntimeJsFiles: jiboStsRuntimeJsFiles.map(backupFile).filter(Boolean),
   jiboStsRuntimeMapFiles: jiboStsRuntimeMapFiles.map(backupFile).filter(Boolean),
+  jiboServerClientJsFiles: jiboServerClientJsFiles.map(backupFile).filter(Boolean),
+  jiboBeServerClientJsFiles: jiboBeServerClientJsFiles.map(backupFile).filter(Boolean),
 };
 
 const jetstream = readJson(jetstreamPath);
@@ -478,6 +480,14 @@ for (const filePath of jiboStsRuntimeMapFiles) {
   patchSourceMapFile(filePath, runtimeSourceMapReplacements);
 }
 
+for (const filePath of jiboServerClientJsFiles) {
+  patchTextFile(filePath, runtimeJsReplacements);
+}
+
+for (const filePath of jiboBeServerClientJsFiles) {
+  patchTextFile(filePath, runtimeJsReplacements);
+}
+
 const nativeServerLibraryPatch = patchServerLibrary(serverLibraryPath);
 
 const conversionMarkerPath = path.resolve(robotRoot, "var/jibo/identity/openjibo-conversion.json");
@@ -528,7 +538,7 @@ const applyManifest = {
     oobeConfigPath,
     serverLibraryPath,
     conversionMarkerPath,
-  ].concat(regionConfigFiles, awsSdkAllFiles, jiboSsmRuntimeJsFiles, jiboSsmRuntimeMapFiles, jiboStsRuntimeJsFiles, jiboStsRuntimeMapFiles),
+  ].concat(regionConfigFiles, awsSdkAllFiles, jiboSsmRuntimeJsFiles, jiboSsmRuntimeMapFiles, jiboStsRuntimeJsFiles, jiboStsRuntimeMapFiles, jiboServerClientJsFiles, jiboBeServerClientJsFiles),
   WrittenFileRoles: {
     Jetstream: jetstreamPath,
     ServerService: serverServicePath,

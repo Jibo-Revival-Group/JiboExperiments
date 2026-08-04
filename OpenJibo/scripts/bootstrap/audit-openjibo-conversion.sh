@@ -217,13 +217,15 @@ const awsSdkAllFiles = collectExisting([
 ]);
 const jiboSsmRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/lib");
 const jiboStsRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib");
+const jiboServerClientJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib");
+const jiboBeServerClientJsFiles = collectJsFilesUnder("opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib");
 const jiboSsmRuntimeMapFiles = collectExisting([
   "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
 ]);
 const jiboStsRuntimeMapFiles = collectExisting([
   "usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib/jibo-service-clients.js.map",
 ]);
-const jiboRuntimeJsFiles = jiboSsmRuntimeJsFiles.concat(jiboStsRuntimeJsFiles);
+const jiboRuntimeJsFiles = jiboSsmRuntimeJsFiles.concat(jiboStsRuntimeJsFiles, jiboServerClientJsFiles, jiboBeServerClientJsFiles);
 const jiboRuntimeMapFiles = jiboSsmRuntimeMapFiles.concat(jiboStsRuntimeMapFiles);
 
 const templateNeedles = [
@@ -384,6 +386,8 @@ const audit = {
     JiboSsmRuntimeMapFiles: jiboSsmRuntimeMapFiles,
     JiboStsRuntimeJsFiles: jiboStsRuntimeJsFiles,
     JiboStsRuntimeMapFiles: jiboStsRuntimeMapFiles,
+    JiboServerClientJsFiles: jiboServerClientJsFiles,
+    JiboBeServerClientJsFiles: jiboBeServerClientJsFiles,
   },
   TemplateMatches: scanTemplateMatches(regionConfigFiles.concat(awsSdkAllFiles)),
   RuntimeJsMatches: scanRuntimeJsMatches(jiboRuntimeJsFiles),

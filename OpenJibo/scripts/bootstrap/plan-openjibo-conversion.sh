@@ -183,6 +183,23 @@ const proposedChanges = [
     ],
   },
   {
+    File: "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/*.js",
+    Action: "replace region hostname concatenations in jibo-server-client library files",
+    Details: [
+      "the jibo-server-client library constructs hostnames by concatenating region + .openjibo.com",
+      "replace data.region + '.openjibo.com' patterns with fixed 'api.openjibo.com'",
+      "this prevents open-jibo.openjibo.com when region is set to 'open-jibo'",
+    ],
+  },
+  {
+    File: "opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib/*.js",
+    Action: "replace region hostname concatenations in BE jibo-server-client library files",
+    Details: [
+      "the BE skill also bundles jibo-server-client with the same hostname construction",
+      "apply the same region + .openjibo.com to api.openjibo.com replacements",
+    ],
+  },
+  {
     File: "/var/jibo/credentials.json",
     Action: "rewrite the active region for Open Jibo routing",
     Details: [
@@ -243,6 +260,8 @@ const plan = {
     ...(audit.NodeBundles && audit.NodeBundles.RegionConfigFiles ? audit.NodeBundles.RegionConfigFiles : []),
     ...(audit.NodeBundles && audit.NodeBundles.AwsSdkAllFiles ? audit.NodeBundles.AwsSdkAllFiles : []),
     ...(audit.NodeBundles && audit.NodeBundles.JiboSsmRuntimeJsFiles ? audit.NodeBundles.JiboSsmRuntimeJsFiles : []),
+    ...(audit.NodeBundles && audit.NodeBundles.JiboServerClientJsFiles ? audit.NodeBundles.JiboServerClientJsFiles : []),
+    ...(audit.NodeBundles && audit.NodeBundles.JiboBeServerClientJsFiles ? audit.NodeBundles.JiboBeServerClientJsFiles : []),
   ].filter(Boolean),
   ProposedChanges: proposedChanges,
   RollbackPlan: rollbackPlan,

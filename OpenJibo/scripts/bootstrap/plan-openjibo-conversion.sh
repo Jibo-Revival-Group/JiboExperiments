@@ -99,13 +99,15 @@ const existingMode = audit.Credentials && audit.Credentials.Region ? String(audi
 const proposedChanges = [
   {
     File: "/usr/local/etc/jibo-jetstream-service.json",
-    Action: "add or update region-settings entries",
+    Action: "add or update region-settings entries and HubClient.override",
     Details: [
       "preserve stock region where possible",
       "write region-settings only under HubClient and remove conversion-created top-level duplicates",
       `add target mode region entry for ${targetMode}`,
       `set entrypoint_hostname to ${apiHostname}`,
       `set hub_hostname to ${hubHostname}`,
+      "add HubClient.override section to directly override hub and entrypoint hostnames",
+      "this bypasses library hostname construction and prevents open-jibo.openjibo.com issues",
     ],
   },
   {
@@ -183,6 +185,23 @@ const proposedChanges = [
     ],
   },
   {
+    File: "usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib/*.js",
+    Action: "replace region hostname concatenations in jibo-server-client library files",
+    Details: [
+      "the jibo-server-client library constructs hostnames by concatenating region + .openjibo.com",
+      "replace data.region + '.openjibo.com' patterns with fixed 'api.openjibo.com'",
+      "this prevents open-jibo.openjibo.com when region is set to 'open-jibo'",
+    ],
+  },
+  {
+    File: "opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib/*.js",
+    Action: "replace region hostname concatenations in BE jibo-server-client library files",
+    Details: [
+      "the BE skill also bundles jibo-server-client with the same hostname construction",
+      "apply the same region + .openjibo.com to api.openjibo.com replacements",
+    ],
+  },
+  {
     File: "/var/jibo/credentials.json",
     Action: "rewrite the active region for Open Jibo routing",
     Details: [
@@ -243,6 +262,8 @@ const plan = {
     ...(audit.NodeBundles && audit.NodeBundles.RegionConfigFiles ? audit.NodeBundles.RegionConfigFiles : []),
     ...(audit.NodeBundles && audit.NodeBundles.AwsSdkAllFiles ? audit.NodeBundles.AwsSdkAllFiles : []),
     ...(audit.NodeBundles && audit.NodeBundles.JiboSsmRuntimeJsFiles ? audit.NodeBundles.JiboSsmRuntimeJsFiles : []),
+    ...(audit.NodeBundles && audit.NodeBundles.JiboServerClientJsFiles ? audit.NodeBundles.JiboServerClientJsFiles : []),
+    ...(audit.NodeBundles && audit.NodeBundles.JiboBeServerClientJsFiles ? audit.NodeBundles.JiboBeServerClientJsFiles : []),
   ].filter(Boolean),
   ProposedChanges: proposedChanges,
   RollbackPlan: rollbackPlan,

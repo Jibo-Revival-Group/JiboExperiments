@@ -333,6 +333,8 @@ const awsSdkAllFiles = collectExisting([
 ]);
 const jiboSsmRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/lib");
 const jiboStsRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib");
+const jiboServerClientJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib");
+const jiboBeServerClientJsFiles = collectJsFilesUnder("opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib");
 const jiboSsmRuntimeMapFiles = collectExisting([
   "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
 ]);
@@ -356,6 +358,8 @@ const backups = {
   jiboSsmRuntimeMapFiles: jiboSsmRuntimeMapFiles.map(backupFile).filter(Boolean),
   jiboStsRuntimeJsFiles: jiboStsRuntimeJsFiles.map(backupFile).filter(Boolean),
   jiboStsRuntimeMapFiles: jiboStsRuntimeMapFiles.map(backupFile).filter(Boolean),
+  jiboServerClientJsFiles: jiboServerClientJsFiles.map(backupFile).filter(Boolean),
+  jiboBeServerClientJsFiles: jiboBeServerClientJsFiles.map(backupFile).filter(Boolean),
 };
 
 const jetstream = readJson(jetstreamPath);
@@ -382,11 +386,17 @@ for (const key of Object.keys(baseRegion)) {
   openJiboRegion[key] = baseRegion[key];
 }
 openJiboRegion.hub_port = baseRegion.hub_port || 443;
-openJiboRegion.entrypoint_port = baseRegion.entrypoint_port || 443;
+openJiboRegion.entrypoint_port = baseRegion.entrypointPort || 443;
 openJiboRegion.hub_hostname = hubHostname;
 openJiboRegion.entrypoint_hostname = apiHostname;
 
 regionSettings["open-jibo"] = openJiboRegion;
+
+jetstream.HubClient.override = {
+  hub_port: 443,
+  hub_hostname: hubHostname,
+  entrypoint_hostname: apiHostname
+};
 
 if (serverService && typeof serverService === "object") {
   serverService.NotificationSubsystem = serverService.NotificationSubsystem || {};
@@ -419,8 +429,8 @@ const endpointReplacements = [
   ["{service}.{region}.api.jibo.com", "{service}.{region}.api.openjibo.com"],
   ["https://api.jibo.com", "https://api.openjibo.com"],
   ["http://api.jibo.com:8080", "http://api.openjibo.com:8080"],
-  ["https://{region}.jibo.com", "https://{region}.openjibo.com"],
-  ["http://{region}.jibo.com:8080", "http://{region}.openjibo.com:8080"],
+  ["https://{region}.jibo.com", "https://api.openjibo.com"],
+  ["http://{region}.jibo.com:8080", "http://api.openjibo.com:8080"],
   ["wss://{region}-socket.jibo.com", "wss://{region}-socket.openjibo.com"],
   ["ws://{region}-socket.jibo.com:8090", "ws://{region}-socket.openjibo.com:8090"],
 ];
@@ -434,8 +444,25 @@ const runtimeJsReplacements = [
   ['this._wifiService.options.region+".jibo.com"', '"api.openjibo.com"'],
   ['this._wifiService.options.region + ".openjibo.com"', '"api.openjibo.com"'],
   ['this._wifiService.options.region+".openjibo.com"', '"api.openjibo.com"'],
+  ['config.region + ".jibo.com"', '"api.openjibo.com"'],
+  ['config.region+".jibo.com"', '"api.openjibo.com"'],
+  ['config.region + ".openjibo.com"', '"api.openjibo.com"'],
+  ['config.region+".openjibo.com"', '"api.openjibo.com"'],
+  ['this.region + ".jibo.com"', '"api.openjibo.com"'],
+  ['this.region+".jibo.com"', '"api.openjibo.com"'],
+  ['this.region + ".openjibo.com"', '"api.openjibo.com"'],
+  ['this.region+".openjibo.com"', '"api.openjibo.com"'],
+  ['options.region + ".jibo.com"', '"api.openjibo.com"'],
+  ['options.region+".jibo.com"', '"api.openjibo.com"'],
+  ['options.region + ".openjibo.com"', '"api.openjibo.com"'],
+  ['options.region+".openjibo.com"', '"api.openjibo.com"'],
+  ['region + ".jibo.com"', '"api.openjibo.com"'],
+  ['region+".jibo.com"', '"api.openjibo.com"'],
+  ['region + ".openjibo.com"', '"api.openjibo.com"'],
+  ['region+".openjibo.com"', '"api.openjibo.com"'],
   ["API: 'api.jibo.com'", "API: 'api.openjibo.com'"],
   [".jibo.com", ".openjibo.com"],
+  ["open-jibo.openjibo.com", "api.openjibo.com"],
 ];
 
 const runtimeMapReplacements = [
@@ -447,6 +474,22 @@ const runtimeMapReplacements = [
   ['this._wifiService.options.region+\\".jibo.com\\"', '\\"api.openjibo.com\\"'],
   ['this._wifiService.options.region + \\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
   ['this._wifiService.options.region+\\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['config.region + \\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['config.region+\\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['config.region + \\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['config.region+\\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['this.region + \\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['this.region+\\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['this.region + \\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['this.region+\\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['options.region + \\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['options.region+\\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['options.region + \\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['options.region+\\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['region + \\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['region+\\".jibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['region + \\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
+  ['region+\\".openjibo.com\\"', '\\"api.openjibo.com\\"'],
   ["API: 'api.jibo.com'", "API: 'api.openjibo.com'"],
   [".jibo.com", ".openjibo.com"],
 ];
@@ -474,6 +517,14 @@ for (const filePath of jiboStsRuntimeJsFiles) {
 
 for (const filePath of jiboStsRuntimeMapFiles) {
   patchSourceMapFile(filePath, runtimeSourceMapReplacements);
+}
+
+for (const filePath of jiboServerClientJsFiles) {
+  patchTextFile(filePath, runtimeJsReplacements);
+}
+
+for (const filePath of jiboBeServerClientJsFiles) {
+  patchTextFile(filePath, runtimeJsReplacements);
 }
 
 const nativeServerLibraryPatch = patchServerLibrary(serverLibraryPath);
@@ -514,11 +565,12 @@ const applyManifest = {
     "This helper writes the minimal staged conversion state after taking backups.",
     "The active credentials region is rewritten to open-jibo so the robot boots against the converted routing state.",
     "The staged open-jibo region points to the canonical Open Jibo API hostname.",
-  "The staged notification subsystem suffix points the robot at open-jibo-socket.openjibo.com while the deployment binds neohub.openjibo.com separately.",
-  "The helper also normalizes bundled jibo-server-client region templates in live robot bundles, including api, service-scoped api, and socket host forms.",
-  "The helper now also normalizes the live jibo-ssm runtime bundle when it hardcodes region + .jibo.com or api.jibo.com.",
-  "The nearby source map is parsed, backed up, and rewritten through sourcesContent so the embedded source text stays aligned with the JS bundle.",
-  "The native server library is hash-gated and receives exactly two equal-length jibo.com to jibo.pro byte replacements for token signing and transport.",
+    "The HubClient.override section directly overrides hub and entrypoint hostnames, bypassing library hostname construction.",
+    "The staged notification subsystem suffix points the robot at open-jibo-socket.openjibo.com while the deployment binds neohub.openjibo.com separately.",
+    "The helper also normalizes bundled jibo-server-client region templates in live robot bundles, including api, service-scoped api, and socket host forms.",
+    "The helper now also normalizes the live jibo-ssm runtime bundle when it hardcodes region + .jibo.com or api.jibo.com.",
+    "The nearby source map is parsed, backed up, and rewritten through sourcesContent so the embedded source text stays aligned with the JS bundle.",
+    "The native server library is hash-gated and receives exactly two equal-length jibo.com to jibo.pro byte replacements for token signing and transport.",
   ],
   WrittenFiles: [
     jetstreamPath,
@@ -526,7 +578,7 @@ const applyManifest = {
     oobeConfigPath,
     serverLibraryPath,
     conversionMarkerPath,
-  ].concat(regionConfigFiles, awsSdkAllFiles, jiboSsmRuntimeJsFiles, jiboSsmRuntimeMapFiles, jiboStsRuntimeJsFiles, jiboStsRuntimeMapFiles),
+  ].concat(regionConfigFiles, awsSdkAllFiles, jiboSsmRuntimeJsFiles, jiboSsmRuntimeMapFiles, jiboStsRuntimeJsFiles, jiboStsRuntimeMapFiles, jiboServerClientJsFiles, jiboBeServerClientJsFiles),
   WrittenFileRoles: {
     Jetstream: jetstreamPath,
     ServerService: serverServicePath,

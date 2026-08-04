@@ -217,13 +217,15 @@ const awsSdkAllFiles = collectExisting([
 ]);
 const jiboSsmRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/lib");
 const jiboStsRuntimeJsFiles = collectJsFilesUnder("usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib");
+const jiboServerClientJsFiles = collectJsFilesUnder("usr/local/bin/jibo-ssm/node_modules/@jibo/jibo-server-client/lib");
+const jiboBeServerClientJsFiles = collectJsFilesUnder("opt/jibo/Jibo/Skills/@be/be/node_modules/@jibo/jibo-server-client/lib");
 const jiboSsmRuntimeMapFiles = collectExisting([
   "usr/local/bin/jibo-ssm/lib/skills-service-manager.js.map",
 ]);
 const jiboStsRuntimeMapFiles = collectExisting([
   "usr/local/bin/jibo-sts/node_modules/jibo-service-clients/lib/jibo-service-clients.js.map",
 ]);
-const jiboRuntimeJsFiles = jiboSsmRuntimeJsFiles.concat(jiboStsRuntimeJsFiles);
+const jiboRuntimeJsFiles = jiboSsmRuntimeJsFiles.concat(jiboStsRuntimeJsFiles, jiboServerClientJsFiles, jiboBeServerClientJsFiles);
 const jiboRuntimeMapFiles = jiboSsmRuntimeMapFiles.concat(jiboStsRuntimeMapFiles);
 
 const templateNeedles = [
@@ -246,7 +248,24 @@ const runtimeJsNeedles = [
   'this._wifiService.options.region+".jibo.com"',
   'this._wifiService.options.region + ".openjibo.com"',
   'this._wifiService.options.region+".openjibo.com"',
+  'config.region + ".jibo.com"',
+  'config.region+".jibo.com"',
+  'config.region + ".openjibo.com"',
+  'config.region+".openjibo.com"',
+  'this.region + ".jibo.com"',
+  'this.region+".jibo.com"',
+  'this.region + ".openjibo.com"',
+  'this.region+".openjibo.com"',
+  'options.region + ".jibo.com"',
+  'options.region+".jibo.com"',
+  'options.region + ".openjibo.com"',
+  'options.region+".openjibo.com"',
+  'region + ".jibo.com"',
+  'region+".jibo.com"',
+  'region + ".openjibo.com"',
+  'region+".openjibo.com"',
   "API: 'api.jibo.com'",
+  "open-jibo.openjibo.com",
 ];
 
 function scanTemplateMatches(filePaths) {
@@ -338,6 +357,7 @@ const activeRegionSettings = nestedRegionSettings || legacyTopLevelRegionSetting
 const jetstreamRegionNames = activeRegionSettings && typeof activeRegionSettings === "object"
   ? Object.keys(activeRegionSettings)
   : [];
+const hubClientOverride = getField(hubClient, "override");
 
 const recommendations = [];
 if (!jetstreamPath) recommendations.push("Add or mount a jetstream region config file before conversion.");
@@ -369,6 +389,7 @@ const audit = {
     RegionNames: jetstreamRegionNames,
     RegionSettingsLocation: nestedRegionSettings ? "HubClient.region-settings" : legacyTopLevelRegionSettings ? "legacy-top-level" : null,
     LegacyTopLevelRegionSettingsPresent: Boolean(legacyTopLevelRegionSettings),
+    HubClientOverride: hubClientOverride || null,
   },
   ServerService: {
     NotificationSubsystemSuffix: getField(getField(serverService, "NotificationSubsystem"), "serverURLSuffix") || null,
@@ -384,6 +405,8 @@ const audit = {
     JiboSsmRuntimeMapFiles: jiboSsmRuntimeMapFiles,
     JiboStsRuntimeJsFiles: jiboStsRuntimeJsFiles,
     JiboStsRuntimeMapFiles: jiboStsRuntimeMapFiles,
+    JiboServerClientJsFiles: jiboServerClientJsFiles,
+    JiboBeServerClientJsFiles: jiboBeServerClientJsFiles,
   },
   TemplateMatches: scanTemplateMatches(regionConfigFiles.concat(awsSdkAllFiles)),
   RuntimeJsMatches: scanRuntimeJsMatches(jiboRuntimeJsFiles),

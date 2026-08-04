@@ -19,6 +19,8 @@ public sealed class HomeAssistantEntityAwareTests
 
         var waitTask = registry.SendCommandAndWaitAsync(
             "ha-instance-1",
+            "link-test-1",
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
             "lights_off_named",
             new Dictionary<string, string> { ["targetName"] = "zanes" });
 

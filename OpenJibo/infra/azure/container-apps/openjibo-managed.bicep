@@ -212,6 +212,10 @@ var managedEnvVars = concat([
     value: 'false'
   }
   {
+    name: 'OpenJibo__ProtocolAuthDiagnostics__Enabled'
+    value: 'false'
+  }
+  {
     name: 'OpenJibo__TurnTelemetry__Enabled'
     value: 'false'
   }

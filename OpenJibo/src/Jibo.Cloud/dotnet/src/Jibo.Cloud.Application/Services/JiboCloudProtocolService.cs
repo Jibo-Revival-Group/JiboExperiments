@@ -6,6 +6,8 @@ using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -15,7 +17,8 @@ public sealed class JiboCloudProtocolService(
     IConfiguration? configuration = null,
     ICloudAuthProtocolHandler? authHandler = null,
     RobotNotificationRegistry? robotNotificationRegistry = null,
-    LoopUpdatedPushService? loopUpdatedPushService = null)
+    LoopUpdatedPushService? loopUpdatedPushService = null,
+    ILogger<JiboCloudProtocolService>? logger = null)
 {
     private const int SchedulerBackupDelayMs = 250;
     private const int SchedulerDownloadTickMs = 100;
@@ -36,6 +39,9 @@ public sealed class JiboCloudProtocolService(
 
     private readonly string? _configuredRobotId = ReadConfiguredRobotId(configuration);
     private readonly string? _canonicalApiBaseUrl = ReadCanonicalApiBaseUrl(configuration);
+    private readonly bool _protocolAuthDiagnosticsEnabled = ReadProtocolAuthDiagnosticsEnabled(configuration);
+    private readonly ILogger _logger = logger ?? NullLogger<JiboCloudProtocolService>.Instance;
+    private readonly ProtocolRobotIdentityResolver _identityResolver = new(stateStore);
 
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private readonly RobotNotificationRegistry? _robotNotificationRegistry = robotNotificationRegistry;
@@ -71,6 +77,9 @@ public sealed class JiboCloudProtocolService(
             ? uri.GetLeftPart(UriPartial.Authority)
             : null;
     }
+
+    private static bool ReadProtocolAuthDiagnosticsEnabled(IConfiguration? configuration) =>
+        bool.TryParse(configuration?["OpenJibo:ProtocolAuthDiagnostics:Enabled"], out var enabled) && enabled;
 
     private static string? ReadTargetHost(JsonElement? body)
     {
@@ -112,7 +121,7 @@ public sealed class JiboCloudProtocolService(
             (envelope.Path.StartsWith("/upload/asr-binary", StringComparison.OrdinalIgnoreCase) ||
              envelope.Path.StartsWith("/upload/log-events", StringComparison.OrdinalIgnoreCase) ||
              envelope.Path.StartsWith("/upload/log-binary", StringComparison.OrdinalIgnoreCase)))
-            return Task.FromResult(HandleLogUpload(envelope));
+            return Task.FromResult(HandleLogUpload(envelope, ResolveRobotIdentity(envelope, "log-upload")));
 
         if ((envelope.ServicePrefix ?? string.Empty).StartsWith("OOBE_", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleOobe(envelope.Operation ?? string.Empty, envelope));
@@ -132,7 +141,7 @@ public sealed class JiboCloudProtocolService(
         var operation = envelope.Operation ?? string.Empty;
 
         if (servicePrefix.StartsWith("Log_", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(HandleLog(operation, envelope));
+            return Task.FromResult(HandleLog(operation, envelope, ResolveRobotIdentity(envelope, $"log.{operation}")));
 
         if (servicePrefix.StartsWith("Backup_", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleBackup(operation, envelope));
@@ -147,7 +156,7 @@ public sealed class JiboCloudProtocolService(
             return Task.FromResult(HandleLoop(operation, envelope));
 
         if (servicePrefix.Equals("Media_20160725", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(HandleMedia(operation, envelope));
+            return Task.FromResult(HandleMedia(operation, envelope, ResolveRobotIdentity(envelope, $"media.{operation}")));
 
         if (servicePrefix.StartsWith("Key_", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleKey(operation, envelope));
@@ -1160,12 +1169,12 @@ public sealed class JiboCloudProtocolService(
         return keys;
     }
 
-    private ProtocolDispatchResult HandleLog(string operation, ProtocolEnvelope envelope)
+    private ProtocolDispatchResult HandleLog(string operation, ProtocolEnvelope envelope, ProtocolRobotIdentity identity)
     {
         if (!string.IsNullOrEmpty(envelope.BodyText))
             StoreLogContent($"{GetLogCategory(operation)}-request", CreateLogUploadId(),
                 ReadHeader(envelope, "Content-Type") ?? "application/octet-stream",
-                Encoding.UTF8.GetBytes(envelope.BodyText), envelope);
+                Encoding.UTF8.GetBytes(envelope.BodyText), envelope, identity);
 
         var uploadId = CreateLogUploadId();
         return operation switch
@@ -1192,7 +1201,7 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
-    private ProtocolDispatchResult HandleLogUpload(ProtocolEnvelope envelope)
+    private ProtocolDispatchResult HandleLogUpload(ProtocolEnvelope envelope, ProtocolRobotIdentity identity)
     {
         var category = envelope.Path.Contains("asr-binary", StringComparison.OrdinalIgnoreCase)
             ? "asr"
@@ -1202,19 +1211,20 @@ public sealed class JiboCloudProtocolService(
         var uploadId = GetLogUploadId(envelope.Path);
         var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
         var content = string.IsNullOrEmpty(envelope.BodyText) ? [] : Encoding.UTF8.GetBytes(envelope.BodyText);
-        StoreLogContent(category, uploadId, contentType, content, envelope);
+        StoreLogContent(category, uploadId, contentType, content, envelope, identity);
         return ProtocolDispatchResult.Raw(200, string.Empty);
     }
 
     private void StoreLogContent(string category, string uploadId, string contentType, byte[] content,
-        ProtocolEnvelope envelope)
+        ProtocolEnvelope envelope, ProtocolRobotIdentity identity)
     {
         var metadata = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
             ["artifactType"] = "robot-log",
             ["category"] = category,
             ["uploadId"] = uploadId,
-            ["deviceId"] = envelope.DeviceId,
+            ["deviceId"] = identity.DeviceId,
+            ["identitySource"] = identity.Source,
             ["requestId"] = envelope.RequestId,
             ["correlationId"] = envelope.CorrelationId,
             ["firmwareVersion"] = envelope.FirmwareVersion,
@@ -1222,6 +1232,20 @@ public sealed class JiboCloudProtocolService(
         };
         _mediaContentStore.StoreAsync($"logs/{category}/{uploadId}", contentType, content, metadata,
             CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    private ProtocolRobotIdentity ResolveRobotIdentity(ProtocolEnvelope envelope, string operation)
+    {
+        var identity = _identityResolver.Resolve(envelope);
+        if (_protocolAuthDiagnosticsEnabled)
+            _logger.LogInformation(
+                "Protocol identity diagnostic requestId={RequestId} traceId={TraceId} operation={Operation} host={Host} " +
+                "path={Path} robotHeaderPresent={RobotHeaderPresent} bearerTokenPresent={BearerTokenPresent} " +
+                "bearerTokenResolved={BearerTokenResolved} identitySource={IdentitySource} resolvedDeviceId={ResolvedDeviceId} bodyBytes={BodyBytes}",
+                envelope.RequestId, envelope.CorrelationId, operation, envelope.HostName, envelope.Path,
+                identity.HeaderPresent, identity.BearerTokenPresent, identity.BearerTokenResolved, identity.Source,
+                identity.DeviceId, Encoding.UTF8.GetByteCount(envelope.BodyText));
+        return identity;
     }
 
     private string BuildLogUploadUrl(ProtocolEnvelope envelope, string endpoint, string uploadId) =>
@@ -1250,7 +1274,7 @@ public sealed class JiboCloudProtocolService(
             : candidate;
     }
 
-    private ProtocolDispatchResult HandleMedia(string operation, ProtocolEnvelope envelope)
+    private ProtocolDispatchResult HandleMedia(string operation, ProtocolEnvelope envelope, ProtocolRobotIdentity identity)
     {
         var body = envelope.TryParseBody();
 
@@ -1278,6 +1302,8 @@ public sealed class JiboCloudProtocolService(
         var reference = ReadHeader(envelope, "x-reference") ?? ReadString(body, "reference") ?? string.Empty;
         var isEncrypted = ReadBooleanHeader(envelope, "x-encrypted") || ReadBool(body, "isEncrypted");
         var meta = ReadObject(body, "meta") ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        meta["deviceId"] = identity.DeviceId;
+        meta["identitySource"] = identity.Source;
         var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
         meta["contentType"] = contentType;
         var bodyBytes = string.IsNullOrWhiteSpace(envelope.BodyText)

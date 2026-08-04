@@ -2742,6 +2742,49 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task BearerTokenIdentity_IsPersistedForLogAndMediaArtifacts()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Identity.Tests", Guid.NewGuid().ToString("N"));
+        var stateStore = new InMemoryCloudStateStore();
+        stateStore.GetOrCreateDevice("robot-auth-1", null, null);
+        var token = stateStore.IssueRobotToken("robot-auth-1");
+        var service = new JiboCloudProtocolService(stateStore, new FileMediaContentStore(directoryPath));
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Authorization"] = $"Bearer {token}",
+            ["Content-Type"] = "application/json"
+        };
+
+        await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Method = "POST",
+            ServicePrefix = "Log_20150309",
+            Operation = "PutEvents",
+            Headers = headers,
+            BodyText = "[{\"event\":\"boot\"}]"
+        });
+        await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Method = "POST",
+            ServicePrefix = "Media_20160725",
+            Operation = "Create",
+            Headers = new Dictionary<string, string>(headers, StringComparer.OrdinalIgnoreCase)
+            {
+                ["x-path"] = "identity-media"
+            },
+            BodyText = "media-body"
+        });
+
+        var logManifest = Directory.EnumerateFiles(Path.Combine(directoryPath, "logs", "events-request"), "*.json").Single();
+        using var logDocument = JsonDocument.Parse(await File.ReadAllTextAsync(logManifest));
+        using var mediaDocument = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(directoryPath, "identity-media.json")));
+        Assert.Equal("robot-auth-1", logDocument.RootElement.GetProperty("meta").GetProperty("deviceId").GetString());
+        Assert.Equal("bearer-token", logDocument.RootElement.GetProperty("meta").GetProperty("identitySource").GetString());
+        Assert.Equal("robot-auth-1", mediaDocument.RootElement.GetProperty("meta").GetProperty("deviceId").GetString());
+        Assert.Equal("bearer-token", mediaDocument.RootElement.GetProperty("meta").GetProperty("identitySource").GetString());
+    }
+
+    [Fact]
     public async Task MediaCreate_WritesBinaryManifestMetadataForSync()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));

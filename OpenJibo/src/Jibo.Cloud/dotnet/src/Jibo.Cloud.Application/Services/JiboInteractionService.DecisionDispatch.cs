@@ -352,6 +352,7 @@ public sealed partial class JiboInteractionService
             "radio" => BuildRadioLaunchDecision(),
             "radio_genre" => BuildRadioGenreLaunchDecision(lowered),
             "bad_apple" => BuildBadAppleLaunchDecision(turn),
+            "introductions" => BuildIntroductionsLaunchDecision(),
             "stop" => BuildStopDecision(),
             "sleep" => BuildSleepDecision(),
             "wake_up" => BuildWakeUpDecision(),

@@ -52,6 +52,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                   string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase);
         var isClockSkillLaunch = string.Equals(skill?.SkillName, "@be/clock", StringComparison.OrdinalIgnoreCase);
         var isReportSkillLaunch = string.Equals(skill?.SkillName, "report-skill", StringComparison.OrdinalIgnoreCase);
+        var isIntroductionsLaunch = string.Equals(skill?.SkillName, "@be/introductions", StringComparison.OrdinalIgnoreCase);
         var idleRedirectDelayMs = 75;
         var idleCompletionDelayMs = isTurnAroundCommand ? 750 : 125;
         var localIntent = ReadSkillPayloadString(skill, "localIntent");
@@ -251,6 +252,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     isPhotoCreateLaunch ? "@be/create" :
                     isClockSkillLaunch ? "@be/clock" :
                     isReportSkillLaunch ? "report-skill" :
+                    isIntroductionsLaunch ? "@be/introductions" :
                     null,
                     isGlobalCommand ? nluDomain ?? "global_commands" : null),
                 ["match"] = listenMatch
@@ -434,6 +436,23 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 75));
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, skillId)),
+                125));
+        }
+
+        if (isIntroductionsLaunch &&
+            !string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase))
+        {
+            messages.Add(new SocketReplyPlan(
+                JsonSerializer.Serialize(BuildSkillRedirectPayload(
+                    transId,
+                    "@be/introductions",
+                    outboundIntent,
+                    outboundAsrText,
+                    outboundRules,
+                    entities)),
+                75));
+            messages.Add(new SocketReplyPlan(
+                JsonSerializer.Serialize(BuildCompletionOnlySkillPayload(transId, "@be/introductions")),
                 125));
         }
 

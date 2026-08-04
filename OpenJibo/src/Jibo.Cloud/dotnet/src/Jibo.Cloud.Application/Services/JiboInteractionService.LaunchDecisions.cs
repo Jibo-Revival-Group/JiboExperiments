@@ -141,4 +141,16 @@ public sealed partial class JiboInteractionService
                 ["nluDomain"] = "global_commands"
             });
     }
+
+    private static JiboInteractionDecision BuildIntroductionsLaunchDecision()
+    {
+        return new JiboInteractionDecision(
+            "introductions",
+            "Starting introductions.",
+            "@be/introductions",
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/introductions"
+            });
+    }
 }

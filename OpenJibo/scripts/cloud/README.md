@@ -85,7 +85,9 @@ The managed Azure path separates persistent storage from the application contain
 
 - State snapshots use Azure Database for PostgreSQL Flexible Server and the `openjibo_state` database.
 - Personal memory snapshots use the same PostgreSQL server and the `openjibo_memory` database.
-- Media stays on Azure Blob Storage through the `OpenJibo__Media__Backend=AzureBlob` runtime setting.
+- Media stays on Azure Blob Storage through the `OpenJibo__Media__Backend=AzureBlob` runtime setting. Robot log,
+  ASR, and binary upload artifacts use that same managed container under the `logs/` prefix, with an adjacent JSON
+  manifest that records the originating robot, request IDs, content type, checksum, and storage timestamp.
 
 `deploy-openjibo-managed-foundation.sh` and `Deploy-OpenJiboManagedFoundation.ps1` create the PostgreSQL server and databases, generate a PostgreSQL administrator password when one is not supplied, and seed the state, personal-memory, media, and API-provider secrets into Key Vault. The scripts still accept explicit state and personal-memory connection string overrides for emergency or external-database cases, but the default managed deployment is PostgreSQL-backed.
 

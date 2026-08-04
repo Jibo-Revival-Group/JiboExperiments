@@ -2651,6 +2651,73 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LogUploads_ArePersistedWithTheirGeneratedUploadId()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Log.Tests", Guid.NewGuid().ToString("N"));
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(),
+            new FileMediaContentStore(directoryPath));
+
+        var uploadRequest = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Log_20160715",
+            Operation = "PutEventsAsync",
+            DeviceId = "robot-log-1"
+        });
+
+        using var uploadPayload = JsonDocument.Parse(uploadRequest.BodyText);
+        var uploadUrl = uploadPayload.RootElement.GetProperty("uploadUrl").GetString()!;
+        var uploadPath = new Uri(uploadUrl).AbsolutePath;
+        var upload = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "PUT",
+            Path = uploadPath,
+            DeviceId = "robot-log-1",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = "application/gzip"
+            },
+            BodyText = "compressed-event-payload"
+        });
+
+        Assert.Equal(200, upload.StatusCode);
+        var artifactId = uploadPath.Split('/').Last();
+        var contentPath = Path.Combine(directoryPath, "logs", "events", $"{artifactId}.bin");
+        var manifestPath = Path.Combine(directoryPath, "logs", "events", $"{artifactId}.json");
+        Assert.True(File.Exists(contentPath));
+        Assert.Equal("compressed-event-payload", await File.ReadAllTextAsync(contentPath));
+
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(manifestPath));
+        Assert.Equal("robot-log", manifest.RootElement.GetProperty("meta").GetProperty("artifactType").GetString());
+        Assert.Equal("robot-log-1", manifest.RootElement.GetProperty("meta").GetProperty("deviceId").GetString());
+        Assert.Equal("application/gzip", manifest.RootElement.GetProperty("contentType").GetString());
+    }
+
+    [Fact]
+    public async Task PutEvents_PersistsInlineLogPayload()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Log.Tests", Guid.NewGuid().ToString("N"));
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(),
+            new FileMediaContentStore(directoryPath));
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Log_20160715",
+            Operation = "PutEvents",
+            DeviceId = "robot-log-inline",
+            BodyText = "[{\"event\":\"boot\"}]"
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        var file = Directory.EnumerateFiles(Path.Combine(directoryPath, "logs", "events-request"), "*.bin").Single();
+        Assert.Equal("[{\"event\":\"boot\"}]", await File.ReadAllTextAsync(file));
+    }
+
+    [Fact]
     public async Task MediaCreate_WritesBinaryManifestMetadataForSync()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));

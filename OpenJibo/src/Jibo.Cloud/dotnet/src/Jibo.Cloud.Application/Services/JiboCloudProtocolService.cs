@@ -99,10 +99,10 @@ public sealed class JiboCloudProtocolService(
             return Task.FromResult(schedulerResult);
 
         if (envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) &&
-            (envelope.Path.Equals("/upload/asr-binary", StringComparison.OrdinalIgnoreCase) ||
-             envelope.Path.Equals("/upload/log-events", StringComparison.OrdinalIgnoreCase) ||
-             envelope.Path.Equals("/upload/log-binary", StringComparison.OrdinalIgnoreCase)))
-            return Task.FromResult(ProtocolDispatchResult.Raw(200, string.Empty));
+            (envelope.Path.StartsWith("/upload/asr-binary", StringComparison.OrdinalIgnoreCase) ||
+             envelope.Path.StartsWith("/upload/log-events", StringComparison.OrdinalIgnoreCase) ||
+             envelope.Path.StartsWith("/upload/log-binary", StringComparison.OrdinalIgnoreCase)))
+            return Task.FromResult(HandleLogUpload(envelope));
 
         if ((envelope.ServicePrefix ?? string.Empty).StartsWith("OOBE_", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleOobe(envelope.Operation ?? string.Empty, envelope));
@@ -122,7 +122,7 @@ public sealed class JiboCloudProtocolService(
         var operation = envelope.Operation ?? string.Empty;
 
         if (servicePrefix.StartsWith("Log_", StringComparison.OrdinalIgnoreCase))
-            return Task.FromResult(HandleLog(operation));
+            return Task.FromResult(HandleLog(operation, envelope));
 
         if (servicePrefix.StartsWith("Backup_", StringComparison.OrdinalIgnoreCase))
             return Task.FromResult(HandleBackup(operation, envelope));
@@ -1150,41 +1150,91 @@ public sealed class JiboCloudProtocolService(
         return keys;
     }
 
-    private static ProtocolDispatchResult HandleLog(string operation)
+    private ProtocolDispatchResult HandleLog(string operation, ProtocolEnvelope envelope)
     {
+        if (!string.IsNullOrEmpty(envelope.BodyText))
+            StoreLogContent($"{GetLogCategory(operation)}-request", CreateLogUploadId(),
+                ReadHeader(envelope, "Content-Type") ?? "application/octet-stream",
+                Encoding.UTF8.GetBytes(envelope.BodyText), envelope);
+
+        var uploadId = CreateLogUploadId();
         return operation switch
         {
             "PutEventsAsync" => ProtocolDispatchResult.Ok(new
             {
                 contentEncoding = "gzip",
-                uploadUrl = "https://api.jibo.com/upload/log-events"
+                uploadUrl = BuildLogUploadUrl("log-events", uploadId)
             }),
             "PutEvents" => ProtocolDispatchResult.Ok(new { }),
             "PutBinaryAsync" => ProtocolDispatchResult.Ok(new
             {
-                url = "https://api.jibo.com/log/binary/fake-id",
-                uploadUrl = "https://api.jibo.com/upload/log-binary"
+                url = $"https://api.jibo.com/log/binary/{uploadId}",
+                uploadUrl = BuildLogUploadUrl("log-binary", uploadId)
             }),
             "PutAsrBinary" => ProtocolDispatchResult.Ok(new
             {
-                bucketName = "openjibo-test",
-                key = "asr/fake-key",
-                uploadUrl = "https://api.jibo.com/upload/asr-binary"
+                bucketName = "openjibo-media",
+                key = $"logs/asr/{uploadId}",
+                uploadUrl = BuildLogUploadUrl("asr-binary", uploadId)
             }),
-            "NewKinesisCredentials" => ProtocolDispatchResult.Ok(new
-            {
-                credentials = new
-                {
-                    AccessKeyId = "fake-access-key",
-                    Expiration = DateTimeOffset.UtcNow.AddHours(1).ToString("O"),
-                    SecretAccessKey = "fake-secret",
-                    SessionToken = "fake-session"
-                },
-                region = "us-east-1",
-                streamName = "openjibo-log-stream"
-            }),
+            "NewKinesisCredentials" => ProtocolDispatchResult.Ok(new { }),
             _ => ProtocolDispatchResult.Ok(new { })
         };
+    }
+
+    private ProtocolDispatchResult HandleLogUpload(ProtocolEnvelope envelope)
+    {
+        var category = envelope.Path.Contains("asr-binary", StringComparison.OrdinalIgnoreCase)
+            ? "asr"
+            : envelope.Path.Contains("log-events", StringComparison.OrdinalIgnoreCase)
+                ? "events"
+                : "binary";
+        var uploadId = GetLogUploadId(envelope.Path);
+        var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
+        var content = string.IsNullOrEmpty(envelope.BodyText) ? [] : Encoding.UTF8.GetBytes(envelope.BodyText);
+        StoreLogContent(category, uploadId, contentType, content, envelope);
+        return ProtocolDispatchResult.Raw(200, string.Empty);
+    }
+
+    private void StoreLogContent(string category, string uploadId, string contentType, byte[] content,
+        ProtocolEnvelope envelope)
+    {
+        var metadata = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["artifactType"] = "robot-log",
+            ["category"] = category,
+            ["uploadId"] = uploadId,
+            ["deviceId"] = envelope.DeviceId,
+            ["requestId"] = envelope.RequestId,
+            ["correlationId"] = envelope.CorrelationId,
+            ["firmwareVersion"] = envelope.FirmwareVersion,
+            ["applicationVersion"] = envelope.ApplicationVersion
+        };
+        _mediaContentStore.StoreAsync($"logs/{category}/{uploadId}", contentType, content, metadata,
+            CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    private static string BuildLogUploadUrl(string endpoint, string uploadId) =>
+        $"https://api.jibo.com/upload/{endpoint}/{uploadId}";
+
+    private static string GetLogCategory(string operation) => operation switch
+    {
+        "PutEvents" or "PutEventsAsync" => "events",
+        "PutAsrBinary" => "asr",
+        "PutBinaryAsync" => "binary",
+        _ => "requests"
+    };
+
+    private static string CreateLogUploadId() => $"{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfffZ}-{Guid.NewGuid():N}";
+
+    private static string GetLogUploadId(string path)
+    {
+        var candidate = path.TrimEnd('/').Split('/').LastOrDefault();
+        return string.IsNullOrWhiteSpace(candidate) ||
+               candidate is "asr-binary" or "log-events" or "log-binary" ||
+               candidate.Contains(".", StringComparison.Ordinal)
+            ? CreateLogUploadId()
+            : candidate;
     }
 
     private ProtocolDispatchResult HandleMedia(string operation, ProtocolEnvelope envelope)

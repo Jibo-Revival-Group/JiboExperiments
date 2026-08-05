@@ -456,4 +456,6 @@ OpenJibo/docs/DesignDoc/original server
 .env.production.example
 .env.test.example
 
+# etc
 /introductions
+OpenJibo/App_Data/

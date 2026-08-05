@@ -364,12 +364,10 @@ public sealed class HomeAssistantPortalApiTests
             robot.GetProperty("verifiedSerialNumber").GetString() == "BOJW-1000-0017-1114-0008");
         Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "live-hub-jibo" &&
-            robot.GetProperty("presence").GetString() == "online" &&
+            robot.GetProperty("presence").GetString() == "never-connected" &&
             !robot.GetProperty("hasOpenSocket").GetBoolean());
-        Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
-            robot.GetProperty("deviceId").GetString() == "archived-live-jibo" &&
-            robot.GetProperty("isHidden").GetBoolean() &&
-            robot.GetProperty("presence").GetString() == "online");
+        Assert.DoesNotContain(summary.GetProperty("robots").EnumerateArray(), robot =>
+            robot.GetProperty("deviceId").GetString() == "archived-live-jibo");
 
         var archiveResponse = await client.PostAsJsonAsync(
             "/api/portal/status/robots/physical-status-robot/archive",
@@ -402,7 +400,7 @@ public sealed class HomeAssistantPortalApiTests
 
         var networkSummary = await (await client.GetAsync("/api/portal/status/summary"))
             .Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal(4, networkSummary.GetProperty("serverFleet").GetProperty("network")
+        Assert.Equal(2, networkSummary.GetProperty("serverFleet").GetProperty("network")
             .GetProperty("connectedRobots").GetInt32());
         Assert.Contains(networkSummary.GetProperty("serverFleet").GetProperty("servers").EnumerateArray(), server =>
             server.GetProperty("canonicalHost").GetString() == remoteServer.CanonicalHost);
@@ -1087,7 +1085,7 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
-    public async Task StatusSummary_ReconcilesDuplicateRobotRecordsIntoOneOnlineRow()
+    public async Task StatusSummary_LeavesUnclaimedDuplicateRecordSeparateFromExplicitlyLinkedRobot()
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
@@ -1117,18 +1115,22 @@ public sealed class HomeAssistantPortalApiTests
 
         Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
         var summary = await summaryResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var reconciledRows = summary.GetProperty("robots")
+        var rows = summary.GetProperty("robots")
             .EnumerateArray()
             .Where(robot =>
                 robot.GetProperty("deviceId").GetString() is "5c0b221fdf9d450019c5e254" or "Royal-Current-Sage-Canvas" ||
                 robot.GetProperty("robotId").GetString() is "robot-5c0b221fdf9d450019c5e254" or "robot-Royal-Current-Sage-Canvas")
             .ToArray();
 
-        Assert.Single(reconciledRows);
-        Assert.Equal("Royal-Current-Sage-Canvas", reconciledRows[0].GetProperty("deviceId").GetString());
-        Assert.Equal("robot-Royal-Current-Sage-Canvas", reconciledRows[0].GetProperty("robotId").GetString());
-        Assert.Equal("online", reconciledRows[0].GetProperty("presence").GetString());
-        Assert.True(reconciledRows[0].GetProperty("connected").GetBoolean());
+        Assert.Equal(2, rows.Length);
+        var linkedRobot = Assert.Single(rows, robot =>
+            robot.GetProperty("deviceId").GetString() == "Royal-Current-Sage-Canvas");
+        Assert.Equal("robot-Royal-Current-Sage-Canvas", linkedRobot.GetProperty("robotId").GetString());
+        Assert.Equal("online", linkedRobot.GetProperty("presence").GetString());
+        Assert.True(linkedRobot.GetProperty("connected").GetBoolean());
+        var unclaimedDuplicate = Assert.Single(rows, robot =>
+            robot.GetProperty("deviceId").GetString() == "5c0b221fdf9d450019c5e254");
+        Assert.Equal("never-connected", unclaimedDuplicate.GetProperty("presence").GetString());
     }
 
     [Fact]

@@ -1662,13 +1662,28 @@ public sealed class WebSocketTurnFinalizationService(
     {
         if (mediaContentStore is null || session.TurnState.BufferedAudioFrames.Count == 0) return;
 
-        var content = session.TurnState.BufferedAudioFrames.SelectMany(frame => frame).ToArray();
+        var rawContent = session.TurnState.BufferedAudioFrames.SelectMany(frame => frame).ToArray();
+        var isOgg = rawContent.Length >= 4 && rawContent.AsSpan(0, 4).SequenceEqual("OggS"u8);
+        var content = rawContent;
+        if (isOgg)
+        {
+            try
+            {
+                content = Audio.OggOpusAudioNormalizer.Normalize(session.TurnState.BufferedAudioFrames);
+            }
+            catch (InvalidOperationException exception)
+            {
+                logger.LogWarning(exception,
+                    "Could not normalize buffered Ogg audio for artifact storage; retaining the raw WebSocket bytes. session={SessionId} turn={TurnId}",
+                    session.SessionId, turn.TurnId);
+                isOgg = false;
+            }
+        }
         if (content.Length == 0) return;
 
         var deviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredDeviceId)
             ? registeredDeviceId?.ToString()
             : turn.DeviceId ?? session.DeviceId;
-        var isOgg = content.Length >= 4 && content.AsSpan(0, 4).SequenceEqual("OggS"u8);
         var artifactId = $"{turn.TimestampUtc:yyyyMMddTHHmmssfffZ}-{turn.TurnId}";
         var meta = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {

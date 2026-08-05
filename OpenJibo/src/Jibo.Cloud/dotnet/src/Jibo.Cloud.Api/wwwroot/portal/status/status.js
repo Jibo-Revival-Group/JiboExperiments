@@ -434,6 +434,25 @@ async function claimArtifactCredential() {
   }
 }
 
+async function swapArtifactCredentials() {
+  if (!activeLogViewer) return;
+  const firstAccessKeyFingerprint = document.getElementById("artifactCredentialSwapFirst")?.value;
+  const secondAccessKeyFingerprint = document.getElementById("artifactCredentialSwapSecond")?.value;
+  if (!firstAccessKeyFingerprint || !secondAccessKeyFingerprint || firstAccessKeyFingerprint === secondAccessKeyFingerprint) return;
+  if (!window.confirm(`Swap the two credential bindings?\n\n${firstAccessKeyFingerprint} ↔ ${secondAccessKeyFingerprint}\n\nOnly AWS credential attribution and its prior credential-backfill artifacts will be corrected.`)) return;
+  try {
+    const result = await apiFetch("/api/portal/status/credential-bindings/swap", {
+      method: "POST",
+      body: JSON.stringify({ firstAccessKeyFingerprint, secondAccessKeyFingerprint, confirmed: true }),
+    });
+    await refreshStatus(`Credential bindings swapped; ${result.reassignedArtifacts || 0} backfilled artifact(s) corrected.`, "success", { force: true });
+    await openRobotArtifacts(activeLogViewer.deviceId, activeLogViewer.robotName);
+  } catch (error) {
+    activeLogViewer = { ...activeLogViewer, error: error.message };
+    renderStatusView(latestSummary);
+  }
+}
+
 async function mergeRobotFromArtifactViewer() {
   if (!activeLogViewer) return;
   const sourceDeviceId = document.getElementById("artifactMergeSource")?.value;
@@ -488,6 +507,17 @@ function renderLogViewer() {
           `<option value="${escapeHtml(robot.deviceId)}">${escapeHtml(robot.robotId || robot.friendlyName || robot.deviceId)}</option>`).join("")}</select>
           <button class="button secondary compact merge-artifact-robot" type="button">Preview merge</button></div></div>`
     : "";
+  const allBindings = latestSummary?.credentialBindings || [];
+  const currentBindings = allBindings.filter((binding) => binding.deviceId === viewer.deviceId);
+  const otherBindings = allBindings.filter((binding) => binding.deviceId !== viewer.deviceId);
+  const credentialSwap = currentBindings.length && otherBindings.length
+    ? `<div class="artifact-claim"><label>Correct an AWS credential swap</label>
+        <div class="button-row"><select id="artifactCredentialSwapFirst">${currentBindings.map((binding) =>
+          `<option value="${escapeHtml(binding.accessKeyFingerprint)}">${escapeHtml(binding.accessKeyFingerprint)} · this robot</option>`).join("")}</select>
+          <select id="artifactCredentialSwapSecond">${otherBindings.map((binding) =>
+          `<option value="${escapeHtml(binding.accessKeyFingerprint)}">${escapeHtml(binding.accessKeyFingerprint)} · ${escapeHtml(binding.deviceId)}</option>`).join("")}</select>
+          <button class="button secondary compact swap-artifact-credentials" type="button">Swap bindings</button></div></div>`
+    : "";
 
   return `
     <section class="card panel tight log-viewer" aria-live="polite">
@@ -497,6 +527,7 @@ function renderLogViewer() {
       </div>
       ${viewer.error ? `<p class="status error">${escapeHtml(viewer.error)}</p>` : ""}
       ${claim}
+      ${credentialSwap}
       ${merge}
       <div class="log-viewer-grid"><div>${list}</div><div class="log-preview-panel">${preview}</div></div>
     </section>`;
@@ -899,6 +930,9 @@ function renderStatusView(summary, previous = previousSummary) {
   });
   document.querySelectorAll(".claim-artifact-credential").forEach((button) => {
     button.addEventListener("click", claimArtifactCredential);
+  });
+  document.querySelectorAll(".swap-artifact-credentials").forEach((button) => {
+    button.addEventListener("click", swapArtifactCredentials);
   });
   document.querySelectorAll(".merge-artifact-robot").forEach((button) => {
     button.addEventListener("click", mergeRobotFromArtifactViewer);

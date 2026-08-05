@@ -319,6 +319,32 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return binding;
     }
 
+    public IReadOnlyList<RobotCredentialBinding> SwapAwsCredentialFingerprintBindings(string firstAccessKeyFingerprint,
+        string secondAccessKeyFingerprint, string claimSource)
+    {
+        if (string.IsNullOrWhiteSpace(firstAccessKeyFingerprint) || string.IsNullOrWhiteSpace(secondAccessKeyFingerprint) ||
+            firstAccessKeyFingerprint.Equals(secondAccessKeyFingerprint, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Choose two different credential fingerprints.");
+
+        lock (_syncRoot)
+        {
+            if (!_robotCredentialBindings.TryGetValue(firstAccessKeyFingerprint.Trim(), out var first) ||
+                !_robotCredentialBindings.TryGetValue(secondAccessKeyFingerprint.Trim(), out var second))
+                throw new KeyNotFoundException("Credential fingerprint was not found.");
+            if (first.DeviceId.Equals(second.DeviceId, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("The selected credential fingerprints are already assigned to the same robot.");
+
+            var now = DateTimeOffset.UtcNow;
+            var source = string.IsNullOrWhiteSpace(claimSource) ? "portal-admin-swap" : claimSource.Trim();
+            var swappedFirst = first with { DeviceId = second.DeviceId, ClaimedUtc = now, ClaimSource = source };
+            var swappedSecond = second with { DeviceId = first.DeviceId, ClaimedUtc = now, ClaimSource = source };
+            _robotCredentialBindings[swappedFirst.AccessKeyFingerprint] = swappedFirst;
+            _robotCredentialBindings[swappedSecond.AccessKeyFingerprint] = swappedSecond;
+            TouchState();
+            return [swappedFirst, swappedSecond];
+        }
+    }
+
     public RobotMergeResult MergeRobotRecords(string sourceDeviceId, string targetDeviceId)
     {
         if (string.IsNullOrWhiteSpace(sourceDeviceId) || string.IsNullOrWhiteSpace(targetDeviceId) ||

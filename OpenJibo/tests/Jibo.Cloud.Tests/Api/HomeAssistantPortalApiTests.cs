@@ -472,6 +472,51 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task CredentialBindingSwap_SwapsOnlyExplicitClaimsAndBackfillArtifacts()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var mediaStore = factory.Services.GetRequiredService<IMediaContentStore>();
+        const string firstRobot = "Royal-Current-Sage-Canvas";
+        const string secondRobot = "duplicate-robot";
+        const string firstFingerprint = "8de2920e0b2874b4";
+        const string secondFingerprint = "0123456789abcdef";
+        stateStore.UpsertDevice(new DeviceRegistration { DeviceId = firstRobot, RobotId = firstRobot, FriendlyName = firstRobot });
+        stateStore.UpsertDevice(new DeviceRegistration { DeviceId = secondRobot, RobotId = secondRobot, FriendlyName = secondRobot });
+        stateStore.BindAwsCredentialFingerprint(firstRobot, firstFingerprint, "test-claim");
+        stateStore.BindAwsCredentialFingerprint(secondRobot, secondFingerprint, "test-claim");
+        await mediaStore.StoreAsync("logs/first-credential.txt", "text/plain", Encoding.UTF8.GetBytes("first"),
+            new Dictionary<string, object?>
+            {
+                ["deviceId"] = firstRobot, ["awsAccessKeyFingerprint"] = firstFingerprint,
+                ["identitySource"] = "aws-credential-binding-backfill"
+            });
+        await mediaStore.StoreAsync("logs/second-credential.txt", "text/plain", Encoding.UTF8.GetBytes("second"),
+            new Dictionary<string, object?>
+            {
+                ["deviceId"] = secondRobot, ["awsAccessKeyFingerprint"] = secondFingerprint,
+                ["identitySource"] = "aws-credential-binding-backfill"
+            });
+
+        await AuthenticateAdminAsync(client);
+        var response = await client.PostAsJsonAsync("/api/portal/status/credential-bindings/swap", new
+        {
+            firstAccessKeyFingerprint = firstFingerprint,
+            secondAccessKeyFingerprint = secondFingerprint,
+            confirmed = true
+        });
+
+        response.EnsureSuccessStatusCode();
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, payload.GetProperty("reassignedArtifacts").GetInt32());
+        Assert.Equal(secondRobot, stateStore.FindDeviceByAwsCredentialFingerprint(firstFingerprint)!.DeviceId);
+        Assert.Equal(firstRobot, stateStore.FindDeviceByAwsCredentialFingerprint(secondFingerprint)!.DeviceId);
+        Assert.Equal(secondRobot, (await mediaStore.LoadAsync("logs/first-credential.txt"))!.Meta["deviceId"]?.ToString());
+        Assert.Equal(firstRobot, (await mediaStore.LoadAsync("logs/second-credential.txt"))!.Meta["deviceId"]?.ToString());
+    }
+
+    [Fact]
     public async Task RobotMerge_RequiresAdminPreviewAndMigratesOnlyIdentityArtifacts()
     {
         await using var factory = CreateFactory();

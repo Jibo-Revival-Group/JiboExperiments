@@ -1158,6 +1158,29 @@ internal static class PortalEndpoints
             }
         });
 
+        app.MapPost("/api/portal/status/credential-bindings/swap", async (
+            [FromBody] SwapRobotCredentialBindingsRequest request, HttpRequest httpRequest,
+            PortalSessionService portalSessionService, ICloudStateStore cloudStateStore,
+            IMediaContentStore mediaContentStore, CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            if (!request.Confirmed) return Results.BadRequest(new { error = "Confirm the credential swap before applying it." });
+            try
+            {
+                var bindings = cloudStateStore.SwapAwsCredentialFingerprintBindings(
+                    request.FirstAccessKeyFingerprint ?? string.Empty, request.SecondAccessKeyFingerprint ?? string.Empty,
+                    "portal-admin-swap");
+                var reassignedArtifacts = 0;
+                foreach (var binding in bindings)
+                    reassignedArtifacts += await ReassignCredentialBackfillArtifactsAsync(mediaContentStore,
+                        binding.AccessKeyFingerprint, binding.DeviceId, cancellationToken);
+                return Results.Json(new { ok = true, bindings, reassignedArtifacts });
+            }
+            catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
+            catch (KeyNotFoundException exception) { return Results.NotFound(new { error = exception.Message }); }
+        });
+
         app.MapGet("/api/portal/status/robots/{sourceDeviceId}/merge-preview", async (
             string sourceDeviceId, string targetDeviceId, HttpRequest request,
             PortalSessionService portalSessionService, ICloudStateStore cloudStateStore,
@@ -1415,6 +1438,15 @@ internal static class PortalEndpoints
                         device.DeviceId)
                 })
                 .ToArray(),
+            credentialBindings = cloudStateStore.GetRobotCredentialBindings()
+                .Select(binding => new
+                {
+                    accessKeyFingerprint = binding.AccessKeyFingerprint,
+                    binding.DeviceId,
+                    binding.ClaimedUtc,
+                    binding.ClaimSource
+                })
+                .ToArray(),
             fleet = new
             {
                 registeredRobots = allDevices.Count,
@@ -1533,6 +1565,30 @@ internal static class PortalEndpoints
                 ["identitySource"] = identitySource,
                 ["mergedFromDeviceId"] = sourceDeviceId,
                 ["mergedUtc"] = DateTimeOffset.UtcNow
+            };
+            await mediaContentStore.StoreAsync(artifact.Path, content.ContentType, content.Content, meta, cancellationToken);
+            updated++;
+        }
+        return updated;
+    }
+
+    private static async Task<int> ReassignCredentialBackfillArtifactsAsync(IMediaContentStore mediaContentStore,
+        string accessKeyFingerprint, string deviceId, CancellationToken cancellationToken)
+    {
+        var updated = 0;
+        foreach (var artifact in (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken)).Where(item =>
+                     ReadArtifactMeta(item.Meta, "awsAccessKeyFingerprint")
+                         .Equals(accessKeyFingerprint, StringComparison.OrdinalIgnoreCase) &&
+                     ReadArtifactMeta(item.Meta, "identitySource") is "aws-credential-binding-backfill" or
+                         "aws-credential-binding-swap"))
+        {
+            var content = await mediaContentStore.LoadAsync(artifact.Path, cancellationToken);
+            if (content is null) continue;
+            var meta = new Dictionary<string, object?>(content.Meta, StringComparer.OrdinalIgnoreCase)
+            {
+                ["deviceId"] = deviceId,
+                ["identitySource"] = "aws-credential-binding-swap",
+                ["credentialSwappedUtc"] = DateTimeOffset.UtcNow
             };
             await mediaContentStore.StoreAsync(artifact.Path, content.ContentType, content.Content, meta, cancellationToken);
             updated++;
@@ -2532,6 +2588,8 @@ internal static class PortalEndpoints
     private sealed record ArchiveStatusRobotRequest(string? PortalSessionToken, bool Hidden);
     private sealed record LinkStatusSessionRequest(string? PortalSessionToken, string? DeviceId);
     private sealed record BindRobotCredentialRequest(string? PortalSessionToken, string? AccessKeyFingerprint);
+    private sealed record SwapRobotCredentialBindingsRequest(string? PortalSessionToken,
+        string? FirstAccessKeyFingerprint, string? SecondAccessKeyFingerprint, bool Confirmed);
     private sealed record MergeRobotRequest(string? PortalSessionToken, string? TargetDeviceId);
 
     private sealed record FleetServerPresenceReportRequest(

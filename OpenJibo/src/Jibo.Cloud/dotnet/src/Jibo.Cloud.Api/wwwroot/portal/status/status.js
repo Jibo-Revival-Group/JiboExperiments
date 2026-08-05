@@ -164,6 +164,7 @@ function robotSearchHaystack(robot) {
     robot.robotId,
     robot.deviceId,
     robot.registrationSource,
+    robot.verifiedSerialNumber,
     robot.presence,
     robot.firmwareVersion,
     robot.applicationVersion,
@@ -278,6 +279,7 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
       <td>
         <div class="mono">${escapeHtml(robot.robotId || "-")}</div>
         <div class="muted-row">${escapeHtml(robot.registrationSource || "unknown")}</div>
+        ${robot.verifiedSerialNumber ? `<div class="muted-row">Verified serial: ${escapeHtml(robot.verifiedSerialNumber)}</div>` : ""}
       </td>
       <td>${robot.liveConnectionCount ?? 0} live<br><span class="muted-row">${escapeHtml((robot.connectionKinds || []).join(", ") || "-")}</span></td>
       <td>${formatDate(robot.lastSeenUtc)}</td>

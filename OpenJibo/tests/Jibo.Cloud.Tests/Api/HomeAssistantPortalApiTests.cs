@@ -318,6 +318,9 @@ public sealed class HomeAssistantPortalApiTests
             DeviceId = "physical-status-robot",
             RobotId = "physical-status-robot",
             FriendlyName = "Living Room Jibo",
+            VerifiedSerialNumber = "BOJW-1000-0017-1114-0008",
+            SerialEvidenceSource = "oobe-verified:physical-label",
+            SerialEvidenceVerifiedUtc = DateTimeOffset.UtcNow,
             RegistrationSource = RobotRegistrationSources.Physical
         });
         var authHandler = factory.Services.GetRequiredService<ICloudAuthProtocolHandler>();
@@ -357,7 +360,8 @@ public sealed class HomeAssistantPortalApiTests
         Assert.True(summary.GetProperty("service").GetProperty("uptimeSeconds").GetInt64() >= 0);
         Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "physical-status-robot" &&
-            robot.GetProperty("presence").GetString() == "never-connected");
+            robot.GetProperty("presence").GetString() == "never-connected" &&
+            robot.GetProperty("verifiedSerialNumber").GetString() == "BOJW-1000-0017-1114-0008");
         Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "live-hub-jibo" &&
             robot.GetProperty("presence").GetString() == "online" &&

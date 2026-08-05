@@ -1407,6 +1407,9 @@ internal static class PortalEndpoints
                     robotId = device.RobotId,
                     friendlyName = device.FriendlyName,
                     isHidden = device.IsHidden,
+                    verifiedSerialNumber = device.VerifiedSerialNumber,
+                    serialEvidenceSource = device.SerialEvidenceSource,
+                    serialEvidenceVerifiedUtc = device.SerialEvidenceVerifiedUtc,
                     registrationSource = RobotRegistrationSources.Normalize(
                         device.RegistrationSource,
                         device.DeviceId)
@@ -1738,6 +1741,9 @@ internal static class PortalEndpoints
                     .OrderByDescending(value => value)
                     .FirstOrDefault(),
                 SelectPreferredRegistrationSource(primaryDevice, groupDevices),
+                primaryDevice.VerifiedSerialNumber,
+                primaryDevice.SerialEvidenceSource,
+                primaryDevice.SerialEvidenceVerifiedUtc,
                 groupIsSynthetic,
                 presence,
                 presence is "online" or "sleeping",
@@ -1946,6 +1952,9 @@ internal static class PortalEndpoints
         bool IsHidden,
         DateTimeOffset? ArchivedUtc,
         string RegistrationSource,
+        string? VerifiedSerialNumber,
+        string? SerialEvidenceSource,
+        DateTimeOffset? SerialEvidenceVerifiedUtc,
         bool IsSynthetic,
         string Presence,
         bool Connected,

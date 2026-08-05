@@ -12,6 +12,10 @@ public sealed class DeviceRegistration
     public string? IssuedIdentityId { get; init; }
     public string? BuildHash { get; init; }
     public string? ConfigHash { get; init; }
+    // Recorded only from an explicit verified OOBE/recovery claim; never inferred from traffic.
+    public string? VerifiedSerialNumber { get; init; }
+    public string? SerialEvidenceSource { get; init; }
+    public DateTimeOffset? SerialEvidenceVerifiedUtc { get; init; }
     public string RegistrationSource { get; init; } = RobotRegistrationSources.Unknown;
     public bool IsHidden { get; init; }
     public DateTimeOffset? ArchivedUtc { get; init; }

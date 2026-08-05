@@ -357,6 +357,53 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task VerifiedSerialEvidence_IsPersistedOnlyThroughPreparedOobeClaim()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"Royal-Current-Sage-Canvas","rollbackSnapshotId":"serial-claim","serialNumber":"BOJW-1000-0017-1114-0008","serialVerified":true,"serialVerificationMethod":"physical-label"}"""
+        });
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"Royal-Current-Sage-Canvas"}"""
+        });
+
+        Assert.Equal(200, setup.StatusCode);
+        var device = store.FindDeviceByFriendlyId("Royal-Current-Sage-Canvas");
+        Assert.NotNull(device);
+        Assert.Equal("BOJW-1000-0017-1114-0008", device.VerifiedSerialNumber);
+        Assert.Equal("oobe-verified:physical-label", device.SerialEvidenceSource);
+        Assert.NotNull(device.SerialEvidenceVerifiedUtc);
+
+        var passive = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = """{"id":"unclaimed-serial","serialNumber":"BOJW-1000-0017-1114-0008"}"""
+        });
+        Assert.Equal(200, passive.StatusCode);
+        Assert.Null(store.FindDeviceByFriendlyId("unclaimed-serial")!.VerifiedSerialNumber);
+
+        var invalid = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = """{"id":"invalid-serial","serialNumber":"BOJW-1000-0017-1114-0008","serialVerified":true}"""
+        });
+        Assert.Equal(400, invalid.StatusCode);
+        Assert.Null(store.FindDeviceByFriendlyId("invalid-serial"));
+    }
+
+    [Fact]
     public async Task PrepareAndStatus_ReturnSignedOnboardingSessionForProviderReturnBinding()
     {
         var store = new InMemoryCloudStateStore();

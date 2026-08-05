@@ -2944,6 +2944,21 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public void RobotMerge_RejectsActiveRobotAsSource()
+    {
+        var store = new InMemoryCloudStateStore();
+        var active = store.GetRobot();
+        var target = store.GetOrCreateDevice("Royal-Current-Sage-Canvas", null, null,
+            RobotRegistrationSources.Physical);
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            store.MergeRobotRecords(active.DeviceId, target.DeviceId));
+
+        Assert.Equal("The active robot record must be the canonical target, not the merge source.", exception.Message);
+        Assert.Equal(active.DeviceId, store.GetRobot().DeviceId);
+    }
+
+    [Fact]
     public async Task MediaCreate_WritesBinaryManifestMetadataForSync()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));

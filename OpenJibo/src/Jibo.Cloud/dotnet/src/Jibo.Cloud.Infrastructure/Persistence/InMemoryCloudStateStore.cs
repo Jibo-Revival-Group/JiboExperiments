@@ -324,6 +324,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         if (string.IsNullOrWhiteSpace(sourceDeviceId) || string.IsNullOrWhiteSpace(targetDeviceId) ||
             sourceDeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("Choose two different robot records.");
+        if (sourceDeviceId.Equals(_robot.DeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("The active robot record must be the canonical target, not the merge source.");
         if (!_devices.TryGetValue(sourceDeviceId, out var source) || !_devices.ContainsKey(targetDeviceId))
             throw new KeyNotFoundException("Robot record was not found.");
 

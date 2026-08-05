@@ -472,6 +472,65 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task RobotMerge_RequiresAdminPreviewAndMigratesOnlyIdentityArtifacts()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var mediaStore = factory.Services.GetRequiredService<IMediaContentStore>();
+        const string sourceDeviceId = "duplicate-robot";
+        const string targetDeviceId = "Royal-Current-Sage-Canvas";
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = sourceDeviceId,
+            RobotId = sourceDeviceId,
+            FriendlyName = "Duplicate robot",
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = targetDeviceId,
+            RobotId = targetDeviceId,
+            FriendlyName = targetDeviceId,
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
+        var sourceToken = stateStore.IssueRobotToken(sourceDeviceId);
+        stateStore.BindAwsCredentialFingerprint(sourceDeviceId, "8de2920e0b2874b4", "test-claim");
+        await mediaStore.StoreAsync("logs/duplicate-request.txt", "text/plain", Encoding.UTF8.GetBytes("capture"),
+            new Dictionary<string, object?> { ["deviceId"] = sourceDeviceId });
+        var loopIdsBefore = stateStore.GetLoops().Select(loop => loop.LoopId).ToArray();
+        var peopleBefore = stateStore.GetPeople().Select(person => person.PersonId).ToArray();
+
+        await AuthenticateAdminAsync(client);
+        var previewResponse = await client.GetAsync(
+            $"/api/portal/status/robots/{sourceDeviceId}/merge-preview?targetDeviceId={targetDeviceId}");
+        previewResponse.EnsureSuccessStatusCode();
+        var preview = await previewResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, preview.GetProperty("sessionCount").GetInt32());
+        Assert.Equal(1, preview.GetProperty("credentialBindingCount").GetInt32());
+        Assert.Equal(1, preview.GetProperty("artifactCount").GetInt32());
+
+        var mergeResponse = await client.PostAsJsonAsync(
+            $"/api/portal/status/robots/{sourceDeviceId}/merge", new { targetDeviceId });
+        mergeResponse.EnsureSuccessStatusCode();
+        var merge = await mergeResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(merge.GetProperty("ok").GetBoolean());
+        Assert.Equal(1, merge.GetProperty("migratedArtifacts").GetInt32());
+        Assert.Equal(1, merge.GetProperty("result").GetProperty("migratedSessions").GetInt32());
+        Assert.Equal(1, merge.GetProperty("result").GetProperty("migratedCredentialBindings").GetInt32());
+
+        Assert.Equal(targetDeviceId, stateStore.FindSessionByToken(sourceToken)!.DeviceId);
+        Assert.Equal(targetDeviceId, stateStore.FindDeviceByAwsCredentialFingerprint("8de2920e0b2874b4")!.DeviceId);
+        Assert.True(stateStore.GetDevices().Single(device => device.DeviceId == sourceDeviceId).IsHidden);
+        var artifact = await mediaStore.LoadAsync("logs/duplicate-request.txt");
+        Assert.Equal(targetDeviceId, artifact!.Meta["deviceId"]?.ToString());
+        Assert.Equal("robot-merge", artifact.Meta["identitySource"]?.ToString());
+        Assert.Equal(sourceDeviceId, artifact.Meta["mergedFromDeviceId"]?.ToString());
+        Assert.Equal(loopIdsBefore, stateStore.GetLoops().Select(loop => loop.LoopId));
+        Assert.Equal(peopleBefore, stateStore.GetPeople().Select(person => person.PersonId));
+    }
+
+    [Fact]
     public async Task IdentityGraphEndpoint_ReturnsSignedEvidencePayloadForPortalSession()
     {
         await using var factory = CreateFactory();

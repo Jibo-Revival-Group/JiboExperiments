@@ -157,6 +157,8 @@ public sealed class WebSocketTurnFinalizationService(
         "sure",
         "ok",
         "okay",
+        "introductions",
+        "meet",
         "no",
         "nope",
         "nah"
@@ -2101,7 +2103,8 @@ public sealed class WebSocketTurnFinalizationService(
                turnState.ListenRules.Any(rule =>
                    IsClockValueRule(rule) ||
                    IsGalleryPreviewRule(rule) ||
-                   IsConstrainedYesNoRule(rule));
+                   IsConstrainedYesNoRule(rule) ||
+                   IsIntroductionsRule(rule));
     }
 
     private static string? ExtractDataPayload(string? text)
@@ -2211,6 +2214,8 @@ public sealed class WebSocketTurnFinalizationService(
         if (transcript is "blank_audio" or "blank audio") return false;
 
         if (listenRules.Any(IsClockValueRule)) return true;
+
+        if (listenRules.Any(IsIntroductionsRule)) return true;
 
         if (ChitchatStateMachine.IsLikelyEmotionUtterance(transcript)) return true;
 
@@ -2351,6 +2356,11 @@ public sealed class WebSocketTurnFinalizationService(
         return string.Equals(rule, "gallery/gallery_preview", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsIntroductionsRule(string rule)
+    {
+        return rule.StartsWith("introductions/", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsConstrainedYesNoRule(string rule)
     {
         return string.Equals(rule, "clock/alarm_timer_change", StringComparison.OrdinalIgnoreCase) ||
@@ -2360,7 +2370,8 @@ public sealed class WebSocketTurnFinalizationService(
                string.Equals(rule, "settings/download_now_later", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase);
+               string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase) ||
+               IsIntroductionsRule(rule);
     }
 
     private static bool IsYesNoReplyTranscript(string normalizedTranscript)

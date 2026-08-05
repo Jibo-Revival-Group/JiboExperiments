@@ -1713,6 +1713,17 @@ public sealed partial class JiboInteractionService
 
         if (MatchesAny(
                 loweredTranscript,
+                "meet someone new",
+                "meet someone",
+                "meet some",
+                "meet",
+                "introductions",
+                "introduce yourself",
+                "introduce me"))
+            return "introductions";
+
+        if (MatchesAny(
+                loweredTranscript,
                 "what's your favorite name",
                 "what is your favorite name",
                 "do you have a favorite name",

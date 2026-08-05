@@ -314,6 +314,16 @@ body {
   padding-left: 1.25rem;
 }
 
+.artifact-claim {
+  margin-top: 0.9rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.artifact-claim label { display: block; margin-bottom: 0.45rem; }
+.artifact-claim select { min-width: min(100%, 24rem); }
+
 .status-divider {
   height: 1px;
   margin: 1rem 0;

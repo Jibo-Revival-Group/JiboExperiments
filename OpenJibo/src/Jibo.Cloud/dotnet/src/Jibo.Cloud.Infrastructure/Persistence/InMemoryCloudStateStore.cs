@@ -316,6 +316,52 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return binding;
     }
 
+    public RobotMergeResult MergeRobotRecords(string sourceDeviceId, string targetDeviceId)
+    {
+        if (string.IsNullOrWhiteSpace(sourceDeviceId) || string.IsNullOrWhiteSpace(targetDeviceId) ||
+            sourceDeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Choose two different robot records.");
+        if (!_devices.TryGetValue(sourceDeviceId, out var source) || !_devices.ContainsKey(targetDeviceId))
+            throw new KeyNotFoundException("Robot record was not found.");
+
+        var migratedSessions = 0;
+        foreach (var session in _sessionsByToken.Values.Where(session =>
+                     source.DeviceId.Equals(session.DeviceId, StringComparison.OrdinalIgnoreCase)))
+        {
+            session.DeviceId = targetDeviceId;
+            session.Metadata["registeredDeviceId"] = targetDeviceId;
+            migratedSessions++;
+        }
+
+        var migratedBindings = 0;
+        foreach (var binding in _robotCredentialBindings.Values.Where(binding =>
+                     source.DeviceId.Equals(binding.DeviceId, StringComparison.OrdinalIgnoreCase)).ToArray())
+        {
+            _robotCredentialBindings[binding.AccessKeyFingerprint] = binding with { DeviceId = targetDeviceId };
+            migratedBindings++;
+        }
+
+        _devices[source.DeviceId] = new DeviceRegistration
+        {
+            DeviceId = source.DeviceId,
+            RobotId = source.RobotId,
+            FriendlyName = source.FriendlyName,
+            FirmwareVersion = source.FirmwareVersion,
+            ApplicationVersion = source.ApplicationVersion,
+            IsActive = false,
+            CertificateThumbprint = source.CertificateThumbprint,
+            IssuedIdentityId = source.IssuedIdentityId,
+            BuildHash = source.BuildHash,
+            ConfigHash = source.ConfigHash,
+            RegistrationSource = source.RegistrationSource,
+            IsHidden = true,
+            ArchivedUtc = DateTimeOffset.UtcNow,
+            HostMappings = new Dictionary<string, string>(source.HostMappings, StringComparer.OrdinalIgnoreCase)
+        };
+        TouchState();
+        return new RobotMergeResult(source.DeviceId, targetDeviceId, migratedSessions, migratedBindings, DateTimeOffset.UtcNow);
+    }
+
     private static bool IdentityMatches(string? left, string? right)
     {
         if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))

@@ -97,7 +97,9 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
     public async Task<IReadOnlyList<MediaContentItem>> ListAsync(string prefix, int maxCount = 100,
         CancellationToken cancellationToken = default)
     {
-        var normalizedPrefix = MediaPathHelper.GetRelativeStoragePath(prefix).Replace('\\', '/');
+        var normalizedPrefix = string.IsNullOrWhiteSpace(prefix)
+            ? string.Empty
+            : MediaPathHelper.GetRelativeStoragePath(prefix).Replace('\\', '/');
         if (!string.IsNullOrWhiteSpace(normalizedPrefix)) normalizedPrefix += "/";
         var items = new List<MediaContentItem>();
         try

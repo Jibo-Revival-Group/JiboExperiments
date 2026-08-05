@@ -2878,6 +2878,25 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public void RobotMerge_MigratesSessionsAndCredentialBindingsAndArchivesSource()
+    {
+        var store = new InMemoryCloudStateStore();
+        var source = store.GetOrCreateDevice("duplicate-robot", null, null, RobotRegistrationSources.Physical);
+        var target = store.GetOrCreateDevice("Royal-Current-Sage-Canvas", null, null, RobotRegistrationSources.Physical);
+        var token = store.IssueRobotToken(source.DeviceId);
+        store.BindAwsCredentialFingerprint(source.DeviceId, "8de2920e0b2874b4", "test-claim");
+
+        var result = store.MergeRobotRecords(source.DeviceId, target.DeviceId);
+
+        Assert.Equal(target.DeviceId, store.FindSessionByToken(token)!.DeviceId);
+        Assert.Equal(target.DeviceId, store.FindDeviceByAwsCredentialFingerprint("8de2920e0b2874b4")!.DeviceId);
+        Assert.True(store.GetDevices().Single(device => device.DeviceId == source.DeviceId).IsHidden);
+        Assert.False(store.GetDevices().Single(device => device.DeviceId == source.DeviceId).IsActive);
+        Assert.Equal(1, result.MigratedSessions);
+        Assert.Equal(1, result.MigratedCredentialBindings);
+    }
+
+    [Fact]
     public async Task MediaCreate_WritesBinaryManifestMetadataForSync()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));

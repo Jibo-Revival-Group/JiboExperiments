@@ -9,9 +9,12 @@ using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Jibo.Cloud.Tests.Api;
 
@@ -422,6 +425,46 @@ public sealed class HomeAssistantPortalApiTests
             FleetPeerSyncAuthentication.Sign(remoteServer.ServerId, peerTimestamp, peerPayloadHash, "test-peer-key"));
         var peerResponse = await client.SendAsync(peerRequest);
         Assert.Equal(HttpStatusCode.OK, peerResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task CredentialClaim_BackfillsMatchingUnassignedArtifacts()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var mediaStore = factory.Services.GetRequiredService<IMediaContentStore>();
+        const string deviceId = "Royal-Current-Sage-Canvas";
+        const string fingerprint = "8de2920e0b2874b4";
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = deviceId,
+            RobotId = deviceId,
+            FriendlyName = deviceId,
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
+        await mediaStore.StoreAsync("logs/unassigned-sigv4-request.txt", "text/plain", Encoding.UTF8.GetBytes("capture"),
+            new Dictionary<string, object?>
+            {
+                ["awsAccessKeyFingerprint"] = fingerprint,
+                ["identitySource"] = "unresolved"
+            });
+
+        await AuthenticateAdminAsync(client);
+        var response = await client.PostAsJsonAsync(
+            $"/api/portal/status/robots/{deviceId}/credential-bindings",
+            new { accessKeyFingerprint = fingerprint });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(payload.GetProperty("ok").GetBoolean());
+        Assert.Equal(1, payload.GetProperty("backfilledArtifacts").GetInt32());
+        Assert.Equal(deviceId, stateStore.FindDeviceByAwsCredentialFingerprint(fingerprint)!.DeviceId);
+
+        var artifact = await mediaStore.LoadAsync("logs/unassigned-sigv4-request.txt");
+        Assert.NotNull(artifact);
+        Assert.Equal(deviceId, artifact.Meta["deviceId"]?.ToString());
+        Assert.Equal("aws-credential-binding-backfill", artifact.Meta["identitySource"]?.ToString());
     }
 
     [Fact]
@@ -1142,6 +1185,11 @@ public sealed class HomeAssistantPortalApiTests
         return new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.RemoveAll<IMediaContentStore>();
+                    services.AddSingleton<IMediaContentStore>(new FileMediaContentStore(Path.Combine(root, "media")));
+                });
                 builder.UseSetting("OpenJibo:Telemetry:DirectoryPath", Path.Combine(root, "websocket"));
                 builder.UseSetting("OpenJibo:ProtocolTelemetry:DirectoryPath", Path.Combine(root, "http"));
                 builder.UseSetting("OpenJibo:TurnTelemetry:DirectoryPath", Path.Combine(root, "turn"));

@@ -94,8 +94,9 @@ internal sealed class FileMediaContentStore(string? directoryPath) : IMediaConte
     {
         if (string.IsNullOrWhiteSpace(DirectoryPath) || !Directory.Exists(DirectoryPath)) return [];
 
-        var normalizedPrefix = MediaPathHelper.GetRelativeStoragePath(prefix)
-            .Replace(Path.DirectorySeparatorChar, '/');
+        var normalizedPrefix = string.IsNullOrWhiteSpace(prefix)
+            ? string.Empty
+            : MediaPathHelper.GetRelativeStoragePath(prefix).Replace(Path.DirectorySeparatorChar, '/');
         var items = new List<MediaContentItem>();
         foreach (var metaPath in Directory.EnumerateFiles(DirectoryPath, "*.json", SearchOption.AllDirectories))
         {

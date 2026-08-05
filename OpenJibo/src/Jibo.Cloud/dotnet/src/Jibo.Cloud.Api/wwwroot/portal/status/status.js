@@ -388,11 +388,11 @@ async function setRobotArchive(deviceId, hidden) {
 }
 
 async function openRobotArtifacts(deviceId, robotName) {
-  activeLogViewer = { deviceId, robotName, loading: true, artifacts: [], selected: null, error: "" };
+  activeLogViewer = { deviceId, robotName, loading: true, artifacts: [], unassignedCredentials: [], selected: null, error: "" };
   renderStatusView(latestSummary);
   try {
     const payload = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/artifacts`);
-    activeLogViewer = { ...activeLogViewer, loading: false, artifacts: payload.artifacts || [] };
+    activeLogViewer = { ...activeLogViewer, loading: false, artifacts: payload.artifacts || [], unassignedCredentials: payload.unassignedCredentials || [] };
   } catch (error) {
     activeLogViewer = { ...activeLogViewer, loading: false, error: error.message };
   }
@@ -412,6 +412,46 @@ async function openArtifact(path) {
   renderStatusView(latestSummary);
 }
 
+async function claimArtifactCredential() {
+  if (!activeLogViewer) return;
+  const select = document.getElementById("artifactCredentialFingerprint");
+  const fingerprint = select?.value;
+  if (!fingerprint) return;
+  activeLogViewer = { ...activeLogViewer, claiming: true, error: "" };
+  renderStatusView(latestSummary);
+  try {
+    const payload = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(activeLogViewer.deviceId)}/credential-bindings`, {
+      method: "POST",
+      body: JSON.stringify({ accessKeyFingerprint: fingerprint }),
+    });
+    await openRobotArtifacts(activeLogViewer.deviceId, activeLogViewer.robotName);
+    await refreshStatus(`Credential claimed; ${payload.backfilledArtifacts || 0} stored artifact(s) attributed.`, "success", { silent: true });
+  } catch (error) {
+    activeLogViewer = { ...activeLogViewer, claiming: false, error: error.message };
+    renderStatusView(latestSummary);
+  }
+}
+
+async function mergeRobotFromArtifactViewer() {
+  if (!activeLogViewer) return;
+  const sourceDeviceId = document.getElementById("artifactMergeSource")?.value;
+  if (!sourceDeviceId) return;
+  const targetDeviceId = activeLogViewer.deviceId;
+  try {
+    const preview = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(sourceDeviceId)}/merge-preview?targetDeviceId=${encodeURIComponent(targetDeviceId)}`);
+    if (!window.confirm(`Merge ${sourceDeviceId} into ${targetDeviceId}?\n\nMoves ${preview.sessionCount} session(s), ${preview.credentialBindingCount} credential binding(s), and ${preview.artifactCount} artifact(s). The source is archived. Household loops are not merged.`)) return;
+    const result = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(sourceDeviceId)}/merge`, {
+      method: "POST",
+      body: JSON.stringify({ targetDeviceId }),
+    });
+    await refreshStatus(`Robot merged; ${result.migratedArtifacts || 0} artifact(s) reassigned.`, "success", { force: true });
+    await openRobotArtifacts(targetDeviceId, activeLogViewer.robotName);
+  } catch (error) {
+    activeLogViewer = { ...activeLogViewer, error: error.message };
+    renderStatusView(latestSummary);
+  }
+}
+
 function renderLogViewer() {
   if (!activeLogViewer) return "";
   const viewer = activeLogViewer;
@@ -425,12 +465,27 @@ function renderLogViewer() {
             <strong>${escapeHtml(log.category || "log")}${log.unassigned ? " · Unassigned" : ""}</strong>
             <span>${escapeHtml(formatDate(log.storedUtc))} · ${escapeHtml(log.contentLength || "?")} bytes</span>
             <small class="mono">${escapeHtml(log.path)}</small>
+            ${log.identitySource ? `<small>Attributed by ${escapeHtml(log.identitySource)}${log.mergedFromDeviceId ? ` · merged from ${escapeHtml(log.mergedFromDeviceId)}` : ""}</small>` : ""}
           </button>`).join("")}</div>`;
   const preview = viewer.loadingContent
     ? `<p class="muted-row">Loading log preview…</p>`
     : viewer.selected
       ? renderArtifactPreview(viewer.selected)
       : `<p class="muted-row">Select an artifact to inspect its decoded text preview.</p>`;
+  const credentials = viewer.unassignedCredentials || [];
+  const claim = credentials.length
+    ? `<div class="artifact-claim"><label for="artifactCredentialFingerprint">Claim unassigned credential</label>
+        <div class="button-row"><select id="artifactCredentialFingerprint">${credentials.map((credential) =>
+          `<option value="${escapeHtml(credential.fingerprint)}">${escapeHtml(credential.fingerprint)} · ${escapeHtml(credential.artifactCount)} artifact(s)</option>`).join("")}</select>
+          <button class="button secondary compact claim-artifact-credential" type="button" ${viewer.claiming ? "disabled" : ""}>${viewer.claiming ? "Claiming..." : "Claim to this robot"}</button></div></div>`
+    : "";
+  const mergeCandidates = (latestSummary?.inventory || []).filter((robot) => robot.deviceId !== viewer.deviceId && !robot.isHidden);
+  const merge = mergeCandidates.length
+    ? `<div class="artifact-claim"><label for="artifactMergeSource">Merge a duplicate into this robot</label>
+        <div class="button-row"><select id="artifactMergeSource"><option value="">Choose source robot...</option>${mergeCandidates.map((robot) =>
+          `<option value="${escapeHtml(robot.deviceId)}">${escapeHtml(robot.robotId || robot.friendlyName || robot.deviceId)}</option>`).join("")}</select>
+          <button class="button secondary compact merge-artifact-robot" type="button">Preview merge</button></div></div>`
+    : "";
 
   return `
     <section class="card panel tight log-viewer" aria-live="polite">
@@ -439,6 +494,8 @@ function renderLogViewer() {
         <button class="button secondary compact close-log-viewer" type="button">Close</button>
       </div>
       ${viewer.error ? `<p class="status error">${escapeHtml(viewer.error)}</p>` : ""}
+      ${claim}
+      ${merge}
       <div class="log-viewer-grid"><div>${list}</div><div class="log-preview-panel">${preview}</div></div>
     </section>`;
 }
@@ -837,6 +894,12 @@ function renderStatusView(summary, previous = previousSummary) {
   });
   document.querySelectorAll(".view-artifact").forEach((button) => {
     button.addEventListener("click", () => openArtifact(button.dataset.path));
+  });
+  document.querySelectorAll(".claim-artifact-credential").forEach((button) => {
+    button.addEventListener("click", claimArtifactCredential);
+  });
+  document.querySelectorAll(".merge-artifact-robot").forEach((button) => {
+    button.addEventListener("click", mergeRobotFromArtifactViewer);
   });
   document.querySelectorAll(".close-log-viewer").forEach((button) => {
     button.addEventListener("click", () => {

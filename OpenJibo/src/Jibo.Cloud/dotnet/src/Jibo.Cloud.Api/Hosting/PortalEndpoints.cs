@@ -986,7 +986,9 @@ internal static class PortalEndpoints
                     unassigned = string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")),
                     storedUtc = ReadArtifactMeta(item.Meta, "storedUtc"),
                     contentLength = ReadArtifactMeta(item.Meta, "contentLength"),
-                    contentSha256 = ReadArtifactMeta(item.Meta, "contentSha256")
+                    contentSha256 = ReadArtifactMeta(item.Meta, "contentSha256"),
+                    identitySource = ReadArtifactMeta(item.Meta, "identitySource"),
+                    mergedFromDeviceId = ReadArtifactMeta(item.Meta, "mergedFromDeviceId")
                 });
             return Results.Json(new { logs });
         });
@@ -1061,9 +1063,23 @@ internal static class PortalEndpoints
                     unassigned = string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")),
                     storedUtc = ReadArtifactMeta(item.Meta, "storedUtc"),
                     contentLength = ReadArtifactMeta(item.Meta, "contentLength"),
-                    contentSha256 = ReadArtifactMeta(item.Meta, "contentSha256")
+                    contentSha256 = ReadArtifactMeta(item.Meta, "contentSha256"),
+                    identitySource = ReadArtifactMeta(item.Meta, "identitySource"),
+                    mergedFromDeviceId = ReadArtifactMeta(item.Meta, "mergedFromDeviceId")
                 });
-            return Results.Json(new { artifacts });
+            var unassignedCredentials = (await mediaContentStore.ListAsync(string.Empty, 400, cancellationToken))
+                .Where(item => string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")))
+                .Select(item => new
+                {
+                    fingerprint = ReadArtifactMeta(item.Meta, "awsAccessKeyFingerprint"),
+                    storedUtc = ReadArtifactMeta(item.Meta, "storedUtc")
+                })
+                .Where(item => !string.IsNullOrWhiteSpace(item.fingerprint))
+                .GroupBy(item => item.fingerprint, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new { fingerprint = group.Key, artifactCount = group.Count(), latestStoredUtc = group.Max(item => item.storedUtc) })
+                .OrderByDescending(item => item.latestStoredUtc)
+                .ToArray();
+            return Results.Json(new { artifacts, unassignedCredentials });
         });
 
         app.MapGet("/api/portal/status/robots/{deviceId}/artifacts/content", async (
@@ -1106,12 +1122,14 @@ internal static class PortalEndpoints
             });
         });
 
-        app.MapPost("/api/portal/status/robots/{deviceId}/credential-bindings", (
+        app.MapPost("/api/portal/status/robots/{deviceId}/credential-bindings", async (
             string deviceId,
             [FromBody] BindRobotCredentialRequest request,
             HttpRequest httpRequest,
             PortalSessionService portalSessionService,
-            ICloudStateStore cloudStateStore) =>
+            ICloudStateStore cloudStateStore,
+            IMediaContentStore mediaContentStore,
+            CancellationToken cancellationToken) =>
         {
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
@@ -1126,7 +1144,9 @@ internal static class PortalEndpoints
                 if (robot is null) return Results.NotFound(new { error = "Robot record was not found." });
                 var binding = cloudStateStore.BindAwsCredentialFingerprint(robot.DeviceId, request.AccessKeyFingerprint,
                     "portal-admin-claim");
-                return Results.Json(new { ok = true, binding });
+                var backfilledArtifacts = await BackfillArtifactsForCredentialAsync(mediaContentStore,
+                    binding.AccessKeyFingerprint, binding.DeviceId, cancellationToken);
+                return Results.Json(new { ok = true, binding, backfilledArtifacts });
             }
             catch (KeyNotFoundException)
             {
@@ -1136,6 +1156,46 @@ internal static class PortalEndpoints
             {
                 return Results.Conflict(new { error = "Credential fingerprint is already claimed by another robot." });
             }
+        });
+
+        app.MapGet("/api/portal/status/robots/{sourceDeviceId}/merge-preview", async (
+            string sourceDeviceId, string targetDeviceId, HttpRequest request,
+            PortalSessionService portalSessionService, ICloudStateStore cloudStateStore,
+            IMediaContentStore mediaContentStore, CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            var source = cloudStateStore.GetDevices().FirstOrDefault(device => device.DeviceId.Equals(sourceDeviceId, StringComparison.OrdinalIgnoreCase));
+            var target = cloudStateStore.GetDevices().FirstOrDefault(device => device.DeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase));
+            if (source is null || target is null || source.DeviceId.Equals(target.DeviceId, StringComparison.OrdinalIgnoreCase))
+                return Results.BadRequest(new { error = "Choose two different registered robots." });
+            var artifactCount = (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken))
+                .Count(item => ReadArtifactMeta(item.Meta, "deviceId").Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase));
+            return Results.Json(new {
+                sourceDeviceId = source.DeviceId, targetDeviceId = target.DeviceId,
+                sessionCount = cloudStateStore.GetSessions().Count(item => source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase)),
+                credentialBindingCount = cloudStateStore.GetRobotCredentialBindings().Count(item => source.DeviceId.Equals(item.DeviceId, StringComparison.OrdinalIgnoreCase)),
+                artifactCount,
+                note = "Household loops and people are not merged automatically. The source robot is archived."
+            });
+        });
+
+        app.MapPost("/api/portal/status/robots/{sourceDeviceId}/merge", async (
+            string sourceDeviceId, [FromBody] MergeRobotRequest request, HttpRequest httpRequest,
+            PortalSessionService portalSessionService, ICloudStateStore cloudStateStore,
+            IMediaContentStore mediaContentStore, CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            try
+            {
+                var result = cloudStateStore.MergeRobotRecords(sourceDeviceId, request.TargetDeviceId ?? string.Empty);
+                var migratedArtifacts = await ReassignArtifactsAsync(mediaContentStore, result.SourceDeviceId,
+                    result.TargetDeviceId, "robot-merge", cancellationToken);
+                return Results.Json(new { ok = true, result, migratedArtifacts });
+            }
+            catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
+            catch (KeyNotFoundException) { return Results.NotFound(new { error = "Robot record was not found." }); }
         });
 
         app.MapPost("/api/portal/status/sessions/{sessionId}/link", (
@@ -1429,6 +1489,52 @@ internal static class PortalEndpoints
         return value is JsonElement element && element.ValueKind == JsonValueKind.String
             ? element.GetString() ?? string.Empty
             : value.ToString() ?? string.Empty;
+    }
+
+    private static async Task<int> BackfillArtifactsForCredentialAsync(IMediaContentStore mediaContentStore,
+        string accessKeyFingerprint, string deviceId, CancellationToken cancellationToken)
+    {
+        var artifacts = await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken);
+        var updated = 0;
+        foreach (var artifact in artifacts.Where(item =>
+                     string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")) &&
+                     ReadArtifactMeta(item.Meta, "awsAccessKeyFingerprint")
+                         .Equals(accessKeyFingerprint, StringComparison.OrdinalIgnoreCase)))
+        {
+            var content = await mediaContentStore.LoadAsync(artifact.Path, cancellationToken);
+            if (content is null) continue;
+            var meta = new Dictionary<string, object?>(content.Meta, StringComparer.OrdinalIgnoreCase)
+            {
+                ["deviceId"] = deviceId,
+                ["identitySource"] = "aws-credential-binding-backfill",
+                ["credentialClaimedUtc"] = DateTimeOffset.UtcNow
+            };
+            await mediaContentStore.StoreAsync(artifact.Path, content.ContentType, content.Content, meta, cancellationToken);
+            updated++;
+        }
+        return updated;
+    }
+
+    private static async Task<int> ReassignArtifactsAsync(IMediaContentStore mediaContentStore, string sourceDeviceId,
+        string targetDeviceId, string identitySource, CancellationToken cancellationToken)
+    {
+        var updated = 0;
+        foreach (var artifact in (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken)).Where(item =>
+                     ReadArtifactMeta(item.Meta, "deviceId").Equals(sourceDeviceId, StringComparison.OrdinalIgnoreCase)))
+        {
+            var content = await mediaContentStore.LoadAsync(artifact.Path, cancellationToken);
+            if (content is null) continue;
+            var meta = new Dictionary<string, object?>(content.Meta, StringComparer.OrdinalIgnoreCase)
+            {
+                ["deviceId"] = targetDeviceId,
+                ["identitySource"] = identitySource,
+                ["mergedFromDeviceId"] = sourceDeviceId,
+                ["mergedUtc"] = DateTimeOffset.UtcNow
+            };
+            await mediaContentStore.StoreAsync(artifact.Path, content.ContentType, content.Content, meta, cancellationToken);
+            updated++;
+        }
+        return updated;
     }
 
     private static string ReadLogText(byte[] content, string contentType)
@@ -2411,6 +2517,7 @@ internal static class PortalEndpoints
     private sealed record ArchiveStatusRobotRequest(string? PortalSessionToken, bool Hidden);
     private sealed record LinkStatusSessionRequest(string? PortalSessionToken, string? DeviceId);
     private sealed record BindRobotCredentialRequest(string? PortalSessionToken, string? AccessKeyFingerprint);
+    private sealed record MergeRobotRequest(string? PortalSessionToken, string? TargetDeviceId);
 
     private sealed record FleetServerPresenceReportRequest(
         string? PortalSessionToken,

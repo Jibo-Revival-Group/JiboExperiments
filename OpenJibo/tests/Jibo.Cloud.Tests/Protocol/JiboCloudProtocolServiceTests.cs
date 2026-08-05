@@ -2269,6 +2269,33 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LegacyLogBinaryPost_IsCapturedAsBinaryArtifact()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(), new FileMediaContentStore(directoryPath));
+        var binaryPayload = new byte[] { 0x00, 0xFF, 0x4F, 0x67, 0x67 };
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            Path = "/log/binary/legacy-upload",
+            DeviceId = "Royal-Current-Sage-Canvas",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = "application/octet-stream"
+            },
+            BodyBytes = binaryPayload
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        var manifestPath = Path.Combine(directoryPath, "logs", "binary", "legacy-upload.json");
+        Assert.True(File.Exists(manifestPath));
+        Assert.Equal(binaryPayload, (await new FileMediaContentStore(directoryPath)
+            .LoadAsync("logs/binary/legacy-upload"))!.Content);
+    }
+
+    [Fact]
     public async Task PersonListHolidays_DoesNotThrow_WhenLoopStateIsEmpty()
     {
         var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-empty-holidays-{Guid.NewGuid():N}.json");

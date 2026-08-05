@@ -9,8 +9,10 @@ internal static class ApiRequestEnvelopeFactory
     {
         context.Request.EnableBuffering();
 
-        using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, false, leaveOpen: true);
-        var bodyText = await reader.ReadToEndAsync(cancellationToken);
+        await using var bodyBuffer = new MemoryStream();
+        await context.Request.Body.CopyToAsync(bodyBuffer, cancellationToken);
+        var bodyBytes = bodyBuffer.ToArray();
+        var bodyText = Encoding.UTF8.GetString(bodyBytes);
         context.Request.Body.Position = 0;
 
         var target = context.Request.Headers["X-Amz-Target"].ToString();
@@ -30,6 +32,7 @@ internal static class ApiRequestEnvelopeFactory
             FirmwareVersion = context.Request.Headers["X-OpenJibo-Firmware"].ToString(),
             ApplicationVersion = context.Request.Headers["X-OpenJibo-AppVersion"].ToString(),
             BodyText = bodyText,
+            BodyBytes = bodyBytes,
             Headers = context.Request.Headers.ToDictionary(pair => pair.Key, pair => pair.Value.ToString(),
                 StringComparer.OrdinalIgnoreCase),
             QueryParameters = context.Request.Query.ToDictionary(pair => pair.Key, pair => pair.Value.ToString(),

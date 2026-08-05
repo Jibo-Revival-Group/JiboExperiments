@@ -518,6 +518,12 @@ function renderLogViewer() {
           `<option value="${escapeHtml(binding.accessKeyFingerprint)}">${escapeHtml(binding.accessKeyFingerprint)} · ${escapeHtml(binding.deviceId)}</option>`).join("")}</select>
           <button class="button secondary compact swap-artifact-credentials" type="button">Swap bindings</button></div></div>`
     : "";
+  const advancedTools = [claim, credentialSwap, merge].filter(Boolean).join("");
+  const advanced = advancedTools
+    ? `<details class="advanced-identity-tools"><summary>Advanced identity tools</summary>
+        <p class="muted-row">These actions change explicit administrator attribution only. They never infer ownership from traffic.</p>
+        ${advancedTools}</details>`
+    : "";
 
   return `
     <section class="card panel tight log-viewer" aria-live="polite">
@@ -526,9 +532,7 @@ function renderLogViewer() {
         <button class="button secondary compact close-log-viewer" type="button">Close</button>
       </div>
       ${viewer.error ? `<p class="status error">${escapeHtml(viewer.error)}</p>` : ""}
-      ${claim}
-      ${credentialSwap}
-      ${merge}
+      ${advanced}
       <div class="log-viewer-grid"><div>${list}</div><div class="log-preview-panel">${preview}</div></div>
     </section>`;
 }

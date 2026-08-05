@@ -117,10 +117,12 @@ public sealed class JiboCloudProtocolService(
         if (TryHandleLocalSchedulerRequest(envelope, out var schedulerResult))
             return Task.FromResult(schedulerResult);
 
-        if (envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) &&
+        if ((envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) ||
+             envelope.Method.Equals("POST", StringComparison.OrdinalIgnoreCase)) &&
             (envelope.Path.StartsWith("/upload/asr-binary", StringComparison.OrdinalIgnoreCase) ||
              envelope.Path.StartsWith("/upload/log-events", StringComparison.OrdinalIgnoreCase) ||
-             envelope.Path.StartsWith("/upload/log-binary", StringComparison.OrdinalIgnoreCase)))
+             envelope.Path.StartsWith("/upload/log-binary", StringComparison.OrdinalIgnoreCase) ||
+             envelope.Path.StartsWith("/log/binary", StringComparison.OrdinalIgnoreCase)))
             return Task.FromResult(HandleLogUpload(envelope, ResolveRobotIdentity(envelope, "log-upload")));
 
         if ((envelope.ServicePrefix ?? string.Empty).StartsWith("OOBE_", StringComparison.OrdinalIgnoreCase))
@@ -1194,10 +1196,11 @@ public sealed class JiboCloudProtocolService(
 
     private ProtocolDispatchResult HandleLog(string operation, ProtocolEnvelope envelope, ProtocolRobotIdentity identity)
     {
-        if (!string.IsNullOrEmpty(envelope.BodyText))
+        var requestContent = ReadBodyBytes(envelope);
+        if (requestContent.Length > 0)
             StoreLogContent($"{GetLogCategory(operation)}-request", CreateLogUploadId(),
                 ReadHeader(envelope, "Content-Type") ?? "application/octet-stream",
-                Encoding.UTF8.GetBytes(envelope.BodyText), envelope, identity);
+                requestContent, envelope, identity);
 
         var uploadId = CreateLogUploadId();
         return operation switch
@@ -1247,7 +1250,7 @@ public sealed class JiboCloudProtocolService(
                 : "binary";
         var uploadId = GetLogUploadId(envelope.Path);
         var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
-        var content = string.IsNullOrEmpty(envelope.BodyText) ? [] : Encoding.UTF8.GetBytes(envelope.BodyText);
+        var content = ReadBodyBytes(envelope);
         StoreLogContent(category, uploadId, contentType, content, envelope, identity);
         return ProtocolDispatchResult.Raw(200, string.Empty);
     }
@@ -1296,7 +1299,7 @@ public sealed class JiboCloudProtocolService(
                 identity.Aws.AccessKeyFingerprint,
                 identity.Aws.SecurityTokenPresent, identity.Aws.DatePresent, identity.Aws.SignaturePresent,
                 identity.Aws.SignedHeadersPresent, identity.Aws.SignsRobotHeader, identity.Aws.SignsTransactionHeader,
-                Encoding.UTF8.GetByteCount(envelope.BodyText));
+                ReadBodyBytes(envelope).Length);
         return identity;
     }
 
@@ -1365,9 +1368,7 @@ public sealed class JiboCloudProtocolService(
         meta["awsSignsTransactionHeader"] = identity.Aws.SignsTransactionHeader;
         var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
         meta["contentType"] = contentType;
-        var bodyBytes = string.IsNullOrWhiteSpace(envelope.BodyText)
-            ? []
-            : Encoding.UTF8.GetBytes(envelope.BodyText);
+        var bodyBytes = ReadBodyBytes(envelope);
         meta["contentLength"] = bodyBytes.Length;
         meta["contentSha256"] = Convert.ToHexString(SHA256.HashData(bodyBytes)).ToLowerInvariant();
         if (!string.IsNullOrWhiteSpace(envelope.BodyText)) meta["bodyText"] = envelope.BodyText;
@@ -1379,6 +1380,9 @@ public sealed class JiboCloudProtocolService(
         return ProtocolDispatchResult.Ok(
             MapMedia(stateStore.CreateMedia(loopId, path, type, reference, isEncrypted, meta)));
     }
+
+    private static byte[] ReadBodyBytes(ProtocolEnvelope envelope) =>
+        envelope.BodyBytes is { Length: > 0 } bodyBytes ? bodyBytes : Encoding.UTF8.GetBytes(envelope.BodyText);
 
     private ProtocolDispatchResult HandlePerson(string operation, ProtocolEnvelope envelope)
     {

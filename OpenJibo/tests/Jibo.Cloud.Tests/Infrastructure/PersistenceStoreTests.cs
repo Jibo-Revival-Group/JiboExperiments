@@ -26,6 +26,7 @@ public sealed class PersistenceStoreTests
         Assert.True(linked);
         Assert.Equal("5c0b221fdf9d450019c5e254", session.DeviceId);
         Assert.Equal("Royal-Current-Sage-Canvas", session.Metadata["registeredDeviceId"]?.ToString());
+        Assert.Contains("\"Action\": \"linked\"", session.Metadata["sessionBindingAudit"]?.ToString());
     }
 
     [Fact]

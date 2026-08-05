@@ -1059,6 +1059,7 @@ internal static class PortalEndpoints
                     item.Path,
                     item.ContentType,
                     source = item.Path.StartsWith("logs/", StringComparison.OrdinalIgnoreCase) ? "log" : "media",
+                    artifactType = ReadArtifactMeta(item.Meta, "artifactType"),
                     category = ReadArtifactMeta(item.Meta, "category"),
                     unassigned = string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")),
                     storedUtc = ReadArtifactMeta(item.Meta, "storedUtc"),
@@ -1508,6 +1509,7 @@ internal static class PortalEndpoints
                     // never silently presented as an inventory link.
                     registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId"),
                     registeredRobotId = ReadSessionMetadata(session, "registeredRobotId"),
+                    sessionBindingAudit = ReadSessionMetadata(session, "sessionBindingAudit"),
                     session.HostName,
                     session.Path,
                     session.CreatedUtc,

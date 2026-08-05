@@ -337,6 +337,30 @@ body {
   font-weight: 650;
 }
 
+.artifact-audit {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.artifact-audit div { display: grid; gap: 0.2rem; min-width: 0; }
+.artifact-audit strong { overflow-wrap: anywhere; }
+.artifact-audit span { color: var(--muted); font-size: 0.8rem; }
+.artifact-audit .muted-row { grid-column: 1 / -1; margin: 0.1rem 0 0; }
+
+.session-binding-audit {
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.session-binding-audit summary { cursor: pointer; }
+.session-binding-audit ul { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+
 .status-divider {
   height: 1px;
   margin: 1rem 0;
@@ -397,6 +421,7 @@ body {
   }
 
   .log-viewer-grid { grid-template-columns: 1fr; }
+  .artifact-audit { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
   .toolbar-summary {
     grid-column: 1 / -1;
@@ -415,6 +440,8 @@ body {
   .robot-toolbar {
     grid-template-columns: 1fr;
   }
+
+  .artifact-audit { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   .toolbar-actions,
   .pagination-actions {

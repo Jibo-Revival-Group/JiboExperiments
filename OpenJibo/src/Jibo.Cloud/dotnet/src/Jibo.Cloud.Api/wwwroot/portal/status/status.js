@@ -488,6 +488,7 @@ function renderLogViewer() {
             <small class="mono">${escapeHtml(log.path)}</small>
             ${log.identitySource ? `<small>Attributed by ${escapeHtml(log.identitySource)}${log.mergedFromDeviceId ? ` · merged from ${escapeHtml(log.mergedFromDeviceId)}` : ""}</small>` : ""}
           </button>`).join("")}</div>`;
+  const audit = viewer.loading ? "" : renderArtifactAudit(items);
   const preview = viewer.loadingContent
     ? `<p class="muted-row">Loading log preview…</p>`
     : viewer.selected
@@ -533,8 +534,31 @@ function renderLogViewer() {
       </div>
       ${viewer.error ? `<p class="status error">${escapeHtml(viewer.error)}</p>` : ""}
       ${advanced}
+      ${audit}
       <div class="log-viewer-grid"><div>${list}</div><div class="log-preview-panel">${preview}</div></div>
     </section>`;
+}
+
+function renderArtifactAudit(items) {
+  const totalBytes = items.reduce((total, item) => total + (Number(item.contentLength) || 0), 0);
+  const asr = items.filter((item) => item.category === "asr" || item.artifactType === "websocket-asr-audio");
+  const logs = items.filter((item) => item.source === "log");
+  const media = items.filter((item) => item.source === "media" && !asr.includes(item));
+  const unassigned = items.filter((item) => item.unassigned);
+  const sources = [...new Set(items.map((item) => item.identitySource).filter(Boolean))];
+  const formatBytes = (bytes) => bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : bytes >= 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} bytes`;
+
+  return `<section class="artifact-audit" aria-label="Artifact capture audit">
+    <div><strong>${items.length}</strong><span>stored artifacts</span></div>
+    <div><strong>${formatBytes(totalBytes)}</strong><span>captured data</span></div>
+    <div><strong>${asr.length ? `${asr.length} captured` : "Not yet captured"}</strong><span>ASR audio</span></div>
+    <div><strong>${logs.length}</strong><span>log uploads</span></div>
+    <div><strong>${media.length}</strong><span>other media</span></div>
+    <div><strong>${unassigned.length ? `${unassigned.length} needs review` : "All assigned"}</strong><span>attribution</span></div>
+    ${sources.length ? `<p class="muted-row">Attribution sources: ${escapeHtml(sources.join(", "))}</p>` : ""}
+  </section>`;
 }
 
 function renderArtifactPreview(artifact) {
@@ -558,13 +582,16 @@ function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Se
   return rows.map((session) => `
     <li class="${changedSessionIds.has(session.sessionId) ? "changed-row" : ""}">
       <strong>${escapeHtml(session.kind || "unknown")}</strong>
-      <span>${escapeHtml(session.deviceId || "-")} · ${escapeHtml(session.hostName || "-")}${session.path ? ` · ${escapeHtml(session.path)}` : ""}</span>
+      <span>Observed runtime ID: ${escapeHtml(session.deviceId || "-")} · ${escapeHtml(session.hostName || "-")}${session.path ? ` · ${escapeHtml(session.path)}` : ""}</span>
       <div class="muted-row">${formatDate(session.lastSeenUtc)} · heartbeat ${formatFloat(session.heartbeatAgeSeconds, 0)}s ago</div>
-      ${session.registeredDeviceId ? `<div class="muted-row">Linked inventory identity: ${escapeHtml(session.registeredDeviceId)}</div>` : ""}
+      ${session.registeredDeviceId
+        ? `<div class="muted-row">Explicit admin link: ${escapeHtml(session.registeredDeviceId)}</div>`
+        : `<div class="muted-row">Unclaimed session — observed traffic never assigns a robot.</div>`}
+      ${renderSessionBindingAudit(session.sessionBindingAudit)}
       <div class="button-row session-link-row">
         <select class="session-device-select" data-session-id="${escapeHtml(session.sessionId)}" aria-label="Robot record for live session">
-          <option value="">${session.registeredDeviceId ? "Replace linked robot..." : "Link to robot..."}</option>${robots.map((robot) =>
-            `<option value="${escapeHtml(robot.deviceId)}" ${robot.deviceId === session.registeredDeviceId ? "selected" : ""}>${escapeHtml(robotSelectorLabel(robot))}${robot.isHidden ? " (archived)" : ""}</option>`
+          <option value="">${session.registeredDeviceId ? "Replace explicit link..." : "Link to robot..."}</option>${robots.filter((robot) => !robot.isHidden).map((robot) =>
+            `<option value="${escapeHtml(robot.deviceId)}" ${robot.deviceId === session.registeredDeviceId ? "selected" : ""}>${escapeHtml(robotSelectorLabel(robot))}</option>`
           ).join("")}
         </select>
         <button class="button secondary compact link-session" data-session-id="${escapeHtml(session.sessionId)}" type="button">${session.registeredDeviceId ? "Replace" : "Link"}</button>
@@ -574,12 +601,28 @@ function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Se
   `).join("");
 }
 
+function renderSessionBindingAudit(rawAudit) {
+  if (!rawAudit) return "";
+  try {
+    const entries = JSON.parse(rawAudit);
+    if (!Array.isArray(entries) || !entries.length) return "";
+    const recent = entries.slice(-3).reverse();
+    return `<details class="session-binding-audit"><summary>Link audit (${entries.length})</summary><ul>${recent.map((entry) =>
+      `<li>${escapeHtml(formatDate(entry.OccurredUtc || entry.occurredUtc))} · ${escapeHtml(entry.Action || entry.action || "changed")} · ${escapeHtml(entry.DeviceId || entry.deviceId || entry.PreviousDeviceId || entry.previousDeviceId || "no robot")}</li>`
+    ).join("")}</ul></details>`;
+  } catch {
+    return "";
+  }
+}
+
 async function linkLiveSession(sessionId) {
   const select = document.querySelector(`.session-device-select[data-session-id="${CSS.escape(sessionId)}"]`);
   if (!select?.value) {
     await refreshStatus("Choose the inventory record that this live session belongs to.", "error", { preserveBanner: false });
     return;
   }
+
+  if (!window.confirm(`Explicitly link this session to ${select.value}?\n\nObserved traffic will not change this link.`)) return;
 
   await apiFetch(`/api/portal/status/sessions/${encodeURIComponent(sessionId)}/link`, {
     method: "POST",

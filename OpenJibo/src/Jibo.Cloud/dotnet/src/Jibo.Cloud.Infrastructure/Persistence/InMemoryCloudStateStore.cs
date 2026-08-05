@@ -752,6 +752,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             // session identity, even by an explicit UI request.
             if (device is null || device.IsHidden || session is null) return false;
 
+            var previousDeviceId = ReadSessionMetadata(session, "registeredDeviceId");
+            AppendSessionBindingAudit(session, string.IsNullOrWhiteSpace(previousDeviceId) ? "linked" : "relinked",
+                previousDeviceId, device.DeviceId, "portal-admin");
             // Keep the runtime loop identifier as DeviceId, and persist the explicitly selected
             // inventory identity separately so both hardware identifiers remain traceable.
             session.Metadata["registeredDeviceId"] = device.DeviceId;
@@ -772,6 +775,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
             if (session is null) return false;
 
+            AppendSessionBindingAudit(session, "unlinked", ReadSessionMetadata(session, "registeredDeviceId"), null,
+                "portal-admin");
             session.Metadata.Remove("registeredDeviceId");
             session.Metadata.Remove("registeredRobotId");
         }
@@ -3250,12 +3255,35 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             var device = FindDeviceByFriendlyId(value.ToString()!);
             if (device is null || !device.IsHidden) continue;
 
+            AppendSessionBindingAudit(session, "cleared-archived-link", device.DeviceId, null, "startup-guard");
             session.Metadata.Remove("registeredDeviceId");
             session.Metadata.Remove("registeredRobotId");
             changed = true;
         }
 
         return changed;
+    }
+
+    private static void AppendSessionBindingAudit(CloudSession session, string action, string? previousDeviceId,
+        string? deviceId, string source)
+    {
+        const string auditKey = "sessionBindingAudit";
+        var entries = new List<SessionBindingAuditEntry>();
+        if (session.Metadata.TryGetValue(auditKey, out var existing) && existing is not null)
+        {
+            try
+            {
+                entries.AddRange(JsonSerializer.Deserialize<List<SessionBindingAuditEntry>>(existing.ToString() ?? "[]",
+                    PersistenceJsonOptions) ?? []);
+            }
+            catch (JsonException)
+            {
+                // A malformed legacy note is not a reason to block a deliberate admin action.
+            }
+        }
+
+        entries.Add(new SessionBindingAuditEntry(action, previousDeviceId, deviceId, source, DateTimeOffset.UtcNow));
+        session.Metadata[auditKey] = JsonSerializer.Serialize(entries.TakeLast(10), PersistenceJsonOptions);
     }
 
     private bool RepairSupersededRobotPlaceholdersLocked()
@@ -3441,6 +3469,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             HostMappings = new Dictionary<string, string>(device.HostMappings, StringComparer.OrdinalIgnoreCase)
         };
     }
+
+    private sealed record SessionBindingAuditEntry(string Action, string? PreviousDeviceId, string? DeviceId,
+        string Source, DateTimeOffset OccurredUtc);
 
     private sealed class PersistentStateSnapshot
     {

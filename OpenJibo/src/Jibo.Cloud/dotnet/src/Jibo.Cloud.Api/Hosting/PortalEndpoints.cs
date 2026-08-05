@@ -1504,10 +1504,10 @@ internal static class PortalEndpoints
                     session.SessionId,
                     session.Kind,
                     session.DeviceId,
-                    registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId")
-                        ?? FindMatchingDevice(session, allDevices)?.DeviceId,
-                    registeredRobotId = ReadSessionMetadata(session, "registeredRobotId")
-                        ?? FindMatchingDevice(session, allDevices)?.RobotId,
+                    // Observed runtime IDs remain visible as session.DeviceId, but they are
+                    // never silently presented as an inventory link.
+                    registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId"),
+                    registeredRobotId = ReadSessionMetadata(session, "registeredRobotId"),
                     session.HostName,
                     session.Path,
                     session.CreatedUtc,
@@ -1912,20 +1912,10 @@ internal static class PortalEndpoints
 
     private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device)
     {
-        foreach (var value in GetSessionIdentityValues(session))
-        {
-            if (IdentityMatches(value, device.DeviceId) ||
-                IdentityMatches(value, device.RobotId) ||
-                IdentityMatches(value, device.FriendlyName))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static DeviceRegistration? FindMatchingDevice(CloudSession session, IReadOnlyList<DeviceRegistration> devices)
-    {
-        return devices.FirstOrDefault(device => SessionMatchesDevice(session, device));
+        // Runtime identity values can be shared by cloned robots.  The portal only
+        // reconciles sessions using an administrator-created binding.
+        return IdentityMatches(ReadSessionMetadata(session, "registeredDeviceId"), device.DeviceId) ||
+               IdentityMatches(ReadSessionMetadata(session, "registeredRobotId"), device.RobotId);
     }
 
     private static IEnumerable<string> GetSessionIdentityValues(CloudSession session)

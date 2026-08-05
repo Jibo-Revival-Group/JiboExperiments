@@ -748,7 +748,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             var device = FindDeviceByFriendlyId(deviceId);
             var session = _sessionsByToken.Values.FirstOrDefault(candidate =>
                 candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
-            if (device is null || session is null) return false;
+            // Archived records are historical only. They can never be selected as a live
+            // session identity, even by an explicit UI request.
+            if (device is null || device.IsHidden || session is null) return false;
 
             // Keep the runtime loop identifier as DeviceId, and persist the explicitly selected
             // inventory identity separately so both hardware identifiers remain traceable.
@@ -3227,12 +3229,33 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 UpdatedUtc = DateTimeOffset.UtcNow
             };
 
-        var cleanupApplied = RepairSupersededRobotPlaceholdersLocked();
+        var cleanupApplied = ClearArchivedSessionDeviceBindingsLocked();
+        cleanupApplied |= RepairSupersededRobotPlaceholdersLocked();
 
         Interlocked.Exchange(ref _revision, snapshot.Revision);
         _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
         _lastSavedUtc = snapshot.LastSavedUtc;
         return cleanupApplied;
+    }
+
+    private bool ClearArchivedSessionDeviceBindingsLocked()
+    {
+        var changed = false;
+        foreach (var session in _sessionsByToken.Values)
+        {
+            if (!session.Metadata.TryGetValue("registeredDeviceId", out var value) ||
+                string.IsNullOrWhiteSpace(value?.ToString()))
+                continue;
+
+            var device = FindDeviceByFriendlyId(value.ToString()!);
+            if (device is null || !device.IsHidden) continue;
+
+            session.Metadata.Remove("registeredDeviceId");
+            session.Metadata.Remove("registeredRobotId");
+            changed = true;
+        }
+
+        return changed;
     }
 
     private bool RepairSupersededRobotPlaceholdersLocked()
@@ -3305,15 +3328,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device)
     {
-        foreach (var value in GetSessionIdentityValues(session))
-        {
-            if (IdentityMatches(value, device.DeviceId) ||
-                IdentityMatches(value, device.RobotId) ||
-                IdentityMatches(value, device.FriendlyName))
-                return true;
-        }
-
-        return false;
+        // Traffic-derived IDs are evidence, not ownership. Only a portal-admin binding
+        // can connect a live session to an inventory record.
+        return IdentityMatches(ReadSessionMetadata(session, "registeredDeviceId"), device.DeviceId) ||
+               IdentityMatches(ReadSessionMetadata(session, "registeredRobotId"), device.RobotId);
     }
 
     private static IEnumerable<string> GetSessionIdentityValues(CloudSession session)

@@ -2206,8 +2206,53 @@ public sealed partial class JiboInteractionService
             loweredTranscript,
             "set an alarm",
             "set alarm",
+            "start an alarm",
+            "start alarm",
+            "create an alarm",
+            "create alarm",
+            "make an alarm",
+            "make alarm",
             "wake me up",
             "alarm for");
+    }
+
+    private static bool IsAlarmQueryRequest(string loweredTranscript)
+    {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        return MatchesAny(
+                   normalized,
+                   "show my alarm",
+                   "show my alarms",
+                   "show the alarm",
+                   "show the alarms",
+                   "check my alarm",
+                   "check my alarms",
+                   "check the alarm",
+                   "check the alarms",
+                   "query my alarm",
+                   "query the alarm",
+                   "alarm status",
+                   "alarm status please",
+                   "is my alarm set",
+                   "is an alarm set",
+                   "is there an alarm",
+                   "are there any alarms",
+                   "do i have an alarm",
+                   "do you have an alarm") ||
+               Regex.IsMatch(normalized,
+                   @"\b(?:when|what time)\b.*\balarm\b.*\b(?:ring|go off|activate)\b",
+                   RegexOptions.IgnoreCase | RegexOptions.CultureInvariant) ||
+               Regex.IsMatch(normalized,
+                   @"\bhow long\b.*\balarm\b",
+                   RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    }
+
+    private static bool IsAlarmEditRequest(string loweredTranscript)
+    {
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        return Regex.IsMatch(normalized,
+            @"\b(?:edit|change|modify|revise|adjust|move)\b.*\balarm\b|\bmake\b.*\b(?:my|the)?\s*alarm\b.*\b(?:at|for|to|be)\b",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 
     private static bool IsCancelRequest(string? clientIntent, string loweredTranscript)

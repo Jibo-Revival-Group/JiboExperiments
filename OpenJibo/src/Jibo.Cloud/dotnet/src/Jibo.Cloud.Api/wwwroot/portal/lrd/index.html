@@ -51,8 +51,19 @@
               <option value="">Loading robots...</option>
             </select>
           </div>
+          <div class="status-indicator">
+            <span class="indicator-label">Robot IP & Port:</span>
+            <input type="text" id="robotIpInput" class="status-input" placeholder="IP Address" />
+            <input type="text" id="robotPortInput" class="status-input status-input-port" value="8765" placeholder="Port" />
+            <button id="robotConnectBtn" class="status-btn">Connect</button>
+          </div>
         </div>
         <div class="statusbar-right">
+          <div class="status-indicator">
+            <label class="indicator-label" style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer; text-transform: none;">
+              <input type="checkbox" id="skipLogPollingLogsToggle" /> Skip Log Polling Requests
+            </label>
+          </div>
           <div class="status-indicator">
             <span class="indicator-label">Ping:</span>
             <span class="indicator-value" id="serverPing">-- ms</span>

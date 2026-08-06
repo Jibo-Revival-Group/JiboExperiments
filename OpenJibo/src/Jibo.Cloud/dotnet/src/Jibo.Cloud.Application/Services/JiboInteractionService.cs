@@ -23,7 +23,8 @@ public sealed partial class JiboInteractionService(
     IUserIntegrationStore? userIntegrationStore = null,
     JiboVerificationService? jiboVerificationService = null,
     HomeAssistantCommandService? homeAssistantCommandService = null,
-    HomeAssistantPendingClimateStore? homeAssistantPendingClimateStore = null)
+    HomeAssistantPendingClimateStore? homeAssistantPendingClimateStore = null,
+    RepeatLastCommandStore? repeatLastCommandStore = null)
 {
     private const string GreetingRouteMetadataKey = "greetingsRoute";
     private const string GreetingSpeakerMetadataKey = "greetingsSpeaker";
@@ -451,9 +452,11 @@ public sealed partial class JiboInteractionService(
         ("npr", "NPR")
     ];
 
-    public Task<JiboInteractionDecision> BuildDecisionAsync(TurnContext turn,
+    public async Task<JiboInteractionDecision> BuildDecisionAsync(TurnContext turn,
         CancellationToken cancellationToken = default)
     {
-        return BuildDecisionCoreAsync(turn, cancellationToken);
+        var decision = await BuildDecisionCoreAsync(turn, cancellationToken);
+        RecordRepeatableCommand(turn, decision);
+        return decision;
     }
 }

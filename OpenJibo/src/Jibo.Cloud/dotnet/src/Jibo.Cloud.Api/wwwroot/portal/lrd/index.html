@@ -9,15 +9,41 @@
 </head>
 <body>
   <div id="app">
-    <div class="center-shell">
-      <section class="card">
-        <p class="eyebrow">OpenJibo Debug</p>
-        <h1>Live Robot Debugger</h1>
-        <p class="lede" id="robotInfo">Loading robot information...</p>
-        <div id="debugContent">
-          <p class="muted-row">Initializing debugger...</p>
+    <div class="lrd-layout">
+      <div class="lrd-toolbar">
+        <div class="toolbar-content">
+          <!-- Top toolbar - empty for now -->
         </div>
-      </section>
+      </div>
+
+      <div class="lrd-center">
+        <!-- Center area - unpopulated for now -->
+      </div>
+
+      <div class="lrd-statusbar">
+        <div class="statusbar-left">
+          <div class="status-indicator" id="robotConnection">
+            <span class="indicator-label">Robot:</span>
+            <span class="indicator-value" id="robotConnectionStatus">Loading...</span>
+          </div>
+          <div class="status-indicator">
+            <span class="indicator-label">Robot:</span>
+            <select id="robotSelect" class="status-select">
+              <option value="">Loading robots...</option>
+            </select>
+          </div>
+        </div>
+        <div class="statusbar-right">
+          <div class="status-indicator">
+            <span class="indicator-label">Ping:</span>
+            <span class="indicator-value" id="serverPing">-- ms</span>
+          </div>
+          <div class="status-indicator">
+            <span class="indicator-label">Server:</span>
+            <span class="indicator-value" id="serverConnectionStatus">Loading...</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <script src="/portal/lrd/lrd.js"></script>

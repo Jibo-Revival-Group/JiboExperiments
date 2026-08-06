@@ -1,18 +1,70 @@
-.center-shell {
+.lrd-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.lrd-toolbar {
+  flex: 0 0 auto;
+  padding: 0.5rem 1rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.toolbar-content {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 2rem;
+  gap: 1rem;
 }
 
-.card {
-  max-width: 800px;
-  width: 100%;
+.lrd-center {
+  flex: 1 1 auto;
+  overflow: auto;
+  background: #ffffff;
 }
 
-#debugContent {
-  margin-top: 2rem;
-  padding-top: 2rem;
+.lrd-statusbar {
+  flex: 0 0 auto;
+  padding: 0.5rem 1rem;
+  background: #f9fafb;
   border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.statusbar-left,
+.statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.indicator-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.indicator-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-select {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  background: white;
+  min-width: 200px;
 }

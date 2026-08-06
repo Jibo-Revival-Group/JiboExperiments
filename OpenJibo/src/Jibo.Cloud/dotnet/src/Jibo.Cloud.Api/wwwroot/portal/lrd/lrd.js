@@ -395,6 +395,30 @@ function setupSplitResizer() {
   });
 }
 
+async function initLogPollingToggle() {
+  const toggle = document.getElementById("skipLogPollingLogsToggle");
+  if (!toggle) return;
+
+  try {
+    const status = await apiFetch("/api/portal/server/logs/diagnostics-status");
+    toggle.checked = !!status.disabled;
+  } catch (e) {
+    console.error("Failed to fetch log polling diagnostics status:", e);
+  }
+
+  toggle.addEventListener("change", async () => {
+    try {
+      const res = await apiFetch("/api/portal/server/logs/toggle-diagnostics", {
+        method: "POST"
+      });
+      toggle.checked = !!res.disabled;
+    } catch (e) {
+      console.error("Failed to toggle log polling diagnostics:", e);
+      toggle.checked = !toggle.checked;
+    }
+  });
+}
+
 async function init() {
   const params = getUrlParams();
   selectedRobotId = params.deviceId;
@@ -413,6 +437,9 @@ async function init() {
   if (connectBtn) {
     connectBtn.addEventListener("click", toggleRobotConnection);
   }
+
+  // Set up log polling diagnostics toggle
+  await initLogPollingToggle();
 
   // Initial server ping check
   await measureServerPing();

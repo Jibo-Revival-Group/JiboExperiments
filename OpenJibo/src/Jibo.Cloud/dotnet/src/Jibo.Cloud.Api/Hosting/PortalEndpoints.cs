@@ -1389,6 +1389,29 @@ internal static class PortalEndpoints
             });
         });
 
+        app.MapGet("/api/portal/server/logs/diagnostics-status", (
+            HttpRequest request,
+            PortalSessionService portalSessionService) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            return Results.Json(new { disabled = PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging });
+        });
+
+        app.MapPost("/api/portal/server/logs/toggle-diagnostics", (
+            HttpRequest request,
+            PortalSessionService portalSessionService) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging = !PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging;
+            return Results.Json(new { ok = true, disabled = PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging });
+        });
+
         app.MapGet("/api/portal/home-assistant/links", (
             PortalSessionService portalSessionService,
             IUserIntegrationStore integrationStore,

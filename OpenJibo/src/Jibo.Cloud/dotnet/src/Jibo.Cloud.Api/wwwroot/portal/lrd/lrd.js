@@ -9,6 +9,7 @@ let pingInterval = null;
 let logPollInterval = null;
 let logOffset = 0;
 let currentLogFile = null;
+let robotEventSource = null;
 
 function escapeHtml(value) {
   return String(value)
@@ -174,7 +175,7 @@ function appendServerLogs(logText) {
   const rightContent = document.getElementById("rightLogContent");
   if (!rightContent) return;
 
-  console.log("Appending logs, length:", logText.length);
+  console.log("Appending server logs, length:", logText.length);
 
   // Check if user is at the bottom before adding new logs
   const isAtBottom = rightContent.scrollHeight - rightContent.scrollTop <= rightContent.clientHeight + 50;
@@ -222,6 +223,128 @@ function appendServerLogs(logText) {
   // Auto-scroll to bottom only if user was already at the bottom
   if (isAtBottom) {
     rightContent.scrollTop = rightContent.scrollHeight;
+  }
+}
+
+function appendRobotLogs(logText) {
+  const leftContent = document.getElementById("leftLogContent");
+  if (!leftContent) return;
+
+  // Check if user is at the bottom before adding new logs
+  const isAtBottom = leftContent.scrollHeight - leftContent.scrollTop <= leftContent.clientHeight + 50;
+
+  const lines = logText.split('\n');
+  lines.forEach(line => {
+    if (line.trim()) {
+      const logLine = document.createElement('div');
+      logLine.className = 'log-line';
+
+      let language = 'plaintext';
+      let cleanLine = line;
+
+      if (line.trim().startsWith('{') && line.trim().endsWith('}')) {
+        try {
+          JSON.parse(line);
+          language = 'json';
+        } catch (e) {}
+      }
+
+      try {
+        const highlighted = Prism.highlight(cleanLine, Prism.languages[language] || Prism.languages.plaintext, language);
+        logLine.innerHTML = highlighted;
+      } catch (e) {
+        logLine.textContent = cleanLine;
+      }
+      leftContent.appendChild(logLine);
+    }
+  });
+
+  const logLines = leftContent.querySelectorAll('.log-line');
+  if (logLines.length > MAX_LOG_LINES) {
+    const linesToRemove = logLines.length - MAX_LOG_LINES;
+    for (let i = 0; i < linesToRemove; i++) {
+      leftContent.removeChild(logLines[i]);
+    }
+  }
+
+  if (isAtBottom) {
+    leftContent.scrollTop = leftContent.scrollHeight;
+  }
+}
+
+function toggleRobotConnection() {
+  const ipInput = document.getElementById("robotIpInput");
+  const portInput = document.getElementById("robotPortInput");
+  const connectBtn = document.getElementById("robotConnectBtn");
+  const leftContent = document.getElementById("leftLogContent");
+
+  if (!ipInput || !connectBtn) return;
+
+  if (robotEventSource) {
+    robotEventSource.close();
+    robotEventSource = null;
+    connectBtn.textContent = "Connect";
+    connectBtn.classList.remove("connected");
+    if (leftContent) {
+      const notice = document.createElement('div');
+      notice.className = 'log-line';
+      notice.style.color = '#ef4444';
+      notice.textContent = '[Disconnected from robot log stream]';
+      leftContent.appendChild(notice);
+    }
+    return;
+  }
+
+  const ip = ipInput.value.trim();
+  const port = portInput ? portInput.value.trim() || "8765" : "8765";
+
+  if (!ip) {
+    alert("Please enter a valid Robot IP address.");
+    return;
+  }
+
+  if (leftContent) {
+    leftContent.innerHTML = '';
+  }
+
+  const url = `http://${ip}:${port}/stream`;
+  console.log("Connecting to robot log stream at:", url);
+
+  try {
+    robotEventSource = new EventSource(url);
+
+    robotEventSource.onopen = () => {
+      console.log("Robot EventSource connected");
+      connectBtn.textContent = "Disconnect";
+      connectBtn.classList.add("connected");
+      if (leftContent) {
+        const notice = document.createElement('div');
+        notice.className = 'log-line';
+        notice.style.color = '#10b981';
+        notice.textContent = `[Connected to robot log stream at ${url}]`;
+        leftContent.appendChild(notice);
+      }
+    };
+
+    robotEventSource.onmessage = (event) => {
+      if (event.data) {
+        appendRobotLogs(event.data);
+      }
+    };
+
+    robotEventSource.onerror = (error) => {
+      console.error("Robot EventSource error:", error);
+      if (leftContent) {
+        const notice = document.createElement('div');
+        notice.className = 'log-line';
+        notice.style.color = '#ef4444';
+        notice.textContent = `[Connection error / disconnected from robot stream]`;
+        leftContent.appendChild(notice);
+      }
+    };
+  } catch (e) {
+    console.error("Failed to create EventSource:", e);
+    alert(`Failed to connect: ${e.message}`);
   }
 }
 
@@ -285,6 +408,12 @@ async function init() {
     robotSelect.addEventListener("change", handleRobotSelectChange);
   }
 
+  // Set up robot connect button handler
+  const connectBtn = document.getElementById("robotConnectBtn");
+  if (connectBtn) {
+    connectBtn.addEventListener("click", toggleRobotConnection);
+  }
+
   // Initial server ping check
   await measureServerPing();
 
@@ -308,6 +437,9 @@ window.addEventListener("beforeunload", () => {
   }
   if (logPollInterval) {
     clearInterval(logPollInterval);
+  }
+  if (robotEventSource) {
+    robotEventSource.close();
   }
 });
 

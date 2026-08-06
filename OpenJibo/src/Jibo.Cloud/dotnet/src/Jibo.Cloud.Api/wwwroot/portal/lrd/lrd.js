@@ -176,6 +176,9 @@ function appendServerLogs(logText) {
 
   console.log("Appending logs, length:", logText.length);
 
+  // Check if user is at the bottom before adding new logs
+  const isAtBottom = rightContent.scrollHeight - rightContent.scrollTop <= rightContent.clientHeight + 50;
+
   const lines = logText.split('\n');
   lines.forEach(line => {
     if (line.trim()) {
@@ -216,8 +219,10 @@ function appendServerLogs(logText) {
     }
   }
 
-  // Auto-scroll to bottom
-  rightContent.scrollTop = rightContent.scrollHeight;
+  // Auto-scroll to bottom only if user was already at the bottom
+  if (isAtBottom) {
+    rightContent.scrollTop = rightContent.scrollHeight;
+  }
 }
 
 function setupSplitResizer() {

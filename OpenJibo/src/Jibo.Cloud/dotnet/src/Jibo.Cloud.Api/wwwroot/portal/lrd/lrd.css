@@ -8,8 +8,8 @@
 .lrd-toolbar {
   flex: 0 0 auto;
   padding: 0.5rem 1rem;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: #323232;
+
 }
 
 .toolbar-content {
@@ -20,15 +20,91 @@
 
 .lrd-center {
   flex: 1 1 auto;
-  overflow: auto;
+  overflow: hidden;
   background: #ffffff;
+}
+
+.split-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.split-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  overflow: hidden;
+}
+
+.left-panel {
+  flex: 1 1 50%;
+}
+
+.right-panel {
+  flex: 1 1 50%;
+}
+
+.split-resizer {
+  flex: 0 0 auto;
+  width: 4px;
+  background: #323232;
+  cursor: col-resize;
+  position: relative;
+}
+
+.split-resizer:hover,
+.split-resizer.active {
+  background: #0099fb;
+}
+
+.split-resizer::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 20px;
+  background: #666;
+  border-radius: 1px;
+}
+
+.panel-header {
+  flex: 0 0 auto;
+  background: #494949;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel-title {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: #dadada;
+}
+
+.panel-content {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: .5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.55rem;
+  line-height: 1.5;
+  background: #000000;
+}
+
+.log-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  padding: 0;
 }
 
 .lrd-statusbar {
   flex: 0 0 auto;
-  padding: 0.5rem 1rem;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
+  background: #323232;
+  border-top: 1px solid #0099fbde;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -61,10 +137,9 @@
 }
 
 .status-select {
-  font-size: 0.875rem;
+  font-size: 0.55rem;
   padding: 0.25rem 0.5rem;
-  border: 1px solid #d1d5db;
   border-radius: 0.25rem;
-  background: white;
+  background: #070707;
   min-width: 200px;
 }

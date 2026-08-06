@@ -1351,6 +1351,44 @@ internal static class PortalEndpoints
             return Results.Json(new { ok = true });
         });
 
+        app.MapGet("/api/portal/server/logs", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            IConfiguration configuration) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            var logDirectory = ResolvePortalConfiguredPath(configuration,
+                "OpenJibo:Logging:DirectoryPath",
+                "captures/logs");
+            var logFileName = configuration["OpenJibo:Logging:FileName"] ?? "openjibo-.log";
+
+            // Get the most recent log file
+            var logFiles = Directory.GetFiles(logDirectory, logFileName.Replace("-", "*"))
+                .OrderByDescending(f => File.GetLastWriteTimeUtc(f))
+                .ToArray();
+
+            if (logFiles.Length == 0)
+                return Results.Json(new { logs = "", hasLogs = false });
+
+            var latestLogFile = logFiles[0];
+            var tailLines = int.TryParse(request.Query["lines"], out var lines) && lines > 0 ? lines : 100;
+            var offset = long.TryParse(request.Query["offset"], out var fileOffset) ? fileOffset : 0L;
+
+            var logContent = ReadLogFileWithOffset(latestLogFile, offset, tailLines);
+            var newOffset = new FileInfo(latestLogFile).Length;
+
+            return Results.Json(new
+            {
+                logs = logContent,
+                offset = newOffset,
+                hasLogs = true,
+                fileName = Path.GetFileName(latestLogFile)
+            });
+        });
+
         app.MapGet("/api/portal/home-assistant/links", (
             PortalSessionService portalSessionService,
             IUserIntegrationStore integrationStore,
@@ -2659,6 +2697,73 @@ internal static class PortalEndpoints
             return uri.Host;
 
         return trimmed.TrimEnd('/');
+    }
+
+    private static string ReadLogFileWithOffset(string filePath, long offset, int tailLines)
+    {
+        if (!File.Exists(filePath))
+            return string.Empty;
+
+        var fileInfo = new FileInfo(filePath);
+        if (offset >= fileInfo.Length)
+            return string.Empty;
+
+        try
+        {
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            stream.Seek(offset, SeekOrigin.Begin);
+
+            using var reader = new StreamReader(stream);
+            var lines = new List<string>();
+
+            while (!reader.EndOfStream)
+            {
+                var line = reader.ReadLine();
+                if (line != null)
+                    lines.Add(line);
+            }
+
+            // Return only the last N lines if requested
+            if (tailLines > 0 && lines.Count > tailLines)
+                lines = lines.Skip(lines.Count - tailLines).ToList();
+
+            return string.Join("\n", lines);
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private static string ResolvePortalConfiguredPath(IConfiguration configuration, string key, string defaultPath)
+    {
+        var configuredPath = configuration[key];
+        if (string.IsNullOrWhiteSpace(configuredPath)) configuredPath = defaultPath;
+
+        if (Path.IsPathRooted(configuredPath)) return Path.GetFullPath(configuredPath);
+
+        var repoRoot = FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
+                       FindOpenJiboRepoRoot(AppContext.BaseDirectory) ??
+                       Directory.GetCurrentDirectory();
+
+        return Path.GetFullPath(configuredPath, repoRoot);
+    }
+
+    private static string? FindOpenJiboRepoRoot(string? startPath)
+    {
+        if (string.IsNullOrWhiteSpace(startPath)) return null;
+
+        var directory = new DirectoryInfo(Path.GetFullPath(startPath));
+        if (directory is { Exists: false, Parent: not null }) directory = directory.Parent;
+
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "OpenJibo.slnx"))) return directory.FullName;
+
+            directory = directory.Parent;
+        }
+
+        return null;
     }
 
     private static bool IsLocalSelfHostedTarget(string host)

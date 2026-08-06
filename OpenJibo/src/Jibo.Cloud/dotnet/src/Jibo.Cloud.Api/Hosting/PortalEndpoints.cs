@@ -2711,28 +2711,95 @@ internal static class PortalEndpoints
         try
         {
             using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            stream.Seek(offset, SeekOrigin.Begin);
 
-            using var reader = new StreamReader(stream);
-            var lines = new List<string>();
-
-            while (!reader.EndOfStream)
+            // If offset is 0, we want to tail the file (read last N lines)
+            if (offset == 0)
             {
-                var line = reader.ReadLine();
-                if (line != null)
-                    lines.Add(line);
+                // Read backwards to get last N lines efficiently
+                return ReadLastLines(stream, tailLines);
             }
+            else
+            {
+                // Read from offset forward, limited to tailLines
+                stream.Seek(offset, SeekOrigin.Begin);
+                using var reader = new StreamReader(stream);
+                var lines = new List<string>();
+                var lineCount = 0;
 
-            // Return only the last N lines if requested
-            if (tailLines > 0 && lines.Count > tailLines)
-                lines = lines.Skip(lines.Count - tailLines).ToList();
+                while (!reader.EndOfStream && lineCount < tailLines)
+                {
+                    var line = reader.ReadLine();
+                    if (line != null)
+                    {
+                        lines.Add(line);
+                        lineCount++;
+                    }
+                }
 
-            return string.Join("\n", lines);
+                return string.Join("\n", lines);
+            }
         }
         catch
         {
             return string.Empty;
         }
+    }
+
+    private static string ReadLastLines(FileStream stream, int lineCount)
+    {
+        if (lineCount <= 0)
+            return string.Empty;
+
+        stream.Seek(0, SeekOrigin.End);
+        var position = stream.Length;
+        var lines = new List<string>();
+        var buffer = new byte[4096];
+        var lineBuffer = new StringBuilder();
+        var linesFound = 0;
+
+        while (position > 0 && linesFound < lineCount)
+        {
+            var bytesToRead = (int)Math.Min(buffer.Length, position);
+            position -= bytesToRead;
+            stream.Seek(position, SeekOrigin.Begin);
+            var bytesRead = stream.Read(buffer, 0, bytesToRead);
+
+            // Process buffer backwards
+            for (int i = bytesRead - 1; i >= 0; i--)
+            {
+                var c = (char)buffer[i];
+                if (c == '\n')
+                {
+                    if (lineBuffer.Length > 0)
+                    {
+                        lines.Insert(0, ReverseString(lineBuffer.ToString()));
+                        lineBuffer.Clear();
+                        linesFound++;
+                        if (linesFound >= lineCount)
+                            break;
+                    }
+                }
+                else if (c != '\r')
+                {
+                    lineBuffer.Append(c);
+                }
+            }
+        }
+
+        // Add remaining buffer content
+        if (lineBuffer.Length > 0 && linesFound < lineCount)
+        {
+            lines.Insert(0, ReverseString(lineBuffer.ToString()));
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    private static string ReverseString(string s)
+    {
+        var charArray = s.ToCharArray();
+        Array.Reverse(charArray);
+        return new string(charArray);
     }
 
     private static string ResolvePortalConfiguredPath(IConfiguration configuration, string key, string defaultPath)

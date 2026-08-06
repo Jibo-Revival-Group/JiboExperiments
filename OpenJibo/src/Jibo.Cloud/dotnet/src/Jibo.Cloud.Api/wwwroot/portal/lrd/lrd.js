@@ -1,6 +1,7 @@
 const SESSION_KEY = "openjibo_status_session";
 const PING_INTERVAL_MS = 5000;
 const LOG_POLL_INTERVAL_MS = 1000;
+const MAX_LOG_LINES = 500; // Maximum number of log lines to keep in DOM
 
 let selectedRobotId = null;
 let robots = [];
@@ -140,59 +141,11 @@ function handleRobotSelectChange() {
   }
 }
 
-function ansiToHtml(text) {
-  const ansiColors = {
-    '30': '#000000', // black
-    '31': '#cd0000', // red
-    '32': '#00cd00', // green
-    '33': '#cdcd00', // yellow
-    '34': '#0000ee', // blue
-    '35': '#cd00cd', // magenta
-    '36': '#00cdcd', // cyan
-    '37': '#e5e5e5', // white
-    '90': '#7f7f7f', // bright black
-    '91': '#ff0000', // bright red
-    '92': '#00ff00', // bright green
-    '93': '#ffff00', // bright yellow
-    '94': '#5c5cff', // bright blue
-    '95': '#ff00ff', // bright magenta
-    '96': '#00ffff', // bright cyan
-    '97': '#ffffff', // bright white
-  };
-
-  const ansiStyles = {
-    '0': 'font-weight:normal;text-decoration:none;color:inherit',
-    '1': 'font-weight:bold',
-    '2': 'opacity:0.7',
-    '3': 'font-style:italic',
-    '4': 'text-decoration:underline',
-    '7': 'background-color:#000;color:#fff',
-  };
-
-  let result = text;
-  let ansiRegex = /\x1b\[([0-9;]*)m/g;
-
-  result = result.replace(ansiRegex, (match, codes) => {
-    const codeList = codes.split(';');
-    let styles = [];
-
-    codeList.forEach(code => {
-      if (ansiColors[code]) {
-        styles.push(`color:${ansiColors[code]}`);
-      } else if (ansiStyles[code]) {
-        styles.push(ansiStyles[code]);
-      }
-    });
-
-    return styles.length > 0 ? `</span><span style="${styles.join(';')}">` : '</span><span>';
-  });
-
-  return `<span>${result}</span>`;
-}
-
 async function fetchServerLogs() {
   try {
     const response = await apiFetch(`/api/portal/server/logs?offset=${logOffset}&lines=100`);
+    console.log("Server logs response:", response);
+
     if (response.hasLogs && response.logs) {
       // Check if log file changed
       if (response.fileName && response.fileName !== currentLogFile) {
@@ -209,6 +162,8 @@ async function fetchServerLogs() {
       }
 
       logOffset = response.offset || logOffset;
+    } else {
+      console.log("No logs available, hasLogs:", response.hasLogs);
     }
   } catch (error) {
     console.error("Failed to fetch server logs:", error);
@@ -219,15 +174,47 @@ function appendServerLogs(logText) {
   const rightContent = document.getElementById("rightLogContent");
   if (!rightContent) return;
 
+  console.log("Appending logs, length:", logText.length);
+
   const lines = logText.split('\n');
   lines.forEach(line => {
     if (line.trim()) {
       const logLine = document.createElement('div');
       logLine.className = 'log-line';
-      logLine.innerHTML = ansiToHtml(line);
+
+      // Try to detect if line is JSON for better highlighting
+      let language = 'plaintext';
+      let cleanLine = line;
+
+      if (line.trim().startsWith('{') && line.trim().endsWith('}')) {
+        try {
+          JSON.parse(line);
+          language = 'json';
+        } catch (e) {
+          // Not valid JSON, keep as plaintext
+        }
+      }
+
+      // Use PrismJS for syntax highlighting
+      try {
+        const highlighted = Prism.highlight(cleanLine, Prism.languages[language] || Prism.languages.plaintext, language);
+        logLine.innerHTML = highlighted;
+      } catch (e) {
+        console.error("Prism highlight error:", e);
+        logLine.textContent = cleanLine;
+      }
       rightContent.appendChild(logLine);
     }
   });
+
+  // Remove old lines to prevent DOM overload
+  const logLines = rightContent.querySelectorAll('.log-line');
+  if (logLines.length > MAX_LOG_LINES) {
+    const linesToRemove = logLines.length - MAX_LOG_LINES;
+    for (let i = 0; i < linesToRemove; i++) {
+      rightContent.removeChild(logLines[i]);
+    }
+  }
 
   // Auto-scroll to bottom
   rightContent.scrollTop = rightContent.scrollHeight;

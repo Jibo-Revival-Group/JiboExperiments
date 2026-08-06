@@ -31,6 +31,9 @@ internal static class PortalStaticFileMapper
         app.MapGet("/portal/lrd/lrd.css", () => Serve(portalDirectory, "lrd/lrd.css", "text/css; charset=utf-8"));
         app.MapGet("/portal/lrd/lrd.js",
             () => Serve(portalDirectory, "lrd/lrd.js", "application/javascript; charset=utf-8"));
+        app.MapGet("/portal/lrd/lib/prism.css", () => Serve(portalDirectory, "lrd/lib/prism.css", "text/css; charset=utf-8"));
+        app.MapGet("/portal/lrd/lib/prism.js",
+            () => Serve(portalDirectory, "lrd/lib/prism.js", "application/javascript; charset=utf-8"));
 
         app.MapGet("/harness", () => Results.Redirect("/portal/admin/harness/index.html"));
         app.MapGet("/harness.html", () => Results.Redirect("/portal/admin/harness/index.html"));

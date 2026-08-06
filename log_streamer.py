@@ -26,9 +26,11 @@ class LogStreamHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            self.wfile.write(
-                ('{"status": "ok", "log_path": "%s"}\n' % LOG_PATH).encode("utf-8")
+            # encode the string to bytes
+            response = ('{"status": "ok", "log_path": "%s"}\n' % LOG_PATH).encode(
+                "utf-8"
             )
+            self.wfile.write(response)
             return
 
         if self.path == "/stream":
@@ -42,16 +44,22 @@ class LogStreamHandler(BaseHTTPRequestHandler):
             # Send initial history (last 100 lines)
             if os.path.exists(LOG_PATH):
                 try:
-                    f_hist = open(LOG_PATH, "r")
-                    lines = f_hist.readlines()
-                    f_hist.close()
+                    with open(LOG_PATH, "r") as f_hist:
+                        lines = f_hist.readlines()
                     last_100 = lines[-100:] if len(lines) > 100 else lines
                     for line in last_100:
-                        self.wfile.write("data: %s\n\n" % line.strip())
+                        # encode the string
+                        self.wfile.write(
+                            ("data: %s\n\n" % line.strip()).encode("utf-8")
+                        )
                         self.wfile.flush()
                 except Exception as e:
                     try:
-                        self.wfile.write("data: Error reading history: %s\n\n" % str(e))
+                        self.wfile.write(
+                            ("data: Error reading history: %s\n\n" % str(e)).encode(
+                                "utf-8"
+                            )
+                        )
                         self.wfile.flush()
                     except Exception:
                         pass
@@ -66,6 +74,7 @@ class LogStreamHandler(BaseHTTPRequestHandler):
                         if not line:
                             time.sleep(0.1)
                             continue
+                        # encode the string
                         self.wfile.write(
                             ("data: %s\n\n" % line.strip()).encode("utf-8")
                         )

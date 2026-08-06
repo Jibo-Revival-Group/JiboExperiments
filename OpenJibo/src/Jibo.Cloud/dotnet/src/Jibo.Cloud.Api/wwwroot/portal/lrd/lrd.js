@@ -141,6 +141,83 @@ function handleRobotSelectChange() {
   }
 }
 
+
+let robotLogOffset = 0;
+
+async function fetchRobotLogs() {
+  if (!selectedRobotId) return;
+  try {
+    const response = await apiFetch(`/api/portal/status/robots/${selectedRobotId}/logs/content?path=live&offset=${robotLogOffset}&lines=100`).catch(() => null);
+    if (!response) return; // If endpoint doesn't exist yet, silently fail
+    
+    if (response.hasLogs && response.logs) {
+      appendRobotLogs(response.logs);
+      robotLogOffset = response.offset || robotLogOffset;
+    }
+  } catch (error) {
+    // silently fail for now if it's not implemented
+  }
+}
+
+function appendRobotLogs(logText) {
+  const leftContent = document.getElementById("leftLogContent");
+  if (!leftContent) return;
+
+  // Clear placeholder if it exists
+  const placeholder = leftContent.querySelector('.muted-row');
+  if (placeholder) {
+    leftContent.removeChild(placeholder);
+  }
+
+  // Check if user is at the bottom before adding new logs
+  const isAtBottom = leftContent.scrollHeight - leftContent.scrollTop <= leftContent.clientHeight + 50;
+
+  const lines = logText.split('\n');
+  lines.forEach(line => {
+    if (line.trim()) {
+      const logLine = document.createElement('div');
+      logLine.className = 'log-line';
+
+      // Try to detect if line is JSON for better highlighting
+      let language = 'plaintext';
+      let cleanLine = line;
+
+      if (line.trim().startsWith('{') && line.trim().endsWith('}')) {
+        try {
+          JSON.parse(line);
+          language = 'json';
+        } catch (e) {
+          // Not valid JSON, keep as plaintext
+        }
+      }
+
+      // Use PrismJS for syntax highlighting
+      try {
+        const highlighted = Prism.highlight(cleanLine, Prism.languages[language] || Prism.languages.plaintext, language);
+        logLine.innerHTML = highlighted;
+      } catch (e) {
+        console.error("Prism highlight error:", e);
+        logLine.textContent = cleanLine;
+      }
+      leftContent.appendChild(logLine);
+    }
+  });
+
+  // Remove old lines to prevent DOM overload
+  const logLines = leftContent.querySelectorAll('.log-line');
+  if (logLines.length > MAX_LOG_LINES) {
+    const linesToRemove = logLines.length - MAX_LOG_LINES;
+    for (let i = 0; i < linesToRemove; i++) {
+      leftContent.removeChild(logLines[i]);
+    }
+  }
+
+  // Auto-scroll to bottom only if user was already at the bottom
+  if (isAtBottom) {
+    leftContent.scrollTop = leftContent.scrollHeight;
+  }
+}
+
 async function fetchServerLogs() {
   try {
     const response = await apiFetch(`/api/portal/server/logs?offset=${logOffset}&lines=100`);
@@ -293,12 +370,13 @@ async function init() {
 
   // Initial server logs fetch
   await fetchServerLogs();
+  await fetchRobotLogs();
 
   // Start periodic ping checks
   pingInterval = setInterval(measureServerPing, PING_INTERVAL_MS);
 
   // Start periodic log polling
-  logPollInterval = setInterval(fetchServerLogs, LOG_POLL_INTERVAL_MS);
+  logPollInterval = setInterval(() => { fetchServerLogs(); fetchRobotLogs(); }, LOG_POLL_INTERVAL_MS);
 }
 
 // Clean up on page unload
@@ -312,3 +390,4 @@ window.addEventListener("beforeunload", () => {
 });
 
 init();
+

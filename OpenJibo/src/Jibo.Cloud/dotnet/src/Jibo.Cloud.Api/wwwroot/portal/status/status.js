@@ -290,12 +290,8 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
       </td>
       <td>
         <div class="row-actions">
-<<<<<<< Updated upstream
           <button class="button secondary compact view-artifacts" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Artifacts</button>
-=======
-          <button class="button secondary compact view-logs" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Logs</button>
           <button class="button secondary compact open-lrd" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button" title="Open in Live Robot Debugger">Open in LRD</button>
->>>>>>> Stashed changes
           <button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button>
         </div>
       </td>
@@ -977,7 +973,6 @@ function renderStatusView(summary, previous = previousSummary) {
   document.querySelectorAll(".view-artifacts").forEach((button) => {
     button.addEventListener("click", () => openRobotArtifacts(button.dataset.deviceId, button.dataset.robotName));
   });
-<<<<<<< Updated upstream
   document.querySelectorAll(".view-artifact").forEach((button) => {
     button.addEventListener("click", () => openArtifact(button.dataset.path));
   });
@@ -989,17 +984,13 @@ function renderStatusView(summary, previous = previousSummary) {
   });
   document.querySelectorAll(".merge-artifact-robot").forEach((button) => {
     button.addEventListener("click", mergeRobotFromArtifactViewer);
-=======
+  });
   document.querySelectorAll(".open-lrd").forEach((button) => {
     button.addEventListener("click", () => {
       const deviceId = button.dataset.deviceId;
       const robotName = button.dataset.robotName;
       window.open(`/portal/lrd?deviceId=${encodeURIComponent(deviceId)}&robotName=${encodeURIComponent(robotName)}`, '_blank');
     });
-  });
-  document.querySelectorAll(".view-log-artifact").forEach((button) => {
-    button.addEventListener("click", () => openLogArtifact(button.dataset.path));
->>>>>>> Stashed changes
   });
   document.querySelectorAll(".close-log-viewer").forEach((button) => {
     button.addEventListener("click", () => {

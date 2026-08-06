@@ -318,6 +318,9 @@ public sealed class HomeAssistantPortalApiTests
             DeviceId = "physical-status-robot",
             RobotId = "physical-status-robot",
             FriendlyName = "Living Room Jibo",
+            VerifiedSerialNumber = "BOJW-1000-0017-1114-0008",
+            SerialEvidenceSource = "oobe-verified:physical-label",
+            SerialEvidenceVerifiedUtc = DateTimeOffset.UtcNow,
             RegistrationSource = RobotRegistrationSources.Physical
         });
         var authHandler = factory.Services.GetRequiredService<ICloudAuthProtocolHandler>();
@@ -357,15 +360,14 @@ public sealed class HomeAssistantPortalApiTests
         Assert.True(summary.GetProperty("service").GetProperty("uptimeSeconds").GetInt64() >= 0);
         Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "physical-status-robot" &&
-            robot.GetProperty("presence").GetString() == "never-connected");
+            robot.GetProperty("presence").GetString() == "never-connected" &&
+            robot.GetProperty("verifiedSerialNumber").GetString() == "BOJW-1000-0017-1114-0008");
         Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "live-hub-jibo" &&
-            robot.GetProperty("presence").GetString() == "online" &&
+            robot.GetProperty("presence").GetString() == "never-connected" &&
             !robot.GetProperty("hasOpenSocket").GetBoolean());
-        Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
-            robot.GetProperty("deviceId").GetString() == "archived-live-jibo" &&
-            robot.GetProperty("isHidden").GetBoolean() &&
-            robot.GetProperty("presence").GetString() == "online");
+        Assert.DoesNotContain(summary.GetProperty("robots").EnumerateArray(), robot =>
+            robot.GetProperty("deviceId").GetString() == "archived-live-jibo");
 
         var archiveResponse = await client.PostAsJsonAsync(
             "/api/portal/status/robots/physical-status-robot/archive",
@@ -398,7 +400,7 @@ public sealed class HomeAssistantPortalApiTests
 
         var networkSummary = await (await client.GetAsync("/api/portal/status/summary"))
             .Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal(4, networkSummary.GetProperty("serverFleet").GetProperty("network")
+        Assert.Equal(2, networkSummary.GetProperty("serverFleet").GetProperty("network")
             .GetProperty("connectedRobots").GetInt32());
         Assert.Contains(networkSummary.GetProperty("serverFleet").GetProperty("servers").EnumerateArray(), server =>
             server.GetProperty("canonicalHost").GetString() == remoteServer.CanonicalHost);
@@ -465,6 +467,110 @@ public sealed class HomeAssistantPortalApiTests
         Assert.NotNull(artifact);
         Assert.Equal(deviceId, artifact.Meta["deviceId"]?.ToString());
         Assert.Equal("aws-credential-binding-backfill", artifact.Meta["identitySource"]?.ToString());
+    }
+
+    [Fact]
+    public async Task CredentialBindingSwap_SwapsOnlyExplicitClaimsAndBackfillArtifacts()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var mediaStore = factory.Services.GetRequiredService<IMediaContentStore>();
+        const string firstRobot = "Royal-Current-Sage-Canvas";
+        const string secondRobot = "duplicate-robot";
+        const string firstFingerprint = "8de2920e0b2874b4";
+        const string secondFingerprint = "0123456789abcdef";
+        stateStore.UpsertDevice(new DeviceRegistration { DeviceId = firstRobot, RobotId = firstRobot, FriendlyName = firstRobot });
+        stateStore.UpsertDevice(new DeviceRegistration { DeviceId = secondRobot, RobotId = secondRobot, FriendlyName = secondRobot });
+        stateStore.BindAwsCredentialFingerprint(firstRobot, firstFingerprint, "test-claim");
+        stateStore.BindAwsCredentialFingerprint(secondRobot, secondFingerprint, "test-claim");
+        await mediaStore.StoreAsync("logs/first-credential.txt", "text/plain", Encoding.UTF8.GetBytes("first"),
+            new Dictionary<string, object?>
+            {
+                ["deviceId"] = firstRobot, ["awsAccessKeyFingerprint"] = firstFingerprint,
+                ["identitySource"] = "aws-credential-binding-backfill"
+            });
+        await mediaStore.StoreAsync("logs/second-credential.txt", "text/plain", Encoding.UTF8.GetBytes("second"),
+            new Dictionary<string, object?>
+            {
+                ["deviceId"] = secondRobot, ["awsAccessKeyFingerprint"] = secondFingerprint,
+                ["identitySource"] = "aws-credential-binding-backfill"
+            });
+
+        await AuthenticateAdminAsync(client);
+        var response = await client.PostAsJsonAsync("/api/portal/status/credential-bindings/swap", new
+        {
+            firstAccessKeyFingerprint = firstFingerprint,
+            secondAccessKeyFingerprint = secondFingerprint,
+            confirmed = true
+        });
+
+        response.EnsureSuccessStatusCode();
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, payload.GetProperty("reassignedArtifacts").GetInt32());
+        Assert.Equal(secondRobot, stateStore.FindDeviceByAwsCredentialFingerprint(firstFingerprint)!.DeviceId);
+        Assert.Equal(firstRobot, stateStore.FindDeviceByAwsCredentialFingerprint(secondFingerprint)!.DeviceId);
+        Assert.Equal(secondRobot, (await mediaStore.LoadAsync("logs/first-credential.txt"))!.Meta["deviceId"]?.ToString());
+        Assert.Equal(firstRobot, (await mediaStore.LoadAsync("logs/second-credential.txt"))!.Meta["deviceId"]?.ToString());
+    }
+
+    [Fact]
+    public async Task RobotMerge_RequiresAdminPreviewAndMigratesOnlyIdentityArtifacts()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var mediaStore = factory.Services.GetRequiredService<IMediaContentStore>();
+        const string sourceDeviceId = "duplicate-robot";
+        const string targetDeviceId = "Royal-Current-Sage-Canvas";
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = sourceDeviceId,
+            RobotId = sourceDeviceId,
+            FriendlyName = "Duplicate robot",
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = targetDeviceId,
+            RobotId = targetDeviceId,
+            FriendlyName = targetDeviceId,
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
+        var sourceToken = stateStore.IssueRobotToken(sourceDeviceId);
+        stateStore.BindAwsCredentialFingerprint(sourceDeviceId, "8de2920e0b2874b4", "test-claim");
+        await mediaStore.StoreAsync("logs/duplicate-request.txt", "text/plain", Encoding.UTF8.GetBytes("capture"),
+            new Dictionary<string, object?> { ["deviceId"] = sourceDeviceId });
+        var loopIdsBefore = stateStore.GetLoops().Select(loop => loop.LoopId).ToArray();
+        var peopleBefore = stateStore.GetPeople().Select(person => person.PersonId).ToArray();
+
+        await AuthenticateAdminAsync(client);
+        var previewResponse = await client.GetAsync(
+            $"/api/portal/status/robots/{sourceDeviceId}/merge-preview?targetDeviceId={targetDeviceId}");
+        previewResponse.EnsureSuccessStatusCode();
+        var preview = await previewResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, preview.GetProperty("sessionCount").GetInt32());
+        Assert.Equal(1, preview.GetProperty("credentialBindingCount").GetInt32());
+        Assert.Equal(1, preview.GetProperty("artifactCount").GetInt32());
+
+        var mergeResponse = await client.PostAsJsonAsync(
+            $"/api/portal/status/robots/{sourceDeviceId}/merge", new { targetDeviceId });
+        mergeResponse.EnsureSuccessStatusCode();
+        var merge = await mergeResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(merge.GetProperty("ok").GetBoolean());
+        Assert.Equal(1, merge.GetProperty("migratedArtifacts").GetInt32());
+        Assert.Equal(1, merge.GetProperty("result").GetProperty("migratedSessions").GetInt32());
+        Assert.Equal(1, merge.GetProperty("result").GetProperty("migratedCredentialBindings").GetInt32());
+
+        Assert.Equal(targetDeviceId, stateStore.FindSessionByToken(sourceToken)!.DeviceId);
+        Assert.Equal(targetDeviceId, stateStore.FindDeviceByAwsCredentialFingerprint("8de2920e0b2874b4")!.DeviceId);
+        Assert.True(stateStore.GetDevices().Single(device => device.DeviceId == sourceDeviceId).IsHidden);
+        var artifact = await mediaStore.LoadAsync("logs/duplicate-request.txt");
+        Assert.Equal(targetDeviceId, artifact!.Meta["deviceId"]?.ToString());
+        Assert.Equal("robot-merge", artifact.Meta["identitySource"]?.ToString());
+        Assert.Equal(sourceDeviceId, artifact.Meta["mergedFromDeviceId"]?.ToString());
+        Assert.Equal(loopIdsBefore, stateStore.GetLoops().Select(loop => loop.LoopId));
+        Assert.Equal(peopleBefore, stateStore.GetPeople().Select(person => person.PersonId));
     }
 
     [Fact]
@@ -979,7 +1085,7 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
-    public async Task StatusSummary_ReconcilesDuplicateRobotRecordsIntoOneOnlineRow()
+    public async Task StatusSummary_LeavesUnclaimedDuplicateRecordSeparateFromExplicitlyLinkedRobot()
     {
         await using var factory = CreateFactory();
         var client = factory.CreateClient();
@@ -1009,18 +1115,22 @@ public sealed class HomeAssistantPortalApiTests
 
         Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
         var summary = await summaryResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var reconciledRows = summary.GetProperty("robots")
+        var rows = summary.GetProperty("robots")
             .EnumerateArray()
             .Where(robot =>
                 robot.GetProperty("deviceId").GetString() is "5c0b221fdf9d450019c5e254" or "Royal-Current-Sage-Canvas" ||
                 robot.GetProperty("robotId").GetString() is "robot-5c0b221fdf9d450019c5e254" or "robot-Royal-Current-Sage-Canvas")
             .ToArray();
 
-        Assert.Single(reconciledRows);
-        Assert.Equal("Royal-Current-Sage-Canvas", reconciledRows[0].GetProperty("deviceId").GetString());
-        Assert.Equal("robot-Royal-Current-Sage-Canvas", reconciledRows[0].GetProperty("robotId").GetString());
-        Assert.Equal("online", reconciledRows[0].GetProperty("presence").GetString());
-        Assert.True(reconciledRows[0].GetProperty("connected").GetBoolean());
+        Assert.Equal(2, rows.Length);
+        var linkedRobot = Assert.Single(rows, robot =>
+            robot.GetProperty("deviceId").GetString() == "Royal-Current-Sage-Canvas");
+        Assert.Equal("robot-Royal-Current-Sage-Canvas", linkedRobot.GetProperty("robotId").GetString());
+        Assert.Equal("online", linkedRobot.GetProperty("presence").GetString());
+        Assert.True(linkedRobot.GetProperty("connected").GetBoolean());
+        var unclaimedDuplicate = Assert.Single(rows, robot =>
+            robot.GetProperty("deviceId").GetString() == "5c0b221fdf9d450019c5e254");
+        Assert.Equal("never-connected", unclaimedDuplicate.GetProperty("presence").GetString());
     }
 
     [Fact]

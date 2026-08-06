@@ -357,6 +357,53 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task VerifiedSerialEvidence_IsPersistedOnlyThroughPreparedOobeClaim()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = new JiboCloudProtocolService(store);
+        var prepare = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            ServicePrefix = "OOBE_20160715",
+            Operation = "PrepareRobot",
+            BodyText = """{"deviceId":"Royal-Current-Sage-Canvas","rollbackSnapshotId":"serial-claim","serialNumber":"BOJW-1000-0017-1114-0008","serialVerified":true,"serialVerificationMethod":"physical-label"}"""
+        });
+        using var preparePayload = JsonDocument.Parse(prepare.BodyText);
+        var token = preparePayload.RootElement.GetProperty("token").GetString();
+
+        var setup = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = $$"""{"token":"{{token}}","id":"Royal-Current-Sage-Canvas"}"""
+        });
+
+        Assert.Equal(200, setup.StatusCode);
+        var device = store.FindDeviceByFriendlyId("Royal-Current-Sage-Canvas");
+        Assert.NotNull(device);
+        Assert.Equal("BOJW-1000-0017-1114-0008", device.VerifiedSerialNumber);
+        Assert.Equal("oobe-verified:physical-label", device.SerialEvidenceSource);
+        Assert.NotNull(device.SerialEvidenceVerifiedUtc);
+
+        var passive = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = """{"id":"unclaimed-serial","serialNumber":"BOJW-1000-0017-1114-0008"}"""
+        });
+        Assert.Equal(200, passive.StatusCode);
+        Assert.Null(store.FindDeviceByFriendlyId("unclaimed-serial")!.VerifiedSerialNumber);
+
+        var invalid = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            ServicePrefix = "OOBE_20160715",
+            Operation = "SetupRobot",
+            BodyText = """{"id":"invalid-serial","serialNumber":"BOJW-1000-0017-1114-0008","serialVerified":true}"""
+        });
+        Assert.Equal(400, invalid.StatusCode);
+        Assert.Null(store.FindDeviceByFriendlyId("invalid-serial"));
+    }
+
+    [Fact]
     public async Task PrepareAndStatus_ReturnSignedOnboardingSessionForProviderReturnBinding()
     {
         var store = new InMemoryCloudStateStore();
@@ -2222,6 +2269,33 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LegacyLogBinaryPost_IsCapturedAsBinaryArtifact()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(), new FileMediaContentStore(directoryPath));
+        var binaryPayload = new byte[] { 0x00, 0xFF, 0x4F, 0x67, 0x67 };
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            Path = "/log/binary/legacy-upload",
+            DeviceId = "Royal-Current-Sage-Canvas",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = "application/octet-stream"
+            },
+            BodyBytes = binaryPayload
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        var manifestPath = Path.Combine(directoryPath, "logs", "binary", "legacy-upload.json");
+        Assert.True(File.Exists(manifestPath));
+        Assert.Equal(binaryPayload, (await new FileMediaContentStore(directoryPath)
+            .LoadAsync("logs/binary/legacy-upload"))!.Content);
+    }
+
+    [Fact]
     public async Task PersonListHolidays_DoesNotThrow_WhenLoopStateIsEmpty()
     {
         var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-empty-holidays-{Guid.NewGuid():N}.json");
@@ -2894,6 +2968,21 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.False(store.GetDevices().Single(device => device.DeviceId == source.DeviceId).IsActive);
         Assert.Equal(1, result.MigratedSessions);
         Assert.Equal(1, result.MigratedCredentialBindings);
+    }
+
+    [Fact]
+    public void RobotMerge_RejectsActiveRobotAsSource()
+    {
+        var store = new InMemoryCloudStateStore();
+        var active = store.GetRobot();
+        var target = store.GetOrCreateDevice("Royal-Current-Sage-Canvas", null, null,
+            RobotRegistrationSources.Physical);
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            store.MergeRobotRecords(active.DeviceId, target.DeviceId));
+
+        Assert.Equal("The active robot record must be the canonical target, not the merge source.", exception.Message);
+        Assert.Equal(active.DeviceId, store.GetRobot().DeviceId);
     }
 
     [Fact]

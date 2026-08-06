@@ -17,6 +17,7 @@ public sealed class ProtocolEnvelope
     public string? FirmwareVersion { get; init; }
     public string? ApplicationVersion { get; init; }
     public string BodyText { get; init; } = string.Empty;
+    public byte[]? BodyBytes { get; init; }
 
     public IDictionary<string, string> Headers { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

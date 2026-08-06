@@ -13,7 +13,8 @@ public sealed class WebSocketTurnFinalizationService(
     ITurnTelemetrySink sink,
     ILogger<WebSocketTurnFinalizationService> logger,
     HomeAssistantCommandService? homeAssistantCommandService = null,
-    ICloudStateStore? cloudStateStore = null
+    ICloudStateStore? cloudStateStore = null,
+    IMediaContentStore? mediaContentStore = null
 )
 {
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
@@ -914,6 +915,7 @@ public sealed class WebSocketTurnFinalizationService(
         {
             var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, messageType);
             var turnState = session.TurnState;
+            await StoreBufferedAudioArtifactAsync(session, turn, cancellationToken);
             if (IsYesNoTurn(turn) || ReadPrimaryYesNoRule(turn) is not null)
                 await sink.RecordTurnDiagnosticAsync("yes_no_turn_received", BuildTurnDiagnosticSnapshot(session,
                     envelope, new Dictionary<string, object?>
@@ -1653,6 +1655,50 @@ public sealed class WebSocketTurnFinalizationService(
                 messageType,
                 session.TurnState.TransId);
         }
+    }
+
+    private async Task StoreBufferedAudioArtifactAsync(CloudSession session, TurnContext turn,
+        CancellationToken cancellationToken)
+    {
+        if (mediaContentStore is null || session.TurnState.BufferedAudioFrames.Count == 0) return;
+
+        var rawContent = session.TurnState.BufferedAudioFrames.SelectMany(frame => frame).ToArray();
+        var isOgg = rawContent.Length >= 4 && rawContent.AsSpan(0, 4).SequenceEqual("OggS"u8);
+        var content = rawContent;
+        if (isOgg)
+        {
+            try
+            {
+                content = Audio.OggOpusAudioNormalizer.Normalize(session.TurnState.BufferedAudioFrames);
+            }
+            catch (InvalidOperationException exception)
+            {
+                logger.LogWarning(exception,
+                    "Could not normalize buffered Ogg audio for artifact storage; retaining the raw WebSocket bytes. session={SessionId} turn={TurnId}",
+                    session.SessionId, turn.TurnId);
+                isOgg = false;
+            }
+        }
+        if (content.Length == 0) return;
+
+        var deviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredDeviceId)
+            ? registeredDeviceId?.ToString()
+            : turn.DeviceId ?? session.DeviceId;
+        var artifactId = $"{turn.TimestampUtc:yyyyMMddTHHmmssfffZ}-{turn.TurnId}";
+        var meta = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["artifactType"] = "websocket-asr-audio",
+            ["category"] = "asr",
+            ["deviceId"] = deviceId,
+            ["identitySource"] = "websocket-session",
+            ["sessionId"] = session.SessionId,
+            ["turnId"] = turn.TurnId,
+            ["transId"] = session.TurnState.TransId ?? session.LastTransId,
+            ["audioFrameCount"] = session.TurnState.BufferedAudioFrames.Count,
+            ["contentEncoding"] = isOgg ? "ogg" : "binary"
+        };
+        await mediaContentStore.StoreAsync($"asr/{artifactId}", isOgg ? "audio/ogg" : "application/octet-stream",
+            content, meta, cancellationToken);
     }
 
     private static bool ShouldAutoFinalize(CloudSession session)

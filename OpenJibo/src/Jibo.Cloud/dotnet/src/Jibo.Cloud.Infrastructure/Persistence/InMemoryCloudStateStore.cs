@@ -250,6 +250,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 IssuedIdentityId = current.IssuedIdentityId,
                 BuildHash = current.BuildHash,
                 ConfigHash = current.ConfigHash,
+                VerifiedSerialNumber = current.VerifiedSerialNumber,
+                SerialEvidenceSource = current.SerialEvidenceSource,
+                SerialEvidenceVerifiedUtc = current.SerialEvidenceVerifiedUtc,
                 RegistrationSource = current.RegistrationSource == RobotRegistrationSources.Unknown &&
                                      source != RobotRegistrationSources.Unknown
                     ? source
@@ -316,11 +319,39 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return binding;
     }
 
+    public IReadOnlyList<RobotCredentialBinding> SwapAwsCredentialFingerprintBindings(string firstAccessKeyFingerprint,
+        string secondAccessKeyFingerprint, string claimSource)
+    {
+        if (string.IsNullOrWhiteSpace(firstAccessKeyFingerprint) || string.IsNullOrWhiteSpace(secondAccessKeyFingerprint) ||
+            firstAccessKeyFingerprint.Equals(secondAccessKeyFingerprint, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Choose two different credential fingerprints.");
+
+        lock (_syncRoot)
+        {
+            if (!_robotCredentialBindings.TryGetValue(firstAccessKeyFingerprint.Trim(), out var first) ||
+                !_robotCredentialBindings.TryGetValue(secondAccessKeyFingerprint.Trim(), out var second))
+                throw new KeyNotFoundException("Credential fingerprint was not found.");
+            if (first.DeviceId.Equals(second.DeviceId, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("The selected credential fingerprints are already assigned to the same robot.");
+
+            var now = DateTimeOffset.UtcNow;
+            var source = string.IsNullOrWhiteSpace(claimSource) ? "portal-admin-swap" : claimSource.Trim();
+            var swappedFirst = first with { DeviceId = second.DeviceId, ClaimedUtc = now, ClaimSource = source };
+            var swappedSecond = second with { DeviceId = first.DeviceId, ClaimedUtc = now, ClaimSource = source };
+            _robotCredentialBindings[swappedFirst.AccessKeyFingerprint] = swappedFirst;
+            _robotCredentialBindings[swappedSecond.AccessKeyFingerprint] = swappedSecond;
+            TouchState();
+            return [swappedFirst, swappedSecond];
+        }
+    }
+
     public RobotMergeResult MergeRobotRecords(string sourceDeviceId, string targetDeviceId)
     {
         if (string.IsNullOrWhiteSpace(sourceDeviceId) || string.IsNullOrWhiteSpace(targetDeviceId) ||
             sourceDeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("Choose two different robot records.");
+        if (sourceDeviceId.Equals(_robot.DeviceId, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("The active robot record must be the canonical target, not the merge source.");
         if (!_devices.TryGetValue(sourceDeviceId, out var source) || !_devices.ContainsKey(targetDeviceId))
             throw new KeyNotFoundException("Robot record was not found.");
 
@@ -353,6 +384,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             IssuedIdentityId = source.IssuedIdentityId,
             BuildHash = source.BuildHash,
             ConfigHash = source.ConfigHash,
+            VerifiedSerialNumber = source.VerifiedSerialNumber,
+            SerialEvidenceSource = source.SerialEvidenceSource,
+            SerialEvidenceVerifiedUtc = source.SerialEvidenceVerifiedUtc,
             RegistrationSource = source.RegistrationSource,
             IsHidden = true,
             ArchivedUtc = DateTimeOffset.UtcNow,
@@ -714,8 +748,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             var device = FindDeviceByFriendlyId(deviceId);
             var session = _sessionsByToken.Values.FirstOrDefault(candidate =>
                 candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
-            if (device is null || session is null) return false;
+            // Archived records are historical only. They can never be selected as a live
+            // session identity, even by an explicit UI request.
+            if (device is null || device.IsHidden || session is null) return false;
 
+            var previousDeviceId = ReadSessionMetadata(session, "registeredDeviceId");
+            AppendSessionBindingAudit(session, string.IsNullOrWhiteSpace(previousDeviceId) ? "linked" : "relinked",
+                previousDeviceId, device.DeviceId, "portal-admin");
             // Keep the runtime loop identifier as DeviceId, and persist the explicitly selected
             // inventory identity separately so both hardware identifiers remain traceable.
             session.Metadata["registeredDeviceId"] = device.DeviceId;
@@ -736,6 +775,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
             if (session is null) return false;
 
+            AppendSessionBindingAudit(session, "unlinked", ReadSessionMetadata(session, "registeredDeviceId"), null,
+                "portal-admin");
             session.Metadata.Remove("registeredDeviceId");
             session.Metadata.Remove("registeredRobotId");
         }
@@ -3018,6 +3059,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             IssuedIdentityId = device.IssuedIdentityId,
             BuildHash = device.BuildHash,
             ConfigHash = device.ConfigHash,
+            VerifiedSerialNumber = device.VerifiedSerialNumber,
+            SerialEvidenceSource = device.SerialEvidenceSource,
+            SerialEvidenceVerifiedUtc = device.SerialEvidenceVerifiedUtc,
             RegistrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
             IsHidden = device.IsHidden,
             ArchivedUtc = device.ArchivedUtc,
@@ -3190,12 +3234,56 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 UpdatedUtc = DateTimeOffset.UtcNow
             };
 
-        var cleanupApplied = RepairSupersededRobotPlaceholdersLocked();
+        var cleanupApplied = ClearArchivedSessionDeviceBindingsLocked();
+        cleanupApplied |= RepairSupersededRobotPlaceholdersLocked();
 
         Interlocked.Exchange(ref _revision, snapshot.Revision);
         _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
         _lastSavedUtc = snapshot.LastSavedUtc;
         return cleanupApplied;
+    }
+
+    private bool ClearArchivedSessionDeviceBindingsLocked()
+    {
+        var changed = false;
+        foreach (var session in _sessionsByToken.Values)
+        {
+            if (!session.Metadata.TryGetValue("registeredDeviceId", out var value) ||
+                string.IsNullOrWhiteSpace(value?.ToString()))
+                continue;
+
+            var device = FindDeviceByFriendlyId(value.ToString()!);
+            if (device is null || !device.IsHidden) continue;
+
+            AppendSessionBindingAudit(session, "cleared-archived-link", device.DeviceId, null, "startup-guard");
+            session.Metadata.Remove("registeredDeviceId");
+            session.Metadata.Remove("registeredRobotId");
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static void AppendSessionBindingAudit(CloudSession session, string action, string? previousDeviceId,
+        string? deviceId, string source)
+    {
+        const string auditKey = "sessionBindingAudit";
+        var entries = new List<SessionBindingAuditEntry>();
+        if (session.Metadata.TryGetValue(auditKey, out var existing) && existing is not null)
+        {
+            try
+            {
+                entries.AddRange(JsonSerializer.Deserialize<List<SessionBindingAuditEntry>>(existing.ToString() ?? "[]",
+                    PersistenceJsonOptions) ?? []);
+            }
+            catch (JsonException)
+            {
+                // A malformed legacy note is not a reason to block a deliberate admin action.
+            }
+        }
+
+        entries.Add(new SessionBindingAuditEntry(action, previousDeviceId, deviceId, source, DateTimeOffset.UtcNow));
+        session.Metadata[auditKey] = JsonSerializer.Serialize(entries.TakeLast(10), PersistenceJsonOptions);
     }
 
     private bool RepairSupersededRobotPlaceholdersLocked()
@@ -3250,6 +3338,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                     IssuedIdentityId = device.IssuedIdentityId,
                     BuildHash = device.BuildHash,
                     ConfigHash = device.ConfigHash,
+                    VerifiedSerialNumber = device.VerifiedSerialNumber,
+                    SerialEvidenceSource = device.SerialEvidenceSource,
+                    SerialEvidenceVerifiedUtc = device.SerialEvidenceVerifiedUtc,
                     RegistrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
                     IsHidden = true,
                     ArchivedUtc = device.ArchivedUtc ?? DateTimeOffset.UtcNow,
@@ -3265,15 +3356,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device)
     {
-        foreach (var value in GetSessionIdentityValues(session))
-        {
-            if (IdentityMatches(value, device.DeviceId) ||
-                IdentityMatches(value, device.RobotId) ||
-                IdentityMatches(value, device.FriendlyName))
-                return true;
-        }
-
-        return false;
+        // Traffic-derived IDs are evidence, not ownership. Only a portal-admin binding
+        // can connect a live session to an inventory record.
+        return IdentityMatches(ReadSessionMetadata(session, "registeredDeviceId"), device.DeviceId) ||
+               IdentityMatches(ReadSessionMetadata(session, "registeredRobotId"), device.RobotId);
     }
 
     private static IEnumerable<string> GetSessionIdentityValues(CloudSession session)
@@ -3374,12 +3460,18 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             IssuedIdentityId = device.IssuedIdentityId,
             BuildHash = device.BuildHash,
             ConfigHash = device.ConfigHash,
+            VerifiedSerialNumber = device.VerifiedSerialNumber,
+            SerialEvidenceSource = device.SerialEvidenceSource,
+            SerialEvidenceVerifiedUtc = device.SerialEvidenceVerifiedUtc,
             RegistrationSource = source,
             IsHidden = hidden,
             ArchivedUtc = hidden ? device.ArchivedUtc ?? DateTimeOffset.UtcNow : null,
             HostMappings = new Dictionary<string, string>(device.HostMappings, StringComparer.OrdinalIgnoreCase)
         };
     }
+
+    private sealed record SessionBindingAuditEntry(string Action, string? PreviousDeviceId, string? DeviceId,
+        string Source, DateTimeOffset OccurredUtc);
 
     private sealed class PersistentStateSnapshot
     {

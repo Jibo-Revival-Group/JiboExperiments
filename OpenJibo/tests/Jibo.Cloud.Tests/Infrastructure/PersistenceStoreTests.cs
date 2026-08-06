@@ -26,6 +26,24 @@ public sealed class PersistenceStoreTests
         Assert.True(linked);
         Assert.Equal("5c0b221fdf9d450019c5e254", session.DeviceId);
         Assert.Equal("Royal-Current-Sage-Canvas", session.Metadata["registeredDeviceId"]?.ToString());
+        Assert.Contains("\"Action\": \"linked\"", session.Metadata["sessionBindingAudit"]?.ToString());
+    }
+
+    [Fact]
+    public void BindSessionToDevice_RejectsArchivedRobotRecord()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Archived-Duplicate",
+            RobotId = "Archived-Duplicate",
+            IsHidden = true,
+            ArchivedUtc = DateTimeOffset.UtcNow
+        });
+        var session = store.OpenSession("hub", "observed-runtime-id", "hub-archived", "neohub", "/v1/listen");
+
+        Assert.False(store.BindSessionToDevice(session.SessionId, "Archived-Duplicate"));
+        Assert.False(session.Metadata.ContainsKey("registeredDeviceId"));
     }
 
     [Fact]
@@ -119,7 +137,7 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
-    public void CloudStateStore_LoadsAndRepairsSupersededPlaceholderRobotRecords()
+    public void CloudStateStore_DoesNotArchivePlaceholderRobotRecordsFromObservedSessionTraffic()
     {
         var persistencePath = Path.Combine(Path.GetTempPath(),
             $"openjibo-cloud-placeholder-repair-{Guid.NewGuid():N}.json");
@@ -158,9 +176,9 @@ public sealed class PersistenceStoreTests
             var repairedPlaceholder = Assert.Single(repairedDevices, device => device.DeviceId == placeholderId);
             var repairedVerified = Assert.Single(repairedDevices, device => device.DeviceId == verifiedId);
 
-            Assert.True(secondInfo.Revision > firstInfo.Revision);
-            Assert.True(repairedPlaceholder.IsHidden);
-            Assert.NotNull(repairedPlaceholder.ArchivedUtc);
+            Assert.Equal(firstInfo.Revision, secondInfo.Revision);
+            Assert.False(repairedPlaceholder.IsHidden);
+            Assert.Null(repairedPlaceholder.ArchivedUtc);
             Assert.False(repairedVerified.IsHidden);
             Assert.Null(repairedVerified.ArchivedUtc);
 
@@ -169,8 +187,8 @@ public sealed class PersistenceStoreTests
             var persistedPlaceholder = Assert.Single(thirdStore.GetDevices(), device => device.DeviceId == placeholderId);
 
             Assert.Equal(secondInfo.Revision, thirdInfo.Revision);
-            Assert.True(persistedPlaceholder.IsHidden);
-            Assert.NotNull(persistedPlaceholder.ArchivedUtc);
+            Assert.False(persistedPlaceholder.IsHidden);
+            Assert.Null(persistedPlaceholder.ArchivedUtc);
         }
         finally
         {

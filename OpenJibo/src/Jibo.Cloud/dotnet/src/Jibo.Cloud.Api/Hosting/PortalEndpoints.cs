@@ -1059,6 +1059,7 @@ internal static class PortalEndpoints
                     item.Path,
                     item.ContentType,
                     source = item.Path.StartsWith("logs/", StringComparison.OrdinalIgnoreCase) ? "log" : "media",
+                    artifactType = ReadArtifactMeta(item.Meta, "artifactType"),
                     category = ReadArtifactMeta(item.Meta, "category"),
                     unassigned = string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")),
                     storedUtc = ReadArtifactMeta(item.Meta, "storedUtc"),
@@ -1156,6 +1157,29 @@ internal static class PortalEndpoints
             {
                 return Results.Conflict(new { error = "Credential fingerprint is already claimed by another robot." });
             }
+        });
+
+        app.MapPost("/api/portal/status/credential-bindings/swap", async (
+            [FromBody] SwapRobotCredentialBindingsRequest request, HttpRequest httpRequest,
+            PortalSessionService portalSessionService, ICloudStateStore cloudStateStore,
+            IMediaContentStore mediaContentStore, CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            if (!request.Confirmed) return Results.BadRequest(new { error = "Confirm the credential swap before applying it." });
+            try
+            {
+                var bindings = cloudStateStore.SwapAwsCredentialFingerprintBindings(
+                    request.FirstAccessKeyFingerprint ?? string.Empty, request.SecondAccessKeyFingerprint ?? string.Empty,
+                    "portal-admin-swap");
+                var reassignedArtifacts = 0;
+                foreach (var binding in bindings)
+                    reassignedArtifacts += await ReassignCredentialBackfillArtifactsAsync(mediaContentStore,
+                        binding.AccessKeyFingerprint, binding.DeviceId, cancellationToken);
+                return Results.Json(new { ok = true, bindings, reassignedArtifacts });
+            }
+            catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
+            catch (KeyNotFoundException exception) { return Results.NotFound(new { error = exception.Message }); }
         });
 
         app.MapGet("/api/portal/status/robots/{sourceDeviceId}/merge-preview", async (
@@ -1407,9 +1431,21 @@ internal static class PortalEndpoints
                     robotId = device.RobotId,
                     friendlyName = device.FriendlyName,
                     isHidden = device.IsHidden,
+                    verifiedSerialNumber = device.VerifiedSerialNumber,
+                    serialEvidenceSource = device.SerialEvidenceSource,
+                    serialEvidenceVerifiedUtc = device.SerialEvidenceVerifiedUtc,
                     registrationSource = RobotRegistrationSources.Normalize(
                         device.RegistrationSource,
                         device.DeviceId)
+                })
+                .ToArray(),
+            credentialBindings = cloudStateStore.GetRobotCredentialBindings()
+                .Select(binding => new
+                {
+                    accessKeyFingerprint = binding.AccessKeyFingerprint,
+                    binding.DeviceId,
+                    binding.ClaimedUtc,
+                    binding.ClaimSource
                 })
                 .ToArray(),
             fleet = new
@@ -1469,10 +1505,11 @@ internal static class PortalEndpoints
                     session.SessionId,
                     session.Kind,
                     session.DeviceId,
-                    registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId")
-                        ?? FindMatchingDevice(session, allDevices)?.DeviceId,
-                    registeredRobotId = ReadSessionMetadata(session, "registeredRobotId")
-                        ?? FindMatchingDevice(session, allDevices)?.RobotId,
+                    // Observed runtime IDs remain visible as session.DeviceId, but they are
+                    // never silently presented as an inventory link.
+                    registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId"),
+                    registeredRobotId = ReadSessionMetadata(session, "registeredRobotId"),
+                    sessionBindingAudit = ReadSessionMetadata(session, "sessionBindingAudit"),
                     session.HostName,
                     session.Path,
                     session.CreatedUtc,
@@ -1530,6 +1567,30 @@ internal static class PortalEndpoints
                 ["identitySource"] = identitySource,
                 ["mergedFromDeviceId"] = sourceDeviceId,
                 ["mergedUtc"] = DateTimeOffset.UtcNow
+            };
+            await mediaContentStore.StoreAsync(artifact.Path, content.ContentType, content.Content, meta, cancellationToken);
+            updated++;
+        }
+        return updated;
+    }
+
+    private static async Task<int> ReassignCredentialBackfillArtifactsAsync(IMediaContentStore mediaContentStore,
+        string accessKeyFingerprint, string deviceId, CancellationToken cancellationToken)
+    {
+        var updated = 0;
+        foreach (var artifact in (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken)).Where(item =>
+                     ReadArtifactMeta(item.Meta, "awsAccessKeyFingerprint")
+                         .Equals(accessKeyFingerprint, StringComparison.OrdinalIgnoreCase) &&
+                     ReadArtifactMeta(item.Meta, "identitySource") is "aws-credential-binding-backfill" or
+                         "aws-credential-binding-swap"))
+        {
+            var content = await mediaContentStore.LoadAsync(artifact.Path, cancellationToken);
+            if (content is null) continue;
+            var meta = new Dictionary<string, object?>(content.Meta, StringComparer.OrdinalIgnoreCase)
+            {
+                ["deviceId"] = deviceId,
+                ["identitySource"] = "aws-credential-binding-swap",
+                ["credentialSwappedUtc"] = DateTimeOffset.UtcNow
             };
             await mediaContentStore.StoreAsync(artifact.Path, content.ContentType, content.Content, meta, cancellationToken);
             updated++;
@@ -1738,6 +1799,9 @@ internal static class PortalEndpoints
                     .OrderByDescending(value => value)
                     .FirstOrDefault(),
                 SelectPreferredRegistrationSource(primaryDevice, groupDevices),
+                primaryDevice.VerifiedSerialNumber,
+                primaryDevice.SerialEvidenceSource,
+                primaryDevice.SerialEvidenceVerifiedUtc,
                 groupIsSynthetic,
                 presence,
                 presence is "online" or "sleeping",
@@ -1850,20 +1914,10 @@ internal static class PortalEndpoints
 
     private static bool SessionMatchesDevice(CloudSession session, DeviceRegistration device)
     {
-        foreach (var value in GetSessionIdentityValues(session))
-        {
-            if (IdentityMatches(value, device.DeviceId) ||
-                IdentityMatches(value, device.RobotId) ||
-                IdentityMatches(value, device.FriendlyName))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static DeviceRegistration? FindMatchingDevice(CloudSession session, IReadOnlyList<DeviceRegistration> devices)
-    {
-        return devices.FirstOrDefault(device => SessionMatchesDevice(session, device));
+        // Runtime identity values can be shared by cloned robots.  The portal only
+        // reconciles sessions using an administrator-created binding.
+        return IdentityMatches(ReadSessionMetadata(session, "registeredDeviceId"), device.DeviceId) ||
+               IdentityMatches(ReadSessionMetadata(session, "registeredRobotId"), device.RobotId);
     }
 
     private static IEnumerable<string> GetSessionIdentityValues(CloudSession session)
@@ -1946,6 +2000,9 @@ internal static class PortalEndpoints
         bool IsHidden,
         DateTimeOffset? ArchivedUtc,
         string RegistrationSource,
+        string? VerifiedSerialNumber,
+        string? SerialEvidenceSource,
+        DateTimeOffset? SerialEvidenceVerifiedUtc,
         bool IsSynthetic,
         string Presence,
         bool Connected,
@@ -2015,6 +2072,9 @@ internal static class PortalEndpoints
             IssuedIdentityId = device.IssuedIdentityId,
             BuildHash = device.BuildHash,
             ConfigHash = device.ConfigHash,
+            VerifiedSerialNumber = device.VerifiedSerialNumber,
+            SerialEvidenceSource = device.SerialEvidenceSource,
+            SerialEvidenceVerifiedUtc = device.SerialEvidenceVerifiedUtc,
             RegistrationSource = RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
             IsHidden = isHidden,
             ArchivedUtc = archivedUtc,
@@ -2149,6 +2209,9 @@ internal static class PortalEndpoints
             IssuedIdentityId = existing?.IssuedIdentityId,
             BuildHash = existing?.BuildHash,
             ConfigHash = existing?.ConfigHash,
+            VerifiedSerialNumber = existing?.VerifiedSerialNumber,
+            SerialEvidenceSource = existing?.SerialEvidenceSource,
+            SerialEvidenceVerifiedUtc = existing?.SerialEvidenceVerifiedUtc,
             RegistrationSource = existing?.RegistrationSource ?? RobotRegistrationSources.Portal,
             IsHidden = existing?.IsHidden ?? false,
             ArchivedUtc = existing?.ArchivedUtc,
@@ -2517,6 +2580,8 @@ internal static class PortalEndpoints
     private sealed record ArchiveStatusRobotRequest(string? PortalSessionToken, bool Hidden);
     private sealed record LinkStatusSessionRequest(string? PortalSessionToken, string? DeviceId);
     private sealed record BindRobotCredentialRequest(string? PortalSessionToken, string? AccessKeyFingerprint);
+    private sealed record SwapRobotCredentialBindingsRequest(string? PortalSessionToken,
+        string? FirstAccessKeyFingerprint, string? SecondAccessKeyFingerprint, bool Confirmed);
     private sealed record MergeRobotRequest(string? PortalSessionToken, string? TargetDeviceId);
 
     private sealed record FleetServerPresenceReportRequest(

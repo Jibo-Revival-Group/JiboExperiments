@@ -117,10 +117,12 @@ public sealed class JiboCloudProtocolService(
         if (TryHandleLocalSchedulerRequest(envelope, out var schedulerResult))
             return Task.FromResult(schedulerResult);
 
-        if (envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) &&
+        if ((envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) ||
+             envelope.Method.Equals("POST", StringComparison.OrdinalIgnoreCase)) &&
             (envelope.Path.StartsWith("/upload/asr-binary", StringComparison.OrdinalIgnoreCase) ||
              envelope.Path.StartsWith("/upload/log-events", StringComparison.OrdinalIgnoreCase) ||
-             envelope.Path.StartsWith("/upload/log-binary", StringComparison.OrdinalIgnoreCase)))
+             envelope.Path.StartsWith("/upload/log-binary", StringComparison.OrdinalIgnoreCase) ||
+             envelope.Path.StartsWith("/log/binary", StringComparison.OrdinalIgnoreCase)))
             return Task.FromResult(HandleLogUpload(envelope, ResolveRobotIdentity(envelope, "log-upload")));
 
         if ((envelope.ServicePrefix ?? string.Empty).StartsWith("OOBE_", StringComparison.OrdinalIgnoreCase))
@@ -210,6 +212,11 @@ public sealed class JiboCloudProtocolService(
         var body = envelope.TryParseBody();
         var token = ReadString(body, "token");
 
+        if (ReadBool(body, "serialVerified") && ReadVerifiedSerialEvidence(body) is null)
+            return ProtocolDispatchResult.Raw(400,
+                "{\"error\":\"verified serial evidence must include a valid BOJW serial number and verification method\"}",
+                "application/json");
+
         if (operation.Equals("PlanConversion", StringComparison.OrdinalIgnoreCase) ||
             operation.Equals("AuditConversion", StringComparison.OrdinalIgnoreCase))
         {
@@ -221,6 +228,7 @@ public sealed class JiboCloudProtocolService(
                 TargetHost = ReadTargetHost(body),
                 RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
                 BaselineEvidence = ReadBaselineEvidence(body, envelope),
+                VerifiedSerialEvidence = ReadVerifiedSerialEvidence(body),
                 ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
             };
             var planReadiness = EvaluateConversionReadiness(planState, false, envelope.HostName);
@@ -255,6 +263,7 @@ public sealed class JiboCloudProtocolService(
                 TargetHost = ReadTargetHost(body),
                 RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
                 BaselineEvidence = ReadBaselineEvidence(body, envelope),
+                VerifiedSerialEvidence = ReadVerifiedSerialEvidence(body),
                 ExpiresUtc = expiresUtc
             };
             _oobeTokens[issuedToken] = preparedState;
@@ -423,6 +432,7 @@ public sealed class JiboCloudProtocolService(
             TargetHost = ReadTargetHost(body),
             RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ?? ReadString(body, "rollbackSnapshot"),
             BaselineEvidence = ReadBaselineEvidence(body, envelope),
+            VerifiedSerialEvidence = ReadVerifiedSerialEvidence(body),
             ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
         });
         if (state.ExpiresUtc <= DateTimeOffset.UtcNow)
@@ -438,6 +448,10 @@ public sealed class JiboCloudProtocolService(
                 error = "conversion readiness blocked",
                 conversionReadiness = setupReadiness.ToResponse()
             }), "application/json");
+
+        if (setupState.VerifiedSerialEvidence is not null && !hasPreparedToken)
+            return ProtocolDispatchResult.Raw(409,
+                "{\"error\":\"verified serial evidence requires a prepared OOBE token\"}", "application/json");
 
         state.Complete = true;
         state.DeviceId = setupState.DeviceId;
@@ -462,6 +476,13 @@ public sealed class JiboCloudProtocolService(
         var isDeploymentSmoke = RobotRegistrationSources.Normalize(registeredDevice.RegistrationSource,
             registeredDevice.DeviceId).Equals(RobotRegistrationSources.DeploymentSmoke,
             StringComparison.OrdinalIgnoreCase);
+        if (setupState.VerifiedSerialEvidence is not null &&
+            !string.IsNullOrWhiteSpace(registeredDevice.VerifiedSerialNumber) &&
+            !registeredDevice.VerifiedSerialNumber.Equals(setupState.VerifiedSerialEvidence.SerialNumber,
+                StringComparison.OrdinalIgnoreCase))
+            return ProtocolDispatchResult.Raw(409,
+                "{\"error\":\"verified serial evidence conflicts with the registered robot\"}", "application/json");
+
         var updatedRegistration = new DeviceRegistration
         {
             DeviceId = registeredDevice.DeviceId,
@@ -474,6 +495,9 @@ public sealed class JiboCloudProtocolService(
             IssuedIdentityId = registeredDevice.IssuedIdentityId,
             BuildHash = registeredDevice.BuildHash,
             ConfigHash = registeredDevice.ConfigHash,
+            VerifiedSerialNumber = setupState.VerifiedSerialEvidence?.SerialNumber ?? registeredDevice.VerifiedSerialNumber,
+            SerialEvidenceSource = setupState.VerifiedSerialEvidence?.Source ?? registeredDevice.SerialEvidenceSource,
+            SerialEvidenceVerifiedUtc = setupState.VerifiedSerialEvidence?.VerifiedUtc ?? registeredDevice.SerialEvidenceVerifiedUtc,
             RegistrationSource = registeredDevice.RegistrationSource,
             IsHidden = registeredDevice.IsHidden,
             ArchivedUtc = registeredDevice.ArchivedUtc,
@@ -799,6 +823,7 @@ public sealed class JiboCloudProtocolService(
             RollbackSnapshotId = ReadString(body, "rollbackSnapshotId") ??
                                  ReadString(body, "rollbackSnapshot") ?? current.RollbackSnapshotId,
             BaselineEvidence = current.BaselineEvidence.Merge(ReadBaselineEvidence(body, envelope)),
+            VerifiedSerialEvidence = ReadVerifiedSerialEvidence(body) ?? current.VerifiedSerialEvidence,
             Complete = current.Complete,
             ExpiresUtc = current.ExpiresUtc
         };
@@ -1171,10 +1196,11 @@ public sealed class JiboCloudProtocolService(
 
     private ProtocolDispatchResult HandleLog(string operation, ProtocolEnvelope envelope, ProtocolRobotIdentity identity)
     {
-        if (!string.IsNullOrEmpty(envelope.BodyText))
+        var requestContent = ReadBodyBytes(envelope);
+        if (requestContent.Length > 0)
             StoreLogContent($"{GetLogCategory(operation)}-request", CreateLogUploadId(),
                 ReadHeader(envelope, "Content-Type") ?? "application/octet-stream",
-                Encoding.UTF8.GetBytes(envelope.BodyText), envelope, identity);
+                requestContent, envelope, identity);
 
         var uploadId = CreateLogUploadId();
         return operation switch
@@ -1201,6 +1227,20 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
+    private static VerifiedSerialEvidence? ReadVerifiedSerialEvidence(JsonElement? body)
+    {
+        if (!ReadBool(body, "serialVerified")) return null;
+
+        var serialNumber = ReadString(body, "serialNumber");
+        var method = ReadString(body, "serialVerificationMethod");
+        if (string.IsNullOrWhiteSpace(serialNumber) || string.IsNullOrWhiteSpace(method) ||
+            !System.Text.RegularExpressions.Regex.IsMatch(serialNumber.Trim(), "^BOJW-(?:[0-9]{4}-){3}[0-9]{4}$",
+                System.Text.RegularExpressions.RegexOptions.CultureInvariant))
+            return null;
+
+        return new VerifiedSerialEvidence(serialNumber.Trim(), $"oobe-verified:{method.Trim()}", DateTimeOffset.UtcNow);
+    }
+
     private ProtocolDispatchResult HandleLogUpload(ProtocolEnvelope envelope, ProtocolRobotIdentity identity)
     {
         var category = envelope.Path.Contains("asr-binary", StringComparison.OrdinalIgnoreCase)
@@ -1210,7 +1250,7 @@ public sealed class JiboCloudProtocolService(
                 : "binary";
         var uploadId = GetLogUploadId(envelope.Path);
         var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
-        var content = string.IsNullOrEmpty(envelope.BodyText) ? [] : Encoding.UTF8.GetBytes(envelope.BodyText);
+        var content = ReadBodyBytes(envelope);
         StoreLogContent(category, uploadId, contentType, content, envelope, identity);
         return ProtocolDispatchResult.Raw(200, string.Empty);
     }
@@ -1259,7 +1299,7 @@ public sealed class JiboCloudProtocolService(
                 identity.Aws.AccessKeyFingerprint,
                 identity.Aws.SecurityTokenPresent, identity.Aws.DatePresent, identity.Aws.SignaturePresent,
                 identity.Aws.SignedHeadersPresent, identity.Aws.SignsRobotHeader, identity.Aws.SignsTransactionHeader,
-                Encoding.UTF8.GetByteCount(envelope.BodyText));
+                ReadBodyBytes(envelope).Length);
         return identity;
     }
 
@@ -1328,9 +1368,7 @@ public sealed class JiboCloudProtocolService(
         meta["awsSignsTransactionHeader"] = identity.Aws.SignsTransactionHeader;
         var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
         meta["contentType"] = contentType;
-        var bodyBytes = string.IsNullOrWhiteSpace(envelope.BodyText)
-            ? []
-            : Encoding.UTF8.GetBytes(envelope.BodyText);
+        var bodyBytes = ReadBodyBytes(envelope);
         meta["contentLength"] = bodyBytes.Length;
         meta["contentSha256"] = Convert.ToHexString(SHA256.HashData(bodyBytes)).ToLowerInvariant();
         if (!string.IsNullOrWhiteSpace(envelope.BodyText)) meta["bodyText"] = envelope.BodyText;
@@ -1342,6 +1380,9 @@ public sealed class JiboCloudProtocolService(
         return ProtocolDispatchResult.Ok(
             MapMedia(stateStore.CreateMedia(loopId, path, type, reference, isEncrypted, meta)));
     }
+
+    private static byte[] ReadBodyBytes(ProtocolEnvelope envelope) =>
+        envelope.BodyBytes is { Length: > 0 } bodyBytes ? bodyBytes : Encoding.UTF8.GetBytes(envelope.BodyText);
 
     private ProtocolDispatchResult HandlePerson(string operation, ProtocolEnvelope envelope)
     {
@@ -1516,6 +1557,9 @@ public sealed class JiboCloudProtocolService(
                 IssuedIdentityId = registeredDevice.IssuedIdentityId,
                 BuildHash = registeredDevice.BuildHash,
                 ConfigHash = registeredDevice.ConfigHash,
+                VerifiedSerialNumber = registeredDevice.VerifiedSerialNumber,
+                SerialEvidenceSource = registeredDevice.SerialEvidenceSource,
+                SerialEvidenceVerifiedUtc = registeredDevice.SerialEvidenceVerifiedUtc,
                 RegistrationSource = registeredDevice.RegistrationSource,
                 IsHidden = registeredDevice.IsHidden,
                 ArchivedUtc = registeredDevice.ArchivedUtc,
@@ -1550,6 +1594,9 @@ public sealed class JiboCloudProtocolService(
                 IssuedIdentityId = robot.IssuedIdentityId,
                 BuildHash = robot.BuildHash,
                 ConfigHash = robot.ConfigHash,
+                VerifiedSerialNumber = robot.VerifiedSerialNumber,
+                SerialEvidenceSource = robot.SerialEvidenceSource,
+                SerialEvidenceVerifiedUtc = robot.SerialEvidenceVerifiedUtc,
                 RegistrationSource = robot.RegistrationSource,
                 IsHidden = robot.IsHidden,
                 ArchivedUtc = robot.ArchivedUtc,
@@ -2343,11 +2390,14 @@ public sealed class JiboCloudProtocolService(
         public string? TargetHost { get; set; }
         public string? RollbackSnapshotId { get; set; }
         public OobeBaselineEvidence BaselineEvidence { get; set; } = new();
+        public VerifiedSerialEvidence? VerifiedSerialEvidence { get; set; }
         public bool Complete { get; set; }
         public string? OnboardingNonce { get; set; }
         public string? OnboardingState { get; set; }
         public DateTimeOffset ExpiresUtc { get; init; }
     }
+
+    private sealed record VerifiedSerialEvidence(string SerialNumber, string Source, DateTimeOffset VerifiedUtc);
 
     private sealed class NullMediaContentStore : IMediaContentStore
     {

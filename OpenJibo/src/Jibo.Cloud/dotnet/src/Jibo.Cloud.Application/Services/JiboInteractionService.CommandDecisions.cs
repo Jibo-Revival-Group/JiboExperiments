@@ -175,8 +175,12 @@ public sealed partial class JiboInteractionService
         DateTimeOffset? referenceLocalTime,
         IReadOnlyDictionary<string, string> clientEntities)
     {
-        var alarm = TryReadStructuredAlarmValue(clientEntities) ??
-                    TryParseAlarmValue(loweredTranscript, allowImplicit, referenceLocalTime) ??
+        // Prefer the transcript when it contains a time. Stock NLU occasionally
+        // normalizes spoken alarm times incorrectly (for example 7:11 AM -> 7:00 PM).
+        // Structured entities remain the fallback for CLIENT_NLU follow-ups with no
+        // transcript-bearing ASR turn.
+        var alarm = TryParseAlarmValue(loweredTranscript, allowImplicit, referenceLocalTime) ??
+                    TryReadStructuredAlarmValue(clientEntities) ??
                     new ClockAlarmValue("7:00", "am");
 
         return new JiboInteractionDecision(
@@ -188,6 +192,32 @@ public sealed partial class JiboInteractionService
                 ["skillId"] = "@be/clock",
                 ["domain"] = "alarm",
                 ["clockIntent"] = "start",
+                ["time"] = alarm.Time,
+                ["ampm"] = alarm.AmPm
+            });
+    }
+
+    private static JiboInteractionDecision BuildAlarmEditDecision(
+        string loweredTranscript,
+        bool allowImplicit,
+        DateTimeOffset? referenceLocalTime,
+        IReadOnlyDictionary<string, string> clientEntities)
+    {
+        var alarm = TryParseAlarmValue(loweredTranscript, allowImplicit, referenceLocalTime) ??
+                    TryReadStructuredAlarmValue(clientEntities);
+
+        if (alarm is null)
+            return BuildClockLaunchDecision("alarm_edit", "alarm", "edit", "Updating the alarm.");
+
+        return new JiboInteractionDecision(
+            "alarm_edit_value",
+            "Updating your alarm.",
+            "@be/clock",
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/clock",
+                ["domain"] = "alarm",
+                ["clockIntent"] = "edit",
                 ["time"] = alarm.Time,
                 ["ampm"] = alarm.AmPm
             });

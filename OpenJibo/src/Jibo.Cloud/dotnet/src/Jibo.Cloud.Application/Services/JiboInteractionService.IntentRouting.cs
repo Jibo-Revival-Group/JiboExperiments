@@ -65,6 +65,8 @@ public sealed partial class JiboInteractionService
             }
         }
 
+        if (RepeatLastCommandParser.IsRepeatRequest(loweredTranscript)) return "repeat_last_command";
+
         if (IsPreferenceRecallQuestion(loweredTranscript) || IsPreferenceRecallAttempt(loweredTranscript))
             return "memory_get_preference";
 

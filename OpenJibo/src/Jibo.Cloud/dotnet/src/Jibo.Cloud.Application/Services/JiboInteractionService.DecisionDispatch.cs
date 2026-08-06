@@ -143,6 +143,7 @@ public sealed partial class JiboInteractionService
     {
         return semanticIntent switch
         {
+            "repeat_last_command" => await BuildRepeatLastCommandDecisionAsync(turn, cancellationToken),
             "joke" => BuildJokeDecision(catalog),
             "fun_fact" => await BuildFunFactDecisionAsync(catalog, cancellationToken),
             "math_query" => BuildMathDecision(transcript),

@@ -67,13 +67,18 @@ NotificationsService
 
 Critical requirements:
 
-1. Exactly one loop in the array.
+1. Exactly one loop in the array (OpenJibo scopes `List`/`ListLoops` to the
+   calling robot when multiple dump-seeded loops exist).
 2. `loop.members` must be a non-empty array.
 3. `loop.members[].accountId` must include `loop.owner`.
-4. `loop.members[].accountId` must include `loop.robot`.
+4. `loop.members[].accountId` must include `loop.robot` (OpenJibo includes the
+   `type=robot` member in List/LoopUpdated; portal ListMembers still hides it).
+5. Live people should use status `accepted` (not a custom `active` value).
 
 If the robot id is missing from the loop, SSM raises the same failure pattern
-that leads to `Q4-Server_connection_lost`.
+that leads to `Q4-Server_connection_lost`. Introductions does not call cloud
+Loop APIs itself — it reads `jibo.kb.loop.loadLoop()` after SyncManager applies
+`Loop#list()` / `LoopUpdated`.
 
 ### WiFiManager server check
 

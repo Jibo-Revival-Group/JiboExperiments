@@ -69,6 +69,13 @@ public sealed class JiboCloudProtocolService(
         return string.IsNullOrWhiteSpace(robotId) ? null : robotId.Trim();
     }
 
+    private static bool LooksLikePegasusFriendlyId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        var parts = value.Trim().Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 4 && parts.All(part => part.Any(char.IsLetter));
+    }
+
     private static string? ReadCanonicalApiBaseUrl(IConfiguration? configuration)
     {
         var value = configuration?["OpenJibo:CanonicalApiBaseUrl"];
@@ -1083,13 +1090,79 @@ public sealed class JiboCloudProtocolService(
 
         if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
-        return ProtocolDispatchResult.Ok(stateStore.GetLoops()
+        // SyncManager _isLoopGood requires exactly one loop. With dump credential seeds
+        // (multiple robots) returning every loop breaks introductions / KB sync.
+        var loops = ResolveLoopsForCaller(envelope);
+        return ProtocolDispatchResult.Ok(loops
             .Select(loop => MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId)))
             .ToArray());
     }
 
+    private IReadOnlyList<LoopRecord> ResolveLoopsForCaller(ProtocolEnvelope envelope)
+    {
+        var all = stateStore.GetLoops();
+        if (all.Count <= 1) return all;
+
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void Add(string? value)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                keys.Add(value.Trim());
+        }
+
+        var identity = _identityResolver.Resolve(envelope);
+        Add(identity.DeviceId);
+        Add(_configuredRobotId);
+
+        var body = envelope.TryParseBody();
+        Add(ReadString(body, "robotId"));
+        Add(ReadString(body, "robotFriendlyId"));
+        Add(ReadString(body, "friendlyId"));
+        Add(ReadString(body, "deviceId"));
+        Add(ReadString(body, "id"));
+
+        if (identity.IsResolved)
+        {
+            var device = stateStore.FindDeviceByFriendlyId(identity.DeviceId!);
+            if (device is not null)
+            {
+                Add(device.DeviceId);
+                Add(device.RobotId);
+                Add(device.FriendlyName);
+            }
+        }
+
+        if (keys.Count > 0)
+        {
+            var matched = all.Where(loop =>
+                    keys.Contains(loop.RobotId) ||
+                    keys.Contains(loop.RobotFriendlyId))
+                .ToArray();
+            if (matched.Length > 0) return matched;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_configuredRobotId))
+        {
+            var configured = all.Where(loop =>
+                    loop.RobotId.Equals(_configuredRobotId, StringComparison.OrdinalIgnoreCase) ||
+                    loop.RobotFriendlyId.Equals(_configuredRobotId, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (configured.Length > 0) return configured;
+        }
+
+        // Prefer the seeded default over dumping every household into SyncManager.
+        var defaultLoop = all.FirstOrDefault(loop =>
+            loop.LoopId.Equals("openjibo-default-loop", StringComparison.OrdinalIgnoreCase));
+        return defaultLoop is null ? [all[0]] : [defaultLoop];
+    }
+
     public static object MapLoopMember(LoopMemberRecord member)
     {
+        var isRobot = string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase);
+        // Normalize legacy "active" rows to stock accepted so KB/introductions keep them.
+        var status = string.Equals(member.Status, "active", StringComparison.OrdinalIgnoreCase)
+            ? "accepted"
+            : member.Status;
         return new
         {
             id = member.Id,
@@ -1098,15 +1171,17 @@ public sealed class JiboCloudProtocolService(
             account = new
             {
                 email = member.Email,
-                firstName = member.FirstName,
-                lastName = member.LastName,
+                // Robot member must carry accountId for _isLoopGood, but empty names so
+                // introductions treats the node as isJibo (missing firstName).
+                firstName = isRobot ? null : member.FirstName,
+                lastName = isRobot ? null : member.LastName,
                 gender = member.Gender,
                 birthday = member.Birthday,
                 isChild = member.IsChild,
                 phoneNumber = member.PhoneNumber
             },
             enrolled = new { face = member.FaceEnrolled, voice = member.VoiceEnrolled },
-            status = member.Status,
+            status,
             type = member.Type,
             nickname = member.Nickname,
             phoneticName = member.PhoneticName,
@@ -1134,6 +1209,8 @@ public sealed class JiboCloudProtocolService(
 
     public static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members)
     {
+        // Include the type=robot member so members[].accountId contains loop.robot
+        // (SSM _isLoopGood). Portal ListMembers still filters robots separately.
         return new
         {
             id = loop.LoopId,
@@ -1141,10 +1218,7 @@ public sealed class JiboCloudProtocolService(
             owner = loop.OwnerAccountId,
             robot = loop.RobotId,
             robotFriendlyId = loop.RobotFriendlyId,
-            members = members
-                .Where(static m => !string.Equals(m.Type, "robot", StringComparison.OrdinalIgnoreCase))
-                .Select(MapLoopMember)
-                .ToArray(),
+            members = members.Select(MapLoopMember).ToArray(),
             isSuspended = loop.IsSuspended,
             created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
             updated = loop.UpdatedUtc.ToUnixTimeMilliseconds(),
@@ -1576,18 +1650,31 @@ public sealed class JiboCloudProtocolService(
         if (operation.Equals("UpdateRobot", StringComparison.OrdinalIgnoreCase))
         {
             var body = envelope.TryParseBody();
-            var explicitRobotId = _configuredRobotId ?? ReadString(body, "id");
-            var registeredDevice = !string.IsNullOrWhiteSpace(explicitRobotId)
-                ? stateStore.FindDeviceByFriendlyId(explicitRobotId) ??
-                  stateStore.GetOrCreateDevice(explicitRobotId, envelope.FirmwareVersion, envelope.ApplicationVersion)
-                : robot;
+            // Robots send the Pegasus friendly id here; OpenJibo__Robot__RobotId may override
+            // to the local KB hex id that SyncManager checks in loop.robot.
+            var reportedId = ReadString(body, "id");
+            var explicitRobotId = _configuredRobotId ?? reportedId;
+            var registeredDevice = !string.IsNullOrWhiteSpace(reportedId)
+                ? stateStore.FindDeviceByFriendlyId(reportedId) ??
+                  (!string.IsNullOrWhiteSpace(explicitRobotId)
+                      ? stateStore.FindDeviceByFriendlyId(explicitRobotId)
+                      : null) ??
+                  stateStore.GetOrCreateDevice(reportedId, envelope.FirmwareVersion, envelope.ApplicationVersion)
+                : !string.IsNullOrWhiteSpace(explicitRobotId)
+                    ? stateStore.FindDeviceByFriendlyId(explicitRobotId) ??
+                      stateStore.GetOrCreateDevice(explicitRobotId, envelope.FirmwareVersion, envelope.ApplicationVersion)
+                    : robot;
+            var preservedFriendly =
+                LooksLikePegasusFriendlyId(reportedId) ? reportedId!.Trim() :
+                LooksLikePegasusFriendlyId(registeredDevice.FriendlyName) ? registeredDevice.FriendlyName :
+                registeredDevice.FriendlyName;
             var updated = new DeviceRegistration
             {
                 // Physical clients identify themselves here before requesting an empty-body hub token.
                 // Promote that exact registered device so the following hub socket retains its real identity.
                 DeviceId = registeredDevice.DeviceId,
                 RobotId = explicitRobotId ?? registeredDevice.RobotId,
-                FriendlyName = registeredDevice.FriendlyName,
+                FriendlyName = preservedFriendly,
                 FirmwareVersion = envelope.FirmwareVersion ?? registeredDevice.FirmwareVersion,
                 ApplicationVersion = envelope.ApplicationVersion ?? registeredDevice.ApplicationVersion,
                 IsActive = registeredDevice.IsActive,

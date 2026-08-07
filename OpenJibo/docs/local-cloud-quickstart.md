@@ -137,7 +137,7 @@ Use Playground when you want to test the local ASR/TTS client behavior directly.
 
 With the .NET cloud running, open the owner portal at `/portal` and link a robot with a spoken verification code.
 
-- **People (Loop):** add, edit, and remove household members (first/last name, nickname, gender, birthday, child). Mutations push `LoopUpdated` to the robot.
+- **People (Loop):** add, edit, and remove household members (first/last name, nickname, gender, birthday, child). Mutations push `LoopUpdated` so SSM re-syncs the on-robot KB that introductions reads. Members use stock `accepted` status; `Loop.List` returns only that robot’s loop (with the robot member accountId) so SyncManager `_isLoopGood` can accept the roster.
 - **Photos:** browse images the robot uploaded through `Media_*` for that Loop. Thumbnails open in a lightbox; content is served from `/api/portal/photos/content`.
 
 ## Which One Should I Use?

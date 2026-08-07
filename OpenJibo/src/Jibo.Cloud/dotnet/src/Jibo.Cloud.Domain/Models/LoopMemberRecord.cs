@@ -12,7 +12,9 @@ public sealed class LoopMemberRecord
     public long? Birthday { get; init; }
     public bool IsChild { get; init; }
     public string? PhoneNumber { get; init; }
-    public string Status { get; init; } = "active";
+    // Stock InvitationStatus is invited|accepted|declined|removed. SSM/KB treat
+    // "accepted" as the live household roster status used by introductions.
+    public string Status { get; init; } = "accepted";
     public string Type { get; init; } = "owner";
     public string? Nickname { get; init; }
     public string? PhoneticName { get; init; }

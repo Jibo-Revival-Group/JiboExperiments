@@ -1648,7 +1648,11 @@ public sealed class JiboCloudProtocolServiceTests
         var members = loops[0].GetProperty("members").EnumerateArray().ToArray();
         Assert.NotEmpty(members);
         Assert.Contains(members, member => member.GetProperty("type").GetString() == "owner");
-        Assert.DoesNotContain(members, member => member.GetProperty("type").GetString() == "robot");
+        // Robot member must be present so SyncManager _isLoopGood sees loop.robot in accountIds.
+        Assert.Contains(members, member => member.GetProperty("type").GetString() == "robot");
+        var robotMember = members.First(member => member.GetProperty("type").GetString() == "robot");
+        Assert.Equal(loops[0].GetProperty("robot").GetString(), robotMember.GetProperty("accountId").GetString());
+        Assert.Equal("accepted", robotMember.GetProperty("status").GetString());
     }
 
     [Fact]

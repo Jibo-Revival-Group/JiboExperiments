@@ -36,7 +36,44 @@ public sealed class PortalLoopMemberSyncTests
         var members = outer.GetProperty("payload").GetProperty("payload").GetProperty("members");
         Assert.Contains(
             members.EnumerateArray(),
-            member => member.GetProperty("account").GetProperty("firstName").GetString() == "Synced");
+            member => member.GetProperty("account").GetProperty("firstName").GetString() == "Synced" &&
+                      member.GetProperty("status").GetString() == "accepted");
+        Assert.Contains(
+            members.EnumerateArray(),
+            member => member.GetProperty("type").GetString() == "robot");
+    }
+
+    [Fact]
+    public async Task PortalLoopMemberAdd_UsesSameLoop_AfterLocalKbRobotIdPromotion()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        await AuthorizeAsync(client, factory);
+
+        var seeded = store.AddLoop(
+            "Ghost Loop",
+            store.GetAccount().AccountId,
+            "Ghost-Instance-Onion-Silk",
+            "BOJW-1000-0017-0820-0020");
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = "BOJW-1000-0017-0820-0020",
+            RobotId = "5a0b6398faa0f0001c5d0df1",
+            FriendlyName = "Ghost-Instance-Onion-Silk"
+        });
+
+        var addResponse = await client.PostAsJsonAsync(
+            "/api/portal/loop-members",
+            new { firstName = "Intro", lastName = "Person", gender = "female" });
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+
+        Assert.Contains(
+            store.GetLoopMembers(seeded.LoopId),
+            member => string.Equals(member.FirstName, "Intro", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(
+            "5a0b6398faa0f0001c5d0df1",
+            store.GetLoops().Single(loop => loop.LoopId == seeded.LoopId).RobotId);
     }
 
     [Fact]

@@ -104,7 +104,7 @@ public sealed class IdentityGraphSnapshotTests
         Assert.Contains(graph.EvidenceBundle.Payload, graph.EvidenceBundle.Envelope);
         Assert.Contains("payload-end", graph.EvidenceBundle.Envelope);
         Assert.Contains(graph.People, person => person.PersonId == "person-openjibo-owner" && person.IsPrimary);
-        Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "active");
+        Assert.Contains(graph.Members, member => member.Type == "owner" && member.Status == "accepted");
         Assert.Contains(graph.Members,
             member => member.Type == "robot" && member.AccountId == "Ghost-Instance-Onion-Silk");
         Assert.Contains(graph.Relationships, relationship =>
@@ -175,7 +175,7 @@ public sealed class IdentityGraphSnapshotTests
         var graph = store.GetIdentityGraph(loopId);
 
         Assert.Contains(graph.Members, member =>
-            member.Type == "robot" && member.AccountId == secondRobot.RobotId && member.Status == "active");
+            member.Type == "robot" && member.AccountId == secondRobot.RobotId && member.Status == "accepted");
         Assert.Contains(graph.Relationships, relationship =>
             relationship.SubjectId == loopId &&
             relationship.SubjectKind == "loop" &&

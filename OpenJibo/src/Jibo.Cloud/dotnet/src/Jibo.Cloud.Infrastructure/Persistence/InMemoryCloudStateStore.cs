@@ -1095,7 +1095,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Gender = existing?.Gender ?? "unknown",
             Birthday = existing?.Birthday,
             IsChild = existing?.IsChild ?? false,
-            Status = "active",
+            Status = "accepted",
             Type = memberType,
             Nickname = resolvedNickname,
             PhoneticName = existing?.PhoneticName,
@@ -1336,7 +1336,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Birthday = birthday,
             IsChild = isChild,
             Type = type,
-            Status = "active",
+            Status = "accepted",
             LegalGuardianId = legalGuardianId?.Trim(),
             PortalEditedUtc = markPortalEdited ? DateTimeOffset.UtcNow : null
         };
@@ -2026,43 +2026,61 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             };
         }
 
+        var loopIdsBeingPromoted = _loops
+            .Where(loop => LoopBelongsToUpdatedRobot(loop, oldRobotId, registration))
+            .Select(loop => loop.LoopId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         for (var i = 0; i < _loopMembers.Count; i++)
         {
             var member = _loopMembers[i];
-            if (string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) ||
-                (member.AccountId != null && member.AccountId.Equals(oldRobotId, StringComparison.OrdinalIgnoreCase)))
-                _loopMembers[i] = new LoopMemberRecord
-                {
-                    Id = member.Id,
-                    LoopId = member.LoopId,
-                    AccountId = string.Equals(member.AccountId, oldRobotId, StringComparison.OrdinalIgnoreCase)
-                        ? registration.RobotId
-                        : member.AccountId,
-                    Email = member.Email,
-                    FirstName = member.FirstName,
-                    LastName = member.LastName,
-                    Gender = member.Gender,
-                    Birthday = member.Birthday,
-                    IsChild = member.IsChild,
-                    PhoneNumber = member.PhoneNumber,
-                    Status = member.Status,
-                    Type = member.Type,
-                    Nickname = member.Nickname,
-                    PhoneticName = member.PhoneticName,
-                    FaceEnrolled = member.FaceEnrolled,
-                    VoiceEnrolled = member.VoiceEnrolled,
-                    LegalGuardianId = member.LegalGuardianId,
-                    AgreementId = member.AgreementId,
-                    CreatedUtc = member.CreatedUtc,
+            var isRobotOnPromotedLoop =
+                string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) &&
+                loopIdsBeingPromoted.Contains(member.LoopId);
+            var accountMatchesOld =
+                member.AccountId != null &&
+                member.AccountId.Equals(oldRobotId, StringComparison.OrdinalIgnoreCase);
+            if (!isRobotOnPromotedLoop && !accountMatchesOld) continue;
+
+            _loopMembers[i] = new LoopMemberRecord
+            {
+                Id = member.Id,
+                LoopId = member.LoopId,
+                AccountId = registration.RobotId,
+                Email = member.Email,
+                // Clear names on robot members so introductions treats them as isJibo.
+                FirstName = string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : member.FirstName,
+                LastName = string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : member.LastName,
+                Gender = member.Gender,
+                Birthday = member.Birthday,
+                IsChild = member.IsChild,
+                PhoneNumber = member.PhoneNumber,
+                Status = string.Equals(member.Status, "active", StringComparison.OrdinalIgnoreCase)
+                    ? "accepted"
+                    : member.Status,
+                Type = member.Type,
+                Nickname = member.Nickname,
+                PhoneticName = member.PhoneticName,
+                FaceEnrolled = member.FaceEnrolled,
+                VoiceEnrolled = member.VoiceEnrolled,
+                LegalGuardianId = member.LegalGuardianId,
+                AgreementId = member.AgreementId,
+                CreatedUtc = member.CreatedUtc,
                 PortalEditedUtc = member.PortalEditedUtc
-                };
+            };
         }
 
         for (var i = 0; i < _loops.Count; i++)
         {
             var loop = _loops[i];
-            if (!string.Equals(loop.RobotId, oldRobotId, StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(loop.RobotFriendlyId, oldRobotId, StringComparison.OrdinalIgnoreCase))
+            // Match the singleton profile loop AND the dump-seeded household for this device
+            // (friendly id / serial), so OpenJibo__Robot__RobotId promotion rewrites loop.robot
+            // to the local KB id SyncManager expects.
+            if (!LoopBelongsToUpdatedRobot(loop, oldRobotId, registration))
                 continue;
 
             _loops[i] = new LoopRecord
@@ -2071,16 +2089,61 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 Name = loop.Name,
                 OwnerAccountId = loop.OwnerAccountId,
                 RobotId = registration.RobotId,
-                RobotFriendlyId = registration.DeviceId,
+                // Keep the Pegasus friendly id (Word-Word-Word-Word) so portal and List
+                // keep resolving the same household after OpenJibo__Robot__RobotId promotion.
+                RobotFriendlyId = ResolvePreservedRobotFriendlyId(loop, registration),
                 IsSuspended = loop.IsSuspended,
                 CreatedUtc = loop.CreatedUtc,
                 UpdatedUtc = DateTimeOffset.UtcNow
             };
+
+            EnsureRobotLoopMember(loop.LoopId, registration.RobotId);
         }
 
         TouchState();
     }
 
+    private static bool LoopBelongsToUpdatedRobot(
+        LoopRecord loop,
+        string oldRobotId,
+        DeviceRegistration registration)
+    {
+        bool Matches(string? value) =>
+            !string.IsNullOrWhiteSpace(value) &&
+            (loop.RobotId.Equals(value, StringComparison.OrdinalIgnoreCase) ||
+             loop.RobotFriendlyId.Equals(value, StringComparison.OrdinalIgnoreCase));
+
+        return Matches(oldRobotId) ||
+               Matches(registration.RobotId) ||
+               Matches(registration.FriendlyName) ||
+               Matches(registration.DeviceId);
+    }
+
+    private static string ResolvePreservedRobotFriendlyId(LoopRecord loop, DeviceRegistration registration)
+    {
+        if (LooksLikePegasusFriendlyId(registration.FriendlyName))
+            return registration.FriendlyName.Trim();
+        if (LooksLikePegasusFriendlyId(loop.RobotFriendlyId))
+            return loop.RobotFriendlyId.Trim();
+        // When promoting RobotId from friendly → local KB hex, keep the old friendly id.
+        if (LooksLikePegasusFriendlyId(loop.RobotId) &&
+            !loop.RobotId.Equals(registration.RobotId, StringComparison.OrdinalIgnoreCase))
+            return loop.RobotId.Trim();
+        if (!string.IsNullOrWhiteSpace(registration.FriendlyName) &&
+            !registration.FriendlyName.Equals(registration.DeviceId, StringComparison.OrdinalIgnoreCase))
+            return registration.FriendlyName.Trim();
+        if (!string.IsNullOrWhiteSpace(loop.RobotFriendlyId))
+            return loop.RobotFriendlyId.Trim();
+        return registration.RobotId.Trim();
+    }
+
+    private static bool LooksLikePegasusFriendlyId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        var parts = value.Trim().Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        // Dump robots use four Title-Case words, e.g. Ghost-Instance-Onion-Silk.
+        return parts.Length == 4 && parts.All(part => part.Any(char.IsLetter));
+    }
 
     private DeviceRegistration? ResolveIdentityGraphRobotMemberDevice(LoopMemberRecord member)
     {
@@ -2922,7 +2985,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Gender = "unknown",
             Birthday = 631152000000,
             Type = "owner",
-            Status = "active"
+            Status = "accepted"
         });
     }
 
@@ -2937,15 +3000,15 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase)))
             return;
 
+        // Leave first/last name empty so introductions treats this UserNode as isJibo
+        // (missing firstName) while still satisfying SyncManager _isLoopGood accountId checks.
         _loopMembers.Add(new LoopMemberRecord
         {
             LoopId = loopId,
             AccountId = robotId,
-            FirstName = "Jibo",
-            LastName = "Robot",
             Gender = "unknown",
             Type = "robot",
-            Status = "active"
+            Status = "accepted"
         });
     }
 

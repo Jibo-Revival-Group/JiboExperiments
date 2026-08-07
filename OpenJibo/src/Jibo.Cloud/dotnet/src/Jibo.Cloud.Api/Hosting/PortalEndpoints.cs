@@ -442,7 +442,7 @@ internal static class PortalEndpoints
             }
 
             UpsertPortalPersonFromMember(cloudStateStore, session, loopId, member);
-            await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
+            await TryPushLoopUpdatedAsync(loopUpdatedPushService, cloudStateStore, session, loopId, cancellationToken);
             return Results.Json(BuildLoopMemberPayload(member));
         });
 
@@ -488,7 +488,7 @@ internal static class PortalEndpoints
                     markPortalEdited: true);
 
                 UpsertPortalPersonFromMember(cloudStateStore, session, loopId, updated);
-                await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
+                await TryPushLoopUpdatedAsync(loopUpdatedPushService, cloudStateStore, session, loopId, cancellationToken);
                 return Results.Json(BuildLoopMemberPayload(updated));
             }
             catch (InvalidOperationException)
@@ -519,7 +519,7 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "The loop owner and robot cannot be removed here." });
 
             cloudStateStore.RemoveLoopMember(loopId, memberId);
-            await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
+            await TryPushLoopUpdatedAsync(loopUpdatedPushService, cloudStateStore, session, loopId, cancellationToken);
             return Results.Json(new { removed = true, memberId });
         });
 
@@ -2531,12 +2531,24 @@ internal static class PortalEndpoints
             .FirstOrDefault(item => item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
         if (loop is not null)
         {
-            if (!string.IsNullOrWhiteSpace(loop.RobotId) &&
-                (keys.Count == 0 || keys.Contains(loop.RobotId)))
+            // Always include loop robot keys so LoopUpdated can reach api-sockets registered
+            // under the local KB robot id / friendly id after promotion.
+            if (!string.IsNullOrWhiteSpace(loop.RobotId))
                 keys.Add(loop.RobotId.Trim());
-            if (!string.IsNullOrWhiteSpace(loop.RobotFriendlyId) &&
-                (keys.Count == 0 || keys.Contains(loop.RobotFriendlyId)))
+            if (!string.IsNullOrWhiteSpace(loop.RobotFriendlyId))
                 keys.Add(loop.RobotFriendlyId.Trim());
+        }
+
+        var device = cloudStateStore.FindDeviceByFriendlyId(session.FriendlyId) ??
+                     cloudStateStore.FindDeviceByFriendlyId(session.DeviceId);
+        if (device is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(device.RobotId))
+                keys.Add(device.RobotId.Trim());
+            if (!string.IsNullOrWhiteSpace(device.FriendlyName))
+                keys.Add(device.FriendlyName.Trim());
+            if (!string.IsNullOrWhiteSpace(device.DeviceId))
+                keys.Add(device.DeviceId.Trim());
         }
 
         return keys;
@@ -2782,13 +2794,14 @@ internal static class PortalEndpoints
 
     private static Task TryPushLoopUpdatedAsync(
         LoopUpdatedPushService loopUpdatedPushService,
+        ICloudStateStore cloudStateStore,
         PortalSessionService.PortalSession session,
         string loopId,
         CancellationToken cancellationToken)
     {
         return loopUpdatedPushService.PushForLoopIdAsync(
             loopId,
-            BuildPortalLoopUpdatedSeedKeys(session),
+            BuildPortalRobotKeys(session, cloudStateStore, loopId),
             cancellationToken);
     }
 
@@ -2796,10 +2809,32 @@ internal static class PortalEndpoints
         ICloudStateStore cloudStateStore,
         PortalSessionService.PortalSession session)
     {
-        // One loop per friendlyId (Pegasus robotID). Do not pass DeviceId — a shared serial
+        // Resolve the robot's existing household loop before creating a new one. After
+        // OpenJibo__Robot__RobotId promotion, loop.robot may be the local KB hex id while
+        // the portal session still has the Pegasus friendly id — both must hit the same loop
+        // or portal-added people never reach introductions (which reads the robot KB).
+        var device = cloudStateStore.FindDeviceByFriendlyId(session.FriendlyId) ??
+                     cloudStateStore.FindDeviceByFriendlyId(session.DeviceId);
+
+        foreach (var key in new[]
+                 {
+                     session.FriendlyId,
+                     device?.RobotId,
+                     device?.FriendlyName
+                 })
+        {
+            if (string.IsNullOrWhiteSpace(key)) continue;
+            var existing = cloudStateStore.GetLoops().FirstOrDefault(loop =>
+                loop.RobotId.Equals(key, StringComparison.OrdinalIgnoreCase) ||
+                loop.RobotFriendlyId.Equals(key, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null) return existing.LoopId;
+        }
+
+        // One loop per friendly/robot id. Do not pass DeviceId alone — a shared serial
         // singleton would OR-match and merge households.
-        var friendlyId = session.FriendlyId;
-        var loop = cloudStateStore.AddLoop(null, null, friendlyId, friendlyId);
+        var robotId = device?.RobotId ?? session.FriendlyId;
+        var robotFriendlyId = session.FriendlyId;
+        var loop = cloudStateStore.AddLoop(null, null, robotId, robotFriendlyId);
         return loop.LoopId;
     }
 

@@ -175,8 +175,10 @@ public sealed partial class JiboInteractionService
         DateTimeOffset? referenceLocalTime,
         IReadOnlyDictionary<string, string> clientEntities)
     {
-        var alarm = TryReadStructuredAlarmValue(clientEntities) ??
-                    TryParseAlarmValue(loweredTranscript, allowImplicit, referenceLocalTime) ??
+        // Prefer the transcript when it contains a time. Structured NLU can
+        // normalize spoken minutes or AM/PM incorrectly; use it only as fallback.
+        var alarm = TryParseAlarmValue(loweredTranscript, allowImplicit, referenceLocalTime) ??
+                    TryReadStructuredAlarmValue(clientEntities) ??
                     new ClockAlarmValue("7:00", "am");
 
         return new JiboInteractionDecision(

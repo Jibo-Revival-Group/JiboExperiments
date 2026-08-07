@@ -1459,6 +1459,16 @@ internal static class PortalEndpoints
             }
         });
 
+        app.MapGet("/api/portal/lrd/beacons", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            RobotDiagnosticBeaconStore beaconStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            return Results.Json(new { beacons = beaconStore.GetActive(DateTimeOffset.UtcNow) });
+        });
+
         app.MapGet("/api/portal/server/logs/diagnostics-status", (
             HttpRequest request,
             PortalSessionService portalSessionService) =>

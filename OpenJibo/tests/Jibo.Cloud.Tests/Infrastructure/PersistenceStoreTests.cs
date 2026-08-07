@@ -62,6 +62,52 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void Reconnect_ReinheritsExplicitSessionBindingForSameRuntimeIdentity()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Royal-Current-Sage-Canvas",
+            RobotId = "Royal-Current-Sage-Canvas",
+            FriendlyName = "Royal-Current-Sage-Canvas"
+        });
+
+        var first = store.OpenSession("hub", "observed-runtime-id", "hub-first", "neohub", "/v1/listen");
+        Assert.True(store.BindSessionToDevice(first.SessionId, "Royal-Current-Sage-Canvas"));
+
+        var reconnect = store.OpenSession("hub", null, "conn:reconnect", "neohub", "/v1/listen");
+        reconnect.DeviceId = "observed-runtime-id"; // CONTEXT binds the runtime identity.
+        store.ReinheritDialogMetadata(reconnect);
+
+        Assert.Equal("observed-runtime-id", reconnect.DeviceId);
+        Assert.Equal("Royal-Current-Sage-Canvas", reconnect.Metadata["registeredDeviceId"]?.ToString());
+    }
+
+    [Fact]
+    public void Reconnect_DoesNotReinheritBindingToArchivedRobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Archived-Duplicate",
+            RobotId = "Archived-Duplicate",
+            FriendlyName = "Archived-Duplicate",
+            IsHidden = true,
+            ArchivedUtc = DateTimeOffset.UtcNow
+        });
+        var first = store.OpenSession("hub", "observed-runtime-id", "hub-first", "neohub", "/v1/listen");
+        Assert.False(store.BindSessionToDevice(first.SessionId, "Archived-Duplicate"));
+
+        // Simulate a historical session loaded with an old binding.
+        first.Metadata["registeredDeviceId"] = "Archived-Duplicate";
+        var reconnect = store.OpenSession("hub", null, "conn:reconnect", "neohub", "/v1/listen");
+        reconnect.DeviceId = "observed-runtime-id";
+        store.ReinheritDialogMetadata(reconnect);
+
+        Assert.False(reconnect.Metadata.ContainsKey("registeredDeviceId"));
+    }
+
+    [Fact]
     public void SnapshotStoreFactory_DefaultsToFileBackend()
     {
         var factory = new PersistenceSnapshotStoreFactory();

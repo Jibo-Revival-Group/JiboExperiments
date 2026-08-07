@@ -718,6 +718,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         foreach (var pair in donor.Metadata)
         {
             if (pair.Value is null || !ShouldInheritDialogMetadataKey(pair.Key)) continue;
+            if (string.Equals(pair.Key, "registeredDeviceId", StringComparison.OrdinalIgnoreCase))
+            {
+                var boundDevice = FindDeviceByFriendlyId(pair.Value.ToString() ?? string.Empty);
+                // Archived/hidden inventory records are historical only. Never
+                // resurrect one as the identity of a reconnecting session.
+                if (boundDevice is null || boundDevice.IsHidden || boundDevice.ArchivedUtc is not null)
+                    continue;
+            }
+            if (string.Equals(pair.Key, "registeredRobotId", StringComparison.OrdinalIgnoreCase) &&
+                !session.Metadata.ContainsKey("registeredDeviceId"))
+                continue;
             if (session.Metadata.ContainsKey(pair.Key)) continue;
             session.Metadata[pair.Key] = pair.Value;
         }
@@ -725,6 +736,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static bool ShouldInheritDialogMetadataKey(string key)
     {
+        // An administrator's explicit session-to-inventory binding must survive a
+        // reconnect.  The runtime DeviceId remains the observed hardware identity;
+        // carrying only these two fields reuses the verified mapping without
+        // auto-claiming a new or cloned robot.
+        if (string.Equals(key, "registeredDeviceId", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(key, "registeredRobotId", StringComparison.OrdinalIgnoreCase))
+            return true;
+
         return key.StartsWith("personalReport", StringComparison.OrdinalIgnoreCase) ||
                key.StartsWith("householdList", StringComparison.OrdinalIgnoreCase) ||
                key.StartsWith("chitchat", StringComparison.OrdinalIgnoreCase) ||

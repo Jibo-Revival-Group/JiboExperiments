@@ -1109,7 +1109,10 @@ internal static class PortalEndpoints
 
             var content = await mediaContentStore.LoadAsync(path, cancellationToken);
             if (content is null) return Results.NotFound(new { error = "Artifact content was not found." });
-            var preview = ReadArtifactPreview(content.Content, content.ContentType);
+            var previewContentType = content.ContentType;
+            if (string.Equals(ReadArtifactMeta(artifact.Meta, "contentEncoding"), "ogg", StringComparison.OrdinalIgnoreCase))
+                previewContentType = "audio/ogg";
+            var preview = ReadArtifactPreview(content.Content, previewContentType);
             return Results.Json(new
             {
                 artifact.Path,

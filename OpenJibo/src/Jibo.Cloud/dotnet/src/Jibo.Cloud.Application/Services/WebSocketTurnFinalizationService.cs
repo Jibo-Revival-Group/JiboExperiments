@@ -1681,8 +1681,11 @@ public sealed class WebSocketTurnFinalizationService(
         }
         if (content.Length == 0) return;
 
-        var deviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredDeviceId)
-            ? registeredDeviceId?.ToString()
+        var registeredDeviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredValue)
+            ? registeredValue?.ToString()
+            : null;
+        var deviceId = !string.IsNullOrWhiteSpace(registeredDeviceId)
+            ? registeredDeviceId
             : turn.DeviceId ?? session.DeviceId;
         var artifactId = $"{turn.TimestampUtc:yyyyMMddTHHmmssfffZ}-{turn.TurnId}";
         var meta = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)

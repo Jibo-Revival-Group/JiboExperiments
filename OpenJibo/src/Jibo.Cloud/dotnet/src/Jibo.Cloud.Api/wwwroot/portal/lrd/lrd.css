@@ -1,0 +1,256 @@
+.lrd-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.lrd-toolbar {
+  flex: 0 0 auto;
+  padding: 0.5rem 1rem;
+  background: #323232;
+
+}
+
+.toolbar-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lrd-center {
+  flex: 1 1 auto;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.split-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.split-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  overflow: hidden;
+}
+
+.left-panel {
+  flex: 1 1 50%;
+}
+
+.right-panel {
+  flex: 1 1 50%;
+}
+
+.split-resizer {
+  flex: 0 0 auto;
+  width: 4px;
+  background: #323232;
+  cursor: col-resize;
+  position: relative;
+}
+
+.split-resizer:hover,
+.split-resizer.active {
+  background: #0099fb;
+}
+
+.split-resizer::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 20px;
+  background: #666;
+  border-radius: 1px;
+}
+
+.panel-header {
+  flex: 0 0 auto;
+  background: #494949;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel-title {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: #dadada;
+}
+
+.panel-content {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: .5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.55rem;
+  line-height: 1.5;
+  background: #000000;
+}
+
+.log-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  padding: 0;
+}
+
+.lrd-statusbar {
+  flex: 0 0 auto;
+  background: #323232;
+  border-top: 1px solid #0099fbde;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.statusbar-left,
+.statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.indicator-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.indicator-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-select {
+  font-size: 0.55rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #070707;
+  color: #fff;
+  border: 1px solid #444;
+  min-width: 200px;
+}
+
+.status-input {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #070707;
+  color: #fff;
+  border: 1px solid #444;
+  width: 120px;
+}
+
+.status-input-port {
+  width: 60px;
+}
+
+.status-select-scheme {
+  min-width: 0;
+  width: 76px;
+}
+
+.status-btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  background: #0099fb;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.status-btn:hover {
+  background: #007acd;
+}
+
+.status-btn.connected {
+  background: #ef4444;
+}
+
+.status-btn.connected:hover {
+  background: #dc2626;
+}
+
+@media (max-width: 800px) {
+  .lrd-layout {
+    min-height: 100dvh;
+    height: auto;
+    overflow: auto;
+  }
+
+  .lrd-center {
+    min-height: 60dvh;
+    overflow: visible;
+  }
+
+  .split-container {
+    flex-direction: column;
+    min-height: 60dvh;
+  }
+
+  .split-panel {
+    min-width: 0;
+    min-height: 28dvh;
+    flex: 1 1 50%;
+  }
+
+  .split-resizer {
+    width: auto;
+    height: 6px;
+    cursor: row-resize;
+  }
+
+  .split-resizer::before {
+    width: 20px;
+    height: 2px;
+  }
+
+  .lrd-statusbar,
+  .statusbar-left,
+  .statusbar-right {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .lrd-statusbar {
+    padding: 0.75rem;
+  }
+
+  .statusbar-left,
+  .statusbar-right {
+    width: 100%;
+  }
+
+  .status-indicator {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .status-input {
+    max-width: 42vw;
+  }
+
+  .status-select {
+    min-width: 0;
+    max-width: 60vw;
+  }
+}

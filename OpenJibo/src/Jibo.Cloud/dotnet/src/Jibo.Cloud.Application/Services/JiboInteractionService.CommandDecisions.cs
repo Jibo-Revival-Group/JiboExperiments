@@ -193,6 +193,25 @@ public sealed partial class JiboInteractionService
             });
     }
 
+    private static JiboInteractionDecision BuildAlarmEditDecision(
+        string loweredTranscript,
+        bool allowImplicit,
+        DateTimeOffset? referenceLocalTime,
+        IReadOnlyDictionary<string, string> clientEntities)
+    {
+        var alarm = TryParseAlarmValue(loweredTranscript, allowImplicit, referenceLocalTime) ??
+                    TryReadStructuredAlarmValue(clientEntities);
+        if (alarm is null)
+            return BuildClockLaunchDecision("alarm_edit", "alarm", "edit", "Updating the alarm.");
+
+        return new JiboInteractionDecision("alarm_edit_value", "Updating your alarm.", "@be/clock",
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["skillId"] = "@be/clock", ["domain"] = "alarm", ["clockIntent"] = "edit",
+                ["time"] = alarm.Time, ["ampm"] = alarm.AmPm
+            });
+    }
+
     private static JiboInteractionDecision BuildRadioGenreLaunchDecision(string loweredTranscript)
     {
         var station = TryResolveRadioGenre(loweredTranscript) ?? "Country";

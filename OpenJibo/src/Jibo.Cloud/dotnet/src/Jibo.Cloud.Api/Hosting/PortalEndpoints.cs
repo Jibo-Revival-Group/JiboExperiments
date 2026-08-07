@@ -1351,6 +1351,137 @@ internal static class PortalEndpoints
             return Results.Json(new { ok = true });
         });
 
+        app.MapGet("/api/portal/server/logs", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            IConfiguration configuration) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            var logDirectory = ResolvePortalConfiguredPath(configuration,
+                "OpenJibo:Logging:DirectoryPath",
+                "captures/logs");
+            var logFileName = configuration["OpenJibo:Logging:FileName"] ?? "openjibo-.log";
+
+            // Get the most recent log file
+            var logFiles = Directory.GetFiles(logDirectory, logFileName.Replace("-", "*"))
+                .OrderByDescending(f => File.GetLastWriteTimeUtc(f))
+                .ToArray();
+
+            if (logFiles.Length == 0)
+                return Results.Json(new { logs = "", hasLogs = false });
+
+            var latestLogFile = logFiles[0];
+            var tailLines = int.TryParse(request.Query["lines"], out var lines) && lines > 0 ? lines : 100;
+            var offset = long.TryParse(request.Query["offset"], out var fileOffset) ? fileOffset : 0L;
+            var requestedFileName = request.Query["fileName"].ToString();
+            if (!string.IsNullOrWhiteSpace(requestedFileName) &&
+                !string.Equals(requestedFileName, Path.GetFileName(latestLogFile), StringComparison.Ordinal))
+            {
+                // Rotation is detected atomically with the read; never apply the old file's offset.
+                offset = 0;
+            }
+
+            var logContent = ReadLogFileWithOffset(latestLogFile, offset, tailLines);
+            var newOffset = new FileInfo(latestLogFile).Length;
+
+            return Results.Json(new
+            {
+                logs = logContent,
+                offset = newOffset,
+                hasLogs = true,
+                fileName = Path.GetFileName(latestLogFile)
+            });
+        });
+
+        // Same-origin SSE tunnel for the optional robot log streamer. The robot target is
+        // restricted to private IPv4 space so this diagnostic endpoint cannot become an
+        // arbitrary server-side request proxy.
+        app.MapGet("/api/portal/lrd/stream", async (
+            HttpContext context,
+            PortalSessionService portalSessionService,
+            IHttpClientFactory httpClientFactory) =>
+        {
+            var session = ResolvePortalSession(context.Request,
+                context.Request.Query["portalSessionToken"].ToString(), portalSessionService);
+            if (session is null || !IsAdminSession(session))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+
+            var ipText = context.Request.Query["ip"].ToString();
+            var scheme = context.Request.Query["scheme"].ToString().ToLowerInvariant();
+            var portText = context.Request.Query["port"].ToString();
+            var token = context.Request.Headers["X-Robot-Stream-Token"].ToString();
+            if (string.IsNullOrWhiteSpace(token)) token = context.Request.Query["token"].ToString();
+            if (!IPAddress.TryParse(ipText, out var ip) || !IsPrivateIpv4(ip) ||
+                scheme is not ("http" or "https") ||
+                !int.TryParse(portText, out var port) || port is < 1 or > 65535)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                await context.Response.WriteAsJsonAsync(new { error = "A private IPv4 robot target, scheme, and valid port are required." });
+                return;
+            }
+
+            var client = httpClientFactory.CreateClient();
+            client.Timeout = Timeout.InfiniteTimeSpan;
+            var upstream = new UriBuilder(scheme, ip.ToString(), port, "stream").Uri;
+            using var request = new HttpRequestMessage(HttpMethod.Get, upstream);
+            if (!string.IsNullOrWhiteSpace(token))
+                request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
+
+            try
+            {
+                using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
+                if (!response.IsSuccessStatusCode)
+                {
+                    context.Response.StatusCode = (int)response.StatusCode;
+                    return;
+                }
+
+                context.Response.StatusCode = StatusCodes.Status200OK;
+                context.Response.ContentType = "text/event-stream";
+                context.Response.Headers.CacheControl = "no-cache";
+                context.Response.Headers["X-Accel-Buffering"] = "no";
+                await response.Content.CopyToAsync(context.Response.Body, context.RequestAborted);
+            }
+            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            {
+                // Browser disconnects are normal for SSE.
+            }
+            catch
+            {
+                if (!context.Response.HasStarted)
+                    context.Response.StatusCode = StatusCodes.Status502BadGateway;
+            }
+        });
+
+        app.MapGet("/api/portal/server/logs/diagnostics-status", (
+            HttpRequest request,
+            PortalSessionService portalSessionService) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            return Results.Json(new { disabled = PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging });
+        });
+
+        app.MapPost("/api/portal/server/logs/toggle-diagnostics", (
+            HttpRequest request,
+            PortalSessionService portalSessionService) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging = !PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging;
+            return Results.Json(new { ok = true, disabled = PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging });
+        });
+
         app.MapGet("/api/portal/home-assistant/links", (
             PortalSessionService portalSessionService,
             IUserIntegrationStore integrationStore,
@@ -2650,6 +2781,15 @@ internal static class PortalEndpoints
         return normalized is "self-hosted" or "self-hosted-hybrid" ? normalized : "self-hosted";
     }
 
+    private static bool IsPrivateIpv4(IPAddress address)
+    {
+        if (address.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork) return false;
+        var bytes = address.GetAddressBytes();
+        return bytes[0] == 10 ||
+               (bytes[0] == 172 && bytes[1] is >= 16 and <= 31) ||
+               (bytes[0] == 192 && bytes[1] == 168);
+    }
+
     private static string NormalizeOnboardingHost(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return string.Empty;
@@ -2659,6 +2799,138 @@ internal static class PortalEndpoints
             return uri.Host;
 
         return trimmed.TrimEnd('/');
+    }
+
+    private static string ReadLogFileWithOffset(string filePath, long offset, int tailLines)
+    {
+        if (!File.Exists(filePath))
+            return string.Empty;
+
+        var fileInfo = new FileInfo(filePath);
+        if (offset >= fileInfo.Length)
+            return string.Empty;
+
+        try
+        {
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+            // If offset is 0, we want to tail the file (read last N lines)
+            if (offset == 0)
+            {
+                // Read backwards to get last N lines efficiently
+                return ReadLastLines(stream, tailLines);
+            }
+            else
+            {
+                // Read from offset forward, limited to tailLines
+                stream.Seek(offset, SeekOrigin.Begin);
+                using var reader = new StreamReader(stream);
+                var lines = new List<string>();
+                var lineCount = 0;
+
+                while (!reader.EndOfStream && lineCount < tailLines)
+                {
+                    var line = reader.ReadLine();
+                    if (line != null)
+                    {
+                        lines.Add(line);
+                        lineCount++;
+                    }
+                }
+
+                return string.Join("\n", lines);
+            }
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private static string ReadLastLines(FileStream stream, int lineCount)
+    {
+        if (lineCount <= 0)
+            return string.Empty;
+
+        stream.Seek(0, SeekOrigin.End);
+        var position = stream.Length;
+        var lines = new List<string>();
+        var buffer = new byte[4096];
+        var byteLines = new List<byte[]>();
+        var current = new List<byte>();
+        var linesFound = 0;
+
+        while (position > 0 && linesFound < lineCount)
+        {
+            var bytesToRead = (int)Math.Min(buffer.Length, position);
+            position -= bytesToRead;
+            stream.Seek(position, SeekOrigin.Begin);
+            var bytesRead = stream.Read(buffer, 0, bytesToRead);
+
+            // Process buffer backwards. Decode complete UTF-8 text after selecting lines;
+            // treating each byte as a char corrupts non-ASCII log entries.
+            for (int i = bytesRead - 1; i >= 0; i--)
+            {
+                var value = buffer[i];
+                if (value == (byte)'\n')
+                {
+                    if (current.Count > 0)
+                    {
+                        current.Reverse();
+                        byteLines.Insert(0, current.ToArray());
+                        current.Clear();
+                        linesFound++;
+                        if (linesFound >= lineCount)
+                            break;
+                    }
+                }
+                else if (value != (byte)'\r')
+                {
+                    current.Add(value);
+                }
+            }
+        }
+
+        // Add remaining buffer content
+        if (current.Count > 0 && linesFound < lineCount)
+        {
+            current.Reverse();
+            byteLines.Insert(0, current.ToArray());
+        }
+
+        lines.AddRange(byteLines.Select(bytes => Encoding.UTF8.GetString(bytes)));
+        return string.Join("\n", lines);
+    }
+
+    private static string ResolvePortalConfiguredPath(IConfiguration configuration, string key, string defaultPath)
+    {
+        var configuredPath = configuration[key];
+        if (string.IsNullOrWhiteSpace(configuredPath)) configuredPath = defaultPath;
+
+        if (Path.IsPathRooted(configuredPath)) return Path.GetFullPath(configuredPath);
+
+        var repoRoot = FindOpenJiboRepoRoot(Directory.GetCurrentDirectory()) ??
+                       FindOpenJiboRepoRoot(AppContext.BaseDirectory) ??
+                       Directory.GetCurrentDirectory();
+
+        return Path.GetFullPath(configuredPath, repoRoot);
+    }
+
+    private static string? FindOpenJiboRepoRoot(string? startPath)
+    {
+        if (string.IsNullOrWhiteSpace(startPath)) return null;
+
+        var directory = new DirectoryInfo(Path.GetFullPath(startPath));
+        if (directory is { Exists: false, Parent: not null }) directory = directory.Parent;
+
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "OpenJibo.slnx"))) return directory.FullName;
+
+            directory = directory.Parent;
+        }
+
+        return null;
     }
 
     private static bool IsLocalSelfHostedTarget(string host)

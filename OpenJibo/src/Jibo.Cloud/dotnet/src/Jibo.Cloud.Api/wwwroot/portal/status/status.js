@@ -291,6 +291,7 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
       <td>
         <div class="row-actions">
           <button class="button secondary compact view-artifacts" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Artifacts</button>
+          <button class="button secondary compact open-lrd" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Open in LRD</button>
           <button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button>
         </div>
       </td>
@@ -551,13 +552,13 @@ function renderArtifactAudit(items) {
     : bytes >= 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} bytes`;
 
   return `<section class="artifact-audit" aria-label="Artifact capture audit">
-    <div><strong>${items.length}</strong><span>stored artifacts</span></div>
-    <div><strong>${formatBytes(totalBytes)}</strong><span>captured data</span></div>
+    <div><strong>${items.length}</strong><span>visible artifacts</span></div>
+    <div><strong>${formatBytes(totalBytes)}</strong><span>visible data</span></div>
     <div><strong>${asr.length ? `${asr.length} captured` : "Not yet captured"}</strong><span>ASR audio</span></div>
     <div><strong>${logs.length}</strong><span>log uploads</span></div>
     <div><strong>${media.length}</strong><span>other media</span></div>
-    <div><strong>${unassigned.length ? `${unassigned.length} needs review` : "All assigned"}</strong><span>attribution</span></div>
-    ${sources.length ? `<p class="muted-row">Attribution sources: ${escapeHtml(sources.join(", "))}</p>` : ""}
+    <div><strong>${unassigned.length || "0"}</strong><span>unassigned candidates</span></div>
+    <p class="muted-row">Showing the latest ${items.length} visible artifacts; unassigned candidates are shown here so an administrator can claim them. ${sources.length ? `Attribution sources: ${escapeHtml(sources.join(", "))}` : ""}</p>
   </section>`;
 }
 
@@ -971,6 +972,12 @@ function renderStatusView(summary, previous = previousSummary) {
   });
   document.querySelectorAll(".view-artifacts").forEach((button) => {
     button.addEventListener("click", () => openRobotArtifacts(button.dataset.deviceId, button.dataset.robotName));
+  });
+  document.querySelectorAll(".open-lrd").forEach((button) => {
+    button.addEventListener("click", () => {
+      const params = new URLSearchParams({ deviceId: button.dataset.deviceId || "", robotName: button.dataset.robotName || "" });
+      window.open(`/portal/lrd/index.html?${params.toString()}`, "_blank", "noopener");
+    });
   });
   document.querySelectorAll(".view-artifact").forEach((button) => {
     button.addEventListener("click", () => openArtifact(button.dataset.path));

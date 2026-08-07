@@ -27,6 +27,9 @@ builder.Host.UseSerilog((context, _, loggerConfiguration) =>
         .MinimumLevel.Is(minimumLevel)
         .Enrich.FromLogContext()
         .Enrich.WithProperty("Application", "OpenJibo.Cloud.Api")
+        .Filter.ByExcluding(e =>
+            PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging &&
+            e.RenderMessage().Contains("/api/portal/server/logs"))
         .WriteTo.Console(
             theme: AnsiConsoleTheme.Code,
             outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}")
@@ -50,6 +53,9 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 
 var app = builder.Build();
 
+PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging =
+    bool.TryParse(builder.Configuration["OpenJibo:Logging:DisableServerLogsEndpointLogging"], out var disableLogs) && disableLogs;
+
 app.Logger.LogInformation("Starting Open Jibo Cloud Api version {Version}", OpenJiboCloudBuildInfo.Version);
 app.Logger.LogInformation(
     "Protocol auth diagnostics effectiveEnabled={Enabled} containerAppRevision={Revision}",
@@ -64,6 +70,15 @@ app.UseWebSockets();
 
 app.Use(async (context, next) =>
 {
+    var skipLogging = PortalLogPollingDiagnosticsState.DisableServerLogsEndpointLogging &&
+        context.Request.Path.StartsWithSegments("/api/portal/server/logs");
+
+    if (skipLogging)
+    {
+        await next();
+        return;
+    }
+
     var started = Stopwatch.GetTimestamp();
     var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
         .CreateLogger("Jibo.Cloud.Api.RequestDiagnostics");

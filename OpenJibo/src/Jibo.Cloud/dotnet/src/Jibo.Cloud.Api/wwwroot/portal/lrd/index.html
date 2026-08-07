@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Robot Debugger</title>
+  <link rel="stylesheet" href="/portal/portal.css">
+  <link rel="stylesheet" href="/portal/lrd/lrd.css">
+  <link rel="stylesheet" href="/portal/lrd/lib/prism.css">
+</head>
+<body>
+  <div id="app">
+    <div class="lrd-layout">
+      <div class="lrd-toolbar">
+        <div class="toolbar-content">
+          <!-- Top toolbar - empty for now -->
+        </div>
+      </div>
+
+      <div class="lrd-center">
+        <div class="split-container">
+          <div class="split-panel left-panel">
+            <div class="panel-header">
+              <span class="panel-title">Robot RX</span>
+            </div>
+            <div class="panel-content" id="leftLogContent">
+              <p class="muted-row">Left log panel - to be populated</p>
+            </div>
+          </div>
+          <div class="split-resizer" id="splitResizer"></div>
+          <div class="split-panel right-panel">
+            <div class="panel-header">
+              <span class="panel-title">Server RX</span>
+            </div>
+            <div class="panel-content" id="rightLogContent">
+              <p class="muted-row">Live logs from server</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lrd-statusbar">
+        <div class="statusbar-left">
+          <div class="status-indicator" id="robotConnection">
+            <span class="indicator-label">Robot:</span>
+            <span class="indicator-value" id="robotConnectionStatus">Loading...</span>
+          </div>
+          <div class="status-indicator">
+            <span class="indicator-label">Robot:</span>
+            <select id="robotSelect" class="status-select">
+              <option value="">Loading robots...</option>
+            </select>
+          </div>
+          <div class="status-indicator">
+            <span class="indicator-label">Robot IP & Port:</span>
+            <input type="text" id="robotIpInput" class="status-input" placeholder="IP Address" />
+            <select id="robotSchemeInput" class="status-select status-select-scheme">
+              <option value="http">HTTP</option>
+              <option value="https">HTTPS</option>
+            </select>
+            <input type="text" id="robotPortInput" class="status-input status-input-port" value="8765" placeholder="Port" />
+            <input type="password" id="robotTokenInput" class="status-input" placeholder="Stream token (optional)" />
+            <button id="robotConnectBtn" class="status-btn">Connect</button>
+          </div>
+        </div>
+        <div class="statusbar-right">
+          <div class="status-indicator">
+            <label class="indicator-label" style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer; text-transform: none;">
+              <input type="checkbox" id="skipLogPollingLogsToggle" /> Skip Log Polling Requests
+            </label>
+          </div>
+          <div class="status-indicator">
+            <span class="indicator-label">Ping:</span>
+            <span class="indicator-value" id="serverPing">-- ms</span>
+          </div>
+          <div class="status-indicator">
+            <span class="indicator-label">Server:</span>
+            <span class="indicator-value" id="serverConnectionStatus">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/portal/lrd/lib/prism.js"></script>
+  <script src="/portal/lrd/lrd.js"></script>
+</body>
+</html>

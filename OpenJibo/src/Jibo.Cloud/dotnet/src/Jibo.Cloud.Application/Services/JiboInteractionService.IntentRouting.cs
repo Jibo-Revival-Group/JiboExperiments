@@ -65,6 +65,8 @@ public sealed partial class JiboInteractionService
             }
         }
 
+        if (RepeatLastCommandParser.IsRepeatRequest(loweredTranscript)) return "repeat_last_command";
+
         if (IsPreferenceRecallQuestion(loweredTranscript) || IsPreferenceRecallAttempt(loweredTranscript))
             return "memory_get_preference";
 
@@ -349,10 +351,20 @@ public sealed partial class JiboInteractionService
         if (MatchesAny(loweredTranscript, "open the timer", "open timer", "show the timer", "show timer"))
             return "timer_menu";
 
-        if (MatchesAny(loweredTranscript, "open the alarm", "open alarm", "show the alarm", "show alarm"))
+        if (MatchesAny(loweredTranscript, "open the alarm", "open alarm"))
             return "alarm_menu";
 
         if (IsAlarmDeleteRequest(loweredTranscript)) return "alarm_delete";
+
+        if (IsAlarmEditRequest(loweredTranscript))
+            return TryParseAlarmValue(loweredTranscript, isAlarmValueTurn, referenceLocalTime) is not null
+                ? "alarm_edit_value"
+                : "alarm_edit";
+
+        if (IsAlarmQueryRequest(loweredTranscript)) return "alarm_query";
+
+        if (MatchesAny(loweredTranscript, "show the alarm", "show alarm"))
+            return "alarm_menu";
 
         if (MatchesAny(
                 loweredTranscript,

@@ -29,6 +29,9 @@ public sealed class PortalLoopMemberSyncTests
             "/api/portal/loop-members",
             new { firstName = "Synced", lastName = "Person", gender = "female" });
         Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+        var added = await addResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(added.GetProperty("syncedToRobot").GetBoolean());
+        Assert.True(added.GetProperty("pushCount").GetInt32() > 0);
 
         Assert.NotNull(socket.LastPayload);
         var outer = socket.LastPayload!.Value;

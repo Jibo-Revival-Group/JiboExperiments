@@ -63,7 +63,9 @@ NotificationsService
 
 ### Loop validation
 
-`Loop#list()` is validated by `_isLoopGood(data)`.
+`Loop#list()` is validated by `_isLoopGood(data)`. See
+[loop-syncmanager-contract.md](loop-syncmanager-contract.md) for the dump-locked
+contract (services-partition SyncManager sources are not readable on all hosts).
 
 Critical requirements:
 
@@ -79,6 +81,13 @@ If the robot id is missing from the loop, SSM raises the same failure pattern
 that leads to `Q4-Server_connection_lost`. Introductions does not call cloud
 Loop APIs itself — it reads `jibo.kb.loop.loadLoop()` after SyncManager applies
 `Loop#list()` / `LoopUpdated`.
+
+Operator check after portal People add:
+
+1. Cloud log: `LoopUpdated push … pushCount>0` (or portal response `syncedToRobot: true`).
+2. Robot SSM: `pausing loop syncing` / `resuming loop syncing`.
+3. Introductions menu shows the new person (`data.firstName` on the KB UserNode).
+4. Diagnostics: `GET /api/portal/loop-sync-status`.
 
 ### WiFiManager server check
 

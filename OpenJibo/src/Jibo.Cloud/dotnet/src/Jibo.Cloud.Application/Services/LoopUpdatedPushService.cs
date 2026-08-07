@@ -12,6 +12,17 @@ public sealed class LoopUpdatedPushService(
     RobotNotificationRegistry robotNotificationRegistry,
     ILogger<LoopUpdatedPushService> logger)
 {
+    private readonly object _lastPushSync = new();
+    private LoopUpdatedPushResult? _lastPush;
+
+    public LoopUpdatedPushResult? LastPush
+    {
+        get
+        {
+            lock (_lastPushSync) return _lastPush;
+        }
+    }
+
     public async Task<int> PushForLoopIdAsync(
         string loopId,
         IReadOnlyCollection<string>? additionalRobotKeys = null,
@@ -22,6 +33,7 @@ public sealed class LoopUpdatedPushService(
         if (loop is null)
         {
             logger.LogWarning("LoopUpdated push skipped: loop {LoopId} not found", loopId);
+            Remember(loopId, 0, [], "loop-not-found");
             return 0;
         }
 
@@ -29,6 +41,7 @@ public sealed class LoopUpdatedPushService(
         if (robotKeys.Count == 0)
         {
             logger.LogWarning("LoopUpdated push skipped: no robot keys loopId={LoopId}", loopId);
+            Remember(loopId, 0, [], "no-robot-keys");
             return 0;
         }
 
@@ -44,6 +57,7 @@ public sealed class LoopUpdatedPushService(
                 loopId,
                 robotKeys.Count,
                 string.Join(',', robotKeys.Take(8)));
+            Remember(loopId, 0, robotKeys, "no-live-socket");
         }
         else
         {
@@ -53,9 +67,27 @@ public sealed class LoopUpdatedPushService(
                 pushed,
                 robotKeys.Count,
                 string.Join(',', robotKeys.Take(8)));
+            Remember(loopId, pushed, robotKeys, "pushed");
         }
 
         return pushed;
+    }
+
+    private void Remember(
+        string loopId,
+        int pushCount,
+        IReadOnlyCollection<string> keys,
+        string outcome)
+    {
+        lock (_lastPushSync)
+        {
+            _lastPush = new LoopUpdatedPushResult(
+                loopId,
+                pushCount,
+                keys.Take(16).ToArray(),
+                outcome,
+                DateTimeOffset.UtcNow);
+        }
     }
 
     private HashSet<string> BuildRobotKeys(LoopRecord loop, IReadOnlyCollection<string>? additionalRobotKeys)
@@ -88,3 +120,10 @@ public sealed class LoopUpdatedPushService(
         return keys;
     }
 }
+
+public sealed record LoopUpdatedPushResult(
+    string LoopId,
+    int PushCount,
+    IReadOnlyList<string> RobotKeys,
+    string Outcome,
+    DateTimeOffset AtUtc);

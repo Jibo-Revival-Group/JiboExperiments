@@ -2175,6 +2175,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         var owner = members.FirstOrDefault(candidate =>
             string.Equals(candidate.Type, "owner", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(candidate.Status, "accepted", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(candidate.Status, "active", StringComparison.OrdinalIgnoreCase));
         if (owner is null || string.Equals(owner.Id, member.Id, StringComparison.OrdinalIgnoreCase)) return;
 

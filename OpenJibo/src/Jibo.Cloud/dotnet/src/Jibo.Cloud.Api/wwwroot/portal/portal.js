@@ -364,11 +364,11 @@ function bindPortalControls() {
       }
 
       try {
-        await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
+        const result = await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
           method: "PUT",
           body: JSON.stringify(payload),
         });
-        await renderDashboard("Person updated in this Loop.");
+        await renderDashboard(formatLoopSyncMessage("Person updated.", result));
       } catch (error) {
         showMemberStatus(status, error.message, true);
       }
@@ -382,10 +382,10 @@ function bindPortalControls() {
       if (!window.confirm("Remove this person from the Loop?")) return;
 
       try {
-        await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
+        const result = await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
           method: "DELETE",
         });
-        await renderDashboard("Person removed from this Loop.");
+        await renderDashboard(formatLoopSyncMessage("Person removed.", result));
       } catch (error) {
         showMemberStatus(status, error.message, true);
       }
@@ -405,11 +405,11 @@ function bindPortalControls() {
       }
 
       try {
-        await apiFetch("/api/portal/loop-members", {
+        const result = await apiFetch("/api/portal/loop-members", {
           method: "POST",
           body: JSON.stringify(payload),
         });
-        await renderDashboard("Person added to this Loop.");
+        await renderDashboard(formatLoopSyncMessage("Person added.", result));
       } catch (error) {
         showMemberStatus(status, error.message, true);
       }
@@ -737,6 +737,17 @@ function showMemberStatus(status, message, isError) {
   status.classList.remove("hidden");
 }
 
+function formatLoopSyncMessage(prefix, result) {
+  if (!result || typeof result !== "object") return prefix;
+  if (result.syncedToRobot) {
+    return `${prefix} Synced to robot (LoopUpdated). Open introductions after SSM re-lists.`;
+  }
+  if (typeof result.pushCount === "number") {
+    return `${prefix} Robot offline — change queued until api-socket reconnects.`;
+  }
+  return prefix;
+}
+
 function renderMemberFields(member = {}) {
   return `
     <div class="member-fields">
@@ -803,7 +814,7 @@ function renderLoopMembersSection(dashboard) {
         </div>
         <span class="badge success">${loopMembers.length} ${loopMembers.length === 1 ? "person" : "people"}</span>
       </div>
-      <p class="muted">Add, edit, or remove people in this Loop. Nickname, birthday, and child flag sync to the robot via LoopUpdated. The owner cannot be removed here.</p>
+      <p class="muted">Add, edit, or remove people in this Loop. Changes push LoopUpdated so SSM re-syncs the on-robot KB that introductions reads. The owner cannot be removed here.</p>
       ${memberRows}
       <div class="member-row member-row-add" id="newMemberRow">
         ${renderMemberFields()}

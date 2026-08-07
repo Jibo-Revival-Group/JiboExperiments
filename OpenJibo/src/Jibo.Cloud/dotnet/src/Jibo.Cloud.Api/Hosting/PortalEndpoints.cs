@@ -442,8 +442,9 @@ internal static class PortalEndpoints
             }
 
             UpsertPortalPersonFromMember(cloudStateStore, session, loopId, member);
-            await TryPushLoopUpdatedAsync(loopUpdatedPushService, cloudStateStore, session, loopId, cancellationToken);
-            return Results.Json(BuildLoopMemberPayload(member));
+            var pushCount = await TryPushLoopUpdatedAsync(
+                loopUpdatedPushService, cloudStateStore, session, loopId, cancellationToken);
+            return Results.Json(BuildLoopMemberMutationPayload(member, loopId, pushCount));
         });
 
         app.MapPut("/api/portal/loop-members/{memberId}", async (
@@ -488,8 +489,9 @@ internal static class PortalEndpoints
                     markPortalEdited: true);
 
                 UpsertPortalPersonFromMember(cloudStateStore, session, loopId, updated);
-                await TryPushLoopUpdatedAsync(loopUpdatedPushService, cloudStateStore, session, loopId, cancellationToken);
-                return Results.Json(BuildLoopMemberPayload(updated));
+                var pushCount = await TryPushLoopUpdatedAsync(
+                    loopUpdatedPushService, cloudStateStore, session, loopId, cancellationToken);
+                return Results.Json(BuildLoopMemberMutationPayload(updated, loopId, pushCount));
             }
             catch (InvalidOperationException)
             {
@@ -519,8 +521,71 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "The loop owner and robot cannot be removed here." });
 
             cloudStateStore.RemoveLoopMember(loopId, memberId);
-            await TryPushLoopUpdatedAsync(loopUpdatedPushService, cloudStateStore, session, loopId, cancellationToken);
-            return Results.Json(new { removed = true, memberId });
+            var pushCount = await TryPushLoopUpdatedAsync(
+                loopUpdatedPushService, cloudStateStore, session, loopId, cancellationToken);
+            return Results.Json(new
+            {
+                removed = true,
+                memberId,
+                loopId,
+                pushCount,
+                syncedToRobot = pushCount > 0,
+                syncMessage = pushCount > 0
+                    ? "LoopUpdated pushed to the robot."
+                    : "Robot api-socket offline; LoopUpdated queued until reconnect."
+            });
+        });
+
+        app.MapGet("/api/portal/loop-sync-status", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore,
+            LoopUpdatedPushService loopUpdatedPushService,
+            RobotNotificationRegistry robotNotificationRegistry) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loop = cloudStateStore.GetLoops()
+                .FirstOrDefault(item => item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+            var robotKeys = BuildPortalRobotKeys(session, cloudStateStore, loopId);
+            var liveOverlaps = robotNotificationRegistry.CountLiveOverlaps(robotKeys);
+            var lastPush = loopUpdatedPushService.LastPush;
+            var members = cloudStateStore.GetLoopMembers(loopId)
+                .Where(static member => !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            return Results.Json(new
+            {
+                loopId,
+                robot = loop?.RobotId,
+                robotFriendlyId = loop?.RobotFriendlyId,
+                memberCount = members.Length,
+                ownerPresent = cloudStateStore.GetLoopMembers(loopId)
+                    .Any(member => string.Equals(member.Type, "owner", StringComparison.OrdinalIgnoreCase)),
+                robotMemberPresent = cloudStateStore.GetLoopMembers(loopId)
+                    .Any(member =>
+                        string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrWhiteSpace(member.AccountId) &&
+                        (loop is null ||
+                         member.AccountId.Equals(loop.RobotId, StringComparison.OrdinalIgnoreCase))),
+                robotKeys = robotKeys.Take(16).ToArray(),
+                openApiSocketConnections = robotNotificationRegistry.OpenConnectionCount,
+                liveApiSocketOverlaps = liveOverlaps,
+                pendingNotifications = robotNotificationRegistry.PendingCount,
+                lastPush = lastPush is null
+                    ? null
+                    : new
+                    {
+                        lastPush.LoopId,
+                        lastPush.PushCount,
+                        lastPush.Outcome,
+                        atUtc = lastPush.AtUtc,
+                        robotKeys = lastPush.RobotKeys
+                    }
+            });
         });
 
         app.MapGet("/api/portal/photos", (
@@ -2792,7 +2857,7 @@ internal static class PortalEndpoints
         return normalized is "male" or "female" ? normalized : "unknown";
     }
 
-    private static Task TryPushLoopUpdatedAsync(
+    private static Task<int> TryPushLoopUpdatedAsync(
         LoopUpdatedPushService loopUpdatedPushService,
         ICloudStateStore cloudStateStore,
         PortalSessionService.PortalSession session,
@@ -2809,26 +2874,22 @@ internal static class PortalEndpoints
         ICloudStateStore cloudStateStore,
         PortalSessionService.PortalSession session)
     {
-        // Resolve the robot's existing household loop before creating a new one. After
-        // OpenJibo__Robot__RobotId promotion, loop.robot may be the local KB hex id while
-        // the portal session still has the Pegasus friendly id — both must hit the same loop
-        // or portal-added people never reach introductions (which reads the robot KB).
+        // Prefer the same household SyncManager would List for this robot's keys so portal
+        // People mutations never land on a second loop the robot never syncs.
+        var portalKeys = LoopRosterResolver.CollectPortalRobotKeys(
+            cloudStateStore,
+            session.FriendlyId,
+            session.DeviceId);
+        var matched = LoopRosterResolver.ResolveLoopsForKeys(cloudStateStore, portalKeys)
+            .Where(loop =>
+                portalKeys.Contains(loop.RobotId) ||
+                portalKeys.Contains(loop.RobotFriendlyId))
+            .ToArray();
+        if (matched.Length > 0)
+            return matched[0].LoopId;
+
         var device = cloudStateStore.FindDeviceByFriendlyId(session.FriendlyId) ??
                      cloudStateStore.FindDeviceByFriendlyId(session.DeviceId);
-
-        foreach (var key in new[]
-                 {
-                     session.FriendlyId,
-                     device?.RobotId,
-                     device?.FriendlyName
-                 })
-        {
-            if (string.IsNullOrWhiteSpace(key)) continue;
-            var existing = cloudStateStore.GetLoops().FirstOrDefault(loop =>
-                loop.RobotId.Equals(key, StringComparison.OrdinalIgnoreCase) ||
-                loop.RobotFriendlyId.Equals(key, StringComparison.OrdinalIgnoreCase));
-            if (existing is not null) return existing.LoopId;
-        }
 
         // One loop per friendly/robot id. Do not pass DeviceId alone — a shared serial
         // singleton would OR-match and merge households.
@@ -2836,6 +2897,42 @@ internal static class PortalEndpoints
         var robotFriendlyId = session.FriendlyId;
         var loop = cloudStateStore.AddLoop(null, null, robotId, robotFriendlyId);
         return loop.LoopId;
+    }
+
+    private static object BuildLoopMemberMutationPayload(
+        LoopMemberRecord member,
+        string loopId,
+        int pushCount)
+    {
+        return new
+        {
+            id = member.Id,
+            firstName = member.FirstName,
+            lastName = member.LastName,
+            nickname = member.Nickname,
+            displayName = GetMemberDisplayName(member),
+            gender = member.Gender,
+            birthday = FormatPortalBirthday(member.Birthday),
+            birthdayMs = member.Birthday,
+            isChild = member.IsChild,
+            type = member.Type,
+            canRemove = member.Type is not "owner" and not "robot",
+            loopId,
+            pushCount,
+            syncedToRobot = pushCount > 0,
+            syncMessage = pushCount > 0
+                ? "LoopUpdated pushed to the robot — introductions should refresh after SSM re-lists."
+                : "Robot api-socket offline; LoopUpdated queued for up to 24h until reconnect."
+        };
+    }
+
+    private static string GetMemberDisplayName(LoopMemberRecord member)
+    {
+        if (!string.IsNullOrWhiteSpace(member.Nickname))
+            return member.Nickname!;
+        var displayName = string.Join(' ', new[] { member.FirstName, member.LastName }
+            .Where(static part => !string.IsNullOrWhiteSpace(part)));
+        return string.IsNullOrWhiteSpace(displayName) ? member.Id : displayName;
     }
 
     private static DeviceRegistration ResolvePortalRobot(

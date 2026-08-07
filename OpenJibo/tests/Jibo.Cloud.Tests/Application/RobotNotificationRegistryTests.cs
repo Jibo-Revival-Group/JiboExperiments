@@ -113,6 +113,26 @@ public sealed class RobotNotificationRegistryTests
             socket.LastPayload!.Value.GetProperty("payload").GetProperty("payload").GetProperty("id").GetString());
     }
 
+    [Fact]
+    public async Task UpdateKeysAsync_ExpandsKeysAndDrainsPending()
+    {
+        var pending = new RobotPendingNotificationStore();
+        var registry = new RobotNotificationRegistry(pending);
+        using var socket = new CapturingWebSocket();
+        registry.Register(["friendly-only"], socket);
+
+        await registry.PushLoopUpdatedAsync(["kb-hex-id"], new { id = "loop-1", eventKey = "LoopUpdated" });
+        Assert.Equal(1, registry.PendingCount);
+        Assert.Null(socket.LastPayload);
+
+        var drained = await registry.UpdateKeysAsync(socket, ["friendly-only", "kb-hex-id"]);
+        Assert.Equal(1, drained);
+        Assert.Equal(0, registry.PendingCount);
+        Assert.Equal(
+            "LoopUpdated",
+            socket.LastPayload!.Value.GetProperty("payload").GetProperty("name").GetString());
+    }
+
     private sealed class CapturingWebSocket : WebSocket
     {
         public JsonElement? LastPayload { get; private set; }

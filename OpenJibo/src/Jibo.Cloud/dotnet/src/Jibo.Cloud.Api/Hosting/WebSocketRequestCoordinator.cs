@@ -227,7 +227,23 @@ internal sealed class WebSocketRequestCoordinator(
                     replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);
                 }
 
-                robotPresenceRegistry.UpdateRobotKeys(presenceConnectionId, ResolveRobotKeys(token, session));
+                var refreshedKeys = ResolveRobotKeys(token, session);
+                robotPresenceRegistry.UpdateRobotKeys(presenceConnectionId, refreshedKeys);
+                if (registeredApiSocket)
+                {
+                    var drainedAfterKeyRefresh = await robotNotificationRegistry.UpdateKeysAsync(
+                        socket,
+                        refreshedKeys,
+                        context.RequestAborted);
+                    if (drainedAfterKeyRefresh > 0)
+                    {
+                        logger.LogInformation(
+                            "api-socket keys refreshed; drained pending LoopUpdated count={PendingDrained} keyCount={KeyCount}",
+                            drainedAfterKeyRefresh,
+                            refreshedKeys.Count);
+                    }
+                }
+
                 if (!string.IsNullOrWhiteSpace(session.TurnState.TransId))
                     loopTransId = session.TurnState.TransId;
                 logger.LogDebug(

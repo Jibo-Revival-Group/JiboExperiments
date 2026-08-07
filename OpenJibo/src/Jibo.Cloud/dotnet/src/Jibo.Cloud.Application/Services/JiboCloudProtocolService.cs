@@ -911,12 +911,21 @@ public sealed class JiboCloudProtocolService(
         if (operation is "ListMembers" or "ListLoopMembers")
         {
             var listBody = envelope.TryParseBody();
+            var scopedLoop = ResolveLoopsForCaller(envelope).FirstOrDefault();
             var loopId = ReadString(listBody, "loopId") ??
                          ReadString(listBody, "id") ??
-                         stateStore.GetLoops().FirstOrDefault()?.LoopId;
+                         scopedLoop?.LoopId;
+
+            var statusFilter = ReadStringArray(listBody, "statusList");
+            var typeFilter = ReadStringArray(listBody, "typeList");
 
             var members = stateStore.GetLoopMembers(loopId ?? string.Empty)
                 .Where(static member => !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                .Where(member => statusFilter.Count == 0 ||
+                                 statusFilter.Contains(NormalizeMemberStatus(member.Status), StringComparer.OrdinalIgnoreCase) ||
+                                 statusFilter.Contains(member.Status, StringComparer.OrdinalIgnoreCase))
+                .Where(member => typeFilter.Count == 0 ||
+                                 typeFilter.Contains(member.Type, StringComparer.OrdinalIgnoreCase))
                 .Select(MapLoopMember)
                 .ToArray();
 
@@ -1100,61 +1109,17 @@ public sealed class JiboCloudProtocolService(
 
     private IReadOnlyList<LoopRecord> ResolveLoopsForCaller(ProtocolEnvelope envelope)
     {
-        var all = stateStore.GetLoops();
-        if (all.Count <= 1) return all;
-
-        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        void Add(string? value)
-        {
-            if (!string.IsNullOrWhiteSpace(value))
-                keys.Add(value.Trim());
-        }
-
         var identity = _identityResolver.Resolve(envelope);
-        Add(identity.DeviceId);
-        Add(_configuredRobotId);
-
-        var body = envelope.TryParseBody();
-        Add(ReadString(body, "robotId"));
-        Add(ReadString(body, "robotFriendlyId"));
-        Add(ReadString(body, "friendlyId"));
-        Add(ReadString(body, "deviceId"));
-        Add(ReadString(body, "id"));
-
-        if (identity.IsResolved)
-        {
-            var device = stateStore.FindDeviceByFriendlyId(identity.DeviceId!);
-            if (device is not null)
-            {
-                Add(device.DeviceId);
-                Add(device.RobotId);
-                Add(device.FriendlyName);
-            }
-        }
-
-        if (keys.Count > 0)
-        {
-            var matched = all.Where(loop =>
-                    keys.Contains(loop.RobotId) ||
-                    keys.Contains(loop.RobotFriendlyId))
-                .ToArray();
-            if (matched.Length > 0) return matched;
-        }
-
-        if (!string.IsNullOrWhiteSpace(_configuredRobotId))
-        {
-            var configured = all.Where(loop =>
-                    loop.RobotId.Equals(_configuredRobotId, StringComparison.OrdinalIgnoreCase) ||
-                    loop.RobotFriendlyId.Equals(_configuredRobotId, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-            if (configured.Length > 0) return configured;
-        }
-
-        // Prefer the seeded default over dumping every household into SyncManager.
-        var defaultLoop = all.FirstOrDefault(loop =>
-            loop.LoopId.Equals("openjibo-default-loop", StringComparison.OrdinalIgnoreCase));
-        return defaultLoop is null ? [all[0]] : [defaultLoop];
+        var keys = LoopRosterResolver.CollectEnvelopeRobotKeys(
+            stateStore,
+            envelope,
+            identity,
+            _configuredRobotId);
+        return LoopRosterResolver.ResolveLoopsForKeys(stateStore, keys, _configuredRobotId);
     }
+
+    private static string NormalizeMemberStatus(string? status) =>
+        string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) ? "accepted" : status ?? string.Empty;
 
     public static object MapLoopMember(LoopMemberRecord member)
     {

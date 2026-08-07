@@ -27,7 +27,38 @@ public sealed class RobotNotificationRegistry(
         var keys = NormalizeKeys(robotKeys);
         if (keys.Count == 0) return;
 
+        // Replace any prior registration for the same socket so keys can grow.
+        Remove(socket);
         _connections[Guid.NewGuid()] = new RobotConnection(keys, socket);
+    }
+
+    /// <summary>
+    /// Refresh notification keys when session identity expands after connect
+    /// (friendly id / serial / KB hex), then drain pending against the new keys.
+    /// </summary>
+    public async Task<int> UpdateKeysAsync(
+        WebSocket socket,
+        IReadOnlyCollection<string> robotKeys,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(socket);
+
+        var keys = NormalizeKeys(robotKeys);
+        if (keys.Count == 0 || socket.State != WebSocketState.Open) return 0;
+
+        var updated = false;
+        foreach (var pair in _connections)
+        {
+            if (!ReferenceEquals(pair.Value.Socket, socket)) continue;
+            pair.Value.RobotKeys.UnionWith(keys);
+            updated = true;
+            break;
+        }
+
+        if (!updated)
+            Register(keys, socket);
+
+        return await DrainPendingAsync(keys, socket, cancellationToken);
     }
 
     public void Remove(WebSocket socket)
@@ -122,6 +153,27 @@ public sealed class RobotNotificationRegistry(
 
     public int PendingCount => _pendingStore.Count;
 
+    public int OpenConnectionCount =>
+        _connections.Count(pair => pair.Value.Socket.State == WebSocketState.Open);
+
+    public IReadOnlyList<string[]> SnapshotOpenConnectionKeys()
+    {
+        return _connections
+            .Where(pair => pair.Value.Socket.State == WebSocketState.Open)
+            .Select(pair => pair.Value.RobotKeys.ToArray())
+            .ToArray();
+    }
+
+    public int CountLiveOverlaps(IReadOnlyCollection<string> robotKeys)
+    {
+        var targetKeys = NormalizeKeys(robotKeys);
+        if (targetKeys.Count == 0) return 0;
+
+        return _connections.Count(pair =>
+            pair.Value.Socket.State == WebSocketState.Open &&
+            pair.Value.RobotKeys.Overlaps(targetKeys));
+    }
+
     private async Task<int> PushBytesToLiveSocketsAsync(
         IReadOnlySet<string> targetKeys,
         byte[] bytes,
@@ -209,5 +261,9 @@ public sealed class RobotNotificationRegistry(
         return keys;
     }
 
-    private sealed record RobotConnection(HashSet<string> RobotKeys, WebSocket Socket);
+    private sealed class RobotConnection(HashSet<string> robotKeys, WebSocket socket)
+    {
+        public HashSet<string> RobotKeys { get; } = robotKeys;
+        public WebSocket Socket { get; } = socket;
+    }
 }

@@ -8,7 +8,8 @@ namespace Jibo.Cloud.Application.Services;
 /// </summary>
 public sealed class RobotPendingNotificationStore
 {
-    private static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
+    // Keep LoopUpdated until the robot reconnects; 5m was too short for offline portals.
+    private static readonly TimeSpan DefaultTtl = TimeSpan.FromHours(24);
 
     private readonly ConcurrentDictionary<Guid, PendingNotificationEntry> _entries = new();
     private readonly TimeSpan _ttl;

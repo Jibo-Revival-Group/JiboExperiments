@@ -1469,6 +1469,28 @@ internal static class PortalEndpoints
             return Results.Json(new { beacons = beaconStore.GetActive(DateTimeOffset.UtcNow) });
         });
 
+        app.MapPost("/api/portal/lrd/beacon", async (
+            HttpRequest request,
+            RobotDiagnosticBeaconStore beaconStore,
+            IConfiguration configuration,
+            CancellationToken cancellationToken) =>
+        {
+            var robotId = request.Headers["X-Jibo-RobotId"].ToString().Trim();
+            var suppliedToken = request.Headers["X-Jibo-Diagnostic-Token"].ToString();
+            var configuredToken = configuration[$"OpenJibo:Diagnostics:BeaconTokens:{robotId}"];
+            if (string.IsNullOrWhiteSpace(robotId) || string.IsNullOrWhiteSpace(configuredToken) ||
+                !CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(suppliedToken), Encoding.UTF8.GetBytes(configuredToken)))
+                return Results.Unauthorized();
+
+            var payload = await request.ReadFromJsonAsync<RobotDiagnosticBeaconPublishRequest>(cancellationToken);
+            if (payload is null || payload.Lines is null || payload.Lines.Count > 100)
+                return Results.BadRequest(new { error = "A beacon payload with at most 100 log lines is required." });
+
+            beaconStore.Publish(robotId, payload.Lines, DateTimeOffset.UtcNow);
+            return Results.Json(new { ok = true });
+        });
+
         app.MapGet("/api/portal/server/logs/diagnostics-status", (
             HttpRequest request,
             PortalSessionService portalSessionService) =>

@@ -64,3 +64,5 @@ public sealed class RobotDiagnosticBeaconStore
 }
 
 public sealed record RobotDiagnosticBeaconSummary(string RobotId, DateTimeOffset LastSeenUtc, int LineCount);
+
+public sealed record RobotDiagnosticBeaconPublishRequest(IReadOnlyList<string> Lines);

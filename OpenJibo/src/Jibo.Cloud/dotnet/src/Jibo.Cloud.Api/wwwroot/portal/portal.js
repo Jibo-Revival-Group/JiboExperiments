@@ -737,22 +737,48 @@ function showMemberStatus(status, message, isError) {
   status.classList.remove("hidden");
 }
 
+function renderMemberFields(member = {}) {
+  return `
+    <div class="member-fields">
+      <label class="member-field">
+        <span>First name</span>
+        <input class="member-first-name" type="text" value="${escapeHtml(member.firstName || "")}" placeholder="First name">
+      </label>
+      <label class="member-field">
+        <span>Last name</span>
+        <input class="member-last-name" type="text" value="${escapeHtml(member.lastName || "")}" placeholder="Last name">
+      </label>
+      <label class="member-field">
+        <span>Nickname</span>
+        <input class="member-nickname" type="text" value="${escapeHtml(member.nickname || "")}" placeholder="Nickname">
+      </label>
+      <label class="member-field">
+        <span>Gender</span>
+        <select class="member-gender">
+          ${genderOptionsHtml(member.gender)}
+        </select>
+      </label>
+      <label class="member-field">
+        <span>Birthday</span>
+        <input class="member-birthday" type="date" value="${escapeHtml(member.birthday || "")}">
+      </label>
+      <label class="member-field member-field-child">
+        <span>Child</span>
+        <span class="member-child-control">
+          <input class="member-is-child" type="checkbox"${member.isChild ? " checked" : ""}>
+          <span>Yes</span>
+        </span>
+      </label>
+    </div>
+  `;
+}
+
 function renderLoopMemberRow(member) {
   const badgeLabel = member.type === "owner" ? "Owner" : "Member";
   const badgeClass = member.type === "owner" ? "success" : "neutral";
   return `
     <div class="member-row" data-member-id="${escapeHtml(member.id)}">
-      <input class="member-first-name" type="text" value="${escapeHtml(member.firstName || "")}" placeholder="First name" aria-label="First name">
-      <input class="member-last-name" type="text" value="${escapeHtml(member.lastName || "")}" placeholder="Last name" aria-label="Last name">
-      <input class="member-nickname" type="text" value="${escapeHtml(member.nickname || "")}" placeholder="Nickname" aria-label="Nickname">
-      <select class="member-gender" aria-label="Gender">
-        ${genderOptionsHtml(member.gender)}
-      </select>
-      <input class="member-birthday" type="date" value="${escapeHtml(member.birthday || "")}" aria-label="Birthday">
-      <label class="member-child-label">
-        <input class="member-is-child" type="checkbox"${member.isChild ? " checked" : ""}>
-        Child
-      </label>
+      ${renderMemberFields(member)}
       <div class="member-row-actions">
         <span class="badge ${badgeClass}">${badgeLabel}</span>
         <button class="button secondary save-member-button" data-member-id="${escapeHtml(member.id)}" type="button">Save</button>
@@ -780,17 +806,7 @@ function renderLoopMembersSection(dashboard) {
       <p class="muted">Add, edit, or remove people in this Loop. Nickname, birthday, and child flag sync to the robot via LoopUpdated. The owner cannot be removed here.</p>
       ${memberRows}
       <div class="member-row member-row-add" id="newMemberRow">
-        <input class="member-first-name" id="newMemberFirstName" type="text" placeholder="First name" aria-label="New first name">
-        <input class="member-last-name" id="newMemberLastName" type="text" placeholder="Last name (optional)" aria-label="New last name">
-        <input class="member-nickname" id="newMemberNickname" type="text" placeholder="Nickname (optional)" aria-label="New nickname">
-        <select class="member-gender" id="newMemberGender" aria-label="New gender">
-          ${genderOptionsHtml("unknown")}
-        </select>
-        <input class="member-birthday" id="newMemberBirthday" type="date" aria-label="New birthday">
-        <label class="member-child-label">
-          <input class="member-is-child" id="newMemberIsChild" type="checkbox">
-          Child
-        </label>
+        ${renderMemberFields()}
         <div class="member-row-actions">
           <button class="button primary" id="addMemberButton" type="button">Add person</button>
         </div>
@@ -827,7 +843,7 @@ function renderLoopPanel(dashboard) {
     `).join("");
 
   return `
-    <section class="card panel">
+    <section class="card panel wide-panel">
       <div class="panel-header">
         <div>
           <p class="eyebrow">Household</p>
@@ -973,7 +989,7 @@ function renderPhotosPanel(photosPayload) {
       </div>`;
 
   return `
-    <section class="card panel" id="photosPanel">
+    <section class="card panel wide-panel" id="photosPanel">
       <div class="panel-header">
         <div>
           <p class="eyebrow">Media</p>
@@ -1072,8 +1088,9 @@ async function renderDashboard(message = "", tone = "success") {
         </section>
 
         ${renderHomeAssistantPanel(dashboard)}
-        ${renderLoopPanel(dashboard)}
       </div>
+
+      ${renderLoopPanel(dashboard)}
 
       ${renderPhotosPanel(photosPayload)}
 

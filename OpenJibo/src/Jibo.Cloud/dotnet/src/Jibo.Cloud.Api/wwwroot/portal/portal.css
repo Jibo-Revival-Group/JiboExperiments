@@ -153,37 +153,79 @@ h2 {
 
 .member-list {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.85rem;
   margin-top: 1rem;
 }
 
 .member-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 140px) minmax(0, 150px) auto auto;
-  gap: 0.6rem;
-  align-items: center;
-  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.9rem;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--bg-soft);
+  min-width: 0;
 }
 
-.member-row input,
-.member-row select {
+.member-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem 0.85rem;
+  align-items: end;
+  min-width: 0;
+}
+
+.member-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.member-field input,
+.member-field select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin-top: 0;
+  box-sizing: border-box;
+}
+
+.member-field input[type="date"] {
+  min-height: 2.9rem;
+  padding-right: 0.75rem;
+}
+
+.member-field-child {
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.member-child-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.9rem;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.member-field .member-is-child,
+.member-row input.member-is-child {
+  width: auto;
+  min-width: 1.1rem;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
 }
 
 .member-row-add {
   margin-top: 1rem;
-}
-
-.member-child-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin: 0;
-  font-size: 0.9rem;
-  white-space: nowrap;
 }
 
 .photo-grid {
@@ -481,15 +523,11 @@ select:focus {
     align-items: flex-start;
   }
 
-  .member-row {
+  .member-fields {
     grid-template-columns: 1fr;
   }
 
   .member-row-actions {
     justify-content: flex-start;
-  }
-
-  .member-child-label {
-    white-space: normal;
   }
 }

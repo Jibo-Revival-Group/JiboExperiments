@@ -2816,6 +2816,80 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task LanCredentialsApi_UsesRequestSchemeAndAuthorityForUploadUrls()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.LanApi.Tests", Guid.NewGuid().ToString("N"));
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(), new FileMediaContentStore(directoryPath));
+
+        var logResult = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Scheme = "http",
+            HostName = "192.168.7.105",
+            Authority = "192.168.7.105:8765",
+            Method = "POST",
+            ServicePrefix = "Log_20150309",
+            Operation = "PutEventsAsync"
+        });
+        using (var logPayload = JsonDocument.Parse(logResult.BodyText))
+        {
+            Assert.StartsWith("http://192.168.7.105:8765/upload/log-events/",
+                logPayload.RootElement.GetProperty("uploadUrl").GetString());
+        }
+
+        var backupResult = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Scheme = "http",
+            HostName = "192.168.7.105",
+            Authority = "192.168.7.105:8765",
+            Method = "POST",
+            ServicePrefix = "Backup_20170222",
+            Operation = "New",
+            BodyText = "{}"
+        });
+        using var backupPayload = JsonDocument.Parse(backupResult.BodyText);
+        var uploadUrl = backupPayload.RootElement.GetProperty("uploadUrl").GetString();
+        Assert.StartsWith("http://192.168.7.105:8765/upload/backup/", uploadUrl);
+
+        var uploadPath = "/" + string.Join('/', uploadUrl!.Split('/')[^3..]);
+        var putResult = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Scheme = "http",
+            HostName = "192.168.7.105",
+            Authority = "192.168.7.105:8765",
+            Method = "PUT",
+            Path = uploadPath,
+            BodyText = "backup-bytes",
+            BodyBytes = "backup-bytes"u8.ToArray()
+        });
+        Assert.Equal(200, putResult.StatusCode);
+        Assert.True(Directory.EnumerateFiles(Path.Combine(directoryPath, "backups"), "*", SearchOption.AllDirectories)
+            .Any());
+    }
+
+    [Fact]
+    public async Task UpdateList_RewritesPayloadUrlToLanAuthority()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.CreateUpdate("1.0.0", "1.0.1", "lan", "sha", 12, "os", "eau", null);
+        var service = new JiboCloudProtocolService(store);
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Scheme = "http",
+            HostName = "192.168.7.105",
+            Authority = "192.168.7.105:8765",
+            Method = "POST",
+            ServicePrefix = "Update_20160301",
+            Operation = "ListUpdates",
+            BodyText = """{"subsystem":"os"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.StartsWith("http://192.168.7.105:8765/update/",
+            payload.RootElement[0].GetProperty("url").GetString());
+    }
+
+    [Fact]
     public async Task BearerTokenIdentity_IsPersistedForLogAndMediaArtifacts()
     {
         var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Identity.Tests", Guid.NewGuid().ToString("N"));

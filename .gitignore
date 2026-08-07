@@ -461,3 +461,14 @@ OpenJibo/docs/DesignDoc/original server
 /OpenJibo/App_Data
 /OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/appsettings.json
 OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/appsettings.json
+
+# LAN credentials API: dump-derived secrets and local upload state
+**/credentials.local.json
+**/robot-credentials.local.json
+OpenJibo/**/robot-credentials.local.json
+OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/robot-credentials.local.json
+OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/App_Data/
+OpenJibo/**/App_Data/backups/
+OpenJibo/**/App_Data/uploads/
+OpenJibo/**/media/backups/
+OpenJibo/**/media/logs/

@@ -2,7 +2,7 @@
 """
 Jibo Robot Log Streamer (Python 2.7 / Python 3 compatible, zero-dep)
 Streams /var/log/messages via Server-Sent Events over LAN.
-Run on-demand for debugging: python log_streamer.py [--port 8765]
+Run on-demand for debugging: python log_streamer.py [--port 8766]
 """
 
 import sys
@@ -15,7 +15,7 @@ except ImportError:
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
 LOG_PATH = "/var/log/messages"
-DEFAULT_PORT = 8765
+DEFAULT_PORT = 8766
 
 class LogStreamHandler(BaseHTTPRequestHandler):
     def do_GET(self):

@@ -64,7 +64,7 @@ Optional environment overrides:
 CERT_PEM=/path/to/cert.pem \
 KEY_PEM=/path/to/key.pem \
 CHAIN_PEM=/path/to/chain.pem \
-ASPNETCORE_URLS="https://0.0.0.0:443;http://0.0.0.0:24605" \
+ASPNETCORE_URLS="https://0.0.0.0:443;http://0.0.0.0:24605;http://0.0.0.0:8765" \
 ./scripts/cloud/start-dotnet-with-node-cert.sh
 ```
 

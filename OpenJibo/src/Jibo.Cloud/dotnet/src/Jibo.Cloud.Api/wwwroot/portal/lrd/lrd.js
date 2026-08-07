@@ -296,7 +296,7 @@ function toggleRobotConnection() {
   }
 
   const ip = ipInput.value.trim();
-  const port = portInput ? portInput.value.trim() || "8765" : "8765";
+  const port = portInput ? portInput.value.trim() || "8766" : "8766";
 
   if (!ip) {
     alert("Please enter a valid Robot IP address.");

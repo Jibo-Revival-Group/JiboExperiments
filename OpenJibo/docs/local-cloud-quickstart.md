@@ -38,9 +38,12 @@ By default, this starts:
 
 - HTTPS: `https://localhost:24604`
 - HTTP: `http://localhost:24605`
-- health check: `http://localhost:24605/health`
+- LAN credentials API: `http://localhost:8765` (robot `credentials.json` / `X-Amz-Target` entrypoint)
+- health check: `http://localhost:24605/health` (also on `:8765/health`)
 - websocket captures: `captures/websocket`
 - HTTP captures: `captures/http`
+
+For pointing physical robots at the LAN credentials API with `credentials.json` `endpoint`, see [lan-credentials-api.md](lan-credentials-api.md).
 
 Smoke check:
 
@@ -66,9 +69,11 @@ For a Linux live-device run on port `443`, reuse the existing PEM certificate ma
 ```bash
 CERT_PEM=/path/to/cert.pem \
 KEY_PEM=/path/to/key.pem \
-ASPNETCORE_URLS="https://0.0.0.0:443;http://0.0.0.0:24605" \
+ASPNETCORE_URLS="https://0.0.0.0:443;http://0.0.0.0:24605;http://0.0.0.0:8765" \
 ./scripts/cloud/start-dotnet-with-node-cert.sh
 ```
+
+(`start-dotnet-with-node-cert.sh` already defaults to those three URLs when `ASPNETCORE_URLS` is unset.)
 
 Then run:
 

@@ -6,7 +6,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "https://localhost:24604;http://localhost:24605"
+      "applicationUrl": "https://localhost:24604;http://localhost:24605;http://localhost:8765"
     },
     "Jibo.Cloud.Api.AzureBlob": {
       "commandName": "Project",
@@ -20,7 +20,7 @@
         "OpenJibo__Media__Backend": "AzureBlob",
         "OpenJibo__Media__ConnectionString": "UseDevelopmentStorage=true"
       },
-      "applicationUrl": "https://localhost:24604;http://localhost:24605"
+      "applicationUrl": "https://localhost:24604;http://localhost:24605;http://localhost:8765"
     }
   }
 }

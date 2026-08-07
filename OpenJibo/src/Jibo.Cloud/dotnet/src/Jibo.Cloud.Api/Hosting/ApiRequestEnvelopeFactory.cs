@@ -18,12 +18,15 @@ internal static class ApiRequestEnvelopeFactory
         var target = context.Request.Headers["X-Amz-Target"].ToString();
         var targetParts = target.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
 
+        var hostName = ResolveHostName(context);
         return new ProtocolEnvelope
         {
             RequestId = Guid.NewGuid().ToString("N"),
             Transport = "http",
             Method = context.Request.Method,
-            HostName = ResolveHostName(context),
+            Scheme = string.IsNullOrWhiteSpace(context.Request.Scheme) ? "https" : context.Request.Scheme,
+            HostName = hostName,
+            Authority = ResolveAuthority(context, hostName),
             Path = context.Request.Path.Value ?? "/",
             ServicePrefix = targetParts.Length > 0 ? targetParts[0] : null,
             Operation = targetParts.Length > 1 ? targetParts[1] : null,
@@ -44,5 +47,15 @@ internal static class ApiRequestEnvelopeFactory
     {
         var harnessHost = context.Request.Headers["X-OpenJibo-Harness-Host"].ToString();
         return string.IsNullOrWhiteSpace(harnessHost) ? context.Request.Host.Host : harnessHost.Trim();
+    }
+
+    private static string ResolveAuthority(HttpContext context, string hostName)
+    {
+        var harnessHost = context.Request.Headers["X-OpenJibo-Harness-Host"].ToString();
+        if (!string.IsNullOrWhiteSpace(harnessHost))
+            return harnessHost.Trim();
+
+        var authority = context.Request.Host.Value;
+        return string.IsNullOrWhiteSpace(authority) ? hostName : authority;
     }
 }

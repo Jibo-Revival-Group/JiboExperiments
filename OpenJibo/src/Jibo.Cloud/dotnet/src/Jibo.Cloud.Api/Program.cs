@@ -2,6 +2,7 @@ using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.DependencyInjection;
+using Jibo.Cloud.Infrastructure.Persistence;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -62,6 +63,13 @@ app.Logger.LogInformation(
     bool.TryParse(builder.Configuration["OpenJibo:ProtocolAuthDiagnostics:Enabled"], out var protocolAuthDiagnosticsEnabled) &&
     protocolAuthDiagnosticsEnabled,
     Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? "local");
+
+var seededRobots = RobotCredentialSeedApplier.Apply(
+    app.Services.GetRequiredService<ICloudStateStore>(),
+    app.Configuration,
+    app.Logger);
+if (seededRobots > 0)
+    app.Logger.LogInformation("Applied {Count} robot credential seed entries for LAN API identity", seededRobots);
 
 app.UseCors();
 app.UseDefaultFiles();

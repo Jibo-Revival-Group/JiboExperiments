@@ -8,7 +8,10 @@ public sealed class ProtocolEnvelope
     public DateTimeOffset ReceivedUtc { get; init; } = DateTimeOffset.UtcNow;
     public string Transport { get; init; } = "http";
     public string Method { get; init; } = "POST";
+    public string Scheme { get; init; } = "https";
     public string HostName { get; init; } = "api.jibo.com";
+    /// <summary>Host[:port] used when building LAN-safe upload/download URLs.</summary>
+    public string Authority { get; init; } = string.Empty;
     public string Path { get; init; } = "/";
     public string? ServicePrefix { get; init; }
     public string? Operation { get; init; }

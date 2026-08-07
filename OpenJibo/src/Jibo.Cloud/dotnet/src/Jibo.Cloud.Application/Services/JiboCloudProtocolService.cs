@@ -73,7 +73,8 @@ public sealed class JiboCloudProtocolService(
     {
         var value = configuration?["OpenJibo:CanonicalApiBaseUrl"];
         return Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
-               uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+               (uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
             ? uri.GetLeftPart(UriPartial.Authority)
             : null;
     }
@@ -116,6 +117,11 @@ public sealed class JiboCloudProtocolService(
 
         if (TryHandleLocalSchedulerRequest(envelope, out var schedulerResult))
             return Task.FromResult(schedulerResult);
+
+        if ((envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) ||
+             envelope.Method.Equals("POST", StringComparison.OrdinalIgnoreCase)) &&
+            envelope.Path.StartsWith("/upload/backup", StringComparison.OrdinalIgnoreCase))
+            return Task.FromResult(HandleBackupUpload(envelope, ResolveRobotIdentity(envelope, "backup-upload")));
 
         if ((envelope.Method.Equals("PUT", StringComparison.OrdinalIgnoreCase) ||
              envelope.Method.Equals("POST", StringComparison.OrdinalIgnoreCase)) &&
@@ -1306,8 +1312,20 @@ public sealed class JiboCloudProtocolService(
     private string BuildLogUploadUrl(ProtocolEnvelope envelope, string endpoint, string uploadId) =>
         $"{ResolveApiBaseUrl(envelope)}/upload/{endpoint}/{uploadId}";
 
-    private string ResolveApiBaseUrl(ProtocolEnvelope envelope) =>
-        _canonicalApiBaseUrl ?? $"https://{envelope.HostName}";
+    private string BuildBackupUploadUrl(ProtocolEnvelope envelope, string backupId) =>
+        $"{ResolveApiBaseUrl(envelope)}/upload/backup/{backupId}";
+
+    private string ResolveApiBaseUrl(ProtocolEnvelope envelope)
+    {
+        if (!string.IsNullOrWhiteSpace(_canonicalApiBaseUrl))
+            return _canonicalApiBaseUrl;
+
+        var scheme = string.IsNullOrWhiteSpace(envelope.Scheme) ? "https" : envelope.Scheme.Trim();
+        var authority = !string.IsNullOrWhiteSpace(envelope.Authority)
+            ? envelope.Authority.Trim()
+            : envelope.HostName;
+        return $"{scheme}://{authority}";
+    }
 
     private static string GetLogCategory(string operation) => operation switch
     {
@@ -1430,7 +1448,8 @@ public sealed class JiboCloudProtocolService(
     private ProtocolDispatchResult HandleBackup(string operation, ProtocolEnvelope envelope)
     {
         if (operation.Equals("List", StringComparison.OrdinalIgnoreCase))
-            return ProtocolDispatchResult.Ok(stateStore.GetBackups().Select(MapBackup).ToArray());
+            return ProtocolDispatchResult.Ok(stateStore.GetBackups().Select(backup => MapBackup(backup, envelope))
+                .ToArray());
 
         if (operation.Equals("New", StringComparison.OrdinalIgnoreCase))
         {
@@ -1441,7 +1460,7 @@ public sealed class JiboCloudProtocolService(
             var backup = stateStore.CreateBackup(loopId, backupName);
             return ProtocolDispatchResult.Ok(new
             {
-                uploadUrl = $"https://api.jibo.com/upload/backup/{backup.BackupId}"
+                uploadUrl = BuildBackupUploadUrl(envelope, backup.BackupId)
             });
         }
 
@@ -1468,7 +1487,26 @@ public sealed class JiboCloudProtocolService(
         var createLoopId = ReadString(createBody, "loopId") ?? stateStore.GetLoops()[0].LoopId;
         return ProtocolDispatchResult.Ok(
             MapBackup(stateStore.CreateBackup(createLoopId,
-                requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}")));
+                requestedName ?? $"backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}"), envelope));
+    }
+
+    private ProtocolDispatchResult HandleBackupUpload(ProtocolEnvelope envelope, ProtocolRobotIdentity identity)
+    {
+        var backupId = GetLogUploadId(envelope.Path);
+        var contentType = ReadHeader(envelope, "Content-Type") ?? "application/octet-stream";
+        var content = ReadBodyBytes(envelope);
+        var metadata = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["artifactType"] = "robot-backup",
+            ["backupId"] = backupId,
+            ["deviceId"] = identity.DeviceId,
+            ["identitySource"] = identity.Source,
+            ["requestId"] = envelope.RequestId,
+            ["correlationId"] = envelope.CorrelationId
+        };
+        _mediaContentStore.StoreAsync($"backups/{backupId}", contentType, content, metadata, CancellationToken.None)
+            .GetAwaiter().GetResult();
+        return ProtocolDispatchResult.Raw(200, string.Empty);
     }
 
     private ProtocolDispatchResult HandleKey(string operation, ProtocolEnvelope envelope)
@@ -1622,14 +1660,13 @@ public sealed class JiboCloudProtocolService(
 
         return operation switch
         {
-            "ListUpdates" => ProtocolDispatchResult.Ok(stateStore.ListUpdates(subsystem, filter).Select(MapUpdate)
-                .ToArray()),
+            "ListUpdates" => ProtocolDispatchResult.Ok(stateStore.ListUpdates(subsystem, filter)
+                .Select(update => MapUpdate(update, envelope)).ToArray()),
             "ListUpdatesFrom" => ProtocolDispatchResult.Ok(stateStore.ListUpdates(subsystem, filter)
                 .Where(update =>
                     IsUpdateNewerThanRequest(update.ToVersion, fromVersion))
-                .Select(MapUpdate)
-                .ToArray()),
-            "GetUpdateFrom" => HandleGetUpdateFrom(subsystem, fromVersion, filter),
+                .Select(update => MapUpdate(update, envelope)).ToArray()),
+            "GetUpdateFrom" => HandleGetUpdateFrom(subsystem, fromVersion, filter, envelope),
             "CreateUpdate" => ProtocolDispatchResult.Ok(MapUpdate(stateStore.CreateUpdate(
                 fromVersion,
                 ReadString(body, "toVersion"),
@@ -1638,8 +1675,9 @@ public sealed class JiboCloudProtocolService(
                 ReadLong(body, "length"),
                 subsystem,
                 filter,
-                ReadObject(body, "dependencies")))),
-            "RemoveUpdate" => ProtocolDispatchResult.Ok(MapUpdate(stateStore.RemoveUpdate(ReadString(body, "id")))),
+                ReadObject(body, "dependencies")), envelope)),
+            "RemoveUpdate" => ProtocolDispatchResult.Ok(
+                MapUpdate(stateStore.RemoveUpdate(ReadString(body, "id")), envelope)),
             _ => ProtocolDispatchResult.Ok(Array.Empty<object>())
         };
     }
@@ -1660,12 +1698,13 @@ public sealed class JiboCloudProtocolService(
         return ProtocolDispatchResult.Raw(200, bodyText, contentType);
     }
 
-    private ProtocolDispatchResult HandleGetUpdateFrom(string? subsystem, string? fromVersion, string? filter)
+    private ProtocolDispatchResult HandleGetUpdateFrom(string? subsystem, string? fromVersion, string? filter,
+        ProtocolEnvelope envelope)
     {
         var update = stateStore.GetUpdateFrom(subsystem, fromVersion, filter);
         return update is null
             ? ProtocolDispatchResult.NoContent()
-            : ProtocolDispatchResult.Ok(MapUpdate(update));
+            : ProtocolDispatchResult.Ok(MapUpdate(update, envelope));
     }
 
     private static string? ReadSchedulerFilterFromPath(string path)
@@ -2046,7 +2085,7 @@ public sealed class JiboCloudProtocolService(
         };
     }
 
-    private static object MapUpdate(UpdateManifest update)
+    private object MapUpdate(UpdateManifest update, ProtocolEnvelope envelope)
     {
         return new
         {
@@ -2056,7 +2095,7 @@ public sealed class JiboCloudProtocolService(
             fromVersion = update.FromVersion,
             toVersion = update.ToVersion,
             changes = update.Changes,
-            url = update.Url,
+            url = $"{ResolveApiBaseUrl(envelope)}/update/{update.UpdateId}",
             shaHash = update.ShaHash,
             length = update.Length,
             subsystem = update.Subsystem,
@@ -2078,7 +2117,7 @@ public sealed class JiboCloudProtocolService(
         return string.Compare(candidateVersion, fromVersion, StringComparison.OrdinalIgnoreCase) > 0;
     }
 
-    private static object MapBackup(BackupRecord backup)
+    private object MapBackup(BackupRecord backup, ProtocolEnvelope envelope)
     {
         return new
         {
@@ -2088,7 +2127,7 @@ public sealed class JiboCloudProtocolService(
             location = new
             {
                 expires = backup.CreatedUtc.AddHours(1).ToString("O"),
-                url = $"https://api.jibo.com/backup/{backup.BackupId}"
+                url = $"{ResolveApiBaseUrl(envelope)}/backup/{backup.BackupId}"
             }
         };
     }

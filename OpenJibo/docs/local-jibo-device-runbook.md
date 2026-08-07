@@ -68,7 +68,7 @@ cd ~/JiboExperiments/OpenJibo
 CERT_PEM=src/Jibo.Cloud/node/cert.pem \
 KEY_PEM=src/Jibo.Cloud/node/key.pem \
 OpenJibo__Robot__RobotId=5a0b6398faa0f0001c5d0df1 \
-ASPNETCORE_URLS="https://0.0.0.0:443;http://0.0.0.0:24605" \
+ASPNETCORE_URLS="https://0.0.0.0:443;http://0.0.0.0:24605;http://0.0.0.0:8765" \
 sudo env "PATH=$PATH" ./scripts/cloud/start-dotnet-with-node-cert.sh
 ```
 
@@ -77,6 +77,7 @@ Notes:
 - Port `443` requires sudo on macOS.
 - The script needs `dotnet` available through the sudo environment.
 - Stop any Node server or other process already bound to `443`.
+- Port `8765` is the LAN credentials API (`credentials.json` `endpoint` / `X-Amz-Target`). See [lan-credentials-api.md](lan-credentials-api.md).
 - `OpenJibo__Robot__RobotId` is required for this robot because some robot
   calls only send the friendly id (`Ghost-Instance-Onion-Silk`), while SSM
   checks loop membership against the real local KB robot id.
@@ -86,6 +87,7 @@ The local health check on the Mac is:
 ```bash
 curl -k https://localhost/health
 curl http://localhost:24605/health
+curl http://localhost:8765/health
 ```
 
 The robot-facing health check from Jibo is:
@@ -524,6 +526,10 @@ The observed credentials shape:
 ```json
 {"accessKeyId":"...","secretAccessKey":"...","region":"api"}
 ```
+
+For Node `@jibo/jibo-server-client` tools (OTA, logs, loop/backup helpers), you can
+also set `"endpoint":"http://<lan-ip>:8765"` so those calls hit the LAN credentials
+API without DNS overrides. Native HubClient still uses region/Jetstream hosts.
 
 Do not paste real credentials into docs or logs unless needed for a local
 debugging session.

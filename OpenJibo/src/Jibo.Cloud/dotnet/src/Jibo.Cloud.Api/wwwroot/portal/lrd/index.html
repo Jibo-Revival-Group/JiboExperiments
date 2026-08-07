@@ -46,21 +46,10 @@
             <span class="indicator-value" id="robotConnectionStatus">Loading...</span>
           </div>
           <div class="status-indicator">
-            <span class="indicator-label">Robot:</span>
-            <select id="robotSelect" class="status-select">
-              <option value="">Loading robots...</option>
+            <span class="indicator-label">Diagnostic robot:</span>
+            <select id="beaconSelect" class="status-select">
+              <option value="">Waiting for robot beacons...</option>
             </select>
-          </div>
-          <div class="status-indicator">
-            <span class="indicator-label">Robot IP & Port:</span>
-            <input type="text" id="robotIpInput" class="status-input" placeholder="IP Address" />
-            <select id="robotSchemeInput" class="status-select status-select-scheme">
-              <option value="http">HTTP</option>
-              <option value="https">HTTPS</option>
-            </select>
-            <input type="text" id="robotPortInput" class="status-input status-input-port" value="8765" placeholder="Port" />
-            <input type="password" id="robotTokenInput" class="status-input" placeholder="Stream token (optional)" />
-            <button id="robotConnectBtn" class="status-btn">Connect</button>
           </div>
         </div>
         <div class="statusbar-right">

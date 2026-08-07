@@ -12,6 +12,8 @@ let currentLogFile = null;
 let robotStreamAbortController = null;
 let logPollInFlight = false;
 let skipLogPolling = false;
+let beaconPollInterval = null;
+let selectedBeaconId = null;
 
 function setLogPollingEnabled(enabled) {
   skipLogPolling = !enabled;
@@ -446,6 +448,36 @@ async function initLogPollingToggle() {
   });
 }
 
+async function fetchDiagnosticBeacons() {
+  try {
+    const payload = await apiFetch("/api/portal/lrd/beacons");
+    const select = document.getElementById("beaconSelect");
+    if (!select) return;
+    const beacons = payload.beacons || [];
+    if (!beacons.some(beacon => beacon.robotId === selectedBeaconId))
+      selectedBeaconId = beacons[0]?.robotId || null;
+    select.innerHTML = beacons.length
+      ? beacons.map(beacon => `<option value="${escapeHtml(beacon.robotId)}" ${beacon.robotId === selectedBeaconId ? "selected" : ""}>${escapeHtml(beacon.robotId)} · ${beacon.lineCount} lines</option>`).join("")
+      : '<option value="">Waiting for robot beacons...</option>';
+    await fetchDiagnosticBeaconLogs();
+  } catch (error) {
+    console.error("Failed to fetch diagnostic beacons:", error);
+  }
+}
+
+async function fetchDiagnosticBeaconLogs() {
+  if (!selectedBeaconId) return;
+  try {
+    const payload = await apiFetch(`/api/portal/lrd/beacons/${encodeURIComponent(selectedBeaconId)}/logs`);
+    const leftContent = document.getElementById("leftLogContent");
+    if (!leftContent) return;
+    leftContent.innerHTML = "";
+    appendRobotLogs((payload.lines || []).join("\n"));
+  } catch (error) {
+    console.error("Failed to fetch diagnostic beacon logs:", error);
+  }
+}
+
 async function init() {
   const params = getUrlParams();
   selectedRobotId = params.deviceId;
@@ -453,17 +485,11 @@ async function init() {
   // Set up split resizer
   setupSplitResizer();
 
-  // Set up robot select change handler
-  const robotSelect = document.getElementById("robotSelect");
-  if (robotSelect) {
-    robotSelect.addEventListener("change", handleRobotSelectChange);
-  }
-
-  // Set up robot connect button handler
-  const connectBtn = document.getElementById("robotConnectBtn");
-  if (connectBtn) {
-    connectBtn.addEventListener("click", toggleRobotConnection);
-  }
+  const beaconSelect = document.getElementById("beaconSelect");
+  if (beaconSelect) beaconSelect.addEventListener("change", event => {
+    selectedBeaconId = event.target.value || null;
+    fetchDiagnosticBeaconLogs();
+  });
 
   // Set up log polling diagnostics toggle
   await initLogPollingToggle();
@@ -471,8 +497,7 @@ async function init() {
   // Initial server ping check
   await measureServerPing();
 
-  // Fetch robots and populate select
-  await fetchRobots();
+  await fetchDiagnosticBeacons();
 
   // Initial server logs fetch
   await fetchServerLogs();
@@ -484,6 +509,7 @@ async function init() {
   if (!skipLogPolling) {
     logPollInterval = setInterval(fetchServerLogs, LOG_POLL_INTERVAL_MS);
   }
+  beaconPollInterval = setInterval(fetchDiagnosticBeacons, LOG_POLL_INTERVAL_MS);
 }
 
 // Clean up on page unload
@@ -493,6 +519,9 @@ window.addEventListener("beforeunload", () => {
   }
   if (logPollInterval) {
     clearInterval(logPollInterval);
+  }
+  if (beaconPollInterval) {
+    clearInterval(beaconPollInterval);
   }
   if (robotStreamAbortController) {
     robotStreamAbortController.abort();

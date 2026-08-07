@@ -1502,7 +1502,8 @@ internal static class PortalEndpoints
                 return Results.Unauthorized();
 
             var payload = await request.ReadFromJsonAsync<RobotDiagnosticBeaconPublishRequest>(cancellationToken);
-            if (payload is null || payload.Lines is null || payload.Lines.Count > 100)
+            if (payload is null || payload.Lines is null || payload.Lines.Count > 100 ||
+                payload.Lines.Any(line => line is null || line.Length > 16_384))
                 return Results.BadRequest(new { error = "A beacon payload with at most 100 log lines is required." });
 
             beaconStore.Publish(robotId, payload.Lines, DateTimeOffset.UtcNow);

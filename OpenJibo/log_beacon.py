@@ -40,10 +40,12 @@ def run(log_path, push_url, robot_id, token, interval):
                     pending.append(value)
 
             now = time.time()
-            if pending and (len(pending) >= 25 or now - last_push >= interval):
+            # Empty publishes are heartbeats so an idle robot remains visible.
+            if (pending and (len(pending) >= 25 or now - last_push >= interval)) or now - last_push >= interval:
                 try:
                     post_lines(push_url, robot_id, token, pending[:100])
-                    del pending[:100]
+                    if pending:
+                        del pending[:100]
                     last_push = now
                 except Exception as error:
                     print("Beacon publish failed: %s" % error)

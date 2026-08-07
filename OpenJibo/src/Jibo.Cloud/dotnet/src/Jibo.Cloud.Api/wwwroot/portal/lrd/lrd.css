@@ -146,48 +146,6 @@
   min-width: 200px;
 }
 
-.status-input {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  background: #070707;
-  color: #fff;
-  border: 1px solid #444;
-  width: 120px;
-}
-
-.status-input-port {
-  width: 60px;
-}
-
-.status-select-scheme {
-  min-width: 0;
-  width: 76px;
-}
-
-.status-btn {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.25rem;
-  background: #0099fb;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.status-btn:hover {
-  background: #007acd;
-}
-
-.status-btn.connected {
-  background: #ef4444;
-}
-
-.status-btn.connected:hover {
-  background: #dc2626;
-}
-
 @media (max-width: 800px) {
   .lrd-layout {
     min-height: 100dvh;
@@ -243,10 +201,6 @@
   .status-indicator {
     flex-wrap: wrap;
     max-width: 100%;
-  }
-
-  .status-input {
-    max-width: 42vw;
   }
 
   .status-select {

@@ -9,11 +9,11 @@ let pingInterval = null;
 let logPollInterval = null;
 let logOffset = 0;
 let currentLogFile = null;
-let robotStreamAbortController = null;
 let logPollInFlight = false;
 let skipLogPolling = false;
 let beaconPollInterval = null;
 let selectedBeaconId = null;
+let beaconPollInFlight = false;
 
 function setLogPollingEnabled(enabled) {
   skipLogPolling = !enabled;
@@ -291,86 +291,6 @@ function appendRobotLogs(logText) {
   }
 }
 
-async function toggleRobotConnection() {
-  const ipInput = document.getElementById("robotIpInput");
-  const portInput = document.getElementById("robotPortInput");
-  const schemeInput = document.getElementById("robotSchemeInput");
-  const tokenInput = document.getElementById("robotTokenInput");
-  const connectBtn = document.getElementById("robotConnectBtn");
-  const leftContent = document.getElementById("leftLogContent");
-
-  if (!ipInput || !connectBtn) return;
-
-  if (robotStreamAbortController) {
-    robotStreamAbortController.abort();
-    robotStreamAbortController = null;
-    connectBtn.textContent = "Connect";
-    connectBtn.classList.remove("connected");
-    if (leftContent) {
-      const notice = document.createElement('div');
-      notice.className = 'log-line';
-      notice.style.color = '#ef4444';
-      notice.textContent = '[Disconnected from robot log stream]';
-      leftContent.appendChild(notice);
-    }
-    return;
-  }
-
-  const ip = ipInput.value.trim();
-  const port = portInput ? portInput.value.trim() || "8765" : "8765";
-  const scheme = schemeInput ? schemeInput.value : "http";
-  const token = tokenInput ? tokenInput.value.trim() : "";
-
-  if (!ip) {
-    alert("Please enter a valid Robot IP address.");
-    return;
-  }
-
-  if (leftContent) {
-    leftContent.innerHTML = '';
-  }
-
-  const params = new URLSearchParams({ ip, scheme, port });
-  const url = `/api/portal/lrd/stream?${params.toString()}`;
-  console.log("Connecting to robot log stream at:", url);
-
-  robotStreamAbortController = new AbortController();
-  try {
-    const headers = {};
-    const portalToken = getSessionToken();
-    if (portalToken) headers.Authorization = `Bearer ${portalToken}`;
-    if (token) headers["X-Robot-Stream-Token"] = token;
-    const response = await fetch(url, { headers, signal: robotStreamAbortController.signal });
-    if (!response.ok || !response.body) throw new Error(`Robot stream failed (${response.status})`);
-    connectBtn.textContent = "Disconnect";
-    connectBtn.classList.add("connected");
-    if (leftContent) appendRobotLogs(`[Connected to robot log stream through portal]`);
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let pending = "";
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      pending += decoder.decode(value, { stream: true });
-      const events = pending.split("\n\n");
-      pending = events.pop() || "";
-      events.forEach(event => {
-        const data = event.split("\n").filter(line => line.startsWith("data:")).map(line => line.slice(5).trimStart()).join("\n");
-        if (data) appendRobotLogs(data);
-      });
-    }
-  } catch (e) {
-    if (e.name !== "AbortError") {
-      console.error("Robot stream error:", e);
-      if (leftContent) appendRobotLogs(`[Connection error / disconnected from robot stream]`);
-    }
-  } finally {
-    if (robotStreamAbortController) robotStreamAbortController = null;
-    connectBtn.textContent = "Connect";
-    connectBtn.classList.remove("connected");
-  }
-}
-
 function setupSplitResizer() {
   const resizer = document.getElementById("splitResizer");
   const leftPanel = document.querySelector(".left-panel");
@@ -449,6 +369,8 @@ async function initLogPollingToggle() {
 }
 
 async function fetchDiagnosticBeacons() {
+  if (beaconPollInFlight) return;
+  beaconPollInFlight = true;
   try {
     const payload = await apiFetch("/api/portal/lrd/beacons");
     const select = document.getElementById("beaconSelect");
@@ -456,12 +378,15 @@ async function fetchDiagnosticBeacons() {
     const beacons = payload.beacons || [];
     if (!beacons.some(beacon => beacon.robotId === selectedBeaconId))
       selectedBeaconId = beacons[0]?.robotId || null;
+    updateRobotConnectionStatus(!!selectedBeaconId);
     select.innerHTML = beacons.length
       ? beacons.map(beacon => `<option value="${escapeHtml(beacon.robotId)}" ${beacon.robotId === selectedBeaconId ? "selected" : ""}>${escapeHtml(beacon.robotId)} · ${beacon.lineCount} lines</option>`).join("")
       : '<option value="">Waiting for robot beacons...</option>';
     await fetchDiagnosticBeaconLogs();
   } catch (error) {
     console.error("Failed to fetch diagnostic beacons:", error);
+  } finally {
+    beaconPollInFlight = false;
   }
 }
 
@@ -522,9 +447,6 @@ window.addEventListener("beforeunload", () => {
   }
   if (beaconPollInterval) {
     clearInterval(beaconPollInterval);
-  }
-  if (robotStreamAbortController) {
-    robotStreamAbortController.abort();
   }
 });
 

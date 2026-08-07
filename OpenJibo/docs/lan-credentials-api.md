@@ -82,9 +82,11 @@ curl -sS http://192.168.7.105:8765/health
 jibo-list-updates --credentials /var/jibo/credentials.json --subsystem os
 ```
 
-3. Loop member mutation (portal or protocol `Loop_*.UpdateMember` / `InviteMember` / `RemoveMember` against `:8765`). Connected api-socket robots should receive `LoopUpdated`.
+3. Loop member mutation (portal People UI, or protocol `Loop_*.UpdateMember` / `InviteMember` / `RemoveMember` against `:8765`). Connected api-socket robots should receive `LoopUpdated`.
 
 4. Confirm captures under `captures/http` show `X-Amz-Target` hits on the LAN host.
+
+Portal owners can also browse robot-uploaded photos at `/portal` (Photos panel) once media has been created for the linked Loop.
 
 ## LRD log streamer port
 

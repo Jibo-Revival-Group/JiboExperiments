@@ -133,6 +133,13 @@ When prompted, enter the Jibo IP address.
 
 Use Playground when you want to test the local ASR/TTS client behavior directly. Use the `.NET` or Node cloud when you want Jibo to boot and talk through the cloud-shaped protocol path.
 
+## Portal: People And Photos
+
+With the .NET cloud running, open the owner portal at `/portal` and link a robot with a spoken verification code.
+
+- **People (Loop):** add, edit, and remove household members (first/last name, nickname, gender, birthday, child). Mutations push `LoopUpdated` to the robot.
+- **Photos:** browse images the robot uploaded through `Media_*` for that Loop. Thumbnails open in a lightbox; content is served from `/api/portal/photos/content`.
+
 ## Which One Should I Use?
 
 Use `.NET cloud` if you want the current OpenJibo behavior, release testing, captures, or anything close to the hosted future.

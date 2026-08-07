@@ -7,6 +7,7 @@ public sealed class ProtocolDispatchResult
     public int StatusCode { get; init; } = 200;
     public string ContentType { get; init; } = "application/x-amz-json-1.1";
     public string BodyText { get; init; } = "{}";
+    public byte[]? BodyBytes { get; init; }
 
     public IDictionary<string, string> Headers { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -36,6 +37,17 @@ public sealed class ProtocolDispatchResult
         {
             StatusCode = statusCode,
             BodyText = bodyText,
+            ContentType = contentType
+        };
+    }
+
+    public static ProtocolDispatchResult RawBytes(int statusCode, byte[] bodyBytes, string contentType)
+    {
+        return new ProtocolDispatchResult
+        {
+            StatusCode = statusCode,
+            BodyText = string.Empty,
+            BodyBytes = bodyBytes,
             ContentType = contentType
         };
     }

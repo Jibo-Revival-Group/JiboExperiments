@@ -202,6 +202,7 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
     context.Response.StatusCode = result.StatusCode;
     context.Response.ContentType = result.ContentType;
 
+    var responseBytes = result.BodyBytes?.Length ?? result.BodyText?.Length ?? 0;
     app.Logger.LogInformation(
         "Protocol request completed requestId={RequestId} traceId={TraceId} operation={Operation} " +
         "deviceId={DeviceId} statusCode={StatusCode} contentType={ContentType} responseBytes={ResponseBytes}",
@@ -211,11 +212,14 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
         envelope.DeviceId,
         result.StatusCode,
         result.ContentType,
-        result.BodyText?.Length ?? 0);
+        responseBytes);
 
     foreach (var header in result.Headers) context.Response.Headers[header.Key] = header.Value;
 
-    if (!string.IsNullOrEmpty(result.BodyText)) await context.Response.WriteAsync(result.BodyText, cancellationToken);
+    if (result.BodyBytes is { Length: > 0 } bodyBytes)
+        await context.Response.Body.WriteAsync(bodyBytes, cancellationToken);
+    else if (!string.IsNullOrEmpty(result.BodyText))
+        await context.Response.WriteAsync(result.BodyText, cancellationToken);
 });
 
 app.Run();

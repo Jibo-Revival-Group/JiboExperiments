@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Security.Cryptography;
@@ -410,18 +411,37 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "firstName is required." });
 
             var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var birthday = ParsePortalBirthday(request.Birthday);
+            var isChild = request.IsChild == true;
+            var nickname = NormalizeOptionalName(request.Nickname);
             var member = cloudStateStore.AddLoopMember(
                 loopId,
                 null,
                 null,
                 firstName,
-                request.LastName?.Trim(),
+                NormalizeOptionalName(request.LastName),
                 NormalizeGender(request.Gender),
-                null,
-                false,
+                birthday,
+                isChild,
                 "member",
                 markPortalEdited: true);
 
+            if (!string.IsNullOrWhiteSpace(nickname))
+            {
+                member = cloudStateStore.UpdateLoopMember(
+                    loopId,
+                    member.Id,
+                    member.FirstName,
+                    member.LastName,
+                    member.Gender,
+                    member.Birthday,
+                    member.IsChild,
+                    nickname,
+                    member.PhoneticName,
+                    markPortalEdited: true);
+            }
+
+            UpsertPortalPersonFromMember(cloudStateStore, session, loopId, member);
             await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
             return Results.Json(BuildLoopMemberPayload(member));
         });
@@ -451,18 +471,23 @@ internal static class PortalEndpoints
 
             try
             {
+                // null = leave unchanged; 0 = clear; positive ms = set.
+                long? birthday = request.Birthday is null
+                    ? null
+                    : ParsePortalBirthday(request.Birthday) ?? 0L;
                 var updated = cloudStateStore.UpdateLoopMember(
                     loopId,
                     memberId,
                     firstName,
-                    request.LastName?.Trim(),
+                    request.LastName is null ? null : (NormalizeOptionalName(request.LastName) ?? string.Empty),
                     request.Gender is null ? null : NormalizeGender(request.Gender),
-                    null,
-                    existing.IsChild,
-                    null,
-                    null,
+                    birthday,
+                    request.IsChild ?? existing.IsChild,
+                    request.Nickname is null ? null : (NormalizeOptionalName(request.Nickname) ?? string.Empty),
+                    existing.PhoneticName,
                     markPortalEdited: true);
 
+                UpsertPortalPersonFromMember(cloudStateStore, session, loopId, updated);
                 await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
                 return Results.Json(BuildLoopMemberPayload(updated));
             }
@@ -496,6 +521,59 @@ internal static class PortalEndpoints
             cloudStateStore.RemoveLoopMember(loopId, memberId);
             await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
             return Results.Json(new { removed = true, memberId });
+        });
+
+        app.MapGet("/api/portal/photos", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var photos = cloudStateStore.ListMedia([loopId])
+                .Where(IsPortalGalleryImage)
+                .OrderByDescending(static item => item.CreatedUtc)
+                .Select(item => BuildPortalPhotoPayload(item))
+                .ToArray();
+
+            return Results.Json(new { loopId, photos, count = photos.Length });
+        });
+
+        app.MapGet("/api/portal/photos/content", async (
+            string path,
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore,
+            IMediaContentStore mediaContentStore,
+            CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null)
+                return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(path))
+                return Results.BadRequest(new { error = "path is required." });
+
+            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var normalizedPath = Uri.UnescapeDataString(path.Trim());
+            var media = cloudStateStore.GetMedia([normalizedPath, $"/{normalizedPath.TrimStart('/')}"])
+                .FirstOrDefault(item =>
+                    item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                    !item.IsDeleted &&
+                    IsPortalGalleryImage(item));
+            if (media is null)
+                return Results.NotFound(new { error = "Photo was not found for this Loop." });
+
+            var content = await mediaContentStore.LoadAsync(media.Path, cancellationToken);
+            if (content?.Content is not { Length: > 0 } bytes)
+                return Results.NotFound(new { error = "Photo content was not found." });
+
+            var contentType = ResolvePortalImageContentType(bytes, content.ContentType,
+                TryReadMediaMetaString(media.Meta, "contentType"));
+            return Results.File(bytes, contentType);
         });
 
         app.MapPost("/api/portal/calendar-feeds/{memberId}/test", async (
@@ -2378,12 +2456,20 @@ internal static class PortalEndpoints
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var robotKeys = BuildPortalRobotKeys(session, cloudStateStore, loopId);
+        var activeMemberIds = cloudStateStore.GetLoopMembers(loopId)
+            .Select(static member => member.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var person in cloudStateStore.GetPeople()
                      .Where(item => PersonBelongsToPortalRobot(item, loopId, robotKeys))
                      .OrderBy(item => item.IsPrimary ? 0 : 1)
                      .ThenBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase))
         {
+            // Portal-created people use member ids; drop them once the member is removed.
+            if (person.PersonId.StartsWith("mbr-", StringComparison.OrdinalIgnoreCase) &&
+                !activeMemberIds.Contains(person.PersonId))
+                continue;
+
             if (!seen.Add(person.PersonId)) continue;
             yield return new CalendarFeedPerson(
                 person.PersonId,
@@ -2532,11 +2618,159 @@ internal static class PortalEndpoints
             id = member.Id,
             firstName = member.FirstName,
             lastName = member.LastName,
+            nickname = member.Nickname,
             displayName,
             gender = member.Gender,
+            birthday = FormatPortalBirthday(member.Birthday),
+            birthdayMs = member.Birthday,
+            isChild = member.IsChild,
             type = member.Type,
             canRemove = member.Type is not "owner" and not "robot"
         };
+    }
+
+    private static void UpsertPortalPersonFromMember(
+        ICloudStateStore cloudStateStore,
+        PortalSessionService.PortalSession session,
+        string loopId,
+        LoopMemberRecord member)
+    {
+        var displayName = !string.IsNullOrWhiteSpace(member.Nickname)
+            ? member.Nickname!.Trim()
+            : string.Join(' ', new[] { member.FirstName, member.LastName }
+                .Where(static part => !string.IsNullOrWhiteSpace(part))).Trim();
+        if (string.IsNullOrWhiteSpace(displayName))
+            displayName = member.Id;
+
+        var robot = ResolvePortalRobot(cloudStateStore, session);
+        cloudStateStore.UpsertPerson(new PersonRecord
+        {
+            PersonId = member.Id,
+            AccountId = cloudStateStore.GetAccount().AccountId,
+            LoopId = loopId,
+            RobotId = string.IsNullOrWhiteSpace(robot.RobotId) ? session.FriendlyId : robot.RobotId,
+            DisplayName = displayName,
+            Alias = string.IsNullOrWhiteSpace(member.Nickname)
+                ? member.FirstName
+                : member.Nickname,
+            IsPrimary = string.Equals(member.Type, "owner", StringComparison.OrdinalIgnoreCase)
+        });
+    }
+
+    private static string? NormalizeOptionalName(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static object BuildPortalPhotoPayload(MediaRecord media)
+    {
+        var contentPath = $"/api/portal/photos/content?path={Uri.EscapeDataString(media.Path)}";
+        return new
+        {
+            path = media.Path,
+            createdUtc = media.CreatedUtc,
+            mediaType = media.MediaType,
+            contentType = TryReadMediaMetaString(media.Meta, "contentType"),
+            contentUrl = contentPath,
+            thumbnailUrl = contentPath,
+            isEncrypted = media.IsEncrypted,
+            reference = media.Reference
+        };
+    }
+
+    private static bool IsPortalGalleryImage(MediaRecord media)
+    {
+        if (media.IsDeleted || media.IsEncrypted) return false;
+
+        var path = media.Path ?? string.Empty;
+        if (path.StartsWith("logs/", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("asr/", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("backups/", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var type = media.MediaType ?? string.Empty;
+        if (type.Contains("image", StringComparison.OrdinalIgnoreCase) ||
+            type.Equals("photo", StringComparison.OrdinalIgnoreCase) ||
+            type.Equals("jpeg", StringComparison.OrdinalIgnoreCase) ||
+            type.Equals("jpg", StringComparison.OrdinalIgnoreCase) ||
+            type.Equals("png", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var contentType = TryReadMediaMetaString(media.Meta, "contentType") ?? string.Empty;
+        if (contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return path.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+               path.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+               path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+               path.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) ||
+               path.EndsWith(".webp", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolvePortalImageContentType(byte[] bytes, string? storedContentType, string? metaContentType)
+    {
+        if (!string.IsNullOrWhiteSpace(storedContentType) &&
+            storedContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return storedContentType;
+
+        if (!string.IsNullOrWhiteSpace(metaContentType) &&
+            metaContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return metaContentType;
+
+        if (bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+            return "image/jpeg";
+        if (bytes.Length >= 8 &&
+            bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47)
+            return "image/png";
+        if (bytes.Length >= 6 &&
+            bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46)
+            return "image/gif";
+        if (bytes.Length >= 12 &&
+            bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+            bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50)
+            return "image/webp";
+
+        return string.IsNullOrWhiteSpace(storedContentType) ? "application/octet-stream" : storedContentType;
+    }
+
+    private static string? TryReadMediaMetaString(IDictionary<string, object?> meta, string key)
+    {
+        if (!meta.TryGetValue(key, out var value) || value is null) return null;
+        return value switch
+        {
+            string text => text,
+            JsonElement { ValueKind: JsonValueKind.String } element => element.GetString(),
+            _ => value.ToString()
+        };
+    }
+
+    private static long? ParsePortalBirthday(string? birthday)
+    {
+        if (string.IsNullOrWhiteSpace(birthday)) return null;
+
+        var trimmed = birthday.Trim();
+        if (long.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out var unixMs))
+        {
+            // Accept seconds or milliseconds.
+            if (unixMs > 0 && unixMs < 100_000_000_000L)
+                unixMs *= 1000;
+            return unixMs;
+        }
+
+        if (DateOnly.TryParse(trimmed, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateOnly))
+            return new DateTimeOffset(dateOnly.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero)
+                .ToUnixTimeMilliseconds();
+
+        if (DateTimeOffset.TryParse(trimmed, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal,
+                out var dto))
+            return dto.ToUnixTimeMilliseconds();
+
+        return null;
+    }
+
+    private static string? FormatPortalBirthday(long? birthdayMs)
+    {
+        if (birthdayMs is null or <= 0) return null;
+        return DateTimeOffset.FromUnixTimeMilliseconds(birthdayMs.Value).UtcDateTime.ToString("yyyy-MM-dd",
+            CultureInfo.InvariantCulture);
     }
 
     private static string NormalizeGender(string? gender)
@@ -2624,13 +2858,19 @@ internal static class PortalEndpoints
         string? PortalSessionToken,
         string? FirstName,
         string? LastName,
-        string? Gender);
+        string? Nickname,
+        string? Gender,
+        string? Birthday,
+        bool? IsChild);
 
     private sealed record UpdateLoopMemberRequest(
         string? PortalSessionToken,
         string? FirstName,
         string? LastName,
-        string? Gender);
+        string? Nickname,
+        string? Gender,
+        string? Birthday,
+        bool? IsChild);
 
     private sealed record PortalLogoutRequest(string? PortalSessionToken);
 

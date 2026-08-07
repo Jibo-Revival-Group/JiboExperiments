@@ -2680,7 +2680,8 @@ public sealed class JiboCloudProtocolServiceTests
 
         Assert.Equal(200, mediaGet.StatusCode);
         Assert.Equal("image/jpeg", mediaGet.ContentType);
-        Assert.Equal("binary-photo-placeholder", mediaGet.BodyText);
+        Assert.NotNull(mediaGet.BodyBytes);
+        Assert.Equal("binary-photo-placeholder", Encoding.UTF8.GetString(mediaGet.BodyBytes!));
     }
 
     [Fact]
@@ -2721,7 +2722,45 @@ public sealed class JiboCloudProtocolServiceTests
 
         Assert.Equal(200, mediaGet.StatusCode);
         Assert.Equal("image/jpeg", mediaGet.ContentType);
-        Assert.Equal("binary-photo-placeholder", mediaGet.BodyText);
+        Assert.NotNull(mediaGet.BodyBytes);
+        Assert.Equal("binary-photo-placeholder", Encoding.UTF8.GetString(mediaGet.BodyBytes!));
+    }
+
+    [Fact]
+    public async Task MediaGet_ReturnsRawJpegBytesWithoutUtf8Corruption()
+    {
+        var directoryPath = Path.Combine(Path.GetTempPath(), "OpenJibo.Media.Tests", Guid.NewGuid().ToString("N"));
+        var service = new JiboCloudProtocolService(new InMemoryCloudStateStore(),
+            new FileMediaContentStore(directoryPath));
+        var jpeg = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0xFF, 0xD9 };
+
+        var create = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Media_20160725",
+            Operation = "Create",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Content-Type"] = "image/jpeg",
+                ["x-path"] = "/media/raw-jpeg",
+                ["x-type"] = "image"
+            },
+            BodyBytes = jpeg
+        });
+        Assert.Equal(200, create.StatusCode);
+
+        var mediaGet = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "GET",
+            Path = "/media/raw-jpeg"
+        });
+
+        Assert.Equal(200, mediaGet.StatusCode);
+        Assert.Equal("image/jpeg", mediaGet.ContentType);
+        Assert.Equal(jpeg, mediaGet.BodyBytes);
+        Assert.True(string.IsNullOrEmpty(mediaGet.BodyText));
     }
 
     [Fact]

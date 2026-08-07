@@ -20,27 +20,55 @@ public sealed class PortalLoopMemberApiTests
 
         var addResponse = await client.PostAsJsonAsync(
             "/api/portal/loop-members",
-            new { firstName = "Jon", lastName = "Tester", gender = "male" });
+            new
+            {
+                firstName = "Jon",
+                lastName = "Tester",
+                nickname = "JT",
+                gender = "male",
+                birthday = "2015-06-01",
+                isChild = true
+            });
         Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
         var added = await addResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("Jon", added.GetProperty("firstName").GetString());
+        Assert.Equal("JT", added.GetProperty("nickname").GetString());
         Assert.Equal("male", added.GetProperty("gender").GetString());
+        Assert.Equal("2015-06-01", added.GetProperty("birthday").GetString());
+        Assert.True(added.GetProperty("isChild").GetBoolean());
         Assert.True(added.GetProperty("canRemove").GetBoolean());
         var memberId = added.GetProperty("id").GetString();
+
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        Assert.Contains(store.GetPeople(), person =>
+            person.PersonId == memberId &&
+            string.Equals(person.DisplayName, "JT", StringComparison.Ordinal));
 
         var listBody = await (await client.GetAsync("/api/portal/loop-members")).Content.ReadAsStringAsync();
         Assert.Contains("Jon", listBody, StringComparison.Ordinal);
 
         var dashboardBody = await (await client.GetAsync("/api/portal/dashboard")).Content.ReadAsStringAsync();
         Assert.Contains("Jon", dashboardBody, StringComparison.Ordinal);
+        Assert.Contains(memberId!, dashboardBody, StringComparison.Ordinal);
 
         var updateResponse = await client.PutAsJsonAsync(
             $"/api/portal/loop-members/{memberId}",
-            new { firstName = "Jonathan", lastName = "Tester", gender = "female" });
+            new
+            {
+                firstName = "Jonathan",
+                lastName = "Tester",
+                nickname = "Jonny",
+                gender = "female",
+                birthday = "2014-01-15",
+                isChild = false
+            });
         Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
         var updated = await updateResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("Jonathan", updated.GetProperty("firstName").GetString());
+        Assert.Equal("Jonny", updated.GetProperty("nickname").GetString());
         Assert.Equal("female", updated.GetProperty("gender").GetString());
+        Assert.Equal("2014-01-15", updated.GetProperty("birthday").GetString());
+        Assert.False(updated.GetProperty("isChild").GetBoolean());
 
         var removeResponse = await client.DeleteAsync($"/api/portal/loop-members/{memberId}");
         Assert.Equal(HttpStatusCode.OK, removeResponse.StatusCode);

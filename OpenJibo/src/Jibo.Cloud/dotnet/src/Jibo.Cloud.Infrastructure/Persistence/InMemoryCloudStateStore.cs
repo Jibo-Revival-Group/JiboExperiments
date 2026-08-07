@@ -1368,15 +1368,15 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 AccountId = existing.AccountId,
                 Email = existing.Email,
                 FirstName = firstName?.Trim() ?? existing.FirstName,
-                LastName = lastName?.Trim() ?? existing.LastName,
+                LastName = lastName is null ? existing.LastName : NullIfWhiteSpace(lastName),
                 Gender = gender ?? existing.Gender,
-                Birthday = birthday ?? existing.Birthday,
+                Birthday = birthday is null ? existing.Birthday : birthday <= 0 ? null : birthday,
                 IsChild = isChild,
                 PhoneNumber = existing.PhoneNumber,
                 Status = existing.Status,
                 Type = existing.Type,
-                Nickname = nickname ?? existing.Nickname,
-                PhoneticName = phoneticName ?? existing.PhoneticName,
+                Nickname = nickname is null ? existing.Nickname : NullIfWhiteSpace(nickname),
+                PhoneticName = phoneticName is null ? existing.PhoneticName : NullIfWhiteSpace(phoneticName),
                 FaceEnrolled = existing.FaceEnrolled,
                 VoiceEnrolled = existing.VoiceEnrolled,
                 LegalGuardianId = existing.LegalGuardianId,
@@ -2976,6 +2976,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             m.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
             m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
     }
+
+    private static string? NullIfWhiteSpace(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static string Slugify(string value)
     {

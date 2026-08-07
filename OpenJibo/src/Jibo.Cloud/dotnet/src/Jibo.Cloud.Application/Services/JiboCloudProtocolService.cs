@@ -1692,9 +1692,10 @@ public sealed class JiboCloudProtocolService(
         var storedContent = _mediaContentStore.LoadAsync(media.Path, CancellationToken.None).GetAwaiter().GetResult();
         var contentType = storedContent?.ContentType ?? TryReadMetaString(media.Meta, "contentType") ??
             "application/octet-stream";
-        var bodyText = storedContent is not null
-            ? Encoding.UTF8.GetString(storedContent.Content)
-            : TryReadMetaString(media.Meta, "bodyText") ?? string.Empty;
+        if (storedContent?.Content is { Length: > 0 } bytes)
+            return ProtocolDispatchResult.RawBytes(200, bytes, contentType);
+
+        var bodyText = TryReadMetaString(media.Meta, "bodyText") ?? string.Empty;
         return ProtocolDispatchResult.Raw(200, bodyText, contentType);
     }
 

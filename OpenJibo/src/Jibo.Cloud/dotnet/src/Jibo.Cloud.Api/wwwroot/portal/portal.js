@@ -356,27 +356,21 @@ function bindPortalControls() {
       const status = document.getElementById("loopMembersActionStatus");
       const memberId = button.getAttribute("data-member-id");
       const row = button.closest(".member-row");
-      const firstName = row.querySelector(".member-first-name").value.trim();
-      const lastName = row.querySelector(".member-last-name").value.trim();
-      const gender = row.querySelector(".member-gender").value;
+      const payload = readMemberForm(row);
 
-      if (!firstName) {
-        status.textContent = "First name is required.";
-        status.className = "status error";
-        status.classList.remove("hidden");
+      if (!payload.firstName) {
+        showMemberStatus(status, "First name is required.", true);
         return;
       }
 
       try {
         await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
           method: "PUT",
-          body: JSON.stringify({ firstName, lastName, gender }),
+          body: JSON.stringify(payload),
         });
-        await renderDashboard("Loop member updated.");
+        await renderDashboard("Person updated in this Loop.");
       } catch (error) {
-        status.textContent = error.message;
-        status.className = "status error";
-        status.classList.remove("hidden");
+        showMemberStatus(status, error.message, true);
       }
     });
   });
@@ -391,11 +385,9 @@ function bindPortalControls() {
         await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
           method: "DELETE",
         });
-        await renderDashboard("Loop member removed.");
+        await renderDashboard("Person removed from this Loop.");
       } catch (error) {
-        status.textContent = error.message;
-        status.className = "status error";
-        status.classList.remove("hidden");
+        showMemberStatus(status, error.message, true);
       }
     });
   });
@@ -404,27 +396,22 @@ function bindPortalControls() {
   if (addMemberButton) {
     addMemberButton.addEventListener("click", async () => {
       const status = document.getElementById("loopMembersActionStatus");
-      const firstName = document.getElementById("newMemberFirstName").value.trim();
-      const lastName = document.getElementById("newMemberLastName").value.trim();
-      const gender = document.getElementById("newMemberGender").value;
+      const row = document.getElementById("newMemberRow");
+      const payload = readMemberForm(row);
 
-      if (!firstName) {
-        status.textContent = "First name is required.";
-        status.className = "status error";
-        status.classList.remove("hidden");
+      if (!payload.firstName) {
+        showMemberStatus(status, "First name is required.", true);
         return;
       }
 
       try {
         await apiFetch("/api/portal/loop-members", {
           method: "POST",
-          body: JSON.stringify({ firstName, lastName, gender }),
+          body: JSON.stringify(payload),
         });
-        await renderDashboard("Loop member added.");
+        await renderDashboard("Person added to this Loop.");
       } catch (error) {
-        status.textContent = error.message;
-        status.className = "status error";
-        status.classList.remove("hidden");
+        showMemberStatus(status, error.message, true);
       }
     });
   }
@@ -728,16 +715,44 @@ function genderOptionsHtml(selectedGender) {
   `).join("");
 }
 
+function readMemberForm(row) {
+  if (!row) {
+    return { firstName: "", lastName: "", nickname: "", gender: "unknown", birthday: "", isChild: false };
+  }
+
+  return {
+    firstName: (row.querySelector(".member-first-name")?.value || "").trim(),
+    lastName: (row.querySelector(".member-last-name")?.value || "").trim(),
+    nickname: (row.querySelector(".member-nickname")?.value || "").trim(),
+    gender: row.querySelector(".member-gender")?.value || "unknown",
+    birthday: (row.querySelector(".member-birthday")?.value || "").trim(),
+    isChild: !!row.querySelector(".member-is-child")?.checked,
+  };
+}
+
+function showMemberStatus(status, message, isError) {
+  if (!status) return;
+  status.textContent = message;
+  status.className = isError ? "status error" : "status success";
+  status.classList.remove("hidden");
+}
+
 function renderLoopMemberRow(member) {
   const badgeLabel = member.type === "owner" ? "Owner" : "Member";
   const badgeClass = member.type === "owner" ? "success" : "neutral";
   return `
     <div class="member-row" data-member-id="${escapeHtml(member.id)}">
-      <input class="member-first-name" type="text" value="${escapeHtml(member.firstName || "")}" placeholder="First name">
-      <input class="member-last-name" type="text" value="${escapeHtml(member.lastName || "")}" placeholder="Last name">
-      <select class="member-gender">
+      <input class="member-first-name" type="text" value="${escapeHtml(member.firstName || "")}" placeholder="First name" aria-label="First name">
+      <input class="member-last-name" type="text" value="${escapeHtml(member.lastName || "")}" placeholder="Last name" aria-label="Last name">
+      <input class="member-nickname" type="text" value="${escapeHtml(member.nickname || "")}" placeholder="Nickname" aria-label="Nickname">
+      <select class="member-gender" aria-label="Gender">
         ${genderOptionsHtml(member.gender)}
       </select>
+      <input class="member-birthday" type="date" value="${escapeHtml(member.birthday || "")}" aria-label="Birthday">
+      <label class="member-child-label">
+        <input class="member-is-child" type="checkbox"${member.isChild ? " checked" : ""}>
+        Child
+      </label>
       <div class="member-row-actions">
         <span class="badge ${badgeClass}">${badgeLabel}</span>
         <button class="button secondary save-member-button" data-member-id="${escapeHtml(member.id)}" type="button">Save</button>
@@ -762,15 +777,23 @@ function renderLoopMembersSection(dashboard) {
         </div>
         <span class="badge success">${loopMembers.length} ${loopMembers.length === 1 ? "person" : "people"}</span>
       </div>
-      <p class="muted">Edit each person's name and gender, or add and remove people from this robot's Loop. The owner and the robot itself cannot be removed here.</p>
+      <p class="muted">Add, edit, or remove people in this Loop. Nickname, birthday, and child flag sync to the robot via LoopUpdated. The owner cannot be removed here.</p>
       ${memberRows}
-      <div class="member-row member-row-add">
-        <input id="newMemberFirstName" type="text" placeholder="First name">
-        <input id="newMemberLastName" type="text" placeholder="Last name (optional)">
-        <select id="newMemberGender">
+      <div class="member-row member-row-add" id="newMemberRow">
+        <input class="member-first-name" id="newMemberFirstName" type="text" placeholder="First name" aria-label="New first name">
+        <input class="member-last-name" id="newMemberLastName" type="text" placeholder="Last name (optional)" aria-label="New last name">
+        <input class="member-nickname" id="newMemberNickname" type="text" placeholder="Nickname (optional)" aria-label="New nickname">
+        <select class="member-gender" id="newMemberGender" aria-label="New gender">
           ${genderOptionsHtml("unknown")}
         </select>
-        <button class="button primary" id="addMemberButton" type="button">Add person</button>
+        <input class="member-birthday" id="newMemberBirthday" type="date" aria-label="New birthday">
+        <label class="member-child-label">
+          <input class="member-is-child" id="newMemberIsChild" type="checkbox">
+          Child
+        </label>
+        <div class="member-row-actions">
+          <button class="button primary" id="addMemberButton" type="button">Add person</button>
+        </div>
       </div>
       <p id="loopMembersActionStatus" class="status hidden"></p>
     </div>
@@ -780,6 +803,7 @@ function renderLoopMembersSection(dashboard) {
 function renderLoopPanel(dashboard) {
   const calendarFeeds = dashboard.calendarFeeds || { members: [] };
   const members = calendarFeeds.members || [];
+  const loopMembers = (dashboard.loopMembers && dashboard.loopMembers.members) || [];
   const options = members.map((member) => `
     <option value="${escapeHtml(member.memberId)}">
       ${escapeHtml(member.displayName || member.memberId)}
@@ -787,7 +811,9 @@ function renderLoopPanel(dashboard) {
   `).join("");
 
   const memberRows = members.length === 0
-    ? `<li><span class="muted">No Loop people found yet. Talk to the robot once so it can sync its Loop roster, then manage calendars here.</span></li>`
+    ? `<li><span class="muted">${loopMembers.length > 0
+      ? "People are in this Loop. Choose someone below to attach a private calendar."
+      : "No Loop people yet. Add someone in People above, then attach calendars here."}</span></li>`
     : members.map((member) => `
       <li>
         <strong>${escapeHtml(member.displayName || member.memberId)}</strong>
@@ -807,9 +833,9 @@ function renderLoopPanel(dashboard) {
           <p class="eyebrow">Household</p>
           <h2>Loop</h2>
         </div>
-        <span class="badge success">${members.length} ${members.length === 1 ? "person" : "people"}</span>
+        <span class="badge success">${loopMembers.length} ${loopMembers.length === 1 ? "person" : "people"}</span>
       </div>
-      <p class="muted">Manage this robot's Loop: add or remove people, fix a name or gender, and attach calendars.</p>
+      <p class="muted">Manage this robot's Loop: add or remove people, edit profiles, and attach calendars.</p>
 
       ${renderLoopMembersSection(dashboard)}
 
@@ -922,10 +948,95 @@ function renderHomeAssistantPanel(dashboard) {
   `;
 }
 
+function authPhotoUrl(url) {
+  const token = getSessionToken();
+  if (!token || !url) return url || "";
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}portalSessionToken=${encodeURIComponent(token)}`;
+}
+
+function renderPhotosPanel(photosPayload) {
+  const photos = (photosPayload && photosPayload.photos) || [];
+  const count = photosPayload?.count ?? photos.length;
+  const grid = photos.length === 0
+    ? `<p class="muted">No photos uploaded from this robot yet. When Jibo saves pictures to the cloud, they appear here.</p>`
+    : `<div class="photo-grid">
+        ${photos.map((photo) => `
+          <button class="photo-thumb" type="button"
+            data-photo-path="${escapeHtml(photo.path || "")}"
+            data-photo-url="${escapeHtml(authPhotoUrl(photo.contentUrl || photo.thumbnailUrl || ""))}"
+            data-photo-created="${escapeHtml(photo.createdUtc || "")}"
+            aria-label="Open photo ${escapeHtml(photo.path || "")}">
+            <img src="${escapeHtml(authPhotoUrl(photo.thumbnailUrl || photo.contentUrl || ""))}" alt="" loading="lazy">
+          </button>
+        `).join("")}
+      </div>`;
+
+  return `
+    <section class="card panel" id="photosPanel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Media</p>
+          <h2>Photos</h2>
+        </div>
+        <span class="badge success">${count} ${count === 1 ? "photo" : "photos"}</span>
+      </div>
+      <p class="muted">Browse pictures this robot has uploaded to OpenJibo for your Loop.</p>
+      ${grid}
+      <div id="photoLightbox" class="photo-lightbox hidden" role="dialog" aria-modal="true" aria-label="Photo preview">
+        <button class="photo-lightbox-close" type="button" aria-label="Close">Close</button>
+        <img id="photoLightboxImage" alt="Selected robot photo">
+        <p id="photoLightboxMeta" class="muted"></p>
+      </div>
+    </section>
+  `;
+}
+
+function bindPhotoGalleryControls() {
+  const lightbox = document.getElementById("photoLightbox");
+  const image = document.getElementById("photoLightboxImage");
+  const meta = document.getElementById("photoLightboxMeta");
+  const closeButton = lightbox?.querySelector(".photo-lightbox-close");
+
+  const closeLightbox = () => {
+    if (!lightbox) return;
+    lightbox.classList.add("hidden");
+    if (image) image.removeAttribute("src");
+  };
+
+  closeButton?.addEventListener("click", closeLightbox);
+  lightbox?.addEventListener("click", (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+
+  document.querySelectorAll(".photo-thumb").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!lightbox || !image) return;
+      const url = button.getAttribute("data-photo-url");
+      const created = button.getAttribute("data-photo-created");
+      const path = button.getAttribute("data-photo-path");
+      if (!url) return;
+      image.src = url;
+      if (meta) {
+        meta.textContent = [path, created ? formatDate(created) : ""]
+          .filter(Boolean)
+          .join(" · ");
+      }
+      lightbox.classList.remove("hidden");
+    });
+  });
+}
+
 async function renderDashboard(message = "", tone = "success") {
   let dashboard;
+  let photosPayload = { photos: [], count: 0 };
   try {
     dashboard = await apiFetch("/api/portal/dashboard");
+    try {
+      photosPayload = await apiFetch("/api/portal/photos");
+    } catch {
+      photosPayload = { photos: [], count: 0 };
+    }
   } catch (error) {
     clearSessionToken();
     renderLogin(error.message, true);
@@ -944,6 +1055,7 @@ async function renderDashboard(message = "", tone = "success") {
           <p class="muted">Manage integrations for this robot.</p>
         </div>
         <div class="button-row" style="margin-top: 0;">
+          <button class="button secondary" id="refreshButton" type="button">Refresh</button>
           <button class="button secondary" id="logoutButton" type="button">Sign out</button>
         </div>
       </header>
@@ -963,6 +1075,8 @@ async function renderDashboard(message = "", tone = "success") {
         ${renderLoopPanel(dashboard)}
       </div>
 
+      ${renderPhotosPanel(photosPayload)}
+
       ${adminPanel}
 
       ${identityGraphPanel}
@@ -973,6 +1087,7 @@ async function renderDashboard(message = "", tone = "success") {
 
   document.getElementById("logoutButton").addEventListener("click", logout);
   bindPortalControls();
+  bindPhotoGalleryControls();
 }
 
 async function logout() {

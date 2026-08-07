@@ -292,6 +292,7 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
         <div class="row-actions">
           <button class="button secondary compact view-artifacts" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Artifacts</button>
           <button class="button secondary compact open-lrd" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Open in LRD</button>
+          ${(robot.friendlyName === "OpenJibo Registered Robot" || String(robot.robotId || "").startsWith("robot-")) ? `<button class="button secondary compact suggest-identity" data-device-id="${escapeHtml(robot.deviceId)}" type="button">Suggest identity</button>` : ""}
           <button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button>
         </div>
       </td>
@@ -388,6 +389,27 @@ async function setRobotArchive(deviceId, hidden) {
     body: JSON.stringify({ hidden }),
   });
   await refreshStatus(hidden ? "Robot archived from the default view." : "Robot restored to the default view.");
+}
+
+async function suggestRobotIdentity(deviceId) {
+  try {
+    const suggestion = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/identity-suggestion`);
+    if (!suggestion.suggested) {
+      window.alert("No reliable robot ID suggestion is available yet. Keep the record unclaimed until stronger evidence arrives.");
+      return;
+    }
+    const evidence = (suggestion.evidence || []).slice(0, 3).map(item => `${item.field}: ${item.value}`).join("\n");
+    const action = suggestion.action === "merge" ? "merge this record into" : "rename this record to";
+    if (!window.confirm(`Evidence suggests ${suggestion.proposedRobotId}.\n\n${evidence}\n\nDo you want to ${action} ${suggestion.proposedRobotId}?`)) return;
+    const result = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/identity-suggestion/apply`, {
+      method: "POST",
+      body: JSON.stringify({ proposedRobotId: suggestion.proposedRobotId }),
+    });
+    await refreshStatus(result.action === "merge" ? "Identity suggestion applied by merge." : "Robot identity renamed.", "success", { force: true });
+  } catch (error) {
+    setStatusBanner(error.message, "error");
+    renderStatusView(latestSummary);
+  }
 }
 
 async function openRobotArtifacts(deviceId, robotName) {
@@ -978,6 +1000,9 @@ function renderStatusView(summary, previous = previousSummary) {
       const params = new URLSearchParams({ deviceId: button.dataset.deviceId || "", robotName: button.dataset.robotName || "" });
       window.open(`/portal/lrd/index.html?${params.toString()}`, "_blank", "noopener");
     });
+  });
+  document.querySelectorAll(".suggest-identity").forEach((button) => {
+    button.addEventListener("click", () => suggestRobotIdentity(button.dataset.deviceId));
   });
   document.querySelectorAll(".view-artifact").forEach((button) => {
     button.addEventListener("click", () => openArtifact(button.dataset.path));

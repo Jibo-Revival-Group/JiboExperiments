@@ -1225,6 +1225,90 @@ internal static class PortalEndpoints
             catch (KeyNotFoundException) { return Results.NotFound(new { error = "Robot record was not found." }); }
         });
 
+        app.MapGet("/api/portal/status/robots/{deviceId}/identity-suggestion", async (
+            string deviceId, HttpRequest request, PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore, IMediaContentStore mediaContentStore,
+            CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            var device = cloudStateStore.GetDevices().FirstOrDefault(item =>
+                item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
+            if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
+
+            var evidence = new List<object>();
+            var candidates = new List<string>();
+            foreach (var robotSession in cloudStateStore.GetSessions().Where(item =>
+                         !string.IsNullOrWhiteSpace(item.DeviceId) &&
+                         item.DeviceId.Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase)))
+            {
+                foreach (var key in new[] { "robotFriendlyId", "friendlyId", "registeredRobotId", "robotId" })
+                {
+                    if (!robotSession.Metadata.TryGetValue(key, out var value) || value is null) continue;
+                    var candidate = value.ToString()?.Trim();
+                    if (IsIdentityNameCandidate(candidate, device))
+                    {
+                        candidates.Add(candidate!);
+                        evidence.Add(new { source = "session", field = key, value = candidate });
+                    }
+                }
+            }
+            var artifacts = await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken);
+            foreach (var artifact in artifacts.Where(item =>
+                         ReadArtifactMeta(item.Meta, "deviceId").Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase)))
+            {
+                foreach (var key in new[] { "robot_name", "robotName", "robot_id", "robotId" })
+                {
+                    var candidate = ReadArtifactMeta(artifact.Meta, key);
+                    if (!IsIdentityNameCandidate(candidate, device)) continue;
+                    candidates.Add(candidate);
+                    evidence.Add(new { source = "artifact", field = key, value = candidate, path = artifact.Path });
+                }
+            }
+            var proposed = candidates.GroupBy(value => value, StringComparer.OrdinalIgnoreCase)
+                .OrderByDescending(group => group.Count()).ThenBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault()?.Key;
+            if (string.IsNullOrWhiteSpace(proposed))
+                return Results.Json(new { suggested = false, currentRobotId = device.RobotId, evidence });
+
+            var target = cloudStateStore.FindDeviceByFriendlyId(proposed);
+            return Results.Json(new
+            {
+                suggested = true,
+                proposedRobotId = proposed,
+                currentRobotId = device.RobotId,
+                action = target is null ? "rename" : "merge",
+                targetDeviceId = target?.DeviceId,
+                evidence
+            });
+        });
+
+        app.MapPost("/api/portal/status/robots/{deviceId}/identity-suggestion/apply", async (
+            string deviceId, [FromBody] ApplyIdentitySuggestionRequest request,
+            HttpRequest httpRequest, PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore, IMediaContentStore mediaContentStore,
+            CancellationToken cancellationToken) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            if (!IsSafeIdentityName(request.ProposedRobotId))
+                return Results.BadRequest(new { error = "Provide a valid robot ID." });
+            var source = cloudStateStore.GetDevices().FirstOrDefault(item =>
+                item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
+            if (source is null) return Results.NotFound(new { error = "Robot record was not found." });
+            var proposedRobotId = request.ProposedRobotId!.Trim();
+            var target = cloudStateStore.FindDeviceByFriendlyId(proposedRobotId);
+            if (target is not null && !target.DeviceId.Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase))
+            {
+                var result = cloudStateStore.MergeRobotRecords(source.DeviceId, target.DeviceId);
+                var migratedArtifacts = await ReassignArtifactsAsync(mediaContentStore, result.SourceDeviceId,
+                    result.TargetDeviceId, "robot-identity-suggestion-merge", cancellationToken);
+                return Results.Json(new { ok = true, action = "merge", result, migratedArtifacts });
+            }
+            var renamed = cloudStateStore.RenameDevice(source.DeviceId, proposedRobotId);
+            return Results.Json(new { ok = true, action = "rename", device = renamed });
+        });
+
         app.MapPost("/api/portal/status/sessions/{sessionId}/link", (
             string sessionId,
             [FromBody] LinkStatusSessionRequest request,
@@ -1967,7 +2051,12 @@ internal static class PortalEndpoints
             var firstSeenUtc = groupSessions.Length > 0
                 ? groupSessions.Min(session => session.CreatedUtc)
                 : (DateTimeOffset?)null;
-            var sleepState = lastSession is null ? null : ReadSessionMetadata(lastSession, "sleepState");
+            // Proactive/listen sockets often reconnect without carrying the dialog
+            // sleepState metadata. Do not let that metadata-less socket erase the
+            // robot's most recent explicit sleeping/awake state.
+            var sleepState = groupSessions
+                .Select(session => ReadSessionMetadata(session, "sleepState"))
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
             var presence = ResolveRobotPresence(mergedDevice, groupConnections, lastSeenUtc, sleepState, now);
 
             visibleRows.Add(new RobotStatusRow(
@@ -2031,6 +2120,18 @@ internal static class PortalEndpoints
 
         return null;
     }
+
+    private static bool IsSafeIdentityName(string? value) =>
+        !string.IsNullOrWhiteSpace(value) &&
+        value.Trim().Length <= 120 &&
+        System.Text.RegularExpressions.Regex.IsMatch(value.Trim(),
+            "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+){2,}$");
+
+    private static bool IsIdentityNameCandidate(string? value, DeviceRegistration device) =>
+        IsSafeIdentityName(value) &&
+        !value!.Trim().Equals(device.RobotId, StringComparison.OrdinalIgnoreCase) &&
+        !value.Trim().Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase) &&
+        !value.Trim().StartsWith("robot-", StringComparison.OrdinalIgnoreCase);
 
     private static string SelectPreferredRegistrationSource(
         DeviceRegistration primaryDevice,
@@ -2768,6 +2869,7 @@ internal static class PortalEndpoints
     private sealed record SwapRobotCredentialBindingsRequest(string? PortalSessionToken,
         string? FirstAccessKeyFingerprint, string? SecondAccessKeyFingerprint, bool Confirmed);
     private sealed record MergeRobotRequest(string? PortalSessionToken, string? TargetDeviceId);
+    private sealed record ApplyIdentitySuggestionRequest(string? PortalSessionToken, string? ProposedRobotId);
 
     private sealed record FleetServerPresenceReportRequest(
         string? PortalSessionToken,

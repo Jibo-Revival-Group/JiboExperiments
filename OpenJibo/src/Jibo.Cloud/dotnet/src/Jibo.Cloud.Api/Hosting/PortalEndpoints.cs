@@ -29,6 +29,8 @@ internal static class PortalEndpoints
 
     internal static void MapPortalEndpoints(this WebApplication app)
     {
+        var configuration = app.Configuration;
+
         app.MapGet("/api/onboarding/trusted-servers", (
             HttpRequest request,
             PortalSessionService portalSessionService,
@@ -314,7 +316,8 @@ internal static class PortalEndpoints
                 return Results.Unauthorized();
 
             var link = integrationStore.FindLinkForJibo(session.FriendlyId, session.FriendlyId);
-            return Results.Json(BuildDashboardPayload(session, link, registry, cloudStateStore, integrationStore));
+            return Results.Json(BuildDashboardPayload(
+                session, link, registry, cloudStateStore, integrationStore, configuration));
         });
 
         app.MapGet("/api/portal/calendar-feeds", (
@@ -327,7 +330,8 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            return Results.Json(BuildCalendarFeedsPayload(cloudStateStore, integrationStore, session));
+            return Results.Json(BuildCalendarFeedsPayload(
+                cloudStateStore, integrationStore, session, configuration));
         });
 
         app.MapPut("/api/portal/calendar-feeds/{memberId}", (
@@ -348,7 +352,7 @@ internal static class PortalEndpoints
             if (!IcalUrlValidator.TryValidateHttpsPublicUrl(request.IcalUrl, out _, out var validationError))
                 return Results.BadRequest(new { error = validationError });
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var member = FindCalendarFeedPerson(cloudStateStore, loopId, session, memberId);
             if (member is null)
                 return Results.NotFound(new { error = "Loop member not found." });
@@ -373,7 +377,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var removed = integrationStore.ClearMemberCalendarFeed(loopId, memberId);
             if (removed is null)
                 return Results.NotFound(new { error = "No calendar feed is configured for that member." });
@@ -390,7 +394,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             return Results.Json(BuildLoopMembersPayload(cloudStateStore, loopId));
         });
 
@@ -410,7 +414,7 @@ internal static class PortalEndpoints
             if (string.IsNullOrWhiteSpace(firstName))
                 return Results.BadRequest(new { error = "firstName is required." });
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var birthday = ParsePortalBirthday(request.Birthday);
             var isChild = request.IsChild == true;
             var nickname = NormalizeOptionalName(request.Nickname);
@@ -460,7 +464,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var existing = cloudStateStore.GetLoopMembers(loopId)
                 .FirstOrDefault(m => m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
             if (existing is null)
@@ -511,7 +515,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var existing = cloudStateStore.GetLoopMembers(loopId)
                 .FirstOrDefault(m => m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase));
             if (existing is null)
@@ -547,7 +551,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var loop = cloudStateStore.GetLoops()
                 .FirstOrDefault(item => item.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
             var robotKeys = BuildPortalRobotKeys(session, cloudStateStore, loopId);
@@ -597,7 +601,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var photos = cloudStateStore.ListMedia([loopId])
                 .Where(IsPortalGalleryImage)
                 .OrderByDescending(static item => item.CreatedUtc)
@@ -622,7 +626,7 @@ internal static class PortalEndpoints
             if (string.IsNullOrWhiteSpace(path))
                 return Results.BadRequest(new { error = "path is required." });
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var normalizedPath = Uri.UnescapeDataString(path.Trim());
             var media = cloudStateStore.GetMedia([normalizedPath, $"/{normalizedPath.TrimStart('/')}"])
                 .FirstOrDefault(item =>
@@ -654,7 +658,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var member = FindCalendarFeedPerson(cloudStateStore, loopId, session, memberId);
             if (member is null)
                 return Results.NotFound(new { error = "Loop member not found." });
@@ -701,7 +705,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var graph = cloudStateStore.GetIdentityGraph(ResolvePortalLoopId(cloudStateStore, session));
+            var graph = cloudStateStore.GetIdentityGraph(ResolvePortalLoopId(cloudStateStore, session, configuration));
             return Results.Json(new
             {
                 graph.AccountId,
@@ -738,7 +742,7 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "anchor is required." });
 
             cloudStateStore.RevokeIdentityGraphAnchor(request.Anchor);
-            var graph = cloudStateStore.GetIdentityGraph(ResolvePortalLoopId(cloudStateStore, session));
+            var graph = cloudStateStore.GetIdentityGraph(ResolvePortalLoopId(cloudStateStore, session, configuration));
 
             return Results.Json(new
             {
@@ -758,7 +762,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var graph = cloudStateStore.GetIdentityGraph(ResolvePortalLoopId(cloudStateStore, session));
+            var graph = cloudStateStore.GetIdentityGraph(ResolvePortalLoopId(cloudStateStore, session, configuration));
             var fileName = $"openjibo-identity-evidence-{graph.DeviceId}-{graph.EvidenceBundle.BundleHash}.txt";
             return Results.File(
                 Encoding.UTF8.GetBytes(graph.EvidenceBundle.Envelope),
@@ -935,7 +939,7 @@ internal static class PortalEndpoints
             if (session is null)
                 return Results.Unauthorized();
 
-            var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
             var robot = ResolvePortalRobot(cloudStateStore, session);
             var persistence = cloudStateStore.GetPersistenceStateInfo();
             var graph = cloudStateStore.GetIdentityGraph(loopId);
@@ -2471,7 +2475,8 @@ internal static class PortalEndpoints
         HomeAssistantLinkRecord? link,
         HomeAssistantConnectionRegistry registry,
         ICloudStateStore cloudStateStore,
-        IUserIntegrationStore integrationStore)
+        IUserIntegrationStore integrationStore,
+        IConfiguration? configuration)
     {
         return new
         {
@@ -2485,17 +2490,20 @@ internal static class PortalEndpoints
                     connected = false
                 }
                 : BuildHomeAssistantPayload(link, registry),
-            calendarFeeds = BuildCalendarFeedsPayload(cloudStateStore, integrationStore, session),
-            loopMembers = BuildLoopMembersPayload(cloudStateStore, ResolvePortalLoopId(cloudStateStore, session))
+            calendarFeeds = BuildCalendarFeedsPayload(
+                cloudStateStore, integrationStore, session, configuration),
+            loopMembers = BuildLoopMembersPayload(
+                cloudStateStore, ResolvePortalLoopId(cloudStateStore, session, configuration))
         };
     }
 
     private static object BuildCalendarFeedsPayload(
         ICloudStateStore cloudStateStore,
         IUserIntegrationStore integrationStore,
-        PortalSessionService.PortalSession session)
+        PortalSessionService.PortalSession session,
+        IConfiguration? configuration)
     {
-        var loopId = ResolvePortalLoopId(cloudStateStore, session);
+        var loopId = ResolvePortalLoopId(cloudStateStore, session, configuration);
         var feeds = integrationStore.GetMemberCalendarFeeds(loopId);
         // Prefer GetPeople() for this robot's Loop only — never merge another Jibo's household.
         var members = EnumerateCalendarFeedPeople(cloudStateStore, loopId, session)
@@ -2872,31 +2880,71 @@ internal static class PortalEndpoints
 
     private static string ResolvePortalLoopId(
         ICloudStateStore cloudStateStore,
-        PortalSessionService.PortalSession session)
+        PortalSessionService.PortalSession session,
+        IConfiguration? configuration = null)
     {
         // Prefer the same household SyncManager would List for this robot's keys so portal
         // People mutations never land on a second loop the robot never syncs.
+        var configuredRobotId = ReadPortalConfiguredRobotId(configuration);
         var portalKeys = LoopRosterResolver.CollectPortalRobotKeys(
             cloudStateStore,
             session.FriendlyId,
-            session.DeviceId);
-        var matched = LoopRosterResolver.ResolveLoopsForKeys(cloudStateStore, portalKeys)
-            .Where(loop =>
+            session.DeviceId,
+            configuredRobotId);
+        var matched = LoopRosterResolver.ResolveLoopsForKeys(
+                cloudStateStore, portalKeys, configuredRobotId)
+            .FirstOrDefault(loop =>
                 portalKeys.Contains(loop.RobotId) ||
-                portalKeys.Contains(loop.RobotFriendlyId))
-            .ToArray();
-        if (matched.Length > 0)
-            return matched[0].LoopId;
+                portalKeys.Contains(loop.RobotFriendlyId) ||
+                (!string.IsNullOrWhiteSpace(configuredRobotId) &&
+                 (loop.RobotId.Equals(configuredRobotId, StringComparison.OrdinalIgnoreCase) ||
+                  loop.RobotFriendlyId.Equals(configuredRobotId, StringComparison.OrdinalIgnoreCase))));
+        if (matched is not null)
+        {
+            EnsurePortalLoopRobotIdPromoted(cloudStateStore, session, matched, configuredRobotId);
+            return matched.LoopId;
+        }
 
         var device = cloudStateStore.FindDeviceByFriendlyId(session.FriendlyId) ??
                      cloudStateStore.FindDeviceByFriendlyId(session.DeviceId);
 
-        // One loop per friendly/robot id. Do not pass DeviceId alone — a shared serial
-        // singleton would OR-match and merge households.
-        var robotId = device?.RobotId ?? session.FriendlyId;
+        // One loop per friendly/robot id. Prefer configured KB hex so List and portal share
+        // the same loop.Robot. Do not pass DeviceId alone — a shared serial singleton would
+        // OR-match and merge households.
+        var robotId = configuredRobotId ?? device?.RobotId ?? session.FriendlyId;
         var robotFriendlyId = session.FriendlyId;
         var loop = cloudStateStore.AddLoop(null, null, robotId, robotFriendlyId);
+        EnsurePortalLoopRobotIdPromoted(cloudStateStore, session, loop, configuredRobotId);
         return loop.LoopId;
+    }
+
+    private static string? ReadPortalConfiguredRobotId(IConfiguration? configuration)
+    {
+        var robotId = configuration?["OpenJibo:Robot:RobotId"];
+        return string.IsNullOrWhiteSpace(robotId) ? null : robotId.Trim();
+    }
+
+    private static void EnsurePortalLoopRobotIdPromoted(
+        ICloudStateStore cloudStateStore,
+        PortalSessionService.PortalSession session,
+        LoopRecord loop,
+        string? configuredRobotId)
+    {
+        if (string.IsNullOrWhiteSpace(configuredRobotId))
+            return;
+        if (loop.RobotId.Equals(configuredRobotId, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var device = cloudStateStore.FindDeviceByFriendlyId(session.FriendlyId) ??
+                     cloudStateStore.FindDeviceByFriendlyId(session.DeviceId);
+        cloudStateStore.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = device?.DeviceId ?? session.DeviceId ?? session.FriendlyId,
+            RobotId = configuredRobotId,
+            FriendlyName = device?.FriendlyName ?? session.FriendlyId,
+            FirmwareVersion = device?.FirmwareVersion,
+            RegistrationSource = device?.RegistrationSource ?? RobotRegistrationSources.Unknown
+        });
     }
 
     private static object BuildLoopMemberMutationPayload(

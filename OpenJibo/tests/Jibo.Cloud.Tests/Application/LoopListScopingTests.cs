@@ -101,4 +101,61 @@ public sealed class LoopListScopingTests
             member.GetProperty("type").GetString() == "owner" &&
             member.GetProperty("status").GetString() == "accepted");
     }
+
+    [Fact]
+    public void ResolveLoopsForKeys_NeverReturnsMoreThanOne_WhenKeysOverlap()
+    {
+        var store = new InMemoryCloudStateStore();
+        var preferred = store.AddLoop(null, null, "Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var other = store.AddLoop(null, null, "Air-Degree-Lunch-Canvas", "BOJW-1000-0017-1009-0021");
+
+        // Simulate historical key overlap by injecting a second match into the private loop list.
+        var loopsField = typeof(InMemoryCloudStateStore)
+            .GetField("_loops", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(loopsField);
+        var loops = (System.Collections.IList)loopsField!.GetValue(store)!;
+        loops.Add(new LoopRecord
+        {
+            LoopId = "loop-overlapping-ghost",
+            Name = "Overlap",
+            OwnerAccountId = store.GetAccount().AccountId,
+            RobotId = "5a0b6398faa0f0001c5d0df1",
+            RobotFriendlyId = "Ghost-Instance-Onion-Silk"
+        });
+
+        var keys = new[]
+        {
+            "Ghost-Instance-Onion-Silk",
+            "BOJW-1000-0017-0820-0020",
+            "5a0b6398faa0f0001c5d0df1",
+            other.RobotId
+        };
+        var resolved = LoopRosterResolver.ResolveLoopsForKeys(
+            store, keys, configuredRobotId: "5a0b6398faa0f0001c5d0df1");
+        Assert.Single(resolved);
+        Assert.Equal("loop-overlapping-ghost", resolved[0].LoopId);
+
+        var byFriendly = LoopRosterResolver.ResolveLoopsForKeys(
+            store,
+            ["Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020", "5a0b6398faa0f0001c5d0df1"],
+            configuredRobotId: null);
+        Assert.Single(byFriendly);
+        // Prefer Pegasus friendly match (preferred) over a secondary overlapping hex row.
+        Assert.Equal(preferred.LoopId, byFriendly[0].LoopId);
+        Assert.NotEqual(other.LoopId, byFriendly[0].LoopId);
+    }
+
+    [Fact]
+    public void SelectSingleLoop_PrefersConfiguredRobotId()
+    {
+        var winner = LoopRosterResolver.SelectSingleLoop(
+            [
+                new LoopRecord { LoopId = "a", RobotId = "friendly-a", RobotFriendlyId = "Ghost-Instance-Onion-Silk" },
+                new LoopRecord { LoopId = "b", RobotId = "5a0b6398faa0f0001c5d0df1", RobotFriendlyId = "Ghost-Instance-Onion-Silk" }
+            ],
+            configuredRobotId: "5a0b6398faa0f0001c5d0df1",
+            callerKeys: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Ghost-Instance-Onion-Silk" });
+
+        Assert.Equal("b", winner.LoopId);
+    }
 }

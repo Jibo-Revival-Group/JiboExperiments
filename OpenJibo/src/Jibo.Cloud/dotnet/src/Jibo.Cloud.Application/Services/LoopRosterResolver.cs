@@ -16,7 +16,8 @@ public static class LoopRosterResolver
         string? configuredRobotId = null)
     {
         var all = stateStore.GetLoops();
-        if (all.Count <= 1) return all;
+        if (all.Count == 0) return all;
+        if (all.Count == 1) return all;
 
         var keys = NormalizeKeys(robotKeys);
         ExpandDeviceKeys(stateStore, keys);
@@ -30,7 +31,8 @@ public static class LoopRosterResolver
                     keys.Contains(loop.RobotId) ||
                     keys.Contains(loop.RobotFriendlyId))
                 .ToArray();
-            if (matched.Length > 0) return matched;
+            if (matched.Length > 0)
+                return [SelectSingleLoop(matched, configuredRobotId, keys)];
         }
 
         if (!string.IsNullOrWhiteSpace(configuredRobotId))
@@ -39,7 +41,8 @@ public static class LoopRosterResolver
                     loop.RobotId.Equals(configuredRobotId, StringComparison.OrdinalIgnoreCase) ||
                     loop.RobotFriendlyId.Equals(configuredRobotId, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
-            if (configured.Length > 0) return configured;
+            if (configured.Length > 0)
+                return [SelectSingleLoop(configured, configuredRobotId, keys)];
         }
 
         var defaultLoop = all.FirstOrDefault(loop =>
@@ -99,7 +102,8 @@ public static class LoopRosterResolver
     public static HashSet<string> CollectPortalRobotKeys(
         ICloudStateStore stateStore,
         string? friendlyId,
-        string? deviceId)
+        string? deviceId,
+        string? configuredRobotId = null)
     {
         var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         void Add(string? value)
@@ -110,6 +114,7 @@ public static class LoopRosterResolver
 
         Add(friendlyId);
         Add(deviceId);
+        Add(configuredRobotId);
 
         var device = stateStore.FindDeviceByFriendlyId(friendlyId ?? string.Empty) ??
                      stateStore.FindDeviceByFriendlyId(deviceId ?? string.Empty);
@@ -122,6 +127,79 @@ public static class LoopRosterResolver
 
         ExpandDeviceKeys(stateStore, keys);
         return keys;
+    }
+
+    /// <summary>
+    /// SyncManager requires exactly one loop. Prefer configured KB hex RobotId,
+    /// else a loop matching a Pegasus-style friendly key, else a non-default loop,
+    /// else first match.
+    /// </summary>
+    internal static LoopRecord SelectSingleLoop(
+        IReadOnlyList<LoopRecord> matched,
+        string? configuredRobotId,
+        IReadOnlySet<string>? callerKeys = null)
+    {
+        if (matched.Count == 0)
+            throw new ArgumentException("matched must not be empty.", nameof(matched));
+        if (matched.Count == 1)
+            return matched[0];
+
+        IReadOnlyList<LoopRecord> candidates = matched;
+
+        if (!string.IsNullOrWhiteSpace(configuredRobotId))
+        {
+            var byConfigured = matched.Where(loop =>
+                    loop.RobotId.Equals(configuredRobotId, StringComparison.OrdinalIgnoreCase) ||
+                    loop.RobotFriendlyId.Equals(configuredRobotId, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (byConfigured.Length == 1)
+                return byConfigured[0];
+            if (byConfigured.Length > 1)
+                candidates = byConfigured;
+        }
+
+        if (callerKeys is { Count: > 0 })
+        {
+            // Prefer Pegasus-style Word-Word-Word-Word friendly ids from the caller key set.
+            foreach (var key in callerKeys)
+            {
+                if (!LooksLikePegasusFriendlyId(key)) continue;
+                var byFriendly = candidates.Where(loop =>
+                        loop.RobotFriendlyId.Equals(key, StringComparison.OrdinalIgnoreCase) ||
+                        loop.RobotId.Equals(key, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+                if (byFriendly.Length == 1)
+                    return byFriendly[0];
+                if (byFriendly.Length > 1)
+                    candidates = byFriendly;
+            }
+
+            foreach (var key in callerKeys)
+            {
+                if (LooksLikePegasusFriendlyId(key)) continue;
+                var byKey = candidates.Where(loop =>
+                        loop.RobotFriendlyId.Equals(key, StringComparison.OrdinalIgnoreCase) ||
+                        loop.RobotId.Equals(key, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+                if (byKey.Length == 1)
+                    return byKey[0];
+                if (byKey.Length > 1)
+                    candidates = byKey;
+            }
+        }
+
+        // UpdateRobot can rewrite both the bootstrap default loop and the household loop
+        // to the same configured hex; never let the default win that tie.
+        var nonDefault = candidates.FirstOrDefault(loop =>
+            !loop.LoopId.Equals("openjibo-default-loop", StringComparison.OrdinalIgnoreCase));
+        return nonDefault ?? candidates[0];
+    }
+
+    private static bool LooksLikePegasusFriendlyId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        var parts = value.Trim().Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 4 && parts.All(part => part.Any(char.IsLetter));
     }
 
     private static void ExpandDeviceKeys(ICloudStateStore stateStore, HashSet<string> keys)

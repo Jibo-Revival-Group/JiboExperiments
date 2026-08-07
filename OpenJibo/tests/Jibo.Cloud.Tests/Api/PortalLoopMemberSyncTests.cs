@@ -8,6 +8,7 @@ using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Jibo.Cloud.Tests.Api;
@@ -77,6 +78,60 @@ public sealed class PortalLoopMemberSyncTests
         Assert.Equal(
             "5a0b6398faa0f0001c5d0df1",
             store.GetLoops().Single(loop => loop.LoopId == seeded.LoopId).RobotId);
+    }
+
+    [Fact]
+    public async Task PortalAndList_ShareLoop_WhenConfiguredRobotIdSetWithoutPriorUpdateRobot()
+    {
+        const string configuredHex = "5a0b6398faa0f0001c5d0df1";
+        await using var factory = CreateFactory(configuredRobotId: configuredHex);
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        await AuthorizeAsync(client, factory);
+
+        // Friendly-keyed household only — no UpdateRobot yet. Portal must promote + reuse.
+        var seeded = store.AddLoop(
+            "Ghost Loop",
+            store.GetAccount().AccountId,
+            "Ghost-Instance-Onion-Silk",
+            "BOJW-1000-0017-0820-0020");
+
+        var addResponse = await client.PostAsJsonAsync(
+            "/api/portal/loop-members",
+            new { firstName = "Shared", lastName = "Roster", gender = "male" });
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+
+        Assert.Contains(
+            store.GetLoopMembers(seeded.LoopId),
+            member => string.Equals(member.FirstName, "Shared", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(configuredHex, store.GetLoops().Single(loop => loop.LoopId == seeded.LoopId).RobotId);
+
+        var protocol = new JiboCloudProtocolService(
+            store,
+            authHandler: new CloudAuthProtocolHandler(store),
+            configuration: new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["OpenJibo:Robot:RobotId"] = configuredHex
+                })
+                .Build());
+        var list = await protocol.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160324",
+            Operation = "List",
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+        Assert.Equal(200, list.StatusCode);
+        using var payload = JsonDocument.Parse(list.BodyText);
+        var loops = payload.RootElement.EnumerateArray().ToArray();
+        Assert.Single(loops);
+        Assert.Equal(seeded.LoopId, loops[0].GetProperty("id").GetString());
+        Assert.Equal(configuredHex, loops[0].GetProperty("robot").GetString());
+        Assert.Contains(
+            loops[0].GetProperty("members").EnumerateArray(),
+            member => member.GetProperty("account").GetProperty("firstName").GetString() == "Shared");
     }
 
     [Fact]
@@ -234,7 +289,7 @@ public sealed class PortalLoopMemberSyncTests
             new AuthenticationHeaderValue("Bearer", confirmPayload.GetProperty("portalSessionToken").GetString());
     }
 
-    private static WebApplicationFactory<Program> CreateFactory()
+    private static WebApplicationFactory<Program> CreateFactory(string? configuredRobotId = null)
     {
         var root = Path.Combine(Path.GetTempPath(), $"openjibo-portal-loop-sync-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
@@ -256,6 +311,8 @@ public sealed class PortalLoopMemberSyncTests
                     "OpenJibo:PersonalMemory:PersistencePath",
                     Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
+                if (!string.IsNullOrWhiteSpace(configuredRobotId))
+                    builder.UseSetting("OpenJibo:Robot:RobotId", configuredRobotId);
             });
     }
 

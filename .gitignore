@@ -458,4 +458,6 @@ OpenJibo/docs/DesignDoc/original server
 
 # etc
 /introductions
-OpenJibo/App_Data/
+/OpenJibo/App_Data
+/OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/appsettings.json
+OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/appsettings.json

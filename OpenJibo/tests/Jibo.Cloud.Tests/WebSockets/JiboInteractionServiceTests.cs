@@ -5844,6 +5844,71 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_AlarmTranscriptWinsOverIncorrectStructuredNlu()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "setting alarm for 7:11 am",
+            NormalizedTranscript = "setting alarm for 7:11 am",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "start",
+                ["clientEntities"] = new Dictionary<string, object?>
+                {
+                    ["domain"] = "alarm",
+                    ["time"] = "7:00",
+                    ["ampm"] = "pm"
+                }
+            }
+        });
+
+        Assert.Equal("alarm_value", decision.IntentName);
+        Assert.Equal("7:11", decision.SkillPayload!["time"]);
+        Assert.Equal("am", decision.SkillPayload["ampm"]);
+    }
+
+    [Theory]
+    [InlineData("show my alarm")]
+    [InlineData("when will my alarm go off")]
+    [InlineData("is my alarm set")]
+    public async Task BuildDecisionAsync_PegasusAlarmQueries_MapToClockQueryIntent(string transcript)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal("alarm_query", decision.IntentName);
+        Assert.Equal("@be/clock", decision.SkillName);
+        Assert.Equal("alarm", decision.SkillPayload!["domain"]);
+        Assert.Equal("query", decision.SkillPayload["clockIntent"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_ChangeAlarmTime_MapsToClockEditIntent()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "change my alarm to 8:15 pm",
+            NormalizedTranscript = "change my alarm to 8:15 pm"
+        });
+
+        Assert.Equal("alarm_edit_value", decision.IntentName);
+        Assert.Equal("@be/clock", decision.SkillName);
+        Assert.Equal("alarm", decision.SkillPayload!["domain"]);
+        Assert.Equal("edit", decision.SkillPayload["clockIntent"]);
+        Assert.Equal("8:15", decision.SkillPayload["time"]);
+        Assert.Equal("pm", decision.SkillPayload["ampm"]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_TimerValueFollowUp_ParsesBareDuration()
     {
         var service = CreateService();

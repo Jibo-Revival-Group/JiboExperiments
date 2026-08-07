@@ -245,6 +245,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<PortalSessionService>();
         services.AddSingleton<HomeAssistantConnectionRegistry>();
         services.AddSingleton<HomeAssistantPendingClimateStore>();
+        services.AddSingleton<RepeatLastCommandStore>();
         services.AddSingleton<RobotPendingNotificationStore>();
         services.AddSingleton<RobotNotificationRegistry>();
         services.AddSingleton<RobotPresenceRegistry>();

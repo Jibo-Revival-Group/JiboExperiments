@@ -7,6 +7,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets;
 using System.Net;
 using System.Net.Sockets;
 
@@ -18,6 +19,7 @@ if (ShouldResetDiagnosticsOnStartup(builder.Configuration))
     ResetDiagnosticsDirectories(builder.Configuration);
 
 ConfigureDefaultKestrelEndpoints(builder);
+ConfigureReusableListenSockets(builder);
 
 builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 {
@@ -366,7 +368,9 @@ static bool CanBindPort(int port)
     {
         using var probe = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         // SO_REUSEADDR so this probe never trips over a socket Kestrel itself
-        // left in TIME_WAIT from a previous run of this same process.
+        // left in TIME_WAIT from a previous run of this same process. Kestrel's
+        // OWN listen sockets are made to set this too (ConfigureReusableListenSockets
+        // below), so this probe's result now actually matches what Kestrel will do.
         probe.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
         probe.Bind(new IPEndPoint(IPAddress.Any, port));
         return true;
@@ -375,6 +379,30 @@ static bool CanBindPort(int port)
     {
         return false;
     }
+}
+
+static void ConfigureReusableListenSockets(WebApplicationBuilder builder)
+{
+    // Kestrel's default listen socket does NOT set SO_REUSEADDR. After a crash
+    // (like tonight's), the old socket sits in TIME_WAIT for ~60s, and every
+    // restart attempt within that window fails to re-bind the SAME port with
+    // "Address already in use" — even with nothing else running — turning one
+    // crash into a crash-loop. SO_REUSEADDR lets a fresh bind reuse a
+    // TIME_WAIT'd port; it does NOT let two processes both actively listen on
+    // the same port at once, so this is safe.
+    builder.WebHost.UseSockets(socketOptions =>
+    {
+        socketOptions.CreateBoundListenSocket = endpoint =>
+        {
+            if (endpoint is not IPEndPoint ipEndPoint)
+                return SocketTransportOptions.CreateDefaultBoundListenSocket(endpoint);
+
+            var socket = new Socket(ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            socket.Bind(ipEndPoint);
+            return socket;
+        };
+    });
 }
 
 static string ResolveConfiguredPath(IConfiguration configuration, string key, string defaultPath)

@@ -178,6 +178,26 @@ app.MapGet("/openjibo-ca.crt", (IConfiguration configuration) =>
         });
 });
 
+app.MapGet("/openjibo-ca.hash", (IConfiguration configuration) =>
+{
+    // Precomputed `openssl x509 -hash` output for the same CA above, so a
+    // robot with no openssl binary can still create the OpenSSL CApath
+    // symlink the native NotificationSubsystem's TLS verification uses.
+    var caHashPath = ResolveConfiguredPath(
+        configuration,
+        "OpenJibo:Tls:CaHashPath",
+        "src/Jibo.Cloud/node/tls/openjibo-ca.hash");
+
+    return File.Exists(caHashPath)
+        ? Results.Text(File.ReadAllText(caHashPath).Trim(), "text/plain")
+        : Results.NotFound(new
+        {
+            error = "CA hash not found on this server.",
+            expectedPath = caHashPath,
+            fix = "Run scripts/cloud/generate-openjibo-ca.sh on the server."
+        });
+});
+
 app.MapPortalStaticFiles();
 app.MapPortalEndpoints();
 

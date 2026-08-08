@@ -29,6 +29,7 @@ TLS_DIR="${NODE_DIR}/tls"
 
 CA_KEY="${TLS_DIR}/openjibo-ca.key"
 CA_CRT="${TLS_DIR}/openjibo-ca.crt"
+CA_HASH="${TLS_DIR}/openjibo-ca.hash"
 SERVER_KEY="${NODE_DIR}/key.pem"
 SERVER_CRT="${NODE_DIR}/cert.pem"
 PFX_OUT="${PFX_OUT:-${REPO_ROOT}/.tmp/openjibo-ca-cert.pfx}"
@@ -86,6 +87,13 @@ rm -f "${TLS_DIR}/openjibo-ca.srl" 2>/dev/null || true
 chmod 600 "${CA_KEY}" "${SERVER_KEY}"
 chmod 644 "${CA_CRT}" "${SERVER_CRT}"
 
+# Precompute the OpenSSL subject-hash so robots WITHOUT an openssl binary
+# (e.g. BusyBox-only builds) can still create the CApath symlink the native
+# NotificationSubsystem needs — install-openjibo-ca.sh fetches this alongside
+# the cert instead of running `openssl x509 -hash` on the robot.
+openssl x509 -hash -noout -in "${CA_CRT}" > "${CA_HASH}"
+chmod 644 "${CA_HASH}"
+
 echo "Packaging PFX for Kestrel..."
 PFX_PASSWORD="$(openssl rand -hex 16)"
 openssl pkcs12 -export -out "${PFX_OUT}" -inkey "${SERVER_KEY}" -in "${SERVER_CRT}" \
@@ -105,8 +113,9 @@ echo ""
 echo "This CA + server cert pair is the SAME for every robot pointed at this"
 echo "server — there is no per-robot certificate to generate or manage."
 echo ""
-echo "The server also serves this CA cert at GET /openjibo-ca.crt once running,"
-echo "so BEam/install-openjibo-ca.sh on the robot can fetch it directly."
+echo "The server also serves this CA cert at GET /openjibo-ca.crt (and its"
+echo "precomputed hash at GET /openjibo-ca.hash) once running, so"
+echo "BEam/install-openjibo-ca.sh on the robot can fetch both directly."
 echo ""
 echo "To use it, regardless of how you launch the .NET cloud (dotnet run,"
 echo "systemd, Docker, ...), set these standard Kestrel env vars:"

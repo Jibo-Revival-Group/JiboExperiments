@@ -84,14 +84,20 @@ OpenJibo/scripts/cloud/generate-openjibo-ca.sh "IP:192.168.7.142"
 ```
 
 This writes `src/Jibo.Cloud/node/{cert.pem,key.pem}` (server cert, signed by
-the CA) and `src/Jibo.Cloud/node/tls/openjibo-ca.{crt,key}` (the CA itself),
-prints the standard `ASPNETCORE_Kestrel__Certificates__Default__Path`/
-`Password` env vars for whatever process manager runs the API (works
-identically under `dotnet run`, systemd, or Docker — it's plain ASP.NET
-Core Kestrel config, not launcher-specific), and needs no code change if
-already using `scripts/cloud/start-dotnet-with-node-cert.sh`. The server
-then serves the CA at an anonymous `GET /openjibo-ca.crt`
-([`Program.cs`](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/Program.cs)).
+the CA) and `src/Jibo.Cloud/node/tls/openjibo-ca.{crt,key}` (the CA itself).
+Nothing else to configure: `ConfigureDefaultKestrelEndpoints` in
+[`Program.cs`](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/Program.cs) checks
+for that `cert.pem`/`key.pem` pair on **every** startup and, if present,
+auto-binds `https://0.0.0.0:443` with it (plus `24605`/`8765` HTTP) via
+`IConfiguration`, before any explicit `Kestrel:Endpoints`/`ASPNETCORE_URLS`
+config is applied — no env vars, no PFX, no launcher-specific wrapper script.
+This is genuinely launcher-agnostic: `dotnet run`, a published binary,
+systemd, or Docker all pick it up identically because it's the same
+`IConfiguration` Kestrel always reads, just seeded with defaults in code
+instead of `appsettings.json` (so a repo checkout with no cert yet still
+starts fine on just the two HTTP ports). Restarting the process after running
+`generate-openjibo-ca.sh` is the only step. The server also serves the CA at
+an anonymous `GET /openjibo-ca.crt`.
 
 On the robot, `~/BEam/install-openjibo-ca.sh` fetches that endpoint (or
 takes a local path) and makes the trust change boot-persistent: CA bundle

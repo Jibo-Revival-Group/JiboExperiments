@@ -15,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 if (ShouldResetDiagnosticsOnStartup(builder.Configuration))
     ResetDiagnosticsDirectories(builder.Configuration);
 
+ConfigureDefaultKestrelEndpoints(builder);
+
 builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 {
     var minimumLevel = ParseLogEventLevel(context.Configuration["OpenJibo:Logging:MinimumLevel"]);
@@ -291,6 +293,46 @@ static void ResetDiagnosticsDirectories(IConfiguration configuration)
         {
             // Startup cleanup is best-effort so a stale file never blocks the app.
         }
+}
+
+static void ConfigureDefaultKestrelEndpoints(WebApplicationBuilder builder)
+{
+    // Binds the same three ports every robot/Portal client expects (443 for the
+    // native NotificationSubsystem's WSS hub, 24605/8765 for the credentials/JSC
+    // HTTP API) directly from configuration, so this works identically whether
+    // launched via `dotnet run`, a published binary under systemd, or Docker —
+    // no ASPNETCORE_URLS or launch-specific wrapper script required.
+    //
+    // Any of these keys already present in config (appsettings.json,
+    // ASPNETCORE_URLS, env vars, --Kestrel:... command-line args, ...) wins over
+    // its specific default below — this only fills in whatever the caller
+    // hasn't already configured themselves, key by key, rather than bailing out
+    // entirely just because e.g. only ASPNETCORE_URLS was set.
+    var defaults = new Dictionary<string, string?>();
+
+    void DefaultIfUnset(string key, string value)
+    {
+        if (string.IsNullOrEmpty(builder.Configuration[key])) defaults[key] = value;
+    }
+
+    DefaultIfUnset("Kestrel:Endpoints:Http24605:Url", "http://0.0.0.0:24605");
+    DefaultIfUnset("Kestrel:Endpoints:Http8765:Url", "http://0.0.0.0:8765");
+
+    var certPath = ResolveConfiguredPath(builder.Configuration, "OpenJibo:Tls:CertPath", "src/Jibo.Cloud/node/cert.pem");
+    var keyPath = ResolveConfiguredPath(builder.Configuration, "OpenJibo:Tls:KeyPath", "src/Jibo.Cloud/node/key.pem");
+    var hasCert = File.Exists(certPath) && File.Exists(keyPath);
+
+    // Only advertise :443 (and only require a cert) once generate-openjibo-ca.sh
+    // has actually produced one — otherwise a fresh checkout with no cert yet
+    // would fail to start instead of just running the two HTTP endpoints.
+    if (hasCert)
+    {
+        DefaultIfUnset("Kestrel:Endpoints:Https:Url", "https://0.0.0.0:443");
+        DefaultIfUnset("Kestrel:Certificates:Default:Path", certPath);
+        DefaultIfUnset("Kestrel:Certificates:Default:KeyPath", keyPath);
+    }
+
+    builder.Configuration.AddInMemoryCollection(defaults);
 }
 
 static string ResolveConfiguredPath(IConfiguration configuration, string key, string defaultPath)

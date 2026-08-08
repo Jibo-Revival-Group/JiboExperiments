@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # Generates the ONE shared OpenJibo CA + server certificate used by every
-# robot pointed at this cloud, and a ready-to-use PFX for Kestrel.
+# robot pointed at this cloud.
 #
 # This is a one-time (per server identity) generation, not per-robot: every
 # robot you convert/point gets the exact same openjibo-ca.crt copied onto it
 # (see ../../../BEam/install-openjibo-ca.sh). There is no per-robot
 # certificate material anywhere in this flow.
+#
+# Nothing further is required to make the .NET cloud use this cert: Program.cs
+# auto-detects src/Jibo.Cloud/node/{cert,key}.pem at startup (via
+# ConfigureDefaultKestrelEndpoints) and binds :443/:24605/:8765 from them
+# directly — no ASPNETCORE_URLS, no PFX, no env vars, regardless of whether you
+# run `dotnet run`, a published binary under systemd, or Docker.
 #
 # Usage:
 #   scripts/cloud/generate-openjibo-ca.sh [extra SAN list]
@@ -17,9 +23,8 @@
 # Output (gitignored; see .gitignore):
 #   src/Jibo.Cloud/node/tls/openjibo-ca.crt   - CA cert (copy to every robot)
 #   src/Jibo.Cloud/node/tls/openjibo-ca.key   - CA key (server-side only)
-#   src/Jibo.Cloud/node/cert.pem              - server cert (Kestrel)
-#   src/Jibo.Cloud/node/key.pem               - server key (Kestrel)
-#   .tmp/openjibo-ca-cert.pfx                 - PFX for Kestrel, any launcher
+#   src/Jibo.Cloud/node/cert.pem              - server cert (auto-loaded)
+#   src/Jibo.Cloud/node/key.pem               - server key (auto-loaded)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,8 +37,6 @@ CA_CRT="${TLS_DIR}/openjibo-ca.crt"
 CA_HASH="${TLS_DIR}/openjibo-ca.hash"
 SERVER_KEY="${NODE_DIR}/key.pem"
 SERVER_CRT="${NODE_DIR}/cert.pem"
-PFX_OUT="${PFX_OUT:-${REPO_ROOT}/.tmp/openjibo-ca-cert.pfx}"
-PFX_PASSWORD_FILE="${PFX_OUT}.password"
 
 CA_DAYS="${CA_DAYS:-7300}"     # ~20 years
 CERT_DAYS="${CERT_DAYS:-3650}" # ~10 years
@@ -47,7 +50,6 @@ else
 fi
 
 mkdir -p "${TLS_DIR}"
-mkdir -p "$(dirname "${PFX_OUT}")"
 
 if [[ -f "${CA_KEY}" && -f "${CA_CRT}" ]]; then
   echo "Reusing existing shared CA: ${CA_CRT}"
@@ -94,21 +96,11 @@ chmod 644 "${CA_CRT}" "${SERVER_CRT}"
 openssl x509 -hash -noout -in "${CA_CRT}" > "${CA_HASH}"
 chmod 644 "${CA_HASH}"
 
-echo "Packaging PFX for Kestrel..."
-PFX_PASSWORD="$(openssl rand -hex 16)"
-openssl pkcs12 -export -out "${PFX_OUT}" -inkey "${SERVER_KEY}" -in "${SERVER_CRT}" \
-  -passout "pass:${PFX_PASSWORD}"
-printf '%s\n' "${PFX_PASSWORD}" > "${PFX_PASSWORD_FILE}"
-chmod 600 "${PFX_OUT}" "${PFX_PASSWORD_FILE}"
-
 echo ""
 echo "Done."
 echo "  CA cert (copy to every robot, same file each time): ${CA_CRT}"
 echo "  CA key  (server-side only, never copy to a robot):  ${CA_KEY}"
-echo "  Server cert/key (Kestrel):                          ${SERVER_CRT}"
-echo "  PFX for Kestrel:                                    ${PFX_OUT}"
-echo "  PFX password (also saved to ${PFX_PASSWORD_FILE}):"
-echo "    ${PFX_PASSWORD}"
+echo "  Server cert/key (auto-loaded by the .NET cloud):    ${SERVER_CRT}"
 echo ""
 echo "This CA + server cert pair is the SAME for every robot pointed at this"
 echo "server — there is no per-robot certificate to generate or manage."
@@ -117,11 +109,11 @@ echo "The server also serves this CA cert at GET /openjibo-ca.crt (and its"
 echo "precomputed hash at GET /openjibo-ca.hash) once running, so"
 echo "BEam/install-openjibo-ca.sh on the robot can fetch both directly."
 echo ""
-echo "To use it, regardless of how you launch the .NET cloud (dotnet run,"
-echo "systemd, Docker, ...), set these standard Kestrel env vars:"
-echo "  ASPNETCORE_URLS=\"https://0.0.0.0:443;http://0.0.0.0:24605;http://0.0.0.0:8765\""
-echo "  ASPNETCORE_Kestrel__Certificates__Default__Path=${PFX_OUT}"
-echo "  ASPNETCORE_Kestrel__Certificates__Default__Password=${PFX_PASSWORD}"
-echo ""
-echo "If you already use scripts/cloud/start-dotnet-with-node-cert.sh, no further"
-echo "action is needed — it reads cert.pem/key.pem from these same default paths."
+echo "Nothing else to configure: the next time the .NET cloud starts — however"
+echo "you launch it (dotnet run, a published binary, systemd, Docker, ...), no"
+echo "ASPNETCORE_URLS/env vars/flags needed — it detects ${SERVER_CRT}"
+echo "and ${SERVER_KEY} automatically and binds:"
+echo "  https://0.0.0.0:443   (native NotificationSubsystem WSS hub, uses this cert)"
+echo "  http://0.0.0.0:24605  (local credentials/JSC API)"
+echo "  http://0.0.0.0:8765   (LAN credentials/JSC API)"
+echo "Just restart the process (kill + relaunch exactly as you always do)."

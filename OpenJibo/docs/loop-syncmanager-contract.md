@@ -54,10 +54,10 @@ Beyond credentials + jetstream, physical robots need:
 |------|------|
 | `/etc/hosts` and/or `/var/etc/hosts` (mode **644**) | Only when pointing at a raw LAN IP: map `api.jibo.com`, **`api-socket.jibo.com`**, `open-jibo-socket.openjibo.com`, `neohub.openjibo.com` |
 | `/usr/local/etc/jibo-server-service.json` | `NotificationSubsystem.serverURLSuffix` = `-socket.openjibo.com` |
-| OpenJibo CA bind + OpenSSL hash links | Native WSS on `:443` trusts local/OpenJibo CA |
-| `S78` `NODE_TLS_REJECT_UNAUTHORIZED=0` | WiFiManager Node HTTPS |
-| Writable `/var/jibo/keys/` | STS `symmetric-<loopId>.json` |
-| JSC `rejectUnauthorized=false` patches | Node JSC HTTPS to local cert |
+| OpenJibo CA bind + OpenSSL hash links | Native WSS on `:443` trusts local/OpenJibo CA — `install-openjibo-ca.sh` |
+| `S78` `NODE_TLS_REJECT_UNAUTHORIZED=0` | WiFiManager Node HTTPS — `install-openjibo-ca.sh` |
+| Writable `/var/jibo/keys/` | STS `symmetric-<loopId>.json` — `install-openjibo-ca.sh` |
+| JSC `rejectUnauthorized=false` patches | Node JSC HTTPS to local cert — `install-openjibo-ca.sh` |
 | `/opt/jibo/Knowledge/.../nodes` | SyncManager write; introductions `loadLoop()` read |
 
 Native NotificationSubsystem uses `wss://api-socket.jibo.com/{token}` on **:443**,
@@ -70,7 +70,42 @@ override, server-service socket suffix, credentials `region`+`endpoint`, and
 **hosts rewrite only for IPv4**. Domains are the normal path (DNS must resolve
 legacy names). Hub port and credentials/JSC API port are prompted separately
 (examples: hub `443`, credentials `8765` or `24605`). It does **not** install CA,
-S78, keys overlay, or JSC patches (OpenJibo bootstrap).
+S78, keys overlay, or JSC patches — run `~/BEam/install-openjibo-ca.sh` next for
+those (below).
+
+### CA install for live `LoopUpdated` push (`install-openjibo-ca.sh`)
+
+The CA is **one shared file, not per-robot**: every robot that needs live
+push gets byte-for-byte the same `openjibo-ca.crt`. Generate it once on the
+server:
+
+```sh
+OpenJibo/scripts/cloud/generate-openjibo-ca.sh "IP:192.168.7.142"
+```
+
+This writes `src/Jibo.Cloud/node/{cert.pem,key.pem}` (server cert, signed by
+the CA) and `src/Jibo.Cloud/node/tls/openjibo-ca.{crt,key}` (the CA itself),
+prints the standard `ASPNETCORE_Kestrel__Certificates__Default__Path`/
+`Password` env vars for whatever process manager runs the API (works
+identically under `dotnet run`, systemd, or Docker — it's plain ASP.NET
+Core Kestrel config, not launcher-specific), and needs no code change if
+already using `scripts/cloud/start-dotnet-with-node-cert.sh`. The server
+then serves the CA at an anonymous `GET /openjibo-ca.crt`
+([`Program.cs`](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/Program.cs)).
+
+On the robot, `~/BEam/install-openjibo-ca.sh` fetches that endpoint (or
+takes a local path) and makes the trust change boot-persistent: CA bundle
+bind-mount + OpenSSL hash symlink under `/etc/ssl/certs` (the bundle append
+alone was not enough for the native WSS handshake), writable
+`/var/jibo/keys` overlay, JSC `rejectUnauthorized` patches, and a
+`NODE_TLS_REJECT_UNAUTHORIZED=0` patch to `S78jibo-system-manager` — backed
+up outside `/etc/init.d` since BusyBox init runs every `S*`-prefixed file
+there, including backups. It restarts `jibo-server-service` immediately so
+`NotificationSubsystem` reconnects without waiting for a reboot.
+
+Skipping this script doesn't lose `LoopUpdated` — `SyncManager`'s periodic
+`Loop#list()` resync (~7200s) still picks up changes, and restarting
+`jibo-server-service` by hand forces that resync immediately.
 
 ### Cloud env
 
@@ -81,7 +116,9 @@ after portal mutations. Portal People and `Loop#list` share one loop via
 ## Verification
 
 1. Run `point-at-server.sh` with domain (or LAN IP) + hub + credentials ports.
-2. Confirm CA/bootstrap if using local TLS OpenJibo.
+2. Run `install-openjibo-ca.sh` on the robot for live push (see above), or
+   skip it and rely on the ~7200s periodic resync / manual
+   `jibo-server-service` restart.
 3. `GET /api/portal/loop-sync-status` → `liveApiSocketOverlaps > 0` /
    `openApiSocketConnections > 0`.
 4. After portal People add: response `syncedToRobot: true`, `pushCount > 0`.

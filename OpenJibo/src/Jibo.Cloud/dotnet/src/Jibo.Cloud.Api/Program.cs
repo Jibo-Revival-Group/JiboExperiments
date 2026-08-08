@@ -157,6 +157,27 @@ app.MapGet("/health", () => Results.Json(new
     version = OpenJiboCloudBuildInfo.Version
 }));
 
+app.MapGet("/openjibo-ca.crt", (IConfiguration configuration) =>
+{
+    // Every robot gets the exact same CA cert copied onto it (see
+    // BEam/install-openjibo-ca.sh) — this is not per-robot material, just a
+    // convenient anonymous download so the robot-side install script does not
+    // need a separate file transfer step.
+    var caCertPath = ResolveConfiguredPath(
+        configuration,
+        "OpenJibo:Tls:CaCertPath",
+        "src/Jibo.Cloud/node/tls/openjibo-ca.crt");
+
+    return File.Exists(caCertPath)
+        ? Results.File(caCertPath, "application/x-x509-ca-cert", "openjibo-ca.crt")
+        : Results.NotFound(new
+        {
+            error = "CA certificate not found on this server.",
+            expectedPath = caCertPath,
+            fix = "Run scripts/cloud/generate-openjibo-ca.sh on the server."
+        });
+});
+
 app.MapPortalStaticFiles();
 app.MapPortalEndpoints();
 

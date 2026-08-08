@@ -7,6 +7,8 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 
 OpenJiboEnvLoader.Load();
 
@@ -325,14 +327,54 @@ static void ConfigureDefaultKestrelEndpoints(WebApplicationBuilder builder)
     // Only advertise :443 (and only require a cert) once generate-openjibo-ca.sh
     // has actually produced one — otherwise a fresh checkout with no cert yet
     // would fail to start instead of just running the two HTTP endpoints.
+    //
+    // :443 must ALSO be probed before Kestrel is ever told about it. If some
+    // other process already owns :443 (EADDRINUSE) or this process lacks
+    // CAP_NET_BIND_SERVICE (EACCES), Kestrel treats every configured endpoint
+    // as mandatory — one failing to bind takes the ENTIRE host down, including
+    // the 24605/8765 endpoints that have nothing to do with :443. So :443 is
+    // opt-in only when a quick bind-and-release test proves it's actually
+    // available; otherwise this logs a warning and just runs the two HTTP
+    // endpoints instead of crashing the whole process.
     if (hasCert)
     {
-        DefaultIfUnset("Kestrel:Endpoints:Https:Url", "https://0.0.0.0:443");
-        DefaultIfUnset("Kestrel:Certificates:Default:Path", certPath);
-        DefaultIfUnset("Kestrel:Certificates:Default:KeyPath", keyPath);
+        if (CanBindPort(443))
+        {
+            DefaultIfUnset("Kestrel:Endpoints:Https:Url", "https://0.0.0.0:443");
+            DefaultIfUnset("Kestrel:Certificates:Default:Path", certPath);
+            DefaultIfUnset("Kestrel:Certificates:Default:KeyPath", keyPath);
+        }
+        else
+        {
+            Console.Error.WriteLine(
+                "openjibo: WARNING — cert.pem/key.pem found but :443 is not bindable " +
+                "(already in use by another process, or this process lacks permission " +
+                "to bind a privileged port — grant CAP_NET_BIND_SERVICE, e.g. via the " +
+                "systemd unit's AmbientCapabilities=CAP_NET_BIND_SERVICE, or run as a " +
+                "user that already has it). Skipping the :443 endpoint so the rest of " +
+                "the server (24605/8765) still starts — LoopUpdated push over the " +
+                "native NotificationSubsystem will NOT work until :443 is free.");
+        }
     }
 
     builder.Configuration.AddInMemoryCollection(defaults);
+}
+
+static bool CanBindPort(int port)
+{
+    try
+    {
+        using var probe = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        // SO_REUSEADDR so this probe never trips over a socket Kestrel itself
+        // left in TIME_WAIT from a previous run of this same process.
+        probe.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+        probe.Bind(new IPEndPoint(IPAddress.Any, port));
+        return true;
+    }
+    catch (SocketException)
+    {
+        return false;
+    }
 }
 
 static string ResolveConfiguredPath(IConfiguration configuration, string key, string defaultPath)

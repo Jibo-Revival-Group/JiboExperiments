@@ -45,10 +45,36 @@ public static class LoopRosterResolver
                 return [SelectSingleLoop(configured, configuredRobotId, keys)];
         }
 
+        // Unidentified caller (e.g. SSM's key-less Loop#list()): never hand back the synthetic
+        // bootstrap loop when a real household loop exists, or SyncManager rejects it as
+        // "robot <kb hex> not in loop" and KB is never written.
+        var nonBootstrap = all.Where(loop => !IsBootstrapLoop(loop)).ToArray();
+        if (nonBootstrap.Length > 0)
+        {
+            var withRobotMember = nonBootstrap
+                .Where(loop => stateStore.GetLoopMembers(loop.LoopId)
+                    .Any(member => string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase)))
+                .ToArray();
+            if (withRobotMember.Length == 1)
+                return [withRobotMember[0]];
+            if (withRobotMember.Length > 1)
+                return [withRobotMember.OrderByDescending(loop => loop.UpdatedUtc).First()];
+
+            return [nonBootstrap.OrderByDescending(loop => loop.UpdatedUtc).First()];
+        }
+
         var defaultLoop = all.FirstOrDefault(loop =>
             loop.LoopId.Equals("openjibo-default-loop", StringComparison.OrdinalIgnoreCase));
         return defaultLoop is null ? [all[0]] : [defaultLoop];
     }
+
+    /// <summary>
+    /// Synthetic loops created for the in-process bootstrap device
+    /// (<c>InMemoryCloudStateStore</c> constructor) — never a real robot's household.
+    /// </summary>
+    internal static bool IsBootstrapLoop(LoopRecord loop) =>
+        loop.RobotId.StartsWith("openjibo-bootstrap-", StringComparison.OrdinalIgnoreCase) ||
+        loop.RobotFriendlyId.StartsWith("openjibo-bootstrap-", StringComparison.OrdinalIgnoreCase);
 
     public static LoopRecord? ResolvePrimaryLoopForKeys(
         ICloudStateStore stateStore,
@@ -188,9 +214,10 @@ public static class LoopRosterResolver
             }
         }
 
-        // UpdateRobot can rewrite both the bootstrap default loop and the household loop
-        // to the same configured hex; never let the default win that tie.
+        // UpdateRobot can rewrite both the bootstrap loop and the household loop to the same
+        // configured hex; never let the bootstrap/default loop win that tie.
         var nonDefault = candidates.FirstOrDefault(loop =>
+            !IsBootstrapLoop(loop) &&
             !loop.LoopId.Equals("openjibo-default-loop", StringComparison.OrdinalIgnoreCase));
         return nonDefault ?? candidates[0];
     }

@@ -87,3 +87,73 @@ after portal mutations. Portal People and `Loop#list` share one loop via
 4. After portal People add: response `syncedToRobot: true`, `pushCount > 0`.
 5. SSM: no `robot … not in loop`; after `LoopUpdated`, pause/resume loop syncing;
    introductions menu shows the new person.
+
+## Root cause: the bootstrap-loop trap
+
+`Loop#list()` from SSM carries **no** `X-Jibo-RobotId` header, **no** bearer
+token, and an empty body — the only identity signal is the SigV4
+access-key fingerprint in `Authorization`. Every `InMemoryCloudStateStore`
+starts with a synthetic loop (`openjibo-default-loop`) owned by a
+`openjibo-bootstrap-<guid>` device
+([`InMemoryCloudStateStore.cs`](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Infrastructure/Persistence/InMemoryCloudStateStore.cs)
+constructor). If that SigV4 fingerprint has never been bound to a real
+device, the old resolver fell back to `openjibo-default-loop`, whose
+`RobotId` never matches the physical robot's local KB hex — SyncManager's
+`_isLoopGood` rejects it as `robot <kb hex> not in loop`, the KB is never
+written, and the introductions menu never updates even though the portal
+roster is correct.
+
+Two fixes close this trap:
+
+- [`LoopRosterResolver.IsBootstrapLoop`](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/LoopRosterResolver.cs)
+  excludes any loop whose `RobotId`/`RobotFriendlyId` starts with
+  `openjibo-bootstrap-` from every fallback and tie-break path. An
+  unidentified caller now gets the real household loop whenever exactly one
+  non-bootstrap loop exists (or the one with a live `type=robot` member, or
+  the most recently updated one, if several do).
+- [`JiboCloudProtocolService.EnsureFirstUseCredentialBinding`](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/JiboCloudProtocolService.cs)
+  binds an unbound SigV4 fingerprint to the single unambiguous candidate
+  device (configured `OpenJibo:Robot:RobotId`, else the robot behind the one
+  non-bootstrap household loop, else the one physical device) the first time
+  it calls `List`/`ListLoops`/`ListMembers`, with `claimSource:
+  "protocol-first-use"`. If more than one candidate exists it leaves the
+  fingerprint unbound rather than guessing. The same request re-resolves
+  immediately with the new binding, so the very first `Loop#list()` call
+  already returns the right loop.
+
+## Observability: loop-sync diagnostics
+
+[`LoopSyncDiagnostics`](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/LoopSyncDiagnostics.cs)
+is a 25-entry ring buffer, registered as a singleton and fed from every
+`List` / `ListLoops` / `ListMembers` / `ListLoopMembers` call in
+`JiboCloudProtocolService.HandleLoop`. Each entry records the call time,
+host/path, resolved identity source and device id, short access-key
+fingerprint, whether that call created a first-use binding, the returned
+loop id, member counts, and whether the bootstrap loop was returned.
+
+`GET /api/portal/loop-sync-status` now also reports:
+
+| Field | Meaning |
+|---|---|
+| `robotListCallsSeen` | Total `List`/`ListLoops` calls ever seen (not just the last 25) |
+| `credentialBindingCount` | Total first-use SigV4 bindings created via protocol calls |
+| `lastListLoops` | The most recent `List`/`ListLoops` call record |
+| `recentLoopCalls` | Last 10 calls (List/ListLoops/ListMembers), newest first |
+| `warnings` | `no-robot-list-calls-seen`, `bootstrap-loop-returned`, `portal-loop-differs-from-listed-loop` |
+
+Use this before assuming a code bug: if `robotListCallsSeen` is `0`, the
+robot has never reached this server (check DNS/hosts, hub vs. credentials
+port, and CA trust) — the loop code itself is not the problem yet.
+
+## `ContactsView` caches the roster until reopened
+
+Even after SyncManager writes a fresh KB roster, the **open** introductions
+menu will not show it. `ContactsView` snapshots the loop into `_loopMembers`
+once when the menu is opened (`loadData`) and only clears it in `destroy()`;
+`removeInvalidLoopers()` filters that cached snapshot on every render, it
+never re-fetches
+([`jibo.js`](../../../BEam/@be/be/node_modules/jibo/lib/jibo.js), `ContactsView`).
+So the correct verification sequence is: add the person in the portal, wait
+for `syncedToRobot: true`/`pushCount > 0`, then **close and reopen** the
+introductions menu on the robot — a sync can succeed while the already-open
+menu still looks stale.

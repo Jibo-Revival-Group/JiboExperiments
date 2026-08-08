@@ -135,6 +135,101 @@ public sealed class PortalLoopMemberSyncTests
     }
 
     [Fact]
+    public async Task PortalAddedMember_SyncsToRobot_AfterFirstUseSigV4CredentialBinding()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        await AuthorizeAsync(client, factory);
+
+        var household = store.AddLoop(
+            "Ghost Loop",
+            store.GetAccount().AccountId,
+            "Ghost-Instance-Onion-Silk",
+            "BOJW-1000-0017-0820-0020");
+
+        var addResponse = await client.PostAsJsonAsync(
+            "/api/portal/loop-members",
+            new { firstName = "FirstUse", lastName = "Bound", gender = "female" });
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+
+        var protocol = factory.Services.GetRequiredService<JiboCloudProtocolService>();
+        var bindingsBefore = store.GetRobotCredentialBindings().Count;
+
+        // SSM's Loop#list(): SigV4-signed, no X-Jibo-RobotId header, no bearer token. The
+        // household loop here is the only non-bootstrap loop, so this credential must self-bind.
+        var list = await protocol.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160324",
+            Operation = "List",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Authorization"] =
+                    "AWS4-HMAC-SHA256 Credential=AKIAGHOSTFIRSTUSE/20240101/us-east-1/execute-api/aws4_request, " +
+                    "SignedHeaders=host;x-amz-date, Signature=deadbeef"
+            }
+        });
+
+        Assert.Equal(200, list.StatusCode);
+        using var payload = JsonDocument.Parse(list.BodyText);
+        var loops = payload.RootElement.EnumerateArray().ToArray();
+        Assert.Single(loops);
+        Assert.Equal(household.LoopId, loops[0].GetProperty("id").GetString());
+        Assert.Contains(
+            loops[0].GetProperty("members").EnumerateArray(),
+            member => member.GetProperty("account").GetProperty("firstName").GetString() == "FirstUse" &&
+                      member.GetProperty("status").GetString() == "accepted");
+        Assert.Equal(bindingsBefore + 1, store.GetRobotCredentialBindings().Count);
+    }
+
+    [Fact]
+    public async Task LoopSyncStatus_ReportsNoRobotListCallsWarning_ThenReflectsRobotCall()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        await AuthorizeAsync(client, factory);
+
+        var household = store.AddLoop(
+            "Ghost Loop",
+            store.GetAccount().AccountId,
+            "Ghost-Instance-Onion-Silk",
+            "BOJW-1000-0017-0820-0020");
+
+        var beforeResponse = await client.GetAsync("/api/portal/loop-sync-status");
+        Assert.Equal(HttpStatusCode.OK, beforeResponse.StatusCode);
+        var before = await beforeResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, before.GetProperty("robotListCallsSeen").GetInt64());
+        Assert.Contains(
+            before.GetProperty("warnings").EnumerateArray(),
+            warning => warning.GetString() == "no-robot-list-calls-seen");
+
+        var protocol = factory.Services.GetRequiredService<JiboCloudProtocolService>();
+        var list = await protocol.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160324",
+            Operation = "List",
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+        Assert.Equal(200, list.StatusCode);
+
+        var afterResponse = await client.GetAsync("/api/portal/loop-sync-status");
+        Assert.Equal(HttpStatusCode.OK, afterResponse.StatusCode);
+        var after = await afterResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, after.GetProperty("robotListCallsSeen").GetInt64());
+        Assert.DoesNotContain(
+            after.GetProperty("warnings").EnumerateArray(),
+            warning => warning.GetString() == "no-robot-list-calls-seen");
+        Assert.Equal(
+            household.LoopId,
+            after.GetProperty("lastListLoops").GetProperty("loopId").GetString());
+    }
+
+    [Fact]
     public async Task PortalLoopMemberAdd_PushesLoopUpdated_WhenRegisteredUnderFriendlyIdFromToken()
     {
         await using var factory = CreateFactory();

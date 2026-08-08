@@ -103,6 +103,67 @@ public sealed class LoopListScopingTests
     }
 
     [Fact]
+    public async Task LoopList_UnidentifiedCaller_ReturnsHouseholdLoop_NotBootstrap()
+    {
+        // A fresh store already carries the synthetic openjibo-default-loop bound to a
+        // openjibo-bootstrap-<guid> robot; that's the trap SSM's key-less Loop#list() used to fall into.
+        var store = new InMemoryCloudStateStore();
+        var household = store.AddLoop(null, null, "Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        store.AddLoopMember(household.LoopId, null, null, "Portal", "Person", "unknown", null, false, "member");
+
+        var service = new JiboCloudProtocolService(store, authHandler: new CloudAuthProtocolHandler(store));
+
+        // No X-Jibo-RobotId header, no bearer token, no SigV4 — exactly what SSM sends.
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160324",
+            Operation = "List"
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var loops = payload.RootElement.EnumerateArray().ToArray();
+        Assert.Single(loops);
+        Assert.Equal(household.LoopId, loops[0].GetProperty("id").GetString());
+        Assert.Equal(household.RobotId, loops[0].GetProperty("robot").GetString());
+    }
+
+    [Fact]
+    public async Task LoopList_UnboundSigV4_WithAmbiguousCandidates_StaysUnbound_AndAvoidsBootstrapLoop()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.AddLoop(null, null, "Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        store.AddLoop(null, null, "Air-Degree-Lunch-Canvas", "BOJW-1000-0017-1009-0021");
+        var bindingsBefore = store.GetRobotCredentialBindings().Count;
+
+        var service = new JiboCloudProtocolService(store, authHandler: new CloudAuthProtocolHandler(store));
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160324",
+            Operation = "List",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Authorization"] =
+                    "AWS4-HMAC-SHA256 Credential=AKIAAMBIGUOUSCANDIDATE/20240101/us-east-1/execute-api/aws4_request, " +
+                    "SignedHeaders=host;x-amz-date, Signature=deadbeef"
+            }
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var loops = payload.RootElement.EnumerateArray().ToArray();
+        Assert.Single(loops);
+        Assert.NotEqual("openjibo-default-loop", loops[0].GetProperty("id").GetString());
+
+        // Two equally-plausible household robots: never guess which one owns the credential.
+        Assert.Equal(bindingsBefore, store.GetRobotCredentialBindings().Count);
+    }
+
+    [Fact]
     public void ResolveLoopsForKeys_NeverReturnsMoreThanOne_WhenKeysOverlap()
     {
         var store = new InMemoryCloudStateStore();

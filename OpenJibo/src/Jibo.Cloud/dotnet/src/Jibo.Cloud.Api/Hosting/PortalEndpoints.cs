@@ -545,7 +545,8 @@ internal static class PortalEndpoints
             PortalSessionService portalSessionService,
             ICloudStateStore cloudStateStore,
             LoopUpdatedPushService loopUpdatedPushService,
-            RobotNotificationRegistry robotNotificationRegistry) =>
+            RobotNotificationRegistry robotNotificationRegistry,
+            LoopSyncDiagnostics? loopSyncDiagnostics) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null)
@@ -560,6 +561,21 @@ internal static class PortalEndpoints
             var members = cloudStateStore.GetLoopMembers(loopId)
                 .Where(static member => !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
                 .ToArray();
+
+            var robotListCallsSeen = loopSyncDiagnostics?.TotalListCallsSeen ?? 0;
+            var lastListLoops = loopSyncDiagnostics?.LastListCall;
+            var recentLoopCalls = loopSyncDiagnostics?.GetRecentCalls(10) ?? [];
+            var credentialBindingCount = loopSyncDiagnostics?.CredentialBindingsCreated ?? 0;
+
+            var warnings = new List<string>();
+            if (robotListCallsSeen == 0)
+                warnings.Add("no-robot-list-calls-seen");
+            if (lastListLoops?.BootstrapLoopReturned == true)
+                warnings.Add("bootstrap-loop-returned");
+            if (lastListLoops is not null &&
+                !string.IsNullOrWhiteSpace(lastListLoops.LoopId) &&
+                !lastListLoops.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase))
+                warnings.Add("portal-loop-differs-from-listed-loop");
 
             return Results.Json(new
             {
@@ -588,7 +604,12 @@ internal static class PortalEndpoints
                         lastPush.Outcome,
                         atUtc = lastPush.AtUtc,
                         robotKeys = lastPush.RobotKeys
-                    }
+                    },
+                robotListCallsSeen,
+                credentialBindingCount,
+                lastListLoops,
+                recentLoopCalls,
+                warnings
             });
         });
 

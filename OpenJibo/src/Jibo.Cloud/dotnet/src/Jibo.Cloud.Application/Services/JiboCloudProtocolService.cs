@@ -18,6 +18,7 @@ public sealed class JiboCloudProtocolService(
     ICloudAuthProtocolHandler? authHandler = null,
     RobotNotificationRegistry? robotNotificationRegistry = null,
     LoopUpdatedPushService? loopUpdatedPushService = null,
+    LoopSyncDiagnostics? loopSyncDiagnostics = null,
     ILogger<JiboCloudProtocolService>? logger = null)
 {
     private const int SchedulerBackupDelayMs = 250;
@@ -46,6 +47,7 @@ public sealed class JiboCloudProtocolService(
     private readonly IMediaContentStore _mediaContentStore = mediaContentStore ?? new NullMediaContentStore();
     private readonly RobotNotificationRegistry? _robotNotificationRegistry = robotNotificationRegistry;
     private readonly LoopUpdatedPushService? _loopUpdatedPushService = loopUpdatedPushService;
+    private readonly LoopSyncDiagnostics? _loopSyncDiagnostics = loopSyncDiagnostics;
     private readonly ConcurrentDictionary<string, OobeTokenState> _oobeTokens = new(StringComparer.Ordinal);
     private readonly Lock _schedulerLock = new();
     private readonly SchedulerRuntimeState _schedulerState = new();
@@ -911,7 +913,8 @@ public sealed class JiboCloudProtocolService(
         if (operation is "ListMembers" or "ListLoopMembers")
         {
             var listBody = envelope.TryParseBody();
-            var scopedLoop = ResolveLoopsForCaller(envelope).FirstOrDefault();
+            var callerResolution = ResolveLoopsForCaller(envelope);
+            var scopedLoop = callerResolution.Loops.FirstOrDefault();
             var loopId = ReadString(listBody, "loopId") ??
                          ReadString(listBody, "id") ??
                          scopedLoop?.LoopId;
@@ -919,17 +922,18 @@ public sealed class JiboCloudProtocolService(
             var statusFilter = ReadStringArray(listBody, "statusList");
             var typeFilter = ReadStringArray(listBody, "typeList");
 
-            var members = stateStore.GetLoopMembers(loopId ?? string.Empty)
+            var matchedMembers = stateStore.GetLoopMembers(loopId ?? string.Empty)
                 .Where(static member => !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase))
                 .Where(member => statusFilter.Count == 0 ||
                                  statusFilter.Contains(NormalizeMemberStatus(member.Status), StringComparer.OrdinalIgnoreCase) ||
                                  statusFilter.Contains(member.Status, StringComparer.OrdinalIgnoreCase))
                 .Where(member => typeFilter.Count == 0 ||
                                  typeFilter.Contains(member.Type, StringComparer.OrdinalIgnoreCase))
-                .Select(MapLoopMember)
                 .ToArray();
 
-            return ProtocolDispatchResult.Ok(members);
+            RecordLoopSyncCall(envelope, operation, callerResolution, loopId, matchedMembers);
+
+            return ProtocolDispatchResult.Ok(matchedMembers.Select(MapLoopMember).ToArray());
         }
 
         if (operation is "ListRecognitionObservations" or "ListRecognitions")
@@ -1101,21 +1105,125 @@ public sealed class JiboCloudProtocolService(
 
         // SyncManager _isLoopGood requires exactly one loop. With dump credential seeds
         // (multiple robots) returning every loop breaks introductions / KB sync.
-        var loops = ResolveLoopsForCaller(envelope);
-        return ProtocolDispatchResult.Ok(loops
-            .Select(loop => MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId)))
+        var listLoopsResolution = ResolveLoopsForCaller(envelope);
+        var listLoopsPrimary = listLoopsResolution.Loops.FirstOrDefault();
+        var listLoopsPrimaryMembers = listLoopsPrimary is null
+            ? Array.Empty<LoopMemberRecord>()
+            : stateStore.GetLoopMembers(listLoopsPrimary.LoopId);
+        RecordLoopSyncCall(
+            envelope, operation, listLoopsResolution, listLoopsPrimary?.LoopId, listLoopsPrimaryMembers);
+
+        return ProtocolDispatchResult.Ok(listLoopsResolution.Loops
+            .Select(record => MapLoopRecord(record, stateStore.GetLoopMembers(record.LoopId)))
             .ToArray());
     }
 
-    private IReadOnlyList<LoopRecord> ResolveLoopsForCaller(ProtocolEnvelope envelope)
+    private LoopCallerResolution ResolveLoopsForCaller(ProtocolEnvelope envelope)
     {
         var identity = _identityResolver.Resolve(envelope);
+        var boundIdentity = EnsureFirstUseCredentialBinding(identity);
+        var firstUseBindingCreated = boundIdentity is not null;
+        identity = boundIdentity ?? identity;
         var keys = LoopRosterResolver.CollectEnvelopeRobotKeys(
             stateStore,
             envelope,
             identity,
             _configuredRobotId);
-        return LoopRosterResolver.ResolveLoopsForKeys(stateStore, keys, _configuredRobotId);
+        var loops = LoopRosterResolver.ResolveLoopsForKeys(stateStore, keys, _configuredRobotId);
+        return new LoopCallerResolution(loops, identity, firstUseBindingCreated);
+    }
+
+    private readonly record struct LoopCallerResolution(
+        IReadOnlyList<LoopRecord> Loops,
+        ProtocolRobotIdentity Identity,
+        bool FirstUseBindingCreated);
+
+    /// <summary>
+    /// Feeds <see cref="LoopSyncDiagnostics"/> so an operator can see via
+    /// <c>GET /api/portal/loop-sync-status</c> whether SSM has ever called <c>Loop#list()</c>,
+    /// what identity it resolved to, and whether it got the synthetic bootstrap loop.
+    /// </summary>
+    private void RecordLoopSyncCall(
+        ProtocolEnvelope envelope,
+        string operation,
+        LoopCallerResolution resolution,
+        string? loopId,
+        IReadOnlyCollection<LoopMemberRecord> members)
+    {
+        if (_loopSyncDiagnostics is null) return;
+
+        var loop = string.IsNullOrWhiteSpace(loopId)
+            ? null
+            : stateStore.GetLoops().FirstOrDefault(candidate =>
+                candidate.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase));
+        var nonRobotMembers = members.Where(member =>
+            !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase)).ToArray();
+
+        _loopSyncDiagnostics.RecordCall(new LoopSyncCallRecord(
+            DateTimeOffset.UtcNow,
+            envelope.HostName,
+            envelope.Path,
+            operation,
+            resolution.Identity.Source,
+            resolution.Identity.DeviceId,
+            resolution.Identity.Aws.AccessKeyFingerprint,
+            resolution.FirstUseBindingCreated,
+            loopId,
+            nonRobotMembers.Length,
+            nonRobotMembers.Count(member => !string.IsNullOrWhiteSpace(member.FirstName)),
+            loop is not null && LoopRosterResolver.IsBootstrapLoop(loop)));
+    }
+
+    /// <summary>
+    /// SSM's <c>Loop#list()</c> sends only a SigV4-signed request — no <c>X-Jibo-RobotId</c>
+    /// header, no bearer token. If that access key has never been bound to a device, bind it
+    /// now to the single unambiguous candidate robot so this call (and all future ones) resolve
+    /// the caller instead of silently falling through to the synthetic bootstrap loop.
+    /// </summary>
+    private ProtocolRobotIdentity? EnsureFirstUseCredentialBinding(ProtocolRobotIdentity identity)
+    {
+        var fingerprint = identity.Aws.AccessKeyFingerprint;
+        if (string.IsNullOrWhiteSpace(fingerprint)) return null;
+        if (!identity.Source.Equals("unresolved", StringComparison.OrdinalIgnoreCase)) return null;
+        if (stateStore.FindDeviceByAwsCredentialFingerprint(fingerprint) is not null) return null;
+
+        var candidate = ResolveUnambiguousBindingCandidate();
+        if (candidate is null) return null;
+
+        stateStore.BindAwsCredentialFingerprint(candidate.DeviceId, fingerprint, "protocol-first-use");
+        return new ProtocolRobotIdentity(
+            candidate.DeviceId,
+            "aws-credential-binding",
+            identity.HeaderPresent,
+            identity.BearerTokenPresent,
+            identity.BearerTokenResolved,
+            identity.Aws);
+    }
+
+    private DeviceRegistration? ResolveUnambiguousBindingCandidate()
+    {
+        if (!string.IsNullOrWhiteSpace(_configuredRobotId))
+        {
+            var configured = stateStore.FindDeviceByFriendlyId(_configuredRobotId);
+            if (configured is not null) return configured;
+        }
+
+        var nonBootstrapLoops = stateStore.GetLoops()
+            .Where(loop => !LoopRosterResolver.IsBootstrapLoop(loop))
+            .ToArray();
+        if (nonBootstrapLoops.Length == 1)
+        {
+            var loop = nonBootstrapLoops[0];
+            var device = stateStore.FindDeviceByFriendlyId(loop.RobotId) ??
+                         stateStore.FindDeviceByFriendlyId(loop.RobotFriendlyId);
+            if (device is not null) return device;
+        }
+
+        var physicalDevices = stateStore.GetDevices()
+            .Where(device => string.Equals(
+                device.RegistrationSource, RobotRegistrationSources.Physical, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        return physicalDevices.Length == 1 ? physicalDevices[0] : null;
     }
 
     private static string NormalizeMemberStatus(string? status) =>

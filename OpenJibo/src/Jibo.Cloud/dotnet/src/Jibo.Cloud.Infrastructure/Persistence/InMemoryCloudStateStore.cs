@@ -2293,7 +2293,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         AddIdentityEvidenceSignal(signals, "build-hash", robot.RobotId, robot.BuildHash, loopId);
         AddIdentityEvidenceSignal(signals, "config-hash", robot.RobotId, robot.ConfigHash, loopId);
 
-        foreach (var mapping in robot.HostMappings.OrderBy(mapping => mapping.Key, StringComparer.OrdinalIgnoreCase))
+        foreach (var mapping in robot.HostMappings
+                     .Where(mapping => !mapping.Key.StartsWith("openjibo.", StringComparison.OrdinalIgnoreCase))
+                     .OrderBy(mapping => mapping.Key, StringComparer.OrdinalIgnoreCase))
             AddIdentityEvidenceSignal(signals, "host-mapping", mapping.Key, mapping.Value, loopId);
 
         foreach (var observation in recognitionObservations ?? [])

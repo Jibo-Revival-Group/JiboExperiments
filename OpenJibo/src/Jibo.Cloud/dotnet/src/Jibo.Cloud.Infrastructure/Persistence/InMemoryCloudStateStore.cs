@@ -3269,6 +3269,21 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         _loops.Clear();
         _loops.AddRange(snapshot.Loops ?? []);
+        // Older or partially onboarded snapshots may contain no loops. The robot
+        // protocol requires ListLoops to return one concrete loop, so restore a
+        // durable default tied to the current registered robot instead of sending
+        // an empty array that makes stock Neo Hub fail acquisition.
+        if (_loops.Count == 0)
+        {
+            _loops.Add(new LoopRecord
+            {
+                LoopId = "openjibo-default-loop",
+                Name = "OpenJibo Default Loop",
+                OwnerAccountId = _account.AccountId,
+                RobotId = _robot.RobotId,
+                RobotFriendlyId = _robot.DeviceId
+            });
+        }
 
         _holidayOverrides.Clear();
         _holidayOverrides.AddRange(snapshot.Holidays ?? []);

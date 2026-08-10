@@ -1077,7 +1077,21 @@ public sealed class JiboCloudProtocolService(
 
         if (operation is not ("List" or "ListLoops")) return ProtocolDispatchResult.Ok(Array.Empty<object>());
 
-        return ProtocolDispatchResult.Ok(stateStore.GetLoops()
+        // Stock Neo Hub requires exactly one loop. A partially onboarded robot
+        // may arrive with an empty persisted loop collection, so materialize a
+        // loop from the strongest currently resolved request identity before
+        // returning the list. This creates protocol state, not an automatic
+        // inventory/household identity claim.
+        var loops = stateStore.GetLoops();
+        if (loops.Count == 0)
+        {
+            var identity = _identityResolver.Resolve(envelope);
+            var robotId = identity.DeviceId ?? envelope.DeviceId ?? _configuredRobotId ?? stateStore.GetRobot().DeviceId;
+            var loop = stateStore.AddLoop(null, stateStore.GetAccount().AccountId, robotId, robotId);
+            loops = [loop];
+        }
+
+        return ProtocolDispatchResult.Ok(loops
             .Select(loop => MapLoopRecord(loop, stateStore.GetLoopMembers(loop.LoopId)))
             .ToArray());
     }

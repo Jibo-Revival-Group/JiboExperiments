@@ -1083,9 +1083,48 @@ public sealed class JiboCloudProtocolService(
         // returning the list. This creates protocol state, not an automatic
         // inventory/household identity claim.
         var loops = stateStore.GetLoops();
+        var identity = _identityResolver.Resolve(envelope);
+        var requestedRobotId = identity.DeviceId ?? envelope.DeviceId;
+        if (!string.IsNullOrWhiteSpace(requestedRobotId) && loops.Count > 1)
+        {
+            var identityCandidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { requestedRobotId };
+            foreach (var session in stateStore.GetSessions())
+            {
+                var registeredDeviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registered)
+                    ? registered?.ToString()
+                    : null;
+                if (!string.Equals(registeredDeviceId, requestedRobotId, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (!string.IsNullOrWhiteSpace(session.DeviceId)) identityCandidates.Add(session.DeviceId);
+                if (session.Metadata.TryGetValue("loopId", out var sessionLoopId) &&
+                    !string.IsNullOrWhiteSpace(sessionLoopId?.ToString()))
+                    identityCandidates.Add(sessionLoopId.ToString()!);
+            }
+            var matchingLoops = loops.Where(loop =>
+                    identityCandidates.Contains(loop.LoopId) ||
+                    identityCandidates.Contains(loop.RobotId) ||
+                    identityCandidates.Contains(loop.RobotFriendlyId))
+                .ToArray();
+            if (matchingLoops.Length > 0)
+                loops = [matchingLoops[0]];
+            else
+            {
+                var loop = stateStore.AddLoop(null, stateStore.GetAccount().AccountId,
+                    requestedRobotId, requestedRobotId);
+                loops = [loop];
+            }
+        }
+        if (loops.Count > 1)
+        {
+            // Neo Hub's acquireLoopId contract is one loop per account/session.
+            // Do not leak other robots' household loops to this robot.
+            var defaultLoop = loops.FirstOrDefault(loop =>
+                loop.OwnerAccountId.Equals(stateStore.GetAccount().AccountId, StringComparison.OrdinalIgnoreCase) &&
+                loop.RobotId.Equals(stateStore.GetRobot().RobotId, StringComparison.OrdinalIgnoreCase));
+            loops = [defaultLoop ?? loops[0]];
+        }
         if (loops.Count == 0)
         {
-            var identity = _identityResolver.Resolve(envelope);
             var robotId = identity.DeviceId ?? envelope.DeviceId ?? _configuredRobotId ?? stateStore.GetRobot().DeviceId;
             var loop = stateStore.AddLoop(null, stateStore.GetAccount().AccountId, robotId, robotId);
             loops = [loop];

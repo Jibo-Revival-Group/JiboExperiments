@@ -962,12 +962,7 @@ internal static class PortalEndpoints
                 candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
 
-            var robotKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                device.DeviceId,
-                device.RobotId,
-                device.FriendlyName
-            };
+            var robotKeys = BuildRobotArtifactKeys(device, cloudStateStore);
             var logs = (await mediaContentStore.ListAsync("logs", 200, cancellationToken))
                 .Where(item =>
                 {
@@ -1010,8 +1005,7 @@ internal static class PortalEndpoints
             if (device is null || !path.StartsWith("logs/", StringComparison.OrdinalIgnoreCase))
                 return Results.NotFound(new { error = "Log artifact was not found." });
 
-            var robotKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { device.DeviceId, device.RobotId, device.FriendlyName };
+            var robotKeys = BuildRobotArtifactKeys(device, cloudStateStore);
             var artifact = (await mediaContentStore.ListAsync("logs", 200, cancellationToken))
                 .FirstOrDefault(item => item.Path.Equals(path, StringComparison.OrdinalIgnoreCase) &&
                                         (string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")) ||
@@ -1044,8 +1038,7 @@ internal static class PortalEndpoints
                 candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
 
-            var robotKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { device.DeviceId, device.RobotId, device.FriendlyName };
+            var robotKeys = BuildRobotArtifactKeys(device, cloudStateStore);
             var artifacts = (await mediaContentStore.ListAsync(string.Empty, 400, cancellationToken))
                 .Where(item =>
                 {
@@ -1099,8 +1092,7 @@ internal static class PortalEndpoints
             if (device is null || string.IsNullOrWhiteSpace(path))
                 return Results.NotFound(new { error = "Artifact was not found." });
 
-            var robotKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { device.DeviceId, device.RobotId, device.FriendlyName };
+            var robotKeys = BuildRobotArtifactKeys(device, cloudStateStore);
             var artifact = (await mediaContentStore.ListAsync(string.Empty, 400, cancellationToken))
                 .FirstOrDefault(item => item.Path.Equals(path, StringComparison.OrdinalIgnoreCase) &&
                     (string.IsNullOrWhiteSpace(ReadArtifactMeta(item.Meta, "deviceId")) ||
@@ -1795,6 +1787,27 @@ internal static class PortalEndpoints
         return value is JsonElement element && element.ValueKind == JsonValueKind.String
             ? element.GetString() ?? string.Empty
             : value.ToString() ?? string.Empty;
+    }
+
+    private static HashSet<string> BuildRobotArtifactKeys(DeviceRegistration device, ICloudStateStore cloudStateStore)
+    {
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            device.DeviceId,
+            device.RobotId,
+            device.FriendlyName
+        };
+
+        // Merged/grouped robots retain their observed runtime IDs on sessions.
+        // Include those aliases when querying artifacts, while requiring the
+        // explicit admin binding that grouped the session to this inventory row.
+        foreach (var session in cloudStateStore.GetSessions().Where(item => SessionMatchesDevice(item, device)))
+        {
+            foreach (var identity in GetSessionIdentityValues(session))
+                keys.Add(identity);
+        }
+
+        return keys;
     }
 
     private static async Task<int> BackfillArtifactsForCredentialAsync(IMediaContentStore mediaContentStore,

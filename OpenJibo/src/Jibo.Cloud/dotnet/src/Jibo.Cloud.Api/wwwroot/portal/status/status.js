@@ -312,6 +312,7 @@ function filterAndSortRobots(robots = []) {
 
 function shouldAutoRefreshNow() {
   if (!autoRefreshEnabled || !getSessionToken()) return false;
+  if (activeLogViewer) return false;
   if (document.visibilityState !== "visible") return false;
 
   const active = document.activeElement;
@@ -513,7 +514,7 @@ function renderLogViewer() {
           </button>`).join("")}</div>`;
   const audit = viewer.loading ? "" : renderArtifactAudit(items);
   const preview = viewer.loadingContent
-    ? `<p class="muted-row">Loading log preview…</p>`
+    ? `<div class="preview-loading"><span class="loading-pulse" aria-hidden="true"></span><span>Loading log preview…</span></div>`
     : viewer.selected
       ? renderArtifactPreview(viewer.selected)
       : `<p class="muted-row">Select an artifact to inspect its decoded text preview.</p>`;

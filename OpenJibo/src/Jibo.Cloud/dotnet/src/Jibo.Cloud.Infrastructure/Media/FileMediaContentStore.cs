@@ -101,8 +101,6 @@ internal sealed class FileMediaContentStore(string? directoryPath) : IMediaConte
         foreach (var metaPath in Directory.EnumerateFiles(DirectoryPath, "*.json", SearchOption.AllDirectories))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (items.Count >= Math.Max(1, maxCount)) break;
-
             try
             {
                 using var document = JsonDocument.Parse(await File.ReadAllTextAsync(metaPath, cancellationToken));
@@ -127,6 +125,15 @@ internal sealed class FileMediaContentStore(string? directoryPath) : IMediaConte
             }
         }
 
-        return items;
+        return items
+            .OrderByDescending(item => ReadStoredUtc(item.Meta))
+            .Take(Math.Max(1, maxCount))
+            .ToArray();
     }
+
+    private static DateTimeOffset ReadStoredUtc(IReadOnlyDictionary<string, object?> meta) =>
+        meta.TryGetValue("storedUtc", out var value) &&
+        DateTimeOffset.TryParse(value?.ToString(), out var parsed)
+            ? parsed
+            : DateTimeOffset.MinValue;
 }

@@ -539,6 +539,11 @@ public sealed class WebSocketTurnFinalizationService(
         logger.LogDebug("Listen setup entered session={SessionId} transId={TransId}",
             session.SessionId,
             turnState.TransId);
+        // A live listen request is affirmative activity from the robot. Do not
+        // leave the portal row in Sleeping after the robot has resumed listening.
+        if (session.Metadata.TryGetValue("sleepState", out var sleepState) &&
+            string.Equals(sleepState?.ToString(), "sleeping", StringComparison.OrdinalIgnoreCase))
+            session.Metadata["sleepState"] = "awake";
         logger.LogDebug(
             "Listen setup state session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} sawContext={SawContext} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks} firstAudioUtc={FirstAudioUtc} lastAudioUtc={LastAudioUtc} followUpOpen={FollowUpOpen}",
             session.SessionId,

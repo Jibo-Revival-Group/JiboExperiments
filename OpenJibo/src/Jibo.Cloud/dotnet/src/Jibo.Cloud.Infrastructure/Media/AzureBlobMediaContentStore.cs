@@ -107,7 +107,6 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
             await foreach (var blob in _containerClient.GetBlobsAsync(BlobTraits.None, BlobStates.None,
                                normalizedPrefix, cancellationToken))
             {
-                if (items.Count >= Math.Max(1, maxCount)) break;
                 if (!blob.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
 
                 try
@@ -136,6 +135,15 @@ internal sealed class AzureBlobMediaContentStore : IMediaContentStore
             return [];
         }
 
-        return items;
+        return items
+            .OrderByDescending(item => ReadStoredUtc(item.Meta))
+            .Take(Math.Max(1, maxCount))
+            .ToArray();
     }
+
+    private static DateTimeOffset ReadStoredUtc(IReadOnlyDictionary<string, object?> meta) =>
+        meta.TryGetValue("storedUtc", out var value) &&
+        DateTimeOffset.TryParse(value?.ToString(), out var parsed)
+            ? parsed
+            : DateTimeOffset.MinValue;
 }

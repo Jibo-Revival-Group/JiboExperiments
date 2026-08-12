@@ -2282,6 +2282,12 @@ internal static class PortalEndpoints
         DateTimeOffset now)
     {
         if (!device.IsActive) return "inactive";
+        // A live interactive socket means the robot is awake, even if an older
+        // proactive/session record still carries sleepState= sleeping.
+        if (liveConnections.Any(connection =>
+                connection.Kind.Equals("neo-hub-listen", StringComparison.OrdinalIgnoreCase) ||
+                connection.Kind.Equals("api-socket", StringComparison.OrdinalIgnoreCase)))
+            return "online";
         if (string.Equals(sleepState, "sleeping", StringComparison.OrdinalIgnoreCase) &&
             (liveConnections.Count > 0 || lastSeenUtc >= now.AddHours(-24))) return "sleeping";
         if (liveConnections.Count > 0 || lastSeenUtc >= now - StatusActiveActivityWindow) return "online";

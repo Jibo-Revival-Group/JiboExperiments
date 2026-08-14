@@ -40,7 +40,17 @@ public interface ICloudStateStore
     /// </summary>
     void ReinheritDialogMetadata(CloudSession session);
     IReadOnlyList<LoopRecord> GetLoops();
-    LoopRecord AddLoop(string? name, string? ownerAccountId, string? robotId, string? robotFriendlyId);
+    LoopRecord AddLoop(string? name, string? ownerAccountId, string? robotId, string? robotFriendlyId,
+        string? preferredLoopId = null);
+
+    /// <summary>
+    /// Aligns (or creates) the household loop so <c>Loop#list()</c> matches the robot's
+    /// existing KB identity: <paramref name="robotId"/> (required), optional stock
+    /// <paramref name="preferredLoopId"/> / <paramref name="ownerAccountId"/>.
+    /// Rematerializes the loop id across members/people when the preferred id differs.
+    /// </summary>
+    LoopRecord AlignHouseholdIdentity(string robotId, string? robotFriendlyId = null,
+        string? preferredLoopId = null, string? ownerAccountId = null, string? loopName = null);
     IReadOnlyList<PersonRecord> GetPeople();
     PersonRecord UpsertPerson(PersonRecord person);
     /// <summary>

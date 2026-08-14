@@ -791,7 +791,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
 
-    public LoopRecord AddLoop(string? name, string? ownerAccountId, string? robotId, string? robotFriendlyId)
+    public LoopRecord AddLoop(string? name, string? ownerAccountId, string? robotId, string? robotFriendlyId,
+        string? preferredLoopId = null)
     {
         var now = DateTimeOffset.UtcNow;
         var resolvedOwnerAccountId = string.IsNullOrWhiteSpace(ownerAccountId) ? _account.AccountId : ownerAccountId.Trim();
@@ -802,7 +803,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 ? "OpenJibo Loop"
                 : $"{resolvedRobotFriendlyId} Loop"
             : name.Trim();
-        var baseLoopId = $"loop-{Slugify(string.IsNullOrWhiteSpace(resolvedRobotFriendlyId) ? baseName : resolvedRobotFriendlyId)}";
+        var preferredId = string.IsNullOrWhiteSpace(preferredLoopId) ? null : preferredLoopId.Trim();
+        var baseLoopId = preferredId
+            ?? $"loop-{Slugify(string.IsNullOrWhiteSpace(resolvedRobotFriendlyId) ? baseName : resolvedRobotFriendlyId)}";
         if (string.IsNullOrWhiteSpace(baseLoopId) || string.Equals(baseLoopId, "loop", StringComparison.OrdinalIgnoreCase))
             baseLoopId = $"loop-{Guid.NewGuid():N}";
 
@@ -841,8 +844,20 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
             var candidateLoopId = baseLoopId;
             var suffix = 2;
+            // Prefer an exact stock ObjectId when provided; only suffix on collision.
             while (_loops.Any(loop => string.Equals(loop.LoopId, candidateLoopId, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (preferredId is not null &&
+                    string.Equals(candidateLoopId, preferredId, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Stock id already owned by another loop — fall back to slug form.
+                    candidateLoopId = $"loop-{Slugify(string.IsNullOrWhiteSpace(resolvedRobotFriendlyId) ? baseName : resolvedRobotFriendlyId)}";
+                    preferredId = null;
+                    continue;
+                }
+
                 candidateLoopId = $"{baseLoopId}-{suffix++}";
+            }
 
             var loop = new LoopRecord
             {
@@ -855,10 +870,175 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 UpdatedUtc = now
             };
             _loops.Add(loop);
-            EnsureOwnerLoopMember(loop.LoopId);
+            EnsureOwnerLoopMember(loop.LoopId, resolvedOwnerAccountId);
             EnsureRobotLoopMember(loop.LoopId, resolvedRobotId);
             TouchState();
             return loop;
+        }
+    }
+
+    public LoopRecord AlignHouseholdIdentity(string robotId, string? robotFriendlyId = null,
+        string? preferredLoopId = null, string? ownerAccountId = null, string? loopName = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(robotId);
+        var resolvedRobotId = robotId.Trim();
+        var resolvedFriendlyId = string.IsNullOrWhiteSpace(robotFriendlyId) ? null : robotFriendlyId.Trim();
+        var resolvedOwner = string.IsNullOrWhiteSpace(ownerAccountId) ? null : ownerAccountId.Trim();
+        var resolvedPreferredLoopId = string.IsNullOrWhiteSpace(preferredLoopId) ? null : preferredLoopId.Trim();
+        var resolvedName = string.IsNullOrWhiteSpace(loopName) ? null : loopName.Trim();
+
+        lock (_syncRoot)
+        {
+            var existing = FindLoopForRobotLocked(resolvedRobotId, resolvedFriendlyId ?? string.Empty)
+                           ?? FindPreferredHouseholdLoopLocked(resolvedPreferredLoopId);
+
+            if (existing is null)
+            {
+                // Drop the lock before AddLoop (it re-enters); release via scope end.
+            }
+            else
+            {
+                return RematerializeHouseholdLoopLocked(
+                    existing,
+                    resolvedRobotId,
+                    resolvedFriendlyId,
+                    resolvedPreferredLoopId,
+                    resolvedOwner,
+                    resolvedName);
+            }
+        }
+
+        return AddLoop(
+            resolvedName,
+            resolvedOwner ?? _account.AccountId,
+            resolvedRobotId,
+            resolvedFriendlyId,
+            resolvedPreferredLoopId);
+    }
+
+    private LoopRecord? FindPreferredHouseholdLoopLocked(string? preferredLoopId)
+    {
+        if (!string.IsNullOrWhiteSpace(preferredLoopId))
+        {
+            var byId = _loops.FirstOrDefault(loop =>
+                loop.LoopId.Equals(preferredLoopId, StringComparison.OrdinalIgnoreCase));
+            if (byId is not null)
+                return byId;
+        }
+
+        var nonBootstrap = _loops
+            .Where(loop => !LoopRosterResolver.IsBootstrapLoop(loop))
+            .OrderByDescending(loop => loop.UpdatedUtc)
+            .FirstOrDefault();
+        if (nonBootstrap is not null)
+            return nonBootstrap;
+
+        // Fresh install / single bootstrap loop: rematerialize it into the stock identity
+        // so portal-added members (e.g. Bob Ross) keep their roster row under the new loop id.
+        return _loops.OrderByDescending(loop => loop.UpdatedUtc).FirstOrDefault();
+    }
+
+    private LoopRecord RematerializeHouseholdLoopLocked(
+        LoopRecord existing,
+        string robotId,
+        string? robotFriendlyId,
+        string? preferredLoopId,
+        string? ownerAccountId,
+        string? loopName)
+    {
+        var targetLoopId = preferredLoopId ?? existing.LoopId;
+        if (!string.Equals(targetLoopId, existing.LoopId, StringComparison.OrdinalIgnoreCase) &&
+            _loops.Any(loop =>
+                !loop.LoopId.Equals(existing.LoopId, StringComparison.OrdinalIgnoreCase) &&
+                loop.LoopId.Equals(targetLoopId, StringComparison.OrdinalIgnoreCase)))
+        {
+            // Prefer keeping the existing household rather than colliding with another loop.
+            targetLoopId = existing.LoopId;
+        }
+
+        var oldLoopId = existing.LoopId;
+        var ownerId = ownerAccountId ?? existing.OwnerAccountId;
+        if (string.IsNullOrWhiteSpace(ownerId))
+            ownerId = _account.AccountId;
+
+        var updated = new LoopRecord
+        {
+            LoopId = targetLoopId,
+            Name = loopName ?? existing.Name,
+            OwnerAccountId = ownerId,
+            RobotId = robotId,
+            RobotFriendlyId = robotFriendlyId
+                ?? (string.IsNullOrWhiteSpace(existing.RobotFriendlyId) ? robotId : existing.RobotFriendlyId),
+            IsSuspended = existing.IsSuspended,
+            CreatedUtc = existing.CreatedUtc,
+            UpdatedUtc = DateTimeOffset.UtcNow
+        };
+
+        var index = _loops.FindIndex(loop =>
+            loop.LoopId.Equals(oldLoopId, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+            _loops[index] = updated;
+        else
+            _loops.Add(updated);
+
+        if (!oldLoopId.Equals(targetLoopId, StringComparison.OrdinalIgnoreCase))
+            RewriteLoopScopedIdsLocked(oldLoopId, targetLoopId);
+
+        EnsureOwnerLoopMember(targetLoopId, ownerId);
+        EnsureRobotLoopMember(targetLoopId, robotId);
+        TouchState();
+        return updated;
+    }
+
+    private void RewriteLoopScopedIdsLocked(string oldLoopId, string newLoopId)
+    {
+        for (var i = 0; i < _loopMembers.Count; i++)
+        {
+            if (!_loopMembers[i].LoopId.Equals(oldLoopId, StringComparison.OrdinalIgnoreCase))
+                continue;
+            var member = _loopMembers[i];
+            _loopMembers[i] = new LoopMemberRecord
+            {
+                Id = member.Id,
+                LoopId = newLoopId,
+                AccountId = member.AccountId,
+                Email = member.Email,
+                FirstName = member.FirstName,
+                LastName = member.LastName,
+                Gender = member.Gender,
+                Birthday = member.Birthday,
+                IsChild = member.IsChild,
+                Nickname = member.Nickname,
+                PhoneticName = member.PhoneticName,
+                FaceEnrolled = member.FaceEnrolled,
+                VoiceEnrolled = member.VoiceEnrolled,
+                Type = member.Type,
+                Status = member.Status,
+                LegalGuardianId = member.LegalGuardianId,
+                AgreementId = member.AgreementId,
+                PhoneNumber = member.PhoneNumber,
+                CreatedUtc = member.CreatedUtc,
+                PortalEditedUtc = member.PortalEditedUtc
+            };
+        }
+
+        for (var i = 0; i < _people.Count; i++)
+        {
+            if (!_people[i].LoopId.Equals(oldLoopId, StringComparison.OrdinalIgnoreCase))
+                continue;
+            var person = _people[i];
+            _people[i] = new PersonRecord
+            {
+                PersonId = person.PersonId,
+                AccountId = person.AccountId,
+                LoopId = newLoopId,
+                RobotId = person.RobotId,
+                DisplayName = person.DisplayName,
+                Alias = person.Alias,
+                IsPrimary = person.IsPrimary,
+                CreatedUtc = person.CreatedUtc,
+                UpdatedUtc = DateTimeOffset.UtcNow
+            };
         }
     }
 
@@ -2967,19 +3147,61 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return $"openjibo-bootstrap-{Guid.NewGuid():N}";
     }
 
-    private void EnsureOwnerLoopMember(string loopId)
+    private void EnsureOwnerLoopMember(string loopId, string? ownerAccountId = null)
     {
+        var resolvedOwner = string.IsNullOrWhiteSpace(ownerAccountId)
+            ? _account.AccountId
+            : ownerAccountId.Trim();
+
+        var existingOwnerIndex = _loopMembers.FindIndex(member =>
+            member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(member.Type, "owner", StringComparison.OrdinalIgnoreCase) &&
+            !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase));
+
+        if (existingOwnerIndex >= 0)
+        {
+            var existing = _loopMembers[existingOwnerIndex];
+            if (!string.Equals(existing.AccountId, resolvedOwner, StringComparison.OrdinalIgnoreCase))
+            {
+                _loopMembers[existingOwnerIndex] = new LoopMemberRecord
+                {
+                    Id = existing.Id,
+                    LoopId = existing.LoopId,
+                    AccountId = resolvedOwner,
+                    Email = existing.Email ?? _account.Email,
+                    FirstName = existing.FirstName ?? _account.FirstName,
+                    LastName = existing.LastName ?? _account.LastName,
+                    Gender = existing.Gender,
+                    Birthday = existing.Birthday,
+                    IsChild = existing.IsChild,
+                    PhoneNumber = existing.PhoneNumber,
+                    Status = existing.Status,
+                    Type = "owner",
+                    Nickname = existing.Nickname,
+                    PhoneticName = existing.PhoneticName,
+                    FaceEnrolled = existing.FaceEnrolled,
+                    VoiceEnrolled = existing.VoiceEnrolled,
+                    LegalGuardianId = existing.LegalGuardianId,
+                    AgreementId = existing.AgreementId,
+                    CreatedUtc = existing.CreatedUtc,
+                    PortalEditedUtc = existing.PortalEditedUtc
+                };
+            }
+
+            return;
+        }
+
         if (_loopMembers.Any(member =>
                 member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
                 member.AccountId != null &&
-                member.AccountId.Equals(_account.AccountId, StringComparison.OrdinalIgnoreCase) &&
+                member.AccountId.Equals(resolvedOwner, StringComparison.OrdinalIgnoreCase) &&
                 !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase)))
             return;
 
         _loopMembers.Add(new LoopMemberRecord
         {
             LoopId = loopId,
-            AccountId = _account.AccountId,
+            AccountId = resolvedOwner,
             Email = _account.Email,
             FirstName = _account.FirstName,
             LastName = _account.LastName,

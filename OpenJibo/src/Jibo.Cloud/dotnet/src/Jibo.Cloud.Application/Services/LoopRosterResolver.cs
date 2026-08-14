@@ -72,7 +72,7 @@ public static class LoopRosterResolver
     /// Synthetic loops created for the in-process bootstrap device
     /// (<c>InMemoryCloudStateStore</c> constructor) — never a real robot's household.
     /// </summary>
-    internal static bool IsBootstrapLoop(LoopRecord loop) =>
+    public static bool IsBootstrapLoop(LoopRecord loop) =>
         loop.RobotId.StartsWith("openjibo-bootstrap-", StringComparison.OrdinalIgnoreCase) ||
         loop.RobotFriendlyId.StartsWith("openjibo-bootstrap-", StringComparison.OrdinalIgnoreCase);
 

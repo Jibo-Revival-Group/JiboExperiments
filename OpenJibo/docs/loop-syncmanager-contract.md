@@ -37,8 +37,18 @@ Required: `owner`. Members: `id`, `name`, `owner`, `robot`, `robotFriendlyId`,
 ## Stock Member shape (`S9` element)
 
 Required: `id`, `loopId`, `status`, `type`.  
-Names under nested `account.firstName` / `account.lastName` (SyncManager
-flattens to UserNode `data.firstName` for introductions).
+Wire `type` values from stock cloud are **`incoming`** (owner) and **`outgoing`**
+(robot + household). OpenJibo stores `owner`/`member`/`robot` internally and
+translates at the `MapLoopMember` boundary.
+
+Names live under nested `account.firstName` / `account.lastName` (SyncManager
+flattens those onto UserNode `data.firstName` for introductions). Stock List
+payloads also flatten the same fields onto the member object; OpenJibo emits
+both. The robot member uses `account: {}` with no flattened names so
+`UserNode.isJibo` (`!data.firstName`) stays true.
+
+Unauthenticated LAN check: `GET /api/diagnostics/loop-sync` (same counters as
+`/api/portal/loop-sync-status`, no portal session required).
 
 ## Introductions menu gate
 
@@ -115,9 +125,33 @@ Skipping this script doesn't lose `LoopUpdated` — `SyncManager`'s periodic
 
 ### Cloud env
 
-Set `OpenJibo__Robot__RobotId=<local KB hex>` so `loop.robot` matches SyncManager
-after portal mutations. Portal People and `Loop#list` share one loop via
-`LoopRosterResolver` (never more than one List item).
+The stock List member **shape** (incoming/outgoing, flattened names, empty robot
+`account`) is the same for every robot. Identity values are **per robot**.
+
+Set `OpenJibo__Robot__RobotId` to **this** unit's KB hex
+(`Knowledge/jibo/loop` root `data.robot`) so `loop.robot` matches SyncManager
+after portal mutations. Do **not** copy ids from another robot's dump.
+
+Portal People and `Loop#list` share one loop via `LoopRosterResolver` (never
+more than one List item). Contract tests use the synthetic fixture
+`tests/Jibo.Cloud.Tests/Fixtures/stock-loop-list-contract.json` — never commit
+a real household roster.
+
+To also reuse **this** robot's existing KB loop/owner ObjectIds:
+
+```bash
+OpenJibo__Loop__SeedIdentity=true
+OpenJibo__Robot__RobotId=<this-robot-data.robot>
+OpenJibo__Robot__FriendlyId=<this-robot-data.robotFriendlyId>
+OpenJibo__Loop__LoopId=<this-robot-data.id>                 # optional
+OpenJibo__Loop__OwnerAccountId=<this-robot-data.owner>      # optional
+OpenJibo__Loop__Name=<this-robot-data.name>                 # optional
+```
+
+`SeedIdentity` rematerializes the household loop (and moves existing portal
+members onto the preferred loop id). Without it, `RobotId` alone still feeds
+`LoopRosterResolver` / first-use credential binding but will not rewrite a
+persisted `openjibo-default-loop` id.
 
 ## Verification
 

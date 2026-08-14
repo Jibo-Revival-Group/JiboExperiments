@@ -77,6 +77,11 @@ var seededRobots = RobotCredentialSeedApplier.Apply(
 if (seededRobots > 0)
     app.Logger.LogInformation("Applied {Count} robot credential seed entries for LAN API identity", seededRobots);
 
+LoopIdentitySeedApplier.Apply(
+    app.Services.GetRequiredService<ICloudStateStore>(),
+    app.Configuration,
+    app.Logger);
+
 app.UseCors();
 app.UseDefaultFiles();
 app.UseStaticFiles();

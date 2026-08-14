@@ -1236,6 +1236,35 @@ public sealed class JiboCloudProtocolService(
         var status = string.Equals(member.Status, "active", StringComparison.OrdinalIgnoreCase)
             ? "accepted"
             : member.Status;
+        // Stock JSC Loop#list emits invitation direction, not our internal owner/member/robot
+        // labels: owner -> "incoming", everyone else (including the robot) -> "outgoing".
+        // SyncManager copies `type` verbatim onto the KB UserNode; introductions gates on
+        // data.firstName (isJibo), not on these values, but matching stock avoids surprises.
+        var wireType = MapLoopMemberWireType(member.Type);
+
+        // SyncManager._applyCloudLoopMemberAndAccountToLocalLoopNode merges:
+        //   member fields (incl. nested account) + account.{firstName,...} onto UserNode.data.
+        // Stock cloud also flattens name fields on the member itself; dump KB nodes show both.
+        // Robot member keeps an empty account {} and no flattened names so isJibo stays true.
+        if (isRobot)
+        {
+            return new
+            {
+                id = member.Id,
+                loopId = member.LoopId,
+                accountId = member.AccountId,
+                account = new { },
+                enrolled = new { face = member.FaceEnrolled, voice = member.VoiceEnrolled },
+                status,
+                type = wireType,
+                nickname = member.Nickname,
+                phoneticName = member.PhoneticName,
+                legalGuardianId = member.LegalGuardianId,
+                agreementId = member.AgreementId,
+                created = member.CreatedUtc.ToUnixTimeMilliseconds()
+            };
+        }
+
         return new
         {
             id = member.Id,
@@ -1244,10 +1273,8 @@ public sealed class JiboCloudProtocolService(
             account = new
             {
                 email = member.Email,
-                // Robot member must carry accountId for _isLoopGood, but empty names so
-                // introductions treats the node as isJibo (missing firstName).
-                firstName = isRobot ? null : member.FirstName,
-                lastName = isRobot ? null : member.LastName,
+                firstName = member.FirstName,
+                lastName = member.LastName,
                 gender = member.Gender,
                 birthday = member.Birthday,
                 isChild = member.IsChild,
@@ -1255,13 +1282,36 @@ public sealed class JiboCloudProtocolService(
             },
             enrolled = new { face = member.FaceEnrolled, voice = member.VoiceEnrolled },
             status,
-            type = member.Type,
+            type = wireType,
             nickname = member.Nickname,
             phoneticName = member.PhoneticName,
             legalGuardianId = member.LegalGuardianId,
             agreementId = member.AgreementId,
-            created = member.CreatedUtc.ToUnixTimeMilliseconds()
+            created = member.CreatedUtc.ToUnixTimeMilliseconds(),
+            // Flattened onto the member so dump/stock clients that read data.firstName
+            // directly (and our golden fixtures) see the same shape SyncManager persists.
+            email = member.Email,
+            firstName = member.FirstName,
+            lastName = member.LastName,
+            gender = member.Gender,
+            birthday = member.Birthday,
+            isChild = member.IsChild
         };
+    }
+
+    /// <summary>
+    /// Maps internal roster roles to the stock Loop#list wire <c>type</c> values
+    /// (<c>incoming</c> for the owner, <c>outgoing</c> for robot and household members).
+    /// </summary>
+    public static string MapLoopMemberWireType(string? internalType)
+    {
+        if (string.Equals(internalType, "owner", StringComparison.OrdinalIgnoreCase))
+            return "incoming";
+        // Already-stock values pass through so fixtures/replays stay idempotent.
+        if (string.Equals(internalType, "incoming", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(internalType, "outgoing", StringComparison.OrdinalIgnoreCase))
+            return internalType!.ToLowerInvariant();
+        return "outgoing";
     }
 
     private static object MapRecognitionObservation(RecognitionObservationRecord observation)

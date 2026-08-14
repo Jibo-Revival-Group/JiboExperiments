@@ -40,11 +40,13 @@ public sealed class PortalLoopMemberSyncTests
         var members = outer.GetProperty("payload").GetProperty("payload").GetProperty("members");
         Assert.Contains(
             members.EnumerateArray(),
-            member => member.GetProperty("account").GetProperty("firstName").GetString() == "Synced" &&
+            member => member.GetProperty("account").TryGetProperty("firstName", out var firstName) &&
+                      firstName.GetString() == "Synced" &&
                       member.GetProperty("status").GetString() == "accepted");
         Assert.Contains(
             members.EnumerateArray(),
-            member => member.GetProperty("type").GetString() == "robot");
+            member => member.GetProperty("type").GetString() == "outgoing" &&
+                      !member.GetProperty("account").EnumerateObject().Any());
     }
 
     [Fact]
@@ -131,7 +133,8 @@ public sealed class PortalLoopMemberSyncTests
         Assert.Equal(configuredHex, loops[0].GetProperty("robot").GetString());
         Assert.Contains(
             loops[0].GetProperty("members").EnumerateArray(),
-            member => member.GetProperty("account").GetProperty("firstName").GetString() == "Shared");
+            member => member.GetProperty("account").TryGetProperty("firstName", out var firstName) &&
+                      firstName.GetString() == "Shared");
     }
 
     [Fact]
@@ -179,7 +182,8 @@ public sealed class PortalLoopMemberSyncTests
         Assert.Equal(household.LoopId, loops[0].GetProperty("id").GetString());
         Assert.Contains(
             loops[0].GetProperty("members").EnumerateArray(),
-            member => member.GetProperty("account").GetProperty("firstName").GetString() == "FirstUse" &&
+            member => member.GetProperty("account").TryGetProperty("firstName", out var firstName) &&
+                      firstName.GetString() == "FirstUse" &&
                       member.GetProperty("status").GetString() == "accepted");
         Assert.Equal(bindingsBefore + 1, store.GetRobotCredentialBindings().Count);
     }
@@ -227,6 +231,29 @@ public sealed class PortalLoopMemberSyncTests
         Assert.Equal(
             household.LoopId,
             after.GetProperty("lastListLoops").GetProperty("loopId").GetString());
+    }
+
+    [Fact]
+    public async Task DiagnosticsLoopSync_IsUnauthenticatedTwinOfPortalStatus()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        store.AddLoop(
+            "Ghost Loop",
+            store.GetAccount().AccountId,
+            "Ghost-Instance-Onion-Silk",
+            "BOJW-1000-0017-0820-0020");
+
+        var response = await client.GetAsync("/api/diagnostics/loop-sync");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(payload.TryGetProperty("robotListCallsSeen", out var calls));
+        Assert.Equal(0, calls.GetInt64());
+        Assert.Contains(
+            payload.GetProperty("warnings").EnumerateArray(),
+            warning => warning.GetString() == "no-robot-list-calls-seen");
+        Assert.False(payload.TryGetProperty("note", out _));
     }
 
     [Fact]

@@ -1647,12 +1647,14 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.NotEmpty(loops);
         var members = loops[0].GetProperty("members").EnumerateArray().ToArray();
         Assert.NotEmpty(members);
-        Assert.Contains(members, member => member.GetProperty("type").GetString() == "owner");
+        Assert.Contains(members, member => member.GetProperty("type").GetString() == "incoming");
         // Robot member must be present so SyncManager _isLoopGood sees loop.robot in accountIds.
-        Assert.Contains(members, member => member.GetProperty("type").GetString() == "robot");
-        var robotMember = members.First(member => member.GetProperty("type").GetString() == "robot");
-        Assert.Equal(loops[0].GetProperty("robot").GetString(), robotMember.GetProperty("accountId").GetString());
+        Assert.Contains(members, member => member.GetProperty("type").GetString() == "outgoing" &&
+                                           member.GetProperty("accountId").GetString() == loops[0].GetProperty("robot").GetString());
+        var robotMember = members.First(member =>
+            member.GetProperty("accountId").GetString() == loops[0].GetProperty("robot").GetString());
         Assert.Equal("accepted", robotMember.GetProperty("status").GetString());
+        Assert.False(robotMember.GetProperty("account").EnumerateObject().Any());
     }
 
     [Fact]
@@ -1672,7 +1674,7 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("loop-kitchen-jibo", payload.RootElement.GetProperty("id").GetString());
         Assert.Equal("Kitchen Loop", payload.RootElement.GetProperty("name").GetString());
         Assert.Contains(payload.RootElement.GetProperty("members").EnumerateArray(),
-            member => member.GetProperty("type").GetString() == "owner");
+            member => member.GetProperty("type").GetString() == "incoming");
     }
 
     [Fact]
@@ -1723,7 +1725,7 @@ public sealed class JiboCloudProtocolServiceTests
         var members = payload.RootElement.EnumerateArray().ToArray();
         Assert.NotEmpty(members);
         Assert.All(members, member => Assert.Equal("openjibo-default-loop", member.GetProperty("loopId").GetString()));
-        Assert.Contains(members, member => member.GetProperty("type").GetString() == "owner");
+        Assert.Contains(members, member => member.GetProperty("type").GetString() == "incoming");
     }
 
     [Fact]

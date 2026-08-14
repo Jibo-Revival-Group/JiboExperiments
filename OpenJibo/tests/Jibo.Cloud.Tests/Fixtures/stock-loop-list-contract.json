@@ -1,0 +1,93 @@
+[
+  {
+    "id": "aaaaaaaaaaaaaaaaaaaaaaaa",
+    "name": "Test Household Jibo",
+    "owner": "bbbbbbbbbbbbbbbbbbbbbbbb",
+    "robot": "cccccccccccccccccccccccc",
+    "robotFriendlyId": "Test-Robot-Friendly-Name",
+    "members": [
+      {
+        "id": "dddddddddddddddddddddddd",
+        "loopId": "aaaaaaaaaaaaaaaaaaaaaaaa",
+        "accountId": "cccccccccccccccccccccccc",
+        "account": {},
+        "enrolled": {
+          "face": false,
+          "voice": false
+        },
+        "status": "accepted",
+        "type": "outgoing",
+        "nickname": null,
+        "phoneticName": null,
+        "legalGuardianId": null,
+        "agreementId": null,
+        "created": 1600000000000
+      },
+      {
+        "id": "eeeeeeeeeeeeeeeeeeeeeeee",
+        "loopId": "aaaaaaaaaaaaaaaaaaaaaaaa",
+        "accountId": "bbbbbbbbbbbbbbbbbbbbbbbb",
+        "account": {
+          "email": "owner@example.test",
+          "firstName": "Alex",
+          "lastName": "Owner",
+          "gender": "male",
+          "birthday": 631152000000,
+          "photoUrl": null
+        },
+        "enrolled": {
+          "face": true,
+          "voice": true
+        },
+        "status": "accepted",
+        "type": "incoming",
+        "nickname": null,
+        "phoneticName": null,
+        "legalGuardianId": null,
+        "agreementId": null,
+        "created": 1600000000000,
+        "email": "owner@example.test",
+        "firstName": "Alex",
+        "lastName": "Owner",
+        "gender": "male",
+        "birthday": 631152000000,
+        "photoUrl": null
+      },
+      {
+        "id": "ffffffffffffffffffffffff",
+        "loopId": "aaaaaaaaaaaaaaaaaaaaaaaa",
+        "accountId": null,
+        "account": {
+          "email": null,
+          "firstName": "Pat",
+          "lastName": "Member",
+          "gender": "female",
+          "birthday": 946684800000,
+          "photoUrl": null,
+          "isChild": false
+        },
+        "enrolled": {
+          "face": true,
+          "voice": true
+        },
+        "status": "accepted",
+        "type": "outgoing",
+        "nickname": null,
+        "phoneticName": null,
+        "legalGuardianId": null,
+        "agreementId": null,
+        "created": 1600001000000,
+        "firstName": "Pat",
+        "lastName": "Member",
+        "gender": "female",
+        "birthday": 946684800000,
+        "isChild": false,
+        "photoUrl": null
+      }
+    ],
+    "isSuspended": false,
+    "created": 1600000000000,
+    "updated": 1600002000000,
+    "eventKey": "LoopUpdated"
+  }
+]

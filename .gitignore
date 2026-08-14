@@ -475,3 +475,5 @@ OpenJibo/**/media/logs/
 
 # Example files
 dump.bin
+# Local robot dump extracts / scratch (may contain household PII)
+artifact-output/

@@ -33,10 +33,12 @@ public sealed class LoopListScopingTests
         Assert.Equal(ghost.LoopId, loops[0].GetProperty("id").GetString());
         Assert.Contains(
             loops[0].GetProperty("members").EnumerateArray(),
-            member => member.GetProperty("account").GetProperty("firstName").GetString() == "Portal");
+            member => member.GetProperty("account").TryGetProperty("firstName", out var firstName) &&
+                      firstName.GetString() == "Portal");
         Assert.Contains(
             loops[0].GetProperty("members").EnumerateArray(),
-            member => member.GetProperty("type").GetString() == "robot");
+            member => member.GetProperty("type").GetString() == "outgoing" &&
+                      member.GetProperty("accountId").GetString() == loops[0].GetProperty("robot").GetString());
     }
 
     [Fact]
@@ -95,10 +97,10 @@ public sealed class LoopListScopingTests
 
         var members = loops[0].GetProperty("members").EnumerateArray().ToArray();
         Assert.Contains(members, member =>
-            member.GetProperty("type").GetString() == "robot" &&
+            member.GetProperty("type").GetString() == "outgoing" &&
             member.GetProperty("accountId").GetString() == "5a0b6398faa0f0001c5d0df1");
         Assert.Contains(members, member =>
-            member.GetProperty("type").GetString() == "owner" &&
+            member.GetProperty("type").GetString() == "incoming" &&
             member.GetProperty("status").GetString() == "accepted");
     }
 

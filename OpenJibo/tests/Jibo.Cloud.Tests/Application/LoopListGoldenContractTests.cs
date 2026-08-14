@@ -60,15 +60,19 @@ public sealed class LoopListGoldenContractTests
         }
 
         Assert.Contains(members, member =>
-            member.GetProperty("type").GetString() == "member" &&
-            member.GetProperty("account").GetProperty("firstName").GetString() == "Intro");
+            member.GetProperty("type").GetString() == "outgoing" &&
+            member.GetProperty("account").TryGetProperty("firstName", out var firstName) &&
+            firstName.GetString() == "Intro" &&
+            member.TryGetProperty("firstName", out var flatFirst) &&
+            flatFirst.GetString() == "Intro");
 
-        var robotMember = members.Single(member => member.GetProperty("type").GetString() == "robot");
-        Assert.Equal(loop.GetProperty("robot").GetString(), robotMember.GetProperty("accountId").GetString());
-        Assert.True(
-            robotMember.GetProperty("account").GetProperty("firstName").ValueKind is JsonValueKind.Null
-                or JsonValueKind.Undefined ||
-            string.IsNullOrWhiteSpace(robotMember.GetProperty("account").GetProperty("firstName").GetString()));
+        // Stock wire type for the robot member is "outgoing" with an empty account object.
+        var robotMember = members.Single(member =>
+            member.GetProperty("accountId").GetString() == loop.GetProperty("robot").GetString());
+        Assert.Equal("outgoing", robotMember.GetProperty("type").GetString());
+        Assert.Equal(JsonValueKind.Object, robotMember.GetProperty("account").ValueKind);
+        Assert.False(robotMember.GetProperty("account").EnumerateObject().Any());
+        Assert.False(robotMember.TryGetProperty("firstName", out _));
     }
 
     [Fact]
@@ -102,10 +106,16 @@ public sealed class LoopListGoldenContractTests
         var loopPayload = socket.LastPayload!.Value.GetProperty("payload").GetProperty("payload");
         Assert.Equal(loop.LoopId, loopPayload.GetProperty("id").GetString());
         var members = loopPayload.GetProperty("members").EnumerateArray().ToArray();
-        Assert.Contains(members, member => member.GetProperty("type").GetString() == "robot");
         Assert.Contains(members, member =>
-            member.GetProperty("account").GetProperty("firstName").GetString() == "Jordan" &&
-            member.GetProperty("status").GetString() == "accepted");
+            member.GetProperty("accountId").GetString() == loopPayload.GetProperty("robot").GetString() &&
+            member.GetProperty("type").GetString() == "outgoing");
+        Assert.Contains(members, member =>
+            member.GetProperty("account").TryGetProperty("firstName", out var firstName) &&
+            firstName.GetString() == "Jordan" &&
+            member.TryGetProperty("firstName", out var flatFirst) &&
+            flatFirst.GetString() == "Jordan" &&
+            member.GetProperty("status").GetString() == "accepted" &&
+            member.GetProperty("type").GetString() == "outgoing");
     }
 
     [Fact]
@@ -128,7 +138,10 @@ public sealed class LoopListGoldenContractTests
         Assert.Equal(200, result.StatusCode);
         using var payload = JsonDocument.Parse(result.BodyText);
         var members = payload.RootElement.EnumerateArray().ToArray();
-        Assert.DoesNotContain(members, member => member.GetProperty("type").GetString() == "robot");
+        // ListMembers excludes the robot member (internal type=robot), so no empty-account row.
+        Assert.DoesNotContain(members, member =>
+            member.GetProperty("account").ValueKind == JsonValueKind.Object &&
+            !member.GetProperty("account").EnumerateObject().Any());
         Assert.Contains(members, member =>
             member.GetProperty("account").GetProperty("firstName").GetString() == "Keep");
         Assert.All(members, member => Assert.Equal("accepted", member.GetProperty("status").GetString()));

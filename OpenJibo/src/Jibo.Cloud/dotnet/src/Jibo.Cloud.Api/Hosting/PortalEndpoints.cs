@@ -577,40 +577,96 @@ internal static class PortalEndpoints
                 !lastListLoops.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase))
                 warnings.Add("portal-loop-differs-from-listed-loop");
 
-            return Results.Json(new
-            {
+            return Results.Json(BuildLoopSyncStatusPayload(
                 loopId,
-                robot = loop?.RobotId,
-                robotFriendlyId = loop?.RobotFriendlyId,
-                memberCount = members.Length,
-                ownerPresent = cloudStateStore.GetLoopMembers(loopId)
+                loop,
+                memberCount: members.Length,
+                ownerPresent: cloudStateStore.GetLoopMembers(loopId)
                     .Any(member => string.Equals(member.Type, "owner", StringComparison.OrdinalIgnoreCase)),
-                robotMemberPresent = cloudStateStore.GetLoopMembers(loopId)
+                robotMemberPresent: cloudStateStore.GetLoopMembers(loopId)
                     .Any(member =>
                         string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) &&
                         !string.IsNullOrWhiteSpace(member.AccountId) &&
                         (loop is null ||
                          member.AccountId.Equals(loop.RobotId, StringComparison.OrdinalIgnoreCase))),
-                robotKeys = robotKeys.Take(16).ToArray(),
-                openApiSocketConnections = robotNotificationRegistry.OpenConnectionCount,
-                liveApiSocketOverlaps = liveOverlaps,
-                pendingNotifications = robotNotificationRegistry.PendingCount,
-                lastPush = lastPush is null
-                    ? null
-                    : new
-                    {
-                        lastPush.LoopId,
-                        lastPush.PushCount,
-                        lastPush.Outcome,
-                        atUtc = lastPush.AtUtc,
-                        robotKeys = lastPush.RobotKeys
-                    },
+                robotKeys,
+                liveOverlaps,
+                lastPush,
+                robotNotificationRegistry,
                 robotListCallsSeen,
                 credentialBindingCount,
                 lastListLoops,
                 recentLoopCalls,
-                warnings
-            });
+                warnings));
+        });
+
+        // Unauthenticated LAN diagnostics twin of /api/portal/loop-sync-status so operators
+        // can confirm robotListCallsSeen / api-socket overlap without a portal session.
+        // No member display names — only loop ids, counters, and warnings.
+        app.MapGet("/api/diagnostics/loop-sync", (
+            ICloudStateStore cloudStateStore,
+            LoopUpdatedPushService loopUpdatedPushService,
+            RobotNotificationRegistry robotNotificationRegistry,
+            LoopSyncDiagnostics? loopSyncDiagnostics) =>
+        {
+            var loop = cloudStateStore.GetLoops()
+                .Where(item => !LoopRosterResolver.IsBootstrapLoop(item))
+                .OrderByDescending(item => item.UpdatedUtc)
+                .FirstOrDefault()
+                ?? cloudStateStore.GetLoops().OrderByDescending(item => item.UpdatedUtc).FirstOrDefault();
+            var loopId = loop?.LoopId ?? string.Empty;
+            var robotKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (loop is not null)
+            {
+                if (!string.IsNullOrWhiteSpace(loop.RobotId))
+                    robotKeys.Add(loop.RobotId.Trim());
+                if (!string.IsNullOrWhiteSpace(loop.RobotFriendlyId))
+                    robotKeys.Add(loop.RobotFriendlyId.Trim());
+            }
+
+            var liveOverlaps = robotNotificationRegistry.CountLiveOverlaps(robotKeys);
+            var lastPush = loopUpdatedPushService.LastPush;
+            var allMembers = string.IsNullOrEmpty(loopId)
+                ? Array.Empty<LoopMemberRecord>()
+                : cloudStateStore.GetLoopMembers(loopId).ToArray();
+
+            var robotListCallsSeen = loopSyncDiagnostics?.TotalListCallsSeen ?? 0;
+            var lastListLoops = loopSyncDiagnostics?.LastListCall;
+            var recentLoopCalls = loopSyncDiagnostics?.GetRecentCalls(10) ?? [];
+            var credentialBindingCount = loopSyncDiagnostics?.CredentialBindingsCreated ?? 0;
+
+            var warnings = new List<string>();
+            if (robotListCallsSeen == 0)
+                warnings.Add("no-robot-list-calls-seen");
+            if (lastListLoops?.BootstrapLoopReturned == true)
+                warnings.Add("bootstrap-loop-returned");
+            if (lastListLoops is not null &&
+                !string.IsNullOrWhiteSpace(loopId) &&
+                !string.IsNullOrWhiteSpace(lastListLoops.LoopId) &&
+                !lastListLoops.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase))
+                warnings.Add("portal-loop-differs-from-listed-loop");
+
+            return Results.Json(BuildLoopSyncStatusPayload(
+                loopId,
+                loop,
+                memberCount: allMembers.Count(member =>
+                    !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase)),
+                ownerPresent: allMembers.Any(member =>
+                    string.Equals(member.Type, "owner", StringComparison.OrdinalIgnoreCase)),
+                robotMemberPresent: allMembers.Any(member =>
+                    string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(member.AccountId) &&
+                    (loop is null ||
+                     member.AccountId.Equals(loop.RobotId, StringComparison.OrdinalIgnoreCase))),
+                robotKeys,
+                liveOverlaps,
+                lastPush,
+                robotNotificationRegistry,
+                robotListCallsSeen,
+                credentialBindingCount,
+                lastListLoops,
+                recentLoopCalls,
+                warnings));
         });
 
         app.MapGet("/api/portal/photos", (
@@ -2966,6 +3022,52 @@ internal static class PortalEndpoints
             FirmwareVersion = device?.FirmwareVersion,
             RegistrationSource = device?.RegistrationSource ?? RobotRegistrationSources.Unknown
         });
+    }
+
+    private static object BuildLoopSyncStatusPayload(
+        string loopId,
+        LoopRecord? loop,
+        int memberCount,
+        bool ownerPresent,
+        bool robotMemberPresent,
+        IReadOnlyCollection<string> robotKeys,
+        int liveOverlaps,
+        LoopUpdatedPushResult? lastPush,
+        RobotNotificationRegistry robotNotificationRegistry,
+        long robotListCallsSeen,
+        long credentialBindingCount,
+        LoopSyncCallRecord? lastListLoops,
+        IReadOnlyList<LoopSyncCallRecord> recentLoopCalls,
+        IReadOnlyList<string> warnings)
+    {
+        return new
+        {
+            loopId,
+            robot = loop?.RobotId,
+            robotFriendlyId = loop?.RobotFriendlyId,
+            memberCount,
+            ownerPresent,
+            robotMemberPresent,
+            robotKeys = robotKeys.Take(16).ToArray(),
+            openApiSocketConnections = robotNotificationRegistry.OpenConnectionCount,
+            liveApiSocketOverlaps = liveOverlaps,
+            pendingNotifications = robotNotificationRegistry.PendingCount,
+            lastPush = lastPush is null
+                ? null
+                : new
+                {
+                    lastPush.LoopId,
+                    lastPush.PushCount,
+                    lastPush.Outcome,
+                    atUtc = lastPush.AtUtc,
+                    robotKeys = lastPush.RobotKeys
+                },
+            robotListCallsSeen,
+            credentialBindingCount,
+            lastListLoops,
+            recentLoopCalls,
+            warnings
+        };
     }
 
     private static object BuildLoopMemberMutationPayload(

@@ -1200,13 +1200,21 @@ public sealed class JiboInteractionServiceTests
 
     [Theory]
     [InlineData("how many people do you know", "robot_how_many_people_do_you_know", "I know 2 people")]
-    [InlineData("what is the loop", "robot_what_is_the_loop", "Jibo Owner and OpenJibo Household Member")]
+    [InlineData("what is the loop", "robot_what_is_the_loop", "Jibo Owner and Casey Rivera")]
     public async Task BuildDecisionAsync_LoopTemplatedMims_UseLiveLoopState(
         string transcript,
         string expectedIntent,
         string expectedReplySnippet)
     {
-        var service = CreateService(cloudStateStore: new InMemoryCloudStateStore());
+        var store = new InMemoryCloudStateStore();
+        store.UpsertPerson(new PersonRecord
+        {
+            PersonId = "person-casey",
+            DisplayName = "Casey Rivera",
+            Alias = "Casey",
+            IsPrimary = false
+        });
+        var service = CreateService(cloudStateStore: store);
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {

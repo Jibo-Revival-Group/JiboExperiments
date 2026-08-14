@@ -1,33 +1,118 @@
-# Loop SyncManager contract (dump-verified)
+# Loop SyncManager contract (source-verified)
 
-Services-partition SyncManager sources under `/run/media/zane/891f7d4a-…/bin`
-are not readable on this host (mode `750` root:group). The contract below is
-locked from:
+The services partition is mode `750` root:group, so a loop-mount of a robot
+dump still hides `bin/` from a normal user — which is why this document
+previously had to be inferred from logs. That limitation is gone.
+`scripts/dump/extract-robot-partition.sh` reads the partition straight out of
+the raw `.bin` with `debugfs` (ext4 metadata walk, so Unix permissions never
+apply; no root, no mount, no dd carve), and the stock services ship their
+browserify source maps with `sourcesContent` intact, so
+`scripts/dump/unpack-sourcemap.py` recovers the **original TypeScript**:
 
-- Artifact logs (`artifact-output/jibo-test-31`, `jibo-test-32`)
-- Stock API shapes `S6`/`S9` in `loop-2016-03-24.min.json`
-- On-robot `jibo-kb` + `@be/introductions` on the skills mount
-- Prior OpenJibo runbook observations of `_isLoopGood` failure strings
+```sh
+DUMP=~/Documents/Jibos/Air-Degree-Lunch-Canvas.bin
+scripts/dump/extract-robot-partition.sh rget "$DUMP" services /bin/jibo-ssm
+scripts/dump/unpack-sourcemap.py \
+  artifact-output/dumps/<slug>/services/bin/jibo-ssm/lib/skills-service-manager.js.map
+```
+
+Everything below is quoted from that recovered source (OS 1.9,
+`Air-Degree-Lunch-Canvas`), from `libJiboServerService.so` disassembly, or from
+`/etc/jibo-server-service.json` on the same dump:
+
+| Fact | Source |
+|---|---|
+| SyncManager / LoopManager behavior | `jibo-ssm/lib/…src/src/services/kb/{SyncManager,LoopManager}.ts` |
+| Notification frame shape | `jibo-client-framework/lib/…src/src/NotificationsDispatcher.ts` |
+| Socket inactivity timeout | `libJiboServerService.so`, `jibo::server::ServerPort::{onTimer,onReadable}` |
+| Notification subsystem config | `services:/etc/jibo-server-service.json` |
 
 ## SyncManager behavior
 
 1. Calls JSC **`Loop#list()`** / `ListLoops` (not ListMembers) for roster sync.
 2. Validates with `_isLoopGood(data)` before writing KB UserNodes.
-3. Registers for **`LoopUpdated`** notifications; on receive, pauses/resumes
-   loop syncing (re-runs List). Observed log pair:
-   `pausing loop syncing` → `resuming loop syncing`.
-4. Periodic loop sync every **7200 seconds**.
-5. Observed failure strings:
-   - `JSC server call Loop#list() loop has no members`
-   - `JSC server call Loop#list() robot <localKbRobotId> not in loop`
+3. Registers for **`AccountUpdated`** and **`LoopUpdated`** notifications, but
+   only from inside the callback of the first `_syncWithCloud()` during
+   `LoopManager.init()` — so a robot that has never completed one List attempt
+   is not yet listening. Log line: `registering for "LoopUpdated" notifications`.
+4. Notification handling is **debounced 5 s**, with a 60 s maximum span
+   (`NOTIFICATIONS_DEBOUNCE_PERIOD` / `_MAX_SPAN` in `SyncManager.ts`), so even a
+   perfect push takes ~5 s to show up. On fire it logs
+   `got a notification named "LoopUpdated"`, then `pausing loop syncing` →
+   `resuming loop syncing`.
+5. Periodic loop sync every **7200 seconds** — `PERIODIC_SECONDS = 60 * 60 * 2`
+   in `LoopManager.ts`, passed to the `SyncManager` constructor as
+   `syncingPeriod`. This is the fallback that makes portal edits appear "about
+   two hours later" whenever push does not land.
 
-## `_isLoopGood` requirements
+## `_isLoopGood` only enforces three things
 
-1. Exactly **one** loop in the List array.
-2. `loop.members` is a non-empty array.
-3. Some `members[].accountId` equals `loop.owner`.
-4. Some `members[].accountId` equals `loop.robot` (OpenJibo: `type=robot`).
-5. Live people use stock status **`accepted`** (`invited|accepted|declined|removed`).
+The name oversells it. Reading the recovered `LoopManager._isLoopGood`, only
+these are hard failures:
+
+1. `data` is a non-empty array.
+2. `data.length === 1` (exactly one loop).
+3. `loop.members` is a non-empty array.
+
+The owner and robot checks are **warnings that still return `true`**:
+
+```ts
+// warn if the owner is not in the loop for some reason (but let it pass)
+if (!loopAccountIds.includes(loop.owner)) {
+    this._errorOnce('JSC server call Loop#list() owner not in loop for robot '+this.robotAccountId);
+}
+```
+
+## …but `_applyLoopChanges` hard-crashes without them
+
+Passing `_isLoopGood` is not enough. The very next function does:
+
+```ts
+let ownerMemberId = memberIdsByAccountId[cloudLoop.owner];
+rootNode.addEdges(ownerMemberId, 'owner');   // and the same for cloudLoop.robot
+```
+
+If no member carries that `accountId`, `ownerMemberId` is `undefined`, and
+`jibo-kb`'s `Node._resolveIdAndLayer` takes the non-string branch and
+dereferences `node._id` — a `TypeError` thrown mid-sync, after the KB has
+already been partially updated.
+
+**So the real contract is stricter than the old checklist claimed, for a
+different reason: `loop.owner` and `loop.robot` must each equal the
+`accountId` of some member in `loop.members`, or the sync throws.** Deleting
+the owner member outright is therefore not an option; the supported way to get
+rid of the placeholder "Jibo Owner" person is to make a real household member
+*be* the owner (portal "Make owner", or the first person you add, which claims
+the seeded owner record in place).
+
+`_filterOutInvitedChildren` runs before the merge and reads
+`member.account.isChild` unconditionally, so every member must carry an
+`account` object — `{}` is fine, `null`/missing is not.
+
+Live people use stock status **`accepted`** (`invited|accepted|declined|removed`).
+
+## Removed members are pruned from the loop, but their nodes survive
+
+`_applyLoopChanges` diffs by **member `id`** (`cloudLoopEntry.id === loopNode._id`),
+then for anyone no longer in the List payload:
+
+```ts
+removeLoop.forEach( (removeNode) => {
+    rootNode.removeEdges(removeNode, 'user');
+    // we remove them from the list of loop members, but
+    // we don't delete the removed member's node on purpose
+```
+
+So dropping someone from the cloud roster *does* remove them from the loop the
+robot enumerates — no manual KB cleanup needed — while the orphaned UserNode
+lingers harmlessly. Two consequences worth keeping in mind:
+
+- Renaming a member **in place** (same member `id`) updates the existing
+  UserNode. Replacing it with a new `id` drops the old node from the loop and
+  creates a second one, so in-place rewrites are always preferable.
+- `rootNode.data` fields (`id`, `name`, `owner`, `robot`, `robotFriendlyId`,
+  `created`, `updated`) and the member/account field lists are synced strictly:
+  a field absent from the cloud payload is **deleted** from the node.
 
 ## Stock List item shape (`S6`)
 
@@ -49,6 +134,94 @@ both. The robot member uses `account: {}` with no flattened names so
 
 Unauthenticated LAN check: `GET /api/diagnostics/loop-sync` (same counters as
 `/api/portal/loop-sync-status`, no portal session required).
+
+## Notification transport: frame shape and the 120 s silence timeout
+
+The cloud → robot path has two hops. Native `jibo-server-service` holds
+`wss://api-socket.jibo.com/{token}` on **:443** and republishes whatever it
+receives to local node services over `ws://<server>/server/notifications`;
+`NotificationsDispatcher` in `jibo-client-framework` then fans it out as an
+EventEmitter event.
+
+### Frame shape (exact)
+
+```ts
+interface NotificationMessage {
+    _id:string;
+    skillId:string;
+    payload:{ name:string; payload:any };
+    created:string;
+}
+```
+
+Dispatch is forgiving — `_processNotification` requires only
+`message.payload.name` to be truthy, emits `payload.name` as the event with
+`payload.payload` as the argument, and otherwise logs `notification message
+being dropped here!`. `created` is declared a string but never read, so the
+numeric epoch OpenJibo sends is harmless.
+
+`RobotNotificationRegistry.CreateStockNotificationRecord` already matches this
+exactly. **The frame shape was never the problem.**
+
+One caveat worth respecting: the dispatcher emits the name verbatim, so a name
+of `error` would hit EventEmitter's throw-on-unhandled-`error` rule. Any other
+unknown name is a silent no-op on the robot.
+
+### The robot hangs up after 120 s of cloud silence
+
+`ServerPort::onTimer` compares `steady_clock::now()` against the last-contact
+timestamp and disconnects past a threshold the constructor hard-codes as
+`movw r3, #0xd4c0; movt r3, #0x1` — **0x1D4C0 = 120000 ms**:
+
+```
+1d686: ldr   r3, [r4, #0x170]     ; threshold = 120000
+1d68c: cmp   r0, r3               ; elapsed ms since last contact
+1d68e: bls   <keep going>
+       ; else log "Haven't had contact from the server in <n>" + " disconnecting."
+```
+
+`onReadable` refreshes that timestamp (`strd` to `[r4, #376]`) on **all three**
+of the paths that matter, dispatched through a `tbh` jump table on the frame
+opcode:
+
+| Opcode | Path | Refreshes timer |
+|---|---|---|
+| 1/2 (text/binary, >0 bytes) | application message | yes |
+| 9 (ping) | replies with a pong | yes |
+| 10 (pong) | unsolicited pong accepted | yes |
+
+So a WebSocket keepalive is both sufficient and safe here — the native Poco
+client handles ping/pong properly. This is **not** the Neo Hub client, which
+is a Node `ws` client that logged `Hubclient: received zero bytes` when it saw
+control frames and therefore keeps `KeepAliveInterval = InfiniteTimeSpan` in
+`WebSocketRequestCoordinator`. The two sockets need opposite treatment.
+
+**This is the root cause of "loop members only sync every two hours."**
+ASP.NET Core's default `KeepAliveInterval` is 2 minutes, exactly equal to the
+robot's 120 s tolerance, so whether the keepalive or the disconnect timer wins
+is a coin flip on jitter. `docs/feature-backlog.md` records the loss case: a
+robot that logged `ServerPort::onTimer Haven't had contact from the server`
+every three seconds and sat on a dead TLS connection for ~60 hours with a
+stale-contact counter around 216,000,000 ms, never recovering on its own.
+A push into that socket is silently lost and the roster only catches up on the
+7200 s periodic List.
+
+The fix is to keep api-socket connections comfortably inside the window
+(OpenJibo uses 30 s) rather than relying on the framework default.
+
+## Fallback: shortening the 7200 s periodic resync
+
+`scripts/robot/set-loop-sync-period.sh` rewrites `PERIODIC_SECONDS` in
+`/usr/local/bin/jibo-ssm/lib/skills-service-manager.js` (one anchored match;
+the Holiday/MediaList/Robot managers use `SYNC_PERIODIC_SECONDS` and are left
+alone), keeps a `.openjibo-orig` backup, and supports `--restore`.
+
+This is a last resort, not part of the fix. It does not repair push — it only
+bounds how long a lost `LoopUpdated` stays invisible. Reach for it only when
+`/api/diagnostics/loop-sync` reports pushes being *delivered* and the robot
+still logs no `got a notification named "LoopUpdated"`. Every shortened period
+is a full `Loop#list()` round trip, so stay well above the 5 s notification
+debounce; ~60 s is the intended setting.
 
 ## Introductions menu gate
 

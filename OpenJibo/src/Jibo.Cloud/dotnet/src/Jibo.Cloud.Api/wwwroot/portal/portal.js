@@ -375,6 +375,23 @@ function bindPortalControls() {
     });
   });
 
+  document.querySelectorAll(".make-owner-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const status = document.getElementById("loopMembersActionStatus");
+      const memberId = button.getAttribute("data-member-id");
+      if (!window.confirm("Make this person the Loop owner?")) return;
+
+      try {
+        const result = await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}/make-owner`, {
+          method: "POST",
+        });
+        await renderDashboard(formatLoopSyncMessage("Owner updated.", result));
+      } catch (error) {
+        showMemberStatus(status, error.message, true);
+      }
+    });
+  });
+
   document.querySelectorAll(".remove-member-button").forEach((button) => {
     button.addEventListener("click", async () => {
       const status = document.getElementById("loopMembersActionStatus");
@@ -740,7 +757,9 @@ function showMemberStatus(status, message, isError) {
 function formatLoopSyncMessage(prefix, result) {
   if (!result || typeof result !== "object") return prefix;
   if (result.syncedToRobot) {
-    return `${prefix} Synced to robot (LoopUpdated). Open introductions after SSM re-lists.`;
+    // SSM debounces notifications for 5s, and the robot's introductions menu caches the
+    // roster when it opens — so an already-open menu keeps showing the old list.
+    return `${prefix} Synced to robot (LoopUpdated). Give SSM ~5s, then close and reopen introductions.`;
   }
   if (typeof result.pushCount === "number") {
     return `${prefix} Robot offline — change queued until api-socket reconnects.`;
@@ -793,6 +812,7 @@ function renderLoopMemberRow(member) {
       <div class="member-row-actions">
         <span class="badge ${badgeClass}">${badgeLabel}</span>
         <button class="button secondary save-member-button" data-member-id="${escapeHtml(member.id)}" type="button">Save</button>
+        ${member.canMakeOwner ? `<button class="button secondary make-owner-button" data-member-id="${escapeHtml(member.id)}" type="button">Make owner</button>` : ""}
         ${member.canRemove ? `<button class="button danger remove-member-button" data-member-id="${escapeHtml(member.id)}" type="button">Remove</button>` : ""}
       </div>
     </div>
@@ -814,7 +834,7 @@ function renderLoopMembersSection(dashboard) {
         </div>
         <span class="badge success">${loopMembers.length} ${loopMembers.length === 1 ? "person" : "people"}</span>
       </div>
-      <p class="muted">Add, edit, or remove people in this Loop. Changes push LoopUpdated so SSM re-syncs the on-robot KB that introductions reads. The owner cannot be removed here.</p>
+      <p class="muted">Add, edit, or remove people in this Loop. Changes push LoopUpdated so SSM re-syncs the on-robot KB that introductions reads. One person always holds the owner role — the robot needs it to apply the roster — so hand it to someone else before removing the current owner.</p>
       ${memberRows}
       <div class="member-row member-row-add" id="newMemberRow">
         ${renderMemberFields()}

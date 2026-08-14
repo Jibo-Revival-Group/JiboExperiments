@@ -20,6 +20,12 @@ internal sealed class WebSocketRequestCoordinator(
     private static readonly TimeSpan TurnWatchdogInterval = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
+    /// Comfortably inside the 120s the robot's <c>ServerPort::onTimer</c> waits before it
+    /// hangs up on a silent cloud, with room for a missed interval.
+    /// </summary>
+    internal static readonly TimeSpan ApiSocketKeepAliveInterval = TimeSpan.FromSeconds(30);
+
+    /// <summary>
     /// Test helper constructor. Production DI injects the full primary constructor.
     /// </summary>
     internal WebSocketRequestCoordinator(
@@ -100,14 +106,29 @@ internal sealed class WebSocketRequestCoordinator(
                 return;
         }
 
-        // Stock OS 1.9's Neo Hub client closes when ASP.NET sends a WebSocket
-        // control-frame keepalive: first at the default two-minute interval,
-        // then at 30 seconds when that interval was trialled. Limit the
-        // compatibility behavior to the legacy Hub routes; other sockets keep
-        // the framework default.
-        var acceptContext = kind is "neo-hub-listen" or "neo-hub-proactive"
-            ? new WebSocketAcceptContext { KeepAliveInterval = Timeout.InfiniteTimeSpan }
-            : null;
+        // The two stock socket clients need opposite keepalive treatment.
+        //
+        // Neo Hub is a Node `ws` client that closes when ASP.NET sends a WebSocket
+        // control frame: it logged `Hubclient: received zero bytes` at the default
+        // two-minute interval, and again at 30s when that was trialled.
+        //
+        // api-socket is the native Poco client in jibo-server-service, and it needs
+        // the opposite. `ServerPort::onTimer` disconnects after 120000ms without
+        // contact (hard-coded in the constructor), and per docs/feature-backlog.md a
+        // robot that hits that can sit on a dead TLS connection for days, so every
+        // LoopUpdated push is silently lost and the roster only catches up on the
+        // 7200s periodic sync. `onReadable` refreshes the contact timestamp on ping,
+        // pong, and data alike, so a keepalive comfortably inside the window keeps
+        // the socket alive. The framework default is exactly 120s — a coin flip
+        // against the robot's own timer — which is why this is set explicitly.
+        var acceptContext = kind switch
+        {
+            "neo-hub-listen" or "neo-hub-proactive" =>
+                new WebSocketAcceptContext { KeepAliveInterval = Timeout.InfiniteTimeSpan },
+            "api-socket" =>
+                new WebSocketAcceptContext { KeepAliveInterval = ApiSocketKeepAliveInterval },
+            _ => null
+        };
         using var socket = acceptContext is null
             ? await context.WebSockets.AcceptWebSocketAsync()
             : await context.WebSockets.AcceptWebSocketAsync(acceptContext);
@@ -188,6 +209,8 @@ internal sealed class WebSocketRequestCoordinator(
 
                     received = await pendingReceive;
                     pendingReceive = null;
+                    if (registeredApiSocket)
+                        robotNotificationRegistry.RecordInboundFrame(socket);
                     logger.LogDebug(
                         "WebSocket frame received connectionId={ConnectionId} kind={Kind} messageType={MessageType} bytes={Bytes}",
                         connectionId,

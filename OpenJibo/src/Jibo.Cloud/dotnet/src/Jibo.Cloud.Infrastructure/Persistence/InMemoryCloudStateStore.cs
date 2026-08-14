@@ -141,16 +141,6 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 DisplayName = $"{_account.FirstName} {_account.LastName}",
                 Alias = _account.FirstName,
                 IsPrimary = true
-            },
-            new PersonRecord
-            {
-                PersonId = "person-openjibo-household-member",
-                AccountId = _account.AccountId,
-                LoopId = _loops[0].LoopId,
-                RobotId = _robot.RobotId,
-                DisplayName = "OpenJibo Household Member",
-                Alias = "Household Member",
-                IsPrimary = false
             }
         ];
 
@@ -1564,6 +1554,77 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 CreatedUtc = existing.CreatedUtc,
                 PortalEditedUtc = markPortalEdited ? DateTimeOffset.UtcNow : existing.PortalEditedUtc
             };
+        }
+
+        TouchState();
+        return GetLoopMember(loopId, memberId);
+    }
+
+    public LoopMemberRecord? ClaimSeededOwner(string loopId, string firstName, string? lastName, string? gender,
+        long? birthday, bool isChild)
+    {
+        string claimedId;
+        lock (_syncRoot)
+        {
+            var index = _loopMembers.FindIndex(m =>
+                m.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                !m.Status.Equals("removed", StringComparison.OrdinalIgnoreCase) &&
+                IsUnclaimedSeededOwner(m));
+            if (index < 0) return null;
+
+            var existing = _loopMembers[index];
+            claimedId = existing.Id;
+            _loopMembers[index] = new LoopMemberRecord
+            {
+                Id = existing.Id,
+                LoopId = existing.LoopId,
+                AccountId = existing.AccountId,
+                Email = existing.Email,
+                FirstName = firstName.Trim(),
+                LastName = NullIfWhiteSpace(lastName),
+                Gender = gender ?? existing.Gender,
+                Birthday = birthday,
+                IsChild = isChild,
+                PhoneNumber = existing.PhoneNumber,
+                Status = existing.Status,
+                Type = "owner",
+                Nickname = existing.Nickname,
+                PhoneticName = existing.PhoneticName,
+                FaceEnrolled = existing.FaceEnrolled,
+                VoiceEnrolled = existing.VoiceEnrolled,
+                LegalGuardianId = existing.LegalGuardianId,
+                AgreementId = existing.AgreementId,
+                CreatedUtc = existing.CreatedUtc,
+                PortalEditedUtc = DateTimeOffset.UtcNow
+            };
+            RemoveSeededOwnerPersonLocked();
+        }
+
+        TouchState();
+        return GetLoopMember(loopId, claimedId);
+    }
+
+    public LoopMemberRecord PromoteLoopMemberToOwner(string loopId, string memberId)
+    {
+        lock (_syncRoot)
+        {
+            var loop = _loops.FirstOrDefault(l => l.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase))
+                       ?? throw new InvalidOperationException($"Loop '{loopId}' not found.");
+
+            var index = _loopMembers.FindIndex(m =>
+                m.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+                m.Id.Equals(memberId, StringComparison.OrdinalIgnoreCase) &&
+                !m.Status.Equals("removed", StringComparison.OrdinalIgnoreCase));
+            if (index < 0) throw new InvalidOperationException($"Member '{memberId}' not found in loop '{loopId}'.");
+
+            var target = _loopMembers[index];
+            if (string.Equals(target.Type, "robot", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The robot member cannot own the loop.");
+            if (string.Equals(target.Type, "owner", StringComparison.OrdinalIgnoreCase))
+                return target;
+
+            RetireOwnerLoopMembersLocked(loopId, exceptMemberId: memberId);
+            _loopMembers[index] = WithOwnership(target, loop.OwnerAccountId, "owner");
         }
 
         TouchState();
@@ -3128,23 +3189,98 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             Alias = _account.FirstName,
             IsPrimary = true
         });
-        _people.Add(new PersonRecord
-        {
-            PersonId = "person-openjibo-household-member",
-            AccountId = _account.AccountId,
-            LoopId = loopId,
-            RobotId = _robot.RobotId,
-            DisplayName = "OpenJibo Household Member",
-            Alias = "Household Member",
-            IsPrimary = false
-        });
-
         EnsureDefaultCommuteProfile();
     }
 
     private static string CreateBootstrapDeviceId()
     {
         return $"openjibo-bootstrap-{Guid.NewGuid():N}";
+    }
+
+    /// <summary>
+    /// True while the owner member is still the placeholder seeded from the account
+    /// profile — nobody has renamed it through the portal, and it still carries the
+    /// stock "Jibo Owner" name. Such a member exists only to satisfy SyncManager's
+    /// <c>loop.owner</c> lookup and should never survive as a household person.
+    /// </summary>
+    private bool IsUnclaimedSeededOwner(LoopMemberRecord member)
+    {
+        return string.Equals(member.Type, "owner", StringComparison.OrdinalIgnoreCase) &&
+               member.PortalEditedUtc is null &&
+               NameMatches(member.FirstName, _account.FirstName) &&
+               NameMatches(member.LastName, _account.LastName);
+
+        static bool NameMatches(string? left, string? right) =>
+            string.Equals(left?.Trim() ?? string.Empty, right?.Trim() ?? string.Empty,
+                StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static LoopMemberRecord WithOwnership(LoopMemberRecord member, string? accountId, string type)
+    {
+        return new LoopMemberRecord
+        {
+            Id = member.Id,
+            LoopId = member.LoopId,
+            AccountId = accountId,
+            Email = member.Email,
+            FirstName = member.FirstName,
+            LastName = member.LastName,
+            Gender = member.Gender,
+            Birthday = member.Birthday,
+            IsChild = member.IsChild,
+            PhoneNumber = member.PhoneNumber,
+            Status = member.Status,
+            Type = type,
+            Nickname = member.Nickname,
+            PhoneticName = member.PhoneticName,
+            FaceEnrolled = member.FaceEnrolled,
+            VoiceEnrolled = member.VoiceEnrolled,
+            LegalGuardianId = member.LegalGuardianId,
+            AgreementId = member.AgreementId,
+            CreatedUtc = member.CreatedUtc,
+            PortalEditedUtc = member.PortalEditedUtc
+        };
+    }
+
+    /// <summary>
+    /// Clears the way for a new owner. An untouched placeholder is deleted outright;
+    /// a real person is demoted to a plain member and gives up the account id, because
+    /// two members sharing <c>loop.owner</c> would make the robot's
+    /// <c>memberIdsByAccountId</c> lookup ambiguous.
+    /// </summary>
+    private void RetireOwnerLoopMembersLocked(string loopId, string exceptMemberId)
+    {
+        for (var i = _loopMembers.Count - 1; i >= 0; i--)
+        {
+            var candidate = _loopMembers[i];
+            if (!candidate.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase)) continue;
+            if (candidate.Id.Equals(exceptMemberId, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!string.Equals(candidate.Type, "owner", StringComparison.OrdinalIgnoreCase)) continue;
+
+            if (IsUnclaimedSeededOwner(candidate))
+            {
+                _loopMembers.RemoveAt(i);
+                RemoveSeededOwnerPersonLocked();
+            }
+            else
+            {
+                _loopMembers[i] = WithOwnership(candidate, null, "member");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Drops the placeholder owner person seeded at startup, once a real person has taken
+    /// the role. It is a singleton bound to the bootstrap loop rather than to whichever
+    /// loop the portal is editing, so it is matched by identity and seeded name — never
+    /// by loop — and a renamed household person is left alone.
+    /// </summary>
+    private void RemoveSeededOwnerPersonLocked()
+    {
+        var seededDisplayName = $"{_account.FirstName} {_account.LastName}".Trim();
+        _people.RemoveAll(person =>
+            person.PersonId.Equals("person-openjibo-owner", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(person.DisplayName?.Trim(), seededDisplayName, StringComparison.OrdinalIgnoreCase));
     }
 
     private void EnsureOwnerLoopMember(string loopId, string? ownerAccountId = null)
@@ -3197,6 +3333,20 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 member.AccountId.Equals(resolvedOwner, StringComparison.OrdinalIgnoreCase) &&
                 !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase)))
             return;
+
+        // The loop needs *a* member carrying loop.owner or the robot's _applyLoopChanges
+        // dereferences undefined and throws mid-sync. Prefer handing that role to a real
+        // household member; inventing a "Jibo Owner" person is the last resort, because
+        // it shows up in introductions as somebody who does not exist.
+        var adoptableIndex = _loopMembers.FindIndex(member =>
+            member.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(member.Type, "robot", StringComparison.OrdinalIgnoreCase) &&
+            !member.Status.Equals("removed", StringComparison.OrdinalIgnoreCase));
+        if (adoptableIndex >= 0)
+        {
+            _loopMembers[adoptableIndex] = WithOwnership(_loopMembers[adoptableIndex], resolvedOwner, "owner");
+            return;
+        }
 
         _loopMembers.Add(new LoopMemberRecord
         {

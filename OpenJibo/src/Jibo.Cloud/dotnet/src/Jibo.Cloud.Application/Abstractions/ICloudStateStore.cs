@@ -78,6 +78,23 @@ public interface ICloudStateStore
         string? gender, long? birthday, bool isChild, string? nickname, string? phoneticName,
         bool markPortalEdited = false);
 
+    /// <summary>
+    /// Rewrites the still-untouched seeded owner ("Jibo Owner") into a real household
+    /// person, keeping its member id and accountId so the robot updates the existing KB
+    /// UserNode instead of gaining a second one. Returns <c>null</c> when the owner has
+    /// already been claimed, in which case the caller should add a normal member.
+    /// </summary>
+    LoopMemberRecord? ClaimSeededOwner(string loopId, string firstName, string? lastName, string? gender,
+        long? birthday, bool isChild);
+
+    /// <summary>
+    /// Moves loop ownership onto an existing member. The member takes over
+    /// <see cref="LoopRecord.OwnerAccountId"/> so SyncManager can still resolve
+    /// <c>loop.owner</c> to a member id, and the previous owner becomes a plain member
+    /// (or is dropped entirely if it was still the untouched seed).
+    /// </summary>
+    LoopMemberRecord PromoteLoopMemberToOwner(string loopId, string memberId);
+
     bool RemoveLoopMember(string loopId, string memberId);
     LoopMemberRecord SetMemberEnrollment(string loopId, string memberId, bool? face, bool? voice);
 

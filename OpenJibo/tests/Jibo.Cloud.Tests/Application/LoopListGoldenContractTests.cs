@@ -75,6 +75,53 @@ public sealed class LoopListGoldenContractTests
         Assert.False(robotMember.TryGetProperty("firstName", out _));
     }
 
+    /// <summary>
+    /// After a household has real people, the List payload must contain no placeholder
+    /// person while still resolving <c>loop.owner</c> to a member — the robot warns about a
+    /// missing owner in <c>_isLoopGood</c> but then throws on it in <c>_applyLoopChanges</c>.
+    /// </summary>
+    [Fact]
+    public async Task LoopList_AfterOwnerIsClaimed_HasNoPlaceholderPersonButStillResolvesOwner()
+    {
+        var store = new InMemoryCloudStateStore();
+        var ghost = store.AddLoop(null, null, "Ghost-Instance-Onion-Silk", "BOJW-1000-0017-0820-0020");
+        var claimed = store.ClaimSeededOwner(ghost.LoopId, "Zane", "Ricci", "male", null, false);
+        Assert.NotNull(claimed);
+
+        var service = new JiboCloudProtocolService(store, authHandler: new CloudAuthProtocolHandler(store));
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Loop_20160324",
+            Operation = "List",
+            DeviceId = "Ghost-Instance-Onion-Silk"
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var loop = payload.RootElement.EnumerateArray().Single();
+        var members = loop.GetProperty("members").EnumerateArray().ToArray();
+
+        var accountIds = members
+            .Select(member => member.TryGetProperty("accountId", out var accountId) ? accountId.GetString() : null)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+        Assert.Contains(loop.GetProperty("owner").GetString()!, accountIds);
+        Assert.Contains(loop.GetProperty("robot").GetString()!, accountIds);
+
+        // Introductions shows any member with a truthy firstName, so the placeholder must
+        // be gone from both the flattened and nested name fields.
+        Assert.DoesNotContain(members, member =>
+            (member.TryGetProperty("firstName", out var flat) && flat.GetString() == "Jibo") ||
+            (member.GetProperty("account").TryGetProperty("firstName", out var nested) &&
+             nested.GetString() == "Jibo"));
+
+        var person = Assert.Single(members, member =>
+            member.TryGetProperty("firstName", out var first) && first.GetString() == "Zane");
+        Assert.Equal(loop.GetProperty("owner").GetString(), person.GetProperty("accountId").GetString());
+    }
+
     [Fact]
     public async Task LoopUpdated_IncludesFullRosterForSyncManagerRelist()
     {

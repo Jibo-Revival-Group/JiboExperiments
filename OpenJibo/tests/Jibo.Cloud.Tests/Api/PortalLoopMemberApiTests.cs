@@ -18,6 +18,10 @@ public sealed class PortalLoopMemberApiTests
         var client = factory.CreateClient();
         await AuthorizeAsync(client, factory);
 
+        // The first person claims the seeded owner, so add someone before the member
+        // this test actually exercises.
+        await client.PostAsJsonAsync("/api/portal/loop-members", new { firstName = "Casey" });
+
         var addResponse = await client.PostAsJsonAsync(
             "/api/portal/loop-members",
             new
@@ -114,6 +118,119 @@ public sealed class PortalLoopMemberApiTests
 
         var removeResponse = await client.DeleteAsync($"/api/portal/loop-members/{owner.Id}");
         Assert.Equal(HttpStatusCode.BadRequest, removeResponse.StatusCode);
+    }
+
+    /// <summary>
+    /// The placeholder "Jibo Owner" has a truthy firstName, so the robot shows it in
+    /// introductions as a person who does not exist. It cannot simply be deleted: the
+    /// robot's _applyLoopChanges throws if no member carries loop.owner. The first real
+    /// person therefore takes the record over in place — same member id, so SyncManager
+    /// renames the existing KB UserNode rather than leaving a "Jibo" node behind.
+    /// </summary>
+    [Fact]
+    public async Task LoopMembers_FirstAddClaimsTheSeededOwnerInPlace()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        await AuthorizeAsync(client, factory);
+
+        var before = await (await client.GetAsync("/api/portal/loop-members"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var loopId = before.GetProperty("loopId").GetString()!;
+        var seededOwner = before.GetProperty("members").EnumerateArray().Single();
+        Assert.Equal("Jibo", seededOwner.GetProperty("firstName").GetString());
+
+        var addResponse = await client.PostAsJsonAsync(
+            "/api/portal/loop-members",
+            new { firstName = "Zane", lastName = "Ricci" });
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+        var added = await addResponse.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal(seededOwner.GetProperty("id").GetString(), added.GetProperty("id").GetString());
+        Assert.Equal("owner", added.GetProperty("type").GetString());
+
+        var household = store.GetLoopMembers(loopId).Where(m => m.Type != "robot").ToArray();
+        var owner = Assert.Single(household);
+        Assert.Equal("Zane", owner.FirstName);
+        Assert.DoesNotContain(store.GetLoopMembers(loopId), m =>
+            string.Equals(m.FirstName, "Jibo", StringComparison.OrdinalIgnoreCase));
+
+        // The robot resolves loop.owner through members[].accountId; losing that mapping
+        // is a TypeError mid-sync, not a warning.
+        var loop = store.GetLoops().Single(l => l.LoopId == loopId);
+        Assert.Equal(loop.OwnerAccountId, owner.AccountId);
+
+        Assert.DoesNotContain(store.GetPeople(), person =>
+            string.Equals(person.DisplayName, "Jibo Owner", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task LoopMembers_MakeOwnerMovesOwnershipAndDemotesThePrevious()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        await AuthorizeAsync(client, factory);
+
+        var first = await (await client.PostAsJsonAsync(
+            "/api/portal/loop-members", new { firstName = "Zane" }))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var second = await (await client.PostAsJsonAsync(
+            "/api/portal/loop-members", new { firstName = "Casey" }))
+            .Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal("owner", first.GetProperty("type").GetString());
+        Assert.Equal("member", second.GetProperty("type").GetString());
+        Assert.True(second.GetProperty("canMakeOwner").GetBoolean());
+
+        var secondId = second.GetProperty("id").GetString();
+        var promoteResponse = await client.PostAsync(
+            $"/api/portal/loop-members/{secondId}/make-owner", null);
+        Assert.Equal(HttpStatusCode.OK, promoteResponse.StatusCode);
+        var promoted = await promoteResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("owner", promoted.GetProperty("type").GetString());
+
+        var loop = store.GetLoops().Single(l => l.LoopId == promoted.GetProperty("loopId").GetString());
+        var household = store.GetLoopMembers(loop.LoopId).Where(m => m.Type != "robot").ToArray();
+        Assert.Equal(2, household.Length);
+
+        var owner = Assert.Single(household, m => m.Type == "owner");
+        Assert.Equal("Casey", owner.FirstName);
+        Assert.Equal(loop.OwnerAccountId, owner.AccountId);
+
+        // Exactly one member may carry the owner account id, or the robot's
+        // memberIdsByAccountId lookup becomes ambiguous.
+        Assert.Single(household, m =>
+            string.Equals(m.AccountId, loop.OwnerAccountId, StringComparison.OrdinalIgnoreCase));
+
+        var demoted = Assert.Single(household, m => m.FirstName == "Zane");
+        Assert.Equal("member", demoted.Type);
+    }
+
+    [Fact]
+    public async Task LoopMembers_OwnerRemovalHandsOwnershipToSomeoneElse()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        await AuthorizeAsync(client, factory);
+
+        var owner = await (await client.PostAsJsonAsync(
+            "/api/portal/loop-members", new { firstName = "Zane" }))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        await client.PostAsJsonAsync("/api/portal/loop-members", new { firstName = "Casey" });
+
+        var removeResponse = await client.DeleteAsync(
+            $"/api/portal/loop-members/{owner.GetProperty("id").GetString()}");
+        Assert.Equal(HttpStatusCode.OK, removeResponse.StatusCode);
+
+        var loop = store.GetLoops().Single(l => l.LoopId == owner.GetProperty("loopId").GetString());
+        var household = store.GetLoopMembers(loop.LoopId).Where(m => m.Type != "robot").ToArray();
+        var survivor = Assert.Single(household);
+        Assert.Equal("Casey", survivor.FirstName);
+        Assert.Equal("owner", survivor.Type);
+        Assert.Equal(loop.OwnerAccountId, survivor.AccountId);
     }
 
     [Fact]

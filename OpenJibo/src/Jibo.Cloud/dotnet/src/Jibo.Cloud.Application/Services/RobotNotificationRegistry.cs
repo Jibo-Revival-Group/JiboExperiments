@@ -7,6 +7,29 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Jibo.Cloud.Application.Services;
 
 /// <summary>
+/// One live <c>api-socket</c> registration, for the paste-back diagnostics report.
+/// </summary>
+public sealed record RobotNotificationConnectionInfo(
+    DateTimeOffset ConnectedUtc,
+    DateTimeOffset? LastInboundUtc,
+    long InboundFrames,
+    IReadOnlyList<string> RobotKeys);
+
+/// <summary>
+/// The most recent notification push, kept so a single diagnostics response can say
+/// whether a frame was built, who it targeted, which sockets were live at the time,
+/// and whether it actually went out.
+/// </summary>
+public sealed record RobotNotificationPushAttempt(
+    DateTimeOffset AtUtc,
+    string Name,
+    IReadOnlyList<string> TargetKeys,
+    IReadOnlyList<IReadOnlyList<string>> OpenConnectionKeys,
+    int PushedCount,
+    int FrameBytes,
+    string FramePreview);
+
+/// <summary>
 /// Live registry of robot <c>api-socket</c> WebSockets, used to push stock-style
 /// <c>LoopUpdated</c> notifications so SSM can re-sync the on-device Loop immediately.
 /// </summary>
@@ -19,6 +42,7 @@ public sealed class RobotNotificationRegistry(
     private readonly ConcurrentDictionary<Guid, RobotConnection> _connections = new();
     private readonly RobotPendingNotificationStore _pendingStore = pendingStore ?? new RobotPendingNotificationStore();
     private readonly ILogger _logger = logger ?? NullLogger<RobotNotificationRegistry>.Instance;
+    private RobotNotificationPushAttempt? _lastPushAttempt;
 
     public void Register(IReadOnlyCollection<string> robotKeys, WebSocket socket)
     {
@@ -90,7 +114,7 @@ public sealed class RobotNotificationRegistry(
         var bytes = JsonSerializer.SerializeToUtf8Bytes(envelope, JsonOptions);
         _pendingStore.Enqueue("LoopUpdated", targetKeys, bytes);
 
-        var pushed = await PushBytesToLiveSocketsAsync(targetKeys, bytes, cancellationToken);
+        var pushed = await PushBytesToLiveSocketsAsync(targetKeys, bytes, cancellationToken, "LoopUpdated");
         if (pushed > 0)
             _pendingStore.Drain(targetKeys);
 
@@ -113,7 +137,7 @@ public sealed class RobotNotificationRegistry(
         }
 
         _pendingStore.Enqueue(name, targetKeys, payload);
-        var pushed = await PushBytesToLiveSocketsAsync(targetKeys, payload, cancellationToken);
+        var pushed = await PushBytesToLiveSocketsAsync(targetKeys, payload, cancellationToken, name);
         if (pushed > 0)
             _pendingStore.Drain(targetKeys);
         return pushed;
@@ -151,16 +175,47 @@ public sealed class RobotNotificationRegistry(
         return sent;
     }
 
+    /// <summary>
+    /// Counts a frame the robot sent us. A socket the cloud believes is open but that has
+    /// gone quiet inbound is the signature of the robot having hung up on a silent cloud
+    /// (<c>ServerPort::onTimer</c>, 120s) without the TCP teardown reaching us.
+    /// </summary>
+    public void RecordInboundFrame(WebSocket socket)
+    {
+        if (socket is null) return;
+
+        foreach (var pair in _connections)
+        {
+            if (!ReferenceEquals(pair.Value.Socket, socket)) continue;
+            pair.Value.NoteInboundFrame();
+            return;
+        }
+    }
+
     public int PendingCount => _pendingStore.Count;
 
     public int OpenConnectionCount =>
         _connections.Count(pair => pair.Value.Socket.State == WebSocketState.Open);
+
+    public RobotNotificationPushAttempt? LastPushAttempt => Volatile.Read(ref _lastPushAttempt);
 
     public IReadOnlyList<string[]> SnapshotOpenConnectionKeys()
     {
         return _connections
             .Where(pair => pair.Value.Socket.State == WebSocketState.Open)
             .Select(pair => pair.Value.RobotKeys.ToArray())
+            .ToArray();
+    }
+
+    public IReadOnlyList<RobotNotificationConnectionInfo> SnapshotOpenConnections()
+    {
+        return _connections
+            .Where(pair => pair.Value.Socket.State == WebSocketState.Open)
+            .Select(pair => new RobotNotificationConnectionInfo(
+                pair.Value.ConnectedUtc,
+                pair.Value.LastInboundUtc,
+                pair.Value.InboundFrames,
+                pair.Value.RobotKeys.ToArray()))
             .ToArray();
     }
 
@@ -177,10 +232,12 @@ public sealed class RobotNotificationRegistry(
     private async Task<int> PushBytesToLiveSocketsAsync(
         IReadOnlySet<string> targetKeys,
         byte[] bytes,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string name)
     {
         var pushed = 0;
         var openConnections = 0;
+        var openConnectionKeys = new List<IReadOnlyList<string>>();
 
         foreach (var pair in _connections)
         {
@@ -193,12 +250,17 @@ public sealed class RobotNotificationRegistry(
             }
 
             openConnections++;
+            openConnectionKeys.Add(connection.RobotKeys.ToArray());
             if (!connection.RobotKeys.Overlaps(targetKeys))
             {
-                _logger.LogDebug(
-                    "LoopUpdated push key miss connectionKeys={ConnectionKeys} targetKeys={TargetKeys}",
-                    string.Join(',', connection.RobotKeys.Take(8)),
-                    string.Join(',', targetKeys.Take(8)));
+                // Information, not Debug: a key miss is the difference between "the robot
+                // never got it" and "the robot ignored it", and it has to be answerable
+                // from the log alone.
+                _logger.LogInformation(
+                    "{Name} push key miss connectionKeys={ConnectionKeys} targetKeys={TargetKeys}",
+                    name,
+                    string.Join(',', connection.RobotKeys),
+                    string.Join(',', targetKeys));
                 continue;
             }
 
@@ -221,15 +283,34 @@ public sealed class RobotNotificationRegistry(
             }
         }
 
+        Volatile.Write(ref _lastPushAttempt, new RobotNotificationPushAttempt(
+            DateTimeOffset.UtcNow,
+            name,
+            targetKeys.ToArray(),
+            openConnectionKeys,
+            pushed,
+            bytes.Length,
+            BuildFramePreview(bytes)));
+
         if (pushed == 0)
         {
-            _logger.LogDebug(
-                "LoopUpdated push matched no sockets openConnections={OpenConnections} targetKeys={TargetKeys}",
+            _logger.LogInformation(
+                "{Name} push matched no sockets openConnections={OpenConnections} targetKeys={TargetKeys} " +
+                "openConnectionKeys={OpenConnectionKeys}",
+                name,
                 openConnections,
-                string.Join(',', targetKeys.Take(8)));
+                string.Join(',', targetKeys),
+                string.Join(" | ", openConnectionKeys.Select(keys => string.Join(',', keys))));
         }
 
         return pushed;
+    }
+
+    private static string BuildFramePreview(byte[] bytes)
+    {
+        const int maxPreviewBytes = 2048;
+        var text = System.Text.Encoding.UTF8.GetString(bytes, 0, Math.Min(bytes.Length, maxPreviewBytes));
+        return bytes.Length > maxPreviewBytes ? text + "…" : text;
     }
 
     private static object CreateStockNotificationRecord(string name, object payload)
@@ -263,7 +344,27 @@ public sealed class RobotNotificationRegistry(
 
     private sealed class RobotConnection(HashSet<string> robotKeys, WebSocket socket)
     {
+        private long _inboundFrames;
+        private long _lastInboundTicks;
+
         public HashSet<string> RobotKeys { get; } = robotKeys;
         public WebSocket Socket { get; } = socket;
+        public DateTimeOffset ConnectedUtc { get; } = DateTimeOffset.UtcNow;
+        public long InboundFrames => Interlocked.Read(ref _inboundFrames);
+
+        public DateTimeOffset? LastInboundUtc
+        {
+            get
+            {
+                var ticks = Interlocked.Read(ref _lastInboundTicks);
+                return ticks == 0 ? null : new DateTimeOffset(ticks, TimeSpan.Zero);
+            }
+        }
+
+        public void NoteInboundFrame()
+        {
+            Interlocked.Increment(ref _inboundFrames);
+            Interlocked.Exchange(ref _lastInboundTicks, DateTimeOffset.UtcNow.UtcTicks);
+        }
     }
 }

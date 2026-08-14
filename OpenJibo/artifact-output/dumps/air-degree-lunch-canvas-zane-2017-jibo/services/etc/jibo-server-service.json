@@ -1,0 +1,37 @@
+{
+    "WebCore": {
+        "serverPort": 8888,
+        "fileRoot": "/usr/local/var/www/server"
+    },
+    "ServerService": {
+        "registryPort":8181,
+        "serverPort":8888
+    },
+    "NotificationSubsystem":{
+        "registryPort":8181,
+        "refreshInterval": 15000,
+        "serverURLSuffix": "-socket.jibo.com"
+    },
+    "ErrorTracker":{
+        "views": [
+            {
+                "name": "ServerService",
+                "errors": [
+                    "CANNOT_CONNECT_TO_SERVER"
+                ]
+            }
+        ]
+    },
+    "logging" : {
+        "loggers" : {
+            "root": {
+                "level": "warning"
+            },
+            "l2": {
+                "name": "NotificationSubsystem", 
+                "level": "information", 
+                "channel": "splitter"
+            }
+        }
+    }
+}

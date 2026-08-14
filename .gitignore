@@ -472,3 +472,6 @@ OpenJibo/**/App_Data/backups/
 OpenJibo/**/App_Data/uploads/
 OpenJibo/**/media/backups/
 OpenJibo/**/media/logs/
+
+# Example files
+dump.bin

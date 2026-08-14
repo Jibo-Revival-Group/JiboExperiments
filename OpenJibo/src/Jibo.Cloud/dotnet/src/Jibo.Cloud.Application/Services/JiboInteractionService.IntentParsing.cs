@@ -631,6 +631,7 @@ public sealed partial class JiboInteractionService
                 perception.ValueKind == JsonValueKind.Object)
             {
                 if (perception.TryGetProperty("speaker", out var speaker))
+                {
                     speakerId = speaker.ValueKind switch
                     {
                         JsonValueKind.String => speaker.GetString() ?? string.Empty,
@@ -638,6 +639,9 @@ public sealed partial class JiboInteractionService
                                                 string.Empty,
                         _ => speakerId
                     };
+                    if (string.Equals(speakerId, "NOT_TRAINED", StringComparison.OrdinalIgnoreCase))
+                        speakerId = string.Empty;
+                }
 
                 if (perception.TryGetProperty("peoplePresent", out var peoplePresent) &&
                     peoplePresent.ValueKind == JsonValueKind.Array)
@@ -664,7 +668,9 @@ public sealed partial class JiboInteractionService
                 ? speakerId
                 : !string.IsNullOrWhiteSpace(triggerLooperId)
                     ? triggerLooperId
-                    : peoplePresentIds.FirstOrDefault();
+                    : peoplePresentIds.Count == 1
+                        ? peoplePresentIds[0]
+                        : null;
 
             return new GreetingPresenceProfile(
                 primaryPersonId,

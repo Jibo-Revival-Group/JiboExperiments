@@ -416,9 +416,7 @@ public sealed class JiboInteractionServiceTests
     [Fact]
     public async Task BuildDecisionAsync_WhoAmI_UsesPersonScopedNameWhenSpeakerIsKnown()
     {
-        var memoryStore = new InMemoryPersonalMemoryStore();
-        memoryStore.SetName(new PersonalMemoryTenantScope("acct-b", "loop-b", "device-b", "person-2"), "sam");
-        var service = CreateService(memoryStore);
+        var service = CreateService();
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -445,9 +443,7 @@ public sealed class JiboInteractionServiceTests
     [InlineData("can you recognize me")]
     public async Task BuildDecisionAsync_IdentityFollowUp_UsesPersonScopedNameWhenSpeakerIsKnown(string transcript)
     {
-        var memoryStore = new InMemoryPersonalMemoryStore();
-        memoryStore.SetName(new PersonalMemoryTenantScope("acct-c", "loop-c", "device-c", "person-3"), "taylor");
-        var service = CreateService(memoryStore);
+        var service = CreateService();
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -468,7 +464,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_IdentityFollowUp_RequestsNameWhenSpeakerIsUnknown()
+    public async Task BuildDecisionAsync_IdentityFollowUp_RequestsEnrollmentWhenSpeakerIsUnknown()
     {
         var service = CreateService();
 
@@ -479,11 +475,11 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("memory_get_name", decision.IntentName);
-        Assert.Equal("I do not know your name yet. You can say, my name is Alex.", decision.ReplyText);
+        Assert.Equal(LoopSpeakerResolver.UnrecognizedReply, decision.ReplyText);
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_IdentityFollowUp_DoesNotGuessFromLoopFirstNameWhenMemoryIsMissing()
+    public async Task BuildDecisionAsync_IdentityFollowUp_UsesLoopFirstNameWhenSpeakerIsKnownWithoutMemory()
     {
         var service = CreateService();
 
@@ -504,7 +500,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("memory_get_name", decision.IntentName);
-        Assert.Equal("I do not know your name yet. You can say, my name is Alex.", decision.ReplyText);
+        Assert.Equal("I think you are Hi.", decision.ReplyText);
     }
 
     [Fact]
@@ -541,7 +537,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_TriggerWithMultiplePeople_DoesNotBorrowLoopFirstName()
+    public async Task BuildDecisionAsync_TriggerWithRecognizedSpeaker_GreetsByNameEvenWhenOthersArePresent()
     {
         var cloudStateStore = new InMemoryCloudStateStore();
         var service = CreateService(cloudStateStore: cloudStateStore);
@@ -560,9 +556,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("proactive_greeting", decision.IntentName);
-        Assert.DoesNotContain("Jake", decision.ReplyText, StringComparison.Ordinal);
+        Assert.Contains("Jake", decision.ReplyText, StringComparison.Ordinal);
         Assert.DoesNotContain("Sam", decision.ReplyText, StringComparison.Ordinal);
-        Assert.Contains("I am glad to see you", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -1471,11 +1466,9 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_HowAreYou_UsesRememberedNameForStateDrivenReply()
+    public async Task BuildDecisionAsync_HowAreYou_UsesRecognizedLoopNameForStateDrivenReply()
     {
-        var memoryStore = new InMemoryPersonalMemoryStore();
-        memoryStore.SetName(new PersonalMemoryTenantScope("acct-how", "loop-how", "device-how"), "jake");
-        var service = CreateService(memoryStore);
+        var service = CreateService();
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -1484,7 +1477,9 @@ public sealed class JiboInteractionServiceTests
             Attributes = new Dictionary<string, object?>
             {
                 ["accountId"] = "acct-how",
-                ["loopId"] = "loop-how"
+                ["loopId"] = "loop-how",
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-how"},"loop":{"users":[{"id":"person-how","firstName":"jake"}]}}}"""
             },
             DeviceId = "device-how"
         });
@@ -1509,12 +1504,9 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_WhoAmI_WithMultiplePeoplePresent_DoesNotBorrowLoopLevelName()
+    public async Task BuildDecisionAsync_WhoAmI_WithSpeakerSet_UsesThatPersonEvenWhenOthersArePresent()
     {
-        var memoryStore = new InMemoryPersonalMemoryStore();
-        memoryStore.SetName(new PersonalMemoryTenantScope("acct-presence", "loop-presence", "device-presence"),
-            "jake");
-        var service = CreateService(memoryStore);
+        var service = CreateService();
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -1531,7 +1523,7 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("memory_get_name", decision.IntentName);
-        Assert.Equal("I do not know your name yet. You can say, my name is Alex.", decision.ReplyText);
+        Assert.Equal("I think you are Jake.", decision.ReplyText);
     }
 
     [Theory]
@@ -2441,7 +2433,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_NameMemory_SetThenRecallWithinTenant()
+    public async Task BuildDecisionAsync_NameMemory_SpokenNameDoesNotBecomeIdentity()
     {
         var memoryStore = new InMemoryPersonalMemoryStore();
         var service = CreateService(memoryStore);
@@ -2459,7 +2451,8 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("memory_set_name", setDecision.IntentName);
-        Assert.Equal("Nice to meet you, alex. I will remember your name.", setDecision.ReplyText);
+        Assert.Equal(LoopSpeakerResolver.UnrecognizedReply, setDecision.ReplyText);
+        Assert.Null(memoryStore.GetName(new PersonalMemoryTenantScope("acct-a", "loop-a", "device-a")));
 
         var recallDecision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -2474,7 +2467,63 @@ public sealed class JiboInteractionServiceTests
         });
 
         Assert.Equal("memory_get_name", recallDecision.IntentName);
-        Assert.Equal("You told me your name is Alex.", recallDecision.ReplyText);
+        Assert.Equal(LoopSpeakerResolver.UnrecognizedReply, recallDecision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_MyNameIs_WhenAlreadyRecognized_PointsAtPortal()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "my name is Alex",
+            NormalizedTranscript = "my name is Alex",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-casey"},"loop":{"users":[{"id":"person-casey","firstName":"Casey"}]}}}"""
+            }
+        });
+
+        Assert.Equal("memory_set_name", decision.IntentName);
+        Assert.Equal("I already know you as Casey. Change it in the portal.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_WhoAmI_TwoSpeakersStayIsolated()
+    {
+        var store = new InMemoryCloudStateStore();
+        var loopId = store.GetLoops()[0].LoopId;
+        var casey = store.AddLoopMember(loopId, "acct-casey", null, "Casey", "Rivera", "unknown", null, false, "member");
+        var jordan = store.AddLoopMember(loopId, "acct-jordan", null, "Jordan", "Lee", "unknown", null, false, "member");
+        var service = CreateService(cloudStateStore: store);
+
+        var caseyDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "who am i",
+            NormalizedTranscript = "who am i",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["loopId"] = loopId,
+                ["context"] =
+                    $"{{\"runtime\":{{\"perception\":{{\"speaker\":\"{casey.Id}\"}},\"loop\":{{\"users\":[{{\"id\":\"{casey.Id}\",\"firstName\":\"Casey\"}},{{\"id\":\"{jordan.Id}\",\"firstName\":\"Jordan\"}}]}}}}}}"
+            }
+        });
+        var jordanDecision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "who am i",
+            NormalizedTranscript = "who am i",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["loopId"] = loopId,
+                ["context"] =
+                    $"{{\"runtime\":{{\"perception\":{{\"speaker\":\"{jordan.Id}\"}},\"loop\":{{\"users\":[{{\"id\":\"{casey.Id}\",\"firstName\":\"Casey\"}},{{\"id\":\"{jordan.Id}\",\"firstName\":\"Jordan\"}}]}}}}}}"
+            }
+        });
+
+        Assert.Equal("I think you are Casey.", caseyDecision.ReplyText);
+        Assert.Equal("I think you are Jordan.", jordanDecision.ReplyText);
     }
 
     [Fact]
@@ -3055,16 +3104,15 @@ public sealed class JiboInteractionServiceTests
             }
         });
 
-        Assert.Equal("personal_report_request_name", decision.IntentName);
-        Assert.Equal("Who is this?", decision.ReplyText);
+        Assert.Equal("personal_report_unrecognized", decision.IntentName);
+        Assert.Equal(LoopSpeakerResolver.UnrecognizedReply, decision.ReplyText);
+        Assert.Equal("idle", decision.ContextUpdates![PersonalReportStateKey]);
     }
 
     [Fact]
     public async Task BuildDecisionAsync_PersonalReport_OptInYesWithKnownName_AsksForIdentityConfirmation()
     {
-        var memoryStore = new InMemoryPersonalMemoryStore();
-        memoryStore.SetName(new PersonalMemoryTenantScope("acct-a", "loop-a", "device-a"), "alex");
-        var service = CreateService(memoryStore);
+        var service = CreateService();
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
@@ -3075,12 +3123,14 @@ public sealed class JiboInteractionServiceTests
             {
                 ["accountId"] = "acct-a",
                 ["loopId"] = "loop-a",
-                [PersonalReportStateKey] = "awaiting_opt_in"
+                [PersonalReportStateKey] = "awaiting_opt_in",
+                ["context"] =
+                    """{"runtime":{"perception":{"speaker":"person-alex"},"loop":{"users":[{"id":"person-alex","firstName":"alex"}]}}}"""
             }
         });
 
         Assert.Equal("personal_report_verify_user", decision.IntentName);
-        Assert.Equal("I think this is alex. Is that right?", decision.ReplyText);
+        Assert.Equal("I think this is Alex. Is that right?", decision.ReplyText);
         Assert.Equal("chitchat-skill", decision.SkillName);
         Assert.NotNull(decision.SkillPayload);
         Assert.Equal("question", decision.SkillPayload["mim_type"]);
@@ -3089,7 +3139,7 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("shared/yes_no", listenContexts[0]);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("awaiting_identity_confirmation", decision.ContextUpdates![PersonalReportStateKey]);
-        Assert.Equal("alex", decision.ContextUpdates[PersonalReportUserNameKey]);
+        Assert.Equal("Alex", decision.ContextUpdates[PersonalReportUserNameKey]);
     }
 
     [Fact]

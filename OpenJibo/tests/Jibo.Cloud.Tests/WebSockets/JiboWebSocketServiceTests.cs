@@ -21,7 +21,7 @@ public sealed class JiboWebSocketServiceTests
         var contentRepository = new InMemoryJiboExperienceContentRepository();
         var contentCache = new JiboExperienceContentCache(contentRepository);
         var conversationBroker = new DemoConversationBroker(new JiboInteractionService(contentCache,
-            new LastItemRandomizer(), new InMemoryPersonalMemoryStore()));
+            new LastItemRandomizer(), new InMemoryPersonalMemoryStore(), cloudStateStore: _store));
         var sttSelector = new DefaultSttStrategySelector(
         [
             new SyntheticBufferedAudioSttStrategy()
@@ -8343,7 +8343,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, optInReplies.Count);
         using (var optInListenPayload = JsonDocument.Parse(optInReplies[0].Text!))
         {
-            Assert.Equal("personal_report_request_name",
+            Assert.Equal("personal_report_unrecognized",
                 optInListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
                     .GetString());
         }
@@ -8359,12 +8359,12 @@ public sealed class JiboWebSocketServiceTests
                 .GetProperty("play");
             var esml = play.GetProperty("esml").GetString();
             Assert.DoesNotContain("Yes.", esml, StringComparison.Ordinal);
-            Assert.Contains("Who is this?", esml, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("meet someone new", esml, StringComparison.OrdinalIgnoreCase);
         }
 
         session = _store.FindSessionByToken(token);
         Assert.NotNull(session);
-        Assert.Equal("awaiting_identity_name", session.Metadata[stateKey]?.ToString());
+        Assert.Equal("idle", session.Metadata[stateKey]?.ToString());
     }
 
     [Fact]
@@ -8405,7 +8405,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.True(optInReplies.Count >= 2, $"expected listen+eos(+skill), got {optInReplies.Count}");
         using (var optInListenPayload = JsonDocument.Parse(optInReplies[0].Text!))
         {
-            Assert.Equal("personal_report_request_name",
+            Assert.Equal("personal_report_unrecognized",
                 optInListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
                     .GetString());
         }
@@ -8423,12 +8423,12 @@ public sealed class JiboWebSocketServiceTests
                 .GetProperty("play")
                 .GetProperty("esml")
                 .GetString();
-            Assert.Contains("Who is this?", esml, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("meet someone new", esml, StringComparison.OrdinalIgnoreCase);
         }
 
         var session = _store.FindSessionByToken(token);
         Assert.NotNull(session);
-        Assert.Equal("awaiting_identity_name", session.Metadata[stateKey]?.ToString());
+        Assert.Equal("idle", session.Metadata[stateKey]?.ToString());
     }
 
     [Fact]
@@ -8509,7 +8509,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, yesReplies.Count);
         using (var yesListenPayload = JsonDocument.Parse(yesReplies[0].Text!))
         {
-            Assert.Equal("personal_report_request_name",
+            Assert.Equal("personal_report_unrecognized",
                 yesListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
                     .GetString());
         }
@@ -8525,13 +8525,13 @@ public sealed class JiboWebSocketServiceTests
                 .GetProperty("play")
                 .GetProperty("esml")
                 .GetString();
-            Assert.Contains("Who is this?", esml, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("meet someone new", esml, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain(">Yes.<", esml, StringComparison.Ordinal);
         }
 
         yesSession = _store.FindSessionByToken("conn:connection-personal-report-yesno");
         Assert.NotNull(yesSession);
-        Assert.Equal("awaiting_identity_name", yesSession.Metadata[stateKey]?.ToString());
+        Assert.Equal("idle", yesSession.Metadata[stateKey]?.ToString());
     }
 
     [Fact]
@@ -8592,31 +8592,8 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal(3, optInReplies.Count);
         using (var optInListenPayload = JsonDocument.Parse(optInReplies[0].Text!))
         {
-            Assert.Equal("personal_report_request_name",
+            Assert.Equal("personal_report_unrecognized",
                 optInListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
-                    .GetString());
-        }
-
-        session = _store.FindSessionByToken(token);
-        Assert.NotNull(session);
-        Assert.True(session.Metadata.TryGetValue(stateKey, out stateValue));
-        Assert.Equal("awaiting_identity_name", stateValue?.ToString());
-        Assert.True(session.FollowUpOpen);
-
-        var identifyReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
-        {
-            HostName = "neo-hub.jibo.com",
-            Path = "/listen",
-            Kind = "neo-hub-listen",
-            Token = token,
-            Text = """{"type":"CLIENT_ASR","transID":"trans-personal-report-name","data":{"text":"my name is alex"}}"""
-        });
-
-        Assert.Equal(3, identifyReplies.Count);
-        using (var identifyListenPayload = JsonDocument.Parse(identifyReplies[0].Text!))
-        {
-            Assert.Equal("personal_report_delivered",
-                identifyListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent")
                     .GetString());
         }
 
@@ -8677,6 +8654,16 @@ public sealed class JiboWebSocketServiceTests
             JsonDocument.Parse(nameReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
                 .GetProperty("intent").GetString());
 
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text =
+                """{"type":"CONTEXT","transID":"trans-smoke-memory","data":{"runtime":{"perception":{"speaker":"person-erin"},"loop":{"users":[{"id":"person-erin","firstName":"erin"}]}}}}"""
+        });
+
         var session = customStore.FindSessionByToken(token);
         Assert.NotNull(session);
 
@@ -8736,6 +8723,16 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("personal_report_opt_in",
             JsonDocument.Parse(reportStartReplies[0].Text!).RootElement.GetProperty("data").GetProperty("nlu")
                 .GetProperty("intent").GetString());
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Text =
+                """{"type":"CONTEXT","transID":"trans-smoke-report-verify","data":{"runtime":{"perception":{"speaker":"person-erin"},"loop":{"users":[{"id":"person-erin","firstName":"erin"}]}}}}"""
+        });
 
         var reportVerifyReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -9190,7 +9187,8 @@ public sealed class JiboWebSocketServiceTests
             weatherReportProvider,
             calendarReportProvider,
             commuteReportProvider,
-            newsBriefingProvider);
+            newsBriefingProvider,
+            cloudStateStore: stateStore);
         var conversationBroker = new DemoConversationBroker(interactionService);
         var sttSelector = new DefaultSttStrategySelector(sttStrategies ?? [new SyntheticBufferedAudioSttStrategy()]);
         var sink = new NullTurnTelemetrySink();

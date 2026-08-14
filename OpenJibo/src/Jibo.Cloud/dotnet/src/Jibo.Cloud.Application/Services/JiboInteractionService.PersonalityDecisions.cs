@@ -270,26 +270,7 @@ public sealed partial class JiboInteractionService
 
     private string? ResolvePreferredGreetingName(TurnContext turn, GreetingPresenceProfile presence)
     {
-        var rememberedName = personalMemoryStore.GetName(ResolveTenantScope(turn, presence.PrimaryPersonId));
-        if (!string.IsNullOrWhiteSpace(rememberedName)) return ToDisplayName(rememberedName);
-
-        var tenantRememberedName = personalMemoryStore.GetName(ResolveTenantScope(turn));
-        if (!string.IsNullOrWhiteSpace(tenantRememberedName)) return ToDisplayName(tenantRememberedName);
-
-        var primaryPersonId = presence.PrimaryPersonId;
-        if (CanUseLoopFirstNameFallback(presence) &&
-            !string.IsNullOrWhiteSpace(primaryPersonId) &&
-            presence.LoopUserFirstNames.TryGetValue(primaryPersonId, out var firstName) &&
-            !string.IsNullOrWhiteSpace(firstName))
-            return ToDisplayName(firstName);
-
-        return null;
-    }
-
-    private static bool CanUseLoopFirstNameFallback(GreetingPresenceProfile presence)
-    {
-        if (string.IsNullOrWhiteSpace(presence.PrimaryPersonId)) return false;
-        return presence.PeoplePresentIds.Count <= 1;
+        return LoopSpeakerResolver.Resolve(turn, cloudStateStore).DisplayName;
     }
 
     private static string ToDisplayName(string value)

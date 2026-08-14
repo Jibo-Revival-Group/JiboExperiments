@@ -68,12 +68,11 @@ public sealed partial class JiboInteractionService
             semanticIntent,
             lowered,
             catalog,
-            personalMemoryStore,
+            cloudStateStore,
             BuildWeatherReportDecisionAsync,
             BuildCalendarReportDecisionAsync,
             BuildCommuteReportDecisionAsync,
             (turnContext, ct) => BuildNewsDecisionAsync(turnContext, string.Empty, catalog, ct, includeOutro: false),
-            turnContext => ResolveTenantScope(turnContext),
             cancellationToken);
         if (personalReportDecision is not null) return personalReportDecision;
 
@@ -1335,8 +1334,8 @@ public sealed partial class JiboInteractionService
                 "welcome_back",
                 "it's nice to be here",
                 "welcome back"),
-            "memory_set_name" => BuildRememberNameDecision(turn, transcript),
-            "memory_get_name" => BuildRecallNameDecision(turn, greetingPresence),
+            "memory_set_name" => BuildRememberNameDecision(turn),
+            "memory_get_name" => BuildRecallNameDecision(turn),
             "memory_set_birthday" => BuildRememberBirthdayDecision(turn, transcript),
             "memory_get_birthday" => BuildRecallBirthdayDecision(turn),
             "memory_set_important_date" => BuildRememberImportantDateDecision(turn, transcript),

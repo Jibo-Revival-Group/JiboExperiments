@@ -7,46 +7,39 @@ namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService
 {
-    private JiboInteractionDecision BuildRememberNameDecision(TurnContext turn, string transcript)
+    private JiboInteractionDecision BuildRememberNameDecision(TurnContext turn)
     {
-        var name = TryExtractNameFact(transcript);
-        if (string.IsNullOrWhiteSpace(name))
+        var identity = LoopSpeakerResolver.Resolve(turn, cloudStateStore);
+        if (identity.IsRecognized && !string.IsNullOrWhiteSpace(identity.DisplayName))
             return new JiboInteractionDecision(
                 "memory_set_name",
-                "I can remember it if you say, my name is Alex.");
+                $"I already know you as {identity.DisplayName}. Change it in the portal.");
 
-        personalMemoryStore.SetName(ResolveTenantScope(turn), name);
+        if (identity.IsRecognized)
+            return new JiboInteractionDecision(
+                "memory_set_name",
+                LoopSpeakerResolver.UnnamedRecognizedReply);
+
         return new JiboInteractionDecision(
             "memory_set_name",
-            $"Nice to meet you, {name}. I will remember your name.");
+            LoopSpeakerResolver.UnrecognizedReply);
     }
 
-    private JiboInteractionDecision BuildRecallNameDecision(TurnContext turn, GreetingPresenceProfile? presence = null)
+    private JiboInteractionDecision BuildRecallNameDecision(TurnContext turn)
     {
-        var personScope = ResolveTenantScope(turn, presence?.PrimaryPersonId);
-        var name = personalMemoryStore.GetName(personScope);
-        if (string.IsNullOrWhiteSpace(name) && CanUseLoopLevelNameMemoryFallback(presence))
-            name = personalMemoryStore.GetName(ResolveTenantScope(turn));
+        var identity = LoopSpeakerResolver.Resolve(turn, cloudStateStore);
+        if (!identity.IsRecognized)
+            return new JiboInteractionDecision(
+                "memory_get_name",
+                LoopSpeakerResolver.UnrecognizedReply);
 
-        name = ToDisplayName(name ?? string.Empty);
-
-        return string.IsNullOrWhiteSpace(name)
+        return string.IsNullOrWhiteSpace(identity.DisplayName)
             ? new JiboInteractionDecision(
                 "memory_get_name",
-                "I do not know your name yet. You can say, my name is Alex.")
+                LoopSpeakerResolver.UnnamedRecognizedReply)
             : new JiboInteractionDecision(
                 "memory_get_name",
-                presence is not null && !string.IsNullOrWhiteSpace(presence.PrimaryPersonId)
-                    ? $"I think you are {name}."
-                    : $"You told me your name is {name}.");
-    }
-
-    private static bool CanUseLoopLevelNameMemoryFallback(GreetingPresenceProfile? presence)
-    {
-        if (presence is null) return true;
-        if (string.IsNullOrWhiteSpace(presence.PrimaryPersonId)) return true;
-
-        return presence.PeoplePresentIds.Count <= 1;
+                $"I think you are {identity.DisplayName}.");
     }
 
     private JiboInteractionDecision BuildRememberBirthdayDecision(TurnContext turn, string transcript)

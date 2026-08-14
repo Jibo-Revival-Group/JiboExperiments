@@ -107,12 +107,11 @@ internal static partial class PersonalReportOrchestrator
         string semanticIntent,
         string loweredTranscript,
         JiboExperienceCatalog catalog,
-        IPersonalMemoryStore personalMemoryStore,
+        ICloudStateStore? cloudStateStore,
         Func<TurnContext, string, CancellationToken, Task<JiboInteractionDecision>> buildWeatherDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCalendarDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildCommuteDecisionAsync,
         Func<TurnContext, CancellationToken, Task<JiboInteractionDecision>> buildNewsDecisionAsync,
-        Func<TurnContext, PersonalMemoryTenantScope> tenantScopeResolver,
         CancellationToken cancellationToken)
     {
         var state = ReadState(turn);
@@ -155,8 +154,8 @@ internal static partial class PersonalReportOrchestrator
                 {
                     case YesNoReply.Affirmative:
                     {
-                        var scope = tenantScopeResolver(turn);
-                        var knownName = ReadString(turn, UserNameMetadataKey) ?? personalMemoryStore.GetName(scope);
+                        var knownName = ReadString(turn, UserNameMetadataKey)
+                                        ?? LoopSpeakerResolver.Resolve(turn, cloudStateStore).DisplayName;
                         if (!string.IsNullOrWhiteSpace(knownName))
                             return BuildYesNoPromptDecision(
                                 "personal_report_verify_user",
@@ -170,17 +169,7 @@ internal static partial class PersonalReportOrchestrator
                                     false,
                                     string.Empty));
 
-                        return new JiboInteractionDecision(
-                            "personal_report_request_name",
-                            "Who is this?",
-                            ContextUpdates: BuildContextUpdates(
-                                AwaitingIdentityNameState,
-                                0,
-                                0,
-                                toggles,
-                                null,
-                                false,
-                                string.Empty));
+                        return BuildUnrecognizedIdentityDecision(toggles);
                     }
                     case YesNoReply.Negative:
                         return BuildDeclinedDecision(toggles);
@@ -219,27 +208,14 @@ internal static partial class PersonalReportOrchestrator
             {
                 var currentName = ReadString(turn, UserNameMetadataKey);
                 if (string.IsNullOrWhiteSpace(currentName))
-                    return new JiboInteractionDecision(
-                        "personal_report_request_name",
-                        "Who is this?",
-                        ContextUpdates: BuildContextUpdates(
-                            AwaitingIdentityNameState,
-                            0,
-                            0,
-                            toggles,
-                            null,
-                            false,
-                            string.Empty));
+                    return BuildUnrecognizedIdentityDecision(toggles);
 
                 return yesNoReply switch
                 {
                     YesNoReply.Affirmative => await BuildDeliveredReportDecisionAsync(turn, catalog,
                         toggles, currentName, buildWeatherDecisionAsync, buildCalendarDecisionAsync,
                         buildCommuteDecisionAsync, buildNewsDecisionAsync, cancellationToken),
-                    YesNoReply.Negative => new JiboInteractionDecision("personal_report_request_name",
-                        "Okay, who is this?",
-                        ContextUpdates: BuildContextUpdates(AwaitingIdentityNameState, 0, 0, toggles, null, false,
-                            string.Empty)),
+                    YesNoReply.Negative => BuildUnrecognizedIdentityDecision(toggles),
                     _ => BuildNoMatchDecision(turn, state,
                         yesNoReply == YesNoReply.Ambiguous
                             ? $"I heard both yes and no. Is this {currentName}?"
@@ -248,29 +224,7 @@ internal static partial class PersonalReportOrchestrator
             }
 
             case AwaitingIdentityNameState:
-            {
-                var parsedName = TryExtractName(loweredTranscript);
-                if (string.IsNullOrWhiteSpace(parsedName))
-                    return BuildNoMatchDecision(
-                        turn,
-                        state,
-                        "Tell me your name like this: my name is Alex.",
-                        toggles,
-                        null,
-                        false);
-
-                personalMemoryStore.SetName(tenantScopeResolver(turn), parsedName);
-                return await BuildDeliveredReportDecisionAsync(
-                    turn,
-                    catalog,
-                    toggles,
-                    parsedName,
-                    buildWeatherDecisionAsync,
-                    buildCalendarDecisionAsync,
-                    buildCommuteDecisionAsync,
-                    buildNewsDecisionAsync,
-                    cancellationToken);
-            }
+                return BuildUnrecognizedIdentityDecision(toggles);
 
             default:
                 return BuildDeclinedDecision(toggles);
@@ -688,6 +642,21 @@ internal static partial class PersonalReportOrchestrator
                 string.Empty));
     }
 
+    private static JiboInteractionDecision BuildUnrecognizedIdentityDecision(PersonalReportServiceToggles toggles)
+    {
+        return new JiboInteractionDecision(
+            "personal_report_unrecognized",
+            LoopSpeakerResolver.UnrecognizedReply,
+            ContextUpdates: BuildContextUpdates(
+                IdleState,
+                0,
+                0,
+                toggles,
+                null,
+                false,
+                string.Empty));
+    }
+
     private static IDictionary<string, object?> BuildContextUpdates(
         string state,
         int noMatchCount,
@@ -945,51 +914,6 @@ internal static partial class PersonalReportOrchestrator
                 parsed,
             _ => 0
         };
-    }
-
-    private static string? TryExtractName(string loweredTranscript)
-    {
-        var normalized = NameNoiseRegex().Replace(loweredTranscript, " ")
-            .Replace("  ", " ", StringComparison.Ordinal)
-            .Trim();
-        if (string.IsNullOrWhiteSpace(normalized)) return null;
-
-        var prefixes = new[]
-        {
-            "my name is ",
-            "it is ",
-            "it s ",
-            "it's ",
-            "i am ",
-            "im "
-        };
-
-        foreach (var prefix in prefixes)
-        {
-            if (!normalized.StartsWith(prefix, StringComparison.Ordinal)) continue;
-
-            var candidate = normalized[prefix.Length..].Trim();
-            return NormalizeNameCandidate(candidate);
-        }
-
-        return NormalizeNameCandidate(normalized);
-    }
-
-    private static string? NormalizeNameCandidate(string candidate)
-    {
-        if (string.IsNullOrWhiteSpace(candidate)) return null;
-
-        var cleaned = NameNoiseRegex().Replace(candidate, " ")
-            .Replace("  ", " ", StringComparison.Ordinal)
-            .Trim();
-        if (string.IsNullOrWhiteSpace(cleaned)) return null;
-
-        if (cleaned.Length is < 2 or > 32) return null;
-
-        var words = cleaned.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length > 4) return null;
-
-        return words.Any(static word => word.Any(char.IsDigit)) ? null : cleaned;
     }
 
     private static string ChoosePersonalReportTemplate(

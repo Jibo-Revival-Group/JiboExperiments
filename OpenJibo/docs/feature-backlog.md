@@ -575,6 +575,25 @@ These are the carryover items that need a clean proof pass first:
 - Progress update (`2026-07-28`):
   - focused media-create and cloud-state persistence tests now pass, so the binary-safe storage seam is proven enough to move this lane from `in progress` to `implemented`
 
+### 12. Durable Robot Attribution And Hosted Artifact Audit
+
+- Status: `polish`
+- Tags: `protocol`, `storage`, `reliability`, `docs`
+- Scope:
+  - preserve explicit robot links and AWS credential claims without inferring ownership from traffic
+  - keep archived duplicate records from reclaiming live sessions
+  - capture HTTP, WebSocket ASR, Ogg/Opus, logs, and media artifacts with attribution provenance
+  - expose session-link history and artifact capture coverage in the admin status page
+- Current implementation:
+  - robot header, bearer/session, SigV4/AWS3, and one-way credential fingerprint evidence are resolved centrally
+  - credential claims, swaps, backfill, offline merge, verified serial evidence, and explicit session links are persisted
+  - raw binary WebSocket audio is normalized into a single browser-playable Ogg/Opus stream
+  - the status page distinguishes observed runtime IDs from explicit links and reports artifact coverage
+- Remaining proof:
+  - deploy and verify attribution survives restart/reconnect on the Azure state backend
+  - perform a real capture audit covering events, logs, media, and ASR, including an unassigned-credential claim
+  - confirm archived records remain historical after a fresh deployment
+
 ### Next Up (`2026-05-06`): Dialog Parsing Expansion And Ambiguity Guardrails
 
 - Status: `polish`
@@ -950,6 +969,9 @@ These are the carryover items that need a clean proof pass first:
   - the robot stays in a live listen/capture state long enough to accept an item phrase
   - existing shopping/to-do flows remain unchanged
   - future integration-backed list work remains a separate backlog item
+- Refinement note (2026-08-07): Pegasus provides only refusal MIMs for shopping and to-do lists in the available snapshot; there is no authoritative legacy implementation to port. Treat the current household-list implementation as an OpenJibo capability needing iterative live-robot refinement, and capture protocol-boundary failures before changing the cloud parser.
+
+- Refinement note (2026-08-07): Pegasus provides only refusal MIMs for shopping and to-do lists in the available snapshot; there is no authoritative legacy implementation to port. Treat the current household-list implementation as an OpenJibo capability needing iterative live-robot refinement, and capture protocol-boundary failures before changing the cloud parser.
 
 ### 29. Legacy MIM Personality Import Ladder
 
@@ -1303,3 +1325,12 @@ For `1.0.20` and beyond:
      - keep smart-home control as a separate future integration track
      - keep pizza, rideshare, and other concierge integrations behind provider and policy decisions
      - keep LLM and orchestration work gated by the tiered brain roadmap so the charm-first behavior stays intact
+
+### Robot-Initiated LRD Diagnostic Beacon
+
+- Status: `ready`
+- Tags: `protocol`, `reliability`, `storage`, `docs`
+- Replace browser-to-robot log access with a robot-initiated authenticated diagnostic stream while preserving the merged LRD comparison workflow.
+- Preserve the current LRD UI and server polling until the beacon path has live proof.
+- First slice: explicit enrollment credential, outbound agent connection, bounded robot-log buffer keyed by the claimed canonical robot, and active-beacon status in the fleet summary.
+- Exit criteria: no inbound listener, safe reconnect/rotation behavior, robot selection without IP/port/scheme/token fields, and no change to identity, credential-claim, artifact, or household behavior.

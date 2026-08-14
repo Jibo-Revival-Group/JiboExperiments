@@ -57,6 +57,7 @@ builder.Services.AddHttpClient("OpenJiboFleetPeerSync", client => client.Timeout
 builder.Services.AddHostedService<FleetPeerSyncService>();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddSingleton<RobotDiagnosticBeaconStore>();
 
 var app = builder.Build();
 

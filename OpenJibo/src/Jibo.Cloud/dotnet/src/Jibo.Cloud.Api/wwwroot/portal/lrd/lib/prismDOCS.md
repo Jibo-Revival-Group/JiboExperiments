@@ -12,7 +12,7 @@
 
 
 Examples
-The Prism source, highlighted with Prism (don’t you just love how meta this is?):
+The Prism source, highlighted with Prism (don?t you just love how meta this is?):
 
 
 /* **********************************************
@@ -504,7 +504,7 @@ var Prism = (function (_self) {
 		plugins: {},
 
 		/**
-		 * This is the most high-level function in Prism’s API.
+		 * This is the most high-level function in Prism?s API.
 		 * It fetches all the elements that have a `.language-xxxx` class and then calls {@link Prism.highlightElement} on
 		 * each one of them.
 		 *
@@ -654,7 +654,7 @@ var Prism = (function (_self) {
 		},
 
 		/**
-		 * Low-level function, only use if you know what you’re doing. It accepts a string of text as input
+		 * Low-level function, only use if you know what you?re doing. It accepts a string of text as input
 		 * and the language definitions to use, and returns a string with the HTML produced.
 		 *
 		 * The following hooks will be run:
@@ -1776,11 +1776,11 @@ Prism.languages.js = Prism.languages.javascript;
 		Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
 	}
 
-	var LOADING_MESSAGE = 'Loading…';
+	var LOADING_MESSAGE = 'Loading?';
 	var FAILURE_MESSAGE = function (status, message) {
-		return '✖ Error ' + status + ' while fetching file: ' + message;
+		return '? Error ' + status + ' while fetching file: ' + message;
 	};
-	var FAILURE_EMPTY_MESSAGE = '✖ Error: File does not exist or is empty';
+	var FAILURE_EMPTY_MESSAGE = '? Error: File does not exist or is empty';
 
 	var EXTENSIONS = {
 		'js': 'javascript',
@@ -1960,7 +1960,7 @@ Prism.languages.js = Prism.languages.javascript;
 	};
 
 }());
-This page’s CSS code, highlighted with Prism:
+This page?s CSS code, highlighted with Prism:
 
 @import url(https://fonts.googleapis.com/css?family=Questrial);
 @import url(https://fonts.googleapis.com/css?family=Arvo);
@@ -2014,7 +2014,7 @@ section h1 {
 
 	section h1 > a:before,
 	section h2[id] > a:before {
-		content: '§';
+		content: '?';
 		position: absolute;
 		padding: 0 .2em;
 		margin-left: -1em;
@@ -2171,7 +2171,7 @@ footer:before {
 		}
 
 			#features li:before {
-				content: '✓';
+				content: '?';
 				float: left;
 				margin-left: -.8em;
 				color: #7fab14;
@@ -2880,7 +2880,7 @@ section :is(h1, h2, h3)[id] {
 		}
 	}
 }
-This page’s HTML, highlighted with Prism:
+This page?s HTML, highlighted with Prism:
 
 <!DOCTYPE html>
 <html lang="en"
@@ -2899,7 +2899,7 @@ This page’s HTML, highlighted with Prism:
 	<script src="https://www.google-analytics.com/ga.js" async></script>
 
 	<script>
-	// Just a lil’ script to show off that inline JS gets highlighted
+	// Just a lil? script to show off that inline JS gets highlighted
 	console.log("foo");
 </script></head>
 
@@ -2912,7 +2912,7 @@ This page’s HTML, highlighted with Prism:
 
 			<p>
 				Prism is a lightweight, extensible syntax highlighter, built with modern web standards in mind.
-				It’s used in millions of websites, including some of those you visit daily.
+				It?s used in millions of websites, including some of those you visit daily.
 			</p>
 		</div>
 
@@ -2946,7 +2946,7 @@ The core is 2KB minified &amp; gzipped. Languages add 0.3-0.5KB each, themes are
 <li><strong>Blazing fast</strong>
 Supports parallelism with Web Workers, if available.</li>
 <li><strong>Extensible</strong>
-Define new languages or extend existing ones. Add new features thanks to Prism’s plugin architecture.</li>
+Define new languages or extend existing ones. Add new features thanks to Prism?s plugin architecture.</li>
 <li><strong>Easy styling</strong>
 All styling is done through CSS, with sensible class names like <code>.comment</code>, <code>.string</code>, <code>.property</code> etc.</li>
 </ul>
@@ -2978,15 +2978,15 @@ All styling is done through CSS, with sensible class names like <code>.comment</
 </section>
 <section>
 <h1 id="examples" tabindex="-1"><a class="header-anchor" href="#examples">Examples</a></h1>
-<p>The Prism source, highlighted with Prism (don’t you just love how meta this is?):</p>
+<p>The Prism source, highlighted with Prism (don?t you just love how meta this is?):</p>
 <pre data-src="https://dev.prismjs.com/prism.js"></pre>
-<p>This page’s CSS code, highlighted with Prism:</p>
+<p>This page?s CSS code, highlighted with Prism:</p>
 <pre data-src="assets/style.css"></pre>
-<p>This page’s HTML, highlighted with Prism:</p>
+<p>This page?s HTML, highlighted with Prism:</p>
 <pre data-src="index.html"></pre>
-<p>This page’s logo (SVG), highlighted with Prism:</p>
+<p>This page?s logo (SVG), highlighted with Prism:</p>
 <pre data-src="assets/logo.svg"></pre>
-<p>If you’re still not sold, you can <a href='/examples'>view more examples</a> or <a href='/test'>try it out for yourself</a>.</p>
+<p>If you?re still not sold, you can <a href='/examples'>view more examples</a> or <a href='/test'>try it out for yourself</a>.</p>
 </section>
 <section class="language-markup">
 <h1 id="full-list-of-features" tabindex="-1"><a class="header-anchor" href="#full-list-of-features">Full list of features</a></h1>
@@ -2995,13 +2995,13 @@ All styling is done through CSS, with sensible class names like <code>.comment</
 <li>Encourages good author practices. Other highlighters encourage or even force you to use elements that are semantically wrong, like <code>&lt;pre&gt;</code> (on its own) or <code>&lt;script&gt;</code>. Prism forces you to use the correct element for marking up code: <code>&lt;code&gt;</code>. On its own for inline code, or inside a <code>&lt;pre&gt;</code> for blocks of code. In addition, the language is defined through the way recommended in the HTML5 draft: through a <code>language-xxxx</code> class.</li>
 <li>The <code>language-xxxx</code> class is inherited. This means that if multiple code snippets have the same language, you can just define it once, in one of their common ancestors.</li>
 <li>Supports <strong>parallelism with Web Workers</strong>, if available. Disabled by default (<a href='/faq#why-is-asynchronous-highlighting-disabled-by-default'>why?</a>).</li>
-<li>Very easy to extend without modifying the code, due to Prism’s <a href="#plugins">plugin architecture</a>. Multiple hooks are scattered throughout the source.</li>
+<li>Very easy to extend without modifying the code, due to Prism?s <a href="#plugins">plugin architecture</a>. Multiple hooks are scattered throughout the source.</li>
 <li>Very easy to <a href='/extending#language-definitions'>define new languages</a>. The only thing you need is a good understanding of regular expressions.</li>
 <li>All styling is done through CSS, with <a href='/faq#how-do-i-know-which-tokens-i-can-style-for'>sensible class names</a> rather than ugly, namespaced, abbreviated nonsense.</li>
 <li>Wide browser support: Edge, IE11, Firefox, Chrome, Safari, <a href='/faq#this-page-doesnt-work-in-opera'>Opera</a>, most mobile browsers.</li>
 <li>Highlights embedded languages (e.g. CSS inside HTML, JavaScript inside HTML).</li>
 <li>Highlights inline code as well, not just code blocks.</li>
-<li>It doesn’t force you to use any Prism-specific markup, not even a Prism-specific class name, only standard markup you should be using anyway. So, you can just try it for a while, remove it if you don’t like it and leave no traces behind.</li>
+<li>It doesn?t force you to use any Prism-specific markup, not even a Prism-specific class name, only standard markup you should be using anyway. So, you can just try it for a while, remove it if you don?t like it and leave no traces behind.</li>
 <li>Highlight specific lines and/or line ranges (requires <a href="plugins/line-highlight/">plugin</a>).</li>
 <li>Show invisible characters like tabs, line breaks etc (requires <a href="plugins/show-invisibles/">plugin</a>).</li>
 <li>Autolink URLs and emails, use Markdown links in comments (requires <a href="plugins/autolinker/">plugin</a>).</li>
@@ -3032,7 +3032,7 @@ All styling is done through CSS, with sensible class names like <code>.comment</
 &lt;/html></code></pre>
 <p>Prism does its best to encourage good authoring practices. Therefore, it only works with <code>&lt;code&gt;</code> elements, since marking up code without a <code>&lt;code&gt;</code> element is semantically invalid. <a href="https://www.w3.org/TR/html52/textlevel-semantics.html#the-code-element">According to the HTML5 spec</a>, the recommended way to define a code language is a <code>language-xxxx</code> class, which is what Prism uses. Alternatively, Prism also supports a shorter version: <code>lang-xxxx</code>.</p>
 <p>The <a href="https://www.w3.org/TR/html5/grouping-content.html#the-pre-element">recommended way to mark up a code block</a> (both for semantics and for Prism) is a <code>&lt;pre&gt;</code> element with a <code>&lt;code&gt;</code> element inside, like so:</p>
-<pre ><code class="language-html">&lt;pre&gt;&lt;code class=&quot;language-css&quot;&gt;p { color: red }&lt;/code&gt;&lt;/pre&gt;</code></pre><p>If you use that pattern, the <code>&lt;pre&gt;</code> will automatically get the <code>language-xxxx</code> class (if it doesn’t already have it) and will be styled as a code block.</p>
+<pre ><code class="language-html">&lt;pre&gt;&lt;code class=&quot;language-css&quot;&gt;p { color: red }&lt;/code&gt;&lt;/pre&gt;</code></pre><p>If you use that pattern, the <code>&lt;pre&gt;</code> will automatically get the <code>language-xxxx</code> class (if it doesn?t already have it) and will be styled as a code block.</p>
 <p>Inline code snippets are done like this:</p>
 <pre ><code class="language-html">&lt;code class=&quot;language-css&quot;&gt;p { color: red }&lt;/code&gt;</code></pre><p><strong>Note</strong>: You have to escape all <code>&lt;</code> and <code>&amp;</code> characters inside <code>&lt;code&gt;</code> elements (code blocks and inline snippets) with <code>&amp;lt;</code> and <code>&amp;amp;</code> respectively, or else the browser might interpret them as an HTML tag or <a href="https://developer.mozilla.org/en-US/docs/Glossary/Entity">entity</a>. If you have large portions of HTML code, you can use the <a href="plugins/unescaped-markup/">Unescaped Markup plugin</a> to work around this.</p>
 <h2 id="language-inheritance" tabindex="-1"><a class="header-anchor" href="#language-inheritance">Language inheritance</a></h2>
@@ -3066,9 +3066,9 @@ window.Prism.manual = true;
 <h2 id="basic-usage-bundlers" tabindex="-1"><a class="header-anchor" href="#basic-usage-bundlers">Usage with Webpack, Browserify, &amp; Other Bundlers</a></h2>
 <p>If you want to use Prism with a bundler, install Prism with <code>npm</code>:</p>
 <pre ><code class="language-bash">$ npm install prismjs</code></pre><p>You can then <code>import</code> into your bundle:</p>
-<pre ><code class="language-js">import Prism from 'prismjs';</code></pre><p>To make it easy to configure your Prism instance with only the languages and plugins you need, use the babel plugin, <a href="https://github.com/mAAdhaTTah/babel-plugin-prismjs">babel-plugin-prismjs</a>. This will allow you to load the minimum number of languages and plugins to satisfy your needs. See that plugin’s documentation for configuration details.</p>
+<pre ><code class="language-js">import Prism from 'prismjs';</code></pre><p>To make it easy to configure your Prism instance with only the languages and plugins you need, use the babel plugin, <a href="https://github.com/mAAdhaTTah/babel-plugin-prismjs">babel-plugin-prismjs</a>. This will allow you to load the minimum number of languages and plugins to satisfy your needs. See that plugin?s documentation for configuration details.</p>
 <h2 id="basic-usage-node" tabindex="-1"><a class="header-anchor" href="#basic-usage-node">Usage with Node</a></h2>
-<p>If you want to use Prism on the server or through the command line, Prism can be used with Node.js as well. This might be useful if you’re trying to generate static HTML pages with highlighted code for environments that don’t support browser-side JS, like <a href="https://www.ampproject.org/">AMP pages</a>.</p>
+<p>If you want to use Prism on the server or through the command line, Prism can be used with Node.js as well. This might be useful if you?re trying to generate static HTML pages with highlighted code for environments that don?t support browser-side JS, like <a href="https://www.ampproject.org/">AMP pages</a>.</p>
 <p>Example:</p>
 <pre ><code class="language-js">const Prism = require('prismjs');
 
@@ -3094,902 +3094,902 @@ const html = Prism.highlight(code, Prism.languages.haml, 'haml');</code></pre><p
 <p>This is the list of all 297 languages currently supported by Prism, with their corresponding alias, to use in place of <code>xxxx</code> in the <code>language-xxxx</code> (or <code>lang-xxxx</code>) class:</p>
 <ul id="languages-list">
 	<li data-id="markup">
-		Markup&nbsp;—<code>markup</code>, <code>html</code>, <code>xml</code>, <code>svg</code>, <code>mathml</code>, <code>ssml</code>, <code>atom</code>, <code>rss</code>
+		Markup&nbsp;?<code>markup</code>, <code>html</code>, <code>xml</code>, <code>svg</code>, <code>mathml</code>, <code>ssml</code>, <code>atom</code>, <code>rss</code>
 	</li>
 	<li data-id="css">
-		CSS&nbsp;—<code>css</code>
+		CSS&nbsp;?<code>css</code>
 	</li>
 	<li data-id="clike">
-		C-like&nbsp;—<code>clike</code>
+		C-like&nbsp;?<code>clike</code>
 	</li>
 	<li data-id="javascript">
-		JavaScript&nbsp;—<code>javascript</code>, <code>js</code>
+		JavaScript&nbsp;?<code>javascript</code>, <code>js</code>
 	</li>
 	<li data-id="abap">
-		ABAP&nbsp;—<code>abap</code>
+		ABAP&nbsp;?<code>abap</code>
 	</li>
 	<li data-id="abnf">
-		ABNF&nbsp;—<code>abnf</code>
+		ABNF&nbsp;?<code>abnf</code>
 	</li>
 	<li data-id="actionscript">
-		ActionScript&nbsp;—<code>actionscript</code>
+		ActionScript&nbsp;?<code>actionscript</code>
 	</li>
 	<li data-id="ada">
-		Ada&nbsp;—<code>ada</code>
+		Ada&nbsp;?<code>ada</code>
 	</li>
 	<li data-id="agda">
-		Agda&nbsp;—<code>agda</code>
+		Agda&nbsp;?<code>agda</code>
 	</li>
 	<li data-id="al">
-		AL&nbsp;—<code>al</code>
+		AL&nbsp;?<code>al</code>
 	</li>
 	<li data-id="antlr4">
-		ANTLR4&nbsp;—<code>antlr4</code>, <code>g4</code>
+		ANTLR4&nbsp;?<code>antlr4</code>, <code>g4</code>
 	</li>
 	<li data-id="apacheconf">
-		Apache Configuration&nbsp;—<code>apacheconf</code>
+		Apache Configuration&nbsp;?<code>apacheconf</code>
 	</li>
 	<li data-id="apex">
-		Apex&nbsp;—<code>apex</code>
+		Apex&nbsp;?<code>apex</code>
 	</li>
 	<li data-id="apl">
-		APL&nbsp;—<code>apl</code>
+		APL&nbsp;?<code>apl</code>
 	</li>
 	<li data-id="applescript">
-		AppleScript&nbsp;—<code>applescript</code>
+		AppleScript&nbsp;?<code>applescript</code>
 	</li>
 	<li data-id="aql">
-		AQL&nbsp;—<code>aql</code>
+		AQL&nbsp;?<code>aql</code>
 	</li>
 	<li data-id="arduino">
-		Arduino&nbsp;—<code>arduino</code>, <code>ino</code>
+		Arduino&nbsp;?<code>arduino</code>, <code>ino</code>
 	</li>
 	<li data-id="arff">
-		ARFF&nbsp;—<code>arff</code>
+		ARFF&nbsp;?<code>arff</code>
 	</li>
 	<li data-id="armasm">
-		ARM Assembly&nbsp;—<code>armasm</code>, <code>arm-asm</code>
+		ARM Assembly&nbsp;?<code>armasm</code>, <code>arm-asm</code>
 	</li>
 	<li data-id="arturo">
-		Arturo&nbsp;—<code>arturo</code>, <code>art</code>
+		Arturo&nbsp;?<code>arturo</code>, <code>art</code>
 	</li>
 	<li data-id="asciidoc">
-		AsciiDoc&nbsp;—<code>asciidoc</code>, <code>adoc</code>
+		AsciiDoc&nbsp;?<code>asciidoc</code>, <code>adoc</code>
 	</li>
 	<li data-id="aspnet">
-		ASP.NET (C#)&nbsp;—<code>aspnet</code>
+		ASP.NET (C#)&nbsp;?<code>aspnet</code>
 	</li>
 	<li data-id="asm6502">
-		6502 Assembly&nbsp;—<code>asm6502</code>
+		6502 Assembly&nbsp;?<code>asm6502</code>
 	</li>
 	<li data-id="asmatmel">
-		Atmel AVR Assembly&nbsp;—<code>asmatmel</code>
+		Atmel AVR Assembly&nbsp;?<code>asmatmel</code>
 	</li>
 	<li data-id="autohotkey">
-		AutoHotkey&nbsp;—<code>autohotkey</code>
+		AutoHotkey&nbsp;?<code>autohotkey</code>
 	</li>
 	<li data-id="autoit">
-		AutoIt&nbsp;—<code>autoit</code>
+		AutoIt&nbsp;?<code>autoit</code>
 	</li>
 	<li data-id="avisynth">
-		AviSynth&nbsp;—<code>avisynth</code>, <code>avs</code>
+		AviSynth&nbsp;?<code>avisynth</code>, <code>avs</code>
 	</li>
 	<li data-id="avro-idl">
-		Avro IDL&nbsp;—<code>avro-idl</code>, <code>avdl</code>
+		Avro IDL&nbsp;?<code>avro-idl</code>, <code>avdl</code>
 	</li>
 	<li data-id="awk">
-		AWK&nbsp;—<code>awk</code>, <code>gawk</code>
+		AWK&nbsp;?<code>awk</code>, <code>gawk</code>
 	</li>
 	<li data-id="bash">
-		Bash&nbsp;—<code>bash</code>, <code>sh</code>, <code>shell</code>
+		Bash&nbsp;?<code>bash</code>, <code>sh</code>, <code>shell</code>
 	</li>
 	<li data-id="basic">
-		BASIC&nbsp;—<code>basic</code>
+		BASIC&nbsp;?<code>basic</code>
 	</li>
 	<li data-id="batch">
-		Batch&nbsp;—<code>batch</code>
+		Batch&nbsp;?<code>batch</code>
 	</li>
 	<li data-id="bbcode">
-		BBcode&nbsp;—<code>bbcode</code>, <code>shortcode</code>
+		BBcode&nbsp;?<code>bbcode</code>, <code>shortcode</code>
 	</li>
 	<li data-id="bbj">
-		BBj&nbsp;—<code>bbj</code>
+		BBj&nbsp;?<code>bbj</code>
 	</li>
 	<li data-id="bicep">
-		Bicep&nbsp;—<code>bicep</code>
+		Bicep&nbsp;?<code>bicep</code>
 	</li>
 	<li data-id="birb">
-		Birb&nbsp;—<code>birb</code>
+		Birb&nbsp;?<code>birb</code>
 	</li>
 	<li data-id="bison">
-		Bison&nbsp;—<code>bison</code>
+		Bison&nbsp;?<code>bison</code>
 	</li>
 	<li data-id="bnf">
-		BNF&nbsp;—<code>bnf</code>, <code>rbnf</code>
+		BNF&nbsp;?<code>bnf</code>, <code>rbnf</code>
 	</li>
 	<li data-id="bqn">
-		BQN&nbsp;—<code>bqn</code>
+		BQN&nbsp;?<code>bqn</code>
 	</li>
 	<li data-id="brainfuck">
-		Brainfuck&nbsp;—<code>brainfuck</code>
+		Brainfuck&nbsp;?<code>brainfuck</code>
 	</li>
 	<li data-id="brightscript">
-		BrightScript&nbsp;—<code>brightscript</code>
+		BrightScript&nbsp;?<code>brightscript</code>
 	</li>
 	<li data-id="bro">
-		Bro&nbsp;—<code>bro</code>
+		Bro&nbsp;?<code>bro</code>
 	</li>
 	<li data-id="bsl">
-		BSL (1C:Enterprise)&nbsp;—<code>bsl</code>, <code>oscript</code>
+		BSL (1C:Enterprise)&nbsp;?<code>bsl</code>, <code>oscript</code>
 	</li>
 	<li data-id="c">
-		C&nbsp;—<code>c</code>
+		C&nbsp;?<code>c</code>
 	</li>
 	<li data-id="csharp">
-		C#&nbsp;—<code>csharp</code>, <code>cs</code>, <code>dotnet</code>
+		C#&nbsp;?<code>csharp</code>, <code>cs</code>, <code>dotnet</code>
 	</li>
 	<li data-id="cpp">
-		C++&nbsp;—<code>cpp</code>
+		C++&nbsp;?<code>cpp</code>
 	</li>
 	<li data-id="cfscript">
-		CFScript&nbsp;—<code>cfscript</code>, <code>cfc</code>
+		CFScript&nbsp;?<code>cfscript</code>, <code>cfc</code>
 	</li>
 	<li data-id="chaiscript">
-		ChaiScript&nbsp;—<code>chaiscript</code>
+		ChaiScript&nbsp;?<code>chaiscript</code>
 	</li>
 	<li data-id="cil">
-		CIL&nbsp;—<code>cil</code>
+		CIL&nbsp;?<code>cil</code>
 	</li>
 	<li data-id="cilkc">
-		Cilk/C&nbsp;—<code>cilkc</code>, <code>cilk-c</code>
+		Cilk/C&nbsp;?<code>cilkc</code>, <code>cilk-c</code>
 	</li>
 	<li data-id="cilkcpp">
-		Cilk/C++&nbsp;—<code>cilkcpp</code>, <code>cilk-cpp</code>, <code>cilk</code>
+		Cilk/C++&nbsp;?<code>cilkcpp</code>, <code>cilk-cpp</code>, <code>cilk</code>
 	</li>
 	<li data-id="clojure">
-		Clojure&nbsp;—<code>clojure</code>
+		Clojure&nbsp;?<code>clojure</code>
 	</li>
 	<li data-id="cmake">
-		CMake&nbsp;—<code>cmake</code>
+		CMake&nbsp;?<code>cmake</code>
 	</li>
 	<li data-id="cobol">
-		COBOL&nbsp;—<code>cobol</code>
+		COBOL&nbsp;?<code>cobol</code>
 	</li>
 	<li data-id="coffeescript">
-		CoffeeScript&nbsp;—<code>coffeescript</code>, <code>coffee</code>
+		CoffeeScript&nbsp;?<code>coffeescript</code>, <code>coffee</code>
 	</li>
 	<li data-id="concurnas">
-		Concurnas&nbsp;—<code>concurnas</code>, <code>conc</code>
+		Concurnas&nbsp;?<code>concurnas</code>, <code>conc</code>
 	</li>
 	<li data-id="csp">
-		Content-Security-Policy&nbsp;—<code>csp</code>
+		Content-Security-Policy&nbsp;?<code>csp</code>
 	</li>
 	<li data-id="cooklang">
-		Cooklang&nbsp;—<code>cooklang</code>
+		Cooklang&nbsp;?<code>cooklang</code>
 	</li>
 	<li data-id="coq">
-		Coq&nbsp;—<code>coq</code>
+		Coq&nbsp;?<code>coq</code>
 	</li>
 	<li data-id="crystal">
-		Crystal&nbsp;—<code>crystal</code>
+		Crystal&nbsp;?<code>crystal</code>
 	</li>
 	<li data-id="css-extras">
-		CSS Extras&nbsp;—<code>css-extras</code>
+		CSS Extras&nbsp;?<code>css-extras</code>
 	</li>
 	<li data-id="csv">
-		CSV&nbsp;—<code>csv</code>
+		CSV&nbsp;?<code>csv</code>
 	</li>
 	<li data-id="cue">
-		CUE&nbsp;—<code>cue</code>
+		CUE&nbsp;?<code>cue</code>
 	</li>
 	<li data-id="cypher">
-		Cypher&nbsp;—<code>cypher</code>
+		Cypher&nbsp;?<code>cypher</code>
 	</li>
 	<li data-id="d">
-		D&nbsp;—<code>d</code>
+		D&nbsp;?<code>d</code>
 	</li>
 	<li data-id="dart">
-		Dart&nbsp;—<code>dart</code>
+		Dart&nbsp;?<code>dart</code>
 	</li>
 	<li data-id="dataweave">
-		DataWeave&nbsp;—<code>dataweave</code>
+		DataWeave&nbsp;?<code>dataweave</code>
 	</li>
 	<li data-id="dax">
-		DAX&nbsp;—<code>dax</code>
+		DAX&nbsp;?<code>dax</code>
 	</li>
 	<li data-id="dhall">
-		Dhall&nbsp;—<code>dhall</code>
+		Dhall&nbsp;?<code>dhall</code>
 	</li>
 	<li data-id="diff">
-		Diff&nbsp;—<code>diff</code>
+		Diff&nbsp;?<code>diff</code>
 	</li>
 	<li data-id="django">
-		Django/Jinja2&nbsp;—<code>django</code>, <code>jinja2</code>
+		Django/Jinja2&nbsp;?<code>django</code>, <code>jinja2</code>
 	</li>
 	<li data-id="dns-zone-file">
-		DNS zone file&nbsp;—<code>dns-zone-file</code>, <code>dns-zone</code>
+		DNS zone file&nbsp;?<code>dns-zone-file</code>, <code>dns-zone</code>
 	</li>
 	<li data-id="docker">
-		Docker&nbsp;—<code>docker</code>, <code>dockerfile</code>
+		Docker&nbsp;?<code>docker</code>, <code>dockerfile</code>
 	</li>
 	<li data-id="dot">
-		DOT (Graphviz)&nbsp;—<code>dot</code>, <code>gv</code>
+		DOT (Graphviz)&nbsp;?<code>dot</code>, <code>gv</code>
 	</li>
 	<li data-id="ebnf">
-		EBNF&nbsp;—<code>ebnf</code>
+		EBNF&nbsp;?<code>ebnf</code>
 	</li>
 	<li data-id="editorconfig">
-		EditorConfig&nbsp;—<code>editorconfig</code>
+		EditorConfig&nbsp;?<code>editorconfig</code>
 	</li>
 	<li data-id="eiffel">
-		Eiffel&nbsp;—<code>eiffel</code>
+		Eiffel&nbsp;?<code>eiffel</code>
 	</li>
 	<li data-id="ejs">
-		EJS&nbsp;—<code>ejs</code>, <code>eta</code>
+		EJS&nbsp;?<code>ejs</code>, <code>eta</code>
 	</li>
 	<li data-id="elixir">
-		Elixir&nbsp;—<code>elixir</code>
+		Elixir&nbsp;?<code>elixir</code>
 	</li>
 	<li data-id="elm">
-		Elm&nbsp;—<code>elm</code>
+		Elm&nbsp;?<code>elm</code>
 	</li>
 	<li data-id="etlua">
-		Embedded Lua templating&nbsp;—<code>etlua</code>
+		Embedded Lua templating&nbsp;?<code>etlua</code>
 	</li>
 	<li data-id="erb">
-		ERB&nbsp;—<code>erb</code>
+		ERB&nbsp;?<code>erb</code>
 	</li>
 	<li data-id="erlang">
-		Erlang&nbsp;—<code>erlang</code>
+		Erlang&nbsp;?<code>erlang</code>
 	</li>
 	<li data-id="excel-formula">
-		Excel Formula&nbsp;—<code>excel-formula</code>, <code>xlsx</code>, <code>xls</code>
+		Excel Formula&nbsp;?<code>excel-formula</code>, <code>xlsx</code>, <code>xls</code>
 	</li>
 	<li data-id="fsharp">
-		F#&nbsp;—<code>fsharp</code>
+		F#&nbsp;?<code>fsharp</code>
 	</li>
 	<li data-id="factor">
-		Factor&nbsp;—<code>factor</code>
+		Factor&nbsp;?<code>factor</code>
 	</li>
 	<li data-id="false">
-		False&nbsp;—<code>false</code>
+		False&nbsp;?<code>false</code>
 	</li>
 	<li data-id="firestore-security-rules">
-		Firestore security rules&nbsp;—<code>firestore-security-rules</code>
+		Firestore security rules&nbsp;?<code>firestore-security-rules</code>
 	</li>
 	<li data-id="flow">
-		Flow&nbsp;—<code>flow</code>
+		Flow&nbsp;?<code>flow</code>
 	</li>
 	<li data-id="fortran">
-		Fortran&nbsp;—<code>fortran</code>
+		Fortran&nbsp;?<code>fortran</code>
 	</li>
 	<li data-id="ftl">
-		FreeMarker Template Language&nbsp;—<code>ftl</code>
+		FreeMarker Template Language&nbsp;?<code>ftl</code>
 	</li>
 	<li data-id="gml">
-		GameMaker Language&nbsp;—<code>gml</code>, <code>gamemakerlanguage</code>
+		GameMaker Language&nbsp;?<code>gml</code>, <code>gamemakerlanguage</code>
 	</li>
 	<li data-id="gap">
-		GAP (CAS)&nbsp;—<code>gap</code>
+		GAP (CAS)&nbsp;?<code>gap</code>
 	</li>
 	<li data-id="gcode">
-		G-code&nbsp;—<code>gcode</code>
+		G-code&nbsp;?<code>gcode</code>
 	</li>
 	<li data-id="gdscript">
-		GDScript&nbsp;—<code>gdscript</code>
+		GDScript&nbsp;?<code>gdscript</code>
 	</li>
 	<li data-id="gedcom">
-		GEDCOM&nbsp;—<code>gedcom</code>
+		GEDCOM&nbsp;?<code>gedcom</code>
 	</li>
 	<li data-id="gettext">
-		gettext&nbsp;—<code>gettext</code>, <code>po</code>
+		gettext&nbsp;?<code>gettext</code>, <code>po</code>
 	</li>
 	<li data-id="gherkin">
-		Gherkin&nbsp;—<code>gherkin</code>
+		Gherkin&nbsp;?<code>gherkin</code>
 	</li>
 	<li data-id="git">
-		Git&nbsp;—<code>git</code>
+		Git&nbsp;?<code>git</code>
 	</li>
 	<li data-id="glsl">
-		GLSL&nbsp;—<code>glsl</code>
+		GLSL&nbsp;?<code>glsl</code>
 	</li>
 	<li data-id="gn">
-		GN&nbsp;—<code>gn</code>, <code>gni</code>
+		GN&nbsp;?<code>gn</code>, <code>gni</code>
 	</li>
 	<li data-id="linker-script">
-		GNU Linker Script&nbsp;—<code>linker-script</code>, <code>ld</code>
+		GNU Linker Script&nbsp;?<code>linker-script</code>, <code>ld</code>
 	</li>
 	<li data-id="go">
-		Go&nbsp;—<code>go</code>
+		Go&nbsp;?<code>go</code>
 	</li>
 	<li data-id="go-module">
-		Go module&nbsp;—<code>go-module</code>, <code>go-mod</code>
+		Go module&nbsp;?<code>go-module</code>, <code>go-mod</code>
 	</li>
 	<li data-id="gradle">
-		Gradle&nbsp;—<code>gradle</code>
+		Gradle&nbsp;?<code>gradle</code>
 	</li>
 	<li data-id="graphql">
-		GraphQL&nbsp;—<code>graphql</code>
+		GraphQL&nbsp;?<code>graphql</code>
 	</li>
 	<li data-id="groovy">
-		Groovy&nbsp;—<code>groovy</code>
+		Groovy&nbsp;?<code>groovy</code>
 	</li>
 	<li data-id="haml">
-		Haml&nbsp;—<code>haml</code>
+		Haml&nbsp;?<code>haml</code>
 	</li>
 	<li data-id="handlebars">
-		Handlebars&nbsp;—<code>handlebars</code>, <code>hbs</code>, <code>mustache</code>
+		Handlebars&nbsp;?<code>handlebars</code>, <code>hbs</code>, <code>mustache</code>
 	</li>
 	<li data-id="haskell">
-		Haskell&nbsp;—<code>haskell</code>, <code>hs</code>
+		Haskell&nbsp;?<code>haskell</code>, <code>hs</code>
 	</li>
 	<li data-id="haxe">
-		Haxe&nbsp;—<code>haxe</code>
+		Haxe&nbsp;?<code>haxe</code>
 	</li>
 	<li data-id="hcl">
-		HCL&nbsp;—<code>hcl</code>
+		HCL&nbsp;?<code>hcl</code>
 	</li>
 	<li data-id="hlsl">
-		HLSL&nbsp;—<code>hlsl</code>
+		HLSL&nbsp;?<code>hlsl</code>
 	</li>
 	<li data-id="hoon">
-		Hoon&nbsp;—<code>hoon</code>
+		Hoon&nbsp;?<code>hoon</code>
 	</li>
 	<li data-id="http">
-		HTTP&nbsp;—<code>http</code>
+		HTTP&nbsp;?<code>http</code>
 	</li>
 	<li data-id="hpkp">
-		HTTP Public-Key-Pins&nbsp;—<code>hpkp</code>
+		HTTP Public-Key-Pins&nbsp;?<code>hpkp</code>
 	</li>
 	<li data-id="hsts">
-		HTTP Strict-Transport-Security&nbsp;—<code>hsts</code>
+		HTTP Strict-Transport-Security&nbsp;?<code>hsts</code>
 	</li>
 	<li data-id="ichigojam">
-		IchigoJam&nbsp;—<code>ichigojam</code>
+		IchigoJam&nbsp;?<code>ichigojam</code>
 	</li>
 	<li data-id="icon">
-		Icon&nbsp;—<code>icon</code>
+		Icon&nbsp;?<code>icon</code>
 	</li>
 	<li data-id="icu-message-format">
-		ICU Message Format&nbsp;—<code>icu-message-format</code>
+		ICU Message Format&nbsp;?<code>icu-message-format</code>
 	</li>
 	<li data-id="idris">
-		Idris&nbsp;—<code>idris</code>, <code>idr</code>
+		Idris&nbsp;?<code>idris</code>, <code>idr</code>
 	</li>
 	<li data-id="ignore">
-		.ignore&nbsp;—<code>ignore</code>, <code>gitignore</code>, <code>hgignore</code>, <code>npmignore</code>
+		.ignore&nbsp;?<code>ignore</code>, <code>gitignore</code>, <code>hgignore</code>, <code>npmignore</code>
 	</li>
 	<li data-id="inform7">
-		Inform 7&nbsp;—<code>inform7</code>
+		Inform 7&nbsp;?<code>inform7</code>
 	</li>
 	<li data-id="ini">
-		Ini&nbsp;—<code>ini</code>
+		Ini&nbsp;?<code>ini</code>
 	</li>
 	<li data-id="io">
-		Io&nbsp;—<code>io</code>
+		Io&nbsp;?<code>io</code>
 	</li>
 	<li data-id="j">
-		J&nbsp;—<code>j</code>
+		J&nbsp;?<code>j</code>
 	</li>
 	<li data-id="java">
-		Java&nbsp;—<code>java</code>
+		Java&nbsp;?<code>java</code>
 	</li>
 	<li data-id="javadoc">
-		JavaDoc&nbsp;—<code>javadoc</code>
+		JavaDoc&nbsp;?<code>javadoc</code>
 	</li>
 	<li data-id="javadoclike">
-		JavaDoc-like&nbsp;—<code>javadoclike</code>
+		JavaDoc-like&nbsp;?<code>javadoclike</code>
 	</li>
 	<li data-id="javastacktrace">
-		Java stack trace&nbsp;—<code>javastacktrace</code>
+		Java stack trace&nbsp;?<code>javastacktrace</code>
 	</li>
 	<li data-id="jexl">
-		Jexl&nbsp;—<code>jexl</code>
+		Jexl&nbsp;?<code>jexl</code>
 	</li>
 	<li data-id="jolie">
-		Jolie&nbsp;—<code>jolie</code>
+		Jolie&nbsp;?<code>jolie</code>
 	</li>
 	<li data-id="jq">
-		JQ&nbsp;—<code>jq</code>
+		JQ&nbsp;?<code>jq</code>
 	</li>
 	<li data-id="jsdoc">
-		JSDoc&nbsp;—<code>jsdoc</code>
+		JSDoc&nbsp;?<code>jsdoc</code>
 	</li>
 	<li data-id="js-extras">
-		JS Extras&nbsp;—<code>js-extras</code>
+		JS Extras&nbsp;?<code>js-extras</code>
 	</li>
 	<li data-id="json">
-		JSON&nbsp;—<code>json</code>, <code>webmanifest</code>
+		JSON&nbsp;?<code>json</code>, <code>webmanifest</code>
 	</li>
 	<li data-id="json5">
-		JSON5&nbsp;—<code>json5</code>
+		JSON5&nbsp;?<code>json5</code>
 	</li>
 	<li data-id="jsonp">
-		JSONP&nbsp;—<code>jsonp</code>
+		JSONP&nbsp;?<code>jsonp</code>
 	</li>
 	<li data-id="jsstacktrace">
-		JS stack trace&nbsp;—<code>jsstacktrace</code>
+		JS stack trace&nbsp;?<code>jsstacktrace</code>
 	</li>
 	<li data-id="js-templates">
-		JS Templates&nbsp;—<code>js-templates</code>
+		JS Templates&nbsp;?<code>js-templates</code>
 	</li>
 	<li data-id="julia">
-		Julia&nbsp;—<code>julia</code>
+		Julia&nbsp;?<code>julia</code>
 	</li>
 	<li data-id="keepalived">
-		Keepalived Configure&nbsp;—<code>keepalived</code>
+		Keepalived Configure&nbsp;?<code>keepalived</code>
 	</li>
 	<li data-id="keyman">
-		Keyman&nbsp;—<code>keyman</code>
+		Keyman&nbsp;?<code>keyman</code>
 	</li>
 	<li data-id="kotlin">
-		Kotlin&nbsp;—<code>kotlin</code>, <code>kt</code>, <code>kts</code>
+		Kotlin&nbsp;?<code>kotlin</code>, <code>kt</code>, <code>kts</code>
 	</li>
 	<li data-id="kumir">
-		KuMir (КуМир)&nbsp;—<code>kumir</code>, <code>kum</code>
+		KuMir (?????)&nbsp;?<code>kumir</code>, <code>kum</code>
 	</li>
 	<li data-id="kusto">
-		Kusto&nbsp;—<code>kusto</code>
+		Kusto&nbsp;?<code>kusto</code>
 	</li>
 	<li data-id="latex">
-		LaTeX&nbsp;—<code>latex</code>, <code>tex</code>, <code>context</code>
+		LaTeX&nbsp;?<code>latex</code>, <code>tex</code>, <code>context</code>
 	</li>
 	<li data-id="latte">
-		Latte&nbsp;—<code>latte</code>
+		Latte&nbsp;?<code>latte</code>
 	</li>
 	<li data-id="less">
-		Less&nbsp;—<code>less</code>
+		Less&nbsp;?<code>less</code>
 	</li>
 	<li data-id="lilypond">
-		LilyPond&nbsp;—<code>lilypond</code>, <code>ly</code>
+		LilyPond&nbsp;?<code>lilypond</code>, <code>ly</code>
 	</li>
 	<li data-id="liquid">
-		Liquid&nbsp;—<code>liquid</code>
+		Liquid&nbsp;?<code>liquid</code>
 	</li>
 	<li data-id="lisp">
-		Lisp&nbsp;—<code>lisp</code>, <code>emacs</code>, <code>elisp</code>, <code>emacs-lisp</code>
+		Lisp&nbsp;?<code>lisp</code>, <code>emacs</code>, <code>elisp</code>, <code>emacs-lisp</code>
 	</li>
 	<li data-id="livescript">
-		LiveScript&nbsp;—<code>livescript</code>
+		LiveScript&nbsp;?<code>livescript</code>
 	</li>
 	<li data-id="llvm">
-		LLVM IR&nbsp;—<code>llvm</code>
+		LLVM IR&nbsp;?<code>llvm</code>
 	</li>
 	<li data-id="log">
-		Log file&nbsp;—<code>log</code>
+		Log file&nbsp;?<code>log</code>
 	</li>
 	<li data-id="lolcode">
-		LOLCODE&nbsp;—<code>lolcode</code>
+		LOLCODE&nbsp;?<code>lolcode</code>
 	</li>
 	<li data-id="lua">
-		Lua&nbsp;—<code>lua</code>
+		Lua&nbsp;?<code>lua</code>
 	</li>
 	<li data-id="magma">
-		Magma (CAS)&nbsp;—<code>magma</code>
+		Magma (CAS)&nbsp;?<code>magma</code>
 	</li>
 	<li data-id="makefile">
-		Makefile&nbsp;—<code>makefile</code>
+		Makefile&nbsp;?<code>makefile</code>
 	</li>
 	<li data-id="markdown">
-		Markdown&nbsp;—<code>markdown</code>, <code>md</code>
+		Markdown&nbsp;?<code>markdown</code>, <code>md</code>
 	</li>
 	<li data-id="markup-templating">
-		Markup templating&nbsp;—<code>markup-templating</code>
+		Markup templating&nbsp;?<code>markup-templating</code>
 	</li>
 	<li data-id="mata">
-		Mata&nbsp;—<code>mata</code>
+		Mata&nbsp;?<code>mata</code>
 	</li>
 	<li data-id="matlab">
-		MATLAB&nbsp;—<code>matlab</code>
+		MATLAB&nbsp;?<code>matlab</code>
 	</li>
 	<li data-id="maxscript">
-		MAXScript&nbsp;—<code>maxscript</code>
+		MAXScript&nbsp;?<code>maxscript</code>
 	</li>
 	<li data-id="mel">
-		MEL&nbsp;—<code>mel</code>
+		MEL&nbsp;?<code>mel</code>
 	</li>
 	<li data-id="mermaid">
-		Mermaid&nbsp;—<code>mermaid</code>
+		Mermaid&nbsp;?<code>mermaid</code>
 	</li>
 	<li data-id="metafont">
-		METAFONT&nbsp;—<code>metafont</code>
+		METAFONT&nbsp;?<code>metafont</code>
 	</li>
 	<li data-id="mizar">
-		Mizar&nbsp;—<code>mizar</code>
+		Mizar&nbsp;?<code>mizar</code>
 	</li>
 	<li data-id="mongodb">
-		MongoDB&nbsp;—<code>mongodb</code>
+		MongoDB&nbsp;?<code>mongodb</code>
 	</li>
 	<li data-id="monkey">
-		Monkey&nbsp;—<code>monkey</code>
+		Monkey&nbsp;?<code>monkey</code>
 	</li>
 	<li data-id="moonscript">
-		MoonScript&nbsp;—<code>moonscript</code>, <code>moon</code>
+		MoonScript&nbsp;?<code>moonscript</code>, <code>moon</code>
 	</li>
 	<li data-id="n1ql">
-		N1QL&nbsp;—<code>n1ql</code>
+		N1QL&nbsp;?<code>n1ql</code>
 	</li>
 	<li data-id="n4js">
-		N4JS&nbsp;—<code>n4js</code>, <code>n4jsd</code>
+		N4JS&nbsp;?<code>n4js</code>, <code>n4jsd</code>
 	</li>
 	<li data-id="nand2tetris-hdl">
-		Nand To Tetris HDL&nbsp;—<code>nand2tetris-hdl</code>
+		Nand To Tetris HDL&nbsp;?<code>nand2tetris-hdl</code>
 	</li>
 	<li data-id="naniscript">
-		Naninovel Script&nbsp;—<code>naniscript</code>, <code>nani</code>
+		Naninovel Script&nbsp;?<code>naniscript</code>, <code>nani</code>
 	</li>
 	<li data-id="nasm">
-		NASM&nbsp;—<code>nasm</code>
+		NASM&nbsp;?<code>nasm</code>
 	</li>
 	<li data-id="neon">
-		NEON&nbsp;—<code>neon</code>
+		NEON&nbsp;?<code>neon</code>
 	</li>
 	<li data-id="nevod">
-		Nevod&nbsp;—<code>nevod</code>
+		Nevod&nbsp;?<code>nevod</code>
 	</li>
 	<li data-id="nginx">
-		nginx&nbsp;—<code>nginx</code>
+		nginx&nbsp;?<code>nginx</code>
 	</li>
 	<li data-id="nim">
-		Nim&nbsp;—<code>nim</code>
+		Nim&nbsp;?<code>nim</code>
 	</li>
 	<li data-id="nix">
-		Nix&nbsp;—<code>nix</code>
+		Nix&nbsp;?<code>nix</code>
 	</li>
 	<li data-id="nsis">
-		NSIS&nbsp;—<code>nsis</code>
+		NSIS&nbsp;?<code>nsis</code>
 	</li>
 	<li data-id="objectivec">
-		Objective-C&nbsp;—<code>objectivec</code>, <code>objc</code>
+		Objective-C&nbsp;?<code>objectivec</code>, <code>objc</code>
 	</li>
 	<li data-id="ocaml">
-		OCaml&nbsp;—<code>ocaml</code>
+		OCaml&nbsp;?<code>ocaml</code>
 	</li>
 	<li data-id="odin">
-		Odin&nbsp;—<code>odin</code>
+		Odin&nbsp;?<code>odin</code>
 	</li>
 	<li data-id="opencl">
-		OpenCL&nbsp;—<code>opencl</code>
+		OpenCL&nbsp;?<code>opencl</code>
 	</li>
 	<li data-id="openqasm">
-		OpenQasm&nbsp;—<code>openqasm</code>, <code>qasm</code>
+		OpenQasm&nbsp;?<code>openqasm</code>, <code>qasm</code>
 	</li>
 	<li data-id="oz">
-		Oz&nbsp;—<code>oz</code>
+		Oz&nbsp;?<code>oz</code>
 	</li>
 	<li data-id="parigp">
-		PARI/GP&nbsp;—<code>parigp</code>
+		PARI/GP&nbsp;?<code>parigp</code>
 	</li>
 	<li data-id="parser">
-		Parser&nbsp;—<code>parser</code>
+		Parser&nbsp;?<code>parser</code>
 	</li>
 	<li data-id="pascal">
-		Pascal&nbsp;—<code>pascal</code>, <code>objectpascal</code>
+		Pascal&nbsp;?<code>pascal</code>, <code>objectpascal</code>
 	</li>
 	<li data-id="pascaligo">
-		Pascaligo&nbsp;—<code>pascaligo</code>
+		Pascaligo&nbsp;?<code>pascaligo</code>
 	</li>
 	<li data-id="psl">
-		PATROL Scripting Language&nbsp;—<code>psl</code>
+		PATROL Scripting Language&nbsp;?<code>psl</code>
 	</li>
 	<li data-id="pcaxis">
-		PC-Axis&nbsp;—<code>pcaxis</code>, <code>px</code>
+		PC-Axis&nbsp;?<code>pcaxis</code>, <code>px</code>
 	</li>
 	<li data-id="peoplecode">
-		PeopleCode&nbsp;—<code>peoplecode</code>, <code>pcode</code>
+		PeopleCode&nbsp;?<code>peoplecode</code>, <code>pcode</code>
 	</li>
 	<li data-id="perl">
-		Perl&nbsp;—<code>perl</code>
+		Perl&nbsp;?<code>perl</code>
 	</li>
 	<li data-id="php">
-		PHP&nbsp;—<code>php</code>
+		PHP&nbsp;?<code>php</code>
 	</li>
 	<li data-id="phpdoc">
-		PHPDoc&nbsp;—<code>phpdoc</code>
+		PHPDoc&nbsp;?<code>phpdoc</code>
 	</li>
 	<li data-id="php-extras">
-		PHP Extras&nbsp;—<code>php-extras</code>
+		PHP Extras&nbsp;?<code>php-extras</code>
 	</li>
 	<li data-id="plant-uml">
-		PlantUML&nbsp;—<code>plant-uml</code>, <code>plantuml</code>
+		PlantUML&nbsp;?<code>plant-uml</code>, <code>plantuml</code>
 	</li>
 	<li data-id="plsql">
-		PL/SQL&nbsp;—<code>plsql</code>
+		PL/SQL&nbsp;?<code>plsql</code>
 	</li>
 	<li data-id="powerquery">
-		PowerQuery&nbsp;—<code>powerquery</code>, <code>pq</code>, <code>mscript</code>
+		PowerQuery&nbsp;?<code>powerquery</code>, <code>pq</code>, <code>mscript</code>
 	</li>
 	<li data-id="powershell">
-		PowerShell&nbsp;—<code>powershell</code>
+		PowerShell&nbsp;?<code>powershell</code>
 	</li>
 	<li data-id="processing">
-		Processing&nbsp;—<code>processing</code>
+		Processing&nbsp;?<code>processing</code>
 	</li>
 	<li data-id="prolog">
-		Prolog&nbsp;—<code>prolog</code>
+		Prolog&nbsp;?<code>prolog</code>
 	</li>
 	<li data-id="promql">
-		PromQL&nbsp;—<code>promql</code>
+		PromQL&nbsp;?<code>promql</code>
 	</li>
 	<li data-id="properties">
-		.properties&nbsp;—<code>properties</code>
+		.properties&nbsp;?<code>properties</code>
 	</li>
 	<li data-id="protobuf">
-		Protocol Buffers&nbsp;—<code>protobuf</code>
+		Protocol Buffers&nbsp;?<code>protobuf</code>
 	</li>
 	<li data-id="pug">
-		Pug&nbsp;—<code>pug</code>
+		Pug&nbsp;?<code>pug</code>
 	</li>
 	<li data-id="puppet">
-		Puppet&nbsp;—<code>puppet</code>
+		Puppet&nbsp;?<code>puppet</code>
 	</li>
 	<li data-id="pure">
-		Pure&nbsp;—<code>pure</code>
+		Pure&nbsp;?<code>pure</code>
 	</li>
 	<li data-id="purebasic">
-		PureBasic&nbsp;—<code>purebasic</code>, <code>pbfasm</code>
+		PureBasic&nbsp;?<code>purebasic</code>, <code>pbfasm</code>
 	</li>
 	<li data-id="purescript">
-		PureScript&nbsp;—<code>purescript</code>, <code>purs</code>
+		PureScript&nbsp;?<code>purescript</code>, <code>purs</code>
 	</li>
 	<li data-id="python">
-		Python&nbsp;—<code>python</code>, <code>py</code>
+		Python&nbsp;?<code>python</code>, <code>py</code>
 	</li>
 	<li data-id="qsharp">
-		Q#&nbsp;—<code>qsharp</code>, <code>qs</code>
+		Q#&nbsp;?<code>qsharp</code>, <code>qs</code>
 	</li>
 	<li data-id="q">
-		Q (kdb+ database)&nbsp;—<code>q</code>
+		Q (kdb+ database)&nbsp;?<code>q</code>
 	</li>
 	<li data-id="qml">
-		QML&nbsp;—<code>qml</code>
+		QML&nbsp;?<code>qml</code>
 	</li>
 	<li data-id="qore">
-		Qore&nbsp;—<code>qore</code>
+		Qore&nbsp;?<code>qore</code>
 	</li>
 	<li data-id="r">
-		R&nbsp;—<code>r</code>
+		R&nbsp;?<code>r</code>
 	</li>
 	<li data-id="racket">
-		Racket&nbsp;—<code>racket</code>, <code>rkt</code>
+		Racket&nbsp;?<code>racket</code>, <code>rkt</code>
 	</li>
 	<li data-id="cshtml">
-		Razor C#&nbsp;—<code>cshtml</code>, <code>razor</code>
+		Razor C#&nbsp;?<code>cshtml</code>, <code>razor</code>
 	</li>
 	<li data-id="jsx">
-		React JSX&nbsp;—<code>jsx</code>
+		React JSX&nbsp;?<code>jsx</code>
 	</li>
 	<li data-id="tsx">
-		React TSX&nbsp;—<code>tsx</code>
+		React TSX&nbsp;?<code>tsx</code>
 	</li>
 	<li data-id="reason">
-		Reason&nbsp;—<code>reason</code>
+		Reason&nbsp;?<code>reason</code>
 	</li>
 	<li data-id="regex">
-		Regex&nbsp;—<code>regex</code>
+		Regex&nbsp;?<code>regex</code>
 	</li>
 	<li data-id="rego">
-		Rego&nbsp;—<code>rego</code>
+		Rego&nbsp;?<code>rego</code>
 	</li>
 	<li data-id="renpy">
-		Ren&#39;py&nbsp;—<code>renpy</code>, <code>rpy</code>
+		Ren&#39;py&nbsp;?<code>renpy</code>, <code>rpy</code>
 	</li>
 	<li data-id="rescript">
-		ReScript&nbsp;—<code>rescript</code>, <code>res</code>
+		ReScript&nbsp;?<code>rescript</code>, <code>res</code>
 	</li>
 	<li data-id="rest">
-		reST (reStructuredText)&nbsp;—<code>rest</code>
+		reST (reStructuredText)&nbsp;?<code>rest</code>
 	</li>
 	<li data-id="rip">
-		Rip&nbsp;—<code>rip</code>
+		Rip&nbsp;?<code>rip</code>
 	</li>
 	<li data-id="roboconf">
-		Roboconf&nbsp;—<code>roboconf</code>
+		Roboconf&nbsp;?<code>roboconf</code>
 	</li>
 	<li data-id="robotframework">
-		Robot Framework&nbsp;—<code>robotframework</code>, <code>robot</code>
+		Robot Framework&nbsp;?<code>robotframework</code>, <code>robot</code>
 	</li>
 	<li data-id="ruby">
-		Ruby&nbsp;—<code>ruby</code>, <code>rb</code>
+		Ruby&nbsp;?<code>ruby</code>, <code>rb</code>
 	</li>
 	<li data-id="rust">
-		Rust&nbsp;—<code>rust</code>
+		Rust&nbsp;?<code>rust</code>
 	</li>
 	<li data-id="sas">
-		SAS&nbsp;—<code>sas</code>
+		SAS&nbsp;?<code>sas</code>
 	</li>
 	<li data-id="sass">
-		Sass (Sass)&nbsp;—<code>sass</code>
+		Sass (Sass)&nbsp;?<code>sass</code>
 	</li>
 	<li data-id="scss">
-		Sass (SCSS)&nbsp;—<code>scss</code>
+		Sass (SCSS)&nbsp;?<code>scss</code>
 	</li>
 	<li data-id="scala">
-		Scala&nbsp;—<code>scala</code>
+		Scala&nbsp;?<code>scala</code>
 	</li>
 	<li data-id="scheme">
-		Scheme&nbsp;—<code>scheme</code>
+		Scheme&nbsp;?<code>scheme</code>
 	</li>
 	<li data-id="shell-session">
-		Shell session&nbsp;—<code>shell-session</code>, <code>sh-session</code>, <code>shellsession</code>
+		Shell session&nbsp;?<code>shell-session</code>, <code>sh-session</code>, <code>shellsession</code>
 	</li>
 	<li data-id="smali">
-		Smali&nbsp;—<code>smali</code>
+		Smali&nbsp;?<code>smali</code>
 	</li>
 	<li data-id="smalltalk">
-		Smalltalk&nbsp;—<code>smalltalk</code>
+		Smalltalk&nbsp;?<code>smalltalk</code>
 	</li>
 	<li data-id="smarty">
-		Smarty&nbsp;—<code>smarty</code>
+		Smarty&nbsp;?<code>smarty</code>
 	</li>
 	<li data-id="sml">
-		SML&nbsp;—<code>sml</code>, <code>smlnj</code>
+		SML&nbsp;?<code>sml</code>, <code>smlnj</code>
 	</li>
 	<li data-id="solidity">
-		Solidity (Ethereum)&nbsp;—<code>solidity</code>, <code>sol</code>
+		Solidity (Ethereum)&nbsp;?<code>solidity</code>, <code>sol</code>
 	</li>
 	<li data-id="solution-file">
-		Solution file&nbsp;—<code>solution-file</code>, <code>sln</code>
+		Solution file&nbsp;?<code>solution-file</code>, <code>sln</code>
 	</li>
 	<li data-id="soy">
-		Soy (Closure Template)&nbsp;—<code>soy</code>
+		Soy (Closure Template)&nbsp;?<code>soy</code>
 	</li>
 	<li data-id="sparql">
-		SPARQL&nbsp;—<code>sparql</code>, <code>rq</code>
+		SPARQL&nbsp;?<code>sparql</code>, <code>rq</code>
 	</li>
 	<li data-id="splunk-spl">
-		Splunk SPL&nbsp;—<code>splunk-spl</code>
+		Splunk SPL&nbsp;?<code>splunk-spl</code>
 	</li>
 	<li data-id="sqf">
-		SQF: Status Quo Function (Arma 3)&nbsp;—<code>sqf</code>
+		SQF: Status Quo Function (Arma 3)&nbsp;?<code>sqf</code>
 	</li>
 	<li data-id="sql">
-		SQL&nbsp;—<code>sql</code>
+		SQL&nbsp;?<code>sql</code>
 	</li>
 	<li data-id="squirrel">
-		Squirrel&nbsp;—<code>squirrel</code>
+		Squirrel&nbsp;?<code>squirrel</code>
 	</li>
 	<li data-id="stan">
-		Stan&nbsp;—<code>stan</code>
+		Stan&nbsp;?<code>stan</code>
 	</li>
 	<li data-id="stata">
-		Stata Ado&nbsp;—<code>stata</code>
+		Stata Ado&nbsp;?<code>stata</code>
 	</li>
 	<li data-id="iecst">
-		Structured Text (IEC 61131-3)&nbsp;—<code>iecst</code>
+		Structured Text (IEC 61131-3)&nbsp;?<code>iecst</code>
 	</li>
 	<li data-id="stylus">
-		Stylus&nbsp;—<code>stylus</code>
+		Stylus&nbsp;?<code>stylus</code>
 	</li>
 	<li data-id="supercollider">
-		SuperCollider&nbsp;—<code>supercollider</code>, <code>sclang</code>
+		SuperCollider&nbsp;?<code>supercollider</code>, <code>sclang</code>
 	</li>
 	<li data-id="swift">
-		Swift&nbsp;—<code>swift</code>
+		Swift&nbsp;?<code>swift</code>
 	</li>
 	<li data-id="systemd">
-		Systemd configuration file&nbsp;—<code>systemd</code>
+		Systemd configuration file&nbsp;?<code>systemd</code>
 	</li>
 	<li data-id="t4-templating">
-		T4 templating&nbsp;—<code>t4-templating</code>
+		T4 templating&nbsp;?<code>t4-templating</code>
 	</li>
 	<li data-id="t4-cs">
-		T4 Text Templates (C#)&nbsp;—<code>t4-cs</code>, <code>t4</code>
+		T4 Text Templates (C#)&nbsp;?<code>t4-cs</code>, <code>t4</code>
 	</li>
 	<li data-id="t4-vb">
-		T4 Text Templates (VB)&nbsp;—<code>t4-vb</code>
+		T4 Text Templates (VB)&nbsp;?<code>t4-vb</code>
 	</li>
 	<li data-id="tap">
-		TAP&nbsp;—<code>tap</code>
+		TAP&nbsp;?<code>tap</code>
 	</li>
 	<li data-id="tcl">
-		Tcl&nbsp;—<code>tcl</code>
+		Tcl&nbsp;?<code>tcl</code>
 	</li>
 	<li data-id="tt2">
-		Template Toolkit 2&nbsp;—<code>tt2</code>
+		Template Toolkit 2&nbsp;?<code>tt2</code>
 	</li>
 	<li data-id="textile">
-		Textile&nbsp;—<code>textile</code>
+		Textile&nbsp;?<code>textile</code>
 	</li>
 	<li data-id="toml">
-		TOML&nbsp;—<code>toml</code>
+		TOML&nbsp;?<code>toml</code>
 	</li>
 	<li data-id="tremor">
-		Tremor&nbsp;—<code>tremor</code>, <code>trickle</code>, <code>troy</code>
+		Tremor&nbsp;?<code>tremor</code>, <code>trickle</code>, <code>troy</code>
 	</li>
 	<li data-id="turtle">
-		Turtle&nbsp;—<code>turtle</code>, <code>trig</code>
+		Turtle&nbsp;?<code>turtle</code>, <code>trig</code>
 	</li>
 	<li data-id="twig">
-		Twig&nbsp;—<code>twig</code>
+		Twig&nbsp;?<code>twig</code>
 	</li>
 	<li data-id="typescript">
-		TypeScript&nbsp;—<code>typescript</code>, <code>ts</code>
+		TypeScript&nbsp;?<code>typescript</code>, <code>ts</code>
 	</li>
 	<li data-id="typoscript">
-		TypoScript&nbsp;—<code>typoscript</code>, <code>tsconfig</code>
+		TypoScript&nbsp;?<code>typoscript</code>, <code>tsconfig</code>
 	</li>
 	<li data-id="unrealscript">
-		UnrealScript&nbsp;—<code>unrealscript</code>, <code>uscript</code>, <code>uc</code>
+		UnrealScript&nbsp;?<code>unrealscript</code>, <code>uscript</code>, <code>uc</code>
 	</li>
 	<li data-id="uorazor">
-		UO Razor Script&nbsp;—<code>uorazor</code>
+		UO Razor Script&nbsp;?<code>uorazor</code>
 	</li>
 	<li data-id="uri">
-		URI&nbsp;—<code>uri</code>, <code>url</code>
+		URI&nbsp;?<code>uri</code>, <code>url</code>
 	</li>
 	<li data-id="v">
-		V&nbsp;—<code>v</code>
+		V&nbsp;?<code>v</code>
 	</li>
 	<li data-id="vala">
-		Vala&nbsp;—<code>vala</code>
+		Vala&nbsp;?<code>vala</code>
 	</li>
 	<li data-id="vbnet">
-		VB.Net&nbsp;—<code>vbnet</code>
+		VB.Net&nbsp;?<code>vbnet</code>
 	</li>
 	<li data-id="velocity">
-		Velocity&nbsp;—<code>velocity</code>
+		Velocity&nbsp;?<code>velocity</code>
 	</li>
 	<li data-id="verilog">
-		Verilog&nbsp;—<code>verilog</code>
+		Verilog&nbsp;?<code>verilog</code>
 	</li>
 	<li data-id="vhdl">
-		VHDL&nbsp;—<code>vhdl</code>
+		VHDL&nbsp;?<code>vhdl</code>
 	</li>
 	<li data-id="vim">
-		vim&nbsp;—<code>vim</code>
+		vim&nbsp;?<code>vim</code>
 	</li>
 	<li data-id="visual-basic">
-		Visual Basic&nbsp;—<code>visual-basic</code>, <code>vb</code>, <code>vba</code>
+		Visual Basic&nbsp;?<code>visual-basic</code>, <code>vb</code>, <code>vba</code>
 	</li>
 	<li data-id="warpscript">
-		WarpScript&nbsp;—<code>warpscript</code>
+		WarpScript&nbsp;?<code>warpscript</code>
 	</li>
 	<li data-id="wasm">
-		WebAssembly&nbsp;—<code>wasm</code>
+		WebAssembly&nbsp;?<code>wasm</code>
 	</li>
 	<li data-id="web-idl">
-		Web IDL&nbsp;—<code>web-idl</code>, <code>webidl</code>
+		Web IDL&nbsp;?<code>web-idl</code>, <code>webidl</code>
 	</li>
 	<li data-id="wgsl">
-		WGSL&nbsp;—<code>wgsl</code>
+		WGSL&nbsp;?<code>wgsl</code>
 	</li>
 	<li data-id="wiki">
-		Wiki markup&nbsp;—<code>wiki</code>
+		Wiki markup&nbsp;?<code>wiki</code>
 	</li>
 	<li data-id="wolfram">
-		Wolfram language&nbsp;—<code>wolfram</code>, <code>mathematica</code>, <code>nb</code>, <code>wl</code>
+		Wolfram language&nbsp;?<code>wolfram</code>, <code>mathematica</code>, <code>nb</code>, <code>wl</code>
 	</li>
 	<li data-id="wren">
-		Wren&nbsp;—<code>wren</code>
+		Wren&nbsp;?<code>wren</code>
 	</li>
 	<li data-id="xeora">
-		Xeora&nbsp;—<code>xeora</code>, <code>xeoracube</code>
+		Xeora&nbsp;?<code>xeora</code>, <code>xeoracube</code>
 	</li>
 	<li data-id="xml-doc">
-		XML doc (.net)&nbsp;—<code>xml-doc</code>
+		XML doc (.net)&nbsp;?<code>xml-doc</code>
 	</li>
 	<li data-id="xojo">
-		Xojo (REALbasic)&nbsp;—<code>xojo</code>
+		Xojo (REALbasic)&nbsp;?<code>xojo</code>
 	</li>
 	<li data-id="xquery">
-		XQuery&nbsp;—<code>xquery</code>
+		XQuery&nbsp;?<code>xquery</code>
 	</li>
 	<li data-id="yaml">
-		YAML&nbsp;—<code>yaml</code>, <code>yml</code>
+		YAML&nbsp;?<code>yaml</code>, <code>yml</code>
 	</li>
 	<li data-id="yang">
-		YANG&nbsp;—<code>yang</code>
+		YANG&nbsp;?<code>yang</code>
 	</li>
 	<li data-id="zig">
-		Zig&nbsp;—<code>zig</code>
+		Zig&nbsp;?<code>zig</code>
 	</li>
 </ul>
-<p>Couldn’t find the language you were looking for? <a href="https://github.com/PrismJS/prism/issues">Request it</a>!</p>
+<p>Couldn?t find the language you were looking for? <a href="https://github.com/PrismJS/prism/issues">Request it</a>!</p>
 </section>
 <section>
 <h1 id="plugins" tabindex="-1"><a class="header-anchor" href="#plugins">Plugins</a></h1>
-<p>Plugins are additional scripts (and CSS code) that extend Prism’s functionality. Many of the following plugins are official, but are released as plugins to keep the Prism Core small for those who don’t need the extra functionality.</p>
+<p>Plugins are additional scripts (and CSS code) that extend Prism?s functionality. Many of the following plugins are official, but are released as plugins to keep the Prism Core small for those who don?t need the extra functionality.</p>
 <ul class="plugin-list">
 	<li>
 		<a href="plugins/autolinker">Autolinker</a>
@@ -4009,7 +4009,7 @@ const html = Prism.highlight(code, Prism.languages.haml, 'haml');</code></pre><p
 	</li>
 	<li>
 		<a href="plugins/custom-class">Custom Class</a>
-		<div>This plugin allows you to prefix Prism’s default classes (<code>.comment</code> can become <code>.namespace--comment</code>) or replace them with your defined ones (like <code>.editor__comment</code>). You can even add new classes.</div>
+		<div>This plugin allows you to prefix Prism?s default classes (<code>.comment</code> can become <code>.namespace--comment</code>) or replace them with your defined ones (like <code>.editor__comment</code>). You can even add new classes.</div>
 	</li>
 	<li>
 		<a href="plugins/data-uri-highlight">Data URI Highlight</a>
@@ -4097,7 +4097,7 @@ const html = Prism.highlight(code, Prism.languages.haml, 'haml');</code></pre><p
 	</li>
 	</ul>
 <p>No assembly required to use them. Just select them in the <a href='/download'>download</a> page.</p>
-<p>It’s very easy to <a href='/extending#writing-plugins'>write your own Prism plugins</a>. Did you write a plugin for Prism that you want added to this list? <a href="https://github.com/PrismJS/plugins/">Send a pull request</a>!</p>
+<p>It?s very easy to <a href='/extending#writing-plugins'>write your own Prism plugins</a>. Did you write a plugin for Prism that you want added to this list? <a href="https://github.com/PrismJS/plugins/">Send a pull request</a>!</p>
 </section>
 <section>
 <h1 id="third-party-language-definitions" tabindex="-1"><a class="header-anchor" href="#third-party-language-definitions">Third-party language definitions</a></h1>
@@ -4129,15 +4129,15 @@ const html = Prism.highlight(code, Prism.languages.haml, 'haml');</code></pre><p
 <li><a href="https://itsmycode.com/prismjs-tutorial/">PrismJS Tutorial | Implement Prism in HTML and React</a></li>
 <li>Code syntax highlighting in Pug with <a href="https://webdiscus.github.io/pug-loader/pug-filters/highlight.html">:highlight</a> and <a href="https://webdiscus.github.io/pug-loader/pug-filters/markdown.html">:markdown</a> filters using <a href="https://github.com/webdiscus/pug-loader">pug-loader</a> and Prism.js</li>
 </ul>
-<p>Please note that the tutorials listed here are not verified to contain correct information. Read at your risk and always check the official documentation here if something doesn’t work. 🙂</p>
-<p>Have you written a tutorial about Prism that’s not already included here? Send a pull request!</p>
+<p>Please note that the tutorials listed here are not verified to contain correct information. Read at your risk and always check the official documentation here if something doesn?t work. ??</p>
+<p>Have you written a tutorial about Prism that?s not already included here? Send a pull request!</p>
 </section>
 <section>
 <h1 id="credits" tabindex="-1"><a class="header-anchor" href="#credits">Credits</a></h1>
 <ul>
 <li>Special thanks to <a href="https://github.com/RunDevelopment">Michael Schmidt</a>, <a href="https://github.com/mAAdhaTTah">James DiGioia</a>, <a href="https://github.com/Golmote">Golmote</a> and <a href="https://github.com/apfelbox">Jannik Zschiesche</a> for their contributions and for being <strong>amazing maintainers</strong>. Prism would not have been able to keep up without their help.</li>
 <li>To <a href="https://twitter.com/kizmarh">Roman Komarov</a> for his contributions, feedback and testing.</li>
-<li>To <a href="https://twitter.com/zdfs">Zachary Forrest</a> for <a href="https://twitter.com/zdfs/statuses/217834980871639041">coming up with the name “Prism”</a>.</li>
+<li>To <a href="https://twitter.com/zdfs">Zachary Forrest</a> for <a href="https://twitter.com/zdfs/statuses/217834980871639041">coming up with the name ?Prism?</a>.</li>
 <li>To <a href="https://stellarr.deviantart.com/">stellarr</a> for the <a href="https://stellarr.deviantart.com/art/Spectra-Wallpaper-Pack-97785901">spectrum background</a> used on this page.</li>
 <li>To <a href="https://twitter.com/thecodezombie">Jason Hobbs</a> for <a href="https://twitter.com/thecodezombie/status/217663703825399809">encouraging me</a> to release this script as standalone.</li>
 </ul>
@@ -4173,7 +4173,7 @@ const html = Prism.highlight(code, Prism.languages.haml, 'haml');</code></pre><p
 	<script src="https://dev.prismjs.com/components/prism-bash.js" ></script>
 </body>
 </html>
-This page’s logo (SVG), highlighted with Prism:
+This page?s logo (SVG), highlighted with Prism:
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 170">
 	<path fill="#fff" d="M55.37 131.5H48.4v9.13h6.97c1.67 0 2.92-.4 3.78-1.22.85
@@ -4197,20 +4197,20 @@ This page’s logo (SVG), highlighted with Prism:
 	1.32v-17.54l-7.84 10.08-7.97-10.08v17.54H133v-21.2h2.78l7.58 10.06 7.45
 	-10.05h2.8v21.2h-2.4"/>
 </svg>
-If you’re still not sold, you can view more examples or try it out for yourself.
+If you?re still not sold, you can view more examples or try it out for yourself.
 
 Full list of features
 Only 2KB minified & gzipped (core). Each language definition adds roughly 300-500 bytes.
 Encourages good author practices. Other highlighters encourage or even force you to use elements that are semantically wrong, like <pre> (on its own) or <script>. Prism forces you to use the correct element for marking up code: <code>. On its own for inline code, or inside a <pre> for blocks of code. In addition, the language is defined through the way recommended in the HTML5 draft: through a language-xxxx class.
 The language-xxxx class is inherited. This means that if multiple code snippets have the same language, you can just define it once, in one of their common ancestors.
 Supports parallelism with Web Workers, if available. Disabled by default (why?).
-Very easy to extend without modifying the code, due to Prism’s plugin architecture. Multiple hooks are scattered throughout the source.
+Very easy to extend without modifying the code, due to Prism?s plugin architecture. Multiple hooks are scattered throughout the source.
 Very easy to define new languages. The only thing you need is a good understanding of regular expressions.
 All styling is done through CSS, with sensible class names rather than ugly, namespaced, abbreviated nonsense.
 Wide browser support: Edge, IE11, Firefox, Chrome, Safari, Opera, most mobile browsers.
 Highlights embedded languages (e.g. CSS inside HTML, JavaScript inside HTML).
 Highlights inline code as well, not just code blocks.
-It doesn’t force you to use any Prism-specific markup, not even a Prism-specific class name, only standard markup you should be using anyway. So, you can just try it for a while, remove it if you don’t like it and leave no traces behind.
+It doesn?t force you to use any Prism-specific markup, not even a Prism-specific class name, only standard markup you should be using anyway. So, you can just try it for a while, remove it if you don?t like it and leave no traces behind.
 Highlight specific lines and/or line ranges (requires plugin).
 Show invisible characters like tabs, line breaks etc (requires plugin).
 Autolink URLs and emails, use Markdown links in comments (requires plugin).
@@ -4238,7 +4238,7 @@ Prism does its best to encourage good authoring practices. Therefore, it only wo
 The recommended way to mark up a code block (both for semantics and for Prism) is a <pre> element with a <code> element inside, like so:
 
 <pre><code class="language-css">p { color: red }</code></pre>
-If you use that pattern, the <pre> will automatically get the language-xxxx class (if it doesn’t already have it) and will be styled as a code block.
+If you use that pattern, the <pre> will automatically get the language-xxxx class (if it doesn?t already have it) and will be styled as a code block.
 
 Inline code snippets are done like this:
 
@@ -4291,10 +4291,10 @@ $ npm install prismjs
 You can then import into your bundle:
 
 import Prism from 'prismjs';
-To make it easy to configure your Prism instance with only the languages and plugins you need, use the babel plugin, babel-plugin-prismjs. This will allow you to load the minimum number of languages and plugins to satisfy your needs. See that plugin’s documentation for configuration details.
+To make it easy to configure your Prism instance with only the languages and plugins you need, use the babel plugin, babel-plugin-prismjs. This will allow you to load the minimum number of languages and plugins to satisfy your needs. See that plugin?s documentation for configuration details.
 
 Usage with Node
-If you want to use Prism on the server or through the command line, Prism can be used with Node.js as well. This might be useful if you’re trying to generate static HTML pages with highlighted code for environments that don’t support browser-side JS, like AMP pages.
+If you want to use Prism on the server or through the command line, Prism can be used with Node.js as well. This might be useful if you?re trying to generate static HTML pages with highlighted code for environments that don?t support browser-side JS, like AMP pages.
 
 Example:
 
@@ -4876,7 +4876,7 @@ Please note the data-start="-5" in the code below.
 	data-inputpath="plugins/line-numbers/README.md">
 <head>
 	<title>
-		Line Numbers ▲ Prism 
+		Line Numbers ? Prism 
 	</title>
 	<meta name="viewport" content="width=device-width" />
 	<meta charset="utf-8" />
@@ -4897,7 +4897,7 @@ Please note the data-start="-5" in the code below.
 
 			<p>
 				Prism is a lightweight, extensible syntax highlighter, built with modern web standards in mind.
-				It’s used in millions of websites, including some of those you visit daily.
+				It?s used in millions of websites, including some of those you visit daily.
 			</p>
 		</div>
 
@@ -5020,7 +5020,7 @@ Please note the style="white-space: pre-wrap;" in the code below.
 	data-inputpath="plugins/line-numbers/README.md">
 <head>
 	<title>
-		Line Numbers ▲ Prism 
+		Line Numbers ? Prism 
 	</title>
 	<meta name="viewport" content="width=device-width" />
 	<meta charset="utf-8" />
@@ -5041,7 +5041,7 @@ Please note the style="white-space: pre-wrap;" in the code below.
 
 			<p>
 				Prism is a lightweight, extensible syntax highlighter, built with modern web standards in mind.
-				It’s used in millions of websites, including some of those you visit daily.
+				It?s used in millions of websites, including some of those you visit daily.
 			</p>
 		</div>
 
@@ -5169,14 +5169,14 @@ The simplest method is through the HTML API. Add a data-label attribute to the p
 
 <pre data-src="./prism-toolbar.js" data-label="Hello World!"></pre>
 Hello World!
-If you want to provide arbitrary HTML to the label, create a template element with the HTML you want in the label, and provide the template element’s id to data-label. The Toolbar plugin will use the template’s content for the button. You can also use to declare your event handlers inline:
+If you want to provide arbitrary HTML to the label, create a template element with the HTML you want in the label, and provide the template element?s id to data-label. The Toolbar plugin will use the template?s content for the button. You can also use to declare your event handlers inline:
 
 <pre data-src="./prism-toolbar.js" data-label="my-label-button"></pre>
 <template id="my-label-button"><button onclick="console.log('This is an inline-handler');">My button</button></template>
 Registering buttons
 For more flexibility, the Toolbar exposes a JavaScript function that can be used to register new buttons or labels to the Toolbar, Prism.plugins.toolbar.registerButton.
 
-The function accepts a key for the button and an object with a text property string and an optional onClick function or a url string. The onClick function will be called when the button is clicked, while the url property will be set to the anchor tag’s href.
+The function accepts a key for the button and an object with a text property string and an optional onClick function or a url string. The onClick function will be called when the button is clicked, while the url property will be set to the anchor tag?s href.
 
 Prism.plugins.toolbar.registerButton("hello-world", {
 	text: "Hello World!", // required
@@ -5219,7 +5219,7 @@ Ordering buttons
 By default, the buttons will be added to the code snippet in the order they were registered. If more control over the order is needed, the data-toolbar-order attribute can be used. Given a comma-separated list of button names, it will ensure that these buttons will be displayed in the given order.
 Buttons not listed will not be displayed. This means that buttons can be disabled using this technique.
 
-Example: The “Hello World!” button will appear before the “Select Code” button and the custom label button will not be displayed.
+Example: The ?Hello World!? button will appear before the ?Select Code? button and the custom label button will not be displayed.
 
 <pre data-toolbar-order="hello-world,select-code" data-label="Hello World!"><code></code></pre>
 The data-toolbar-order attribute is inherited, so you can define the button order for the whole document by adding the attribute to the body of the page.
@@ -5245,7 +5245,7 @@ Optionally, the text of the button can also be customized by using a data-downlo
 
 <pre data-src="myfile.js" data-download-link data-download-link-label="Download this file"></pre>
 Examples
-The plugin’s JS code:
+The plugin?s JS code:
 
 (function () {
 
@@ -5276,7 +5276,7 @@ This page:
 	data-inputpath="plugins/download-button/README.md">
 <head>
 	<title>
-		Download Button ▲ Prism 
+		Download Button ? Prism 
 	</title>
 	<meta name="viewport" content="width=device-width" />
 	<meta charset="utf-8" />
@@ -5297,7 +5297,7 @@ This page:
 
 			<p>
 				Prism is a lightweight, extensible syntax highlighter, built with modern web standards in mind.
-				It’s used in millions of websites, including some of those you visit daily.
+				It?s used in millions of websites, including some of those you visit daily.
 			</p>
 		</div>
 
@@ -5340,7 +5340,7 @@ This page:
 <pre ><code class="language-html">&lt;pre data-src=&quot;myfile.js&quot; data-download-link data-download-link-label=&quot;Download this file&quot;&gt;&lt;/pre&gt;</code></pre></section>
 <section>
 <h1 id="examples" tabindex="-1"><a class="header-anchor" href="#examples">Examples</a></h1>
-<p>The plugin’s JS code:</p>
+<p>The plugin?s JS code:</p>
 <pre data-src="./prism-download-button.js" data-download-link data-download-link-label="Download the code!"></pre>
 <p>This page:</p>
 <pre data-src="./index.html" data-download-link></pre>

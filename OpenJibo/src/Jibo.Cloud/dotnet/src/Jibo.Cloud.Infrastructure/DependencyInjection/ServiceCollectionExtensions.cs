@@ -217,6 +217,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<JiboExperienceContentCache>();
         services.AddSingleton<IJiboRandomizer, DefaultJiboRandomizer>();
         services.AddSingleton<ITurnProgressPublisher, AmbientTurnProgressPublisher>();
+        services.AddSingleton<RepeatLastCommandStore>();
         services.AddSingleton<JiboInteractionService>();
         services.AddSingleton<IConversationBroker, DemoConversationBroker>();
         services.AddSingleton<IExternalProcessRunner, ExternalProcessRunner>();

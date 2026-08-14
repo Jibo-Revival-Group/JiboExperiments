@@ -291,7 +291,8 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
       <td>
         <div class="row-actions">
           <button class="button secondary compact view-artifacts" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Artifacts</button>
-          <button class="button secondary compact open-lrd" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button" title="Open in Live Robot Debugger">Open in LRD</button>
+          <button class="button secondary compact open-lrd" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Open in LRD</button>
+          ${(robot.friendlyName === "OpenJibo Registered Robot" || String(robot.robotId || "").startsWith("robot-")) ? `<button class="button secondary compact suggest-identity" data-device-id="${escapeHtml(robot.deviceId)}" type="button">Suggest identity</button>` : ""}
           <button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button>
         </div>
       </td>
@@ -311,6 +312,7 @@ function filterAndSortRobots(robots = []) {
 
 function shouldAutoRefreshNow() {
   if (!autoRefreshEnabled || !getSessionToken()) return false;
+  if (activeLogViewer) return false;
   if (document.visibilityState !== "visible") return false;
 
   const active = document.activeElement;
@@ -388,6 +390,27 @@ async function setRobotArchive(deviceId, hidden) {
     body: JSON.stringify({ hidden }),
   });
   await refreshStatus(hidden ? "Robot archived from the default view." : "Robot restored to the default view.");
+}
+
+async function suggestRobotIdentity(deviceId) {
+  try {
+    const suggestion = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/identity-suggestion`);
+    if (!suggestion.suggested) {
+      window.alert("No reliable robot ID suggestion is available yet. Keep the record unclaimed until stronger evidence arrives.");
+      return;
+    }
+    const evidence = (suggestion.evidence || []).slice(0, 3).map(item => `${item.field}: ${item.value}`).join("\n");
+    const action = suggestion.action === "merge" ? "merge this record into" : "rename this record to";
+    if (!window.confirm(`Evidence suggests ${suggestion.proposedRobotId}.\n\n${evidence}\n\nDo you want to ${action} ${suggestion.proposedRobotId}?`)) return;
+    const result = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/identity-suggestion/apply`, {
+      method: "POST",
+      body: JSON.stringify({ proposedRobotId: suggestion.proposedRobotId }),
+    });
+    await refreshStatus(result.action === "merge" ? "Identity suggestion applied by merge." : "Robot identity renamed.", "success", { force: true });
+  } catch (error) {
+    setStatusBanner(error.message, "error");
+    renderStatusView(latestSummary);
+  }
 }
 
 async function openRobotArtifacts(deviceId, robotName) {
@@ -491,7 +514,7 @@ function renderLogViewer() {
           </button>`).join("")}</div>`;
   const audit = viewer.loading ? "" : renderArtifactAudit(items);
   const preview = viewer.loadingContent
-    ? `<p class="muted-row">Loading log preview…</p>`
+    ? `<div class="preview-loading"><span class="loading-pulse" aria-hidden="true"></span><span>Loading log preview…</span></div>`
     : viewer.selected
       ? renderArtifactPreview(viewer.selected)
       : `<p class="muted-row">Select an artifact to inspect its decoded text preview.</p>`;
@@ -552,13 +575,13 @@ function renderArtifactAudit(items) {
     : bytes >= 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} bytes`;
 
   return `<section class="artifact-audit" aria-label="Artifact capture audit">
-    <div><strong>${items.length}</strong><span>stored artifacts</span></div>
-    <div><strong>${formatBytes(totalBytes)}</strong><span>captured data</span></div>
+    <div><strong>${items.length}</strong><span>visible artifacts</span></div>
+    <div><strong>${formatBytes(totalBytes)}</strong><span>visible data</span></div>
     <div><strong>${asr.length ? `${asr.length} captured` : "Not yet captured"}</strong><span>ASR audio</span></div>
     <div><strong>${logs.length}</strong><span>log uploads</span></div>
     <div><strong>${media.length}</strong><span>other media</span></div>
-    <div><strong>${unassigned.length ? `${unassigned.length} needs review` : "All assigned"}</strong><span>attribution</span></div>
-    ${sources.length ? `<p class="muted-row">Attribution sources: ${escapeHtml(sources.join(", "))}</p>` : ""}
+    <div><strong>${unassigned.length || "0"}</strong><span>unassigned candidates</span></div>
+    <p class="muted-row">Showing the latest ${items.length} visible artifacts; unassigned candidates are shown here so an administrator can claim them. ${sources.length ? `Attribution sources: ${escapeHtml(sources.join(", "))}` : ""}</p>
   </section>`;
 }
 
@@ -973,6 +996,15 @@ function renderStatusView(summary, previous = previousSummary) {
   document.querySelectorAll(".view-artifacts").forEach((button) => {
     button.addEventListener("click", () => openRobotArtifacts(button.dataset.deviceId, button.dataset.robotName));
   });
+  document.querySelectorAll(".open-lrd").forEach((button) => {
+    button.addEventListener("click", () => {
+      const params = new URLSearchParams({ deviceId: button.dataset.deviceId || "", robotName: button.dataset.robotName || "" });
+      window.open(`/portal/lrd/index.html?${params.toString()}`, "_blank", "noopener");
+    });
+  });
+  document.querySelectorAll(".suggest-identity").forEach((button) => {
+    button.addEventListener("click", () => suggestRobotIdentity(button.dataset.deviceId));
+  });
   document.querySelectorAll(".view-artifact").forEach((button) => {
     button.addEventListener("click", () => openArtifact(button.dataset.path));
   });
@@ -984,13 +1016,6 @@ function renderStatusView(summary, previous = previousSummary) {
   });
   document.querySelectorAll(".merge-artifact-robot").forEach((button) => {
     button.addEventListener("click", mergeRobotFromArtifactViewer);
-  });
-  document.querySelectorAll(".open-lrd").forEach((button) => {
-    button.addEventListener("click", () => {
-      const deviceId = button.dataset.deviceId;
-      const robotName = button.dataset.robotName;
-      window.open(`/portal/lrd?deviceId=${encodeURIComponent(deviceId)}&robotName=${encodeURIComponent(robotName)}`, '_blank');
-    });
   });
   document.querySelectorAll(".close-log-viewer").forEach((button) => {
     button.addEventListener("click", () => {

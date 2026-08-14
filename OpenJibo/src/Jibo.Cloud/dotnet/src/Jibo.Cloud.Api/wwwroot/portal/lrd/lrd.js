@@ -9,7 +9,21 @@ let pingInterval = null;
 let logPollInterval = null;
 let logOffset = 0;
 let currentLogFile = null;
-let robotEventSource = null;
+let logPollInFlight = false;
+let skipLogPolling = false;
+let beaconPollInterval = null;
+let selectedBeaconId = null;
+let beaconPollInFlight = false;
+
+function setLogPollingEnabled(enabled) {
+  skipLogPolling = !enabled;
+  if (!enabled && logPollInterval) {
+    clearInterval(logPollInterval);
+    logPollInterval = null;
+  } else if (enabled && !logPollInterval) {
+    logPollInterval = setInterval(fetchServerLogs, LOG_POLL_INTERVAL_MS);
+  }
+}
 
 function escapeHtml(value) {
   return String(value)
@@ -143,8 +157,11 @@ function handleRobotSelectChange() {
 }
 
 async function fetchServerLogs() {
+  if (skipLogPolling || logPollInFlight) return;
+  logPollInFlight = true;
   try {
-    const response = await apiFetch(`/api/portal/server/logs?offset=${logOffset}&lines=100`);
+    const fileParam = currentLogFile ? `&fileName=${encodeURIComponent(currentLogFile)}` : "";
+    const response = await apiFetch(`/api/portal/server/logs?offset=${logOffset}&lines=100${fileParam}`);
     console.log("Server logs response:", response);
 
     if (response.hasLogs && response.logs) {
@@ -162,12 +179,14 @@ async function fetchServerLogs() {
         appendServerLogs(response.logs);
       }
 
-      logOffset = response.offset || logOffset;
+      logOffset = response.offset || 0;
     } else {
       console.log("No logs available, hasLogs:", response.hasLogs);
     }
   } catch (error) {
     console.error("Failed to fetch server logs:", error);
+  } finally {
+    logPollInFlight = false;
   }
 }
 
@@ -272,82 +291,6 @@ function appendRobotLogs(logText) {
   }
 }
 
-function toggleRobotConnection() {
-  const ipInput = document.getElementById("robotIpInput");
-  const portInput = document.getElementById("robotPortInput");
-  const connectBtn = document.getElementById("robotConnectBtn");
-  const leftContent = document.getElementById("leftLogContent");
-
-  if (!ipInput || !connectBtn) return;
-
-  if (robotEventSource) {
-    robotEventSource.close();
-    robotEventSource = null;
-    connectBtn.textContent = "Connect";
-    connectBtn.classList.remove("connected");
-    if (leftContent) {
-      const notice = document.createElement('div');
-      notice.className = 'log-line';
-      notice.style.color = '#ef4444';
-      notice.textContent = '[Disconnected from robot log stream]';
-      leftContent.appendChild(notice);
-    }
-    return;
-  }
-
-  const ip = ipInput.value.trim();
-  const port = portInput ? portInput.value.trim() || "8766" : "8766";
-
-  if (!ip) {
-    alert("Please enter a valid Robot IP address.");
-    return;
-  }
-
-  if (leftContent) {
-    leftContent.innerHTML = '';
-  }
-
-  const url = `http://${ip}:${port}/stream`;
-  console.log("Connecting to robot log stream at:", url);
-
-  try {
-    robotEventSource = new EventSource(url);
-
-    robotEventSource.onopen = () => {
-      console.log("Robot EventSource connected");
-      connectBtn.textContent = "Disconnect";
-      connectBtn.classList.add("connected");
-      if (leftContent) {
-        const notice = document.createElement('div');
-        notice.className = 'log-line';
-        notice.style.color = '#10b981';
-        notice.textContent = `[Connected to robot log stream at ${url}]`;
-        leftContent.appendChild(notice);
-      }
-    };
-
-    robotEventSource.onmessage = (event) => {
-      if (event.data) {
-        appendRobotLogs(event.data);
-      }
-    };
-
-    robotEventSource.onerror = (error) => {
-      console.error("Robot EventSource error:", error);
-      if (leftContent) {
-        const notice = document.createElement('div');
-        notice.className = 'log-line';
-        notice.style.color = '#ef4444';
-        notice.textContent = `[Connection error / disconnected from robot stream]`;
-        leftContent.appendChild(notice);
-      }
-    };
-  } catch (e) {
-    console.error("Failed to create EventSource:", e);
-    alert(`Failed to connect: ${e.message}`);
-  }
-}
-
 function setupSplitResizer() {
   const resizer = document.getElementById("splitResizer");
   const leftPanel = document.querySelector(".left-panel");
@@ -355,6 +298,9 @@ function setupSplitResizer() {
   const container = document.querySelector(".split-container");
 
   if (!resizer || !leftPanel || !rightPanel || !container) return;
+  // Mobile uses a vertical stack with equal-height panels; avoid applying the
+  // desktop horizontal drag math to a touch/row layout.
+  if (window.matchMedia("(max-width: 800px)").matches) return;
 
   let isResizing = false;
 
@@ -402,6 +348,7 @@ async function initLogPollingToggle() {
   try {
     const status = await apiFetch("/api/portal/server/logs/diagnostics-status");
     toggle.checked = !!status.disabled;
+    setLogPollingEnabled(!toggle.checked);
   } catch (e) {
     console.error("Failed to fetch log polling diagnostics status:", e);
   }
@@ -412,11 +359,48 @@ async function initLogPollingToggle() {
         method: "POST"
       });
       toggle.checked = !!res.disabled;
+      setLogPollingEnabled(!toggle.checked);
     } catch (e) {
       console.error("Failed to toggle log polling diagnostics:", e);
       toggle.checked = !toggle.checked;
+      setLogPollingEnabled(!toggle.checked);
     }
   });
+}
+
+async function fetchDiagnosticBeacons() {
+  if (beaconPollInFlight) return;
+  beaconPollInFlight = true;
+  try {
+    const payload = await apiFetch("/api/portal/lrd/beacons");
+    const select = document.getElementById("beaconSelect");
+    if (!select) return;
+    const beacons = payload.beacons || [];
+    if (!beacons.some(beacon => beacon.robotId === selectedBeaconId))
+      selectedBeaconId = beacons[0]?.robotId || null;
+    updateRobotConnectionStatus(!!selectedBeaconId);
+    select.innerHTML = beacons.length
+      ? beacons.map(beacon => `<option value="${escapeHtml(beacon.robotId)}" ${beacon.robotId === selectedBeaconId ? "selected" : ""}>${escapeHtml(beacon.robotId)} · ${beacon.lineCount} lines</option>`).join("")
+      : '<option value="">Waiting for robot beacons...</option>';
+    await fetchDiagnosticBeaconLogs();
+  } catch (error) {
+    console.error("Failed to fetch diagnostic beacons:", error);
+  } finally {
+    beaconPollInFlight = false;
+  }
+}
+
+async function fetchDiagnosticBeaconLogs() {
+  if (!selectedBeaconId) return;
+  try {
+    const payload = await apiFetch(`/api/portal/lrd/beacons/${encodeURIComponent(selectedBeaconId)}/logs`);
+    const leftContent = document.getElementById("leftLogContent");
+    if (!leftContent) return;
+    leftContent.innerHTML = "";
+    appendRobotLogs((payload.lines || []).join("\n"));
+  } catch (error) {
+    console.error("Failed to fetch diagnostic beacon logs:", error);
+  }
 }
 
 async function init() {
@@ -426,17 +410,11 @@ async function init() {
   // Set up split resizer
   setupSplitResizer();
 
-  // Set up robot select change handler
-  const robotSelect = document.getElementById("robotSelect");
-  if (robotSelect) {
-    robotSelect.addEventListener("change", handleRobotSelectChange);
-  }
-
-  // Set up robot connect button handler
-  const connectBtn = document.getElementById("robotConnectBtn");
-  if (connectBtn) {
-    connectBtn.addEventListener("click", toggleRobotConnection);
-  }
+  const beaconSelect = document.getElementById("beaconSelect");
+  if (beaconSelect) beaconSelect.addEventListener("change", event => {
+    selectedBeaconId = event.target.value || null;
+    fetchDiagnosticBeaconLogs();
+  });
 
   // Set up log polling diagnostics toggle
   await initLogPollingToggle();
@@ -444,8 +422,7 @@ async function init() {
   // Initial server ping check
   await measureServerPing();
 
-  // Fetch robots and populate select
-  await fetchRobots();
+  await fetchDiagnosticBeacons();
 
   // Initial server logs fetch
   await fetchServerLogs();
@@ -454,7 +431,10 @@ async function init() {
   pingInterval = setInterval(measureServerPing, PING_INTERVAL_MS);
 
   // Start periodic log polling
-  logPollInterval = setInterval(fetchServerLogs, LOG_POLL_INTERVAL_MS);
+  if (!skipLogPolling) {
+    logPollInterval = setInterval(fetchServerLogs, LOG_POLL_INTERVAL_MS);
+  }
+  beaconPollInterval = setInterval(fetchDiagnosticBeacons, LOG_POLL_INTERVAL_MS);
 }
 
 // Clean up on page unload
@@ -465,8 +445,8 @@ window.addEventListener("beforeunload", () => {
   if (logPollInterval) {
     clearInterval(logPollInterval);
   }
-  if (robotEventSource) {
-    robotEventSource.close();
+  if (beaconPollInterval) {
+    clearInterval(beaconPollInterval);
   }
 });
 

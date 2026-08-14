@@ -15,6 +15,7 @@ public interface ICloudStateStore
     DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion,
         string? registrationSource = null);
     DeviceRegistration UpsertDevice(DeviceRegistration registration);
+    DeviceRegistration RenameDevice(string deviceId, string robotId);
     DeviceRegistration? FindDeviceByFriendlyId(string friendlyId);
     DeviceRegistration? FindDeviceByAwsCredentialFingerprint(string accessKeyFingerprint);
     IReadOnlyList<RobotCredentialBinding> GetRobotCredentialBindings();

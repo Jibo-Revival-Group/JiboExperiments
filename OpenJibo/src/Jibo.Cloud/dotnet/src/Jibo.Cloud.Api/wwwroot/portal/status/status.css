@@ -253,6 +253,28 @@ body {
   margin-top: 1rem;
 }
 
+.preview-loading {
+  min-height: 8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  color: var(--muted);
+}
+
+.loading-pulse {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--accent, #55d68a);
+  animation: loading-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes loading-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.75); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
 .log-list {
   display: grid;
   gap: 0.5rem;

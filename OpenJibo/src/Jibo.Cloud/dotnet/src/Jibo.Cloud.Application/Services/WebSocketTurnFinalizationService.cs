@@ -428,6 +428,11 @@ public sealed class WebSocketTurnFinalizationService(
             SessionRobotIdentityBinder.TryBindFromContextPayload(
                 session,
                 turnState.ContextPayload ?? envelope.Text);
+            // CONTEXT establishes the runtime identity. Reapply any administrator
+            // binding from an earlier session before persisting firmware hints so a
+            // reconnect cannot create a second inventory record for the same robot.
+            if (cloudStateStore is not null && !string.IsNullOrWhiteSpace(session.DeviceId))
+                cloudStateStore.ReinheritDialogMetadata(session);
             PersistContextRelease(session, turnState.ContextPayload ?? envelope.Text);
 
             if (TryReadContextProperty(envelope.Text, "audioTranscriptHint", out var transcriptHint) &&
@@ -498,7 +503,13 @@ public sealed class WebSocketTurnFinalizationService(
             return;
 
         session.Metadata["firmwareVersion"] = release;
-        cloudStateStore.GetOrCreateDevice(session.DeviceId, release, null);
+        var registeredDeviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredValue)
+            ? registeredValue?.ToString()
+            : null;
+        cloudStateStore.GetOrCreateDevice(
+            string.IsNullOrWhiteSpace(registeredDeviceId) ? session.DeviceId : registeredDeviceId,
+            release,
+            null);
     }
 
     public async Task<IReadOnlyList<WebSocketReply>> HandleTurnAsync(
@@ -528,6 +539,11 @@ public sealed class WebSocketTurnFinalizationService(
         logger.LogDebug("Listen setup entered session={SessionId} transId={TransId}",
             session.SessionId,
             turnState.TransId);
+        // A live listen request is affirmative activity from the robot. Do not
+        // leave the portal row in Sleeping after the robot has resumed listening.
+        if (session.Metadata.TryGetValue("sleepState", out var sleepState) &&
+            string.Equals(sleepState?.ToString(), "sleeping", StringComparison.OrdinalIgnoreCase))
+            session.Metadata["sleepState"] = "awake";
         logger.LogDebug(
             "Listen setup state session={SessionId} transId={TransId} awaiting={Awaiting} sawListen={SawListen} sawContext={SawContext} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks} firstAudioUtc={FirstAudioUtc} lastAudioUtc={LastAudioUtc} followUpOpen={FollowUpOpen}",
             session.SessionId,
@@ -1681,8 +1697,11 @@ public sealed class WebSocketTurnFinalizationService(
         }
         if (content.Length == 0) return;
 
-        var deviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredDeviceId)
-            ? registeredDeviceId?.ToString()
+        var registeredDeviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredValue)
+            ? registeredValue?.ToString()
+            : null;
+        var deviceId = !string.IsNullOrWhiteSpace(registeredDeviceId)
+            ? registeredDeviceId
             : turn.DeviceId ?? session.DeviceId;
         var artifactId = $"{turn.TimestampUtc:yyyyMMddTHHmmssfffZ}-{turn.TurnId}";
         var meta = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)

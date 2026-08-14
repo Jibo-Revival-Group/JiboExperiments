@@ -14,6 +14,57 @@ public sealed class JiboCloudProtocolServiceTests
     private readonly JiboCloudProtocolService _service = new(new InMemoryCloudStateStore());
 
     [Fact]
+    public async Task ListLoops_RehydratesAnEmptyPartiallyOnboardedState()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-loop-list-{Guid.NewGuid():N}.json");
+        try
+        {
+            File.WriteAllText(persistencePath, "{\"SchemaVersion\":\"1\",\"Loops\":[]}");
+            var store = new InMemoryCloudStateStore(persistencePath);
+            var service = new JiboCloudProtocolService(store);
+
+            var result = await service.DispatchAsync(new ProtocolEnvelope
+            {
+                Method = "POST",
+                HostName = "api.jibo.com",
+                ServicePrefix = "Loop_20160324",
+                Operation = "ListLoops",
+                DeviceId = "observed-runtime-robot"
+            });
+
+            using var payload = JsonDocument.Parse(result.BodyText);
+            Assert.Single(payload.RootElement.EnumerateArray());
+            Assert.Equal("openjibo-default-loop", payload.RootElement[0].GetProperty("id").GetString());
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
+    [Fact]
+    public async Task ListLoops_ReturnsOnlyTheRequestingRobotsLoop()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.AddLoop("Other", store.GetAccount().AccountId, "other-robot", "other-robot");
+        store.AddLoop("Observed", store.GetAccount().AccountId, "observed-runtime-robot", "observed-runtime-robot");
+        var service = new JiboCloudProtocolService(store);
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Method = "POST",
+            HostName = "api.jibo.com",
+            ServicePrefix = "Loop_20160324",
+            Operation = "ListLoops",
+            DeviceId = "observed-runtime-robot"
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Single(payload.RootElement.EnumerateArray());
+        Assert.Equal("observed-runtime-robot", payload.RootElement[0].GetProperty("robotFriendlyId").GetString());
+    }
+
+    [Fact]
     public void CreateHubToken_WithDeviceId_BindsSessionToRobot()
     {
         var store = new InMemoryCloudStateStore();

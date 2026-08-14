@@ -90,7 +90,7 @@ public sealed class RepeatLastCommandInteractionServiceTests
 
         await service.BuildDecisionAsync(CreateTurn("hey jibo roll a dice", "robot-a"));
 
-        // Advance almost to expiry, then repeat — that renews the window.
+        // Advance almost to expiry, then repeat ? that renews the window.
         clock.Advance(TimeSpan.FromMinutes(29));
         var midWindow = await service.BuildDecisionAsync(CreateTurn("do that again", "robot-a"));
         Assert.Equal("roll_dice", midWindow.IntentName);

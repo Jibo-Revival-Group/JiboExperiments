@@ -267,6 +267,45 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return registration;
     }
 
+    public DeviceRegistration RenameDevice(string deviceId, string robotId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId) || string.IsNullOrWhiteSpace(robotId))
+            throw new ArgumentException("Device and robot IDs are required.");
+        lock (_syncRoot)
+        {
+            if (!_devices.TryGetValue(deviceId.Trim(), out var existing))
+                throw new KeyNotFoundException("Robot record was not found.");
+            if (existing.IsHidden || existing.ArchivedUtc is not null)
+                throw new InvalidOperationException("Archived robot records cannot be renamed.");
+            if (_devices.Values.Any(item => !item.DeviceId.Equals(existing.DeviceId, StringComparison.OrdinalIgnoreCase) &&
+                                            item.RobotId.Equals(robotId.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                                            !item.IsHidden))
+                throw new InvalidOperationException("That robot ID already exists; use merge instead.");
+
+            var renamed = new DeviceRegistration
+            {
+                DeviceId = existing.DeviceId,
+                RobotId = robotId.Trim(),
+                FriendlyName = robotId.Trim(),
+                FirmwareVersion = existing.FirmwareVersion,
+                ApplicationVersion = existing.ApplicationVersion,
+                IsActive = existing.IsActive,
+                CertificateThumbprint = existing.CertificateThumbprint,
+                IssuedIdentityId = existing.IssuedIdentityId,
+                BuildHash = existing.BuildHash,
+                ConfigHash = existing.ConfigHash,
+                VerifiedSerialNumber = existing.VerifiedSerialNumber,
+                SerialEvidenceSource = existing.SerialEvidenceSource,
+                SerialEvidenceVerifiedUtc = existing.SerialEvidenceVerifiedUtc,
+                RegistrationSource = existing.RegistrationSource,
+                HostMappings = new Dictionary<string, string>(existing.HostMappings, StringComparer.OrdinalIgnoreCase)
+            };
+            _devices[existing.DeviceId] = renamed;
+            TouchState();
+            return renamed;
+        }
+    }
+
     public DeviceRegistration? FindDeviceByFriendlyId(string friendlyId)
     {
         if (string.IsNullOrWhiteSpace(friendlyId)) return null;
@@ -349,8 +388,15 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         foreach (var session in _sessionsByToken.Values.Where(session =>
                      source.DeviceId.Equals(session.DeviceId, StringComparison.OrdinalIgnoreCase)))
         {
-            session.DeviceId = targetDeviceId;
+            // Keep connection-scoped observed identities intact. The explicit
+            // inventory binding is the durable merge result; retaining these raw
+            // IDs lets future reconnects inherit it instead of recreating the
+            // archived record. Stable issued robot tokens can be migrated directly.
+            if (!string.IsNullOrWhiteSpace(session.Token) &&
+                !session.Token.StartsWith("conn:", StringComparison.OrdinalIgnoreCase))
+                session.DeviceId = targetDeviceId;
             session.Metadata["registeredDeviceId"] = targetDeviceId;
+            session.Metadata["registeredRobotId"] = targetDeviceId;
             migratedSessions++;
         }
 
@@ -382,6 +428,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             ArchivedUtc = DateTimeOffset.UtcNow,
             HostMappings = new Dictionary<string, string>(source.HostMappings, StringComparer.OrdinalIgnoreCase)
         };
+        _devices[source.DeviceId].HostMappings["openjibo.mergedIntoDeviceId"] = targetDeviceId;
         TouchState();
         return new RobotMergeResult(source.DeviceId, targetDeviceId, migratedSessions, migratedBindings, DateTimeOffset.UtcNow);
     }
@@ -703,11 +750,36 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             .OrderByDescending(candidate => candidate.LastSeenUtc)
             .ThenByDescending(candidate => candidate.CreatedUtc)
             .FirstOrDefault();
-        if (donor is null) return;
+        if (donor is null)
+        {
+            var observed = _devices.GetValueOrDefault(session.DeviceId.Trim());
+            if (observed?.HostMappings.TryGetValue("openjibo.mergedIntoDeviceId", out var mergedInto) == true &&
+                !string.IsNullOrWhiteSpace(mergedInto))
+            {
+                var target = FindDeviceByFriendlyId(mergedInto);
+                if (target is not null && !target.IsHidden && target.ArchivedUtc is null)
+                {
+                    session.Metadata["registeredDeviceId"] = target.DeviceId;
+                    session.Metadata["registeredRobotId"] = target.RobotId;
+                }
+            }
+            return;
+        }
 
         foreach (var pair in donor.Metadata)
         {
             if (pair.Value is null || !ShouldInheritDialogMetadataKey(pair.Key)) continue;
+            if (string.Equals(pair.Key, "registeredDeviceId", StringComparison.OrdinalIgnoreCase))
+            {
+                var boundDevice = FindDeviceByFriendlyId(pair.Value.ToString() ?? string.Empty);
+                // Archived/hidden inventory records are historical only. Never
+                // resurrect one as the identity of a reconnecting session.
+                if (boundDevice is null || boundDevice.IsHidden || boundDevice.ArchivedUtc is not null)
+                    continue;
+            }
+            if (string.Equals(pair.Key, "registeredRobotId", StringComparison.OrdinalIgnoreCase) &&
+                !session.Metadata.ContainsKey("registeredDeviceId"))
+                continue;
             if (session.Metadata.ContainsKey(pair.Key)) continue;
             session.Metadata[pair.Key] = pair.Value;
         }
@@ -715,6 +787,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     private static bool ShouldInheritDialogMetadataKey(string key)
     {
+        // An administrator's explicit session-to-inventory binding must survive a
+        // reconnect.  The runtime DeviceId remains the observed hardware identity;
+        // carrying only these two fields reuses the verified mapping without
+        // auto-claiming a new or cloned robot.
+        if (string.Equals(key, "registeredDeviceId", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(key, "registeredRobotId", StringComparison.OrdinalIgnoreCase))
+            return true;
+
         return key.StartsWith("personalReport", StringComparison.OrdinalIgnoreCase) ||
                key.StartsWith("householdList", StringComparison.OrdinalIgnoreCase) ||
                key.StartsWith("chitchat", StringComparison.OrdinalIgnoreCase) ||
@@ -2518,7 +2598,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         AddIdentityEvidenceSignal(signals, "build-hash", robot.RobotId, robot.BuildHash, loopId);
         AddIdentityEvidenceSignal(signals, "config-hash", robot.RobotId, robot.ConfigHash, loopId);
 
-        foreach (var mapping in robot.HostMappings.OrderBy(mapping => mapping.Key, StringComparer.OrdinalIgnoreCase))
+        foreach (var mapping in robot.HostMappings
+                     .Where(mapping => !mapping.Key.StartsWith("openjibo.", StringComparison.OrdinalIgnoreCase))
+                     .OrderBy(mapping => mapping.Key, StringComparer.OrdinalIgnoreCase))
             AddIdentityEvidenceSignal(signals, "host-mapping", mapping.Key, mapping.Value, loopId);
 
         foreach (var observation in recognitionObservations ?? [])
@@ -3626,6 +3708,21 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         _loops.Clear();
         _loops.AddRange(snapshot.Loops ?? []);
+        // Older or partially onboarded snapshots may contain no loops. The robot
+        // protocol requires ListLoops to return one concrete loop, so restore a
+        // durable default tied to the current registered robot instead of sending
+        // an empty array that makes stock Neo Hub fail acquisition.
+        if (_loops.Count == 0)
+        {
+            _loops.Add(new LoopRecord
+            {
+                LoopId = "openjibo-default-loop",
+                Name = "OpenJibo Default Loop",
+                OwnerAccountId = _account.AccountId,
+                RobotId = _robot.RobotId,
+                RobotFriendlyId = _robot.DeviceId
+            });
+        }
 
         _holidayOverrides.Clear();
         _holidayOverrides.AddRange(snapshot.Holidays ?? []);

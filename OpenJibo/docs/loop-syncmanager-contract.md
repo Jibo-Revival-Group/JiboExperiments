@@ -249,12 +249,14 @@ not Node `wsendpoint`.
 ### `point-at-server.sh` (BEam, domain-first)
 
 `~/BEam/point-at-server.sh` covers jetstream hub
-override, server-service socket suffix, credentials `region`+`endpoint`, and
-**hosts rewrite only for IPv4**. Domains are the normal path (DNS must resolve
+override, server-service socket suffix, credentials `region`+`endpoint`,
+**hosts rewrite only for IPv4**, and the OpenJibo CA install (`GET /openjibo-ca.crt`
+from the credentials host:port, plus S78 / keys overlay / JSC patches).
+Domains are the normal path (DNS must resolve
 legacy names). Hub port and credentials/JSC API port are prompted separately
-(examples: hub `443`, credentials `8765` or `24605`). It does **not** install CA,
-S78, keys overlay, or JSC patches — run `~/BEam/install-openjibo-ca.sh` next for
-those (below).
+(examples: hub `443`, credentials `8765` or `24605`). Set `OPENJIBO_SKIP_CA=1`
+to skip the CA step. `~/BEam/post-mod.sh` runs the same pointer after deploying
+BEam. Standalone `~/BEam/install-openjibo-ca.sh` remains available to re-fetch.
 
 ### CA install for live `LoopUpdated` push (`install-openjibo-ca.sh`)
 
@@ -328,14 +330,14 @@ persisted `openjibo-default-loop` id.
 
 ## Verification
 
-1. Run `point-at-server.sh` with domain (or LAN IP) + hub + credentials ports.
-2. Run `install-openjibo-ca.sh` on the robot for live push (see above), or
-   skip it and rely on the ~7200s periodic resync / manual
+1. Run `point-at-server.sh` (or `post-mod.sh`) with domain (or LAN IP) + hub +
+   credentials ports. That also fetches and installs the OpenJibo CA. Or skip
+   CA with `OPENJIBO_SKIP_CA=1` and rely on the ~7200s periodic resync / manual
    `jibo-server-service` restart.
-3. `GET /api/portal/loop-sync-status` → `liveApiSocketOverlaps > 0` /
+2. `GET /api/portal/loop-sync-status` → `liveApiSocketOverlaps > 0` /
    `openApiSocketConnections > 0`.
-4. After portal People add: response `syncedToRobot: true`, `pushCount > 0`.
-5. SSM: no `robot … not in loop`; after `LoopUpdated`, pause/resume loop syncing;
+3. After portal People add: response `syncedToRobot: true`, `pushCount > 0`.
+4. SSM: no `robot … not in loop`; after `LoopUpdated`, pause/resume loop syncing;
    introductions menu shows the new person.
 
 ## Root cause: the bootstrap-loop trap

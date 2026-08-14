@@ -307,59 +307,51 @@ static void ConfigureDefaultKestrelEndpoints(WebApplicationBuilder builder)
     // launched via `dotnet run`, a published binary under systemd, or Docker —
     // no ASPNETCORE_URLS or launch-specific wrapper script required.
     //
-    // Any of these keys already present in config (appsettings.json,
-    // ASPNETCORE_URLS, env vars, --Kestrel:... command-line args, ...) wins over
-    // its specific default below — this only fills in whatever the caller
-    // hasn't already configured themselves, key by key, rather than bailing out
-    // entirely just because e.g. only ASPNETCORE_URLS was set.
-    var defaults = new Dictionary<string, string?>();
-
-    void DefaultIfUnset(string key, string value)
-    {
-        if (string.IsNullOrEmpty(builder.Configuration[key])) defaults[key] = value;
-    }
-
-    DefaultIfUnset("Kestrel:Endpoints:Http24605:Url", "http://0.0.0.0:24605");
-    DefaultIfUnset("Kestrel:Endpoints:Http8765:Url", "http://0.0.0.0:8765");
-
+    // Certificate defaults are all-or-nothing (see KestrelEndpointDefaults): a
+    // caller-supplied PFX (Path + Password from run.sh) must never get a lone
+    // KeyPath=key.pem patched on top, or Kestrel's PEM loader crashes startup.
     var certPath = ResolveConfiguredPath(builder.Configuration, "OpenJibo:Tls:CertPath", "src/Jibo.Cloud/node/cert.pem");
     var keyPath = ResolveConfiguredPath(builder.Configuration, "OpenJibo:Tls:KeyPath", "src/Jibo.Cloud/node/key.pem");
-    var hasCert = File.Exists(certPath) && File.Exists(keyPath);
+    var pemCertUsable = TryLoadPemCertificatePair(certPath, keyPath, out var pemWarning);
+    if (pemWarning is not null)
+        Console.Error.WriteLine(pemWarning);
 
-    // Only advertise :443 (and only require a cert) once generate-openjibo-ca.sh
-    // has actually produced one — otherwise a fresh checkout with no cert yet
-    // would fail to start instead of just running the two HTTP endpoints.
-    //
-    // :443 must ALSO be probed before Kestrel is ever told about it. If some
-    // other process already owns :443 (EADDRINUSE) or this process lacks
-    // CAP_NET_BIND_SERVICE (EACCES), Kestrel treats every configured endpoint
-    // as mandatory — one failing to bind takes the ENTIRE host down, including
-    // the 24605/8765 endpoints that have nothing to do with :443. So :443 is
-    // opt-in only when a quick bind-and-release test proves it's actually
-    // available; otherwise this logs a warning and just runs the two HTTP
-    // endpoints instead of crashing the whole process.
-    if (hasCert)
-    {
-        if (CanBindPort(443))
-        {
-            DefaultIfUnset("Kestrel:Endpoints:Https:Url", "https://0.0.0.0:443");
-            DefaultIfUnset("Kestrel:Certificates:Default:Path", certPath);
-            DefaultIfUnset("Kestrel:Certificates:Default:KeyPath", keyPath);
-        }
-        else
-        {
-            Console.Error.WriteLine(
-                "openjibo: WARNING — cert.pem/key.pem found but :443 is not bindable " +
-                "(already in use by another process, or this process lacks permission " +
-                "to bind a privileged port — grant CAP_NET_BIND_SERVICE, e.g. via the " +
-                "systemd unit's AmbientCapabilities=CAP_NET_BIND_SERVICE, or run as a " +
-                "user that already has it). Skipping the :443 endpoint so the rest of " +
-                "the server (24605/8765) still starts — LoopUpdated push over the " +
-                "native NotificationSubsystem will NOT work until :443 is free.");
-        }
-    }
+    var defaults = KestrelEndpointDefaults.Build(
+        builder.Configuration,
+        certPath,
+        keyPath,
+        pemCertUsable,
+        CanBindPort,
+        out var warning);
+
+    if (warning is not null)
+        Console.Error.WriteLine(warning);
 
     builder.Configuration.AddInMemoryCollection(defaults);
+}
+
+static bool TryLoadPemCertificatePair(string certPath, string keyPath, out string? warning)
+{
+    warning = null;
+    if (!File.Exists(certPath) || !File.Exists(keyPath))
+        return false;
+
+    try
+    {
+        using var certificate = System.Security.Cryptography.X509Certificates.X509Certificate2.CreateFromPemFile(
+            certPath, keyPath);
+        return true;
+    }
+    catch (Exception exception)
+    {
+        warning =
+            "openjibo: WARNING — cert.pem/key.pem exist but could not be loaded " +
+            $"({exception.GetType().Name}: {exception.Message}). Skipping the :443 " +
+            "endpoint so the rest of the server (24605/8765) still starts — fix or " +
+            "regenerate the PEM pair (scripts/cloud/generate-openjibo-ca.sh), or " +
+            "supply a PFX via ASPNETCORE_Kestrel__Certificates__Default__Path.";
+        return false;
+    }
 }
 
 static bool CanBindPort(int port)

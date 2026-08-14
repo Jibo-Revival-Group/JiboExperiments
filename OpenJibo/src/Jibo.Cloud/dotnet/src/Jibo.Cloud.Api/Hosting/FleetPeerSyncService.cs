@@ -21,7 +21,7 @@ internal sealed class FleetPeerSyncService(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(_interval);
-        do
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -35,7 +35,17 @@ internal sealed class FleetPeerSyncService(
             {
                 logger.LogWarning(exception, "Fleet peer presence publish failed");
             }
-        } while (await timer.WaitForNextTickAsync(stoppingToken));
+
+            try
+            {
+                if (!await timer.WaitForNextTickAsync(stoppingToken))
+                    break;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+        }
     }
 
     private async Task PublishAsync(CancellationToken cancellationToken)

@@ -1,0 +1,2 @@
+don't leak my personal data into the code :<
+if you're provided with a dump file to reference, do not insert userdata from the dump file (e.g. a persons name, birthdate, image, etc) into the project. if you need to add userdata, make up a person rather than use a real persons information.

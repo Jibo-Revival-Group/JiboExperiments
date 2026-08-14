@@ -2117,7 +2117,9 @@ public sealed class JiboWebSocketServiceTests
             Binary = new byte[3000]
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yes",
@@ -2434,6 +2436,86 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_IntroductionsYesNoPrompt_DoesNotEmitChitchatSkillAction()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-introductions-yesno-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-introductions-yesno","data":{"rules":["introductions/voice_face_training","$YESNO","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-introductions-yesno-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-introductions-yesno","data":{"text":"Yes"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("introductions/voice_face_training",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("introductions/voice_face_training",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+    }
+
+    [Fact]
+    public async Task ClientAsr_IntroductionsSharedYesNo_DoesNotTreatYesAsHeyJibo()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-introductions-shared-yesno-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-introductions-shared-yesno","data":{"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-introductions-shared-yesno-token",
+            Text =
+                """{"type":"CONTEXT","transID":"trans-introductions-shared-yesno","data":{"skill":{"id":"@be/introductions"}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-introductions-shared-yesno-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-introductions-shared-yesno","data":{"text":"Yes!"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.DoesNotContain(replies, reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION",
+            StringComparison.OrdinalIgnoreCase));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("yes",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("shared/yes_no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+    }
+
+    [Fact]
     public async Task ClientAsr_YesNoPromptFromAsrHints_MapsShortDenialToNoIntent()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -2595,7 +2677,9 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-shared-yesno","data":{"text":"yes"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yes",
@@ -2629,7 +2713,9 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-shared-yesno-negative","data":{"text":"negative"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("no",
@@ -2663,7 +2749,9 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-shared-yesno-clarify","data":{"text":"no yes"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yes_no_clarify",
@@ -5778,7 +5866,7 @@ public sealed class JiboWebSocketServiceTests
             Binary = BuildOggFrame(0x00)
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 

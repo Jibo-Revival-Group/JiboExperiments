@@ -23,9 +23,14 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var isYesNoTurn = !string.IsNullOrWhiteSpace(yesNoRule);
         var isYesNoIntent = string.Equals(plan.IntentName, "yes", StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(plan.IntentName, "no", StringComparison.OrdinalIgnoreCase);
-        // tutorial/yes_no is handled entirely by the robot-local tutorial skill: it speaks its own
-        // response and does not need a competing chitchat SKILL_ACTION from the cloud.
+        // Robot-local yes/no (introductions, tutorial, gallery, shared/yes_no while a skill is
+        // listening) must not get a competing chitchat SKILL_ACTION. That speech is what makes
+        // Jibo answer "Yes!" as a new Hey Jibo turn instead of continuing the skill.
         var isSkillOwnedYesNoTurn = IsYesNoListenTurn(turn);
+        var suppressChitchatForSkillYesNo = isSkillOwnedYesNoTurn &&
+                                            (isYesNoIntent ||
+                                             string.Equals(plan.IntentName, "yes_no_clarify",
+                                                 StringComparison.OrdinalIgnoreCase));
         var isWordOfDayLaunch = string.Equals(plan.IntentName, "word_of_the_day", StringComparison.OrdinalIgnoreCase);
         var isWordOfDayGuess =
             string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase);
@@ -456,10 +461,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 125));
         }
 
-        // Don't emit a chitchat SKILL_ACTION for tutorial yes/no turns: the tutorial skill handles
-        // the response locally. Sending a competing chitchat-skill action with final:true causes the
-        // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
-        if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
+        // Don't emit a chitchat SKILL_ACTION for skill-owned yes/no turns: the running local skill
+        // handles the response. Sending a competing chitchat-skill action with final:true causes the
+        // GLSM to treat "yes" as a new Hey Jibo query instead of continuing introductions/tutorial.
+        if (emitSkillActions && speak is not null && !suppressChitchatForSkillYesNo)
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill, outboundAsrText)),
                 75));
@@ -694,19 +699,70 @@ public sealed class ResponsePlanToSocketMessagesMapper
     {
         // Robot-local yes/no turns: the active skill speaks its own response and does not need a
         // competing chitchat SKILL_ACTION from the cloud.
-        //   tutorial/*           - the on-robot tutorial skill (yes_no after dance, keep_photo, ...)
-        //   create/is_it_a_keeper - @be/create photo-save prompt
-        //   surprises-date/offer_date_fact - @be/surprises-date fact-offer prompt
-        // Other yes/no rules (shared/yes_no, surprises-ota/want_to_download_now, etc.) are
-        // cloud-side and do need a SKILL_ACTION reply.
-        return ReadRuleValues(turn).Any(IsRobotLocalYesNoRule);
+        //   tutorial/* / introductions/* - on-robot skills
+        //   create/is_it_a_keeper        - @be/create photo-save prompt
+        //   surprises-date/offer_date_fact
+        //   shared/yes_no / $YESNO       - shared grammar used by introductions, gallery, etc.
+        // Cloud dialogs (personal report) still need a SKILL_ACTION reply.
+        if (IsCloudOwnedYesNoDialog(turn)) return false;
+
+        if (ReadRuleValues(turn).Any(IsRobotLocalYesNoRule)) return true;
+
+        return IsRobotLocalSkillContext(turn) &&
+               ReadRuleValues(turn, "listenAsrHints")
+                   .Any(static hint => string.Equals(hint, "$YESNO", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsCloudOwnedYesNoDialog(TurnContext turn)
+    {
+        var state = ReadAttribute(turn, PersonalReportOrchestrator.StateMetadataKey);
+        return !string.IsNullOrWhiteSpace(state) &&
+               !string.Equals(state, PersonalReportOrchestrator.IdleState, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsRobotLocalSkillContext(TurnContext turn)
+    {
+        var skillId = ReadContextSkillId(turn);
+        return !string.IsNullOrWhiteSpace(skillId) &&
+               skillId.StartsWith("@be/", StringComparison.OrdinalIgnoreCase) &&
+               !string.Equals(skillId, "@be/nimbus", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? ReadContextSkillId(TurnContext turn)
+    {
+        if (!turn.Attributes.TryGetValue("context", out var value) || value is not string text ||
+            string.IsNullOrWhiteSpace(text))
+            return null;
+
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            var root = document.RootElement;
+            if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object)
+                root = data;
+
+            if (!root.TryGetProperty("skill", out var skill) ||
+                skill.ValueKind != JsonValueKind.Object ||
+                !skill.TryGetProperty("id", out var id) ||
+                id.ValueKind != JsonValueKind.String)
+                return null;
+
+            return id.GetString();
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static bool IsRobotLocalYesNoRule(string rule)
     {
         return rule.StartsWith("tutorial/", StringComparison.OrdinalIgnoreCase) ||
+               rule.StartsWith("introductions/", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "create/is_it_a_keeper", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase);
+               string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "shared/yes_no", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(rule, "$YESNO", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? ReadYesNoRule(TurnContext turn)

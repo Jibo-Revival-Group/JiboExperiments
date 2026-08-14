@@ -215,7 +215,9 @@ public sealed partial class JiboInteractionService
                string.Equals(rule, "shared/yes_no", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase);
+               string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase) ||
+               rule.StartsWith("tutorial/", StringComparison.OrdinalIgnoreCase) ||
+               rule.StartsWith("introductions/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ResolveAffirmativeYesNoIntent(string? yesNoRule)

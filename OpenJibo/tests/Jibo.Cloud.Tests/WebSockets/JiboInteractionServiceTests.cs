@@ -4732,6 +4732,25 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_IntroductionsYesNoFollowUp_MapsShortAffirmationToYesIntent()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "yes",
+            NormalizedTranscript = "yes",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenRules"] = (string[])["introductions/voice_face_training", "$YESNO"]
+            }
+        });
+
+        Assert.Equal("yes", decision.IntentName);
+        Assert.Equal("Yes.", decision.ReplyText);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_YesNoFollowUp_FromAsrHints_MapsShortDenialToNoIntent()
     {
         var service = CreateService();

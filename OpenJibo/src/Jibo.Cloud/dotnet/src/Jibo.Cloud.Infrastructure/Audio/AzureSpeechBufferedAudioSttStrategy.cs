@@ -399,7 +399,9 @@ public sealed class AzureSpeechBufferedAudioSttStrategy(
                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "word-of-the-day/right_word", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase);
+               string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase) ||
+               rule.StartsWith("tutorial/", StringComparison.OrdinalIgnoreCase) ||
+               rule.StartsWith("introductions/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IEnumerable<string> ReadRules(TurnContext turn, string key)

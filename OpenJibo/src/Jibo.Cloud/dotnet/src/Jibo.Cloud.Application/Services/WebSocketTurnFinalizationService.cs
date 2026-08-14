@@ -2159,7 +2159,9 @@ public sealed class WebSocketTurnFinalizationService(
         var skillId = TryReadContextSkillId(text);
         return string.Equals(skillId, "@be/gallery", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(skillId, "@be/create", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(skillId, "@be/settings", StringComparison.OrdinalIgnoreCase);
+               string.Equals(skillId, "@be/settings", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(skillId, "@be/introductions", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(skillId, "@be/tutorial", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool HasCloudHandledLocalPromptOpen(WebSocketTurnState turnState)
@@ -2436,6 +2438,7 @@ public sealed class WebSocketTurnFinalizationService(
                string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(rule, "word-of-the-day/surprise", StringComparison.OrdinalIgnoreCase) ||
+               rule.StartsWith("tutorial/", StringComparison.OrdinalIgnoreCase) ||
                IsIntroductionsRule(rule);
     }
 

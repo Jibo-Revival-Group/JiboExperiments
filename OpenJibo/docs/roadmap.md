@@ -11,6 +11,7 @@ The current execution truth still lives in:
 - [Development plan](development-plan.md)
 - [Feature backlog](feature-backlog.md)
 - [Release 1.0.20 plan](release-1.0.20-plan.md)
+- [Release 1.0.20 paid-service launch plan](release-1.0.20-paid-launch-plan.md)
 - [Cloud deployment and topology plan](cloud-deployment-topology-plan.md)
 - [Storage trust and consensus plan](storage-trust-consensus-plan.md)
 - [Device bootstrap path](device-bootstrap.md)
@@ -56,6 +57,7 @@ Exit criteria:
 - a real Jibo can reach the hosted cloud consistently
 - the cloud can carry the startup and conversation flows needed for daily use
 - update and recovery behavior is understood well enough to trust the next layer
+- for the first paid managed launch, durable state, customer identity/ownership, billing/entitlements, customer policies/support, and production recovery pass the P0 gates in the paid-service launch plan
 
 ## Phase 2: OTA-Assisted Recovery
 
@@ -146,6 +148,7 @@ If you want the current execution truth, read:
 - [Development plan](development-plan.md)
 - [Feature backlog](feature-backlog.md)
 - [Release 1.0.20 plan](release-1.0.20-plan.md)
+- [Release 1.0.20 paid-service launch plan](release-1.0.20-paid-launch-plan.md)
 
 If you want the first-device path, read:
 

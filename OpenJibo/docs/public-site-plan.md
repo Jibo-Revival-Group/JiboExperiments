@@ -6,6 +6,12 @@ Stand up a small public site and web app on `openjibo.com` that makes the projec
 
 `jiborevived.com` remains the community-maintained Jibo Revival Group hub and status space. `openjibo.com` is the Open Jibo showcase, account entry surface, and hosted-cloud entry point.
 
+## Current Status (`2026-08-17`)
+
+Status: `not started` for paid launch.
+
+The repository contains a static placeholder only. It does not yet provide customer authentication, checkout, account/subscription management, signed onboarding return, cancellation/recovery, reviewed policies, support, or status flows. Those are P0 requirements in [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md), not completed capabilities.
+
 ## First Version Content
 
 - project overview

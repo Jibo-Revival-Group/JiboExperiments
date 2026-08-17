@@ -432,6 +432,8 @@ Later pipeline should:
 
 ## `1.0.20` Exit Criteria
 
+Status clarification (`2026-08-17`): the container, migration, and smoke contracts prove the deployment foundation, not paid-service readiness. Customer auth, provider handoff, billing, entitlement enforcement, dependency-aware readiness, operational recovery, and the paid pilot remain open in [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md).
+
 This track is ready to build when:
 
 - Azure Container Apps is accepted as the first managed target
@@ -455,6 +457,8 @@ This track is ready to close for `1.0.20` when:
 - recorded onboarding replay or equivalent smoke coverage proves basic onboarding and operation calls
 - the first auth/identity boundary is documented well enough to avoid mixing robot runtime with root identity authority
 - provider-specific onboarding can hand off to signup/payment and return to robot onboarding
+
+The final item above is still an exit criterion; the design and callback direction are documented, but the customer/billing implementation does not yet exist.
 
 ## Open Questions
 

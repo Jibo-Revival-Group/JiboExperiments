@@ -11,6 +11,14 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - Kickoff date: `2026-06-10`
 - Cloud version source of truth: [OpenJiboCloudBuildInfo.cs](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/OpenJiboCloudBuildInfo.cs)
 - Active release constant: `1.0.20`
+- Paid-service launch plan: [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md)
+- Paid-service launch decision (`2026-08-17`): **NO-GO** until normalized durable state, customer auth, billing/entitlements, customer/legal surfaces, and production operations pass their P0 gates
+
+## Release Definition
+
+The compatibility work recorded below remains part of `1.0.20`, but the release is not complete merely because the cloud feature suite passes. The current objective is a controlled launch of the paid managed service. The authoritative gate order, commercial decisions, pilot criteria, and stop conditions live in [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md).
+
+Unrelated personality/catalog expansion should move to `1.0.21+` during the launch freeze unless it fixes a supported-cohort regression.
 
 ## Scope
 
@@ -478,16 +486,19 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ## Working Order
 
-The suggested order for early `1.0.20` execution is:
+The current `1.0.20` paid-launch order is:
 
-1. update / backup / restore proof
-2. grocery list follow-up and add-item reliability
-3. motion and personality command parity, including `twerk` and `go to sleep`
-4. STT cleanup for the remaining short-utterance misses
-5. continue the broader personality and presence queue once the regression gaps are understood
-6. split the platform-conversion track into named backlog items and work the topmost one at a time
-7. keep the cloud deployment, custom-domain, and public-site tracks in discovery until they are ready for their own proof slices
-8. keep the storage and multi-Jibo architecture tracks in discovery until they are ready for their own proof slices
+1. decide the offer, supported cohort, service policy, support model, and launch targets
+2. freeze the release to launch blockers and supported-cohort regressions
+3. replace snapshot-backed in-memory production state with normalized PostgreSQL/Blob persistence and bounded ephemeral state
+4. deliver customer auth, household/robot ownership, credential lifecycle, and operator access controls
+5. deliver billing, webhook processing, durable entitlements, cancellation, reconciliation, and access enforcement
+6. deliver the public/account/subscription/onboarding/legal customer surface
+7. close security, privacy, monitoring, recovery, cost, CI/CD, and support/business-operation gates
+8. run the release candidate matrix and operational game day
+9. complete a capped paid pilot before general availability
+
+Feature-history items below this launch line remain useful evidence, but they do not outrank the P0 gates in the paid-launch plan.
 
 ## Deferred Full Regression Milestone
 

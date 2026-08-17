@@ -10,11 +10,50 @@ The live regression checklist for release closeout is [regression-test-plan.md](
 
 The active `1.0.20` execution shape is tracked in [release-1.0.20-plan.md](release-1.0.20-plan.md). This file keeps the full `1.0.18` evidence trail for parity reference and the `1.0.19` closeout history alongside the new queue.
 
+## `1.0.20` Paid Launch Control Queue
+
+The authoritative launch gates, ordering, pilot criteria, and stop conditions are in [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md).
+
+Current paid-launch decision (`2026-08-17`): **NO-GO**.
+
+Work these items before unrelated feature expansion:
+
+1. **Commercial and support decisions** — status: `decision required`
+   - choose the initial plan/price/currency/robot allowance, supported cohort, payment provider, cancellation/refund/grace policies, support coverage, SLO/RPO/RTO, retention defaults, pilot size, and success/stop thresholds
+2. **Normalized production persistence and bounded memory** — status: `ready`, P0 blocker
+   - execute [Replace Snapshot-Backed In-Memory Cloud State](#13-replace-snapshot-backed-in-memory-cloud-state)
+   - migrate durable state to normalized PostgreSQL and payload bytes to Blob/file storage
+   - prove migration, rollback, two-replica concurrency, reconnect/audio soak, and cleanup within the production memory limit
+3. **Customer auth and robot ownership service** — status: `not started`, P0 blocker
+   - create the separate auth deployable; implement verified signup/recovery, roles, account-loop-robot ownership, claim/transfer/removal, credential rotation/revocation, export/deletion, and audited operator access
+4. **Billing, subscriptions, and entitlements** — status: `not started`, P0 blocker
+   - implement provider-neutral billing plus the first provider adapter, checkout/portal, signed idempotent webhooks, subscription state, reconciliation, cancellation/payment recovery, and robot-count entitlement enforcement across onboarding, HTTP, and WebSocket access
+5. **Customer site, onboarding, and policy surface** — status: `not started`, P0 blocker
+   - replace the placeholder site with signup/account/subscription/onboarding/recovery flows and publish reviewed price/support/device requirements, terms, privacy, refund/cancellation, acceptable-use, and status/support links
+6. **Security and privacy closeout** — status: `not started`, P0 blocker
+   - threat model public and robot surfaces; remove/rotate defaults; restrict CORS; add authorization, rate/body limits, abuse controls, audit/redaction, retention/deletion, scanning, SBOM/provenance, and independent review
+7. **Production operations and recovery** — status: `in progress`, P0 blocker
+   - add environment isolation, dependency readiness, SLO telemetry/alerts, on-call/runbooks, database/Blob protection, restore/rollback drills, capacity/soak tests, autoscaling proof, and cost budgets/unit-economics checks
+8. **Release engineering** — status: `in progress`
+   - add pull-request gates, immutable image/version provenance, production config validation, billing/auth/migration/authorization suites, protected promotion, and rehearsed rollback
+9. **Customer and business operations** — status: `not started`, P0 blocker for taking money
+   - establish merchant/tax/accounting ownership, reviewed customer policies, receipts/reconciliation, support verification/escalation, refund/chargeback/account-recovery procedures, launch communications, and product/reliability/business metrics
+10. **Release candidate and paid pilot** — status: `blocked by 1-9`
+    - freeze `1.0.20`, run the clean automated/deployment/live-device/security/load/billing/restore matrix, conduct an operational game day, then run a capped paid pilot with daily billing-entitlement reconciliation before GA
+
+Scope control:
+
+- optional personality additions, direct Jibo-to-Jibo transport, public hybrid sync, easy-button conversion, extra billing tiers, and next-tier integrations move to `1.0.21+` unless they fix a launch regression
+- existing items marked `implemented` still require the launch-plan evidence when they participate in a P0 gate; an implementation label is not itself production proof
+
 Status key:
 
 - `implemented`: present in current source and covered by focused tests
 - `polish`: implemented enough to test, but still needs live proof or small cleanup
 - `ready`: grounded enough to implement now
+- `in progress`: implementation exists but the named exit evidence is incomplete
+- `not started`: required scope is understood but implementation has not begun
+- `decision required`: engineering is waiting on an explicit product, business, legal, or operational choice
 - `discovery`: more Pegasus, JiboOS, capture, or log work needed first
 - `blocked`: waiting on infrastructure, provider choice, or a risky unknown
 
@@ -1316,8 +1355,8 @@ Production reliability gate: complete [Replace Snapshot-Backed In-Memory Cloud S
    - first self-hosted target is Docker Compose
    - first Docker Compose database is PostgreSQL
    - PostgreSQL migrations should run through explicit CI/CD or admin commands, with self-hosted startup migration behind an intentional switch
-   - status: `implemented`
-   - current progress: trusted-server registry, self-hosted validation, managed/self-hosted deployment contracts, and the portal onboarding flows now cover the managed, hybrid, and self-hosted topology rules well enough to move this lane from `ready` to `implemented`
+   - status: `in progress`
+   - current progress: trusted-server registry, self-hosted validation, managed/self-hosted deployment contracts, and portal onboarding prove the topology foundation; paid managed mode remains incomplete until customer auth, billing, entitlements, cancellation/recovery, and the paid pilot pass the launch plan
 6. Storage abstraction and sync
    - abstract storage so the rest of the system does not care which server implementation is backing it
    - keep only transient session/onboarding artifacts and device-local secrets permanently local-only for now
@@ -1327,9 +1366,9 @@ Production reliability gate: complete [Replace Snapshot-Backed In-Memory Cloud S
    - use deny-by-evidence admission and full versioned snapshots as the first sync model
    - sign trust-boundary records before replication, not every local write
    - use hardware-stable `DeviceId`, cert thumbprint, issued-identity lineage, and build/config hashes as corroborating clone-detection signals only
-   - current progress: signed identity graph admission decisions, offline evidence bundles, portal trusted-server validation, and loop sync paths now carry the revocation/admission/quarantine and mirror rules well enough to prove the storage/sync lane instead of just discussing it
+   - current progress: signed identity graph admission decisions, offline evidence bundles, portal trusted-server validation, and loop sync paths prove the trust/sync design; the production state implementation still uses the snapshot-backed in-memory store and must complete backlog item 13
    - planning anchor: [storage-trust-consensus-plan.md](storage-trust-consensus-plan.md)
-   - status: `implemented`
+   - status: `in progress`
 7. OpenJibo.com web UI and account surface
    - provide a web UI for `openjibo.com` as the Open Jibo showcase, account entry surface, and hosted-cloud landing page
    - keep `jiborevived.com` separate as the community-maintained Jibo Revival Group hub and status space
@@ -1344,8 +1383,8 @@ Production reliability gate: complete [Replace Snapshot-Backed In-Memory Cloud S
    - later boots should prefer the selected provider cloud first and enter explicit recovery instead of silently switching clouds
    - the subscription surface must be able to revoke hosted access on cancellation and force the robot back through the authorized validation flow before hosted access resumes
    - developer/smoke-only self-hosted paths can use HTTP locally; owner-facing robot paths should default to HTTPS/self-signed or equivalent patched trust behavior until safe HTTP is proven
-   - status: `discovery`
-   - current progress: the site split is now explicit in the public-site and cloud-topology docs, and the open work is to implement the account, subscription, callback, and cancellation plumbing rather than deciding where the pieces belong
+   - status: `not started`
+   - current progress: the site split and launch requirements are explicit in the public-site, cloud-topology, and paid-launch plans; the repository still has only a static placeholder, so account, subscription, callback, cancellation, policy, support, and status implementation remain open
 8. Loop advancement and multi-Jibo support
    - support family/friend advancement, multiple user recognition, and multiple Jibo interaction
    - keep the identity model ready for Jibo-to-Jibo communication and shared household use

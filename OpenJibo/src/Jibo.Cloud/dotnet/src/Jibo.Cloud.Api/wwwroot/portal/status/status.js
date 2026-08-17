@@ -168,6 +168,7 @@ function robotSearchHaystack(robot) {
     robot.presence,
     robot.firmwareVersion,
     robot.applicationVersion,
+    robot.identitySuggestion?.proposedRobotId,
   ].join(" "));
 }
 
@@ -229,6 +230,7 @@ function robotRowSnapshot(robot) {
     applicationVersion: robot.applicationVersion || "",
     registrationSource: robot.registrationSource || "",
     isHidden: Boolean(robot.isHidden),
+    identitySuggestion: robot.identitySuggestion?.proposedRobotId || "",
   });
 }
 
@@ -292,7 +294,10 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
         <div class="row-actions">
           <button class="button secondary compact view-artifacts" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Artifacts</button>
           <button class="button secondary compact open-lrd" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Open in LRD</button>
-          ${(robot.friendlyName === "OpenJibo Registered Robot" || String(robot.robotId || "").startsWith("robot-")) ? `<button class="button secondary compact suggest-identity" data-device-id="${escapeHtml(robot.deviceId)}" type="button">Suggest identity</button>` : ""}
+          ${robot.identitySuggestion ? `
+            <div class="muted-row">I think this robot is <span class="mono">${escapeHtml(robot.identitySuggestion.proposedRobotId)}</span>.</div>
+            <button class="button secondary compact suggest-identity" data-device-id="${escapeHtml(robot.deviceId)}" type="button">Review identity update</button>
+          ` : ""}
           <button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button>
         </div>
       </td>
@@ -396,7 +401,7 @@ async function suggestRobotIdentity(deviceId) {
   try {
     const suggestion = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/identity-suggestion`);
     if (!suggestion.suggested) {
-      window.alert("No reliable robot ID suggestion is available yet. Keep the record unclaimed until stronger evidence arrives.");
+      window.alert("That identity suggestion is no longer pending.");
       return;
     }
     const evidence = (suggestion.evidence || []).slice(0, 3).map(item => `${item.field}: ${item.value}`).join("\n");

@@ -20,29 +20,45 @@ public sealed class ProtocolRobotIdentityResolver(ICloudStateStore stateStore)
 
         if (!string.IsNullOrWhiteSpace(headerIdentity) && !string.IsNullOrWhiteSpace(tokenIdentity) &&
             !headerIdentity.Equals(tokenIdentity, StringComparison.OrdinalIgnoreCase))
-            return new ProtocolRobotIdentity(null, "conflict", true, true, true, aws);
+            return CreateIdentity(null, "conflict", true, true, true, aws,
+                headerIdentity, tokenIdentity, credentialIdentity);
 
         if ((!string.IsNullOrWhiteSpace(headerIdentity) && !string.IsNullOrWhiteSpace(credentialIdentity) &&
              !headerIdentity.Equals(credentialIdentity, StringComparison.OrdinalIgnoreCase)) ||
             (!string.IsNullOrWhiteSpace(tokenIdentity) && !string.IsNullOrWhiteSpace(credentialIdentity) &&
              !tokenIdentity.Equals(credentialIdentity, StringComparison.OrdinalIgnoreCase)))
-            return new ProtocolRobotIdentity(null, "conflict", !string.IsNullOrWhiteSpace(headerIdentity),
-                !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws);
+            return CreateIdentity(null, "conflict", !string.IsNullOrWhiteSpace(headerIdentity),
+                !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws,
+                headerIdentity, tokenIdentity, credentialIdentity);
 
         if (!string.IsNullOrWhiteSpace(headerIdentity))
-            return new ProtocolRobotIdentity(headerIdentity, "robot-header", true,
-                !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws);
+            return CreateIdentity(headerIdentity, "robot-header", true,
+                !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws,
+                headerIdentity, tokenIdentity, credentialIdentity);
 
         if (!string.IsNullOrWhiteSpace(tokenIdentity))
-            return new ProtocolRobotIdentity(tokenIdentity, "bearer-token", false, true, true, aws);
+            return CreateIdentity(tokenIdentity, "bearer-token", false, true, true, aws,
+                headerIdentity, tokenIdentity, credentialIdentity);
 
         if (!string.IsNullOrWhiteSpace(credentialIdentity))
-            return new ProtocolRobotIdentity(credentialIdentity, "aws-credential-binding", false,
-                !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws);
+            return CreateIdentity(credentialIdentity, "aws-credential-binding", false,
+                !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws,
+                headerIdentity, tokenIdentity, credentialIdentity);
 
-        return new ProtocolRobotIdentity(null, "unresolved", false,
-            !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws);
+        return CreateIdentity(null, "unresolved", false,
+            !string.IsNullOrWhiteSpace(bearerToken), tokenSession is not null, aws,
+            headerIdentity, tokenIdentity, credentialIdentity);
     }
+
+    private static ProtocolRobotIdentity CreateIdentity(string? deviceId, string source, bool headerPresent,
+        bool bearerTokenPresent, bool bearerTokenResolved, AwsSignatureDetails aws, string? headerIdentity,
+        string? bearerIdentity, string? credentialIdentity) =>
+        new(deviceId, source, headerPresent, bearerTokenPresent, bearerTokenResolved, aws)
+        {
+            HeaderIdentity = headerIdentity,
+            BearerIdentity = bearerIdentity,
+            CredentialIdentity = credentialIdentity
+        };
 
     private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
@@ -127,6 +143,9 @@ public sealed record ProtocolRobotIdentity(string? DeviceId, string Source, bool
     bool BearerTokenPresent, bool BearerTokenResolved, AwsSignatureDetails Aws)
 {
     public bool IsResolved => !string.IsNullOrWhiteSpace(DeviceId);
+    public string? HeaderIdentity { get; init; }
+    public string? BearerIdentity { get; init; }
+    public string? CredentialIdentity { get; init; }
 }
 
 public sealed record AwsSignatureDetails(string AuthScheme, bool IsSigV4, bool IsSigV3, string? AccessKeyFingerprint,

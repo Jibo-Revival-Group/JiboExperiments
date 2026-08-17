@@ -913,7 +913,8 @@ internal static class PortalEndpoints
             ICloudStateStore cloudStateStore,
             RobotPresenceRegistry robotPresenceRegistry,
             FleetNetworkPresenceRegistry fleetNetworkPresenceRegistry,
-            OpenJiboServerIdentity serverIdentity) =>
+            OpenJiboServerIdentity serverIdentity,
+            RobotIdentitySuggestionStore identitySuggestionStore) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session))
@@ -922,7 +923,7 @@ internal static class PortalEndpoints
             var includeHidden = bool.TryParse(request.Query["includeHidden"], out var requestedIncludeHidden) &&
                                 requestedIncludeHidden;
             return Results.Json(BuildStatusSummaryPayload(cloudStateStore, robotPresenceRegistry,
-                fleetNetworkPresenceRegistry, serverIdentity, includeHidden));
+                fleetNetworkPresenceRegistry, serverIdentity, identitySuggestionStore, includeHidden));
         });
 
         app.MapPost("/api/portal/status/robots/{deviceId}/archive", (
@@ -1217,10 +1218,9 @@ internal static class PortalEndpoints
             catch (KeyNotFoundException) { return Results.NotFound(new { error = "Robot record was not found." }); }
         });
 
-        app.MapGet("/api/portal/status/robots/{deviceId}/identity-suggestion", async (
+        app.MapGet("/api/portal/status/robots/{deviceId}/identity-suggestion", (
             string deviceId, HttpRequest request, PortalSessionService portalSessionService,
-            ICloudStateStore cloudStateStore, IMediaContentStore mediaContentStore,
-            CancellationToken cancellationToken) =>
+            ICloudStateStore cloudStateStore, RobotIdentitySuggestionStore identitySuggestionStore) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
@@ -1228,50 +1228,21 @@ internal static class PortalEndpoints
                 item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
 
-            var evidence = new List<object>();
-            var candidates = new List<string>();
-            foreach (var robotSession in cloudStateStore.GetSessions().Where(item =>
-                         !string.IsNullOrWhiteSpace(item.DeviceId) &&
-                         item.DeviceId.Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase)))
-            {
-                foreach (var key in new[] { "robotFriendlyId", "friendlyId", "registeredRobotId", "robotId" })
-                {
-                    if (!robotSession.Metadata.TryGetValue(key, out var value) || value is null) continue;
-                    var candidate = value.ToString()?.Trim();
-                    if (IsIdentityNameCandidate(candidate, device))
-                    {
-                        candidates.Add(candidate!);
-                        evidence.Add(new { source = "session", field = key, value = candidate });
-                    }
-                }
-            }
-            var artifacts = await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken);
-            foreach (var artifact in artifacts.Where(item =>
-                         ReadArtifactMeta(item.Meta, "deviceId").Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase)))
-            {
-                foreach (var key in new[] { "robot_name", "robotName", "robot_id", "robotId" })
-                {
-                    var candidate = ReadArtifactMeta(artifact.Meta, key);
-                    if (!IsIdentityNameCandidate(candidate, device)) continue;
-                    candidates.Add(candidate);
-                    evidence.Add(new { source = "artifact", field = key, value = candidate, path = artifact.Path });
-                }
-            }
-            var proposed = candidates.GroupBy(value => value, StringComparer.OrdinalIgnoreCase)
-                .OrderByDescending(group => group.Count()).ThenBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
-                .FirstOrDefault()?.Key;
-            if (string.IsNullOrWhiteSpace(proposed))
-                return Results.Json(new { suggested = false, currentRobotId = device.RobotId, evidence });
+            var suggestion = identitySuggestionStore.GetSuggestion(device.DeviceId);
+            if (suggestion is null)
+                return Results.Json(new { suggested = false, currentRobotId = device.RobotId, evidence = Array.Empty<object>() });
 
-            var target = cloudStateStore.FindDeviceByFriendlyId(proposed);
             return Results.Json(new
             {
                 suggested = true,
-                proposedRobotId = proposed,
+                suggestion.ProposedRobotId,
                 currentRobotId = device.RobotId,
-                action = target is null ? "rename" : "merge",
-                targetDeviceId = target?.DeviceId,
-                evidence
+                suggestion.Action,
+                suggestion.TargetDeviceId,
+                suggestion.ObservationCount,
+                suggestion.FirstObservedUtc,
+                suggestion.LastObservedUtc,
+                suggestion.Evidence
             });
         });
 
@@ -1279,6 +1250,7 @@ internal static class PortalEndpoints
             string deviceId, [FromBody] ApplyIdentitySuggestionRequest request,
             HttpRequest httpRequest, PortalSessionService portalSessionService,
             ICloudStateStore cloudStateStore, IMediaContentStore mediaContentStore,
+            RobotIdentitySuggestionStore identitySuggestionStore,
             CancellationToken cancellationToken) =>
         {
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
@@ -1289,15 +1261,21 @@ internal static class PortalEndpoints
                 item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (source is null) return Results.NotFound(new { error = "Robot record was not found." });
             var proposedRobotId = request.ProposedRobotId!.Trim();
+            var pendingSuggestion = identitySuggestionStore.GetSuggestion(source.DeviceId);
+            if (pendingSuggestion is null ||
+                !pendingSuggestion.ProposedRobotId.Equals(proposedRobotId, StringComparison.OrdinalIgnoreCase))
+                return Results.BadRequest(new { error = "That identity suggestion is no longer pending." });
             var target = cloudStateStore.FindDeviceByFriendlyId(proposedRobotId);
             if (target is not null && !target.DeviceId.Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase))
             {
                 var result = cloudStateStore.MergeRobotRecords(source.DeviceId, target.DeviceId);
                 var migratedArtifacts = await ReassignArtifactsAsync(mediaContentStore, result.SourceDeviceId,
                     result.TargetDeviceId, "robot-identity-suggestion-merge", cancellationToken);
+                identitySuggestionStore.Dismiss(source.DeviceId, proposedRobotId);
                 return Results.Json(new { ok = true, action = "merge", result, migratedArtifacts });
             }
             var renamed = cloudStateStore.RenameDevice(source.DeviceId, proposedRobotId);
+            identitySuggestionStore.Dismiss(source.DeviceId, proposedRobotId);
             return Results.Json(new { ok = true, action = "rename", device = renamed });
         });
 
@@ -1634,7 +1612,8 @@ internal static class PortalEndpoints
 
     private static object BuildStatusSummaryPayload(ICloudStateStore cloudStateStore,
         RobotPresenceRegistry robotPresenceRegistry, FleetNetworkPresenceRegistry fleetNetworkPresenceRegistry,
-        OpenJiboServerIdentity serverIdentity, bool includeHidden)
+        OpenJiboServerIdentity serverIdentity, RobotIdentitySuggestionStore identitySuggestionStore,
+        bool includeHidden)
     {
         var now = DateTimeOffset.UtcNow;
         using var process = Process.GetCurrentProcess();
@@ -1645,7 +1624,9 @@ internal static class PortalEndpoints
             .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)
             .ToArray();
         var liveConnections = robotPresenceRegistry.GetLiveConnections();
-        var robots = BuildReconciledRobotStatuses(allDevices, sessions, recentSessions, liveConnections, now, includeHidden);
+        var robots = BuildReconciledRobotStatuses(allDevices, sessions, recentSessions, liveConnections, now, includeHidden)
+            .Select(robot => robot with { IdentitySuggestion = identitySuggestionStore.GetSuggestion(robot.DeviceId) })
+            .ToArray();
 
         var localConnectedRobotIds = robots
             .Where(robot => robot.Connected)
@@ -1712,7 +1693,7 @@ internal static class PortalEndpoints
             fleet = new
             {
                 registeredRobots = allDevices.Count,
-                visibleRobots = robots.Count,
+                visibleRobots = robots.Length,
                 hiddenRobots = allDevices.Count(device => device.IsHidden),
                 syntheticRobots = allDevices.Count(device => RobotRegistrationSources.IsSynthetic(device.RegistrationSource)),
                 activeRobots = robots.Count(robot => robot.IsActive),
@@ -2140,12 +2121,6 @@ internal static class PortalEndpoints
         System.Text.RegularExpressions.Regex.IsMatch(value.Trim(),
             "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+){2,}$");
 
-    private static bool IsIdentityNameCandidate(string? value, DeviceRegistration device) =>
-        IsSafeIdentityName(value) &&
-        !value!.Trim().Equals(device.RobotId, StringComparison.OrdinalIgnoreCase) &&
-        !value.Trim().Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase) &&
-        !value.Trim().StartsWith("robot-", StringComparison.OrdinalIgnoreCase);
-
     private static string SelectPreferredRegistrationSource(
         DeviceRegistration primaryDevice,
         IEnumerable<DeviceRegistration> groupDevices)
@@ -2319,7 +2294,10 @@ internal static class PortalEndpoints
         double? LastHeartbeatAgeSeconds,
         IReadOnlyList<string> SessionKinds,
         IReadOnlyList<string> ConnectionKinds,
-        string? SleepState);
+        string? SleepState)
+    {
+        public RobotIdentitySuggestion? IdentitySuggestion { get; init; }
+    }
 
     private sealed class DisjointSet
     {

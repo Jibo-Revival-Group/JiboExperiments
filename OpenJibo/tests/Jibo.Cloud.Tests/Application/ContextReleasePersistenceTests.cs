@@ -39,4 +39,42 @@ public sealed class ContextReleasePersistenceTests
         Assert.NotNull(device);
         Assert.Equal("BEam.1.1.0", device.FirmwareVersion);
     }
+
+    [Fact]
+    public async Task HandleContextAsync_RecordsIdentitySuggestionWhileTrafficIsInFlight()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "observed-device-001",
+            RobotId = "robot-observed-device-001",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var suggestions = new RobotIdentitySuggestionStore(store);
+        var turnService = new WebSocketTurnFinalizationService(
+            Mock.Of<IConversationBroker>(),
+            Mock.Of<ISttStrategySelector>(),
+            Mock.Of<ITurnTelemetrySink>(),
+            NullLogger<WebSocketTurnFinalizationService>.Instance,
+            cloudStateStore: store,
+            identitySuggestionStore: suggestions);
+        var session = store.OpenSession("neo-hub-listen", "observed-device-001", "conn:identity-test",
+            "neohub.openjibo.com", "/v1/listen");
+
+        await turnService.HandleContextAsync(session, new WebSocketMessageEnvelope
+        {
+            Text =
+                """{"type":"CONTEXT","data":{"runtime":{"loop":{"loopId":"household-loop","jibo":{"id":"Alpha-Beta-Dodger-Quirk"},"users":[]}},"general":{"release":"12.10.0"}}}"""
+        });
+
+        var suggestion = suggestions.GetSuggestion("observed-device-001");
+        Assert.NotNull(suggestion);
+        Assert.Equal("Alpha-Beta-Dodger-Quirk", suggestion.ProposedRobotId);
+        Assert.Contains(suggestion.Evidence, evidence => evidence.Source == "websocket-context" &&
+                                                        evidence.Field.EndsWith("runtime.loop.jibo.id",
+                                                            StringComparison.Ordinal));
+        Assert.DoesNotContain(store.GetDevices(), device =>
+            device.DeviceId.Equals("Alpha-Beta-Dodger-Quirk", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("12.10.0", store.FindDeviceByFriendlyId("observed-device-001")!.FirmwareVersion);
+    }
 }

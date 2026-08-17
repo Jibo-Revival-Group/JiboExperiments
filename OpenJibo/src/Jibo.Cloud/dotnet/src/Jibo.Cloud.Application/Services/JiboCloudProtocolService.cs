@@ -18,7 +18,8 @@ public sealed class JiboCloudProtocolService(
     ICloudAuthProtocolHandler? authHandler = null,
     RobotNotificationRegistry? robotNotificationRegistry = null,
     LoopUpdatedPushService? loopUpdatedPushService = null,
-    ILogger<JiboCloudProtocolService>? logger = null)
+    ILogger<JiboCloudProtocolService>? logger = null,
+    RobotIdentitySuggestionStore? identitySuggestionStore = null)
 {
     private const int SchedulerBackupDelayMs = 250;
     private const int SchedulerDownloadTickMs = 100;
@@ -101,6 +102,8 @@ public sealed class JiboCloudProtocolService(
 
     public Task<ProtocolDispatchResult> DispatchAsync(ProtocolEnvelope envelope)
     {
+        ObserveIdentityCandidates(envelope);
+
         if (envelope.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
             envelope.Path == "/" &&
             string.IsNullOrWhiteSpace(envelope.ServicePrefix))
@@ -180,6 +183,27 @@ public sealed class JiboCloudProtocolService(
             operation,
             note = "unknown target default response"
         }));
+    }
+
+    private void ObserveIdentityCandidates(ProtocolEnvelope envelope)
+    {
+        if (identitySuggestionStore is null) return;
+
+        var candidates = RobotIdentityCandidateExtractor.Extract(envelope.BodyText).ToList();
+        if (RobotIdentitySuggestionStore.IsSafeIdentityName(envelope.DeviceId))
+            candidates.Add(new RobotIdentityCandidate("X-Jibo-RobotId", envelope.DeviceId!.Trim()));
+        if (candidates.Count == 0) return;
+
+        var identity = _identityResolver.Resolve(envelope);
+        var associatedDeviceId = identity.BearerIdentity ?? identity.CredentialIdentity ?? identity.DeviceId;
+        if (string.IsNullOrWhiteSpace(associatedDeviceId)) return;
+
+        var operation = $"{envelope.ServicePrefix}.{envelope.Operation}".Trim('.');
+        var source = string.IsNullOrWhiteSpace(operation)
+            ? envelope.Transport
+            : $"{envelope.Transport}:{operation}";
+        foreach (var candidate in candidates)
+            identitySuggestionStore.Observe(associatedDeviceId, candidate.Value, source, candidate.Field);
     }
 
     private static bool TryHandleLegacyRestRequest(ProtocolEnvelope envelope,

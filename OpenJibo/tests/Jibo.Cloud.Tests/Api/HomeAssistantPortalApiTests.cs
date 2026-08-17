@@ -430,6 +430,92 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task StatusSummary_ShowsOnlyObservedIdentitySuggestionAndApplyClearsIt()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var suggestions = factory.Services.GetRequiredService<RobotIdentitySuggestionStore>();
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "observed-device-001",
+            RobotId = "robot-observed-device-001",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        suggestions.Observe("observed-device-001", "Alpha-Beta-Dodger-Quirk",
+            "websocket-context", "data.runtime.loop.jibo.id");
+        await AuthenticateAdminAsync(client);
+
+        var summary = await (await client.GetAsync("/api/portal/status/summary"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var robot = Assert.Single(summary.GetProperty("robots").EnumerateArray(), item =>
+            item.GetProperty("deviceId").GetString() == "observed-device-001");
+        Assert.Equal("Alpha-Beta-Dodger-Quirk",
+            robot.GetProperty("identitySuggestion").GetProperty("proposedRobotId").GetString());
+
+        var apply = await client.PostAsJsonAsync(
+            "/api/portal/status/robots/observed-device-001/identity-suggestion/apply",
+            new { proposedRobotId = "Alpha-Beta-Dodger-Quirk" });
+
+        apply.EnsureSuccessStatusCode();
+        Assert.Equal("Alpha-Beta-Dodger-Quirk",
+            stateStore.GetDevices().Single(item => item.DeviceId == "observed-device-001").RobotId);
+        Assert.Null(suggestions.GetSuggestion("observed-device-001"));
+    }
+
+    [Fact]
+    public async Task IdentitySuggestion_ExistingNameMergesInsteadOfCreatingDuplicate()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var stateStore = factory.Services.GetRequiredService<ICloudStateStore>();
+        var suggestions = factory.Services.GetRequiredService<RobotIdentitySuggestionStore>();
+        const string sourceDeviceId = "observed-device-001";
+        const string targetDeviceId = "canonical-device-001";
+        const string proposedRobotId = "Alpha-Beta-Dodger-Quirk";
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = sourceDeviceId,
+            RobotId = "robot-observed-device-001",
+            FriendlyName = "OpenJibo Registered Robot",
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
+        stateStore.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = targetDeviceId,
+            RobotId = proposedRobotId,
+            FriendlyName = proposedRobotId,
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
+        suggestions.Observe(sourceDeviceId, proposedRobotId,
+            "websocket-context", "data.runtime.loop.jibo.id");
+        await AuthenticateAdminAsync(client);
+
+        var suggestion = await (await client.GetAsync(
+                $"/api/portal/status/robots/{sourceDeviceId}/identity-suggestion"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("merge", suggestion.GetProperty("action").GetString());
+        Assert.Equal(targetDeviceId, suggestion.GetProperty("targetDeviceId").GetString());
+
+        var apply = await client.PostAsJsonAsync(
+            $"/api/portal/status/robots/{sourceDeviceId}/identity-suggestion/apply",
+            new { proposedRobotId });
+
+        apply.EnsureSuccessStatusCode();
+        var result = await apply.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("merge", result.GetProperty("action").GetString());
+        var devices = stateStore.GetDevices();
+        var source = devices.Single(device => device.DeviceId == sourceDeviceId);
+        Assert.True(source.IsHidden);
+        Assert.NotNull(source.ArchivedUtc);
+        var activeNamedRobot = Assert.Single(devices, device =>
+            !device.IsHidden && device.ArchivedUtc is null &&
+            proposedRobotId.Equals(device.RobotId, StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(targetDeviceId, activeNamedRobot.DeviceId);
+        Assert.Null(suggestions.GetSuggestion(sourceDeviceId));
+    }
+
+    [Fact]
     public async Task CredentialClaim_BackfillsMatchingUnassignedArtifacts()
     {
         await using var factory = CreateFactory();

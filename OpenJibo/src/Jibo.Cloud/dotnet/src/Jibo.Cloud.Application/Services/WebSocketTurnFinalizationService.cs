@@ -14,7 +14,8 @@ public sealed class WebSocketTurnFinalizationService(
     ILogger<WebSocketTurnFinalizationService> logger,
     HomeAssistantCommandService? homeAssistantCommandService = null,
     ICloudStateStore? cloudStateStore = null,
-    IMediaContentStore? mediaContentStore = null
+    IMediaContentStore? mediaContentStore = null,
+    RobotIdentitySuggestionStore? identitySuggestionStore = null
 )
 {
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
@@ -425,6 +426,18 @@ public sealed class WebSocketTurnFinalizationService(
             turnState.SawContext = true;
             turnState.ContextPayload = ExtractDataPayload(envelope.Text);
             session.Metadata["context"] = turnState.ContextPayload;
+            var previouslyObservedDeviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredValue)
+                ? registeredValue?.ToString()
+                : session.DeviceId;
+            if (identitySuggestionStore is not null && !string.IsNullOrWhiteSpace(previouslyObservedDeviceId))
+            {
+                foreach (var candidate in RobotIdentityCandidateExtractor.Extract(
+                             turnState.ContextPayload ?? envelope.Text))
+                    identitySuggestionStore.Observe(previouslyObservedDeviceId, candidate.Value,
+                        "websocket-context", candidate.Field);
+                if (identitySuggestionStore.GetSuggestion(previouslyObservedDeviceId) is not null)
+                    session.Metadata["identitySuggestionDeviceId"] = previouslyObservedDeviceId;
+            }
             SessionRobotIdentityBinder.TryBindFromContextPayload(
                 session,
                 turnState.ContextPayload ?? envelope.Text);
@@ -506,8 +519,20 @@ public sealed class WebSocketTurnFinalizationService(
         var registeredDeviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredValue)
             ? registeredValue?.ToString()
             : null;
+        var suggestionDeviceId = session.Metadata.TryGetValue("identitySuggestionDeviceId", out var suggestionValue)
+            ? suggestionValue?.ToString()
+            : null;
+        var suggestionDevice = string.IsNullOrWhiteSpace(suggestionDeviceId)
+            ? null
+            : cloudStateStore.FindDeviceByFriendlyId(suggestionDeviceId);
+        if (suggestionDevice is null || suggestionDevice.IsHidden || suggestionDevice.ArchivedUtc is not null)
+            suggestionDeviceId = null;
         cloudStateStore.GetOrCreateDevice(
-            string.IsNullOrWhiteSpace(registeredDeviceId) ? session.DeviceId : registeredDeviceId,
+            !string.IsNullOrWhiteSpace(registeredDeviceId)
+                ? registeredDeviceId
+                : !string.IsNullOrWhiteSpace(suggestionDeviceId)
+                    ? suggestionDeviceId
+                    : session.DeviceId,
             release,
             null);
     }

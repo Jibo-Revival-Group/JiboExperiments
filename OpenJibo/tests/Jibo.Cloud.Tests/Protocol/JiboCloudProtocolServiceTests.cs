@@ -2910,6 +2910,34 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public async Task HttpTraffic_RecordsIdentitySuggestionWithoutArtifactHistoryScan()
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        stateStore.GetOrCreateDevice("observed-device-001", null, null);
+        var token = stateStore.IssueRobotToken("observed-device-001");
+        var suggestions = new RobotIdentitySuggestionStore(stateStore);
+        var service = new JiboCloudProtocolService(stateStore, identitySuggestionStore: suggestions);
+
+        await service.DispatchAsync(new ProtocolEnvelope
+        {
+            Method = "POST",
+            ServicePrefix = "Loop_20160413",
+            Operation = "List",
+            DeviceId = "Alpha-Beta-Dodger-Quirk",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Authorization"] = $"Bearer {token}"
+            },
+            BodyText = "{}"
+        });
+
+        var suggestion = suggestions.GetSuggestion("observed-device-001");
+        Assert.NotNull(suggestion);
+        Assert.Equal("Alpha-Beta-Dodger-Quirk", suggestion.ProposedRobotId);
+        Assert.Contains(suggestion.Evidence, evidence => evidence.Field == "X-Jibo-RobotId");
+    }
+
+    [Fact]
     public void AwsSigV4Identity_IsObservedButDoesNotClaimARobot()
     {
         var resolver = new ProtocolRobotIdentityResolver(new InMemoryCloudStateStore());

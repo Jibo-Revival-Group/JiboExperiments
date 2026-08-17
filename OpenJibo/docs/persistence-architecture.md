@@ -2,17 +2,22 @@
 
 ## Goal
 
-Keep OpenJibo's stateful behavior portable now and Azure-ready later.
+Keep OpenJibo's stateful behavior portable while making durable production state database-backed and bounded.
 
-The current in-memory stores are fine as the default implementation, but the app should depend on stable persistence contracts rather than directly on in-memory collections or file formats.
+In-memory stores are appropriate for tests, local development, and explicitly bounded active-session state. They are not an acceptable production source of truth for durable cloud or personal-memory data. The `2026-08-16/17` production OOM incident demonstrated that placing a PostgreSQL snapshot adapter behind `InMemoryCloudStateStore` still hydrates and rewrites the entire cloud state in process memory.
+
+The tracked replacement work and incident evidence live in [feature-backlog.md](feature-backlog.md#13-replace-snapshot-backed-in-memory-cloud-state).
 
 ## Design Principles
 
 - Application code talks to small, intent-specific interfaces.
 - Persistence keys are always scoped by tenant and person where relevant.
-- In-memory, local JSON, and hosted Azure stores are adapters, not behavior sources.
+- PostgreSQL is the managed and self-hosted source of truth for durable structured state.
+- Blob/file storage holds binary media and backup payloads; PostgreSQL holds their manifests and integrity metadata.
+- In-memory adapters are limited to tests/local development and bounded ephemeral connection/turn state.
 - Long-lived data should be versioned so we can add optimistic concurrency later.
 - Ephemeral turn/session state should stay separate from durable user and device state.
+- A scoped mutation must not serialize or rewrite unrelated records or tenants.
 
 ## Current Seams
 
@@ -39,7 +44,7 @@ Responsible for:
 - person records
 - greeting/proactive presence metadata when it becomes durable
 
-This is the seam most likely to become Azure SQL or Cosmos later.
+This belongs in normalized PostgreSQL tables with transactional writes and revision checks.
 
 ### 2. Personal memory store
 
@@ -52,7 +57,7 @@ Responsible for:
 - important dates
 - household lists
 
-This can remain in memory now and later move to a durable store keyed by account/loop/device/person.
+This belongs in PostgreSQL keyed by account/loop/device/person. An in-memory implementation remains useful for tests only.
 
 ### 3. Session and short-lived orchestration state
 
@@ -62,7 +67,7 @@ Responsible for:
 - temporary skill state
 - active report/list/greeting interaction state
 
-This can stay in-process for now, but should be clearly separated from durable memory.
+Active connection and turn state can stay in process only with TTL cleanup, per-session audio limits, total memory bounds, and disconnect cleanup. Durable issued-token material must be separated from live connection state and persisted safely when restart survival is required.
 
 ### 4. Media and backup store
 
@@ -72,7 +77,7 @@ Responsible for:
 - backup manifests
 - binary references
 
-This is a good candidate for Azure Blob Storage plus a metadata table later.
+Payload bytes belong in Azure Blob Storage (or the self-hosted blob/file adapter) and manifests belong in PostgreSQL.
 
 ## Record Shape Guidance
 
@@ -98,25 +103,26 @@ That gives us:
 
 ## Adapter Plan
 
-### Phase 1
+### Phase 1: Incident Mitigation (Complete)
 
-- keep `InMemoryPersonalMemoryStore`
-- keep `InMemoryCloudStateStore`
-- make sure all callers use the interfaces only
-- add tests against behavior, not implementation details
+- prevent backups from recursively embedding the backup catalog
+- compact legacy recursive backup payloads on load
+- retain behavior tests around backup creation, persistence, and restore
 
-### Phase 2
+### Phase 2: Production Store Replacement
 
-- introduce durable adapters behind the same interfaces
-- likely split:
-  - SQL or Cosmos for identity/topology
-  - Blob or table-backed store for media/backup metadata
-  - table/SQL-backed memory store for personal facts
+- split durable state, backup/media, authentication-token, and ephemeral-session contracts
+- add normalized PostgreSQL tables and scoped repository operations
+- move backup/media payload bytes to Blob Storage and retain manifests in PostgreSQL
+- import and verify the existing snapshot through an idempotent migration
+- keep a compatibility adapter until each record family passes protocol and migration tests
 
-### Phase 3
+### Phase 3: Scale And Remove Snapshot Fallback
 
 - add replication/sync primitives if we need multi-server state convergence
-- prefer explicit change records or versioned snapshots over hidden shared state
+- add multi-replica concurrency and cache-invalidation proof
+- remove production snapshot fallback and alert if it is ever selected
+- retain export snapshots only as operational recovery artifacts, never runtime truth
 
 ## Non-Goals For Now
 
@@ -124,13 +130,16 @@ That gives us:
 - no event-sourcing rewrite
 - no giant generic repository
 - no distributed transaction work before single-node semantics are stable
+- no attempt to make active audio buffers durable
 
 ## Immediate Next Step
 
-Before building durable adapters, tighten the store contracts around:
+Start the backlog item by tightening and splitting store contracts around:
 
 - tenant/person scoping
 - record versioning
-- explicit load/save operations for durable state
+- scoped query/upsert operations for durable state
+- bounded ephemeral session ownership
+- backup/media manifest versus payload ownership
 
-That lets us swap the backing store later without changing the personality, report, greeting, or list behaviors already built on top.
+Then implement the PostgreSQL schema and snapshot-import migration one cohesive record family at a time, preserving the personality, report, greeting, list, and stock backup/restore behaviors behind compatibility tests.

@@ -594,6 +594,43 @@ These are the carryover items that need a clean proof pass first:
   - perform a real capture audit covering events, logs, media, and ASR, including an unassigned-credential claim
   - confirm archived records remain historical after a fresh deployment
 
+### 13. Replace Snapshot-Backed In-Memory Cloud State
+
+- Status: `ready`
+- Tags: `storage`, `reliability`
+- Priority: production reliability; complete before treating multi-replica hosting as safe
+- Why now:
+  - the `2026-08-16/17` production incident proved that a healthy `/health` response does not mean robot traffic can complete when persistence allocations are failing
+  - production selects `PostgreSql`, but dependency injection still creates a singleton `InMemoryCloudStateStore`; `PostgreSqlSnapshotStore` only loads and rewrites one whole-state JSON document
+  - the production `cloud-state` row reached `46,446,295` characters, and routine robot context traffic failed in `Utf8JsonWriter.WriteStringEscapeValue` while rewriting it inside a `2 GiB` Container App
+  - five recursively embedded backup payloads had grown to approximately `0.8 MB`, `2.0 MB`, `4.3 MB`, `9.5 MB`, and `20.8 MB`
+- Immediate mitigation already shipped:
+  - backup snapshots no longer embed the backup catalog
+  - legacy recursive backup payloads compact on load while preserving their restore content
+  - the compacted production state was estimated at approximately `4.35 million` characters, about a `90%` reduction
+  - focused backup/persistence tests and the full `2,000`-test cloud suite passed
+- Remaining implementation work:
+  - split the broad `ICloudStateStore` contract into durable, backup/media, authentication-token, and ephemeral session/turn responsibilities
+  - make normalized PostgreSQL tables the production source of truth for accounts, robots, credential bindings, loops, people/members, users, updates, media metadata, backup manifests, holidays, commute/calendar data, greeting presence, recognition observations, and trust/identity records
+  - replace whole-snapshot saves with scoped PostgreSQL queries, transactional upserts, revisions, and optimistic-concurrency checks so a session update never serializes unrelated tenants or records
+  - keep only active WebSocket connection and turn state in process memory; add explicit TTL cleanup, per-session audio limits, total memory bounds, and disconnect cleanup
+  - distinguish durable issued/authentication tokens from live connection state; persist only the durable token material needed across restarts and avoid storing reusable secrets in plaintext
+  - store media bytes and backup payloads in Blob Storage (or the self-hosted blob/file adapter), with PostgreSQL holding URI/key, content hash, byte length, content type, encryption metadata, timestamps, and revision/ETag
+  - add an idempotent migration that imports the existing `PersistenceSnapshots.cloud-state` document into the new schema, validates counts and identities, records completion, and preserves a rollback/export copy until production verification succeeds
+  - provide a compatibility adapter during migration so stock protocol behavior and backup/restore contracts remain unchanged while record families move incrementally
+  - make multi-replica behavior explicit: no replica-local durable truth, no last-writer-wins whole-document overwrite, and bounded caching with invalidation or revision checks where caching is justified
+  - add production metrics and alerts for process working set/GC pressure, active and expired sessions, buffered audio bytes, persistence latency/failures, backup payload size, and unexpected snapshot fallback use
+- Exit criteria:
+  - production DI does not resolve `InMemoryCloudStateStore` for durable cloud state or personal memory
+  - no production mutation serializes or rewrites a whole-cloud JSON snapshot
+  - repeated backup creation grows linearly, and backup payload bytes live outside the PostgreSQL metadata rows
+  - active-session memory remains bounded through a sustained reconnect/audio/load test within the deployed `2 GiB` limit, including cleanup after abnormal disconnects
+  - two replicas can serve the same robot/account without divergent state or destructive whole-document overwrites
+  - migration dry-run, apply, verification, rollback/export, backup creation, and restore all have automated tests and a managed-deployment smoke check
+  - operators can detect persistence degradation before robot requests begin timing out while `/health` remains green
+- Next action:
+  - write the PostgreSQL schema and contract-split design, then migrate one cohesive record family at a time behind compatibility tests; start with backup manifests/payloads and durable identity/topology records, while extracting active sessions into a bounded ephemeral store
+
 ### Next Up (`2026-05-06`): Dialog Parsing Expansion And Ambiguity Guardrails
 
 - Status: `polish`
@@ -1234,6 +1271,8 @@ For `1.0.19`:
 19. Dialog joining/composition as a post-release enhancement, kept separate from the 1.0.19 ladder
 
 For `1.0.20` and beyond:
+
+Production reliability gate: complete [Replace Snapshot-Backed In-Memory Cloud State](#13-replace-snapshot-backed-in-memory-cloud-state) before enabling multi-replica production scale or considering the hosted persistence layer complete. The recursive-backup fix is mitigation, not closure of the storage architecture issue.
 
 1. Open Jibo mode conversion package
    - add explicit `open-jibo`, `open-jibo-ai`, `open-jibo-self-hosted`, and `open-jibo-developer` modes

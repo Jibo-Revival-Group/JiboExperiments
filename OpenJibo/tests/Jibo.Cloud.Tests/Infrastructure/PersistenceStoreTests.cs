@@ -4,6 +4,8 @@ using Jibo.Cloud.Infrastructure.DependencyInjection;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Jibo.Cloud.Tests.Infrastructure;
 
@@ -168,6 +170,62 @@ public sealed class PersistenceStoreTests
         Assert.Single(backend.Saves);
         Assert.Contains(store.ListMedia(), item => item.Path == "backend-photo");
         Assert.Equal("1", store.GetPersistenceStateInfo().SchemaVersion);
+    }
+
+    [Fact]
+    public void CloudStateStore_BackupsDoNotEmbedPriorBackups()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-backup-growth-{Guid.NewGuid():N}.json");
+
+        try
+        {
+            var store = new InMemoryCloudStateStore(persistencePath);
+            store.CreateBackup("openjibo-default-loop", "first");
+            store.CreateMedia("openjibo-default-loop", "between-backups", "image", "photo-ref", false, null);
+            store.CreateBackup("openjibo-default-loop", "second");
+
+            using var persistedState = JsonDocument.Parse(File.ReadAllText(persistencePath));
+            var backups = persistedState.RootElement.GetProperty("Backups");
+            Assert.Equal(2, backups.GetArrayLength());
+            foreach (var backup in backups.EnumerateArray())
+            {
+                using var backupSnapshot = JsonDocument.Parse(backup.GetProperty("SnapshotJson").GetString()!);
+                Assert.Empty(backupSnapshot.RootElement.GetProperty("Backups").EnumerateArray());
+            }
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
+    [Fact]
+    public void CloudStateStore_CompactsRecursiveLegacyBackupsWhenLoading()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-backup-compact-{Guid.NewGuid():N}.json");
+
+        try
+        {
+            var store = new InMemoryCloudStateStore(persistencePath);
+            store.CreateBackup("openjibo-default-loop", "legacy");
+
+            var persistedJson = File.ReadAllText(persistencePath);
+            var legacyState = JsonNode.Parse(persistedJson)!.AsObject();
+            legacyState["Backups"]!.AsArray()[0]!["SnapshotJson"] = persistedJson;
+            File.WriteAllText(persistencePath, legacyState.ToJsonString());
+
+            _ = new InMemoryCloudStateStore(persistencePath);
+
+            using var compactedState = JsonDocument.Parse(File.ReadAllText(persistencePath));
+            var compactedPayload = compactedState.RootElement.GetProperty("Backups")[0]
+                .GetProperty("SnapshotJson").GetString()!;
+            using var compactedBackup = JsonDocument.Parse(compactedPayload);
+            Assert.Empty(compactedBackup.RootElement.GetProperty("Backups").EnumerateArray());
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
     }
 
     [Fact]

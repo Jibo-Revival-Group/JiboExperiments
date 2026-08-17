@@ -1724,7 +1724,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public BackupRecord CreateBackup(string loopId, string name)
     {
-        var snapshotJson = JsonSerializer.Serialize(CaptureSnapshot(DateTimeOffset.UtcNow), PersistenceJsonOptions);
+        // A backup is a point-in-time copy of cloud state, not a container for every
+        // backup that preceded it. Including _backups here causes recursive growth:
+        // each new backup embeds all prior backup payloads and roughly doubles the
+        // persisted snapshot size.
+        var snapshotJson = JsonSerializer.Serialize(CaptureSnapshot(DateTimeOffset.UtcNow, includeBackups: false),
+            PersistenceJsonOptions);
         var backup = new BackupRecord
         {
             LoopId = string.IsNullOrWhiteSpace(loopId) ? null : loopId.Trim(),
@@ -3174,7 +3179,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         };
     }
 
-    private PersistentStateSnapshot CaptureSnapshot(DateTimeOffset now)
+    private PersistentStateSnapshot CaptureSnapshot(DateTimeOffset now, bool includeBackups = true)
     {
         return new PersistentStateSnapshot
         {
@@ -3193,7 +3198,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             KeyRequests = _keyRequests.Values.ToArray(),
             Updates = _updates.ToArray(),
             Media = _media.ToArray(),
-            Backups = _backups.ToArray(),
+            Backups = includeBackups ? _backups.ToArray() : [],
             CommuteProfiles = _commuteProfiles.ToArray(),
             CalendarEvents = _calendarEvents.ToArray(),
             GreetingPresences = _greetingPresences.ToArray(),
@@ -3256,7 +3261,20 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _media.AddRange(snapshot.Media ?? []);
 
         _backups.Clear();
-        _backups.AddRange(snapshot.Backups ?? []);
+        var compactedBackups = false;
+        foreach (var backup in snapshot.Backups ?? [])
+        {
+            var compactedSnapshotJson = CompactBackupSnapshotJson(backup.SnapshotJson);
+            compactedBackups |= !string.Equals(compactedSnapshotJson, backup.SnapshotJson, StringComparison.Ordinal);
+            _backups.Add(new BackupRecord
+            {
+                BackupId = backup.BackupId,
+                CreatedUtc = backup.CreatedUtc,
+                LoopId = backup.LoopId,
+                Name = backup.Name,
+                SnapshotJson = compactedSnapshotJson
+            });
+        }
 
         _commuteProfiles.Clear();
         _commuteProfiles.AddRange(snapshot.CommuteProfiles ?? []);
@@ -3337,7 +3355,50 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         Interlocked.Exchange(ref _revision, snapshot.Revision);
         _lastLoadedUtc = snapshot.LastLoadedUtc ?? DateTimeOffset.UtcNow;
         _lastSavedUtc = snapshot.LastSavedUtc;
-        return cleanupApplied;
+        return cleanupApplied || compactedBackups;
+    }
+
+    private static string? CompactBackupSnapshotJson(string? snapshotJson)
+    {
+        if (string.IsNullOrWhiteSpace(snapshotJson)) return snapshotJson;
+
+        try
+        {
+            using var document = JsonDocument.Parse(snapshotJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty(nameof(PersistentStateSnapshot.Backups), out var backups) ||
+                backups.ValueKind != JsonValueKind.Array || backups.GetArrayLength() == 0)
+                return snapshotJson;
+
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                foreach (var property in document.RootElement.EnumerateObject())
+                {
+                    writer.WritePropertyName(property.Name);
+                    if (property.NameEquals(nameof(PersistentStateSnapshot.Backups)))
+                    {
+                        writer.WriteStartArray();
+                        writer.WriteEndArray();
+                    }
+                    else
+                    {
+                        property.Value.WriteTo(writer);
+                    }
+                }
+
+                writer.WriteEndObject();
+            }
+
+            return Encoding.UTF8.GetString(stream.GetBuffer(), 0, checked((int)stream.Length));
+        }
+        catch (JsonException)
+        {
+            // Preserve a malformed legacy payload. RestoreBackup already treats it
+            // as unusable, and startup should not fail because an old backup is bad.
+            return snapshotJson;
+        }
     }
 
     private bool ClearArchivedSessionDeviceBindingsLocked()

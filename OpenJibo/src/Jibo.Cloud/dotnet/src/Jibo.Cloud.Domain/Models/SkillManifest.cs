@@ -15,13 +15,20 @@ public sealed class SkillManifest
     public string PackageType { get; init; } = "external";
     public string Adapter { get; init; } = string.Empty;
     public string ExecutionTarget { get; init; } = string.Empty;
+    public string RoutingFile { get; init; } = string.Empty;
     public IReadOnlyList<string> SupportedLanguages { get; init; } = [];
-    public IReadOnlyList<SkillIntentBinding> IntentBindings { get; init; } = [];
+    public IReadOnlyList<SkillIntentBinding> IntentBindings { get; set; } = [];
     public IReadOnlyList<string> ProactiveBindings { get; init; } = [];
     public IReadOnlyList<string> Permissions { get; init; } = [];
     public IReadOnlyList<string> Dependencies { get; init; } = [];
     public SkillCompatibility Compatibility { get; init; } = new();
     public SkillAssets Assets { get; init; } = new();
+}
+
+public sealed class SkillRoutingFile
+{
+    public string ApiVersion { get; init; } = "1";
+    public IReadOnlyList<SkillIntentBinding> Bindings { get; init; } = [];
 }
 
 public sealed class SkillIntentBinding

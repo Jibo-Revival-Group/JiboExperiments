@@ -8,40 +8,9 @@
    "packageType": "builtin",
    "adapter": "legacy",
    "executionTarget": "server",
+   "routingFile": "routing.json",
    "supportedLanguages": [
      "en"
-   ],
-   "intentBindings": [
-     {
-       "intent": "fun_fact",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "joke",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "surprise",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "word_of_the_day",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "word_of_the_day_guess",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "yes_no_clarify",
-       "priority": 50,
-       "match": {}
-     }
    ],
    "proactiveBindings": [],
    "permissions": [],

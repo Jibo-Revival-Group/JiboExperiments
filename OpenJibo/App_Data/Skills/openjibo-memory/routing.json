@@ -1,0 +1,55 @@
+ {
+   "apiVersion": "1",
+   "bindings": [
+     {
+       "intent": "memory_get_affinity",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "memory_get_birthday",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "memory_get_important_date",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "memory_get_name",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "memory_get_preference",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "memory_set_affinity",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "memory_set_birthday",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "memory_set_important_date",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "memory_set_name",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "memory_set_preference",
+       "priority": 50,
+       "match": {}
+     }
+   ]
+ }

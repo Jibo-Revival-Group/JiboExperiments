@@ -465,5 +465,6 @@ OpenJibo/docs/DesignDoc/original server
 !/OpenJibo/App_Data/Skills/README-skills.md
 !/OpenJibo/App_Data/Skills/openjibo-*/
 !/OpenJibo/App_Data/Skills/openjibo-*/manifest.json
+!/OpenJibo/App_Data/Skills/openjibo-*/routing.json
 /OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/appsettings.json
 OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/appsettings.json

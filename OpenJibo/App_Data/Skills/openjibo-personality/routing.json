@@ -1,0 +1,1125 @@
+ {
+   "apiVersion": "1",
+   "bindings": [
+     {
+       "intent": "good_afternoon",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "good_evening",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "good_morning",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "good_night",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "goodbye",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "how_are_you",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_are_you_god",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_are_you_here",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_best_friends",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_birthday",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_breathe",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_cook",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_dance",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_dream",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_exercise",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_fly",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_get_tired",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_have_emotions",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_hear",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_jump",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_laugh",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_learn",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_make_breakfast",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_make_coffee",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_move",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_read",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_see",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_sing",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_sleep",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_talk",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_walk",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_walk_dog",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_watch_movies",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_watch_tv",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_whistle",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_wink",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_can_work",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_desire",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_do_you_have_super_powers",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_actor",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_actress",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_adjective",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_animal",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_artist",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_author",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_baseball_team",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_basketball_team",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_bird",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_book",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_candy",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_car",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_celebrity",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_christmas_movie",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_color",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_country_musician",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_dessert",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_drink",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_fish",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_flower",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_food",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_football_team",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_fruit",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_halloween_candy",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_hobby",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_hockey_team",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_holiday_song",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_human",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_ice_cream_flavor",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_joke",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_mammal",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_movie",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_music",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_music_genre",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_name",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_noun",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_number",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_olympic_event",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_olympic_ring",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_painter",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_part_of_ces",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_part_of_today_show",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_part_of_vegas",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_pastime",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_pet",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_pizza_topping",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_place",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_planet",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_president",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_rapper",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_reindeer",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_robot",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_rock_band",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_scary_movie",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_season",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_shape",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_singer",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_smell",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_song",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_sport",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_super_bowl_commercial",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_superhero",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_thanksgiving_food",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_thing",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_time_of_day",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_tv_show",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_various_styles_band",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_vegetable",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_verb",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_video_game",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_weather",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_winter_olympics_event",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_winter_x_games_event",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_favorite_word",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_flavor",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_has_friends",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_how_do_you_work",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_how_many_people_do_you_know",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_how_much_do_you_weigh",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_how_much_you_cost",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_how_old_are_you",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_how_tall_are_you",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_identity",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_is_curious",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_is_friends_with_user",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_is_funny",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_is_helpful",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_is_kind",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_is_likable",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_is_loyal",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_is_mischievous",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_job",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_knowledge",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_adjective",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_animal",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_artist",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_author",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_band",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_bird",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_car",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_celebrity",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_color",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_food",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_mammal",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_movie",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_noun",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_number",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_pizza_topping",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_place",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_president",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_smell",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_time_of_day",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_vegetable",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_verb",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_video_game",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_weather",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_least_favorite_word",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_animals",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_being_jibo",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_cats",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_coffee",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_commander_app",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_dinosaurs",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_dogs",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_dreaming",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_greens",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_iron_man",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_kids",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_penguins",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_r2d2",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_sleep",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_space",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_sun",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_tennis",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_likes_whales",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_name",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_nickname",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_origin_created",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_origin_from",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_peers",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_personality",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_recommend_movie",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_search_web",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_sing_christmas_song",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_story",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_taxes",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_want_to_talk_about",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_are_you_afraid_of",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_are_you_forbidden_to_do",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_are_you_made_of",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_are_you_thinking",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_color_are_you",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_did_you_do",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_do_you_dream_about",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_do_you_eat",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_do_you_like_to_do",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_does_jibo_mean",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_have_you_been_doing",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_if_i_unplug_you",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_is_jibo_commander",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_is_prime_directive",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_is_the_loop",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_is_your_best_book",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_is_your_best_exercise",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_is_your_dream_vacation",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_is_your_purpose",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_is_your_religion",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_is_your_sign",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_it_is_like_being_a_robot",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_it_is_like_having_no_legs",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_languages_do_you_speak",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_what_you_do_when_alone",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_where_do_you_get_info",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_where_do_you_live",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_where_were_you_born",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_who_do_you_love",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "robot_who_is_your_hero",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "seasonal_likes_halloween",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "seasonal_likes_holiday_music",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "seasonal_likes_holiday_parties",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "seasonal_looks_forward_to_christmas",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "seasonal_plans_for_christmas",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "seasonal_thankful_for",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "welcome_back",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "whats_up",
+       "priority": 50,
+       "match": {}
+     }
+   ]
+ }

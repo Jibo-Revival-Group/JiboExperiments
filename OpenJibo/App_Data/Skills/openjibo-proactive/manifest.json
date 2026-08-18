@@ -8,50 +8,9 @@
    "packageType": "builtin",
    "adapter": "legacy",
    "executionTarget": "both",
+   "routingFile": "routing.json",
    "supportedLanguages": [
      "en"
-   ],
-   "intentBindings": [
-     {
-       "intent": "proactive_offer_declined",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "proactive_pizza_fact",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "seasonal_likes_halloween",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "seasonal_likes_holiday_music",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "seasonal_likes_holiday_parties",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "seasonal_looks_forward_to_christmas",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "seasonal_plans_for_christmas",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "seasonal_thankful_for",
-       "priority": 50,
-       "match": {}
-     }
    ],
    "proactiveBindings": [],
    "permissions": [],

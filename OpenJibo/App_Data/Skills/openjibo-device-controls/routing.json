@@ -1,0 +1,80 @@
+ {
+   "apiVersion": "1",
+   "bindings": [
+     {
+       "intent": "dance",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "dance_question",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "request_stop_ignoring_me",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "request_stop_making_that_noise",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "request_stop_moving",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "request_stop_staring",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "sleep",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "stop",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "turn_around",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "twerk",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "volume_down",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "volume_query",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "volume_to_value",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "volume_up",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "wake_up",
+       "priority": 50,
+       "match": {}
+     }
+   ]
+ }

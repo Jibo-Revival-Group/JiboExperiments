@@ -8,80 +8,9 @@
    "packageType": "builtin",
    "adapter": "legacy",
    "executionTarget": "server",
+   "routingFile": "routing.json",
    "supportedLanguages": [
      "en"
-   ],
-   "intentBindings": [
-     {
-       "intent": "backup_help",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "cloud_version",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "countdown",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "current_location",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "define_word",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "math_query",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "measurement_conversion",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "order_pizza",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "pizza",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "repeat_last_command",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "restore_backup",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "roll_dice",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "spell_word",
-       "priority": 50,
-       "match": {}
-     },
-     {
-       "intent": "verify_me",
-       "priority": 50,
-       "match": {}
-     }
    ],
    "proactiveBindings": [],
    "permissions": [],

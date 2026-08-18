@@ -11,17 +11,15 @@ Each package must contain a `manifest.json` with at least:
   "name": "Weather",
   "version": "1.0.0",
   "runtime": "dotnet",
+  "routingFile": "routing.json",
   "executionTarget": "server",
-  "supportedLanguages": ["en"],
-  "intentBindings": [
-    {
-      "intent": "requestWeather",
-      "priority": 80,
-      "match": { "entities": ["location", "date"] }
-    }
-  ]
+  "supportedLanguages": ["en"]
 }
 ```
+
+The referenced `routing.json` contains the package's intent bindings. Small
+packages may still provide `intentBindings` inline for convenience, but larger
+packages should keep routing declarations in that separate file.
 
 The default runtime directory is `App_Data/Skills`. It can be overridden with
 `OpenJibo:Skills:DirectoryPath`.

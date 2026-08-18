@@ -88,6 +88,22 @@ public sealed class FileSystemSkillRegistry : ISkillRegistry
         try
         {
             var manifest = JsonSerializer.Deserialize<SkillManifest>(File.ReadAllText(manifestPath), JsonOptions);
+            if (manifest is not null && !string.IsNullOrWhiteSpace(manifest.RoutingFile))
+            {
+                var routingPath = ResolvePackageFile(packageDirectory, manifest.RoutingFile);
+                if (routingPath is null)
+                    return Failed(packageDirectory, "routingFile must point to a file inside the skill package.");
+
+                if (!File.Exists(routingPath))
+                    return Failed(packageDirectory, $"routing file '{manifest.RoutingFile}' is missing.");
+
+                var routing = JsonSerializer.Deserialize<SkillRoutingFile>(File.ReadAllText(routingPath), JsonOptions);
+                if (routing is null)
+                    return Failed(packageDirectory, $"routing file '{manifest.RoutingFile}' is empty.");
+
+                manifest.IntentBindings = routing.Bindings;
+            }
+
             var errors = Validate(manifest);
             if (errors.Count > 0)
                 return new InstalledSkill
@@ -135,7 +151,10 @@ public sealed class FileSystemSkillRegistry : ISkillRegistry
             errors.Add("packageType must be external or builtin.");
 
         if (string.Equals(manifest.PackageType, "builtin", StringComparison.OrdinalIgnoreCase))
+        {
             Require(manifest.Adapter, "adapter", errors);
+            Require(manifest.RoutingFile, "routingFile", errors);
+        }
 
         if (!string.Equals(manifest.ExecutionTarget, "server", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(manifest.ExecutionTarget, "robot", StringComparison.OrdinalIgnoreCase) &&
@@ -146,6 +165,18 @@ public sealed class FileSystemSkillRegistry : ISkillRegistry
             errors.Add("every intent binding must declare an intent.");
 
         return errors;
+    }
+
+    private static string? ResolvePackageFile(string packageDirectory, string relativePath)
+    {
+        if (Path.IsPathRooted(relativePath)) return null;
+
+        var packageRoot = Path.GetFullPath(packageDirectory);
+        var candidate = Path.GetFullPath(Path.Combine(packageRoot, relativePath));
+        return candidate.StartsWith(packageRoot + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase)
+            ? candidate
+            : null;
     }
 
     private static void Require(string? value, string name, ICollection<string> errors)

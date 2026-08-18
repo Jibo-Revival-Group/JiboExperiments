@@ -1,0 +1,30 @@
+ {
+   "apiVersion": "1",
+   "bindings": [
+     {
+       "intent": "calendar",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "commute",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "news",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "personal_report",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "weather",
+       "priority": 50,
+       "match": {}
+     }
+   ]
+ }

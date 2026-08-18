@@ -432,7 +432,7 @@ Later pipeline should:
 
 ## `1.0.20` Exit Criteria
 
-Status clarification (`2026-08-17`): the container, migration, and smoke contracts prove the deployment foundation, not paid-service readiness. Customer auth, provider handoff, billing, entitlement enforcement, dependency-aware readiness, operational recovery, and the paid pilot remain open in [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md).
+Status clarification (`2026-08-18`): the container, migration, and smoke contracts prove the neutral deployment foundation. Provider-specific membership, price, billing, entitlement policy, managed backup promise, support operations, and paid pilot belong in that provider's repository. Transcendent Software's implementation is tracked in [OpenJiboCloud](https://github.com/Transcendent-Software-LLC/OpenJiboCloud).
 
 This track is ready to build when:
 
@@ -458,7 +458,7 @@ This track is ready to close for `1.0.20` when:
 - the first auth/identity boundary is documented well enough to avoid mixing robot runtime with root identity authority
 - provider-specific onboarding can hand off to signup/payment and return to robot onboarding
 
-The final item above is still an exit criterion; the design and callback direction are documented, but the customer/billing implementation does not yet exist.
+The final item above is a provider-extension contract criterion. The neutral runtime should support a signed handoff/return without implementing or depending on a particular provider's checkout system.
 
 ## Open Questions
 

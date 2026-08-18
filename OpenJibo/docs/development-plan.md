@@ -6,7 +6,7 @@ This document is the current working plan for the OpenJibo hosted cloud.
 
 The production lane is the `.NET` cloud in `src/Jibo.Cloud/dotnet`. The Node server remains the protocol oracle, capture harness, and fast reverse-engineering lab, but it is no longer the long-term hosted architecture.
 
-Day-to-day feature sequencing lives in [feature-backlog.md](feature-backlog.md). Live closeout checks live in [regression-test-plan.md](regression-test-plan.md). The `1.0.20` feature shape is detailed in [release-1.0.20-plan.md](release-1.0.20-plan.md), the paid-service go/no-go gates live in [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md), and the legacy-to-current architecture map is tracked in [system-diagram-alignment.md](system-diagram-alignment.md), while this file keeps the broader evidence and architecture context.
+Day-to-day feature sequencing lives in [feature-backlog.md](feature-backlog.md). Live closeout checks live in [regression-test-plan.md](regression-test-plan.md). The neutral `1.0.20` runtime shape is detailed in [release-1.0.20-plan.md](release-1.0.20-plan.md), Transcendent Software's managed paid-service work lives in [OpenJiboCloud](https://github.com/Transcendent-Software-LLC/OpenJiboCloud), and the legacy-to-current architecture map is tracked in [system-diagram-alignment.md](system-diagram-alignment.md), while this file keeps the broader evidence and architecture context.
 
 ## Current Release Snapshot
 

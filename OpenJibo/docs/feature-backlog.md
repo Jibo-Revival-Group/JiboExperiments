@@ -10,41 +10,20 @@ The live regression checklist for release closeout is [regression-test-plan.md](
 
 The active `1.0.20` execution shape is tracked in [release-1.0.20-plan.md](release-1.0.20-plan.md). This file keeps the full `1.0.18` evidence trail for parity reference and the `1.0.19` closeout history alongside the new queue.
 
-## `1.0.20` Paid Launch Control Queue
+## Managed Hosting Integration Boundary
 
-The authoritative launch gates, ordering, pilot criteria, and stop conditions are in [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md).
+The neutral runtime must support multiple hosting choices without carrying a specific operator's price, billing provider, commercial entitlement policy, or customer-support process.
 
-Current paid-launch decision (`2026-08-17`): **NO-GO**.
+Shared `1.0.20` priorities remain here:
 
-Work these items before unrelated feature expansion:
+1. complete [Replace Snapshot-Backed In-Memory Cloud State](#13-replace-snapshot-backed-in-memory-cloud-state)
+2. keep durable state normalized and payload bytes in Blob/file adapters while bounding connection/turn/audio memory
+3. stabilize provider-neutral identity, provider registry, signed onboarding handoff/return, explicit selection, export, revocation, and recovery contracts
+4. keep self-hosted isolated operation independent of a managed service
+5. define conversion profiles with JiboAutoMod for managed, community-hosted, owner-managed, hybrid, isolated, and developer choices
+6. keep OpenJibo.com neutral and clearly identify every hosted provider/operator
 
-1. **Commercial and support decisions** — status: `decision required`
-   - choose the initial plan/price/currency/robot allowance, supported cohort, payment provider, cancellation/refund/grace policies, support coverage, SLO/RPO/RTO, retention defaults, pilot size, and success/stop thresholds
-2. **Normalized production persistence and bounded memory** — status: `ready`, P0 blocker
-   - execute [Replace Snapshot-Backed In-Memory Cloud State](#13-replace-snapshot-backed-in-memory-cloud-state)
-   - migrate durable state to normalized PostgreSQL and payload bytes to Blob/file storage
-   - prove migration, rollback, two-replica concurrency, reconnect/audio soak, and cleanup within the production memory limit
-3. **Customer auth and robot ownership service** — status: `not started`, P0 blocker
-   - create the separate auth deployable; implement verified signup/recovery, roles, account-loop-robot ownership, claim/transfer/removal, credential rotation/revocation, export/deletion, and audited operator access
-4. **Billing, subscriptions, and entitlements** — status: `not started`, P0 blocker
-   - implement provider-neutral billing plus the first provider adapter, checkout/portal, signed idempotent webhooks, subscription state, reconciliation, cancellation/payment recovery, and robot-count entitlement enforcement across onboarding, HTTP, and WebSocket access
-5. **Customer site, onboarding, and policy surface** — status: `not started`, P0 blocker
-   - replace the placeholder site with signup/account/subscription/onboarding/recovery flows and publish reviewed price/support/device requirements, terms, privacy, refund/cancellation, acceptable-use, and status/support links
-6. **Security and privacy closeout** — status: `not started`, P0 blocker
-   - threat model public and robot surfaces; remove/rotate defaults; restrict CORS; add authorization, rate/body limits, abuse controls, audit/redaction, retention/deletion, scanning, SBOM/provenance, and independent review
-7. **Production operations and recovery** — status: `in progress`, P0 blocker
-   - add environment isolation, dependency readiness, SLO telemetry/alerts, on-call/runbooks, database/Blob protection, restore/rollback drills, capacity/soak tests, autoscaling proof, and cost budgets/unit-economics checks
-8. **Release engineering** — status: `in progress`
-   - add pull-request gates, immutable image/version provenance, production config validation, billing/auth/migration/authorization suites, protected promotion, and rehearsed rollback
-9. **Customer and business operations** — status: `not started`, P0 blocker for taking money
-   - establish merchant/tax/accounting ownership, reviewed customer policies, receipts/reconciliation, support verification/escalation, refund/chargeback/account-recovery procedures, launch communications, and product/reliability/business metrics
-10. **Release candidate and paid pilot** — status: `blocked by 1-9`
-    - freeze `1.0.20`, run the clean automated/deployment/live-device/security/load/billing/restore matrix, conduct an operational game day, then run a capped paid pilot with daily billing-entitlement reconciliation before GA
-
-Scope control:
-
-- optional personality additions, direct Jibo-to-Jibo transport, public hybrid sync, easy-button conversion, extra billing tiers, and next-tier integrations move to `1.0.21+` unless they fix a launch regression
-- existing items marked `implemented` still require the launch-plan evidence when they participate in a P0 gate; an implementation label is not itself production proof
+Transcendent Software's `$5/month/robot` managed membership, billing, entitlements, hosted backup policy, customer site, support, funds transparency, and paid pilot are tracked in [Transcendent-Software-LLC/OpenJiboCloud](https://github.com/Transcendent-Software-LLC/OpenJiboCloud).
 
 Status key:
 
@@ -1350,13 +1329,13 @@ Production reliability gate: complete [Replace Snapshot-Backed In-Memory Cloud S
 5. Hosting modes and service topology
    - support self-hosted operation with no external cloud dependency
    - support hybrid operation where non-self-hosted servers sync to a main cloud service
-   - support a managed cloud service for paid hosted access
+   - support managed hosted providers without embedding one provider's commercial policy
    - treat self-hosted sync enrollment as a one-way setup choice until reset/OOBE recovery is performed
    - first self-hosted target is Docker Compose
    - first Docker Compose database is PostgreSQL
    - PostgreSQL migrations should run through explicit CI/CD or admin commands, with self-hosted startup migration behind an intentional switch
    - status: `in progress`
-   - current progress: trusted-server registry, self-hosted validation, managed/self-hosted deployment contracts, and portal onboarding prove the topology foundation; paid managed mode remains incomplete until customer auth, billing, entitlements, cancellation/recovery, and the paid pilot pass the launch plan
+   - current progress: trusted-server registry, self-hosted validation, managed/self-hosted deployment contracts, and portal onboarding prove the topology foundation; operator-specific membership and billing remain outside this neutral runtime repository
 6. Storage abstraction and sync
    - abstract storage so the rest of the system does not care which server implementation is backing it
    - keep only transient session/onboarding artifacts and device-local secrets permanently local-only for now
@@ -1369,22 +1348,22 @@ Production reliability gate: complete [Replace Snapshot-Backed In-Memory Cloud S
    - current progress: signed identity graph admission decisions, offline evidence bundles, portal trusted-server validation, and loop sync paths prove the trust/sync design; the production state implementation still uses the snapshot-backed in-memory store and must complete backlog item 13
    - planning anchor: [storage-trust-consensus-plan.md](storage-trust-consensus-plan.md)
    - status: `in progress`
-7. OpenJibo.com web UI and account surface
-   - provide a web UI for `openjibo.com` as the Open Jibo showcase, account entry surface, and hosted-cloud landing page
+7. OpenJibo.com neutral platform and hosting-choice surface
+   - provide a web UI for `openjibo.com` as the Open Jibo showcase, community/source entry, documentation path, and neutral hosting-choice surface
    - keep `jiborevived.com` separate as the community-maintained Jibo Revival Group hub and status space
-   - support paid access on the hosted side while leaving room for free or self-hosted options elsewhere
-   - auth starts as a separate deployable under the Open Jibo domain family, with `auth.openjibo.com` handling authentication, robot/loop registration, and token issuance
-   - auth can live in the shared repo/solution initially, but must be its own project
-   - the hosted subscription surface should live on `cloud.openjibo.com` or `members.openjibo.com` so the billing/access flow stays separate from the showcase site
+   - compare Transcendent Software's managed service, future admitted community providers, owner-managed servers, self-hosted hybrid, and self-hosted isolated operation consistently
+   - use `auth.openjibo.com` only if a shared neutral identity authority is intentionally separated; do not assume one commercial provider owns ecosystem identity
+   - keep each provider's membership, billing, terms, privacy, support, and status on its clearly labeled provider surface
+   - use `cloud.openjibo.com` for Transcendent Software's managed service while the neutral site remains at `openjibo.com`
    - onboarding needs provider-specific extension points for signup/payment, free community clouds, hosted plan selection, subscription cancellation, and self-hosted server enrollment
    - onboarding should expose a data-driven trusted-server registry API backed by cloud state so the app can present approved managed options, distinguish self-hosted hybrid servers that stay synced but private, write signed admission/revocation/reactivation audit records, and let the user enter a separate custom self-hosted server name/IP with a local-vs-hybrid trust validator
    - provider-specific onboarding must use signed event callbacks and signed returns
    - provider onboarding should use short-lived signed session tokens plus provider-signed callbacks/returns with nonce/state binding
    - later boots should prefer the selected provider cloud first and enter explicit recovery instead of silently switching clouds
-   - the subscription surface must be able to revoke hosted access on cancellation and force the robot back through the authorized validation flow before hosted access resumes
+   - provider revocation must force the robot back through an authorized validation/recovery flow without silently switching providers or deleting owner data
    - developer/smoke-only self-hosted paths can use HTTP locally; owner-facing robot paths should default to HTTPS/self-signed or equivalent patched trust behavior until safe HTTP is proven
-   - status: `not started`
-   - current progress: the site split and launch requirements are explicit in the public-site, cloud-topology, and paid-launch plans; the repository still has only a static placeholder, so account, subscription, callback, cancellation, policy, support, and status implementation remain open
+   - status: `ready`
+   - current progress: the neutral site must explain the platform, community, source, conversion, and comparable hosting choices; Transcendent Software's commercial membership surface lives in its separate OpenJiboCloud repository
 8. Loop advancement and multi-Jibo support
    - support family/friend advancement, multiple user recognition, and multiple Jibo interaction
    - keep the identity model ready for Jibo-to-Jibo communication and shared household use

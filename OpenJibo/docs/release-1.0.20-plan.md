@@ -11,12 +11,12 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - Kickoff date: `2026-06-10`
 - Cloud version source of truth: [OpenJiboCloudBuildInfo.cs](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/OpenJiboCloudBuildInfo.cs)
 - Active release constant: `1.0.20`
-- Paid-service launch plan: [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md)
-- Paid-service launch decision (`2026-08-17`): **NO-GO** until normalized durable state, customer auth, billing/entitlements, customer/legal surfaces, and production operations pass their P0 gates
+- Managed-service integration plan: [Transcendent-Software-LLC/OpenJiboCloud](https://github.com/Transcendent-Software-LLC/OpenJiboCloud)
+- Repository boundary (`2026-08-18`): this release owns the neutral runtime, self-hosting, provider contracts, and shared reliability work; commercial billing, membership, support, and managed-service policy live in the separate OpenJiboCloud repository
 
 ## Release Definition
 
-The compatibility work recorded below remains part of `1.0.20`, but the release is not complete merely because the cloud feature suite passes. The current objective is a controlled launch of the paid managed service. The authoritative gate order, commercial decisions, pilot criteria, and stop conditions live in [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md).
+The compatibility and platform work recorded below defines the neutral `1.0.20` runtime release. It must support managed providers and self-hosting without embedding one operator's billing or commercial policy into the robot-facing runtime. Transcendent Software's paid-service gate order, pricing, pilot criteria, and stop conditions live in the separate [OpenJiboCloud repository](https://github.com/Transcendent-Software-LLC/OpenJiboCloud).
 
 Unrelated personality/catalog expansion should move to `1.0.21+` during the launch freeze unless it fixes a supported-cohort regression.
 
@@ -486,19 +486,18 @@ Storage trust planning starts in [storage-trust-consensus-plan.md](storage-trust
 
 ## Working Order
 
-The current `1.0.20` paid-launch order is:
+The current neutral `1.0.20` order is:
 
-1. decide the offer, supported cohort, service policy, support model, and launch targets
-2. freeze the release to launch blockers and supported-cohort regressions
-3. replace snapshot-backed in-memory production state with normalized PostgreSQL/Blob persistence and bounded ephemeral state
-4. deliver customer auth, household/robot ownership, credential lifecycle, and operator access controls
-5. deliver billing, webhook processing, durable entitlements, cancellation, reconciliation, and access enforcement
-6. deliver the public/account/subscription/onboarding/legal customer surface
-7. close security, privacy, monitoring, recovery, cost, CI/CD, and support/business-operation gates
-8. run the release candidate matrix and operational game day
-9. complete a capped paid pilot before general availability
+1. replace snapshot-backed in-memory durable state with normalized PostgreSQL/Blob persistence and bounded ephemeral state
+2. freeze the runtime to reliability work and supported-cohort regressions
+3. complete the live compatibility, update/backup/restore, media, identity, reconnect, and multi-robot proof matrix
+4. stabilize provider-neutral identity, trusted-provider, onboarding handoff/return, export, and recovery contracts
+5. keep Docker Compose/self-hosted operation independent of any commercial service
+6. define the JiboAutoMod conversion-profile boundary for managed, community-hosted, owner-managed, hybrid, isolated, and developer targets
+7. publish the neutral OpenJibo.com hosting-choice, community, source, documentation, and contact information architecture
+8. publish the runtime release candidate after clean migration, deployment, rollback, load, and live-device evidence
 
-Feature-history items below this launch line remain useful evidence, but they do not outrank the P0 gates in the paid-launch plan.
+Commercial membership, billing, entitlement, managed backup policy, funds transparency, and paid-pilot work are downstream consumers tracked in the separate OpenJiboCloud repository.
 
 ## Deferred Full Regression Milestone
 

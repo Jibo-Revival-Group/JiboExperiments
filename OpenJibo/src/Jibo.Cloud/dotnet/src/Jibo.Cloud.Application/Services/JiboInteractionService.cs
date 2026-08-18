@@ -24,7 +24,8 @@ public sealed partial class JiboInteractionService(
     JiboVerificationService? jiboVerificationService = null,
     HomeAssistantCommandService? homeAssistantCommandService = null,
     HomeAssistantPendingClimateStore? homeAssistantPendingClimateStore = null,
-    RepeatLastCommandStore? repeatLastCommandStore = null)
+    RepeatLastCommandStore? repeatLastCommandStore = null,
+    ISkillRouter? skillRouter = null)
 {
     private const string GreetingRouteMetadataKey = "greetingsRoute";
     private const string GreetingSpeakerMetadataKey = "greetingsSpeaker";

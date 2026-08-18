@@ -1634,6 +1634,8 @@ public sealed class WebSocketTurnFinalizationService(
                 !string.Equals(plan.IntentName, "snapshot", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase) &&
                 (messageType != "CLIENT_NLU" ||
+                 (plan.ProtocolMetadata.TryGetValue("skillRoute", out var modularRoute) &&
+                  modularRoute is not null) ||
                  string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase) ||
                  IsCloudOwnedPersonalReportIntent(plan.IntentName));
             var replies = ResponsePlanToSocketMessagesMapper.Map(plan, finalizedTurn, session, emitSkillActions)

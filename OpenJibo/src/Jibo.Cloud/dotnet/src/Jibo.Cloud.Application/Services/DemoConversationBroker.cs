@@ -44,7 +44,8 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
             {
                 ["host"] = turn.HostName,
                 ["service"] = turn.ProtocolService,
-                ["operation"] = turn.ProtocolOperation
+                ["operation"] = turn.ProtocolOperation,
+                ["skillRoute"] = decision.SkillRoute
             }
         };
 

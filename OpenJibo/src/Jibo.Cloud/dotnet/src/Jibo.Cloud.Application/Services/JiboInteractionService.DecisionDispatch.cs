@@ -63,6 +63,24 @@ public sealed partial class JiboInteractionService
         if (ShouldTreatAsHaClimateClarify(turn, lowered, semanticIntent))
             semanticIntent = "ha_climate_clarify";
 
+        var modularRoute = skillRouter?.Route(new SkillRoutingInput
+        {
+            NluIntent = clientIntent,
+            SemanticIntent = semanticIntent,
+            Entities = clientEntities,
+            Locale = turn.Locale,
+            Contexts = ReadSkillContexts(turn),
+            CurrentSkillId = ReadSkillAttribute(turn, "currentSkillId", "activeSkillId"),
+            PreferredExecutionTarget = ReadSkillAttribute(turn, "preferredSkillExecutionTarget")
+        });
+
+        // Server-side execution is intentionally left to the runtime-adapter phase. The router
+        // can select it, but this legacy broker must not pretend that a server package is a
+        // robot-native skill. Robot-target packages can use the existing SKILL_ACTION wire path.
+        if (modularRoute is not null &&
+            string.Equals(modularRoute.ExecutionTarget, "robot", StringComparison.OrdinalIgnoreCase))
+            return BuildModularSkillDecision(modularRoute);
+
         var personalReportDecision = await PersonalReportOrchestrator.TryBuildDecisionAsync(
             turn,
             semanticIntent,

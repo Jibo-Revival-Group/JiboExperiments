@@ -220,6 +220,7 @@ public static class ServiceCollectionExtensions
             new FileSystemSkillRegistry(
                 skillsDirectory,
                 provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FileSystemSkillRegistry>>()));
+        services.AddSingleton<ISkillRouter, MetadataSkillRouter>();
         services.AddSingleton<IJiboExperienceContentRepository, InMemoryJiboExperienceContentRepository>();
         services.AddSingleton<JiboExperienceContentCache>();
         services.AddSingleton<IJiboRandomizer, DefaultJiboRandomizer>();

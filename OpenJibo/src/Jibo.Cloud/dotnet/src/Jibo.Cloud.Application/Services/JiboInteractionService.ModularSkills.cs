@@ -5,6 +5,41 @@ namespace Jibo.Cloud.Application.Services;
 
 public sealed partial class JiboInteractionService
 {
+    internal Task<JiboInteractionDecision> BuildLegacySkillDecisionAsync(
+        TurnContext turn,
+        CancellationToken cancellationToken = default)
+    {
+        var attributes = new Dictionary<string, object?>(turn.Attributes, StringComparer.OrdinalIgnoreCase)
+        {
+            ["legacySkillAdapterExecution"] = true
+        };
+
+        var legacyTurn = new TurnContext
+        {
+            TurnId = turn.TurnId,
+            SessionId = turn.SessionId,
+            TimestampUtc = turn.TimestampUtc,
+            InputMode = turn.InputMode,
+            SourceKind = turn.SourceKind,
+            WakePhrase = turn.WakePhrase,
+            RawTranscript = turn.RawTranscript,
+            NormalizedTranscript = turn.NormalizedTranscript,
+            DeviceId = turn.DeviceId,
+            HostName = turn.HostName,
+            RequestId = turn.RequestId,
+            ProtocolService = turn.ProtocolService,
+            ProtocolOperation = turn.ProtocolOperation,
+            FirmwareVersion = turn.FirmwareVersion,
+            ApplicationVersion = turn.ApplicationVersion,
+            Locale = turn.Locale,
+            TimeZone = turn.TimeZone,
+            IsFollowUpEligible = turn.IsFollowUpEligible,
+            Attributes = attributes
+        };
+
+        return BuildDecisionCoreAsync(legacyTurn, cancellationToken);
+    }
+
     private static JiboInteractionDecision BuildModularSkillDecision(SkillRouteDecision route)
     {
         return new JiboInteractionDecision(

@@ -63,7 +63,11 @@ public sealed partial class JiboInteractionService
         if (ShouldTreatAsHaClimateClarify(turn, lowered, semanticIntent))
             semanticIntent = "ha_climate_clarify";
 
-        var modularRoute = skillRouter?.Route(new SkillRoutingInput
+        var legacyAdapterExecution = turn.Attributes.TryGetValue("legacySkillAdapterExecution", out var rawLegacyAdapterExecution) &&
+                                     rawLegacyAdapterExecution is bool legacyAdapterExecutionValue &&
+                                     legacyAdapterExecutionValue;
+        var modularRoute = !legacyAdapterExecution
+            ? skillRouter?.Route(new SkillRoutingInput
         {
             NluIntent = clientIntent,
             SemanticIntent = semanticIntent,
@@ -72,11 +76,23 @@ public sealed partial class JiboInteractionService
             Contexts = ReadSkillContexts(turn),
             CurrentSkillId = ReadSkillAttribute(turn, "currentSkillId", "activeSkillId"),
             PreferredExecutionTarget = ReadSkillAttribute(turn, "preferredSkillExecutionTarget")
-        });
+        })
+            : null;
 
-        // Server-side execution is intentionally left to the runtime-adapter phase. The router
-        // can select it, but this legacy broker must not pretend that a server package is a
-        // robot-native skill. Robot-target packages can use the existing SKILL_ACTION wire path.
+        if (modularRoute is not null && legacySkillAdapters is not null &&
+            legacySkillAdapters.CanExecute(modularRoute.SkillId))
+        {
+            var adaptedDecision = await legacySkillAdapters.ExecuteAsync(
+                modularRoute,
+                turn,
+                cancellationToken);
+            if (adaptedDecision is not null)
+                return adaptedDecision with { SkillRoute = modularRoute };
+        }
+
+        // Packages without an execution adapter are not allowed to masquerade as legacy skills.
+        // Robot-target external packages can still use the existing SKILL_ACTION wire path while
+        // server-side external runtimes wait for their runtime adapter.
         if (modularRoute is not null &&
             string.Equals(modularRoute.ExecutionTarget, "robot", StringComparison.OrdinalIgnoreCase))
             return BuildModularSkillDecision(modularRoute);

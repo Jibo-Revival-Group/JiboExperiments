@@ -20,6 +20,10 @@
 
 	<ItemGroup>
 		<Content Update="wwwroot/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<Content Include="..\..\..\..\..\..\App_Data\Skills\openjibo-*\**\*"
+		         Link="App_Data\Skills\%(RecursiveDir)%(Filename)%(Extension)"
+		         CopyToOutputDirectory="PreserveNewest"
+		         CopyToPublishDirectory="PreserveNewest" />
 	</ItemGroup>
 
 </Project>

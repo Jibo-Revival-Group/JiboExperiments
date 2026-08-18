@@ -7,7 +7,9 @@ namespace Jibo.Cloud.Application.Services;
 /// Selects enabled package metadata without loading or executing skill code.
 /// Runtime adapters consume the resulting route in a later phase.
 /// </summary>
-public sealed class MetadataSkillRouter(ISkillRegistry skillRegistry) : ISkillRouter
+public sealed class MetadataSkillRouter(
+    ISkillRegistry skillRegistry,
+    ILegacySkillAdapterRegistry legacySkillAdapters) : ISkillRouter
 {
     public SkillRouteDecision? Route(SkillRoutingInput input)
     {
@@ -26,7 +28,8 @@ public sealed class MetadataSkillRouter(ISkillRegistry skillRegistry) : ISkillRo
             // legacy implementation during that transition.
             .Where(skill => !string.Equals(skill.Manifest!.PackageType, "builtin",
                 StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(skill.Manifest.Adapter, "legacy", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(skill.Manifest.Adapter, "legacy", StringComparison.OrdinalIgnoreCase) ||
+                legacySkillAdapters.CanExecute(skill.Manifest.SkillId))
             .SelectMany(skill => skill.Manifest!.IntentBindings
                 .Where(binding => intentCandidates.Contains(binding.Intent, StringComparer.OrdinalIgnoreCase))
                 .Select(binding => BuildCandidate(skill, skill.Manifest!, binding, input)))

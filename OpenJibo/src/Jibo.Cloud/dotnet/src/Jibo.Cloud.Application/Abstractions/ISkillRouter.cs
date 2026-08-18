@@ -1,10 +1,21 @@
 using Jibo.Cloud.Domain.Models;
+using Jibo.Runtime.Abstractions;
 
 namespace Jibo.Cloud.Application.Abstractions;
 
 public interface ISkillRouter
 {
     SkillRouteDecision? Route(SkillRoutingInput input);
+}
+
+public interface ILegacySkillAdapterRegistry
+{
+    bool CanExecute(string skillId);
+
+    Task<Jibo.Cloud.Application.Services.JiboInteractionDecision?> ExecuteAsync(
+        SkillRouteDecision route,
+        TurnContext turn,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class SkillRoutingInput

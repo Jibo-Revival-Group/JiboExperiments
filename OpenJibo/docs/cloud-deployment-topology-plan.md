@@ -432,7 +432,7 @@ Later pipeline should:
 
 ## `1.0.20` Exit Criteria
 
-Status clarification (`2026-08-18`): the container, migration, and smoke contracts prove the neutral deployment foundation. Provider-specific membership, price, billing, entitlement policy, managed backup promise, support operations, and paid pilot belong in that provider's repository. Transcendent Software's implementation is tracked in [OpenJiboCloud](https://github.com/Transcendent-Software-LLC/OpenJiboCloud).
+Status clarification (`2026-08-18`): the container, migration, and smoke contracts prove the neutral deployment foundation. Provider-specific membership, price, billing, entitlement policy, managed backup promise, support operations, and paid pilot belong to that provider. Transcendent Software's private implementation is represented publicly by [cloud.openjibo.com](https://cloud.openjibo.com).
 
 This track is ready to build when:
 

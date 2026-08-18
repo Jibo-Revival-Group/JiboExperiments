@@ -11,12 +11,12 @@ The job for `1.0.20` is to tighten the update and backup story, prove the remain
 - Kickoff date: `2026-06-10`
 - Cloud version source of truth: [OpenJiboCloudBuildInfo.cs](../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Application/Services/OpenJiboCloudBuildInfo.cs)
 - Active release constant: `1.0.20`
-- Managed-service integration plan: [Transcendent-Software-LLC/OpenJiboCloud](https://github.com/Transcendent-Software-LLC/OpenJiboCloud)
+- Managed-service public surface: [cloud.openjibo.com](https://cloud.openjibo.com)
 - Repository boundary (`2026-08-18`): this release owns the neutral runtime, self-hosting, provider contracts, and shared reliability work; commercial billing, membership, support, and managed-service policy live in the separate OpenJiboCloud repository
 
 ## Release Definition
 
-The compatibility and platform work recorded below defines the neutral `1.0.20` runtime release. It must support managed providers and self-hosting without embedding one operator's billing or commercial policy into the robot-facing runtime. Transcendent Software's paid-service gate order, pricing, pilot criteria, and stop conditions live in the separate [OpenJiboCloud repository](https://github.com/Transcendent-Software-LLC/OpenJiboCloud).
+The compatibility and platform work recorded below defines the neutral `1.0.20` runtime release. It must support managed providers and self-hosting without embedding one operator's billing or commercial policy into the robot-facing runtime. Transcendent Software's paid-service application and plans live in a separate private repository and are represented publicly by [cloud.openjibo.com](https://cloud.openjibo.com).
 
 Unrelated personality/catalog expansion should move to `1.0.21+` during the launch freeze unless it fixes a supported-cohort regression.
 
@@ -497,7 +497,7 @@ The current neutral `1.0.20` order is:
 7. publish the neutral OpenJibo.com hosting-choice, community, source, documentation, and contact information architecture
 8. publish the runtime release candidate after clean migration, deployment, rollback, load, and live-device evidence
 
-Commercial membership, billing, entitlement, managed backup policy, funds transparency, and paid-pilot work are downstream consumers tracked in the separate OpenJiboCloud repository.
+Commercial membership, billing, entitlement, managed backup policy, funds transparency, and paid-pilot work are downstream consumers implemented in Transcendent Software's separate private application repository.
 
 ## Deferred Full Regression Milestone
 

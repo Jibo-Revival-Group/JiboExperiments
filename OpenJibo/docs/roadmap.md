@@ -11,7 +11,7 @@ The current execution truth still lives in:
 - [Development plan](development-plan.md)
 - [Feature backlog](feature-backlog.md)
 - [Release 1.0.20 plan](release-1.0.20-plan.md)
-- [Transcendent Software managed OpenJibo Cloud plan](https://github.com/Transcendent-Software-LLC/OpenJiboCloud)
+- [Transcendent Software managed OpenJibo Cloud service](https://cloud.openjibo.com)
 - [Cloud deployment and topology plan](cloud-deployment-topology-plan.md)
 - [Storage trust and consensus plan](storage-trust-consensus-plan.md)
 - [Device bootstrap path](device-bootstrap.md)
@@ -148,7 +148,7 @@ If you want the current execution truth, read:
 - [Development plan](development-plan.md)
 - [Feature backlog](feature-backlog.md)
 - [Release 1.0.20 plan](release-1.0.20-plan.md)
-- [Transcendent Software managed OpenJibo Cloud plan](https://github.com/Transcendent-Software-LLC/OpenJiboCloud)
+- [Transcendent Software managed OpenJibo Cloud service](https://cloud.openjibo.com)
 
 If you want the first-device path, read:
 

@@ -23,7 +23,7 @@ Shared `1.0.20` priorities remain here:
 5. define conversion profiles with JiboAutoMod for managed, community-hosted, owner-managed, hybrid, isolated, and developer choices
 6. keep OpenJibo.com neutral and clearly identify every hosted provider/operator
 
-Transcendent Software's `$5/month/robot` managed membership, billing, entitlements, hosted backup policy, customer site, support, funds transparency, and paid pilot are tracked in [Transcendent-Software-LLC/OpenJiboCloud](https://github.com/Transcendent-Software-LLC/OpenJiboCloud).
+Transcendent Software's `$5/month/robot` managed membership, billing, entitlements, hosted backup policy, customer site, support, funds transparency, and paid pilot are implemented privately and represented publicly by [cloud.openjibo.com](https://cloud.openjibo.com).
 
 Status key:
 
@@ -1363,7 +1363,7 @@ Production reliability gate: complete [Replace Snapshot-Backed In-Memory Cloud S
    - provider revocation must force the robot back through an authorized validation/recovery flow without silently switching providers or deleting owner data
    - developer/smoke-only self-hosted paths can use HTTP locally; owner-facing robot paths should default to HTTPS/self-signed or equivalent patched trust behavior until safe HTTP is proven
    - status: `ready`
-   - current progress: the neutral site must explain the platform, community, source, conversion, and comparable hosting choices; Transcendent Software's commercial membership surface lives in its separate OpenJiboCloud repository
+   - current progress: the neutral site must explain the platform, community, source, conversion, and comparable hosting choices; Transcendent Software's private commercial membership application is represented publicly at `cloud.openjibo.com`
 8. Loop advancement and multi-Jibo support
    - support family/friend advancement, multiple user recognition, and multiple Jibo interaction
    - keep the identity model ready for Jibo-to-Jibo communication and shared household use

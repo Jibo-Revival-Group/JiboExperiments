@@ -21,7 +21,7 @@ This document keeps the revival effort honest about what must work first, what c
 - dependency-aware health, monitoring, backups, restore/rollback, load/soak proof, security review, and a published support/status path
 - explicit operator identity, service terms, privacy/retention, backup behavior, and exit path
 
-Provider-specific price, billing, entitlement, customer policy, and support operations belong to the provider. Transcendent Software's implementation is tracked in [OpenJiboCloud](https://github.com/Transcendent-Software-LLC/OpenJiboCloud).
+Provider-specific price, billing, entitlement, customer policy, and support operations belong to the provider. Transcendent Software's implementation is private and represented publicly by [cloud.openjibo.com](https://cloud.openjibo.com).
 
 ## Optional For Parity
 

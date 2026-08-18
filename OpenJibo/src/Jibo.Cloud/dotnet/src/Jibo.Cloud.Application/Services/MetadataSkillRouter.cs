@@ -21,6 +21,12 @@ public sealed class MetadataSkillRouter(ISkillRegistry skillRegistry) : ISkillRo
 
         var candidates = skillRegistry.GetInstalledSkills()
             .Where(skill => skill.State == SkillLifecycleState.Enabled && skill.Manifest is not null)
+            // Built-in manifests are registered before their compatibility adapters are migrated.
+            // They must remain visible to the registry without stealing live traffic from the
+            // legacy implementation during that transition.
+            .Where(skill => !string.Equals(skill.Manifest!.PackageType, "builtin",
+                StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(skill.Manifest.Adapter, "legacy", StringComparison.OrdinalIgnoreCase))
             .SelectMany(skill => skill.Manifest!.IntentBindings
                 .Where(binding => intentCandidates.Contains(binding.Intent, StringComparer.OrdinalIgnoreCase))
                 .Select(binding => BuildCandidate(skill, skill.Manifest!, binding, input)))

@@ -130,6 +130,13 @@ public sealed class FileSystemSkillRegistry : ISkillRegistry
         Require(manifest.Runtime, "runtime", errors);
         Require(manifest.ExecutionTarget, "executionTarget", errors);
 
+        if (!string.Equals(manifest.PackageType, "external", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(manifest.PackageType, "builtin", StringComparison.OrdinalIgnoreCase))
+            errors.Add("packageType must be external or builtin.");
+
+        if (string.Equals(manifest.PackageType, "builtin", StringComparison.OrdinalIgnoreCase))
+            Require(manifest.Adapter, "adapter", errors);
+
         if (!string.Equals(manifest.ExecutionTarget, "server", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(manifest.ExecutionTarget, "robot", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(manifest.ExecutionTarget, "both", StringComparison.OrdinalIgnoreCase))

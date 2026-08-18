@@ -1,0 +1,55 @@
+ {
+   "skillId": "openjibo.conversation",
+   "name": "OpenJibo Conversation",
+   "version": "1.0.0",
+   "author": "OpenJibo",
+   "description": "Built-in compatibility package for the legacy openjibo conversation routes.",
+   "runtime": "dotnet",
+   "packageType": "builtin",
+   "adapter": "legacy",
+   "executionTarget": "server",
+   "supportedLanguages": [
+     "en"
+   ],
+   "intentBindings": [
+     {
+       "intent": "fun_fact",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "joke",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "surprise",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "word_of_the_day",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "word_of_the_day_guess",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "yes_no_clarify",
+       "priority": 50,
+       "match": {}
+     }
+   ],
+   "proactiveBindings": [],
+   "permissions": [],
+   "dependencies": [],
+   "compatibility": {
+     "apiVersion": "1"
+   },
+   "assets": {
+     "paths": []
+   }
+ }

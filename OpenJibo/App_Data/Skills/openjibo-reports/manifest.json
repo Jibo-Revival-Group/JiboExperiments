@@ -1,0 +1,50 @@
+ {
+   "skillId": "openjibo.reports",
+   "name": "OpenJibo Reports",
+   "version": "1.0.0",
+   "author": "OpenJibo",
+   "description": "Built-in compatibility package for the legacy openjibo reports routes.",
+   "runtime": "dotnet",
+   "packageType": "builtin",
+   "adapter": "legacy",
+   "executionTarget": "server",
+   "supportedLanguages": [
+     "en"
+   ],
+   "intentBindings": [
+     {
+       "intent": "calendar",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "commute",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "news",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "personal_report",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "weather",
+       "priority": 50,
+       "match": {}
+     }
+   ],
+   "proactiveBindings": [],
+   "permissions": [],
+   "dependencies": [],
+   "compatibility": {
+     "apiVersion": "1"
+   },
+   "assets": {
+     "paths": []
+   }
+ }

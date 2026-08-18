@@ -1,0 +1,60 @@
+ {
+   "skillId": "openjibo.media",
+   "name": "OpenJibo Media",
+   "version": "1.0.0",
+   "author": "OpenJibo",
+   "description": "Built-in compatibility package for the legacy openjibo media routes.",
+   "runtime": "dotnet",
+   "packageType": "builtin",
+   "adapter": "legacy",
+   "executionTarget": "robot",
+   "supportedLanguages": [
+     "en"
+   ],
+   "intentBindings": [
+     {
+       "intent": "bad_apple",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "introductions",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "photo_gallery",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "photobooth",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "radio",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "radio_genre",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "snapshot",
+       "priority": 50,
+       "match": {}
+     }
+   ],
+   "proactiveBindings": [],
+   "permissions": [],
+   "dependencies": [],
+   "compatibility": {
+     "apiVersion": "1"
+   },
+   "assets": {
+     "paths": []
+   }
+ }

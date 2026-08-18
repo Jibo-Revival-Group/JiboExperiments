@@ -12,6 +12,8 @@ public sealed class SkillManifest
     public string Author { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public string Runtime { get; init; } = string.Empty;
+    public string PackageType { get; init; } = "external";
+    public string Adapter { get; init; } = string.Empty;
     public string ExecutionTarget { get; init; } = string.Empty;
     public IReadOnlyList<string> SupportedLanguages { get; init; } = [];
     public IReadOnlyList<SkillIntentBinding> IntentBindings { get; init; } = [];

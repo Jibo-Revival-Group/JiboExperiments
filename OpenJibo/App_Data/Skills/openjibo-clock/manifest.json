@@ -1,0 +1,100 @@
+ {
+   "skillId": "openjibo.clock",
+   "name": "OpenJibo Clock",
+   "version": "1.0.0",
+   "author": "OpenJibo",
+   "description": "Built-in compatibility package for the legacy openjibo clock routes.",
+   "runtime": "dotnet",
+   "packageType": "builtin",
+   "adapter": "legacy",
+   "executionTarget": "both",
+   "supportedLanguages": [
+     "en"
+   ],
+   "intentBindings": [
+     {
+       "intent": "alarm_cancel",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "alarm_clarify",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "alarm_delete",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "alarm_menu",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "alarm_query",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "alarm_value",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "clock_open",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "date",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "day",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "time",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "timer_cancel",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "timer_clarify",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "timer_delete",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "timer_menu",
+       "priority": 50,
+       "match": {}
+     },
+     {
+       "intent": "timer_value",
+       "priority": 50,
+       "match": {}
+     }
+   ],
+   "proactiveBindings": [],
+   "permissions": [],
+   "dependencies": [],
+   "compatibility": {
+     "apiVersion": "1"
+   },
+   "assets": {
+     "paths": []
+   }
+ }

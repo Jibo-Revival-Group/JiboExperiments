@@ -1,0 +1,30 @@
+ {
+   "skillId": "openjibo.smart-home",
+   "name": "OpenJibo Smart Home",
+   "version": "1.0.0",
+   "author": "OpenJibo",
+   "description": "Built-in compatibility package for the legacy openjibo smart home routes.",
+   "runtime": "dotnet",
+   "packageType": "builtin",
+   "adapter": "legacy",
+   "executionTarget": "server",
+   "supportedLanguages": [
+     "en"
+   ],
+   "intentBindings": [
+     {
+       "intent": "ha_climate_get_temp",
+       "priority": 50,
+       "match": {}
+     }
+   ],
+   "proactiveBindings": [],
+   "permissions": [],
+   "dependencies": [],
+   "compatibility": {
+     "apiVersion": "1"
+   },
+   "assets": {
+     "paths": []
+   }
+ }

@@ -12,6 +12,7 @@ using Jibo.Cloud.Infrastructure.Media;
 using Jibo.Cloud.Infrastructure.News;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Cloud.Infrastructure.Search;
+using Jibo.Cloud.Infrastructure.Skills;
 using Jibo.Cloud.Infrastructure.Telemetry;
 using Jibo.Cloud.Infrastructure.Weather;
 using Jibo.Cloud.Infrastructure.Wikipedia;
@@ -137,6 +138,8 @@ public static class ServiceCollectionExtensions
         var personalMemoryPersistencePath = configuration?["OpenJibo:PersonalMemory:PersistencePath"]
                                             ?? Path.Combine(AppContext.BaseDirectory, "App_Data",
                                                 "personal-memory.json");
+        var skillsDirectory = configuration?["OpenJibo:Skills:DirectoryPath"]
+                              ?? Path.Combine(AppContext.BaseDirectory, "App_Data", "Skills");
         var stateBackendKind = ParseBackendKind(configuration?["OpenJibo:State:Backend"]);
         var personalMemoryBackendKind = ParseBackendKind(configuration?["OpenJibo:PersonalMemory:Backend"]);
         var stateConnectionString = configuration?["OpenJibo:State:ConnectionString"]
@@ -213,6 +216,10 @@ public static class ServiceCollectionExtensions
             return new InMemoryPersonalMemoryStore(snapshotFactory.Create(personalMemoryPersistencePath,
                 personalMemoryBackendKind, "personal-memory", personalMemoryConnectionString));
         });
+        services.AddSingleton<ISkillRegistry>(provider =>
+            new FileSystemSkillRegistry(
+                skillsDirectory,
+                provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FileSystemSkillRegistry>>()));
         services.AddSingleton<IJiboExperienceContentRepository, InMemoryJiboExperienceContentRepository>();
         services.AddSingleton<JiboExperienceContentCache>();
         services.AddSingleton<IJiboRandomizer, DefaultJiboRandomizer>();

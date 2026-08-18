@@ -28,6 +28,29 @@ internal static class PortalEndpoints
 
     internal static void MapPortalEndpoints(this WebApplication app)
     {
+        app.MapGet("/api/portal/skills", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ISkillRegistry skillRegistry) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session))
+                return Results.Unauthorized();
+
+            skillRegistry.Refresh();
+            return Results.Json(new
+            {
+                directory = skillRegistry.SkillsDirectory,
+                skills = skillRegistry.GetInstalledSkills().Select(skill => new
+                {
+                    package = Path.GetFileName(skill.PackageDirectory),
+                    state = skill.State.ToString().ToLowerInvariant(),
+                    validationErrors = skill.ValidationErrors,
+                    manifest = skill.Manifest
+                })
+            });
+        });
+
         app.MapGet("/api/onboarding/trusted-servers", (
             HttpRequest request,
             PortalSessionService portalSessionService,

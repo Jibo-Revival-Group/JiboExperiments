@@ -14,14 +14,14 @@ This document keeps the revival effort honest about what must work first, what c
 - durable PostgreSQL state plus Blob/file payload-storage design
 - bootstrap documentation for router, DNS, RCM, TLS patching, and smoke tests
 
-## Required For The Paid `1.0.20` Managed Service
+## Required For Any Managed Hosting Provider
 
-- normalized PostgreSQL durable state with Blob/file payload storage and bounded ephemeral memory
-- customer authentication, account recovery, household/robot ownership, and credential lifecycle
-- billing-provider integration, durable subscription state, entitlement enforcement, reconciliation, cancellation, and payment recovery
-- customer signup/account/subscription/onboarding surface with reviewed terms, privacy, refund/cancellation, support, and status paths
-- dependency-aware health, monitoring/alerts, backups, restore/rollback drills, load/soak proof, security review, and staffed support/business operations
-- a capped paid pilot that passes the criteria in [release-1.0.20-paid-launch-plan.md](release-1.0.20-paid-launch-plan.md)
+- normalized durable state with Blob/file payload storage and bounded ephemeral memory
+- provider-neutral account/robot ownership, credential lifecycle, onboarding handoff/return, revocation, export, and recovery contracts
+- dependency-aware health, monitoring, backups, restore/rollback, load/soak proof, security review, and a published support/status path
+- explicit operator identity, service terms, privacy/retention, backup behavior, and exit path
+
+Provider-specific price, billing, entitlement, customer policy, and support operations belong to the provider. Transcendent Software's implementation is private and represented publicly by [cloud.openjibo.com](https://cloud.openjibo.com).
 
 ## Optional For Parity
 

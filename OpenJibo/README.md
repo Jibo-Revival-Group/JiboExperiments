@@ -126,7 +126,7 @@ Use these when you want the active technical truth:
 - [Open Jibo mode conversion plan](docs/open-jibo-mode-conversion-plan.md)
 - [Release 1.0.19 closeout](docs/release-1.0.19-plan.md)
 - [Release 1.0.20 plan](docs/release-1.0.20-plan.md)
-- [Release 1.0.20 paid-service launch plan](docs/release-1.0.20-paid-launch-plan.md)
+- [Transcendent Software OpenJibo Cloud managed service](https://cloud.openjibo.com)
 - [Support tiers](docs/support-tiers.md)
 - [System diagram alignment](docs/system-diagram-alignment.md)
 - [Public site plan](docs/public-site-plan.md)

@@ -36,7 +36,7 @@ public sealed class JiboCloudProtocolService(
     private readonly HashSet<string> _acceptedHosts = BuildAcceptedHosts(configuration);
 
     private readonly ICloudAuthProtocolHandler _authHandler =
-        authHandler ?? new CloudAuthProtocolHandler(stateStore);
+        authHandler ?? new CloudAuthProtocolHandler(stateStore, identitySuggestionStore: identitySuggestionStore);
 
     private readonly string? _configuredRobotId = ReadConfiguredRobotId(configuration);
     private readonly string? _canonicalApiBaseUrl = ReadCanonicalApiBaseUrl(configuration);

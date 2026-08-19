@@ -162,6 +162,30 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public void NewRobotToken_MismatchedPresentedNameBecomesSuggestionWithoutRenamingDevice()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Royal-Current-Sage-Canvas",
+            RobotId = "Royal-Current-Sage-Canvas",
+            FriendlyName = "Royal-Current-Sage-Canvas"
+        });
+        var suggestions = new RobotIdentitySuggestionStore(store);
+        var handler = new CloudAuthProtocolHandler(store, identitySuggestionStore: suggestions);
+
+        handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"Royal-Current-Sage-Canvas","robotId":"Coral-Watt-Serrano-Woven"}"""
+        });
+
+        var device = store.GetDevices().Single(item => item.DeviceId == "Royal-Current-Sage-Canvas");
+        Assert.Equal("Royal-Current-Sage-Canvas", device.RobotId);
+        Assert.Equal("Coral-Watt-Serrano-Woven",
+            suggestions.GetSuggestion(device.DeviceId)?.ProposedRobotId);
+    }
+
+    [Fact]
     public async Task AccountCreate_LoginAndCheckEmail_UseUserBackedAuth()
     {
         var create = await _service.DispatchAsync(new ProtocolEnvelope

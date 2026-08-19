@@ -24,6 +24,8 @@ public interface ICloudStateStore
     IReadOnlyList<RobotCredentialBinding> SwapAwsCredentialFingerprintBindings(string firstAccessKeyFingerprint,
         string secondAccessKeyFingerprint, string claimSource);
     RobotMergeResult MergeRobotRecords(string sourceDeviceId, string targetDeviceId);
+    RobotIdentityCleanupPreview PreviewRobotIdentityCleanup();
+    RobotIdentityCleanupResult ResetRobotIdentityAssociations();
     UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);
     UserRecord? AuthenticateUser(string email, string password);
     UserRecord? GetUserById(string id);

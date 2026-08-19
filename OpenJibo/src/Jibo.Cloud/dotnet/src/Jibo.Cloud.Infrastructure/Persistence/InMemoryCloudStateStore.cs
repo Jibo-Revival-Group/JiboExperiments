@@ -443,6 +443,94 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return new RobotMergeResult(source.DeviceId, targetDeviceId, migratedSessions, migratedBindings, DateTimeOffset.UtcNow);
     }
 
+    public RobotIdentityCleanupPreview PreviewRobotIdentityCleanup()
+    {
+        lock (_syncRoot)
+        {
+            var relationships = _devices.Values
+                .Where(device => device.HostMappings.TryGetValue("openjibo.mergedIntoDeviceId", out var target) &&
+                                 !string.IsNullOrWhiteSpace(target))
+                .Select(device => new RobotMergeRelationship(
+                    device.DeviceId,
+                    device.HostMappings["openjibo.mergedIntoDeviceId"]))
+                .OrderBy(item => item.SourceDeviceId, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            var sessionBindings = _sessionsByToken.Values.Count(session =>
+                !string.IsNullOrWhiteSpace(ReadSessionMetadata(session, "registeredDeviceId")));
+            var authenticationSessions = _sessionsByToken.Keys.Count(IsIssuedAuthenticationToken);
+            return new RobotIdentityCleanupPreview(
+                relationships.Length,
+                sessionBindings,
+                authenticationSessions,
+                _robotCredentialBindings.Count,
+                relationships);
+        }
+    }
+
+    public RobotIdentityCleanupResult ResetRobotIdentityAssociations()
+    {
+        lock (_syncRoot)
+        {
+            var restored = 0;
+            foreach (var source in _devices.Values.Where(device =>
+                         device.HostMappings.ContainsKey("openjibo.mergedIntoDeviceId")).ToArray())
+            {
+                var mappings = new Dictionary<string, string>(source.HostMappings, StringComparer.OrdinalIgnoreCase);
+                mappings.Remove("openjibo.mergedIntoDeviceId");
+                _devices[source.DeviceId] = new DeviceRegistration
+                {
+                    DeviceId = source.DeviceId,
+                    RobotId = source.RobotId,
+                    FriendlyName = source.FriendlyName,
+                    FirmwareVersion = source.FirmwareVersion,
+                    ApplicationVersion = source.ApplicationVersion,
+                    IsActive = true,
+                    CertificateThumbprint = source.CertificateThumbprint,
+                    IssuedIdentityId = source.IssuedIdentityId,
+                    BuildHash = source.BuildHash,
+                    ConfigHash = source.ConfigHash,
+                    VerifiedSerialNumber = source.VerifiedSerialNumber,
+                    SerialEvidenceSource = source.SerialEvidenceSource,
+                    SerialEvidenceVerifiedUtc = source.SerialEvidenceVerifiedUtc,
+                    RegistrationSource = source.RegistrationSource,
+                    IsHidden = false,
+                    ArchivedUtc = null,
+                    HostMappings = mappings
+                };
+                restored++;
+            }
+
+            var cleared = 0;
+            foreach (var session in _sessionsByToken.Values)
+            {
+                var registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId");
+                if (!string.IsNullOrWhiteSpace(registeredDeviceId))
+                {
+                    AppendSessionBindingAudit(session, "identity-cleanup-reset",
+                        registeredDeviceId, null, "portal-admin");
+                    session.Metadata.Remove("registeredDeviceId");
+                    session.Metadata.Remove("registeredRobotId");
+                    cleared++;
+                }
+                session.Metadata.Remove("identitySuggestionDeviceId");
+            }
+
+            var revoked = 0;
+            foreach (var token in _sessionsByToken.Keys.Where(IsIssuedAuthenticationToken).ToArray())
+            {
+                if (_sessionsByToken.TryRemove(token, out _)) revoked++;
+            }
+
+            if (restored > 0 || cleared > 0 || revoked > 0) TouchState();
+            return new RobotIdentityCleanupResult(restored, cleared, revoked, _robotCredentialBindings.Count,
+                DateTimeOffset.UtcNow);
+        }
+    }
+
+    private static bool IsIssuedAuthenticationToken(string token) =>
+        token.StartsWith("token-", StringComparison.OrdinalIgnoreCase) ||
+        token.StartsWith("hub-", StringComparison.OrdinalIgnoreCase);
+
     private static bool IdentityMatches(string? left, string? right)
     {
         if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
@@ -855,10 +943,53 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
             if (session is null) return false;
 
-            AppendSessionBindingAudit(session, "unlinked", ReadSessionMetadata(session, "registeredDeviceId"), null,
-                "portal-admin");
-            session.Metadata.Remove("registeredDeviceId");
-            session.Metadata.Remove("registeredRobotId");
+            // A session row is only one connection for an observed runtime identity.
+            // Clear every historical donor for that same runtime ID so reconnect
+            // inheritance cannot immediately recreate the link the admin removed.
+            IEnumerable<CloudSession> relatedSessions = string.IsNullOrWhiteSpace(session.DeviceId)
+                ? new[] { session }
+                : _sessionsByToken.Values.Where(candidate =>
+                    string.Equals(candidate.DeviceId, session.DeviceId, StringComparison.OrdinalIgnoreCase));
+            foreach (var related in relatedSessions)
+            {
+                var previous = ReadSessionMetadata(related, "registeredDeviceId");
+                if (!string.IsNullOrWhiteSpace(previous))
+                    AppendSessionBindingAudit(related, "unlinked", previous, null, "portal-admin");
+                related.Metadata.Remove("registeredDeviceId");
+                related.Metadata.Remove("registeredRobotId");
+                related.Metadata.Remove("identitySuggestionDeviceId");
+            }
+
+            // Breaking a link on an archived merge source is an explicit unmerge of
+            // that observed identity. Restore the source record and remove the marker
+            // that would otherwise bind its next connection again.
+            if (!string.IsNullOrWhiteSpace(session.DeviceId) &&
+                _devices.TryGetValue(session.DeviceId, out var observed) &&
+                observed.HostMappings.ContainsKey("openjibo.mergedIntoDeviceId"))
+            {
+                var mappings = new Dictionary<string, string>(observed.HostMappings, StringComparer.OrdinalIgnoreCase);
+                mappings.Remove("openjibo.mergedIntoDeviceId");
+                _devices[observed.DeviceId] = new DeviceRegistration
+                {
+                    DeviceId = observed.DeviceId,
+                    RobotId = observed.RobotId,
+                    FriendlyName = observed.FriendlyName,
+                    FirmwareVersion = observed.FirmwareVersion,
+                    ApplicationVersion = observed.ApplicationVersion,
+                    IsActive = true,
+                    CertificateThumbprint = observed.CertificateThumbprint,
+                    IssuedIdentityId = observed.IssuedIdentityId,
+                    BuildHash = observed.BuildHash,
+                    ConfigHash = observed.ConfigHash,
+                    VerifiedSerialNumber = observed.VerifiedSerialNumber,
+                    SerialEvidenceSource = observed.SerialEvidenceSource,
+                    SerialEvidenceVerifiedUtc = observed.SerialEvidenceVerifiedUtc,
+                    RegistrationSource = observed.RegistrationSource,
+                    IsHidden = false,
+                    ArchivedUtc = null,
+                    HostMappings = mappings
+                };
+            }
         }
 
         TouchState();
@@ -3416,6 +3547,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AppendSessionBindingAudit(session, "cleared-archived-link", device.DeviceId, null, "startup-guard");
             session.Metadata.Remove("registeredDeviceId");
             session.Metadata.Remove("registeredRobotId");
+            session.Metadata.Remove("identitySuggestionDeviceId");
             changed = true;
         }
 

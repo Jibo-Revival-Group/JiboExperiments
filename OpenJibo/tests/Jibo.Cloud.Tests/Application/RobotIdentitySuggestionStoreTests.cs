@@ -47,6 +47,28 @@ public sealed class RobotIdentitySuggestionStoreTests
     }
 
     [Fact]
+    public void Extract_ReadsRobotNameFromHealthPayloadWithSerialEvidence()
+    {
+        var candidates = RobotIdentityCandidateExtractor.Extract(
+            """{"system_clock":123,"name":"Coral-Watt-Serrano-Woven","serial_number":"BOJW-1000-0017-0815-0075","health":[]}""");
+
+        var candidate = Assert.Single(candidates);
+        Assert.Equal("name", candidate.Field);
+        Assert.Equal("Coral-Watt-Serrano-Woven", candidate.Value);
+    }
+
+    [Fact]
+    public void Extract_ReadsRobotHostnameFromSyslogLines()
+    {
+        var candidates = RobotIdentityCandidateExtractor.Extract(
+            "2026-08-19T12:03:06.479775+02:00 Coral-Watt-Serrano-Woven rsyslogd[-,info]: rsyslogd was HUPed");
+
+        var candidate = Assert.Single(candidates);
+        Assert.Equal("syslog.hostname", candidate.Field);
+        Assert.Equal("Coral-Watt-Serrano-Woven", candidate.Value);
+    }
+
+    [Fact]
     public void GetSuggestion_ProposesMergeWhenCandidateBelongsToAnotherRobot()
     {
         var stateStore = new InMemoryCloudStateStore();

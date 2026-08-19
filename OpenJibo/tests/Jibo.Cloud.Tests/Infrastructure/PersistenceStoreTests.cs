@@ -64,6 +64,48 @@ public sealed class PersistenceStoreTests
     }
 
     [Fact]
+    public void ClearSessionDeviceBinding_ClearsHistoricalDonorsForSameObservedIdentity()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "Royal", RobotId = "Royal" });
+        var first = store.OpenSession("hub", "shared-runtime-id", "hub-first", "neohub", "/v1/listen");
+        var second = store.OpenSession("hub", "shared-runtime-id", "hub-second", "neohub", "/v1/proactive");
+        Assert.True(store.BindSessionToDevice(first.SessionId, "Royal"));
+        Assert.True(store.BindSessionToDevice(second.SessionId, "Royal"));
+
+        Assert.True(store.ClearSessionDeviceBinding(second.SessionId));
+
+        Assert.False(first.Metadata.ContainsKey("registeredDeviceId"));
+        Assert.False(second.Metadata.ContainsKey("registeredDeviceId"));
+        var reconnect = store.OpenSession("hub", "shared-runtime-id", "hub-third", "neohub", "/v1/listen");
+        Assert.False(reconnect.Metadata.ContainsKey("registeredDeviceId"));
+    }
+
+    [Fact]
+    public void ResetRobotIdentityAssociations_RestoresMergeSourcesAndClearsSessionLinks()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "source-runtime", RobotId = "robot-source-runtime" });
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "target", RobotId = "Royal-Current-Sage-Canvas" });
+        var session = store.OpenSession("hub", "source-runtime", "conn:source", "neohub", "/v1/listen");
+        store.MergeRobotRecords("source-runtime", "target");
+
+        var preview = store.PreviewRobotIdentityCleanup();
+        Assert.Equal(1, preview.MergeRelationshipCount);
+        Assert.Equal(1, preview.ExplicitSessionBindingCount);
+
+        var result = store.ResetRobotIdentityAssociations();
+
+        Assert.Equal(1, result.RestoredRobotRecords);
+        Assert.Equal(1, result.ClearedSessionBindings);
+        var restored = store.GetDevices().Single(device => device.DeviceId == "source-runtime");
+        Assert.False(restored.IsHidden);
+        Assert.Null(restored.ArchivedUtc);
+        Assert.False(restored.HostMappings.ContainsKey("openjibo.mergedIntoDeviceId"));
+        Assert.False(session.Metadata.ContainsKey("registeredDeviceId"));
+    }
+
+    [Fact]
     public void Reconnect_ReinheritsExplicitSessionBindingForSameRuntimeIdentity()
     {
         var store = new InMemoryCloudStateStore();

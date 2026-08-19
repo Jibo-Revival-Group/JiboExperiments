@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Collections.Generic;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Microsoft.Extensions.Logging;
@@ -9,7 +8,8 @@ namespace Jibo.Cloud.Application.Services;
 
 public sealed class CloudAuthProtocolHandler(
     ICloudStateStore stateStore,
-    ILogger<CloudAuthProtocolHandler>? logger = null) : ICloudAuthProtocolHandler
+    ILogger<CloudAuthProtocolHandler>? logger = null,
+    RobotIdentitySuggestionStore? identitySuggestionStore = null) : ICloudAuthProtocolHandler
 {
     private readonly ILogger _logger = logger ?? NullLogger<CloudAuthProtocolHandler>.Instance;
     public ProtocolDispatchResult HandleAccount(string operation, ProtocolEnvelope envelope)
@@ -219,24 +219,8 @@ public sealed class CloudAuthProtocolHandler(
         var existing = stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion,
             registrationSource);
         if (!string.IsNullOrWhiteSpace(presentedRobotId))
-        {
-            var resolvedRobotId = presentedRobotId.Trim();
-            stateStore.UpsertDevice(new DeviceRegistration
-            {
-                DeviceId = existing.DeviceId,
-                RobotId = resolvedRobotId,
-                FriendlyName = string.IsNullOrWhiteSpace(existing.FriendlyName)
-                    ? resolvedRobotId
-                    : existing.FriendlyName,
-                FirmwareVersion = existing.FirmwareVersion ?? envelope.FirmwareVersion,
-                ApplicationVersion = existing.ApplicationVersion ?? envelope.ApplicationVersion,
-                IsActive = true,
-                RegistrationSource = existing.RegistrationSource,
-                IsHidden = existing.IsHidden,
-                ArchivedUtc = existing.ArchivedUtc,
-                HostMappings = new Dictionary<string, string>(existing.HostMappings, StringComparer.OrdinalIgnoreCase)
-            });
-        }
+            identitySuggestionStore?.Observe(existing.DeviceId, presentedRobotId,
+                "auth:Notification.NewRobotToken", "robotId");
 
         var token = stateStore.IssueRobotToken(deviceId);
         _logger.LogInformation(

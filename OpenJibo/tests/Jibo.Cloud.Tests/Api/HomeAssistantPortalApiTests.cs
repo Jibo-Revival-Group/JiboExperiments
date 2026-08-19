@@ -1220,6 +1220,120 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task StatusSummary_ListsAndUnlinksStaleExplicitSessionBinding()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var robot = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Royal-Current-Sage-Canvas",
+            RobotId = "robot-Royal-Current-Sage-Canvas",
+            FriendlyName = "Royal-Current-Sage-Canvas"
+        });
+        var session = store.OpenSession("neo-hub-listen", "wrong-runtime-token", "hub-stale", "neo-hub-listen", "/v1/listen");
+        Assert.True(store.BindSessionToDevice(session.SessionId, robot.DeviceId));
+        session.LastSeenUtc = DateTimeOffset.UtcNow.AddHours(-2);
+
+        await AuthenticateAdminAsync(client);
+        var summaryResponse = await client.GetAsync("/api/portal/status/summary");
+        Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
+        var summary = await summaryResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var binding = Assert.Single(summary.GetProperty("explicitSessionBindings").EnumerateArray(), item =>
+            item.GetProperty("sessionId").GetString() == session.SessionId);
+        Assert.True(binding.GetProperty("isStale").GetBoolean());
+        Assert.Equal("wrong-runtime-token", binding.GetProperty("deviceId").GetString());
+
+        var unlinkResponse = await client.DeleteAsync($"/api/portal/status/sessions/{session.SessionId}/link");
+        Assert.Equal(HttpStatusCode.OK, unlinkResponse.StatusCode);
+        Assert.False(session.Metadata.ContainsKey("registeredDeviceId"));
+        Assert.Equal("wrong-runtime-token", session.DeviceId);
+    }
+
+    [Fact]
+    public async Task IdentityCleanup_PreviewsAndResetsHistoricalAssociations()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "cleanup-source", RobotId = "robot-cleanup-source" });
+        store.UpsertDevice(new DeviceRegistration { DeviceId = "cleanup-target", RobotId = "Cleanup-Target-Robot" });
+        store.OpenSession("hub", "cleanup-source", "conn:cleanup", "neohub", "/v1/listen");
+        store.MergeRobotRecords("cleanup-source", "cleanup-target");
+        store.IssueRobotToken("cleanup-target");
+
+        await AuthenticateAdminAsync(client);
+        var previewResponse = await client.GetAsync("/api/portal/status/identity-cleanup");
+        Assert.Equal(HttpStatusCode.OK, previewResponse.StatusCode);
+        var preview = await previewResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(preview.GetProperty("mergeRelationshipCount").GetInt32() >= 1);
+        Assert.True(preview.GetProperty("explicitSessionBindingCount").GetInt32() >= 1);
+        Assert.True(preview.GetProperty("authenticationSessionCount").GetInt32() >= 1);
+
+        var resetResponse = await client.PostAsJsonAsync(
+            "/api/portal/status/identity-cleanup/reset", new { confirmed = true });
+        Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
+        var restored = store.GetDevices().Single(device => device.DeviceId == "cleanup-source");
+        Assert.False(restored.IsHidden);
+        Assert.Null(restored.ArchivedUtc);
+        Assert.DoesNotContain(store.GetSessions(), session =>
+            !string.IsNullOrWhiteSpace(session.Token) && session.Token.StartsWith("token-", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task RestoreIdentityFromDeviceId_RepairsMismatchedNamedRecordWithoutMerging()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Royal-Current-Sage-Canvas",
+            RobotId = "Coral-Watt-Serrano-Woven",
+            FriendlyName = "Coral-Watt-Serrano-Woven"
+        });
+
+        await AuthenticateAdminAsync(client);
+        var response = await client.PostAsJsonAsync(
+            "/api/portal/status/robots/Royal-Current-Sage-Canvas/identity/restore-from-device-id",
+            new { confirmed = true });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var repaired = store.GetDevices().Single(device => device.DeviceId == "Royal-Current-Sage-Canvas");
+        Assert.Equal("Royal-Current-Sage-Canvas", repaired.RobotId);
+        Assert.Equal("Royal-Current-Sage-Canvas", repaired.FriendlyName);
+    }
+
+    [Fact]
+    public async Task IdentitySuggestion_InspectsArtifactPayloadWhenManifestHasNoRobotName()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var placeholder = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "runtime-with-generic-name",
+            RobotId = "robot-runtime-with-generic-name",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var mediaStore = factory.Services.GetRequiredService<IMediaContentStore>();
+        await mediaStore.StoreAsync(
+            "logs/events/identity-evidence.json",
+            "application/json",
+            Encoding.UTF8.GetBytes("{\"metadata\":{\"robot_name\":\"Royal-Current-Sage-Canvas\"}}"),
+            new Dictionary<string, object?> { ["deviceId"] = placeholder.DeviceId });
+
+        await AuthenticateAdminAsync(client);
+        var response = await client.GetAsync($"/api/portal/status/robots/{placeholder.DeviceId}/identity-suggestion");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(payload.GetProperty("suggested").GetBoolean());
+        Assert.Equal("Royal-Current-Sage-Canvas", payload.GetProperty("proposedRobotId").GetString());
+        Assert.Contains(payload.GetProperty("evidence").EnumerateArray(), item =>
+            item.GetProperty("source").GetString()?.StartsWith("artifact-content:", StringComparison.Ordinal) == true);
+    }
+
+    [Fact]
     public async Task StatusSummary_PrefersNamedIdentityOverGenericHashPlaceholder()
     {
         await using var factory = CreateFactory();

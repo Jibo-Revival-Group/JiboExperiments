@@ -519,19 +519,22 @@ public sealed class WebSocketTurnFinalizationService(
         var registeredDeviceId = session.Metadata.TryGetValue("registeredDeviceId", out var registeredValue)
             ? registeredValue?.ToString()
             : null;
-        var suggestionDeviceId = session.Metadata.TryGetValue("identitySuggestionDeviceId", out var suggestionValue)
-            ? suggestionValue?.ToString()
+        // A context payload may replace the session's runtime DeviceId with its
+        // friendly name. Persist release data on the record that actually received
+        // the context while leaving the friendly name as suggestion evidence only.
+        var observedDeviceId = session.Metadata.TryGetValue("identitySuggestionDeviceId", out var observedValue)
+            ? observedValue?.ToString()
             : null;
-        var suggestionDevice = string.IsNullOrWhiteSpace(suggestionDeviceId)
+        var observedDevice = string.IsNullOrWhiteSpace(observedDeviceId)
             ? null
-            : cloudStateStore.FindDeviceByFriendlyId(suggestionDeviceId);
-        if (suggestionDevice is null || suggestionDevice.IsHidden || suggestionDevice.ArchivedUtc is not null)
-            suggestionDeviceId = null;
+            : cloudStateStore.FindDeviceByFriendlyId(observedDeviceId);
+        if (observedDevice is null || observedDevice.IsHidden || observedDevice.ArchivedUtc is not null)
+            observedDeviceId = null;
         cloudStateStore.GetOrCreateDevice(
             !string.IsNullOrWhiteSpace(registeredDeviceId)
                 ? registeredDeviceId
-                : !string.IsNullOrWhiteSpace(suggestionDeviceId)
-                    ? suggestionDeviceId
+                : !string.IsNullOrWhiteSpace(observedDeviceId)
+                    ? observedDeviceId
                     : session.DeviceId,
             release,
             null);

@@ -196,15 +196,19 @@ public static class RobotIdentityCandidateExtractor
 
     public static IReadOnlyList<RobotIdentityCandidate> Extract(string? json)
     {
-        if (string.IsNullOrWhiteSpace(json) || json.Length > 256 * 1024 ||
-            (!CandidateFields.Any(field => json.Contains(field, StringComparison.OrdinalIgnoreCase)) &&
-             !json.Contains("\"jibo\"", StringComparison.OrdinalIgnoreCase)))
+        if (string.IsNullOrWhiteSpace(json) || json.Length > 256 * 1024)
             return [];
+
+        var syslogCandidates = ExtractSyslogCandidates(json);
+        if (!CandidateFields.Any(field => json.Contains(field, StringComparison.OrdinalIgnoreCase)) &&
+            !json.Contains("\"jibo\"", StringComparison.OrdinalIgnoreCase) &&
+            !json.Contains("\"serial_number\"", StringComparison.OrdinalIgnoreCase))
+            return syslogCandidates;
 
         try
         {
             using var document = JsonDocument.Parse(json);
-            var candidates = new List<RobotIdentityCandidate>();
+            var candidates = new List<RobotIdentityCandidate>(syslogCandidates);
             Visit(document.RootElement, string.Empty, candidates);
             return candidates
                 .Where(candidate => RobotIdentitySuggestionStore.IsSafeIdentityName(candidate.Value))
@@ -213,7 +217,7 @@ public static class RobotIdentityCandidateExtractor
         }
         catch (JsonException)
         {
-            return [];
+            return syslogCandidates;
         }
     }
 
@@ -221,13 +225,17 @@ public static class RobotIdentityCandidateExtractor
     {
         if (element.ValueKind == JsonValueKind.Object)
         {
+            var isRobotHealthRoot = string.IsNullOrEmpty(path) &&
+                                    element.TryGetProperty("serial_number", out var serial) &&
+                                    serial.ValueKind == JsonValueKind.String;
             foreach (var property in element.EnumerateObject())
             {
                 var propertyPath = string.IsNullOrEmpty(path) ? property.Name : $"{path}.{property.Name}";
                 var isJiboId = property.NameEquals("id") &&
                                path.EndsWith(".jibo", StringComparison.OrdinalIgnoreCase);
+                var isRobotHealthName = isRobotHealthRoot && property.NameEquals("name");
                 if (property.Value.ValueKind == JsonValueKind.String &&
-                    (CandidateFields.Contains(property.Name) || isJiboId) &&
+                    (CandidateFields.Contains(property.Name) || isJiboId || isRobotHealthName) &&
                     property.Value.GetString() is { } value)
                     candidates.Add(new RobotIdentityCandidate(propertyPath, value.Trim()));
                 Visit(property.Value, propertyPath, candidates);
@@ -239,5 +247,18 @@ public static class RobotIdentityCandidateExtractor
             foreach (var item in element.EnumerateArray())
                 Visit(item, $"{path}[{index++}]", candidates);
         }
+    }
+
+    private static IReadOnlyList<RobotIdentityCandidate> ExtractSyslogCandidates(string text)
+    {
+        var matches = System.Text.RegularExpressions.Regex.Matches(
+            text,
+            "(?m)^\\d{4}-\\d{2}-\\d{2}T\\S+\\s+([A-Za-z0-9]+(?:-[A-Za-z0-9]+){2,})\\s+",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        return matches
+            .Select(match => new RobotIdentityCandidate("syslog.hostname", match.Groups[1].Value))
+            .Where(candidate => RobotIdentitySuggestionStore.IsSafeIdentityName(candidate.Value))
+            .DistinctBy(candidate => candidate.Value, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 }

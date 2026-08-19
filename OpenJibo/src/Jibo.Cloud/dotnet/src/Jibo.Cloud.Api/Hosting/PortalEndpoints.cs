@@ -948,6 +948,29 @@ internal static class PortalEndpoints
             return Results.Json(new { ok = true, deviceId = updated.DeviceId, hidden = updated.IsHidden });
         });
 
+        app.MapGet("/api/portal/status/identity-cleanup", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            return Results.Json(cloudStateStore.PreviewRobotIdentityCleanup());
+        });
+
+        app.MapPost("/api/portal/status/identity-cleanup/reset", (
+            [FromBody] ResetRobotIdentityAssociationsRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            if (!request.Confirmed)
+                return Results.BadRequest(new { error = "Preview and confirm the identity cleanup before applying it." });
+            return Results.Json(new { ok = true, result = cloudStateStore.ResetRobotIdentityAssociations() });
+        });
+
         app.MapGet("/api/portal/status/robots/{deviceId}/logs", async (
             string deviceId,
             HttpRequest request,
@@ -1218,15 +1241,61 @@ internal static class PortalEndpoints
             catch (KeyNotFoundException) { return Results.NotFound(new { error = "Robot record was not found." }); }
         });
 
-        app.MapGet("/api/portal/status/robots/{deviceId}/identity-suggestion", (
+        app.MapGet("/api/portal/status/robots/{deviceId}/identity-suggestion", async (
             string deviceId, HttpRequest request, PortalSessionService portalSessionService,
-            ICloudStateStore cloudStateStore, RobotIdentitySuggestionStore identitySuggestionStore) =>
+            ICloudStateStore cloudStateStore, IMediaContentStore mediaContentStore,
+            RobotIdentitySuggestionStore identitySuggestionStore, CancellationToken cancellationToken) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
             var device = cloudStateStore.GetDevices().FirstOrDefault(item =>
                 item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
+
+            foreach (var robotSession in cloudStateStore.GetSessions().Where(item => SessionMatchesDevice(item, device)))
+            {
+                foreach (var key in new[] { "robotFriendlyId", "friendlyId", "registeredRobotId", "robotId" })
+                {
+                    if (!robotSession.Metadata.TryGetValue(key, out var value) || value is null) continue;
+                    identitySuggestionStore.Observe(device.DeviceId, value.ToString(), "stored-session", key);
+                }
+            }
+            var artifactKeys = BuildRobotArtifactKeys(device, cloudStateStore);
+            var artifacts = await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken);
+            var matchingArtifacts = artifacts.Where(item =>
+                    artifactKeys.Contains(ReadArtifactMeta(item.Meta, "deviceId")))
+                .OrderByDescending(item =>
+                    item.Path.StartsWith("logs/", StringComparison.OrdinalIgnoreCase) ||
+                    item.ContentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase) ||
+                    item.ContentType.Contains("json", StringComparison.OrdinalIgnoreCase) ||
+                    item.ContentType.Contains("gzip", StringComparison.OrdinalIgnoreCase))
+                .Take(24)
+                .ToArray();
+            foreach (var artifact in matchingArtifacts)
+            {
+                foreach (var key in new[] { "robot_name", "robotName", "robot_id", "robotId" })
+                {
+                    var candidate = ReadArtifactMeta(artifact.Meta, key);
+                    identitySuggestionStore.Observe(device.DeviceId, candidate, $"artifact:{artifact.Path}", key);
+                }
+            }
+
+            // Upload manifests generally contain attribution metadata, while the
+            // robot name is often inside the JSON/gzip payload itself. Load only the
+            // newest bounded set, concurrently, so Azure latency does not accumulate.
+            var artifactContents = await Task.WhenAll(matchingArtifacts.Select(async artifact => new
+            {
+                artifact,
+                content = await TryLoadIdentityArtifactAsync(mediaContentStore, artifact.Path, cancellationToken)
+            }));
+            foreach (var item in artifactContents)
+            {
+                var artifact = item.artifact;
+                var content = item.content;
+                foreach (var candidate in ExtractIdentityCandidates(content))
+                    identitySuggestionStore.Observe(device.DeviceId, candidate.Value,
+                        $"artifact-content:{artifact.Path}", candidate.Field);
+            }
 
             var suggestion = identitySuggestionStore.GetSuggestion(device.DeviceId);
             if (suggestion is null)
@@ -1244,6 +1313,32 @@ internal static class PortalEndpoints
                 suggestion.LastObservedUtc,
                 suggestion.Evidence
             });
+        });
+
+        app.MapPost("/api/portal/status/robots/{deviceId}/identity/restore-from-device-id", (
+            string deviceId, [FromBody] RestoreRobotIdentityRequest request,
+            HttpRequest httpRequest, PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
+            if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
+            if (!request.Confirmed) return Results.BadRequest(new { error = "Confirm the identity correction." });
+            var device = cloudStateStore.GetDevices().FirstOrDefault(item =>
+                item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
+            if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
+            if (!IsSafeIdentityName(device.DeviceId))
+                return Results.BadRequest(new { error = "This device ID is not a canonical robot-name candidate." });
+            if (device.DeviceId.Equals(device.RobotId, StringComparison.OrdinalIgnoreCase))
+                return Results.BadRequest(new { error = "The robot identity already matches its device ID." });
+            try
+            {
+                var restored = cloudStateStore.RenameDevice(device.DeviceId, device.DeviceId);
+                return Results.Json(new { ok = true, device = restored });
+            }
+            catch (InvalidOperationException exception)
+            {
+                return Results.Conflict(new { error = exception.Message });
+            }
         });
 
         app.MapPost("/api/portal/status/robots/{deviceId}/identity-suggestion/apply", async (
@@ -1317,7 +1412,7 @@ internal static class PortalEndpoints
 
             return cloudStateStore.ClearSessionDeviceBinding(sessionId)
                 ? Results.Json(new { ok = true, sessionId })
-                : Results.NotFound(new { error = "Live session was not found." });
+                : Results.NotFound(new { error = "Session was not found." });
         });
 
         app.MapPost("/api/portal/status/network/reports", (
@@ -1758,6 +1853,24 @@ internal static class PortalEndpoints
                     session.LastSeenUtc,
                     heartbeatAgeSeconds = (now - session.LastSeenUtc).TotalSeconds
                 })
+                .ToArray(),
+            explicitSessionBindings = sessions
+                .Where(session => !string.IsNullOrWhiteSpace(ReadSessionMetadata(session, "registeredDeviceId")))
+                .OrderByDescending(session => session.LastSeenUtc)
+                .Select(session => new
+                {
+                    session.SessionId,
+                    session.Kind,
+                    session.DeviceId,
+                    registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId"),
+                    registeredRobotId = ReadSessionMetadata(session, "registeredRobotId"),
+                    session.HostName,
+                    session.Path,
+                    session.CreatedUtc,
+                    session.LastSeenUtc,
+                    heartbeatAgeSeconds = (now - session.LastSeenUtc).TotalSeconds,
+                    isStale = now - session.LastSeenUtc > StatusHeartbeatWindow
+                })
                 .ToArray()
         };
     }
@@ -2120,6 +2233,60 @@ internal static class PortalEndpoints
         value.Trim().Length <= 120 &&
         System.Text.RegularExpressions.Regex.IsMatch(value.Trim(),
             "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+){2,}$");
+
+    private static IReadOnlyList<RobotIdentityCandidate> ExtractIdentityCandidates(MediaContentSnapshot? content)
+    {
+        if (content is null || content.Content.Length == 0) return [];
+        const int maxEvidenceBytes = 256 * 1024;
+        try
+        {
+            byte[] bytes = content.Content;
+            if (bytes.Length >= 2 && bytes[0] == 0x1F && bytes[1] == 0x8B)
+            {
+                using var input = new MemoryStream(bytes, writable: false);
+                using var gzip = new GZipStream(input, CompressionMode.Decompress);
+                using var output = new MemoryStream();
+                var buffer = new byte[16 * 1024];
+                while (output.Length < maxEvidenceBytes)
+                {
+                    var remaining = maxEvidenceBytes - checked((int)output.Length);
+                    var read = gzip.Read(buffer, 0, Math.Min(buffer.Length, remaining));
+                    if (read == 0) break;
+                    output.Write(buffer, 0, read);
+                }
+                bytes = output.ToArray();
+            }
+            else if (bytes.Length > maxEvidenceBytes)
+            {
+                bytes = bytes[..maxEvidenceBytes];
+            }
+
+            return RobotIdentityCandidateExtractor.Extract(Encoding.UTF8.GetString(bytes));
+        }
+        catch (InvalidDataException)
+        {
+            return [];
+        }
+    }
+
+    private static async Task<MediaContentSnapshot?> TryLoadIdentityArtifactAsync(
+        IMediaContentStore mediaContentStore, string path, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await mediaContentStore.LoadAsync(path, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            // One inaccessible historical artifact should not prevent the remaining
+            // evidence from producing an admin-reviewable suggestion.
+            return null;
+        }
+    }
 
     private static string SelectPreferredRegistrationSource(
         DeviceRegistration primaryDevice,
@@ -2861,6 +3028,8 @@ internal static class PortalEndpoints
     private sealed record AdminStatusLoginRequest(string? Password);
 
     private sealed record ArchiveStatusRobotRequest(string? PortalSessionToken, bool Hidden);
+    private sealed record ResetRobotIdentityAssociationsRequest(string? PortalSessionToken, bool Confirmed);
+    private sealed record RestoreRobotIdentityRequest(string? PortalSessionToken, bool Confirmed);
     private sealed record LinkStatusSessionRequest(string? PortalSessionToken, string? DeviceId);
     private sealed record BindRobotCredentialRequest(string? PortalSessionToken, string? AccessKeyFingerprint);
     private sealed record SwapRobotCredentialBindingsRequest(string? PortalSessionToken,

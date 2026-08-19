@@ -294,15 +294,34 @@ function renderRobotRows(robots = [], changedRobotIds = new Set()) {
         <div class="row-actions">
           <button class="button secondary compact view-artifacts" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Artifacts</button>
           <button class="button secondary compact open-lrd" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-name="${escapeHtml(robotDisplayName(robot))}" type="button">Open in LRD</button>
-          ${robot.identitySuggestion ? `
-            <div class="muted-row">I think this robot is <span class="mono">${escapeHtml(robot.identitySuggestion.proposedRobotId)}</span>.</div>
-            <button class="button secondary compact suggest-identity" data-device-id="${escapeHtml(robot.deviceId)}" type="button">Review identity update</button>
+          ${shouldOfferIdentityReview(robot) ? `
+            ${robot.identitySuggestion ? `<div class="muted-row">I think this robot is <span class="mono">${escapeHtml(robot.identitySuggestion.proposedRobotId)}</span>.</div>` : ""}
+            <button class="button secondary compact suggest-identity" data-device-id="${escapeHtml(robot.deviceId)}" type="button">${robot.identitySuggestion ? "Review identity update" : "Scan identity evidence"}</button>
           ` : ""}
+          ${hasRestorableDeviceIdentity(robot) ? `<button class="button secondary compact restore-device-identity" data-device-id="${escapeHtml(robot.deviceId)}" data-robot-id="${escapeHtml(robot.robotId)}" type="button">Restore identity to device ID</button>` : ""}
           <button class="button secondary compact archive-robot" data-device-id="${escapeHtml(robot.deviceId)}" data-hidden="${robot.isHidden ? "false" : "true"}" type="button">${robot.isHidden ? "Restore" : "Archive"}</button>
         </div>
       </td>
     </tr>
   `).join("");
+}
+
+function shouldOfferIdentityReview(robot) {
+  const deviceId = String(robot.deviceId || "");
+  const robotId = String(robot.robotId || "");
+  const namedDeviceId = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+){2,}$/.test(deviceId) && !deviceId.startsWith("robot-");
+  return Boolean(robot.identitySuggestion) ||
+    robot.friendlyName === "OpenJibo Registered Robot" ||
+    robotId.startsWith("robot-") ||
+    (namedDeviceId && deviceId.toLowerCase() !== robotId.toLowerCase());
+}
+
+function hasRestorableDeviceIdentity(robot) {
+  const deviceId = String(robot.deviceId || "");
+  const robotId = String(robot.robotId || "");
+  return /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+){2,}$/.test(deviceId) &&
+    !deviceId.startsWith("robot-") &&
+    deviceId.toLowerCase() !== robotId.toLowerCase();
 }
 
 function filterAndSortRobots(robots = []) {
@@ -401,7 +420,7 @@ async function suggestRobotIdentity(deviceId) {
   try {
     const suggestion = await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/identity-suggestion`);
     if (!suggestion.suggested) {
-      window.alert("That identity suggestion is no longer pending.");
+      window.alert("No reliable robot identity was found in the latest stored sessions and artifacts.");
       return;
     }
     const evidence = (suggestion.evidence || []).slice(0, 3).map(item => `${item.field}: ${item.value}`).join("\n");
@@ -412,6 +431,41 @@ async function suggestRobotIdentity(deviceId) {
       body: JSON.stringify({ proposedRobotId: suggestion.proposedRobotId }),
     });
     await refreshStatus(result.action === "merge" ? "Identity suggestion applied by merge." : "Robot identity renamed.", "success", { force: true });
+  } catch (error) {
+    setStatusBanner(error.message, "error");
+    renderStatusView(latestSummary);
+  }
+}
+
+async function resetIdentityAssociations() {
+  try {
+    const preview = await apiFetch("/api/portal/status/identity-cleanup");
+    const relationships = (preview.mergeRelationships || [])
+      .slice(0, 10)
+      .map(item => `${item.sourceDeviceId} → ${item.targetDeviceId}`)
+      .join("\n");
+    const message = `Reset ${preview.mergeRelationshipCount || 0} stored merge relationships, ${preview.explicitSessionBindingCount || 0} explicit session links, and ${preview.authenticationSessionCount || 0} issued token sessions?\n\n${relationships || "No merge relationships are currently recorded."}\n\nRobots may need to reconnect to request fresh tokens. AWS credential bindings and artifacts will be preserved for separate review.`;
+    if (!window.confirm(message)) return;
+    const response = await apiFetch("/api/portal/status/identity-cleanup/reset", {
+      method: "POST",
+      body: JSON.stringify({ confirmed: true }),
+    });
+    const result = response.result || {};
+    await refreshStatus(`Identity cleanup restored ${result.restoredRobotRecords || 0} robot records, cleared ${result.clearedSessionBindings || 0} session links, and revoked ${result.revokedAuthenticationSessions || 0} token sessions.`, "success", { force: true });
+  } catch (error) {
+    setStatusBanner(error.message, "error");
+    renderStatusView(latestSummary);
+  }
+}
+
+async function restoreRobotIdentityFromDeviceId(deviceId, currentRobotId) {
+  if (!window.confirm(`Restore this record's robot identity from ${currentRobotId || "the current value"} to ${deviceId}?\n\nThis is an explicit admin correction. Sessions and artifacts are not moved.`)) return;
+  try {
+    await apiFetch(`/api/portal/status/robots/${encodeURIComponent(deviceId)}/identity/restore-from-device-id`, {
+      method: "POST",
+      body: JSON.stringify({ confirmed: true }),
+    });
+    await refreshStatus(`Robot identity restored to ${deviceId}.`, "success", { force: true });
   } catch (error) {
     setStatusBanner(error.message, "error");
     renderStatusView(latestSummary);
@@ -630,6 +684,26 @@ function renderRecentSessions(rows = [], robots = [], changedSessionIds = new Se
   `).join("");
 }
 
+function renderExplicitSessionBindings(rows = [], robots = []) {
+  if (!rows.length) {
+    return `<p class="muted-row">No explicit session links.</p>`;
+  }
+
+  const robotNames = new Map(robots.map((robot) => [robot.deviceId, robotSelectorLabel(robot)]));
+  return `<ul class="bound-session-list">${rows.map((session) => {
+    const linkedRobot = robotNames.get(session.registeredDeviceId) || session.registeredDeviceId || session.registeredRobotId || "unknown robot";
+    const state = session.isStale ? "stale/inactive" : "recent";
+    return `<li class="bound-session-row">
+      <div>
+        <strong>${escapeHtml(session.kind || "unknown")}</strong>
+        <span class="muted-row">Observed runtime ID: ${escapeHtml(session.deviceId || "-")}</span>
+        <div class="muted-row">Linked to ${escapeHtml(linkedRobot)} · last seen ${escapeHtml(formatDate(session.lastSeenUtc))} · ${state}</div>
+      </div>
+      <button class="button secondary compact unlink-session" data-session-id="${escapeHtml(session.sessionId)}" type="button">Unlink</button>
+    </li>`;
+  }).join("")}</ul>`;
+}
+
 function renderSessionBindingAudit(rawAudit) {
   if (!rawAudit) return "";
   try {
@@ -664,7 +738,7 @@ async function unlinkLiveSession(sessionId) {
   await apiFetch(`/api/portal/status/sessions/${encodeURIComponent(sessionId)}/link`, {
     method: "DELETE",
   });
-  await refreshStatus("Live session link removed.");
+  await refreshStatus("Session link removed. The observed runtime identity was preserved.");
 }
 
 function renderRobotControls(filteredCount, totalCount, totalPages) {
@@ -913,6 +987,18 @@ function renderStatusView(summary, previous = previousSummary) {
             <div class="meta-item"><span>Average heartbeat age</span><span>${formatFloat(fleet.averageHeartbeatAgeSeconds, 0)}s</span></div>
           </div>
         </section>
+
+        <section class="card panel tight">
+          <details class="advanced-session-bindings">
+            <summary><strong>All explicit session links</strong><span class="muted-row">Includes stale or inactive sessions</span></summary>
+            <p class="muted-row">Unlink removes only the administrator’s binding. The observed runtime ID and its historical artifacts are preserved.</p>
+            ${renderExplicitSessionBindings(summary.explicitSessionBindings || [], inventory)}
+            <div class="status-divider"></div>
+            <h3>Reset historical identity associations</h3>
+            <p class="muted-row">Preview and remove every stored merge relationship, explicit session link, and issued token session. Archived merge sources are restored. Robots may request fresh tokens after reconnecting. AWS credential bindings and artifacts are preserved for separate review.</p>
+            <button class="button secondary compact reset-identity-associations" type="button">Preview identity cleanup</button>
+          </details>
+        </section>
       </div>
 
       ${renderLogViewer()}
@@ -1010,6 +1096,9 @@ function renderStatusView(summary, previous = previousSummary) {
   document.querySelectorAll(".suggest-identity").forEach((button) => {
     button.addEventListener("click", () => suggestRobotIdentity(button.dataset.deviceId));
   });
+  document.querySelectorAll(".restore-device-identity").forEach((button) => {
+    button.addEventListener("click", () => restoreRobotIdentityFromDeviceId(button.dataset.deviceId, button.dataset.robotId));
+  });
   document.querySelectorAll(".view-artifact").forEach((button) => {
     button.addEventListener("click", () => openArtifact(button.dataset.path));
   });
@@ -1033,6 +1122,9 @@ function renderStatusView(summary, previous = previousSummary) {
   });
   document.querySelectorAll(".unlink-session").forEach((button) => {
     button.addEventListener("click", () => unlinkLiveSession(button.dataset.sessionId));
+  });
+  document.querySelectorAll(".reset-identity-associations").forEach((button) => {
+    button.addEventListener("click", resetIdentityAssociations);
   });
 
   if (activeSnapshot?.id) {

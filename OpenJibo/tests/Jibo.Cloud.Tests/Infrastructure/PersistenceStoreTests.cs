@@ -4,6 +4,7 @@ using Jibo.Cloud.Infrastructure.DependencyInjection;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -11,6 +12,94 @@ namespace Jibo.Cloud.Tests.Infrastructure;
 
 public sealed class PersistenceStoreTests
 {
+    [Fact]
+    public void CloudStateStore_BoundsEphemeralSessionsWithoutRevokingIssuedTokens()
+    {
+        var store = new InMemoryCloudStateStore(new RecordingSnapshotStore());
+        var issuedToken = store.IssueRobotToken("bounded-session-robot");
+
+        for (var index = 0; index < 300; index++)
+            store.OpenSession("neo-hub-listen", "bounded-session-robot", $"conn:{index}", "neohub", "/v1/listen");
+
+        Assert.NotNull(store.FindSessionByToken(issuedToken));
+        Assert.Equal(256, store.GetSessions().Count(session =>
+            session.Token?.StartsWith("conn:", StringComparison.OrdinalIgnoreCase) == true));
+        Assert.Null(store.FindSessionByToken("conn:0"));
+        Assert.NotNull(store.FindSessionByToken("conn:299"));
+    }
+
+    [Fact]
+    public void CloudStateStore_CloseSession_ReleasesDialogStateButPreservesIssuedToken()
+    {
+        var store = new InMemoryCloudStateStore(new RecordingSnapshotStore());
+        var token = store.IssueRobotToken("close-session-robot");
+        var active = store.OpenSession("api-socket", "close-session-robot", token, "api", "/v1/socket");
+        active.LastTranscript = "transient transcript";
+
+        store.CloseSession(active.SessionId);
+
+        var durable = store.FindSessionByToken(token);
+        Assert.NotNull(durable);
+        Assert.NotEqual(active.SessionId, durable.SessionId);
+        Assert.Null(durable.LastTranscript);
+    }
+
+    [Fact]
+    public void CloudStateStore_DoesNotPersistEphemeralDialogSessions()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-session-split-{Guid.NewGuid():N}.json");
+        try
+        {
+            var first = new InMemoryCloudStateStore(persistencePath);
+            first.OpenSession("neo-hub-listen", "runtime-robot", "conn:ephemeral", "neohub", "/v1/listen");
+            first.SavePersistedState();
+
+            var reloaded = new InMemoryCloudStateStore(persistencePath);
+
+            Assert.Null(reloaded.FindSessionByToken("conn:ephemeral"));
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
+    [Fact]
+    public void CloudStateStore_PersistsExplicitRobotLinkOutsideEphemeralSession()
+    {
+        var persistencePath = Path.Combine(Path.GetTempPath(), $"openjibo-identity-link-{Guid.NewGuid():N}.json");
+        try
+        {
+            var first = new InMemoryCloudStateStore(persistencePath);
+            first.UpsertDevice(new DeviceRegistration
+            {
+                DeviceId = "observed-runtime",
+                RobotId = "observed-runtime",
+                FriendlyName = "Observed Runtime"
+            });
+            first.UpsertDevice(new DeviceRegistration
+            {
+                DeviceId = "registered-robot",
+                RobotId = "registered-robot",
+                FriendlyName = "Registered Robot"
+            });
+            var session = first.OpenSession("neo-hub-listen", "observed-runtime", "conn:first", "neohub",
+                "/v1/listen");
+            Assert.True(first.BindSessionToDevice(session.SessionId, "registered-robot"));
+
+            var reloaded = new InMemoryCloudStateStore(persistencePath);
+            var reconnect = reloaded.OpenSession("neo-hub-listen", "observed-runtime", "conn:second", "neohub",
+                "/v1/listen");
+
+            Assert.Equal("registered-robot", reconnect.Metadata["registeredDeviceId"]);
+            Assert.Equal("registered-robot", reconnect.Metadata["registeredRobotId"]);
+        }
+        finally
+        {
+            if (File.Exists(persistencePath)) File.Delete(persistencePath);
+        }
+    }
+
     [Fact]
     public void BindSessionToDevice_PersistsExplicitInventoryIdentityWithoutReplacingRuntimeIdentity()
     {
@@ -619,6 +708,76 @@ public sealed class PersistenceStoreTests
 
         Assert.True(File.Exists(Path.ChangeExtension(statePath, ".db")));
         Assert.True(File.Exists(Path.ChangeExtension(personalMemoryPath, ".db")));
+    }
+
+    [Fact]
+    public void AddOpenJiboCloud_PostgreSqlStateRegistersOnlyNormalizedSingletonStateServices()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenJibo:State:Backend"] = "PostgreSql",
+                ["OpenJibo:State:ConnectionString"] =
+                    "Host=localhost;Database=openjibo_di_test;Username=openjibo;Password=test",
+                ["OpenJibo:State:PostgreSql:MaxPoolSize"] = "11"
+            })
+            .Build();
+        var services = new ServiceCollection();
+
+        services.AddOpenJiboCloud(configuration);
+
+        var stateDescriptor = Assert.Single(services, item => item.ServiceType == typeof(ICloudStateStore));
+        Assert.Equal(ServiceLifetime.Singleton, stateDescriptor.Lifetime);
+        Assert.NotNull(stateDescriptor.ImplementationFactory);
+        Assert.DoesNotContain(services, item =>
+            item.ServiceType == typeof(ICloudStateStore) &&
+            item.ImplementationType == typeof(InMemoryCloudStateStore));
+        Assert.Contains(services, item =>
+            item.ServiceType == typeof(PostgreSqlCloudStateDataSource) &&
+            item.Lifetime == ServiceLifetime.Singleton);
+        Assert.Contains(services, item =>
+            item.ServiceType == typeof(ICloudStateSecretProtector) &&
+            item.Lifetime == ServiceLifetime.Singleton);
+        Assert.Contains(services, item =>
+            item.ServiceType == typeof(IBackupPayloadStore) &&
+            item.ImplementationType == typeof(MediaContentBackupPayloadStore) &&
+            item.Lifetime == ServiceLifetime.Singleton);
+
+        using var provider = services.BuildServiceProvider();
+        var first = provider.GetRequiredService<PostgreSqlCloudStateDataSource>();
+        var second = provider.GetRequiredService<PostgreSqlCloudStateDataSource>();
+        Assert.Same(first, second);
+        Assert.Equal(11, new NpgsqlConnectionStringBuilder(first.Value.ConnectionString).MaxPoolSize);
+    }
+
+    [Fact]
+    public void AddOpenJiboCloud_FileStateStillResolvesInMemoryStore()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"openjibo-file-di-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["OpenJibo:State:Backend"] = "File",
+                    ["OpenJibo:State:PersistencePath"] = Path.Combine(root, "cloud-state.json"),
+                    ["OpenJibo:PersonalMemory:Backend"] = "File",
+                    ["OpenJibo:PersonalMemory:PersistencePath"] = Path.Combine(root, "personal-memory.json")
+                })
+                .Build();
+            var services = new ServiceCollection();
+            services.AddOpenJiboCloud(configuration);
+
+            using var provider = services.BuildServiceProvider();
+
+            Assert.IsType<InMemoryCloudStateStore>(provider.GetRequiredService<ICloudStateStore>());
+            Assert.Null(provider.GetService<PostgreSqlCloudStateDataSource>());
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     [Fact]

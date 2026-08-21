@@ -38,6 +38,31 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task BinaryAudio_RejectsOversizedFrameWithoutRetainingPayload()
+    {
+        var token = _store.IssueHubToken("audio-limit-robot");
+        var session = _store.OpenSession("neo-hub-listen", null, token, "neo-hub.jibo.com", "/listen");
+        session.TurnState.SawListen = true;
+        session.TurnState.SawContext = true;
+        session.TurnState.AwaitingTurnCompletion = true;
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = token,
+            Binary = new byte[1024 * 1024 + 1]
+        });
+
+        var active = Assert.IsType<CloudSession>(_store.FindActiveSessionByToken(token));
+        Assert.Empty(replies);
+        Assert.Equal(0, active.TurnState.BufferedAudioBytes);
+        Assert.Empty(active.TurnState.BufferedAudioFrames);
+        Assert.False(active.TurnState.AwaitingTurnCompletion);
+    }
+
+    [Fact]
     public async Task ListenMessage_ReturnsSyntheticListenEosAndSkillAction()
     {
         var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope

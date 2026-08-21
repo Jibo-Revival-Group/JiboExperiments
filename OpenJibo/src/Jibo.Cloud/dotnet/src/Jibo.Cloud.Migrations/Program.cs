@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Jibo.Cloud.Infrastructure.Persistence;
 using Npgsql;
 using Serilog;
 using Serilog.Events;
@@ -52,6 +53,7 @@ try
 
     foreach (var target in targets)
     {
+        var targetScripts = scripts.Where(path => AppliesToTarget(path, target)).ToArray();
         var connectionString = options.ResolveConnectionString(target);
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -65,7 +67,7 @@ try
 
         var applied = await LoadAppliedScriptsAsync(connection);
 
-        foreach (var scriptPath in scripts)
+        foreach (var scriptPath in targetScripts)
         {
             var scriptName = Path.GetFileName(scriptPath);
             var scriptText = await File.ReadAllTextAsync(scriptPath);
@@ -109,6 +111,30 @@ try
             }
 
             await transaction.CommitAsync();
+        }
+
+        if (target == MigrationTarget.State && options.ImportLegacyCloudState)
+        {
+            if (options.PreviewOnly)
+            {
+                Log.Information("[State] would explicitly import the legacy cloud-state snapshot.");
+            }
+            else
+            {
+                await using var dataSource = NpgsqlDataSource.Create(connectionString);
+                var backupExportDirectory =
+                    Environment.GetEnvironmentVariable("OPENJIBO_LEGACY_BACKUP_EXPORT_DIRECTORY");
+                var importer = new PostgreSqlCloudStateSnapshotImporter(
+                    dataSource,
+                    new UserDataCloudStateSecretProtector(new UserDataEncryptionService()),
+                    string.IsNullOrWhiteSpace(backupExportDirectory)
+                        ? null
+                        : new DirectoryBackupPayloadStore(backupExportDirectory));
+                var result = await importer.ImportAsync();
+                Log.Information(
+                    "[State] legacy import {ImportName}: sha256={SourceSha256}, alreadyImported={AlreadyImported}, counts={ImportedCounts}",
+                    result.ImportName, result.SourceSha256, result.AlreadyImported, result.ImportedCounts);
+            }
         }
     }
 
@@ -202,6 +228,18 @@ static async Task<Dictionary<string, string>> LoadAppliedScriptsAsync(NpgsqlConn
     return applied;
 }
 
+static bool AppliesToTarget(string scriptPath, MigrationTarget target)
+{
+    var fileName = Path.GetFileName(scriptPath);
+    if (fileName.EndsWith(".state.sql", StringComparison.OrdinalIgnoreCase))
+        return target == MigrationTarget.State;
+
+    if (fileName.EndsWith(".personal-memory.sql", StringComparison.OrdinalIgnoreCase))
+        return target == MigrationTarget.PersonalMemory;
+
+    return true;
+}
+
 internal enum MigrationTarget
 {
     State,
@@ -216,6 +254,7 @@ internal sealed record MigrationOptions(
     string? ScriptsDirectory,
     string? StateConnectionString,
     string? PersonalMemoryConnectionString,
+    bool ImportLegacyCloudState,
     bool ShowHelp)
 {
     public static string HelpText =>
@@ -234,6 +273,8 @@ internal sealed record MigrationOptions(
           --scripts               Override the SQL script directory
           --state-connection      Override the state database connection string
           --memory-connection     Override the personal memory connection string
+          --import-legacy-cloud-state
+                                  Explicitly import PersistenceSnapshots/cloud-state
           --verbose               Print already-applied scripts too
           --help                  Show this help
         """;
@@ -253,6 +294,7 @@ internal sealed record MigrationOptions(
                                                  "OPENJIBO_PERSONAL_MEMORY_STORAGE_CONNECTION_STRING")
                                              ?? BuildPostgreSqlConnectionString("openjibo_memory");
         var showHelp = false;
+        var importLegacyCloudState = false;
 
         for (var index = 0; index < args.Length; index += 1)
         {
@@ -273,6 +315,9 @@ internal sealed record MigrationOptions(
                     break;
                 case "--verbose":
                     verbose = true;
+                    break;
+                case "--import-legacy-cloud-state":
+                    importLegacyCloudState = true;
                     break;
                 case "--target":
                     target = ParseTarget(GetValue(args, ref index, "--target"));
@@ -296,6 +341,7 @@ internal sealed record MigrationOptions(
             scriptsDirectory,
             stateConnectionString,
             personalMemoryConnectionString,
+            importLegacyCloudState,
             showHelp);
     }
 

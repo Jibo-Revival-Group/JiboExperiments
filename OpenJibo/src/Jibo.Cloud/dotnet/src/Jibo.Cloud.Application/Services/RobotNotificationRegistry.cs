@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
+using Jibo.Cloud.Application.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -12,13 +13,15 @@ namespace Jibo.Cloud.Application.Services;
 /// </summary>
 public sealed class RobotNotificationRegistry(
     RobotPendingNotificationStore? pendingStore = null,
-    ILogger<RobotNotificationRegistry>? logger = null)
+    ILogger<RobotNotificationRegistry>? logger = null,
+    ITransportMetrics? transportMetrics = null)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly ConcurrentDictionary<Guid, RobotConnection> _connections = new();
     private readonly RobotPendingNotificationStore _pendingStore = pendingStore ?? new RobotPendingNotificationStore();
     private readonly ILogger _logger = logger ?? NullLogger<RobotNotificationRegistry>.Instance;
+    private readonly ITransportMetrics _transportMetrics = transportMetrics ?? NullTransportMetrics.Instance;
 
     public void Register(IReadOnlyCollection<string> robotKeys, WebSocket socket)
     {
@@ -105,6 +108,8 @@ public sealed class RobotNotificationRegistry(
             try
             {
                 await socket.SendAsync(payload, WebSocketMessageType.Text, true, cancellationToken);
+                _transportMetrics.WebSocketMessage("out", "api-socket", "text-json", "loop_updated",
+                    payload.Length);
                 sent++;
             }
             catch (WebSocketException)
@@ -157,6 +162,8 @@ public sealed class RobotNotificationRegistry(
                     WebSocketMessageType.Text,
                     true,
                     cancellationToken);
+                _transportMetrics.WebSocketMessage("out", "api-socket", "text-json", "loop_updated",
+                    bytes.Length);
                 pushed++;
             }
             catch (WebSocketException)

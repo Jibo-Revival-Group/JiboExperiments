@@ -8,6 +8,20 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: openjibo_tests
+          POSTGRES_USER: openjibo_tests
+          POSTGRES_PASSWORD: openjibo_tests
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openjibo_tests -d openjibo_tests"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: OpenJibo
@@ -26,6 +40,8 @@ jobs:
 
       - name: Restore and test
         run: dotnet test tests/Jibo.Cloud.Tests/Jibo.Cloud.Tests.csproj
+        env:
+          OPENJIBO_TEST_POSTGRES_CONNECTION_STRING: Host=localhost;Port=5432;Database=openjibo_tests;Username=openjibo_tests;Password=openjibo_tests
 
   smoke:
     runs-on: ubuntu-latest

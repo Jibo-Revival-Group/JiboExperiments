@@ -6,6 +6,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System.Diagnostics;
+using System.Text;
 
 OpenJiboEnvLoader.Load();
 
@@ -154,7 +155,7 @@ app.MapPortalStaticFiles();
 app.MapPortalEndpoints();
 
 app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,
-    IProtocolTelemetrySink telemetrySink, CancellationToken cancellationToken) =>
+    IProtocolTelemetrySink telemetrySink, ITransportMetrics transportMetrics, CancellationToken cancellationToken) =>
 {
     if (PortalStaticFileMapper.IsPortalPath(context.Request.Path))
     {
@@ -179,6 +180,9 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
         envelope.FirmwareVersion,
         envelope.ApplicationVersion);
     var result = await service.DispatchAsync(envelope);
+    transportMetrics.HttpPayload("in", "protocol", envelope.Method, result.StatusCode, envelope.BodyBytes?.Length ?? 0);
+    transportMetrics.HttpPayload("out", "protocol", envelope.Method, result.StatusCode,
+        Encoding.UTF8.GetByteCount(result.BodyText ?? string.Empty));
     try
     {
         await telemetrySink.RecordAsync(envelope, result, cancellationToken);

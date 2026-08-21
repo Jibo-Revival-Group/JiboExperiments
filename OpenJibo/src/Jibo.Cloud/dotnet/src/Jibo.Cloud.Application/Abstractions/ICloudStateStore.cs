@@ -34,6 +34,8 @@ public interface ICloudStateStore
     string IssueHubToken(string? deviceId = null, bool useDefaultRobot = true);
     string IssueRobotToken(string deviceId);
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
+    void CloseSession(string sessionId);
+    CloudSession? FindActiveSessionByToken(string token);
     CloudSession? FindSessionByToken(string token);
     bool BindSessionToDevice(string sessionId, string deviceId);
     bool ClearSessionDeviceBinding(string sessionId);
@@ -44,7 +46,7 @@ public interface ICloudStateStore
     void ReinheritDialogMetadata(CloudSession session);
     IReadOnlyList<LoopRecord> GetLoops();
     LoopRecord AddLoop(string? name, string? ownerAccountId, string? robotId, string? robotFriendlyId);
-    IReadOnlyList<PersonRecord> GetPeople();
+    IReadOnlyList<PersonRecord> GetPeople(string? loopId = null);
     PersonRecord UpsertPerson(PersonRecord person);
     /// <summary>
     /// Upserts people (and matching non-robot loop members) from the robot's

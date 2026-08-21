@@ -614,7 +614,7 @@ These are the carryover items that need a clean proof pass first:
 
 ### 13. Replace Snapshot-Backed In-Memory Cloud State
 
-- Status: `ready`
+- Status: `in progress`
 - Tags: `storage`, `reliability`
 - Priority: production reliability; complete before treating multi-replica hosting as safe
 - Why now:
@@ -627,17 +627,31 @@ These are the carryover items that need a clean proof pass first:
   - legacy recursive backup payloads compact on load while preserving their restore content
   - the compacted production state was estimated at approximately `4.35 million` characters, about a `90%` reduction
   - focused backup/persistence tests and the full `2,000`-test cloud suite passed
-- Remaining implementation work:
-  - split the broad `ICloudStateStore` contract into durable, backup/media, authentication-token, and ephemeral session/turn responsibilities
-  - make normalized PostgreSQL tables the production source of truth for accounts, robots, credential bindings, loops, people/members, users, updates, media metadata, backup manifests, holidays, commute/calendar data, greeting presence, recognition observations, and trust/identity records
-  - replace whole-snapshot saves with scoped PostgreSQL queries, transactional upserts, revisions, and optimistic-concurrency checks so a session update never serializes unrelated tenants or records
-  - keep only active WebSocket connection and turn state in process memory; add explicit TTL cleanup, per-session audio limits, total memory bounds, and disconnect cleanup
-  - distinguish durable issued/authentication tokens from live connection state; persist only the durable token material needed across restarts and avoid storing reusable secrets in plaintext
-  - store media bytes and backup payloads in Blob Storage (or the self-hosted blob/file adapter), with PostgreSQL holding URI/key, content hash, byte length, content type, encryption metadata, timestamps, and revision/ETag
-  - add an idempotent migration that imports the existing `PersistenceSnapshots.cloud-state` document into the new schema, validates counts and identities, records completion, and preserves a rollback/export copy until production verification succeeds
-  - provide a compatibility adapter during migration so stock protocol behavior and backup/restore contracts remain unchanged while record families move incrementally
-  - make multi-replica behavior explicit: no replica-local durable truth, no last-writer-wins whole-document overwrite, and bounded caching with invalidation or revision checks where caching is justified
-  - add production metrics and alerts for process working set/GC pressure, active and expired sessions, buffered audio bytes, persistence latency/failures, backup payload size, and unexpected snapshot fallback use
+- First normalized slice implemented:
+  - PostgreSQL personal memory is stored in related tenant-scope tables and loaded per scope through a bounded TTL cache
+  - legacy personal-memory snapshot import is idempotent and transactionally locked; the source snapshot remains available for rollback
+  - the personal-memory connection pool defaults to 4 connections per replica and is configurable independently; cloud state defaults to 8, leaving connection headroom for two replicas under the current database limit
+  - target-qualified migration scripts prevent personal-memory schema from being applied to the state database
+  - issued authentication tokens and active dialog sessions now use separate registries; live sessions are capped, removed on disconnect, and excluded from snapshots without revoking durable tokens
+  - buffered WebSocket audio is capped at 4 MiB per session and 64 MiB process-wide, rejects oversized frames, and is released on normal or abnormal socket teardown
+  - explicit robot-to-inventory links now persist outside ephemeral session metadata so reconnect identity survives the session split
+  - the state-target migration defines normalized relational tables and indexes for every durable cloud-state family; live WebSocket/turn objects are intentionally absent
+  - the explicit legacy cloud-state importer is transactionally locked and idempotent, hashes issued tokens instead of copying plaintext, excludes live sessions, preserves the source snapshot, and externalizes legacy backup payloads with read-back hash verification
+  - privacy-safe aggregate WebSocket connection/message/payload-byte metrics cover normal replies, push notifications, and Home Assistant traffic
+  - generic WebSocket compression remains disabled: checked-in captures show already-compressed Ogg Opus audio is about 90% of inbound application bytes, and stock OS 1.9 `permessage-deflate` compatibility is not yet proven
+- Completed implementation:
+  - PostgreSQL production DI now selects normalized scoped repositories for every durable cloud-state family; file and SQLite self-hosting retain the compatibility store
+  - whole-snapshot runtime writes are absent from the PostgreSQL path; active sessions are process-local and durable tokens are hashed relational records
+  - scoped people/device hot paths and bounded 30-second caches avoid fleet-wide startup and interaction hydration while bounding cross-replica staleness
+  - backup payloads live in Blob/file storage with hashed manifests; v2 loop restores are point-in-time, account-scoped, and atomic, while imported v1 backups remain restorable
+  - the explicit importer is locked, transactional, idempotent, source-preserving, and fails startup safely when an unimported legacy snapshot is detected
+  - aggregate traffic, active-session, accepted/rejected audio, and current buffered-audio metrics contain no robot/session identifiers or payload data
+- Remaining rollout and measurement work:
+  - run the PostgreSQL integration suite in CI (local verification skips it when `OPENJIBO_TEST_POSTGRES_CONNECTION_STRING` is absent), then execute a production-snapshot dry run in a restored staging database
+  - verify imported family counts, identity mappings, v1 backup restore, and two-replica behavior before switching the managed API revision
+  - observe traffic and memory metrics for at least seven representative days and reconcile application payload bytes with Azure ingress/egress
+  - add exporter-side alerts for runtime working set/GC, persistence failures/latency, audio-limit rejection, and unexpected legacy snapshot selection
+  - keep WebSocket compression disabled until a stock OS 1.9 physical-client canary proves negotiation and reconnect behavior; evaluate static HTTP text compression separately
 - Exit criteria:
   - production DI does not resolve `InMemoryCloudStateStore` for durable cloud state or personal memory
   - no production mutation serializes or rewrites a whole-cloud JSON snapshot
@@ -647,7 +661,7 @@ These are the carryover items that need a clean proof pass first:
   - migration dry-run, apply, verification, rollback/export, backup creation, and restore all have automated tests and a managed-deployment smoke check
   - operators can detect persistence degradation before robot requests begin timing out while `/health` remains green
 - Next action:
-  - write the PostgreSQL schema and contract-split design, then migrate one cohesive record family at a time behind compatibility tests; start with backup manifests/payloads and durable identity/topology records, while extracting active sessions into a bounded ephemeral store
+  - run the new environment-gated PostgreSQL suite in CI, rehearse the explicit legacy import against a production backup in staging, and collect seven days of the new low-cardinality transport/memory metrics before making a capacity claim
 
 ### Next Up (`2026-05-06`): Dialog Parsing Expansion And Ambiguity Guardrails
 

@@ -54,8 +54,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private readonly List<TrustedServerAdmissionRecord> _trustedServerAdmissions = [];
     private readonly List<TrustedServerRecord> _trustedServers = [];
 
-    private readonly ConcurrentDictionary<string, CloudSession>
-        _sessionsByToken = new(StringComparer.OrdinalIgnoreCase);
+    private readonly BoundedCloudSessionRegistry _sessions;
 
     private readonly ISnapshotStore _snapshotStore;
     private readonly ConcurrentDictionary<string, string> _symmetricKeys = new(StringComparer.OrdinalIgnoreCase);
@@ -81,12 +80,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public InMemoryCloudStateStore(ISnapshotStore snapshotStore, IHolidayCalendarProvider holidayCalendarProvider,
-        string? ownerFirstName = null, string? ownerLastName = null)
+        string? ownerFirstName = null, string? ownerLastName = null, ITransportMetrics? transportMetrics = null)
     {
         _snapshotStore = snapshotStore;
         _holidayCalendarProvider = holidayCalendarProvider;
         _ownerFirstName = ownerFirstName;
         _ownerLastName = ownerLastName;
+        _sessions = new BoundedCloudSessionRegistry(transportMetrics: transportMetrics);
         var bootstrapDeviceId = CreateBootstrapDeviceId();
         _robot = new DeviceRegistration
         {
@@ -214,7 +214,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public IReadOnlyList<CloudSession> GetSessions()
     {
-        return _sessionsByToken.Values.Select(CloneSession).ToArray();
+        return _sessions.Values.Select(CloneSession).ToArray();
     }
 
     public RobotProfile GetRobotProfile()
@@ -395,7 +395,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             throw new KeyNotFoundException("Robot record was not found.");
 
         var migratedSessions = 0;
-        foreach (var session in _sessionsByToken.Values.Where(session =>
+        foreach (var session in _sessions.Values.Where(session =>
                      source.DeviceId.Equals(session.DeviceId, StringComparison.OrdinalIgnoreCase)))
         {
             // Keep connection-scoped observed identities intact. The explicit
@@ -455,9 +455,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                     device.HostMappings["openjibo.mergedIntoDeviceId"]))
                 .OrderBy(item => item.SourceDeviceId, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
-            var sessionBindings = _sessionsByToken.Values.Count(session =>
+            var sessionBindings = _sessions.Values.Count(session =>
                 !string.IsNullOrWhiteSpace(ReadSessionMetadata(session, "registeredDeviceId")));
-            var authenticationSessions = _sessionsByToken.Keys.Count(IsIssuedAuthenticationToken);
+            var authenticationSessions = _sessions.Keys.Count(IsIssuedAuthenticationToken);
             return new RobotIdentityCleanupPreview(
                 relationships.Length,
                 sessionBindings,
@@ -501,7 +501,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             }
 
             var cleared = 0;
-            foreach (var session in _sessionsByToken.Values)
+            foreach (var session in _sessions.Values)
             {
                 var registeredDeviceId = ReadSessionMetadata(session, "registeredDeviceId");
                 if (!string.IsNullOrWhiteSpace(registeredDeviceId))
@@ -516,9 +516,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             }
 
             var revoked = 0;
-            foreach (var token in _sessionsByToken.Keys.Where(IsIssuedAuthenticationToken).ToArray())
+            foreach (var token in _sessions.Keys.Where(IsIssuedAuthenticationToken).ToArray())
             {
-                if (_sessionsByToken.TryRemove(token, out _)) revoked++;
+                if (_sessions.TryRemove(token, out _)) revoked++;
             }
 
             if (restored > 0 || cleared > 0 || revoked > 0) TouchState();
@@ -760,14 +760,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 ? _robot.DeviceId
                 : null;
         var token = $"hub-{_account.AccountId}-{Guid.NewGuid():N}";
-        _sessionsByToken[token] = new CloudSession
+        _sessions.RegisterDurableToken(token, new CloudSession
         {
             Kind = "hub",
             AccountId = _account.AccountId,
             Token = token,
             DeviceId = resolvedDeviceId,
             Metadata = BuildSessionMetadata(_account.AccountId, resolvedDeviceId, ResolveDefaultLoopId())
-        };
+        });
 
         TouchState();
         return token;
@@ -776,14 +776,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     public string IssueRobotToken(string deviceId)
     {
         var token = $"token-{deviceId}-{Guid.NewGuid():N}";
-        _sessionsByToken[token] = new CloudSession
+        _sessions.RegisterDurableToken(token, new CloudSession
         {
             Kind = "robot",
             AccountId = _account.AccountId,
             Token = token,
             DeviceId = deviceId,
             Metadata = BuildSessionMetadata(_account.AccountId, deviceId, ResolveDefaultLoopId())
-        };
+        });
 
         TouchState();
         return token;
@@ -791,27 +791,35 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path)
     {
+        var durableToken = string.IsNullOrWhiteSpace(token) ? null : _sessions.FindDurable(token);
         // Path-token / per-connection listen sockets must not inherit the process-wide singleton
         // DeviceId — that collapses every robot onto one identity until CONTEXT arrives.
         var resolvedDeviceId = !string.IsNullOrWhiteSpace(deviceId)
             ? deviceId.Trim()
+            : !string.IsNullOrWhiteSpace(durableToken?.DeviceId)
+                ? durableToken.DeviceId
             : IsAmbiguousConnectionToken(token)
                 ? null
                 : _robot.DeviceId;
+        var resolvedAccountId = durableToken?.AccountId ?? _account.AccountId;
         var resolvedLoopId = ResolveDefaultLoopId();
         var session = new CloudSession
         {
             Kind = kind,
-            AccountId = _account.AccountId,
+            AccountId = resolvedAccountId,
             DeviceId = resolvedDeviceId,
             Token = token,
             HostName = hostName,
             Path = path,
-            Metadata = BuildSessionMetadata(_account.AccountId, resolvedDeviceId, resolvedLoopId)
+            Metadata = BuildSessionMetadata(resolvedAccountId, resolvedDeviceId, resolvedLoopId)
         };
 
+        if (durableToken is not null)
+            foreach (var pair in durableToken.Metadata)
+                session.Metadata[pair.Key] = pair.Value;
+
         if (!string.IsNullOrWhiteSpace(token))
-            _sessionsByToken[token] = session;
+            _sessions.RegisterActive(token, session);
 
         InheritDialogMetadataFromDevice(session);
         TouchState();
@@ -841,7 +849,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         if (string.IsNullOrWhiteSpace(session.DeviceId)) return;
 
-        var donor = _sessionsByToken.Values
+        var donor = _sessions.Values
             .Where(candidate =>
                 !string.Equals(candidate.SessionId, session.SessionId, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(candidate.DeviceId, session.DeviceId, StringComparison.OrdinalIgnoreCase))
@@ -851,6 +859,17 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         if (donor is null)
         {
             var observed = _devices.GetValueOrDefault(session.DeviceId.Trim());
+            if (observed?.HostMappings.TryGetValue("openjibo.boundRegisteredDeviceId", out var boundId) == true &&
+                !string.IsNullOrWhiteSpace(boundId))
+            {
+                var boundDevice = FindDeviceByFriendlyId(boundId);
+                if (boundDevice is not null && !boundDevice.IsHidden && boundDevice.ArchivedUtc is null)
+                {
+                    session.Metadata["registeredDeviceId"] = boundDevice.DeviceId;
+                    session.Metadata["registeredRobotId"] = boundDevice.RobotId;
+                    return;
+                }
+            }
             if (observed?.HostMappings.TryGetValue("openjibo.mergedIntoDeviceId", out var mergedInto) == true &&
                 !string.IsNullOrWhiteSpace(mergedInto))
             {
@@ -904,7 +923,16 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
     public CloudSession? FindSessionByToken(string token)
     {
-        return _sessionsByToken.GetValueOrDefault(token);
+        return _sessions.Find(token);
+    }
+
+    public CloudSession? FindActiveSessionByToken(string token) =>
+        string.IsNullOrWhiteSpace(token) ? null : _sessions.FindActive(token);
+
+    public void CloseSession(string sessionId)
+    {
+        if (!string.IsNullOrWhiteSpace(sessionId))
+            _sessions.RemoveBySessionId(sessionId);
     }
 
     public bool BindSessionToDevice(string sessionId, string deviceId)
@@ -914,7 +942,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         lock (_syncRoot)
         {
             var device = FindDeviceByFriendlyId(deviceId);
-            var session = _sessionsByToken.Values.FirstOrDefault(candidate =>
+            var session = _sessions.Values.FirstOrDefault(candidate =>
                 candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
             // Archived records are historical only. They can never be selected as a live
             // session identity, even by an explicit UI request.
@@ -927,6 +955,12 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             // inventory identity separately so both hardware identifiers remain traceable.
             session.Metadata["registeredDeviceId"] = device.DeviceId;
             session.Metadata["registeredRobotId"] = device.RobotId;
+            if (!string.IsNullOrWhiteSpace(session.DeviceId) &&
+                _devices.TryGetValue(session.DeviceId, out var observed))
+            {
+                observed.HostMappings["openjibo.boundRegisteredDeviceId"] = device.DeviceId;
+                observed.HostMappings["openjibo.boundRegisteredRobotId"] = device.RobotId;
+            }
         }
 
         TouchState();
@@ -939,7 +973,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         lock (_syncRoot)
         {
-            var session = _sessionsByToken.Values.FirstOrDefault(candidate =>
+            var session = _sessions.Values.FirstOrDefault(candidate =>
                 candidate.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
             if (session is null) return false;
 
@@ -948,7 +982,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             // inheritance cannot immediately recreate the link the admin removed.
             IEnumerable<CloudSession> relatedSessions = string.IsNullOrWhiteSpace(session.DeviceId)
                 ? new[] { session }
-                : _sessionsByToken.Values.Where(candidate =>
+                : _sessions.Values.Where(candidate =>
                     string.Equals(candidate.DeviceId, session.DeviceId, StringComparison.OrdinalIgnoreCase));
             foreach (var related in relatedSessions)
             {
@@ -960,6 +994,13 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 related.Metadata.Remove("identitySuggestionDeviceId");
             }
 
+            if (!string.IsNullOrWhiteSpace(session.DeviceId) &&
+                _devices.TryGetValue(session.DeviceId, out var boundObserved))
+            {
+                boundObserved.HostMappings.Remove("openjibo.boundRegisteredDeviceId");
+                boundObserved.HostMappings.Remove("openjibo.boundRegisteredRobotId");
+            }
+
             // Breaking a link on an archived merge source is an explicit unmerge of
             // that observed identity. Restore the source record and remove the marker
             // that would otherwise bind its next connection again.
@@ -969,6 +1010,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             {
                 var mappings = new Dictionary<string, string>(observed.HostMappings, StringComparer.OrdinalIgnoreCase);
                 mappings.Remove("openjibo.mergedIntoDeviceId");
+                mappings.Remove("openjibo.boundRegisteredDeviceId");
+                mappings.Remove("openjibo.boundRegisteredRobotId");
                 _devices[observed.DeviceId] = new DeviceRegistration
                 {
                     DeviceId = observed.DeviceId,
@@ -1092,9 +1135,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                string.Equals(loop.RobotFriendlyId, friendlyKey, StringComparison.OrdinalIgnoreCase);
     }
 
-    public IReadOnlyList<PersonRecord> GetPeople()
+    public IReadOnlyList<PersonRecord> GetPeople(string? loopId = null)
     {
-        return _people.ToArray();
+        return _people.Where(person => string.IsNullOrWhiteSpace(loopId) ||
+                                      person.LoopId.Equals(loopId, StringComparison.OrdinalIgnoreCase)).ToArray();
     }
 
     public PersonRecord UpsertPerson(PersonRecord person)
@@ -3323,7 +3367,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             RobotProfile = _robotProfile,
             Devices = _devices.Values.ToArray(),
             RobotCredentialBindings = _robotCredentialBindings.Values.ToArray(),
-            Sessions = _sessionsByToken.Values.Select(MapSessionSnapshot).ToArray(),
+            Sessions = _sessions.DurableTokenValues.Select(MapSessionSnapshot).ToArray(),
             SymmetricKeys = _symmetricKeys.ToDictionary(entry => entry.Key, entry => entry.Value,
                 StringComparer.OrdinalIgnoreCase),
             KeyRequests = _keyRequests.Values.ToArray(),
@@ -3373,10 +3417,10 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 !string.IsNullOrWhiteSpace(binding.DeviceId) && _devices.ContainsKey(binding.DeviceId))
                 _robotCredentialBindings.TryAdd(binding.AccessKeyFingerprint, binding);
 
-        _sessionsByToken.Clear();
+        _sessions.Clear();
         foreach (var session in snapshot.Sessions ?? [])
             if (!string.IsNullOrWhiteSpace(session.Token))
-                _sessionsByToken[session.Token] = session.ToRecord();
+                _sessions.RegisterDurableToken(session.Token, session.ToRecord());
 
         _symmetricKeys.Clear();
         foreach (var pair in snapshot.SymmetricKeys ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase))
@@ -3535,7 +3579,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     private bool ClearArchivedSessionDeviceBindingsLocked()
     {
         var changed = false;
-        foreach (var session in _sessionsByToken.Values)
+        foreach (var session in _sessions.Values)
         {
             if (!session.Metadata.TryGetValue("registeredDeviceId", out var value) ||
                 string.IsNullOrWhiteSpace(value?.ToString()))
@@ -3582,7 +3626,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         if (devices.Length < 2)
             return false;
 
-        var sessions = _sessionsByToken.Values.ToArray();
+        var sessions = _sessions.Values.ToArray();
         var disjointSet = new DisjointSet(devices.Length);
 
         for (var sessionIndex = 0; sessionIndex < sessions.Length; sessionIndex++)

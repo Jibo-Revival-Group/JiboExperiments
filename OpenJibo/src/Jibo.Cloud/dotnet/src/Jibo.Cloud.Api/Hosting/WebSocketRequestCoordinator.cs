@@ -15,6 +15,7 @@ internal sealed class WebSocketRequestCoordinator(
     RobotNotificationRegistry robotNotificationRegistry,
     RobotPresenceRegistry robotPresenceRegistry,
     ICloudStateStore cloudStateStore,
+    ITransportMetrics transportMetrics,
     ILogger<WebSocketRequestCoordinator> logger)
 {
     private static readonly TimeSpan TurnWatchdogInterval = TimeSpan.FromMilliseconds(250);
@@ -34,6 +35,7 @@ internal sealed class WebSocketRequestCoordinator(
             new RobotNotificationRegistry(),
             new RobotPresenceRegistry(),
             cloudStateStore,
+            NullTransportMetrics.Instance,
             NullLogger<WebSocketRequestCoordinator>.Instance)
     {
     }
@@ -52,6 +54,7 @@ internal sealed class WebSocketRequestCoordinator(
             robotNotificationRegistry,
             new RobotPresenceRegistry(),
             cloudStateStore,
+            NullTransportMetrics.Instance,
             logger)
     {
     }
@@ -111,6 +114,7 @@ internal sealed class WebSocketRequestCoordinator(
         using var socket = acceptContext is null
             ? await context.WebSockets.AcceptWebSocketAsync()
             : await context.WebSockets.AcceptWebSocketAsync(acceptContext);
+        transportMetrics.WebSocketConnectionOpened(kind);
         var connectionId = Guid.NewGuid().ToString("N");
         var openEnvelope = CreateEnvelope(context, kind, token, connectionId);
         var session = webSocketService.GetOrCreateSession(openEnvelope);
@@ -176,7 +180,8 @@ internal sealed class WebSocketRequestCoordinator(
                                 connectionId,
                                 kind,
                                 idleReplies.Count);
-                            await SendRepliesAsync(socket, idleReplies, context.RequestAborted);
+                            await SendRepliesAsync(socket, idleReplies, kind, transportMetrics,
+                                context.RequestAborted);
                             await telemetrySink.RecordOutboundAsync(
                                 idleEnvelope,
                                 session,
@@ -219,10 +224,18 @@ internal sealed class WebSocketRequestCoordinator(
                     connectionId,
                     received.MessageType == WebSocketMessageType.Text ? Encoding.UTF8.GetString(received.Buffer) : null,
                     received.MessageType == WebSocketMessageType.Binary ? received.Buffer : null);
+                var inboundMessageClass = SocketMessageTypeReader.Read(envelope.Text);
+                transportMetrics.WebSocketMessage(
+                    "in",
+                    kind,
+                    received.MessageType == WebSocketMessageType.Binary ? "binary-audio" : "text-json",
+                    inboundMessageClass,
+                    received.Buffer.Length);
 
                 IReadOnlyList<WebSocketReply> replies;
                 using (AmbientTurnProgressPublisher.Begin(
-                           (reply, cancellationToken) => SendRepliesAsync(socket, [reply], cancellationToken)))
+                           (reply, cancellationToken) => SendRepliesAsync(socket, [reply], kind, transportMetrics,
+                               cancellationToken)))
                 {
                     replies = await webSocketService.HandleMessageAsync(envelope, context.RequestAborted);
                 }
@@ -241,7 +254,7 @@ internal sealed class WebSocketRequestCoordinator(
                     replies.Count);
                 await telemetrySink.RecordInboundAsync(envelope, session, SocketMessageTypeReader.Read(envelope.Text),
                     context.RequestAborted);
-                await SendRepliesAsync(socket, replies, context.RequestAborted);
+                await SendRepliesAsync(socket, replies, kind, transportMetrics, context.RequestAborted);
 
                 await telemetrySink.RecordOutboundAsync(envelope, session, replies, context.RequestAborted);
             }
@@ -251,6 +264,9 @@ internal sealed class WebSocketRequestCoordinator(
             if (registeredApiSocket)
                 robotNotificationRegistry.Remove(socket);
             robotPresenceRegistry.Remove(presenceConnectionId);
+            WebSocketTurnFinalizationService.ReleaseBufferedAudio(session);
+            cloudStateStore.CloseSession(session.SessionId);
+            transportMetrics.WebSocketConnectionClosed(kind);
         }
 
         var closeEnvelope = CreateEnvelope(context, kind, token, connectionId);
@@ -438,6 +454,8 @@ internal sealed class WebSocketRequestCoordinator(
     private static async Task SendRepliesAsync(
         WebSocket socket,
         IReadOnlyList<WebSocketReply> replies,
+        string socketKind,
+        ITransportMetrics transportMetrics,
         CancellationToken cancellationToken)
     {
         foreach (var reply in replies)
@@ -447,6 +465,8 @@ internal sealed class WebSocketRequestCoordinator(
 
             var payload = Encoding.UTF8.GetBytes(reply.Text);
             await socket.SendAsync(payload, WebSocketMessageType.Text, true, cancellationToken);
+            transportMetrics.WebSocketMessage("out", socketKind, "text-json",
+                SocketMessageTypeReader.Read(reply.Text), payload.Length);
         }
     }
 

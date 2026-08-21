@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     image: openjibo-cloud:self-hosted
+    env_file:
+      - .env
     command:
       - /app/migrations/Jibo.Cloud.Migrations.dll
       - --apply
@@ -14,9 +16,12 @@ services:
       OPENJIBO_POSTGRES_PORT: "5432"
       OPENJIBO_POSTGRES_USER: openjibo
       OPENJIBO_POSTGRES_PASSWORD: ${OPENJIBO_POSTGRES_PASSWORD}
+      OPENJIBO_LEGACY_BACKUP_EXPORT_DIRECTORY: /data/legacy-backup-exports
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - api-data:/data
     profiles:
       - self-hosted
 

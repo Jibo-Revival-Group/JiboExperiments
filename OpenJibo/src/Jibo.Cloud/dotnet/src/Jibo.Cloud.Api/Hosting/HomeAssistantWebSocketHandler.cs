@@ -11,12 +11,14 @@ namespace Jibo.Cloud.Api.Hosting;
 internal sealed class HomeAssistantWebSocketHandler(
     HomeAssistantConnectionRegistry registry,
     IUserIntegrationStore integrationStore,
+    ITransportMetrics transportMetrics,
     ILogger<HomeAssistantWebSocketHandler> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     internal HomeAssistantWebSocketHandler(HomeAssistantConnectionRegistry registry)
-        : this(registry, EmptyUserIntegrationStore.Instance, NullLogger<HomeAssistantWebSocketHandler>.Instance)
+        : this(registry, EmptyUserIntegrationStore.Instance, NullTransportMetrics.Instance,
+            NullLogger<HomeAssistantWebSocketHandler>.Instance)
     {
     }
 
@@ -33,6 +35,7 @@ internal sealed class HomeAssistantWebSocketHandler(
             context.Connection.RemoteIpAddress?.ToString(),
             context.Request.Headers.UserAgent.ToString());
         using var socket = await context.WebSockets.AcceptWebSocketAsync();
+        transportMetrics.WebSocketConnectionOpened("home-assistant");
         string? instanceId = null;
 
         try
@@ -47,12 +50,14 @@ internal sealed class HomeAssistantWebSocketHandler(
                 var type = root.TryGetProperty("type", out var typeElement)
                     ? typeElement.GetString()
                     : null;
+                var messageBytes = Encoding.UTF8.GetByteCount(message);
+                transportMetrics.WebSocketMessage("in", "home-assistant", "text-json", type, messageBytes);
                 logger.LogInformation(
                     "Home Assistant WebSocket message connectionId={ConnectionId} instanceId={InstanceId} messageType={MessageType} bytes={Bytes}",
                     connectionId,
                     instanceId,
                     type ?? "unknown",
-                    message.Length);
+                    messageBytes);
 
                 switch (type?.ToLowerInvariant())
                 {
@@ -121,6 +126,7 @@ internal sealed class HomeAssistantWebSocketHandler(
         {
             if (!string.IsNullOrWhiteSpace(instanceId))
                 registry.RemoveConnection(instanceId);
+            transportMetrics.WebSocketConnectionClosed("home-assistant");
 
             logger.LogInformation(
                 "Home Assistant WebSocket closed connectionId={ConnectionId} instanceId={InstanceId}",

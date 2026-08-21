@@ -196,19 +196,64 @@ public static class ServiceCollectionExtensions
                 provider.GetRequiredService<UserDataEncryptionService>()));
         services.AddSingleton<IUserIntegrationStore>(provider =>
             new InMemoryUserIntegrationStore(provider.GetRequiredService<EncryptedUserDataSnapshotStore>()));
-        services.AddSingleton<ICloudStateStore>(provider =>
+        if (stateBackendKind == PersistenceBackendKind.PostgreSql)
         {
-            var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
-            var holidayCalendarProvider = provider.GetRequiredService<IHolidayCalendarProvider>();
-            return new InMemoryCloudStateStore(
-                snapshotFactory.Create(statePersistencePath, stateBackendKind, "cloud-state", stateConnectionString),
-                holidayCalendarProvider,
-                ownerFirstName,
-                ownerLastName);
-        });
+            var maxPoolSize = configuration?.GetValue<int?>("OpenJibo:State:PostgreSql:MaxPoolSize") ?? 8;
+            var deviceCacheMaxEntries = configuration?.GetValue<int?>(
+                                            "OpenJibo:State:Cache:MaxEntries") ?? 256;
+            var deviceCacheTtlSeconds = configuration?.GetValue<int?>(
+                                            "OpenJibo:State:Cache:TtlSeconds") ?? 30;
+            var maximumActiveSessions = configuration?.GetValue<int?>(
+                                            "OpenJibo:State:Sessions:MaximumActive") ?? 256;
+            services.AddSingleton(_ => new PostgreSqlCloudStateDataSource(
+                stateConnectionString!, Math.Max(1, maxPoolSize)));
+            services.AddSingleton<ICloudStateSecretProtector>(provider =>
+                new UserDataCloudStateSecretProtector(provider.GetRequiredService<UserDataEncryptionService>()));
+            services.AddSingleton<IBackupPayloadStore, MediaContentBackupPayloadStore>();
+            services.AddSingleton<ICloudStateStore>(provider => new PostgreSqlCloudStateStore(
+                provider.GetRequiredService<PostgreSqlCloudStateDataSource>(),
+                provider.GetRequiredService<ICloudStateSecretProtector>(),
+                Math.Max(1, deviceCacheMaxEntries),
+                TimeSpan.FromSeconds(Math.Max(1, deviceCacheTtlSeconds)),
+                Math.Max(1, maximumActiveSessions),
+                backupPayloadStore: provider.GetRequiredService<IBackupPayloadStore>(),
+                ownerFirstName: ownerFirstName,
+                ownerLastName: ownerLastName,
+                transportMetrics: provider.GetRequiredService<ITransportMetrics>()));
+        }
+        else
+        {
+            services.AddSingleton<ICloudStateStore>(provider =>
+            {
+                var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
+                var holidayCalendarProvider = provider.GetRequiredService<IHolidayCalendarProvider>();
+                return new InMemoryCloudStateStore(
+                    snapshotFactory.Create(statePersistencePath, stateBackendKind, "cloud-state",
+                        stateConnectionString),
+                    holidayCalendarProvider,
+                    ownerFirstName,
+                    ownerLastName,
+                    provider.GetRequiredService<ITransportMetrics>());
+            });
+        }
         services.AddSingleton<ICloudAuthProtocolHandler, CloudAuthProtocolHandler>();
         services.AddSingleton<IPersonalMemoryStore>(provider =>
         {
+            if (personalMemoryBackendKind == PersistenceBackendKind.PostgreSql)
+            {
+                var maxPoolSize = configuration?.GetValue<int?>(
+                                      "OpenJibo:PersonalMemory:PostgreSql:MaxPoolSize") ?? 4;
+                var cacheMaxEntries = configuration?.GetValue<int?>(
+                                          "OpenJibo:PersonalMemory:Cache:MaxEntries") ?? 256;
+                var cacheTtlSeconds = configuration?.GetValue<int?>(
+                                          "OpenJibo:PersonalMemory:Cache:TtlSeconds") ?? 30;
+                return new PostgreSqlPersonalMemoryStore(
+                    personalMemoryConnectionString!,
+                    maxPoolSize,
+                    cacheMaxEntries,
+                    TimeSpan.FromSeconds(Math.Max(1, cacheTtlSeconds)));
+            }
+
             var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();
             return new InMemoryPersonalMemoryStore(snapshotFactory.Create(personalMemoryPersistencePath,
                 personalMemoryBackendKind, "personal-memory", personalMemoryConnectionString));
@@ -228,6 +273,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISttStrategy, LocalWhisperCppBufferedAudioSttStrategy>();
         services.AddSingleton<ISttStrategySelector, DefaultSttStrategySelector>();
         services.AddSingleton<IWebSocketTelemetrySink, FileWebSocketTelemetrySink>();
+        services.AddSingleton<ITransportMetrics, TransportMetrics>();
         services.AddSingleton<IProtocolTelemetrySink, FileProtocolTelemetrySink>();
         services.AddSingleton<ITurnTelemetrySink, FileTurnTelemetrySink>();
         services.AddSingleton<IMediaContentStore>(provider =>

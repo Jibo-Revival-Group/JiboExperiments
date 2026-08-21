@@ -2743,7 +2743,7 @@ internal static class PortalEndpoints
     {
         var loopId = ResolvePortalLoopId(cloudStateStore, session);
         var feeds = integrationStore.GetMemberCalendarFeeds(loopId);
-        // Prefer GetPeople() for this robot's Loop only — never merge another Jibo's household.
+        // Query GetPeople(loopId) for this robot's loop only — never merge another Jibo's household.
         var members = EnumerateCalendarFeedPeople(cloudStateStore, loopId, session)
             .Select(person =>
             {
@@ -2768,7 +2768,7 @@ internal static class PortalEndpoints
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var robotKeys = BuildPortalRobotKeys(session, cloudStateStore, loopId);
 
-        foreach (var person in cloudStateStore.GetPeople()
+        foreach (var person in cloudStateStore.GetPeople(loopId)
                      .Where(item => PersonBelongsToPortalRobot(item, loopId, robotKeys))
                      .OrderBy(item => item.IsPrimary ? 0 : 1)
                      .ThenBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase))

@@ -109,19 +109,42 @@ That gives us:
 - compact legacy recursive backup payloads on load
 - retain behavior tests around backup creation, persistence, and restore
 
-### Phase 2: Production Store Replacement
+### Phase 2: Production Store Replacement (In Progress)
 
-- split durable state, backup/media, authentication-token, and ephemeral-session contracts
-- add normalized PostgreSQL tables and scoped repository operations
-- move backup/media payload bytes to Blob Storage and retain manifests in PostgreSQL
-- import and verify the existing snapshot through an idempotent migration
-- keep a compatibility adapter until each record family passes protocol and migration tests
+Implemented:
+
+- PostgreSQL personal memory now uses related scope, profile, preference, important-date, affinity, and list-item tables instead of `PersistenceSnapshots`.
+- Reads hydrate one account/loop/device/person scope and use a bounded cache (256 scopes and a 30-second TTL by default); writes commit only the affected rows and invalidate that scope. The short TTL is also the missed-invalidation recovery bound between replicas.
+- A one-time, transactionally locked importer preserves and imports the legacy `personal-memory` snapshot.
+- Personal memory is explicitly capped at four PostgreSQL connections per replica by default. The cloud-state pool defaults to eight, keeping two replicas at 24 pooled connections and leaving headroom under the current 35-connection database limit.
+- durable issued-token records and bounded active dialog sessions now use separate registries; only token records are serialized, active sessions are removed on disconnect, and explicit robot links persist outside session metadata.
+- audio buffering is independently bounded at 4 MiB per session and 64 MiB across the process, with buffer release tied to WebSocket teardown.
+- the normalized cloud-state migration now defines target-specific relational tables for all durable state families, excluding live WebSocket/turn state.
+- aggregate WebSocket message/byte/connection metrics cover primary, notification, and Home Assistant send paths without recording payloads or identifiers.
+
+Configuration overrides are `OpenJibo:PersonalMemory:PostgreSql:MaxPoolSize`,
+`OpenJibo:PersonalMemory:Cache:MaxEntries`, and `OpenJibo:PersonalMemory:Cache:TtlSeconds`.
+Cloud-state equivalents are `OpenJibo:State:PostgreSql:MaxPoolSize`,
+`OpenJibo:State:Cache:MaxEntries`, `OpenJibo:State:Cache:TtlSeconds`, and
+`OpenJibo:State:Sessions:MaximumActive`.
+Apply migrations before selecting the PostgreSQL personal-memory backend.
+
+The legacy cloud-state import is deliberately separate from normal schema application. Run it once with
+`--apply --target state --import-legacy-cloud-state` after taking a database backup. The importer locks and
+hashes the source `cloud-state` snapshot, writes normalized rows transactionally, records an idempotency ledger,
+and leaves the source snapshot intact for rollback. Legacy backup JSON is exported to the configured
+`OPENJIBO_LEGACY_BACKUP_EXPORT_DIRECTORY`; the self-hosted Compose migration service mounts that directory on
+the persistent `api-data` volume. Do not remove the source snapshot or export until record counts and robot
+identity mappings have been verified against the running API.
+If the API finds a legacy `cloud-state` snapshot but no normalized default account, it fails startup with the
+import command instead of silently bootstrapping a second source of truth. A genuinely empty database still
+receives the default self-hosted account, hidden bootstrap robot, loop, profile, and household records.
 
 ### Phase 3: Scale And Remove Snapshot Fallback
 
-- add replication/sync primitives if we need multi-server state convergence
-- add multi-replica concurrency and cache-invalidation proof
-- remove production snapshot fallback and alert if it is ever selected
+- validate two-replica cache-expiry and committed-write behavior in PostgreSQL CI and staging
+- add replication/invalidation primitives only if the measured 30-second cache convergence bound is insufficient
+- alert if startup encounters an unimported legacy snapshot or normalized persistence fails
 - retain export snapshots only as operational recovery artifacts, never runtime truth
 
 ## Non-Goals For Now
@@ -134,12 +157,7 @@ That gives us:
 
 ## Immediate Next Step
 
-Start the backlog item by tightening and splitting store contracts around:
-
-- tenant/person scoping
-- record versioning
-- scoped query/upsert operations for durable state
-- bounded ephemeral session ownership
-- backup/media manifest versus payload ownership
-
-Then implement the PostgreSQL schema and snapshot-import migration one cohesive record family at a time, preserving the personality, report, greeting, list, and stock backup/restore behaviors behind compatibility tests.
+The production-store implementation is complete; the remaining gate is operational validation. Run the
+environment-gated PostgreSQL suite, rehearse the explicit importer against a restored production snapshot,
+verify counts/identity/backup restore, and only then deploy the managed revision. Preserve the legacy snapshot
+and exported v1 backup payloads until the staged and production verification windows both pass.

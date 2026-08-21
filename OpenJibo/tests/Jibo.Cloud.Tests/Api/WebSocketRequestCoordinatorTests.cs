@@ -54,9 +54,10 @@ public sealed class WebSocketRequestCoordinatorTests
         Assert.Contains(telemetrySink.Events, eventName => eventName == "outbound:0");
         Assert.Contains(telemetrySink.Events, eventName => eventName == "closed:socket-loop-ended");
 
-        var session = store.FindSessionByToken("test-token");
-        Assert.NotNull(session);
-        Assert.Equal(3, session.TurnState.BufferedAudioBytes);
+        Assert.Null(store.FindSessionByToken("test-token"));
+        Assert.NotNull(telemetrySink.ClosedSession);
+        Assert.Equal(0, telemetrySink.ClosedSession.TurnState.BufferedAudioBytes);
+        Assert.Empty(telemetrySink.ClosedSession.TurnState.BufferedAudioFrames);
     }
 
     [Fact]
@@ -79,11 +80,12 @@ public sealed class WebSocketRequestCoordinatorTests
         Assert.True(socket.Accepted);
         Assert.Null(store.FindSessionByToken("v1/listen"));
         Assert.NotNull(telemetrySink.LastConnectionId);
-        var session = store.FindSessionByToken($"conn:{telemetrySink.LastConnectionId}");
-        Assert.NotNull(session);
-        Assert.Equal("trans-path", session.TurnState.TransId);
-        Assert.True(session.TurnState.SawListen);
-        Assert.Equal(4, session.TurnState.BufferedAudioBytes);
+        Assert.Null(store.FindSessionByToken($"conn:{telemetrySink.LastConnectionId}"));
+        Assert.NotNull(telemetrySink.ClosedSession);
+        Assert.Equal("trans-path", telemetrySink.ClosedSession.TurnState.TransId);
+        Assert.True(telemetrySink.ClosedSession.TurnState.SawListen);
+        Assert.Equal(0, telemetrySink.ClosedSession.TurnState.BufferedAudioBytes);
+        Assert.Empty(telemetrySink.ClosedSession.TurnState.BufferedAudioFrames);
         Assert.Equal(telemetrySink.LastConnectionId, telemetrySink.FirstConnectionId);
     }
 
@@ -172,6 +174,8 @@ public sealed class WebSocketRequestCoordinatorTests
 
         public string? LastConnectionId { get; private set; }
 
+        public CloudSession? ClosedSession { get; private set; }
+
         public Task RecordConnectionOpenedAsync(WebSocketMessageEnvelope envelope, CloudSession session,
             CancellationToken cancellationToken = default)
         {
@@ -207,6 +211,7 @@ public sealed class WebSocketRequestCoordinatorTests
             CancellationToken cancellationToken = default)
         {
             Events.Add($"closed:{reason}");
+            ClosedSession = session;
             return Task.CompletedTask;
         }
     }

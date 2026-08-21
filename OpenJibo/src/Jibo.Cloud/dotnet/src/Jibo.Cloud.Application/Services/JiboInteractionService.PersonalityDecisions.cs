@@ -668,8 +668,7 @@ public sealed partial class JiboInteractionService
         if (cloudStateStore is null) return [];
 
         var loopId = ReadTenantAttribute(turn, "loopId") ?? "openjibo-default-loop";
-        return cloudStateStore.GetPeople()
-            .Where(person => string.Equals(person.LoopId, loopId, StringComparison.OrdinalIgnoreCase))
+        return cloudStateStore.GetPeople(loopId)
             .OrderBy(person => person.IsPrimary ? 0 : 1)
             .ThenBy(person => person.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToArray();

@@ -15,9 +15,17 @@ public sealed class WebSocketTurnFinalizationService(
     HomeAssistantCommandService? homeAssistantCommandService = null,
     ICloudStateStore? cloudStateStore = null,
     IMediaContentStore? mediaContentStore = null,
-    RobotIdentitySuggestionStore? identitySuggestionStore = null
+    RobotIdentitySuggestionStore? identitySuggestionStore = null,
+    ITransportMetrics? transportMetrics = null
 )
 {
+    internal const int MaximumBufferedAudioBytes = 4 * 1024 * 1024;
+    internal const int MaximumTotalBufferedAudioBytes = 64 * 1024 * 1024;
+    internal const int MaximumBufferedAudioFrames = 2048;
+    internal const int MaximumAudioFrameBytes = 1024 * 1024;
+    private static readonly BoundedAudioBufferBudget AudioBufferBudget =
+        new(MaximumTotalBufferedAudioBytes);
+    public static long CurrentBufferedAudioBytes => AudioBufferBudget.ReservedBytes;
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
     private const int AutoFinalizeMinBufferedAudioPages = 3;
     private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 9_000;
@@ -332,9 +340,39 @@ public sealed class WebSocketTurnFinalizationService(
                 return [];
             }
 
+            var incomingBytes = envelope.Binary?.Length ?? 0;
+            if (incomingBytes > MaximumAudioFrameBytes ||
+                turnState.BufferedAudioBytes > MaximumBufferedAudioBytes - incomingBytes ||
+                turnState.BufferedAudioFrames.Count >= MaximumBufferedAudioFrames ||
+                !AudioBufferBudget.TryReserve(session.SessionId, incomingBytes))
+            {
+                transportMetrics?.BufferedAudioLimitRejected(incomingBytes);
+                logger.LogWarning(
+                    "Turn binary audio rejected at memory limit session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} incomingBytes={IncomingBytes} frameCount={FrameCount}",
+                    session.SessionId,
+                    turnState.TransId,
+                    turnState.BufferedAudioBytes,
+                    incomingBytes,
+                    turnState.BufferedAudioFrames.Count);
+                await sink.RecordTurnDiagnosticAsync("binary_audio_limit_exceeded",
+                    BuildTurnDiagnosticSnapshot(session, envelope, new Dictionary<string, object?>
+                    {
+                        ["bufferedAudioBytes"] = turnState.BufferedAudioBytes,
+                        ["incomingBytes"] = incomingBytes,
+                        ["bufferedAudioChunks"] = turnState.BufferedAudioChunkCount,
+                        ["maximumBufferedAudioBytes"] = MaximumBufferedAudioBytes,
+                        ["maximumTotalBufferedAudioBytes"] = MaximumTotalBufferedAudioBytes,
+                        ["maximumAudioFrameBytes"] = MaximumAudioFrameBytes
+                    }), cancellationToken);
+                ResetBufferedAudio(session);
+                turnState.AwaitingTurnCompletion = false;
+                return [];
+            }
+
             session.LastMessageType = "BINARY_AUDIO";
             turnState.BufferedAudioChunkCount += 1;
             turnState.BufferedAudioBytes += envelope.Binary?.Length ?? 0;
+            transportMetrics?.BufferedAudioAccepted(incomingBytes);
             if (envelope.Binary is { Length: > 0 }) turnState.BufferedAudioFrames.Add([.. envelope.Binary]);
             turnState.AwaitingTurnCompletion = true;
             session.Metadata["lastAudioBytes"] = envelope.Binary?.Length ?? 0;
@@ -848,6 +886,7 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static void ResetBufferedAudio(CloudSession session)
     {
+        AudioBufferBudget.Release(session.SessionId);
         session.TurnState.BufferedAudioBytes = 0;
         session.TurnState.BufferedAudioChunkCount = 0;
         session.TurnState.AudioTranscriptHint = null;
@@ -861,6 +900,8 @@ public sealed class WebSocketTurnFinalizationService(
         session.TurnState.AutoFinalizeBlockedUntilUtc = null;
         session.Metadata.Remove("audioTranscriptHint");
     }
+
+    public static void ReleaseBufferedAudio(CloudSession session) => ResetBufferedAudio(session);
 
     private static void ResetHotphraseOnlyBufferedAudio(CloudSession session)
     {

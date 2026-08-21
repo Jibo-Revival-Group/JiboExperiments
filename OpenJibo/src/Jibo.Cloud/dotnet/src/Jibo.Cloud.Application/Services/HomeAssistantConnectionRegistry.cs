@@ -4,14 +4,16 @@ using System.Net.WebSockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Jibo.Cloud.Application.Abstractions;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class HomeAssistantConnectionRegistry
+public sealed class HomeAssistantConnectionRegistry(ITransportMetrics? transportMetrics = null)
 {
     private static readonly TimeSpan VerificationLifetime = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan CommandResultTimeout = TimeSpan.FromSeconds(3);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly ITransportMetrics _transportMetrics = transportMetrics ?? NullTransportMetrics.Instance;
 
     private readonly ConcurrentDictionary<string, string> _codeByInstanceId =
         new(StringComparer.OrdinalIgnoreCase);
@@ -93,7 +95,7 @@ public sealed class HomeAssistantConnectionRegistry
             jiboFriendlyName,
             linkId,
             commandSecret
-        }, cancellationToken);
+        }, "paired", cancellationToken);
 
         return true;
     }
@@ -108,7 +110,7 @@ public sealed class HomeAssistantConnectionRegistry
             type = "verification_code",
             code = pending.Code,
             expiresInSeconds = (int)Math.Max(0, (pending.ExpiresAtUtc - DateTimeOffset.UtcNow).TotalSeconds)
-        }, cancellationToken);
+        }, "verification_code", cancellationToken);
     }
 
     public async Task SendErrorAsync(WebSocket socket, string message, CancellationToken cancellationToken = default)
@@ -117,12 +119,12 @@ public sealed class HomeAssistantConnectionRegistry
         {
             type = "error",
             message
-        }, cancellationToken);
+        }, "error", cancellationToken);
     }
 
     public async Task SendPongAsync(WebSocket socket, CancellationToken cancellationToken = default)
     {
-        await SendJsonAsync(socket, new { type = "pong" }, cancellationToken);
+        await SendJsonAsync(socket, new { type = "pong" }, "pong", cancellationToken);
     }
 
     public async Task<bool> SendCommandAsync(
@@ -137,7 +139,7 @@ public sealed class HomeAssistantConnectionRegistry
         if (string.IsNullOrWhiteSpace(commandSecret)) return false;
 
         var payload = BuildCommandPayload(command, parameters, requestId: null, linkId, commandSecret);
-        await SendJsonAsync(connection.Socket, payload, cancellationToken);
+        await SendJsonAsync(connection.Socket, payload, "command", cancellationToken);
         return true;
     }
 
@@ -160,7 +162,7 @@ public sealed class HomeAssistantConnectionRegistry
         try
         {
             var payload = BuildCommandPayload(command, parameters, requestId, linkId, commandSecret);
-            await SendJsonAsync(connection.Socket, payload, cancellationToken);
+            await SendJsonAsync(connection.Socket, payload, "command", cancellationToken);
 
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(CommandResultTimeout);
@@ -205,7 +207,7 @@ public sealed class HomeAssistantConnectionRegistry
         {
             type = "unpaired",
             linkId
-        }, cancellationToken);
+        }, "unpaired", cancellationToken);
     }
 
     private static Dictionary<string, object?> BuildCommandPayload(
@@ -242,12 +244,14 @@ public sealed class HomeAssistantConnectionRegistry
         return payload;
     }
 
-    private static async Task SendJsonAsync(WebSocket socket, object payload, CancellationToken cancellationToken)
+    private async Task SendJsonAsync(WebSocket socket, object payload, string messageClass,
+        CancellationToken cancellationToken)
     {
         if (socket.State != WebSocketState.Open) return;
 
         var bytes = JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions);
         await socket.SendAsync(bytes, WebSocketMessageType.Text, true, cancellationToken);
+        _transportMetrics.WebSocketMessage("out", "home-assistant", "text-json", messageClass, bytes.Length);
     }
 
     private void PurgeExpired()

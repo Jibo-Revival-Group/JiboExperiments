@@ -124,8 +124,7 @@ public sealed class IcalCalendarReportProvider(
         var normalized = NormalizeName(userName);
         if (string.IsNullOrWhiteSpace(normalized)) return null;
 
-        foreach (var person in cloudStateStore.GetPeople()
-                     .Where(item => string.Equals(item.LoopId, loopId, StringComparison.OrdinalIgnoreCase)))
+        foreach (var person in cloudStateStore.GetPeople(loopId))
         {
             var candidates = new[]
             {

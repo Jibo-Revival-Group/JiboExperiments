@@ -23,6 +23,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Include="..\..\src\Jibo.Cloud\dotnet\src\Jibo.Cloud.Migrations\Migrations\PostgreSql\*.sql">
+			<Link>Migrations\PostgreSql\%(Filename)%(Extension)</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Include="..\..\src\Jibo.Cloud\node\fixtures\http\*.json">
 			<Link>fixtures\%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

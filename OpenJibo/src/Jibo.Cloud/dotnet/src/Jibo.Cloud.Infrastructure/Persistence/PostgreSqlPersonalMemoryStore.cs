@@ -88,8 +88,11 @@ public sealed class PostgreSqlPersonalMemoryStore : IPersonalMemoryStore, IDispo
     public void SetAffinity(PersonalMemoryTenantScope tenantScope, string item, PersonalAffinity affinity) =>
         UpsertFact(tenantScope, "PersonalMemoryAffinities", "Item", item, "Affinity", affinity.ToString());
 
-    public PersonalAffinity? GetAffinity(PersonalMemoryTenantScope tenantScope, string item) =>
-        LoadScope(tenantScope).Affinities.GetValueOrDefault(Normalize(item));
+    public PersonalAffinity? GetAffinity(PersonalMemoryTenantScope tenantScope, string item)
+    {
+        var affinities = LoadScope(tenantScope).Affinities;
+        return affinities.TryGetValue(Normalize(item), out var affinity) ? affinity : null;
+    }
 
     public IReadOnlyDictionary<string, PersonalAffinity> GetAffinities(PersonalMemoryTenantScope tenantScope) =>
         new Dictionary<string, PersonalAffinity>(LoadScope(tenantScope).Affinities,

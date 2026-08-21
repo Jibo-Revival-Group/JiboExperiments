@@ -61,6 +61,8 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
         }
 
         var sourceSha256 = Sha256(sourceJson);
+        string? existingName = null;
+        Dictionary<string, int>? existingCounts = null;
         await using (var check = new NpgsqlCommand("""
                                                    SELECT ImportName, ImportedCounts
                                                    FROM CloudStateImports
@@ -73,13 +75,17 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
             await using var reader = await check.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
-                var existingName = reader.GetString(0);
-                var existingCounts =
+                existingName = reader.GetString(0);
+                existingCounts =
                     JsonSerializer.Deserialize<Dictionary<string, int>>(reader.GetString(1), JsonOptions) ?? [];
-                await transaction.CommitAsync(cancellationToken);
-                return new CloudStateSnapshotImportResult(
-                    existingName, snapshotName, sourceSha256, true, existingCounts);
             }
+        }
+
+        if (existingName is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return new CloudStateSnapshotImportResult(
+                existingName, snapshotName, sourceSha256, true, existingCounts!);
         }
 
         var snapshot = ParseSnapshot(sourceJson);

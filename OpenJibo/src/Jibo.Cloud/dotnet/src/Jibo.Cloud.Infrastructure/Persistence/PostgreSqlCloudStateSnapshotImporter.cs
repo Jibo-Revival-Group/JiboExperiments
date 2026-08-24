@@ -254,7 +254,7 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
     private async Task ImportUsersAsync(NpgsqlConnection c, NpgsqlTransaction tx,
         LegacyCloudStateSnapshot snapshot, CancellationToken ct)
     {
-        foreach (var user in snapshot.Users ?? [])
+        foreach (var user in CanonicalUsers(snapshot.Users))
         {
             var secret = Protect(user.SecretAccessKey);
             await ExecuteAsync(c, tx, """
@@ -272,6 +272,17 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
                 ("secret", secret), ("keyId", _secretProtector.KeyId), ("active", user.IsActive),
                 ("created", user.CreatedUtc));
         }
+    }
+
+    internal static IReadOnlyList<UserRecord> CanonicalUsers(IEnumerable<UserRecord>? users)
+    {
+        var canonical = new List<UserRecord>();
+        var emails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var user in users ?? [])
+            if (emails.Add(user.Email.Trim()))
+                canonical.Add(user);
+
+        return canonical;
     }
 
     private static async Task ImportLoopsAsync(NpgsqlConnection c, NpgsqlTransaction tx,

@@ -130,6 +130,18 @@ public sealed class CloudStateSnapshotImporterTests
     }
 
     [Fact]
+    public void CanonicalUsers_PreservesFirstCaseInsensitiveEmailMatch()
+    {
+        var first = new UserRecord { Id = "first", Email = "User@Example.com" };
+        var duplicate = new UserRecord { Id = "duplicate", Email = " user@example.COM " };
+        var distinct = new UserRecord { Id = "distinct", Email = "other@example.com" };
+
+        var canonical = PostgreSqlCloudStateSnapshotImporter.CanonicalUsers([first, duplicate, distinct]);
+
+        Assert.Equal([first, distinct], canonical);
+    }
+
+    [Fact]
     public async Task ExportBackupPayloads_UsesDeterministicVerifiedExternalPayloads()
     {
         var sink = new RecordingBackupPayloadStore();

@@ -275,7 +275,7 @@ for marker in "--import-legacy-cloud-state" "--import-legacy-personal-memory" "-
   fi
 done
 
-for marker in "pg_dump" "pg_restore" "firewall-rule create" "firewall-rule delete" '--server-name "$server_name"' "Source and target resource groups must be different" "source and target PostgreSQL hosts are identical"; do
+for marker in "pg_dump" "pg_restore" "firewall-rule create" "firewall-rule delete" '--server-name "$server_name"' '--name "$rule_name"' "Source and target resource groups must be different" "source and target PostgreSQL hosts are identical"; do
   if [[ "$linux_clone_script_text" != *"$marker"* ]]; then
     echo "Staging clone script is missing expected safety marker: $marker" >&2
     exit 1

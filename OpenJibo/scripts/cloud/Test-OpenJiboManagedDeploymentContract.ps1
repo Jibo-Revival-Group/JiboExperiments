@@ -222,7 +222,7 @@ foreach ($marker in @("--import-legacy-cloud-state", "--import-legacy-personal-m
     Assert-ContainsMarker -Text $linuxPrepareScriptText -Marker $marker -FailurePrefix "Managed database preparation script is missing expected marker"
 }
 
-foreach ($marker in @("pg_dump", "pg_restore", "firewall-rule create", "firewall-rule delete", '--server-name "$server_name"', "Source and target resource groups must be different", "source and target PostgreSQL hosts are identical")) {
+foreach ($marker in @("pg_dump", "pg_restore", "firewall-rule create", "firewall-rule delete", '--server-name "$server_name"', '--name "$rule_name"', "Source and target resource groups must be different", "source and target PostgreSQL hosts are identical")) {
     Assert-ContainsMarker -Text $linuxCloneScriptText -Marker $marker -FailurePrefix "Staging clone script is missing expected safety marker"
 }
 if ($smokeScriptText -match [regex]::Escape('Host = "api.jibo.com"')) {

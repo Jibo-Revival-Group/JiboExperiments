@@ -341,12 +341,16 @@ jobs:
         shell: bash
         env:
           PREVIOUS_APP: ${{ steps.previous.outputs.app_name }}
+          PREVIOUS_REVISION: ${{ steps.previous.outputs.revision_name }}
           PREVIOUS_IMAGE: ${{ steps.previous.outputs.image }}
           PREVIOUS_MIN_REPLICAS: ${{ steps.previous.outputs.min_replicas }}
           PREVIOUS_MAX_REPLICAS: ${{ steps.previous.outputs.max_replicas }}
         run: |
           echo "Deployment failed; restoring the previous image."
           az containerapp update             --resource-group "$OPENJIBO_RESOURCE_GROUP"             --name "$PREVIOUS_APP"             --image "$PREVIOUS_IMAGE"             --min-replicas "$PREVIOUS_MIN_REPLICAS"             --max-replicas "$PREVIOUS_MAX_REPLICAS"             --output none
+          if [[ -n "$PREVIOUS_REVISION" ]]; then
+            az containerapp revision activate               --resource-group "$OPENJIBO_RESOURCE_GROUP"               --name "$PREVIOUS_APP"               --revision "$PREVIOUS_REVISION"               --output none
+          fi
 
       - name: Create staging promotion gate
         if: success() && inputs.deployment_target == 'staging'

@@ -201,6 +201,9 @@ public sealed class CloudStateSnapshotImporterTests
                                    "AccessKeyId":"access-1","SecretAccessKey":"secret-1"},
                                  "Robot":{"DeviceId":"device-1","RobotId":"robot-1","FriendlyName":"Jibo"},
                                  "Devices":[{"DeviceId":"device-1","RobotId":"robot-1","FriendlyName":"Jibo"}],
+                                 "Users":[{"Id":"legacy-user","Email":"existing@example.com",
+                                   "PasswordHash":"legacy-hash","Salt":"legacy-salt",
+                                   "AccessKeyId":"legacy-access","SecretAccessKey":"legacy-secret"}],
                                  "Loops":[{"LoopId":"loop-1","OwnerAccountId":"account-1",
                                    "RobotId":"robot-1","RobotFriendlyId":"device-1"}],
                                  "Sessions":[{"SessionId":"issued","Kind":"robot","AccountId":"account-1",
@@ -215,7 +218,9 @@ public sealed class CloudStateSnapshotImporterTests
                 await using var insert = connection.CreateCommand();
                 insert.CommandText = """
                                      INSERT INTO PersistenceSnapshots (SnapshotName,SnapshotJson)
-                                     VALUES ('cloud-state',@json)
+                                     VALUES ('cloud-state',@json);
+                                     INSERT INTO Users (UserId,Email,PasswordHash,PasswordSalt,AccessKeyId)
+                                     VALUES ('existing-user','Existing@Example.com','hash','salt','existing-access')
                                      """;
                 insert.Parameters.AddWithValue("json", sourceJson);
                 await insert.ExecuteNonQueryAsync();
@@ -238,6 +243,8 @@ public sealed class CloudStateSnapshotImporterTests
             Assert.Equal(1, await ScalarAsync<long>(scopedConnectionString, "SELECT COUNT(*) FROM Accounts"));
             Assert.Equal(1, await ScalarAsync<long>(scopedConnectionString, "SELECT COUNT(*) FROM Devices"));
             Assert.Equal(1, await ScalarAsync<long>(scopedConnectionString, "SELECT COUNT(*) FROM Loops"));
+            Assert.Equal("existing-user", await ScalarAsync<string>(scopedConnectionString,
+                "SELECT UserId FROM Users WHERE LOWER(Email)='existing@example.com'"));
             Assert.Equal(PostgreSqlCloudStateSnapshotImporter.Sha256(token),
                 await ScalarAsync<string>(scopedConnectionString, "SELECT TokenHash FROM CloudAuthTokens"));
             Assert.Equal("device-1", await ScalarAsync<string>(scopedConnectionString,

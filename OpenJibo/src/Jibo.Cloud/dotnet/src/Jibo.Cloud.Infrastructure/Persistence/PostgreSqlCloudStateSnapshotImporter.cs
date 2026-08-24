@@ -260,7 +260,11 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
             await ExecuteAsync(c, tx, """
                 INSERT INTO Users (UserId,Email,PasswordHash,PasswordSalt,FirstName,LastName,Gender,Birthday,
                     AccessKeyId,SecretAccessKeyCiphertext,SecretWrappingKeyId,IsActive,CreatedUtc)
-                VALUES (@id,@email,@hash,@salt,@first,@last,@gender,@birthday,@access,@secret,@keyId,@active,@created)
+                SELECT @id,@email,@hash,@salt,@first,@last,@gender,@birthday,@access,@secret,@keyId,@active,@created
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM Users
+                    WHERE LOWER(Email)=LOWER(@email) AND LOWER(UserId)<>LOWER(@id)
+                )
                 ON CONFLICT (UserId) DO UPDATE SET Email=EXCLUDED.Email,PasswordHash=EXCLUDED.PasswordHash,
                     PasswordSalt=EXCLUDED.PasswordSalt,FirstName=EXCLUDED.FirstName,LastName=EXCLUDED.LastName,
                     Gender=EXCLUDED.Gender,Birthday=EXCLUDED.Birthday,AccessKeyId=EXCLUDED.AccessKeyId,

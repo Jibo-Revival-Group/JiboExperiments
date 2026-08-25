@@ -111,6 +111,8 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
             "photobooth" => false,
             "news" => false,
             "trigger_ignored" => false,
+            "skill_listen" => false,
+            "prompt_echo" => false,
             "proactive_greeting" => false,
             "ha_lights_off" => false,
             "ha_lights_on" => false,

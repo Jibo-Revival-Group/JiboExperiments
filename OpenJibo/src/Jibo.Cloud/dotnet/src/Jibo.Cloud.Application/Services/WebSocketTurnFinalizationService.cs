@@ -485,6 +485,7 @@ public sealed class WebSocketTurnFinalizationService(
             if (cloudStateStore is not null && !string.IsNullOrWhiteSpace(session.DeviceId))
                 cloudStateStore.ReinheritDialogMetadata(session);
             PersistContextRelease(session, turnState.ContextPayload ?? envelope.Text);
+            PersistContextSkillId(session, envelope.Text);
 
             if (TryReadContextProperty(envelope.Text, "audioTranscriptHint", out var transcriptHint) &&
                 !string.IsNullOrWhiteSpace(transcriptHint))
@@ -576,6 +577,28 @@ public sealed class WebSocketTurnFinalizationService(
                     : session.DeviceId,
             release,
             null);
+    }
+
+    private static void PersistContextSkillId(CloudSession session, string? text)
+    {
+        var skillId = TryReadContextSkillId(text);
+        if (string.IsNullOrWhiteSpace(skillId)) return;
+
+        session.Metadata[SkillListenOwnership.LastContextSkillIdKey] = skillId;
+    }
+
+    private static void PersistInvokedSkillId(
+        CloudSession session,
+        InvokeNativeSkillAction? skill,
+        bool keepMicOpen)
+    {
+        var skillId = SkillListenOwnership.ReadInvokedSkillId(skill);
+        if (string.IsNullOrWhiteSpace(skillId) && keepMicOpen)
+            skillId = "chitchat-skill";
+
+        if (string.IsNullOrWhiteSpace(skillId)) return;
+
+        session.Metadata[SkillListenOwnership.LastContextSkillIdKey] = skillId;
     }
 
     public async Task<IReadOnlyList<WebSocketReply>> HandleTurnAsync(
@@ -1562,6 +1585,7 @@ public sealed class WebSocketTurnFinalizationService(
             await ApplyContextUpdatesAsync(session, plan.ContextUpdates, envelope, plan.IntentName, cancellationToken);
 
             var invokedSkillAction = plan.Actions.OfType<InvokeNativeSkillAction>().FirstOrDefault();
+            PersistInvokedSkillId(session, invokedSkillAction, plan.FollowUp.KeepMicOpen);
             if ((string.Equals(plan.IntentName, "weather", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(plan.IntentName, "news", StringComparison.OrdinalIgnoreCase)) &&
                 invokedSkillAction is not null)
@@ -1677,9 +1701,13 @@ public sealed class WebSocketTurnFinalizationService(
                 !string.Equals(plan.IntentName, "photo_gallery", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "snapshot", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(plan.IntentName, "skill_listen", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(plan.IntentName, "prompt_echo", StringComparison.OrdinalIgnoreCase) &&
+                !SkillListenOwnership.ShouldSuppressCompetingSpeech(finalizedTurn, plan.IntentName) &&
                 (messageType != "CLIENT_NLU" ||
                  string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase) ||
-                 IsCloudOwnedPersonalReportIntent(plan.IntentName));
+                 IsCloudOwnedPersonalReportIntent(plan.IntentName) ||
+                 ShouldSpeakCloudOwnedClientNlu(finalizedTurn, plan.IntentName));
             var replies = ResponsePlanToSocketMessagesMapper.Map(plan, finalizedTurn, session, emitSkillActions)
                 .Select(map => new WebSocketReply
                 {
@@ -2234,11 +2262,14 @@ public sealed class WebSocketTurnFinalizationService(
     private static bool HasCloudHandledLocalPromptOpen(WebSocketTurnState turnState)
     {
         return turnState is { AwaitingTurnCompletion: true, SawListen: true } &&
-               turnState.ListenRules.Any(rule =>
-                   IsClockValueRule(rule) ||
-                   IsGalleryPreviewRule(rule) ||
-                   IsConstrainedYesNoRule(rule) ||
-                   IsIntroductionsRule(rule));
+               (turnState.ListenAsrHints.Any(static hint =>
+                    string.Equals(hint, "$YESNO", StringComparison.OrdinalIgnoreCase)) ||
+                turnState.ListenRules.Any(rule =>
+                    IsClockValueRule(rule) ||
+                    IsGalleryPreviewRule(rule) ||
+                    IsConstrainedYesNoRule(rule) ||
+                    IsIntroductionsRule(rule) ||
+                    rule.StartsWith("exercise/", StringComparison.OrdinalIgnoreCase)));
     }
 
     private static string? ExtractDataPayload(string? text)
@@ -2362,6 +2393,8 @@ public sealed class WebSocketTurnFinalizationService(
         if (listenRules.Any(rule =>
                 string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase))) return true;
 
+        if (SkillListenOwnership.IsSkillOwnedListen(turn) && IsYesNoReplyTranscript(transcript)) return true;
+
         if (IsLowSignalSingleTokenTranscript(transcript)) return false;
 
         if (SingleTokenUsableTranscripts.Contains(transcript)) return true;
@@ -2377,10 +2410,23 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static bool IsYesNoTurn(TurnContext turn)
     {
-        return ReadRules(turn, "listenRules")
-            .Concat(ReadRules(turn, "clientRules"))
+        var listenRules = ReadRules(turn, "listenRules").ToArray();
+        var clientRules = ReadRules(turn, "clientRules").ToArray();
+        if (listenRules
+            .Concat(clientRules)
             .Concat(ReadRules(turn, "listenAsrHints"))
-            .Any(IsYesNoRule);
+            .Any(IsYesNoRule))
+            return true;
+
+        if (!SkillListenOwnership.IsSkillOwnedListen(
+                SkillListenOwnership.ReadListenHotphrase(turn),
+                listenRules,
+                clientRules))
+            return false;
+
+        var transcript = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
+        return IsYesNoReplyTranscript(transcript) ||
+               TryClassifyYesNoReply(transcript) == YesNoReply.Ambiguous;
     }
 
     private static bool IsActivePersonalReportTurn(TurnContext turn)
@@ -2394,6 +2440,19 @@ public sealed class WebSocketTurnFinalizationService(
     {
         return !string.IsNullOrWhiteSpace(intentName) &&
                intentName.StartsWith("personal_report_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ShouldSpeakCloudOwnedClientNlu(TurnContext turn, string? intentName)
+    {
+        if (!SkillListenOwnership.IsCloudOwnedFollowUp(turn)) return false;
+        if (SkillListenOwnership.IsHeyJiboSkillLaunch(intentName)) return false;
+
+        var clientIntent = ReadAttribute(turn, "clientIntent");
+        if (!string.IsNullOrWhiteSpace(clientIntent) &&
+            string.Equals(intentName, clientIntent, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return true;
     }
 
     private static bool IsBadAppleSkillLaunch(ResponsePlan plan)
@@ -2423,8 +2482,9 @@ public sealed class WebSocketTurnFinalizationService(
     private static string? ReadPrimaryYesNoRule(TurnContext turn)
     {
         return ReadRules(turn, "listenRules")
-            .Concat(ReadRules(turn, "clientRules"))
-            .FirstOrDefault(IsConstrainedYesNoRule);
+                   .Concat(ReadRules(turn, "clientRules"))
+                   .FirstOrDefault(IsConstrainedYesNoRule) ??
+               SkillListenOwnership.ReadPrimarySkillRule(turn);
     }
 
     private static WebSocketReply[] BuildLocalNoInputReplies(
@@ -2476,7 +2536,8 @@ public sealed class WebSocketTurnFinalizationService(
                string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase) ||
                IsClockValueRule(rule) ||
                IsGalleryPreviewRule(rule) ||
-               IsConstrainedYesNoRule(rule);
+               IsConstrainedYesNoRule(rule) ||
+               SkillListenOwnership.IsSkillRule(rule);
     }
 
     private static bool IsClockValueRule(string rule)
@@ -2913,6 +2974,12 @@ public sealed class WebSocketTurnFinalizationService(
         if (IsHotphraseNonCommandTranscript(normalized))
         {
             reason = "hotphrase_non_command";
+            return true;
+        }
+
+        if (TranscriptHeuristics.IsLikelySkillOfferPromptEcho(normalized))
+        {
+            reason = "hotphrase_prompt_echo";
             return true;
         }
 

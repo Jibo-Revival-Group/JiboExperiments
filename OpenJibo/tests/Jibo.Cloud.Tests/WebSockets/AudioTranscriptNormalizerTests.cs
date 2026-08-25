@@ -84,6 +84,10 @@ public sealed class AudioTranscriptNormalizerTests
     [InlineData("Would you like to play the word of the day game")]
     [InlineData("Can we play the same word")]
     [InlineData("I heard you")]
+    [InlineData("Do you want to take a picture")]
+    [InlineData("Do you want to do yoga now")]
+    [InlineData("Want to take a picture now")]
+    [InlineData("Oh there are no photos yet. Do you want to take one now")]
     public void IsLikelyPromptEchoTranscript_ReturnsTrue_ForPromptEchoOrRobotSelfAudio(string value)
     {
         Assert.True(TranscriptHeuristics.IsLikelyPromptEchoTranscript(value));
@@ -101,8 +105,29 @@ public sealed class AudioTranscriptNormalizerTests
     [Theory]
     [InlineData("yes")]
     [InlineData("no yes")]
+    [InlineData("I want to do yoga")]
     public void IsLikelyPromptEchoTranscript_ReturnsFalse_ForUserSpeech(string value)
     {
         Assert.False(TranscriptHeuristics.IsLikelyPromptEchoTranscript(value));
+    }
+
+    [Theory]
+    [InlineData("Do you want to take a picture")]
+    [InlineData("Do you want to do yoga now")]
+    [InlineData("Want to take a picture now")]
+    [InlineData("Oh there are no photos yet. Do you want to take one now")]
+    public void IsLikelySkillOfferPromptEcho_ReturnsTrue_ForGalleryAndYogaOffers(string value)
+    {
+        Assert.True(TranscriptHeuristics.IsLikelySkillOfferPromptEcho(value));
+    }
+
+    [Theory]
+    [InlineData("what do you want to talk about")]
+    [InlineData("what would you like to talk about")]
+    [InlineData("I want to do yoga")]
+    [InlineData("take a picture")]
+    public void IsLikelySkillOfferPromptEcho_ReturnsFalse_ForPersonalityAndCommands(string value)
+    {
+        Assert.False(TranscriptHeuristics.IsLikelySkillOfferPromptEcho(value));
     }
 }

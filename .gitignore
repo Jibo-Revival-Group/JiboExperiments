@@ -461,3 +461,6 @@ OpenJibo/docs/DesignDoc/original server
 /OpenJibo/App_Data
 /OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/appsettings.json
 OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/appsettings.json
+
+# dump files
+dump.bin

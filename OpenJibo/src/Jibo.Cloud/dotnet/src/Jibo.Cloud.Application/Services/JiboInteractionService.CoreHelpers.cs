@@ -28,7 +28,8 @@ public sealed partial class JiboInteractionService
         string? pendingProactivityOffer,
         bool isYesNoTurn,
         bool isTimerValueTurn,
-        bool isAlarmValueTurn)
+        bool isAlarmValueTurn,
+        bool isSkillOwnedListen)
     {
         return ResolveSemanticIntentCore(
             loweredTranscript,
@@ -41,6 +42,7 @@ public sealed partial class JiboInteractionService
             pendingProactivityOffer,
             isYesNoTurn,
             isTimerValueTurn,
-            isAlarmValueTurn);
+            isAlarmValueTurn,
+            isSkillOwnedListen);
     }
 }

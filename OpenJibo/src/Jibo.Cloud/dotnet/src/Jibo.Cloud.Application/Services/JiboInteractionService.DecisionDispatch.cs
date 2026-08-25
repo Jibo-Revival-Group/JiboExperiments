@@ -38,6 +38,7 @@ public sealed partial class JiboInteractionService
                 ? rawChitchatEmotion?.ToString()
                 : null;
         var isYesNoTurn = IsYesNoTurn(turn);
+        var isSkillOwnedListen = SkillListenOwnership.IsSkillOwnedListen(turn);
         var greetingPresence = ResolveGreetingPresenceProfile(turn);
 
         if (string.Equals(messageType, "TRIGGER", StringComparison.OrdinalIgnoreCase))
@@ -58,7 +59,11 @@ public sealed partial class JiboInteractionService
             pendingProactivityOffer,
             isYesNoTurn,
             isTimerValueTurn,
-            isAlarmValueTurn);
+            isAlarmValueTurn,
+            isSkillOwnedListen);
+
+        if (SkillListenOwnership.ShouldStayInCloudConversation(turn, semanticIntent))
+            semanticIntent = "chat";
 
         if (ShouldTreatAsHaClimateClarify(turn, lowered, semanticIntent))
             semanticIntent = "ha_climate_clarify";
@@ -89,6 +94,10 @@ public sealed partial class JiboInteractionService
 
         var preferredName = ResolvePreferredGreetingName(turn, greetingPresence);
         if (string.Equals(semanticIntent, "chat", StringComparison.OrdinalIgnoreCase))
+        {
+            if (isSkillOwnedListen)
+                return new JiboInteractionDecision("skill_listen", string.Empty);
+
             return await BuildChatFallbackDecisionAsync(
                 catalog,
                 transcript,
@@ -96,6 +105,7 @@ public sealed partial class JiboInteractionService
                 chitchatEmotion,
                 preferredName,
                 cancellationToken);
+        }
 
         var chitchatDecision = ChitchatStateMachine.TryBuildDecision(
             semanticIntent,
@@ -1363,6 +1373,8 @@ public sealed partial class JiboInteractionService
             "weather" => await BuildWeatherReportDecisionAsync(turn, transcript, cancellationToken),
             "yes" => new JiboInteractionDecision("yes", "Yes."),
             "no" => new JiboInteractionDecision("no", "No."),
+            "skill_listen" => new JiboInteractionDecision("skill_listen", string.Empty),
+            "prompt_echo" => new JiboInteractionDecision("prompt_echo", string.Empty),
             "word_of_the_day" => BuildWordOfTheDayLaunchDecision(),
             "word_of_the_day_guess" => BuildWordOfTheDayGuessDecision(clientEntities, transcript, listenAsrHints),
             "surprise" => BuildSurpriseDecision(catalog, turn, referenceLocalTime),

@@ -1934,6 +1934,29 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_HotphraseKnowledgeQuestion_StillSearches()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult(
+                "Paris is the capital of France.",
+                SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what is the capital of France",
+            NormalizedTranscript = "what is the capital of France",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = true,
+                ["listenRules"] = (string[])["launch", "globals/global_commands_launch"]
+            }
+        });
+
+        Assert.Equal("knowledge_search", decision.IntentName);
+        Assert.StartsWith("According to wolf ram alpha.", decision.ReplyText, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_UnhandledChat_SearchNotFound_SaysCantFindAnything()
     {
         var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
@@ -4729,8 +4752,9 @@ public sealed class JiboInteractionServiceTests
             }
         });
 
-        Assert.Equal("yes_no_clarify", decision.IntentName);
-        Assert.Equal("I heard both yes and no. Could you say that again?", decision.ReplyText);
+        Assert.Equal("skill_listen", decision.IntentName);
+        Assert.Equal(string.Empty, decision.ReplyText);
+        Assert.NotEqual("knowledge_search", decision.IntentName);
     }
 
     [Fact]
@@ -4751,6 +4775,183 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("yes", decision.IntentName);
         Assert.Equal("Yes.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_ExerciseWantTo_WithYesNoHints_MapsShortDenialToNoIntent()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("Should not be used.", SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "no",
+            NormalizedTranscript = "no",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = false,
+                ["listenRules"] = (string[])["exercise/want_to", "globals/gui_nav", "globals/global_commands_launch"],
+                ["listenAsrHints"] = (string[])["$YESNO"]
+            }
+        });
+
+        Assert.Equal("no", decision.IntentName);
+        Assert.DoesNotContain("According to", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_ExerciseWantTo_WithoutHints_MapsShortDenialToNoIntent()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("Should not be used.", SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "No.",
+            NormalizedTranscript = "No.",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = false,
+                ["listenRules"] = (string[])["exercise/want_to", "globals/global_commands_launch"]
+            }
+        });
+
+        Assert.Equal("no", decision.IntentName);
+        Assert.DoesNotContain("According to", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_GalleryYesNo_DoesNotSearchKnowledge()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("Should not be used.", SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "no",
+            NormalizedTranscript = "no",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = false,
+                ["listenRules"] = (string[])["shared/yes_no", "globals/gui_nav", "globals/global_commands_launch"],
+                ["listenAsrHints"] = (string[])["$YESNO"]
+            }
+        });
+
+        Assert.Equal("no", decision.IntentName);
+        Assert.DoesNotContain("According to", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_GalleryPromptEcho_DoesNotLaunchSnapshot()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("Should not be used.", SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "do you want to take a picture",
+            NormalizedTranscript = "do you want to take a picture",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = false,
+                ["listenRules"] = (string[])["shared/yes_no", "globals/gui_nav"],
+                ["listenAsrHints"] = (string[])["$YESNO"]
+            }
+        });
+
+        Assert.Equal("skill_listen", decision.IntentName);
+        Assert.Equal(string.Empty, decision.ReplyText);
+        Assert.NotEqual("snapshot", decision.IntentName);
+        Assert.NotEqual("knowledge_search", decision.IntentName);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_YogaPromptEcho_DoesNotSearchKnowledge()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("Should not be used.", SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "do you want to do yoga now",
+            NormalizedTranscript = "do you want to do yoga now",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = false,
+                ["listenRules"] = (string[])["exercise/want_to", "globals/gui_nav"]
+            }
+        });
+
+        Assert.Equal("skill_listen", decision.IntentName);
+        Assert.NotEqual("knowledge_search", decision.IntentName);
+        Assert.DoesNotContain("According to", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_ExerciseRoutineSelector_StaysOnSkillListen()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("Should not be used.", SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "sun salutation",
+            NormalizedTranscript = "sun salutation",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = false,
+                ["listenRules"] = (string[])["exercise/routine_selector", "globals/gui_nav"]
+            }
+        });
+
+        Assert.Equal("skill_listen", decision.IntentName);
+        Assert.Equal(string.Empty, decision.ReplyText);
+        Assert.NotEqual("knowledge_search", decision.IntentName);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_HotphrasePromptEcho_DoesNotLaunchSnapshot()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("Should not be used.", SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "do you want to take a picture",
+            NormalizedTranscript = "do you want to take a picture",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = true,
+                ["listenRules"] = (string[])["launch", "globals/global_commands_launch"]
+            }
+        });
+
+        Assert.Equal("prompt_echo", decision.IntentName);
+        Assert.NotEqual("snapshot", decision.IntentName);
+        Assert.NotEqual("knowledge_search", decision.IntentName);
+        Assert.DoesNotContain("According to", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_HotphraseNo_DoesNotSearchKnowledge()
+    {
+        var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("Should not be used.", SearchBackendKind.Wolfram)));
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "no",
+            NormalizedTranscript = "no",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["listenHotphrase"] = true,
+                ["listenRules"] = (string[])["launch", "globals/global_commands_launch"]
+            }
+        });
+
+        Assert.NotEqual("knowledge_search", decision.IntentName);
+        Assert.DoesNotContain("According to", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -5650,6 +5851,74 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("@be/clock", decision.SkillName);
         Assert.Equal("clock", decision.SkillPayload!["domain"]);
         Assert.Equal("askForTime", decision.SkillPayload["clockIntent"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_NimbusFollowUp_WhatTimeIsIt_StaysInCloudConversation()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            InputMode = TurnInputMode.FollowUp,
+            RawTranscript = "what time is it",
+            NormalizedTranscript = "what time is it",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["followUpOpen"] = true,
+                ["lastListenType"] = "follow-up",
+                ["listenHotphrase"] = false,
+                ["listenRules"] = (string[])["follow-up"]
+            }
+        });
+
+        Assert.NotEqual("time", decision.IntentName);
+        Assert.NotEqual("@be/clock", decision.SkillName);
+        Assert.DoesNotContain("Showing the time.", decision.ReplyText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_NimbusFollowUpContext_DoesNotLaunchSnapshot()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            InputMode = TurnInputMode.FollowUp,
+            RawTranscript = "take a picture",
+            NormalizedTranscript = "take a picture",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["followUpOpen"] = true,
+                ["context"] = """{"skill":{"id":"@be/nimbus"}}"""
+            }
+        });
+
+        Assert.NotEqual("snapshot", decision.IntentName);
+        Assert.NotEqual("@be/create", decision.SkillName);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_NimbusContextSkill_ClientAskForTime_StaysInCloudConversation()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what time is it",
+            NormalizedTranscript = "what time is it",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "CLIENT_NLU",
+                ["clientIntent"] = "askForTime",
+                ["listenHotphrase"] = true,
+                ["listenRules"] = (string[])["launch", "globals/global_commands_launch"],
+                [SkillListenOwnership.LastContextSkillIdKey] = "@be/nimbus"
+            }
+        });
+
+        Assert.NotEqual("time", decision.IntentName);
+        Assert.NotEqual("@be/clock", decision.SkillName);
     }
 
     [Fact]

@@ -75,6 +75,10 @@ public sealed class ProtocolToTurnContextMapper
 
         if (turnState.ListenAsrHints.Count > 0) attributes["listenAsrHints"] = turnState.ListenAsrHints;
 
+        attributes["followUpOpen"] = session.FollowUpOpen;
+        if (!string.IsNullOrWhiteSpace(session.LastListenType))
+            attributes["lastListenType"] = session.LastListenType;
+
         if (turnState.BufferedAudioBytes > 0)
         {
             var audioPageCounts = BufferedAudioPageClassifier.Describe(turnState.BufferedAudioFrames);

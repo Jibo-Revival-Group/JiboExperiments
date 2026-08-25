@@ -2985,6 +2985,59 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_NimbusFollowUp_WhatTimeIsIt_DoesNotLaunchClock()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-nimbus-followup-time-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-nimbus-hello","data":{"text":"hello jibo","rules":["wake-word"]}}"""
+        });
+
+        var session = _store.FindSessionByToken("hub-nimbus-followup-time-token");
+        Assert.NotNull(session);
+        Assert.True(session.FollowUpOpen);
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-nimbus-followup-time-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-nimbus-followup-time","data":{"hotphrase":false,"rules":["follow-up"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-nimbus-followup-time-token",
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-nimbus-followup-time","data":{"text":"what time is it"}}"""
+        });
+
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.NotEqual("askForTime",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
+
+        using var skillPayload = JsonDocument.Parse(replies[2].Text!);
+        Assert.NotEqual("@be/clock",
+            skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+    }
+
+    [Fact]
     public async Task BufferedAudio_YesNoPromptWithSttFailure_AutoFinalizesAsLocalNoInput()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -9195,11 +9248,13 @@ public sealed class JiboWebSocketServiceTests
                 """{"type":"LISTEN","transID":"trans-second","data":{"text":"what time is it","rules":["follow-up"]}}"""
         });
 
-        Assert.Equal(4, followUpReplies.Count);
+        Assert.Equal(3, followUpReplies.Count);
         using var payload = JsonDocument.Parse(followUpReplies[0].Text!);
-        Assert.Equal("askForTime",
+        Assert.NotEqual("askForTime",
             payload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
         Assert.Equal("trans-second", payload.RootElement.GetProperty("transID").GetString());
+        Assert.DoesNotContain(followUpReplies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
 
         var session = _store.FindSessionByToken("hub-followup-audio-token");
         Assert.NotNull(session);

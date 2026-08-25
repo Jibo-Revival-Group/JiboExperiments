@@ -5854,6 +5854,51 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_NimbusFollowUp_WhatTimeIsIt_StaysInCloudConversation()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            InputMode = TurnInputMode.FollowUp,
+            RawTranscript = "what time is it",
+            NormalizedTranscript = "what time is it",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["followUpOpen"] = true,
+                ["lastListenType"] = "follow-up",
+                ["listenHotphrase"] = false,
+                ["listenRules"] = (string[])["follow-up"]
+            }
+        });
+
+        Assert.NotEqual("time", decision.IntentName);
+        Assert.NotEqual("@be/clock", decision.SkillName);
+        Assert.DoesNotContain("Showing the time.", decision.ReplyText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_NimbusFollowUpContext_DoesNotLaunchSnapshot()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            InputMode = TurnInputMode.FollowUp,
+            RawTranscript = "take a picture",
+            NormalizedTranscript = "take a picture",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["followUpOpen"] = true,
+                ["context"] = """{"skill":{"id":"@be/nimbus"}}"""
+            }
+        });
+
+        Assert.NotEqual("snapshot", decision.IntentName);
+        Assert.NotEqual("@be/create", decision.SkillName);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_WhatTimeIsIt_MapsToLocalClockTimeIntent()
     {
         var service = CreateService();

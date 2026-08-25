@@ -62,6 +62,9 @@ public sealed partial class JiboInteractionService
             isAlarmValueTurn,
             isSkillOwnedListen);
 
+        if (SkillListenOwnership.ShouldStayInCloudConversation(turn, semanticIntent))
+            semanticIntent = "chat";
+
         if (ShouldTreatAsHaClimateClarify(turn, lowered, semanticIntent))
             semanticIntent = "ha_climate_clarify";
 

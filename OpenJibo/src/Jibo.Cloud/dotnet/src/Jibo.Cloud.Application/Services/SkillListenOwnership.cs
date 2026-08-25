@@ -20,6 +20,39 @@ internal static class SkillListenOwnership
         "sure"
     };
 
+    private static readonly HashSet<string> HeyJiboSkillLaunchIntents = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "time",
+        "date",
+        "day",
+        "clock_open",
+        "clock_menu",
+        "timer_menu",
+        "alarm_menu",
+        "timer_delete",
+        "alarm_delete",
+        "timer_cancel",
+        "alarm_cancel",
+        "timer_clarify",
+        "alarm_clarify",
+        "timer_value",
+        "alarm_value",
+        "alarm_query",
+        "alarm_edit",
+        "alarm_edit_value",
+        "snapshot",
+        "photobooth",
+        "photo_gallery",
+        "radio",
+        "radio_genre",
+        "bad_apple",
+        "sleep",
+        "wake_up",
+        "turn_around",
+        "spin_around",
+        "word_of_the_day"
+    };
+
     public static bool IsGlobalOrLaunchRule(string? rule)
     {
         if (string.IsNullOrWhiteSpace(rule)) return true;
@@ -81,13 +114,29 @@ internal static class SkillListenOwnership
 
     public static bool IsCloudOwnedFollowUp(TurnContext turn)
     {
-        if (!turn.Attributes.TryGetValue(PersonalReportOrchestrator.StateMetadataKey, out var value) ||
-            value is null)
-            return false;
+        // Robot MIM listens (gallery, yoga, clock values) keep local ownership even if a
+        // previous Nimbus turn left FollowUpOpen.
+        if (IsSkillOwnedListen(turn)) return false;
 
-        var state = value.ToString();
-        return !string.IsNullOrWhiteSpace(state) &&
-               !string.Equals(state, PersonalReportOrchestrator.IdleState, StringComparison.OrdinalIgnoreCase);
+        if (IsPersonalReportFollowUp(turn)) return true;
+
+        if (turn.InputMode == TurnInputMode.FollowUp || ReadFlag(turn, "followUpOpen"))
+            return true;
+
+        if (IsFollowUpListenRule(turn) || IsFollowUpListenType(turn) || IsNimbusContextSkill(turn))
+            return true;
+
+        return false;
+    }
+
+    public static bool ShouldStayInCloudConversation(TurnContext turn, string? intentName)
+    {
+        return IsCloudOwnedFollowUp(turn) && IsHeyJiboSkillLaunch(intentName);
+    }
+
+    public static bool IsHeyJiboSkillLaunch(string? intentName)
+    {
+        return !string.IsNullOrWhiteSpace(intentName) && HeyJiboSkillLaunchIntents.Contains(intentName);
     }
 
     public static bool ShouldSuppressCompetingSpeech(TurnContext turn, string? intentName)
@@ -114,6 +163,74 @@ internal static class SkillListenOwnership
 
         var tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return tokens.Length == 1 && NonQuestionKnowledgeTokens.Contains(tokens[0]);
+    }
+
+    private static bool IsPersonalReportFollowUp(TurnContext turn)
+    {
+        if (!turn.Attributes.TryGetValue(PersonalReportOrchestrator.StateMetadataKey, out var value) ||
+            value is null)
+            return false;
+
+        var state = value.ToString();
+        return !string.IsNullOrWhiteSpace(state) &&
+               !string.Equals(state, PersonalReportOrchestrator.IdleState, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsFollowUpListenRule(TurnContext turn)
+    {
+        return ReadRuleList(turn, "listenRules")
+            .Concat(ReadRuleList(turn, "clientRules"))
+            .Any(static rule => string.Equals(rule, "follow-up", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsFollowUpListenType(TurnContext turn)
+    {
+        if (!turn.Attributes.TryGetValue("lastListenType", out var value) || value is null)
+            return false;
+
+        return string.Equals(value.ToString(), "follow-up", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsNimbusContextSkill(TurnContext turn)
+    {
+        if (!turn.Attributes.TryGetValue("context", out var value) || value is null)
+            return false;
+
+        var json = value.ToString();
+        if (string.IsNullOrWhiteSpace(json)) return false;
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            if (!root.TryGetProperty("skill", out var skill) ||
+                skill.ValueKind != JsonValueKind.Object ||
+                !skill.TryGetProperty("id", out var id) ||
+                id.ValueKind != JsonValueKind.String)
+                return false;
+
+            var skillId = id.GetString();
+            return string.Equals(skillId, "@be/nimbus", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(skillId, "chitchat-skill", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool ReadFlag(TurnContext turn, string key)
+    {
+        if (!turn.Attributes.TryGetValue(key, out var value) || value is null) return false;
+
+        return value switch
+        {
+            bool flag => flag,
+            JsonElement { ValueKind: JsonValueKind.True } => true,
+            JsonElement { ValueKind: JsonValueKind.False } => false,
+            _ when bool.TryParse(value.ToString(), out var parsed) => parsed,
+            _ => false
+        };
     }
 
     private static IEnumerable<string> ReadRuleList(TurnContext turn, string key)

@@ -90,7 +90,7 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
 
         var snapshot = ParseSnapshot(sourceJson);
         var counts = snapshot.GetDurableFamilyCounts();
-        await ImportSnapshotAsync(connection, transaction, snapshot, cancellationToken);
+        await ImportSnapshotAsync(connection, transaction, snapshot, snapshotName, sourceSha256, cancellationToken);
 
         var importName = $"legacy-cloud-state-{sourceSha256[..16]}";
         await using (var mark = new NpgsqlCommand("""
@@ -145,7 +145,8 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
             "linked", null, inventoryDeviceId, "legacy-cloud-state-import", occurredUtc)];
 
     private async Task ImportSnapshotAsync(NpgsqlConnection connection, NpgsqlTransaction transaction,
-        LegacyCloudStateSnapshot snapshot, CancellationToken cancellationToken)
+        LegacyCloudStateSnapshot snapshot, string sourceSnapshotName, string sourceSha256,
+        CancellationToken cancellationToken)
     {
         var account = snapshot.Account;
         if (account is not null)
@@ -246,7 +247,8 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
 
         await ImportUsersAsync(connection, transaction, snapshot, cancellationToken);
         await ImportLoopsAsync(connection, transaction, snapshot, devices, cancellationToken);
-        await ImportTopologyChildrenAsync(connection, transaction, snapshot, cancellationToken);
+        await ImportTopologyChildrenAsync(connection, transaction, snapshot, sourceSnapshotName, sourceSha256,
+            cancellationToken);
         await ImportCatalogsAsync(connection, transaction, snapshot, cancellationToken);
         await ImportSecretsAndTokensAsync(connection, transaction, snapshot, cancellationToken);
     }
@@ -254,13 +256,17 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
     private async Task ImportUsersAsync(NpgsqlConnection c, NpgsqlTransaction tx,
         LegacyCloudStateSnapshot snapshot, CancellationToken ct)
     {
-        foreach (var user in snapshot.Users ?? [])
+        foreach (var user in CanonicalUsers(snapshot.Users))
         {
             var secret = Protect(user.SecretAccessKey);
             await ExecuteAsync(c, tx, """
                 INSERT INTO Users (UserId,Email,PasswordHash,PasswordSalt,FirstName,LastName,Gender,Birthday,
                     AccessKeyId,SecretAccessKeyCiphertext,SecretWrappingKeyId,IsActive,CreatedUtc)
-                VALUES (@id,@email,@hash,@salt,@first,@last,@gender,@birthday,@access,@secret,@keyId,@active,@created)
+                SELECT @id,@email,@hash,@salt,@first,@last,@gender,@birthday,@access,@secret,@keyId,@active,@created
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM Users
+                    WHERE LOWER(Email)=LOWER(@email) AND LOWER(UserId)<>LOWER(@id)
+                )
                 ON CONFLICT (UserId) DO UPDATE SET Email=EXCLUDED.Email,PasswordHash=EXCLUDED.PasswordHash,
                     PasswordSalt=EXCLUDED.PasswordSalt,FirstName=EXCLUDED.FirstName,LastName=EXCLUDED.LastName,
                     Gender=EXCLUDED.Gender,Birthday=EXCLUDED.Birthday,AccessKeyId=EXCLUDED.AccessKeyId,
@@ -272,6 +278,17 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
                 ("secret", secret), ("keyId", _secretProtector.KeyId), ("active", user.IsActive),
                 ("created", user.CreatedUtc));
         }
+    }
+
+    internal static IReadOnlyList<UserRecord> CanonicalUsers(IEnumerable<UserRecord>? users)
+    {
+        var canonical = new List<UserRecord>();
+        var emails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var user in users ?? [])
+            if (emails.Add(user.Email.Trim()))
+                canonical.Add(user);
+
+        return canonical;
     }
 
     private static async Task ImportLoopsAsync(NpgsqlConnection c, NpgsqlTransaction tx,
@@ -306,9 +323,17 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
     }
 
     private static async Task ImportTopologyChildrenAsync(NpgsqlConnection c, NpgsqlTransaction tx,
-        LegacyCloudStateSnapshot s, CancellationToken ct)
+        LegacyCloudStateSnapshot s, string sourceSnapshotName, string sourceSha256, CancellationToken ct)
     {
         foreach (var member in s.LoopMembers ?? [])
+        {
+            if (!await ParentExistsAsync(c, tx, "Loops", "LoopId", member.LoopId, ct))
+            {
+                await QuarantineAsync(c, tx, sourceSnapshotName, sourceSha256, "LoopMember", member.Id,
+                    $"missing-parent:Loops/LoopId={member.LoopId}", member, ct);
+                continue;
+            }
+
             await ExecuteAsync(c, tx, """
                 INSERT INTO LoopMembers (MemberId,LoopId,AccountId,Email,FirstName,LastName,Gender,Birthday,IsChild,
                     PhoneNumber,Status,MemberType,Nickname,PhoneticName,FaceEnrolled,VoiceEnrolled,LegalGuardianId,
@@ -328,7 +353,22 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
                 ("voice", member.VoiceEnrolled), ("guardian", member.LegalGuardianId),
                 ("agreement", member.AgreementId), ("created", member.CreatedUtc),
                 ("portal", member.PortalEditedUtc));
+        }
+
         foreach (var person in s.People ?? [])
+        {
+            var missingParents = new List<string>();
+            if (!await ParentExistsAsync(c, tx, "Accounts", "AccountId", person.AccountId, ct))
+                missingParents.Add($"Accounts/AccountId={person.AccountId}");
+            if (!await ParentExistsAsync(c, tx, "Loops", "LoopId", person.LoopId, ct))
+                missingParents.Add($"Loops/LoopId={person.LoopId}");
+            if (missingParents.Count > 0)
+            {
+                await QuarantineAsync(c, tx, sourceSnapshotName, sourceSha256, "Person", person.PersonId,
+                    $"missing-parent:{string.Join(',', missingParents)}", person, ct);
+                continue;
+            }
+
             await ExecuteAsync(c, tx, """
                 INSERT INTO People (PersonId,AccountId,LoopId,RobotId,DisplayName,Alias,IsPrimary,CreatedUtc,UpdatedUtc)
                 VALUES (@id,@account,@loop,@robot,@display,@alias,@primary,@created,@updated)
@@ -337,7 +377,22 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
                 """, ct, ("id", person.PersonId), ("account", person.AccountId), ("loop", person.LoopId),
                 ("robot", person.RobotId), ("display", person.DisplayName), ("alias", person.Alias),
                 ("primary", person.IsPrimary), ("created", person.CreatedUtc), ("updated", person.UpdatedUtc));
+        }
+
         foreach (var observation in s.RecognitionObservations ?? [])
+        {
+            var missingParents = new List<string>();
+            if (!await ParentExistsAsync(c, tx, "Loops", "LoopId", observation.LoopId, ct))
+                missingParents.Add($"Loops/LoopId={observation.LoopId}");
+            if (!await ParentExistsAsync(c, tx, "LoopMembers", "MemberId", observation.MemberId, ct))
+                missingParents.Add($"LoopMembers/MemberId={observation.MemberId}");
+            if (missingParents.Count > 0)
+            {
+                await QuarantineAsync(c, tx, sourceSnapshotName, sourceSha256, "RecognitionObservation",
+                    observation.ObservationId, $"missing-parent:{string.Join(',', missingParents)}", observation, ct);
+                continue;
+            }
+
             await ExecuteAsync(c, tx, """
                 INSERT INTO RecognitionObservations (ObservationId,LoopId,MemberId,RobotId,Modality,Outcome,
                     Confidence,Source,ObservedUtc)
@@ -348,8 +403,32 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
                 ("modality", observation.Modality), ("outcome", observation.Outcome),
                 ("confidence", observation.Confidence), ("source", observation.Source),
                 ("observed", observation.ObservedUtc));
+        }
     }
 
+    private static async Task<bool> ParentExistsAsync(NpgsqlConnection c, NpgsqlTransaction tx,
+        string table, string keyColumn, string key, CancellationToken ct)
+    {
+        // Identifiers are selected exclusively by the importer, never from snapshot data.
+        await using var command = new NpgsqlCommand(
+            $"SELECT EXISTS (SELECT 1 FROM {table} WHERE {keyColumn}=@key)", c, tx);
+        command.Parameters.AddWithValue("key", key);
+        return (bool)(await command.ExecuteScalarAsync(ct) ?? false);
+    }
+
+    private static async Task QuarantineAsync<T>(NpgsqlConnection c, NpgsqlTransaction tx,
+        string sourceSnapshotName, string sourceSha256, string entityType, string entityKey, string reason,
+        T payload, CancellationToken ct)
+    {
+        await ExecuteAsync(c, tx, """
+            INSERT INTO CloudStateImportRejections
+                (SourceSnapshotName,SourceSha256,EntityType,EntityKey,Reason,Payload)
+            VALUES (@snapshot,@sha,@type,@key,@reason,@payload::jsonb)
+            ON CONFLICT (SourceSnapshotName,SourceSha256,EntityType,EntityKey,Reason)
+            DO UPDATE SET Payload=EXCLUDED.Payload,RejectedUtc=NOW()
+            """, ct, ("snapshot", sourceSnapshotName), ("sha", sourceSha256), ("type", entityType),
+            ("key", entityKey), ("reason", reason), ("payload", JsonSerializer.Serialize(payload)));
+    }
     private async Task ImportCatalogsAsync(NpgsqlConnection c, NpgsqlTransaction tx,
         LegacyCloudStateSnapshot s, CancellationToken ct)
     {

@@ -121,7 +121,7 @@ cleanup_complete=false
 remove_rule() {
   local resource_group="$1"
   local server_name="$2"
-  az postgres flexible-server firewall-rule delete     --resource-group "$resource_group"     --name "$server_name"     --rule-name "$rule_name"     --yes     --output none >/dev/null 2>&1 || true
+  az postgres flexible-server firewall-rule delete     --resource-group "$resource_group"     --server-name "$server_name"     --name "$rule_name"     --yes     --output none >/dev/null 2>&1 || true
 }
 
 cleanup() {
@@ -138,7 +138,7 @@ trap cleanup EXIT
 create_rule() {
   local resource_group="$1"
   local server_name="$2"
-  az postgres flexible-server firewall-rule create     --resource-group "$resource_group"     --name "$server_name"     --rule-name "$rule_name"     --start-ip-address "$runner_ip"     --end-ip-address "$runner_ip"     --output none >/dev/null
+  az postgres flexible-server firewall-rule create     --resource-group "$resource_group"     --server-name "$server_name"     --name "$rule_name"     --start-ip-address "$runner_ip"     --end-ip-address "$runner_ip"     --output none >/dev/null
 }
 
 create_rule "$source_resource_group" "$source_server"

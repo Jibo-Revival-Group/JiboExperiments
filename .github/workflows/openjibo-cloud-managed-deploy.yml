@@ -264,6 +264,10 @@ jobs:
           fi
 
           revision_name="$(az containerapp show             --resource-group "$OPENJIBO_RESOURCE_GROUP"             --name "$app_name"             --query properties.latestReadyRevisionName             --output tsv)"
+          revision_active=""
+          if [[ -n "$revision_name" ]]; then
+            revision_active="$(az containerapp revision show             --resource-group "$OPENJIBO_RESOURCE_GROUP"             --name "$app_name"             --revision "$revision_name"             --query properties.active             --output tsv)"
+          fi
           image="$(az containerapp show             --resource-group "$OPENJIBO_RESOURCE_GROUP"             --name "$app_name"             --query 'properties.template.containers[0].image'             --output tsv)"
           min_replicas="$(az containerapp show             --resource-group "$OPENJIBO_RESOURCE_GROUP"             --name "$app_name"             --query 'properties.template.scale.minReplicas'             --output tsv)"
           max_replicas="$(az containerapp show             --resource-group "$OPENJIBO_RESOURCE_GROUP"             --name "$app_name"             --query 'properties.template.scale.maxReplicas'             --output tsv)"
@@ -275,7 +279,7 @@ jobs:
           echo "min_replicas=${min_replicas:-1}" >> "$GITHUB_OUTPUT"
           echo "max_replicas=${max_replicas:-2}" >> "$GITHUB_OUTPUT"
 
-          if [[ -n "$revision_name" ]]; then
+          if [[ "$revision_active" == "true" ]]; then
             az containerapp revision deactivate               --resource-group "$OPENJIBO_RESOURCE_GROUP"               --name "$app_name"               --revision "$revision_name"               --output none
           fi
 
@@ -337,12 +341,16 @@ jobs:
         shell: bash
         env:
           PREVIOUS_APP: ${{ steps.previous.outputs.app_name }}
+          PREVIOUS_REVISION: ${{ steps.previous.outputs.revision_name }}
           PREVIOUS_IMAGE: ${{ steps.previous.outputs.image }}
           PREVIOUS_MIN_REPLICAS: ${{ steps.previous.outputs.min_replicas }}
           PREVIOUS_MAX_REPLICAS: ${{ steps.previous.outputs.max_replicas }}
         run: |
           echo "Deployment failed; restoring the previous image."
           az containerapp update             --resource-group "$OPENJIBO_RESOURCE_GROUP"             --name "$PREVIOUS_APP"             --image "$PREVIOUS_IMAGE"             --min-replicas "$PREVIOUS_MIN_REPLICAS"             --max-replicas "$PREVIOUS_MAX_REPLICAS"             --output none
+          if [[ -n "$PREVIOUS_REVISION" ]]; then
+            az containerapp revision activate               --resource-group "$OPENJIBO_RESOURCE_GROUP"               --name "$PREVIOUS_APP"               --revision "$PREVIOUS_REVISION"               --output none
+          fi
 
       - name: Create staging promotion gate
         if: success() && inputs.deployment_target == 'staging'

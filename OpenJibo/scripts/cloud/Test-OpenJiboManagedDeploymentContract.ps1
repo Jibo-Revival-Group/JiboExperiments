@@ -202,7 +202,7 @@ foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-m
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing hostname binding environment marker"
 }
 
-foreach ($marker in @("deployment_target", "openjibo-staging-gate", "clone-openjibo-managed-databases.sh", "production_backup_confirmed", "backup.backupRetentionDays", "revision deactivate", "Restore previous image after failure")) {
+foreach ($marker in @("deployment_target", "openjibo-staging-gate", "clone-openjibo-managed-databases.sh", "production_backup_confirmed", "backup.backupRetentionDays", "properties.active", '[[ "$revision_active" == "true" ]]', "revision deactivate", "revision activate", "PREVIOUS_REVISION", "Restore previous image after failure")) {
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing staging or promotion safeguard"
 }
 
@@ -222,7 +222,7 @@ foreach ($marker in @("--import-legacy-cloud-state", "--import-legacy-personal-m
     Assert-ContainsMarker -Text $linuxPrepareScriptText -Marker $marker -FailurePrefix "Managed database preparation script is missing expected marker"
 }
 
-foreach ($marker in @("pg_dump", "pg_restore", "Source and target resource groups must be different", "source and target PostgreSQL hosts are identical")) {
+foreach ($marker in @("pg_dump", "pg_restore", "firewall-rule create", "firewall-rule delete", '--server-name "$server_name"', '--name "$rule_name"', "Source and target resource groups must be different", "source and target PostgreSQL hosts are identical")) {
     Assert-ContainsMarker -Text $linuxCloneScriptText -Marker $marker -FailurePrefix "Staging clone script is missing expected safety marker"
 }
 if ($smokeScriptText -match [regex]::Escape('Host = "api.jibo.com"')) {

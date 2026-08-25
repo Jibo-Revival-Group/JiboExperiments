@@ -130,6 +130,18 @@ public sealed class CloudStateSnapshotImporterTests
     }
 
     [Fact]
+    public void CanonicalUsers_PreservesFirstCaseInsensitiveEmailMatch()
+    {
+        var first = new UserRecord { Id = "first", Email = "User@Example.com" };
+        var duplicate = new UserRecord { Id = "duplicate", Email = " user@example.COM " };
+        var distinct = new UserRecord { Id = "distinct", Email = "other@example.com" };
+
+        var canonical = PostgreSqlCloudStateSnapshotImporter.CanonicalUsers([first, duplicate, distinct]);
+
+        Assert.Equal([first, distinct], canonical);
+    }
+
+    [Fact]
     public async Task ExportBackupPayloads_UsesDeterministicVerifiedExternalPayloads()
     {
         var sink = new RecordingBackupPayloadStore();
@@ -189,8 +201,13 @@ public sealed class CloudStateSnapshotImporterTests
                                    "AccessKeyId":"access-1","SecretAccessKey":"secret-1"},
                                  "Robot":{"DeviceId":"device-1","RobotId":"robot-1","FriendlyName":"Jibo"},
                                  "Devices":[{"DeviceId":"device-1","RobotId":"robot-1","FriendlyName":"Jibo"}],
+                                 "Users":[{"Id":"legacy-user","Email":"existing@example.com",
+                                   "PasswordHash":"legacy-hash","Salt":"legacy-salt",
+                                   "AccessKeyId":"legacy-access","SecretAccessKey":"legacy-secret"}],
                                  "Loops":[{"LoopId":"loop-1","OwnerAccountId":"account-1",
                                    "RobotId":"robot-1","RobotFriendlyId":"device-1"}],
+                                 "People":[{"PersonId":"orphan-person","AccountId":"missing-account",
+                                   "LoopId":"loop-1","RobotId":"robot-1","DisplayName":"Orphan"}],
                                  "Sessions":[{"SessionId":"issued","Kind":"robot","AccountId":"account-1",
                                    "DeviceId":"observed-runtime","Token":"{{{token}}}",
                                    "CreatedUtc":"2026-08-20T00:00:00Z",
@@ -203,7 +220,9 @@ public sealed class CloudStateSnapshotImporterTests
                 await using var insert = connection.CreateCommand();
                 insert.CommandText = """
                                      INSERT INTO PersistenceSnapshots (SnapshotName,SnapshotJson)
-                                     VALUES ('cloud-state',@json)
+                                     VALUES ('cloud-state',@json);
+                                     INSERT INTO Users (UserId,Email,PasswordHash,PasswordSalt,AccessKeyId)
+                                     VALUES ('existing-user','Existing@Example.com','hash','salt','existing-access')
                                      """;
                 insert.Parameters.AddWithValue("json", sourceJson);
                 await insert.ExecuteNonQueryAsync();
@@ -226,6 +245,16 @@ public sealed class CloudStateSnapshotImporterTests
             Assert.Equal(1, await ScalarAsync<long>(scopedConnectionString, "SELECT COUNT(*) FROM Accounts"));
             Assert.Equal(1, await ScalarAsync<long>(scopedConnectionString, "SELECT COUNT(*) FROM Devices"));
             Assert.Equal(1, await ScalarAsync<long>(scopedConnectionString, "SELECT COUNT(*) FROM Loops"));
+            Assert.Equal(0, await ScalarAsync<long>(scopedConnectionString, "SELECT COUNT(*) FROM People"));
+            Assert.Equal(1, await ScalarAsync<long>(scopedConnectionString,
+                "SELECT COUNT(*) FROM CloudStateImportRejections"));
+            Assert.Equal("missing-parent:Accounts/AccountId=missing-account",
+                await ScalarAsync<string>(scopedConnectionString,
+                    "SELECT Reason FROM CloudStateImportRejections WHERE EntityType='Person' AND EntityKey='orphan-person'"));
+            Assert.Equal("orphan-person", await ScalarAsync<string>(scopedConnectionString,
+                "SELECT Payload->>'PersonId' FROM CloudStateImportRejections WHERE EntityType='Person'"));
+            Assert.Equal("existing-user", await ScalarAsync<string>(scopedConnectionString,
+                "SELECT UserId FROM Users WHERE LOWER(Email)='existing@example.com'"));
             Assert.Equal(PostgreSqlCloudStateSnapshotImporter.Sha256(token),
                 await ScalarAsync<string>(scopedConnectionString, "SELECT TokenHash FROM CloudAuthTokens"));
             Assert.Equal("device-1", await ScalarAsync<string>(scopedConnectionString,

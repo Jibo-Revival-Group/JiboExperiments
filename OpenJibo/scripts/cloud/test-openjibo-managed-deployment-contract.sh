@@ -240,7 +240,7 @@ for marker in "containerapp env show" "firewall-rule create" "firewall-rule upda
   fi
 done
 
-for marker in "deployment_target" "openjibo-staging-gate" "clone-openjibo-managed-databases.sh" "production_backup_confirmed" "backup.backupRetentionDays" "revision deactivate" "Restore previous image after failure"; do
+for marker in "deployment_target" "openjibo-staging-gate" "clone-openjibo-managed-databases.sh" "production_backup_confirmed" "backup.backupRetentionDays" "properties.active" '[[ "$revision_active" == "true" ]]' "revision deactivate" "revision activate" "PREVIOUS_REVISION" "Restore previous image after failure"; do
   if [[ "$workflow_text" != *"$marker"* ]]; then
     echo "Workflow is missing staging or promotion safeguard: $marker" >&2
     exit 1
@@ -275,7 +275,7 @@ for marker in "--import-legacy-cloud-state" "--import-legacy-personal-memory" "-
   fi
 done
 
-for marker in "pg_dump" "pg_restore" "Source and target resource groups must be different" "source and target PostgreSQL hosts are identical"; do
+for marker in "pg_dump" "pg_restore" "firewall-rule create" "firewall-rule delete" '--server-name "$server_name"' '--name "$rule_name"' "Source and target resource groups must be different" "source and target PostgreSQL hosts are identical"; do
   if [[ "$linux_clone_script_text" != *"$marker"* ]]; then
     echo "Staging clone script is missing expected safety marker: $marker" >&2
     exit 1

@@ -2117,7 +2117,7 @@ public sealed class JiboWebSocketServiceTests
             Binary = new byte[3000]
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yes",
@@ -2455,7 +2455,7 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-yesno-hints","data":{"text":"no"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("no",
@@ -2490,7 +2490,7 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-yesno-hints-yep","data":{"text":"yep"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yep",
@@ -2525,7 +2525,7 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-yesno-huh","data":{"text":"uh huh"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("uh huh",
@@ -2560,7 +2560,7 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-yesno-punctuation","data":{"text":"- Thank you. - Yes."}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("thank you yes",
@@ -2595,7 +2595,7 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-shared-yesno","data":{"text":"yes"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yes",
@@ -2629,7 +2629,7 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-shared-yesno-negative","data":{"text":"negative"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("no",
@@ -2694,7 +2694,7 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-alarm-change-yesno","data":{"text":"yes"}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         Assert.Equal("yes",
@@ -2704,6 +2704,284 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("clock/alarm_timer_change", rules[0].GetString());
         Assert.Equal("clock/alarm_timer_change",
             listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+    }
+
+    [Fact]
+    public async Task ClientAsr_ExerciseWantTo_MapsNoWithoutCompetingSpeech()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-exercise-want-to-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-exercise-want-to","data":{"hotphrase":false,"rules":["exercise/want_to","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-exercise-want-to-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-exercise-want-to","data":{"text":"no"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("exercise/want_to",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0].GetString());
+        Assert.Equal("exercise/want_to",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.DoesNotContain(replies, reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION",
+            StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ClientAsr_ExerciseWantToWithoutHints_MapsNoWithoutKnowledgeSearch()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-exercise-want-to-nohint-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-exercise-want-to-nohint","data":{"hotphrase":false,"rules":["exercise/want_to","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-exercise-want-to-nohint-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-exercise-want-to-nohint","data":{"text":"no"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("exercise/want_to",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.DoesNotContain(replies, reply =>
+            reply.Text is not null &&
+            reply.Text.Contains("According to", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task ClientAsr_GallerySharedYesNo_MapsNoWithoutCompetingSpeech()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-gallery-yesno-no-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-gallery-yesno-no","data":{"hotphrase":false,"rules":["shared/yes_no","globals/gui_nav","globals/mim_repeat","globals/global_commands_launch"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-gallery-yesno-no-token",
+            Text =
+                """{"type":"CONTEXT","transID":"trans-gallery-yesno-no","data":{"skill":{"id":"@be/gallery"}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-gallery-yesno-no-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-gallery-yesno-no","data":{"text":"no"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("shared/yes_no",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.DoesNotContain(replies, reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION",
+            StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ClientAsr_GalleryPromptEcho_DoesNotLaunchSnapshot()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-gallery-prompt-echo-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-gallery-prompt-echo","data":{"hotphrase":false,"rules":["shared/yes_no","globals/gui_nav"],"asr":{"hints":["$YESNO"]}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-gallery-prompt-echo-token",
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-gallery-prompt-echo","data":{"text":"do you want to take a picture"}}"""
+        });
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.NotEqual("snapshot",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.NotEqual("knowledge_search",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.DoesNotContain(replies, reply =>
+            reply.Text is not null &&
+            reply.Text.Contains("According to", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task ClientAsr_YogaPromptEcho_DoesNotSearchKnowledge()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-yoga-prompt-echo-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-yoga-prompt-echo","data":{"hotphrase":false,"rules":["exercise/want_to","globals/gui_nav"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-yoga-prompt-echo-token",
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-yoga-prompt-echo","data":{"text":"do you want to do yoga now"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("skill_listen",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("exercise/want_to",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.DoesNotContain(replies, reply =>
+            reply.Text is not null &&
+            reply.Text.Contains("According to", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(replies, reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION",
+            StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ClientAsr_ExerciseRoutineSelector_StaysLocal()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-exercise-routine-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-exercise-routine","data":{"hotphrase":false,"rules":["exercise/routine_selector","globals/gui_nav"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-exercise-routine-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-exercise-routine","data":{"text":"sun salutation"}}"""
+        });
+
+        Assert.Equal(2, replies.Count);
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.Equal("skill_listen",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.Equal("exercise/routine_selector",
+            listenPayload.RootElement.GetProperty("data").GetProperty("match").GetProperty("rule").GetString());
+        Assert.Equal("sun salutation",
+            listenPayload.RootElement.GetProperty("data").GetProperty("asr").GetProperty("text").GetString());
+        Assert.DoesNotContain(replies, reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION",
+            StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ClientAsr_HotphrasePromptEcho_DoesNotLaunchSnapshot()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-prompt-echo-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-prompt-echo","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-prompt-echo-token",
+            Text =
+                """{"type":"CLIENT_ASR","transID":"trans-hotphrase-prompt-echo","data":{"text":"do you want to take a picture"}}"""
+        });
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.NotEqual("snapshot",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.DoesNotContain(replies, reply =>
+            reply.Text is not null &&
+            reply.Text.Contains("According to", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(replies, reply => string.Equals(ReadReplyType(reply), "SKILL_ACTION",
+            StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ClientAsr_HotphraseNo_DoesNotSpeakKnowledgeSearch()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-no-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-hotphrase-no","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-no-token",
+            Text = """{"type":"CLIENT_ASR","transID":"trans-hotphrase-no","data":{"text":"no"}}"""
+        });
+
+        Assert.DoesNotContain(replies, reply =>
+            reply.Text is not null &&
+            reply.Text.Contains("According to", StringComparison.OrdinalIgnoreCase));
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.NotEqual("knowledge_search",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -4730,7 +5008,7 @@ public sealed class JiboWebSocketServiceTests
             Text = """{"type":"CLIENT_ASR","transID":"trans-settings-no","data":{"text":"No."}}"""
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
         var rules = listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules");
@@ -5778,7 +6056,7 @@ public sealed class JiboWebSocketServiceTests
             Binary = BuildOggFrame(0x00)
         });
 
-        Assert.Equal(3, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 

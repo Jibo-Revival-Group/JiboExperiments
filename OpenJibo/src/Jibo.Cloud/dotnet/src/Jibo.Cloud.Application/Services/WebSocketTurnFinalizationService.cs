@@ -1636,6 +1636,9 @@ public sealed class WebSocketTurnFinalizationService(
                 !string.Equals(plan.IntentName, "photo_gallery", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "snapshot", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(plan.IntentName, "photobooth", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(plan.IntentName, "skill_listen", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(plan.IntentName, "prompt_echo", StringComparison.OrdinalIgnoreCase) &&
+                !SkillListenOwnership.ShouldSuppressCompetingSpeech(finalizedTurn, plan.IntentName) &&
                 (messageType != "CLIENT_NLU" ||
                  string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase) ||
                  IsCloudOwnedPersonalReportIntent(plan.IntentName));
@@ -2193,11 +2196,14 @@ public sealed class WebSocketTurnFinalizationService(
     private static bool HasCloudHandledLocalPromptOpen(WebSocketTurnState turnState)
     {
         return turnState is { AwaitingTurnCompletion: true, SawListen: true } &&
-               turnState.ListenRules.Any(rule =>
-                   IsClockValueRule(rule) ||
-                   IsGalleryPreviewRule(rule) ||
-                   IsConstrainedYesNoRule(rule) ||
-                   IsIntroductionsRule(rule));
+               (turnState.ListenAsrHints.Any(static hint =>
+                    string.Equals(hint, "$YESNO", StringComparison.OrdinalIgnoreCase)) ||
+                turnState.ListenRules.Any(rule =>
+                    IsClockValueRule(rule) ||
+                    IsGalleryPreviewRule(rule) ||
+                    IsConstrainedYesNoRule(rule) ||
+                    IsIntroductionsRule(rule) ||
+                    rule.StartsWith("exercise/", StringComparison.OrdinalIgnoreCase)));
     }
 
     private static string? ExtractDataPayload(string? text)
@@ -2321,6 +2327,8 @@ public sealed class WebSocketTurnFinalizationService(
         if (listenRules.Any(rule =>
                 string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase))) return true;
 
+        if (SkillListenOwnership.IsSkillOwnedListen(turn) && IsYesNoReplyTranscript(transcript)) return true;
+
         if (IsLowSignalSingleTokenTranscript(transcript)) return false;
 
         if (SingleTokenUsableTranscripts.Contains(transcript)) return true;
@@ -2336,10 +2344,23 @@ public sealed class WebSocketTurnFinalizationService(
 
     private static bool IsYesNoTurn(TurnContext turn)
     {
-        return ReadRules(turn, "listenRules")
-            .Concat(ReadRules(turn, "clientRules"))
+        var listenRules = ReadRules(turn, "listenRules").ToArray();
+        var clientRules = ReadRules(turn, "clientRules").ToArray();
+        if (listenRules
+            .Concat(clientRules)
             .Concat(ReadRules(turn, "listenAsrHints"))
-            .Any(IsYesNoRule);
+            .Any(IsYesNoRule))
+            return true;
+
+        if (!SkillListenOwnership.IsSkillOwnedListen(
+                SkillListenOwnership.ReadListenHotphrase(turn),
+                listenRules,
+                clientRules))
+            return false;
+
+        var transcript = NormalizeUsableTranscript(turn.NormalizedTranscript ?? turn.RawTranscript);
+        return IsYesNoReplyTranscript(transcript) ||
+               TryClassifyYesNoReply(transcript) == YesNoReply.Ambiguous;
     }
 
     private static bool IsActivePersonalReportTurn(TurnContext turn)
@@ -2382,8 +2403,9 @@ public sealed class WebSocketTurnFinalizationService(
     private static string? ReadPrimaryYesNoRule(TurnContext turn)
     {
         return ReadRules(turn, "listenRules")
-            .Concat(ReadRules(turn, "clientRules"))
-            .FirstOrDefault(IsConstrainedYesNoRule);
+                   .Concat(ReadRules(turn, "clientRules"))
+                   .FirstOrDefault(IsConstrainedYesNoRule) ??
+               SkillListenOwnership.ReadPrimarySkillRule(turn);
     }
 
     private static WebSocketReply[] BuildLocalNoInputReplies(
@@ -2435,7 +2457,8 @@ public sealed class WebSocketTurnFinalizationService(
                string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase) ||
                IsClockValueRule(rule) ||
                IsGalleryPreviewRule(rule) ||
-               IsConstrainedYesNoRule(rule);
+               IsConstrainedYesNoRule(rule) ||
+               SkillListenOwnership.IsSkillRule(rule);
     }
 
     private static bool IsClockValueRule(string rule)
@@ -2872,6 +2895,12 @@ public sealed class WebSocketTurnFinalizationService(
         if (IsHotphraseNonCommandTranscript(normalized))
         {
             reason = "hotphrase_non_command";
+            return true;
+        }
+
+        if (TranscriptHeuristics.IsLikelySkillOfferPromptEcho(normalized))
+        {
+            reason = "hotphrase_prompt_echo";
             return true;
         }
 

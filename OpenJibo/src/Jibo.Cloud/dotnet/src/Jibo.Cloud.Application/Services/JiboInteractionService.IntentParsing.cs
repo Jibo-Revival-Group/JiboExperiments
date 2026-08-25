@@ -185,10 +185,23 @@ public sealed partial class JiboInteractionService
 
     private static bool IsYesNoTurn(TurnContext turn)
     {
-        return ReadRules(turn, "listenRules")
-            .Concat(ReadRules(turn, "clientRules"))
+        var listenRules = ReadRules(turn, "listenRules").ToArray();
+        var clientRules = ReadRules(turn, "clientRules").ToArray();
+        if (listenRules
+            .Concat(clientRules)
             .Concat(ReadRules(turn, "listenAsrHints"))
-            .Any(IsYesNoRule);
+            .Any(IsYesNoRule))
+            return true;
+
+        if (!SkillListenOwnership.IsSkillOwnedListen(
+                SkillListenOwnership.ReadListenHotphrase(turn),
+                listenRules,
+                clientRules))
+            return false;
+
+        var transcript = turn.NormalizedTranscript ?? turn.RawTranscript;
+        return TryClassifyYesNoReply(NormalizeCommandPhrase(transcript ?? string.Empty)) is
+            YesNoReply.Affirmative or YesNoReply.Negative or YesNoReply.Ambiguous;
     }
 
     private static string? ReadPrimaryYesNoRule(
@@ -196,8 +209,9 @@ public sealed partial class JiboInteractionService
         IReadOnlyList<string> listenRules)
     {
         return listenRules
-            .Concat(clientRules)
-            .FirstOrDefault(IsConstrainedYesNoRule);
+                   .Concat(clientRules)
+                   .FirstOrDefault(IsConstrainedYesNoRule) ??
+               SkillListenOwnership.ReadPrimarySkillRule(listenRules, clientRules);
     }
 
     private static bool IsYesNoRule(string rule)

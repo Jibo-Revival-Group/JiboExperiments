@@ -20,12 +20,16 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var clientIntent = ReadAttribute(turn, "clientIntent");
         var rules = ReadRules(turn, messageType);
         var yesNoRule = ReadYesNoRule(turn);
+        var primarySkillRule = SkillListenOwnership.ReadPrimarySkillRule(turn);
         var isYesNoTurn = !string.IsNullOrWhiteSpace(yesNoRule);
         var isYesNoIntent = string.Equals(plan.IntentName, "yes", StringComparison.OrdinalIgnoreCase) ||
                             string.Equals(plan.IntentName, "no", StringComparison.OrdinalIgnoreCase);
-        // tutorial/yes_no is handled entirely by the robot-local tutorial skill: it speaks its own
-        // response and does not need a competing chitchat SKILL_ACTION from the cloud.
-        var isSkillOwnedYesNoTurn = IsYesNoListenTurn(turn);
+        var isSkillListenIntent = string.Equals(plan.IntentName, "skill_listen", StringComparison.OrdinalIgnoreCase);
+        var isPromptEchoIntent = string.Equals(plan.IntentName, "prompt_echo", StringComparison.OrdinalIgnoreCase);
+        // Robot-owned skill listens speak for themselves. Personal report is cloud-owned and still
+        // needs a SKILL_ACTION.
+        var isSkillOwnedYesNoTurn = IsYesNoListenTurn(turn) &&
+                                    SkillListenOwnership.ShouldSuppressCompetingSpeech(turn, plan.IntentName);
         var isWordOfDayLaunch = string.Equals(plan.IntentName, "word_of_the_day", StringComparison.OrdinalIgnoreCase);
         var isWordOfDayGuess =
             string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase);
@@ -112,11 +116,13 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                         ? nluGuess
                                         : isYesNoTurn && isYesNoIntent
                                             ? transcript
-                                            : string.Equals(messageType, "CLIENT_NLU",
-                                                  StringComparison.OrdinalIgnoreCase) &&
-                                              !string.IsNullOrWhiteSpace(clientIntent)
-                                                ? clientIntent
-                                                : transcript;
+                                            : isPromptEchoIntent
+                                                ? string.Empty
+                                                : string.Equals(messageType, "CLIENT_NLU",
+                                                      StringComparison.OrdinalIgnoreCase) &&
+                                                  !string.IsNullOrWhiteSpace(clientIntent)
+                                                    ? clientIntent
+                                                    : transcript;
         var outboundRules = isProactivePizzaFactOffer || isProactivePizzaFactFollowUp
             ? ["surprises-date/offer_date_fact"]
             : isWordOfDayLaunch
@@ -143,7 +149,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                             ? ["word-of-the-day/puzzle"]
                                             : isYesNoTurn && isYesNoIntent
                                                 ? [yesNoRule!]
-                                                : rules;
+                                                : isSkillListenIntent && !string.IsNullOrWhiteSpace(primarySkillRule)
+                                                    ? [primarySkillRule]
+                                                    : rules;
         var entities = ReadEntities(
             turn,
             messageType,
@@ -459,7 +467,11 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // Don't emit a chitchat SKILL_ACTION for tutorial yes/no turns: the tutorial skill handles
         // the response locally. Sending a competing chitchat-skill action with final:true causes the
         // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
-        if (emitSkillActions && speak is not null && !(isYesNoIntent && isSkillOwnedYesNoTurn))
+        if (emitSkillActions &&
+            speak is not null &&
+            !isSkillListenIntent &&
+            !isPromptEchoIntent &&
+            !(isYesNoIntent && isSkillOwnedYesNoTurn))
             messages.Add(new SocketReplyPlan(
                 JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill, outboundAsrText)),
                 75));
@@ -692,14 +704,12 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
     private static bool IsYesNoListenTurn(TurnContext turn)
     {
-        // Robot-local yes/no turns: the active skill speaks its own response and does not need a
-        // competing chitchat SKILL_ACTION from the cloud.
-        //   tutorial/*           - the on-robot tutorial skill (yes_no after dance, keep_photo, ...)
-        //   create/is_it_a_keeper - @be/create photo-save prompt
-        //   surprises-date/offer_date_fact - @be/surprises-date fact-offer prompt
-        // Other yes/no rules (shared/yes_no, surprises-ota/want_to_download_now, etc.) are
-        // cloud-side and do need a SKILL_ACTION reply.
-        return ReadRuleValues(turn).Any(IsRobotLocalYesNoRule);
+        // Robot-local yes/no and other skill-owned listens speak their own response. Personal
+        // report is cloud-owned and still needs a competing SKILL_ACTION.
+        if (SkillListenOwnership.IsCloudOwnedFollowUp(turn)) return false;
+
+        return ReadRuleValues(turn).Any(IsRobotLocalYesNoRule) ||
+               SkillListenOwnership.IsSkillOwnedListen(turn);
     }
 
     private static bool IsRobotLocalYesNoRule(string rule)
@@ -711,7 +721,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
 
     private static string? ReadYesNoRule(TurnContext turn)
     {
-        return ReadRuleValues(turn)
+        var constrained = ReadRuleValues(turn)
             .FirstOrDefault(static rule =>
                 string.Equals(rule, "clock/alarm_timer_change", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "clock/alarm_timer_none_set", StringComparison.OrdinalIgnoreCase) ||
@@ -720,6 +730,11 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 string.Equals(rule, "surprises-date/offer_date_fact", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(rule, "surprises-ota/want_to_download_now", StringComparison.OrdinalIgnoreCase) ||
                 IsRobotLocalYesNoRule(rule));
+        if (!string.IsNullOrWhiteSpace(constrained)) return constrained;
+
+        if (!SkillListenOwnership.IsSkillOwnedListen(turn)) return null;
+
+        return SkillListenOwnership.ReadPrimarySkillRule(turn);
     }
 
     private static bool ShouldIncludeCreateDomain(string? yesNoRule)

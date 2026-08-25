@@ -21,18 +21,24 @@ public sealed partial class JiboInteractionService
         if (emotionDecision is not null) return emotionDecision;
 
         var isWhoWhatLookup = WikipediaLookupParser.TryParse(transcript, out _);
+        var skipKnowledgeSearch = SkillListenOwnership.IsNonQuestionKnowledgeQuery(lowered);
         var willSearch =
-            isWhoWhatLookup ||
-            (knowledgeSearchService?.IsConfigured == true);
+            !skipKnowledgeSearch &&
+            (isWhoWhatLookup ||
+             (knowledgeSearchService?.IsConfigured == true));
 
         if (willSearch)
             await EnsureSearchThinkingPreludeAsync(cancellationToken);
 
-        var wikipediaLookup = await TryLookupWikipediaAsync(transcript, cancellationToken);
+        var wikipediaLookup = skipKnowledgeSearch
+            ? null
+            : await TryLookupWikipediaAsync(transcript, cancellationToken);
         if (IsWikipediaFound(wikipediaLookup))
             return BuildWikipediaFoundDecision(wikipediaLookup!);
 
-        var searchDecision = await TryBuildKnowledgeSearchDecisionAsync(transcript, cancellationToken);
+        var searchDecision = skipKnowledgeSearch
+            ? null
+            : await TryBuildKnowledgeSearchDecisionAsync(transcript, cancellationToken);
         if (IsKnowledgeSearchFound(searchDecision))
             return searchDecision!;
 
@@ -103,6 +109,7 @@ public sealed partial class JiboInteractionService
 
         var query = NormalizeCommandPhrase(transcript).Trim();
         if (string.IsNullOrWhiteSpace(query)) return null;
+        if (SkillListenOwnership.IsNonQuestionKnowledgeQuery(query)) return null;
 
         KnowledgeSearchResult? result;
         try

@@ -15,7 +15,8 @@ public sealed partial class JiboInteractionService
         string? pendingProactivityOffer,
         bool isYesNoTurn,
         bool isTimerValueTurn,
-        bool isAlarmValueTurn)
+        bool isAlarmValueTurn,
+        bool isSkillOwnedListen)
     {
         var wordOfDayPuzzleTurn = clientRules.Concat(listenRules)
             .Any(rule => string.Equals(rule, "word-of-the-day/puzzle", StringComparison.OrdinalIgnoreCase));
@@ -48,11 +49,15 @@ public sealed partial class JiboInteractionService
             if (IsNegativeReply(loweredTranscript)) return "proactive_offer_declined";
         }
 
+        if (TranscriptHeuristics.IsLikelyPromptEchoTranscript(loweredTranscript) &&
+            (isYesNoTurn || isSkillOwnedListen))
+            return "skill_listen";
+
+        if (TranscriptHeuristics.IsLikelySkillOfferPromptEcho(loweredTranscript))
+            return isYesNoTurn || isSkillOwnedListen ? "skill_listen" : "prompt_echo";
+
         if (isYesNoTurn)
         {
-            if (TranscriptHeuristics.IsLikelyPromptEchoTranscript(loweredTranscript))
-                return "yes_no_clarify";
-
             var yesNoReply = TryClassifyYesNoReply(NormalizeCommandPhrase(loweredTranscript));
             switch (yesNoReply)
             {
@@ -451,6 +456,12 @@ public sealed partial class JiboInteractionService
         if (IsSleepCommand(loweredTranscript)) return "sleep";
 
         if (IsWakeUpCommand(loweredTranscript)) return "wake_up";
+
+        if ((isYesNoTurn || isSkillOwnedListen) &&
+            !isTimerValueTurn &&
+            !isAlarmValueTurn &&
+            !wordOfDayPuzzleTurn)
+            return "skill_listen";
 
         if (MatchesAny(
                 loweredTranscript,

@@ -76,6 +76,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var reportWeatherCondition = ReadSkillPayloadString(skill, "weatherCondition");
         var nluGuess = ReadClientEntity(turn, "guess");
         var wordOfDayGuess = ResolveWordOfDayGuess(turn, transcript, nluGuess);
+        var isCloudOwnedFollowUp = SkillListenOwnership.IsCloudOwnedFollowUp(turn);
         var outboundIntent = isGlobalCommand && !string.IsNullOrWhiteSpace(globalIntent)
             ? globalIntent
             : isWordOfDayLaunch
@@ -94,7 +95,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                         ? "guess"
                                         : string.Equals(messageType, "CLIENT_NLU",
                                               StringComparison.OrdinalIgnoreCase) &&
-                                          !string.IsNullOrWhiteSpace(clientIntent)
+                                          !string.IsNullOrWhiteSpace(clientIntent) &&
+                                          !isCloudOwnedFollowUp
                                             ? clientIntent
                                             : plan.IntentName ?? "unknown";
         var outboundAsrText = isWordOfDayGuess && !string.IsNullOrWhiteSpace(wordOfDayGuess)
@@ -120,7 +122,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                                 ? string.Empty
                                                 : string.Equals(messageType, "CLIENT_NLU",
                                                       StringComparison.OrdinalIgnoreCase) &&
-                                                  !string.IsNullOrWhiteSpace(clientIntent)
+                                                  !string.IsNullOrWhiteSpace(clientIntent) &&
+                                                  !isCloudOwnedFollowUp
                                                     ? clientIntent
                                                     : transcript;
         var outboundRules = isProactivePizzaFactOffer || isProactivePizzaFactFollowUp
@@ -412,6 +415,7 @@ public sealed class ResponsePlanToSocketMessagesMapper
         }
 
         if (isClockSkillLaunch &&
+            !isCloudOwnedFollowUp &&
             !string.Equals(messageType, "CLIENT_NLU", StringComparison.OrdinalIgnoreCase) &&
             !IsLocalClockFollowUpTurn(rules))
         {

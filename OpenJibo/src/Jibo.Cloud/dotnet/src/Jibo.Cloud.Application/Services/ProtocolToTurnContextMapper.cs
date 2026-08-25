@@ -69,6 +69,11 @@ public sealed class ProtocolToTurnContextMapper
             attributes[pair.Key] = pair.Value;
         }
 
+        if (session.Metadata.TryGetValue(SkillListenOwnership.LastContextSkillIdKey, out var lastContextSkillId) &&
+            lastContextSkillId is string lastContextSkillIdText &&
+            !string.IsNullOrWhiteSpace(lastContextSkillIdText))
+            attributes[SkillListenOwnership.LastContextSkillIdKey] = lastContextSkillIdText;
+
         attributes["listenHotphrase"] = turnState.ListenHotphrase;
 
         if (turnState.ListenRules.Count > 0) attributes["listenRules"] = turnState.ListenRules;
@@ -130,18 +135,6 @@ public sealed class ProtocolToTurnContextMapper
 
             if (!root.TryGetProperty("data", out var data)) return null;
 
-            if (data.TryGetProperty("text", out var transcript) && transcript.ValueKind == JsonValueKind.String)
-                return transcript.GetString();
-
-            if (data.TryGetProperty("asr", out var asr) &&
-                asr.ValueKind == JsonValueKind.Object &&
-                asr.TryGetProperty("text", out var asrText) &&
-                asrText.ValueKind == JsonValueKind.String)
-                return asrText.GetString();
-
-            if (data.TryGetProperty("transcriptHint", out var transcriptHint) &&
-                transcriptHint.ValueKind == JsonValueKind.String) return transcriptHint.GetString();
-
             if (data.TryGetProperty("intent", out var intent) && intent.ValueKind == JsonValueKind.String)
                 attributes["clientIntent"] = intent.GetString();
 
@@ -166,6 +159,19 @@ public sealed class ProtocolToTurnContextMapper
 
             if (data.TryGetProperty("entities", out var entities) && entities.ValueKind == JsonValueKind.Object)
                 attributes["clientEntities"] = entities.Clone();
+
+            if (data.TryGetProperty("text", out var transcript) && transcript.ValueKind == JsonValueKind.String)
+                return transcript.GetString();
+
+            if (data.TryGetProperty("asr", out var asr) &&
+                asr.ValueKind == JsonValueKind.Object &&
+                asr.TryGetProperty("text", out var asrText) &&
+                asrText.ValueKind == JsonValueKind.String)
+                return asrText.GetString();
+
+            if (data.TryGetProperty("transcriptHint", out var transcriptHint) &&
+                transcriptHint.ValueKind == JsonValueKind.String)
+                return transcriptHint.GetString();
 
             return intent.ValueKind == JsonValueKind.String ? intent.GetString() : null;
         }

@@ -5899,6 +5899,29 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_NimbusContextSkill_ClientAskForTime_StaysInCloudConversation()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "what time is it",
+            NormalizedTranscript = "what time is it",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["messageType"] = "CLIENT_NLU",
+                ["clientIntent"] = "askForTime",
+                ["listenHotphrase"] = true,
+                ["listenRules"] = (string[])["launch", "globals/global_commands_launch"],
+                [SkillListenOwnership.LastContextSkillIdKey] = "@be/nimbus"
+            }
+        });
+
+        Assert.NotEqual("time", decision.IntentName);
+        Assert.NotEqual("@be/clock", decision.SkillName);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_WhatTimeIsIt_MapsToLocalClockTimeIntent()
     {
         var service = CreateService();

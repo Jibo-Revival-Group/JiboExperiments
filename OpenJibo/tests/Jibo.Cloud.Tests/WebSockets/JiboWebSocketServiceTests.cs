@@ -3038,6 +3038,68 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientNlu_NimbusFollowUp_AskForTime_DoesNotLaunchClock()
+    {
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-nimbus-clientnlu-time-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-nimbus-hello","data":{"text":"hello jibo","rules":["wake-word"]}}"""
+        });
+
+        var session = _store.FindSessionByToken("hub-nimbus-clientnlu-time-token");
+        Assert.NotNull(session);
+        Assert.Equal("chitchat-skill", session.Metadata[SkillListenOwnership.LastContextSkillIdKey]?.ToString());
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-nimbus-clientnlu-time-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-nimbus-ask-time","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-nimbus-clientnlu-time-token",
+            Text =
+                """{"type":"CONTEXT","transID":"trans-nimbus-ask-time","data":{"skill":{"id":"@be/nimbus"}}}"""
+        });
+
+        var replies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-nimbus-clientnlu-time-token",
+            Text =
+                """{"type":"CLIENT_NLU","transID":"trans-nimbus-ask-time","data":{"intent":"askForTime","text":"what time is it","rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+        Assert.NotEqual("askForTime",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+        Assert.DoesNotContain(replies, reply =>
+            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
+        Assert.Equal(3, replies.Count);
+        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
+        Assert.Equal("EOS", ReadReplyType(replies[1]));
+        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
+
+        using var skillPayload = JsonDocument.Parse(replies[2].Text!);
+        Assert.NotEqual("@be/clock",
+            skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+    }
+
+    [Fact]
     public async Task BufferedAudio_YesNoPromptWithSttFailure_AutoFinalizesAsLocalNoInput()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope

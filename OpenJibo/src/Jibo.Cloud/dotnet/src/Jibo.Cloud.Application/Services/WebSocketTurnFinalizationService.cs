@@ -447,6 +447,7 @@ public sealed class WebSocketTurnFinalizationService(
             if (cloudStateStore is not null && !string.IsNullOrWhiteSpace(session.DeviceId))
                 cloudStateStore.ReinheritDialogMetadata(session);
             PersistContextRelease(session, turnState.ContextPayload ?? envelope.Text);
+            PersistContextSkillId(session, envelope.Text);
 
             if (TryReadContextProperty(envelope.Text, "audioTranscriptHint", out var transcriptHint) &&
                 !string.IsNullOrWhiteSpace(transcriptHint))
@@ -538,6 +539,28 @@ public sealed class WebSocketTurnFinalizationService(
                     : session.DeviceId,
             release,
             null);
+    }
+
+    private static void PersistContextSkillId(CloudSession session, string? text)
+    {
+        var skillId = TryReadContextSkillId(text);
+        if (string.IsNullOrWhiteSpace(skillId)) return;
+
+        session.Metadata[SkillListenOwnership.LastContextSkillIdKey] = skillId;
+    }
+
+    private static void PersistInvokedSkillId(
+        CloudSession session,
+        InvokeNativeSkillAction? skill,
+        bool keepMicOpen)
+    {
+        var skillId = SkillListenOwnership.ReadInvokedSkillId(skill);
+        if (string.IsNullOrWhiteSpace(skillId) && keepMicOpen)
+            skillId = "chitchat-skill";
+
+        if (string.IsNullOrWhiteSpace(skillId)) return;
+
+        session.Metadata[SkillListenOwnership.LastContextSkillIdKey] = skillId;
     }
 
     public async Task<IReadOnlyList<WebSocketReply>> HandleTurnAsync(
@@ -1521,6 +1544,7 @@ public sealed class WebSocketTurnFinalizationService(
             await ApplyContextUpdatesAsync(session, plan.ContextUpdates, envelope, plan.IntentName, cancellationToken);
 
             var invokedSkillAction = plan.Actions.OfType<InvokeNativeSkillAction>().FirstOrDefault();
+            PersistInvokedSkillId(session, invokedSkillAction, plan.FollowUp.KeepMicOpen);
             if ((string.Equals(plan.IntentName, "weather", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(plan.IntentName, "news", StringComparison.OrdinalIgnoreCase)) &&
                 invokedSkillAction is not null)
@@ -1641,7 +1665,8 @@ public sealed class WebSocketTurnFinalizationService(
                 !SkillListenOwnership.ShouldSuppressCompetingSpeech(finalizedTurn, plan.IntentName) &&
                 (messageType != "CLIENT_NLU" ||
                  string.Equals(plan.IntentName, "word_of_the_day_guess", StringComparison.OrdinalIgnoreCase) ||
-                 IsCloudOwnedPersonalReportIntent(plan.IntentName));
+                 IsCloudOwnedPersonalReportIntent(plan.IntentName) ||
+                 ShouldSpeakCloudOwnedClientNlu(finalizedTurn, plan.IntentName));
             var replies = ResponsePlanToSocketMessagesMapper.Map(plan, finalizedTurn, session, emitSkillActions)
                 .Select(map => new WebSocketReply
                 {
@@ -2374,6 +2399,19 @@ public sealed class WebSocketTurnFinalizationService(
     {
         return !string.IsNullOrWhiteSpace(intentName) &&
                intentName.StartsWith("personal_report_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ShouldSpeakCloudOwnedClientNlu(TurnContext turn, string? intentName)
+    {
+        if (!SkillListenOwnership.IsCloudOwnedFollowUp(turn)) return false;
+        if (SkillListenOwnership.IsHeyJiboSkillLaunch(intentName)) return false;
+
+        var clientIntent = ReadAttribute(turn, "clientIntent");
+        if (!string.IsNullOrWhiteSpace(clientIntent) &&
+            string.Equals(intentName, clientIntent, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return true;
     }
 
     private static bool IsBadAppleSkillLaunch(ResponsePlan plan)

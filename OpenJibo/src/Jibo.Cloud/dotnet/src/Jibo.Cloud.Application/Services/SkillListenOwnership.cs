@@ -5,6 +5,7 @@ namespace Jibo.Cloud.Application.Services;
 
 internal static class SkillListenOwnership
 {
+    internal const string LastContextSkillIdKey = "lastContextSkillId";
     private static readonly HashSet<string> NonQuestionKnowledgeTokens = new(StringComparer.Ordinal)
     {
         "no",
@@ -114,11 +115,11 @@ internal static class SkillListenOwnership
 
     public static bool IsCloudOwnedFollowUp(TurnContext turn)
     {
+        if (IsPersonalReportFollowUp(turn)) return true;
+
         // Robot MIM listens (gallery, yoga, clock values) keep local ownership even if a
         // previous Nimbus turn left FollowUpOpen.
         if (IsSkillOwnedListen(turn)) return false;
-
-        if (IsPersonalReportFollowUp(turn)) return true;
 
         if (turn.InputMode == TurnInputMode.FollowUp || ReadFlag(turn, "followUpOpen"))
             return true;
@@ -127,6 +128,28 @@ internal static class SkillListenOwnership
             return true;
 
         return false;
+    }
+
+    public static bool IsNimbusConversationSkill(string? skillId)
+    {
+        return string.Equals(skillId, "@be/nimbus", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(skillId, "chitchat-skill", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(skillId, "answer", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static string? ReadInvokedSkillId(InvokeNativeSkillAction? skill)
+    {
+        if (skill is null) return null;
+
+        if (skill.Payload is not null &&
+            skill.Payload.TryGetValue("skillId", out var payloadSkillId) &&
+            payloadSkillId is not null)
+        {
+            var fromPayload = payloadSkillId.ToString();
+            if (!string.IsNullOrWhiteSpace(fromPayload)) return fromPayload;
+        }
+
+        return string.IsNullOrWhiteSpace(skill.SkillName) ? null : skill.SkillName;
     }
 
     public static bool ShouldStayInCloudConversation(TurnContext turn, string? intentName)
@@ -193,6 +216,9 @@ internal static class SkillListenOwnership
 
     private static bool IsNimbusContextSkill(TurnContext turn)
     {
+        if (IsNimbusConversationSkill(ReadAttribute(turn, LastContextSkillIdKey)))
+            return true;
+
         if (!turn.Attributes.TryGetValue("context", out var value) || value is null)
             return false;
 
@@ -209,14 +235,21 @@ internal static class SkillListenOwnership
                 id.ValueKind != JsonValueKind.String)
                 return false;
 
-            var skillId = id.GetString();
-            return string.Equals(skillId, "@be/nimbus", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(skillId, "chitchat-skill", StringComparison.OrdinalIgnoreCase);
+            return IsNimbusConversationSkill(id.GetString());
         }
         catch (JsonException)
         {
             return false;
         }
+    }
+
+    private static string? ReadAttribute(TurnContext turn, string key)
+    {
+        if (!turn.Attributes.TryGetValue(key, out var value) || value is null)
+            return null;
+
+        var text = value.ToString();
+        return string.IsNullOrWhiteSpace(text) ? null : text;
     }
 
     private static bool ReadFlag(TurnContext turn, string key)

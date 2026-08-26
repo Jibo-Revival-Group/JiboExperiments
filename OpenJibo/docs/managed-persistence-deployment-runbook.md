@@ -146,7 +146,9 @@ Run the workflow with:
 
 If the production resource group moved to another Azure subscription, `uniqueString(resourceGroup().id)` changes even though the resources moved intact. Supply all six `existing_*_name` inputs together so the workflow reuses the original Log Analytics workspace, Container Registry, Key Vault, Storage Account, PostgreSQL server, and Speech Services account. Recover these exact names from the active Container App configuration or the most recent successful production deployment; never mix old and newly generated foundation names.
 
-Promotion is refused if the staging gate is missing, belongs to another commit, lacks a passing smoke test, backup confirmation is absent, or PITR retention is below seven days.
+A subscription move also changes the Container App `customDomainVerificationId`. Before promotion, keep every production hostname CNAME pointed directly at the generated Container App FQDN and replace each `asuid.<hostname>` TXT value with the current verification ID reported by the production Container App. This applies to the three `openjibo.com` hosts and both native `jibo.pro` compatibility hosts. The production DNS preflight verifies all five CNAME and TXT pairs before the image build or maintenance window begins.
+
+Promotion is refused if the staging gate is missing, belongs to another commit, lacks a passing smoke test, backup confirmation is absent, PITR retention is below seven days, or production hostname DNS is not ready.
 
 Downtime begins when the old revision is quiesced and ends after the new revision passes smoke checks.
 

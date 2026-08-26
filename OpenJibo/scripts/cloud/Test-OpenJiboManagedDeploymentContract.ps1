@@ -209,7 +209,7 @@ foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-m
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing hostname binding environment marker"
 }
 
-foreach ($marker in @("deployment_target", "openjibo-staging-gate", "clone-openjibo-managed-databases.sh", "production_backup_confirmed", "backup.backupRetentionDays", "properties.active", '[[ "$revision_active" == "true" ]]', "revision deactivate", "revision activate", "PREVIOUS_REVISION", "Restore previous image after failure", "Run deployed WebSocket release smoke", "invoke-release-smoke.mjs", "webSocketReleaseSmoke")) {
+foreach ($marker in @("deployment_target", "openjibo-staging-gate", "clone-openjibo-managed-databases.sh", "production_backup_confirmed", "backup.backupRetentionDays", "Verify production hostname DNS prerequisites", "customDomainVerificationId", "dig +short CNAME", "dig +short TXT", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "properties.active", '[[ "$revision_active" == "true" ]]', '[[ "$previous_revision_active" != "true" ]]', "already active", "revision deactivate", "revision activate", "PREVIOUS_REVISION", "Restore previous image after failure", "Run deployed WebSocket release smoke", "invoke-release-smoke.mjs", "webSocketReleaseSmoke")) {
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing staging or promotion safeguard"
 }
 

@@ -11,7 +11,12 @@ search_backend=""
 search_fallback=""
 postgres_admin_login="openjiboadmin"
 postgres_admin_password=""
+log_analytics_workspace_name=""
+container_registry_name=""
+key_vault_name=""
+storage_account_name=""
 postgres_server_name=""
+speech_services_account_name=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -59,6 +64,26 @@ while [[ $# -gt 0 ]]; do
       postgres_server_name="${2:-}"
       shift 2
       ;;
+    --log-analytics-workspace-name)
+      log_analytics_workspace_name="${2:-}"
+      shift 2
+      ;;
+    --container-registry-name)
+      container_registry_name="${2:-}"
+      shift 2
+      ;;
+    --key-vault-name)
+      key_vault_name="${2:-}"
+      shift 2
+      ;;
+    --storage-account-name)
+      storage_account_name="${2:-}"
+      shift 2
+      ;;
+    --speech-services-account-name)
+      speech_services_account_name="${2:-}"
+      shift 2
+      ;;
     *)
       echo "Unknown argument: $1" >&2
       exit 2
@@ -91,7 +116,9 @@ if [[ ! -f "$resolved_template_path" ]]; then
 fi
 
 existing_managed_key_vault_name=""
-if command -v az >/dev/null 2>&1; then
+if [[ -n "$key_vault_name" ]]; then
+  existing_managed_key_vault_name="$key_vault_name"
+elif command -v az >/dev/null 2>&1; then
   existing_managed_key_vault_name="$(az keyvault list \
     --resource-group "$resource_group_name" \
     --query "[?starts_with(name, 'kv-')].name | [0]" \
@@ -170,6 +197,26 @@ if [[ -n "$postgres_server_name" ]]; then
   deployment_args+=(--parameters "postgresServerName=${postgres_server_name}")
 fi
 
+if [[ -n "$log_analytics_workspace_name" ]]; then
+  deployment_args+=(--parameters "logAnalyticsWorkspaceName=${log_analytics_workspace_name}")
+fi
+
+if [[ -n "$container_registry_name" ]]; then
+  deployment_args+=(--parameters "containerRegistryName=${container_registry_name}")
+fi
+
+if [[ -n "$key_vault_name" ]]; then
+  deployment_args+=(--parameters "keyVaultName=${key_vault_name}")
+fi
+
+if [[ -n "$storage_account_name" ]]; then
+  deployment_args+=(--parameters "storageAccountName=${storage_account_name}")
+fi
+
+if [[ -n "$speech_services_account_name" ]]; then
+  deployment_args+=(--parameters "speechServicesAccountName=${speech_services_account_name}")
+fi
+
 if [[ -n "$deployment_runner_ip" ]]; then
   deployment_args+=(--parameters "postgresDeploymentRunnerFirewallIpAddress=${deployment_runner_ip}")
 fi
@@ -242,7 +289,7 @@ def set_secret(name: str, value: str) -> None:
             "az", "keyvault", "secret", "set",
             "--vault-name", key_vault_name,
             "--name", name,
-            "--value", value,
+            f"--value={value}",
         ],
         f"Key Vault secret set for '{name}'",
         attempts=6,

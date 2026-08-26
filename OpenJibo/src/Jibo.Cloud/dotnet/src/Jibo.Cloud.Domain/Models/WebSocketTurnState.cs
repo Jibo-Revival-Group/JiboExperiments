@@ -2,6 +2,8 @@ namespace Jibo.Cloud.Domain.Models;
 
 public sealed class WebSocketTurnState
 {
+    private int _finalizationInProgress;
+
     public static readonly TimeSpan DefaultLateAudioIgnoreWindow = TimeSpan.FromSeconds(2);
     public static readonly TimeSpan DiagnosticSpeechLateAudioIgnoreWindow = TimeSpan.FromSeconds(7);
     public static readonly TimeSpan StopCommandLateAudioIgnoreWindow = TimeSpan.FromSeconds(4);
@@ -34,4 +36,14 @@ public sealed class WebSocketTurnState
     public bool SawContext { get; set; }
     public IReadOnlyList<string> ListenRules { get; set; } = [];
     public IReadOnlyList<string> ListenAsrHints { get; set; } = [];
+
+    public bool TryBeginFinalization()
+    {
+        return Interlocked.CompareExchange(ref _finalizationInProgress, 1, 0) == 0;
+    }
+
+    public void EndFinalization()
+    {
+        Volatile.Write(ref _finalizationInProgress, 0);
+    }
 }

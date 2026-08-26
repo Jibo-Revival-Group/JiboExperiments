@@ -3063,7 +3063,7 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
-    public async Task ClientNlu_NimbusFollowUp_AskForTime_DoesNotLaunchClock()
+    public async Task ClientNlu_HotphraseNimbusContext_AskForTime_LaunchesClock()
     {
         await _service.HandleMessageAsync(new WebSocketMessageEnvelope
         {
@@ -3110,18 +3110,11 @@ public sealed class JiboWebSocketServiceTests
         });
 
         using var listenPayload = JsonDocument.Parse(replies[0].Text!);
-        Assert.NotEqual("askForTime",
+        Assert.Equal("askForTime",
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
-        Assert.DoesNotContain(replies, reply =>
-            string.Equals(ReadReplyType(reply), "SKILL_REDIRECT", StringComparison.Ordinal));
-        Assert.Equal(3, replies.Count);
-        Assert.Equal("LISTEN", ReadReplyType(replies[0]));
-        Assert.Equal("EOS", ReadReplyType(replies[1]));
-        Assert.Equal("SKILL_ACTION", ReadReplyType(replies[2]));
-
-        using var skillPayload = JsonDocument.Parse(replies[2].Text!);
-        Assert.NotEqual("@be/clock",
-            skillPayload.RootElement.GetProperty("data").GetProperty("skill").GetProperty("id").GetString());
+        Assert.Equal("@be/clock",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
+        Assert.Contains(replies, reply => string.Equals(ReadReplyType(reply), "EOS", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -6630,7 +6623,7 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
-    public async Task BufferedHotphraseOggAudio_EarlyProbeFinalizesUsableCommandBeforeHardTimeout()
+    public async Task BufferedHotphraseOggAudio_NimbusContext_EarlyProbeLaunchesClockBeforeHardTimeout()
     {
         var stateStore = new InMemoryCloudStateStore();
         var service = CreateService(stateStore, sttStrategies:
@@ -6646,6 +6639,16 @@ public sealed class JiboWebSocketServiceTests
             Token = "hub-hotphrase-ogg-early-probe-token",
             Text =
                 """{"type":"LISTEN","transID":"trans-hotphrase-ogg-early-probe","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        });
+
+        await service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-hotphrase-ogg-early-probe-token",
+            Text =
+                """{"type":"CONTEXT","transID":"trans-hotphrase-ogg-early-probe","data":{"skill":{"id":"@be/nimbus"}}}"""
         });
 
         await service.HandleMessageAsync(new WebSocketMessageEnvelope
@@ -6693,7 +6696,7 @@ public sealed class JiboWebSocketServiceTests
             Binary = BuildOggFrame(0x04)
         });
 
-        Assert.Equal(4, replies.Count);
+        Assert.Equal(2, replies.Count);
         Assert.Equal("LISTEN", ReadReplyType(replies[0]));
         Assert.Equal("EOS", ReadReplyType(replies[1]));
 
@@ -6706,6 +6709,56 @@ public sealed class JiboWebSocketServiceTests
             listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("skill").GetString());
         Assert.False(session.TurnState.AwaitingTurnCompletion);
         Assert.Equal(0, session.TurnState.BufferedAudioBytes);
+    }
+
+    [Fact]
+    public async Task BufferedHotphraseOggAudio_ConcurrentIdleAndFrameFinalization_TranscribesOnce()
+    {
+        var stateStore = new InMemoryCloudStateStore();
+        var stt = new BlockingBufferedAudioSttStrategy("Hey Jibo, what time is it?");
+        var service = CreateService(stateStore, sttStrategies: [stt]);
+        var envelope = new WebSocketMessageEnvelope
+        {
+            HostName = "neo-hub.jibo.com",
+            Path = "/listen",
+            Kind = "neo-hub-listen",
+            Token = "hub-concurrent-finalize-token",
+            Text =
+                """{"type":"LISTEN","transID":"trans-concurrent-finalize","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+        };
+        WebSocketMessageEnvelope AudioEnvelope(byte[] binary) => new()
+        {
+            HostName = envelope.HostName,
+            Path = envelope.Path,
+            Kind = envelope.Kind,
+            Token = envelope.Token,
+            Binary = binary
+        };
+
+        await service.HandleMessageAsync(envelope);
+        await service.HandleMessageAsync(AudioEnvelope(BuildOggFrame(0x02, "OpusHead")));
+        await service.HandleMessageAsync(AudioEnvelope(BuildOggFrame(0x00, "OpusTags")));
+        for (var index = 0; index < 8; index += 1)
+            await service.HandleMessageAsync(AudioEnvelope(BuildOggFrame(0x00)));
+
+        var session = stateStore.FindSessionByToken(envelope.Token!);
+        Assert.NotNull(session);
+        session.TurnState.FirstAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromSeconds(5);
+        session.TurnState.LastAudioReceivedUtc = DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(1300);
+
+        var idleFinalization = service.HandleIdleAsync(session, envelope);
+        await stt.Started.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var frameReplies = await service.HandleMessageAsync(AudioEnvelope(BuildOggFrame(0x04)));
+        Assert.Empty(frameReplies);
+
+        stt.Release();
+        var idleReplies = await idleFinalization;
+
+        Assert.Equal(1, stt.TranscriptionCount);
+        using var listenPayload = JsonDocument.Parse(idleReplies[0].Text!);
+        Assert.Equal("askForTime",
+            listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
     }
 
     [Fact]
@@ -9879,6 +9932,48 @@ public sealed class JiboWebSocketServiceTests
                 string value when int.TryParse(value, out var parsed) => parsed,
                 _ => 0
             };
+        }
+    }
+
+    private sealed class BlockingBufferedAudioSttStrategy(string transcript) : ISttStrategy
+    {
+        private readonly TaskCompletionSource _release =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _transcriptionCount;
+
+        public string Name => "blocking-buffered-audio";
+        public Task Started => _started.Task;
+        public int TranscriptionCount => Volatile.Read(ref _transcriptionCount);
+
+        private readonly TaskCompletionSource _started =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public bool CanHandle(TurnContext turn)
+        {
+            return turn.Attributes.TryGetValue("bufferedAudioBytes", out var value) &&
+                   value is int bytes &&
+                   bytes > 0;
+        }
+
+        public async Task<SttResult> TranscribeAsync(
+            TurnContext turn,
+            CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _transcriptionCount);
+            _started.TrySetResult();
+            await _release.Task.WaitAsync(cancellationToken);
+            return new SttResult
+            {
+                Text = transcript,
+                Provider = Name,
+                Confidence = 0.95f,
+                Locale = turn.Locale
+            };
+        }
+
+        public void Release()
+        {
+            _release.TrySetResult();
         }
     }
 }

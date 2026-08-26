@@ -1010,6 +1010,17 @@ public sealed class WebSocketTurnFinalizationService(
         bool allowFallbackOnMissingTranscript,
         CancellationToken cancellationToken)
     {
+        var turnState = session.TurnState;
+        if (!turnState.TryBeginFinalization())
+        {
+            logger.LogDebug(
+                "Finalize turn ignored because another finalization is active session={SessionId} messageType={MessageType} transId={TransId}",
+                session.SessionId,
+                messageType,
+                turnState.TransId);
+            return [];
+        }
+
         logger.LogDebug(
             "Finalize turn entered session={SessionId} messageType={MessageType} transId={TransId} allowFallback={AllowFallback} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks} awaiting={Awaiting}",
             session.SessionId,
@@ -1022,7 +1033,6 @@ public sealed class WebSocketTurnFinalizationService(
         try
         {
             var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, messageType);
-            var turnState = session.TurnState;
             await StoreBufferedAudioArtifactAsync(session, turn, cancellationToken);
             if (IsYesNoTurn(turn) || ReadPrimaryYesNoRule(turn) is not null)
                 await sink.RecordTurnDiagnosticAsync("yes_no_turn_received", BuildTurnDiagnosticSnapshot(session,
@@ -1762,6 +1772,7 @@ public sealed class WebSocketTurnFinalizationService(
         }
         finally
         {
+            turnState.EndFinalization();
             await TrackGlsmPhaseAsync(session, envelope, $"finalize:{messageType}", cancellationToken);
             logger.LogDebug("Finalize turn exit session={SessionId} messageType={MessageType} transId={TransId}",
                 session.SessionId,

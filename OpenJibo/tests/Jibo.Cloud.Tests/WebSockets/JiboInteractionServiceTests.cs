@@ -5931,7 +5931,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_NimbusContextSkill_ClientAskForTime_StaysInCloudConversation()
+    public async Task BuildDecisionAsync_HotphraseNimbusContext_ClientAskForTime_LaunchesClock()
     {
         var service = CreateService();
 
@@ -5949,8 +5949,9 @@ public sealed class JiboInteractionServiceTests
             }
         });
 
-        Assert.NotEqual("time", decision.IntentName);
-        Assert.NotEqual("@be/clock", decision.SkillName);
+        Assert.Equal("time", decision.IntentName);
+        Assert.Equal("@be/clock", decision.SkillName);
+        Assert.Equal("askForTime", decision.SkillPayload!["clockIntent"]);
     }
 
     [Fact]

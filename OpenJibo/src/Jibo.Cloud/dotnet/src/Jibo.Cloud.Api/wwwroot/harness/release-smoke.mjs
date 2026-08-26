@@ -162,7 +162,7 @@ export async function runReleaseSmoke({
       robotId: deviceId,
     });
     token = issued?.token;
-    assert(token, "NewRobotToken did not return a token.");
+    assert(token, `NewRobotToken did not return a token: ${JSON.stringify(issued)}`);
     const robot = await protocolCall("Robot_20160225", "GetRobot", { id: deviceId });
     assert(robot, "GetRobot did not return the persisted fake robot.");
     return `persisted ${deviceId}`;

@@ -38,6 +38,11 @@ internal static class SocketKindResolver
         if (path.StartsWithSegments("/v1/homeassistant"))
             return "home-assistant";
 
+        // On self-hosted/container endpoints the Host header is not a canonical Jibo
+        // hostname, so the route itself must identify NeoHub traffic.
+        if (IsHubPath(path, out var proactive))
+            return proactive ? "neo-hub-proactive" : "neo-hub-listen";
+
         // Self-hosted / LAN: Host is often the machine IP (or localhost) while the robot
         // still opens the stock notification path /{token}. Classify that as api-socket so
         // LoopUpdated can be pushed. Do not reclassify real neo-hub hosts (handled above).
@@ -45,6 +50,16 @@ internal static class SocketKindResolver
             return "api-socket";
 
         return OpenJiboHosts.Contains(host) ? "openjibo" : "neo-hub-listen";
+    }
+
+    private static bool IsHubPath(PathString path, out bool proactive)
+    {
+        proactive = path.StartsWithSegments("/v1/proactive") ||
+                    path.StartsWithSegments("/proactive");
+
+        return proactive ||
+               path.StartsWithSegments("/v1/listen") ||
+               path.StartsWithSegments("/listen");
     }
 
     /// <summary>

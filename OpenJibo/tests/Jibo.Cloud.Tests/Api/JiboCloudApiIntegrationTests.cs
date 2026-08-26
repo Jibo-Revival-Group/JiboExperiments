@@ -102,6 +102,31 @@ public sealed class JiboCloudApiIntegrationTests
     }
 
     [Fact]
+    public async Task WebSocket_MissingTokenOnSelfHostedListenRoute_ReturnsUnauthorized()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.Server.CreateWebSocketClient();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            client.ConnectAsync(new Uri("ws://localhost/v1/listen"), CancellationToken.None));
+
+        Assert.Contains("401", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WebSocket_TokenPathOnSelfHostedListenRoute_Connects()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.Server.CreateWebSocketClient();
+
+        using var socket =
+            await client.ConnectAsync(new Uri("ws://localhost/v1/listen/test-token"), CancellationToken.None);
+
+        Assert.Equal(WebSocketState.Open, socket.State);
+        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "test-complete", CancellationToken.None);
+    }
+
+    [Fact]
     public async Task WebSocket_TokenPathOnNeoHubListen_Connects()
     {
         await using var factory = CreateFactory();

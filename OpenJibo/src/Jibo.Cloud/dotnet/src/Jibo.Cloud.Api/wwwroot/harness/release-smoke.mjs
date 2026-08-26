@@ -225,7 +225,7 @@ export async function runReleaseSmoke({
   });
 
   await runStep("Missing-token socket rejection", async () => {
-    await expectRejectedSocket(WebSocketImpl, websocketUrl(baseUrl, "/"));
+    await expectRejectedSocket(WebSocketImpl, websocketUrl(baseUrl, "/v1/listen"));
     return "connection rejected before WebSocket upgrade";
   });
 

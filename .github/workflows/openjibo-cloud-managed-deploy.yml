@@ -175,6 +175,11 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Azure login
         uses: azure/login@v3
         with:
@@ -336,6 +341,18 @@ jobs:
 
           bash ./scripts/cloud/deploy-openjibo-managed.sh "${deploy_args[@]}"
 
+      - name: Run deployed WebSocket release smoke
+        if: inputs.deployment_target == 'staging'
+        shell: bash
+        run: |
+          app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
+          app_fqdn="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.configuration.ingress.fqdn --output tsv)"
+          if [[ -z "$app_fqdn" ]]; then
+            echo "The staging Container App did not report an ingress FQDN." >&2
+            exit 1
+          fi
+          BASE_URL="https://${app_fqdn}" node ./scripts/cloud/invoke-release-smoke.mjs
+
       - name: Restore previous image after failure
         if: failure() && steps.previous.outputs.exists == 'true'
         shell: bash
@@ -368,6 +385,7 @@ jobs:
               "runId": os.environ["GITHUB_RUN_ID"],
               "imageTag": "${{ steps.image.outputs.tag }}",
               "smoke": "passed",
+              "webSocketReleaseSmoke": "passed",
           }
           with open(sys.argv[1], "w", encoding="utf-8") as gate_file:
               json.dump(gate, gate_file, indent=2)
@@ -395,6 +413,7 @@ jobs:
             echo "- Database preparation: passed"
             echo "- Smoke test: passed"
             if [[ "${{ inputs.deployment_target }}" == "staging" ]]; then
+              echo "- WebSocket release smoke: passed"
               echo "- Production promotion gate: workflow run $GITHUB_RUN_ID"
             else
               echo "- PITR reference time: ${{ steps.recovery.outputs.utc }}"

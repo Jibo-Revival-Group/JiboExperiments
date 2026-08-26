@@ -1,3 +1,5 @@
+import { createProtocolCaller, runReleaseSmoke } from "/harness/release-smoke.mjs";
+
 const ADMIN_SESSION_KEY = "openjibo_status_session";
 
 async function ensureAdminAccess() {
@@ -173,6 +175,42 @@ $("runConversionSmoke").addEventListener("click", async () => {
       },
     });
   } catch (error) { showStatus(error.message, "error"); }
+});
+
+$("runReleaseSmoke").addEventListener("click", async () => {
+  const button = $("runReleaseSmoke");
+  const releaseStatus = $("releaseSmokeStatus");
+  const results = $("releaseSmokeResults");
+  button.disabled = true;
+  results.replaceChildren();
+  releaseStatus.textContent = "Running deployed HTTP and WebSocket scenarios...";
+  releaseStatus.className = "status success";
+  const rows = new Map();
+  const renderStep = (step) => {
+    let row = rows.get(step.name);
+    if (!row) {
+      row = document.createElement("li");
+      rows.set(step.name, row);
+      results.appendChild(row);
+    }
+    row.className = step.status;
+    row.textContent = `${step.status === "running" ? "Running" : step.status === "passed" ? "Passed" : "Failed"}: ${step.name}${step.detail ? ` - ${step.detail}` : ""}`;
+  };
+  try {
+    const run = await runReleaseSmoke({
+      baseUrl: window.location.origin,
+      protocolCall: createProtocolCaller(window.location.origin, $("hostName").value.trim() || "api.openjibo.com"),
+      robotPrefix: `browser-release-smoke-${Date.now()}`,
+      onStep: renderStep,
+    });
+    releaseStatus.textContent = `Release smoke passed: ${run.results.length} scenarios, including six concurrent sockets.`;
+    releaseStatus.className = "status success";
+  } catch (error) {
+    releaseStatus.textContent = `Release smoke failed: ${error.message}`;
+    releaseStatus.className = "status error";
+  } finally {
+    button.disabled = false;
+  }
 });
 
 loadPlan("AuditConversion");

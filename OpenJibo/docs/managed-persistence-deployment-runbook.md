@@ -110,10 +110,11 @@ Expected sequence:
 6. Apply normalized schemas.
 7. Import and verify both legacy snapshots.
 8. Store embedded backups in staging Azure Blob Storage.
-9. Deploy and smoke-test staging.
-10. Upload `openjibo-staging-gate-<commit>`.
+9. Deploy and run the HTTP smoke test against staging.
+10. Run the deployed WebSocket release smoke through Azure ingress: token issuance, notification reconnect, `CLIENT_ASR`, `CLIENT_NLU`, malformed-frame recovery, missing-token rejection, persistence, and six concurrent fake robots.
+11. Upload `openjibo-staging-gate-<commit>` with both smoke results.
 
-A failed run produces no promotion gate.
+The same WebSocket release smoke is available from the admin harness and runs against the current deployment. A failed HTTP or WebSocket smoke restores the previous revision and produces no promotion gate.
 
 ## Staging Verification
 

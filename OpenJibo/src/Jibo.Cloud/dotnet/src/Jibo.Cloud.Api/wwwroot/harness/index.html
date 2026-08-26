@@ -101,10 +101,23 @@
   </section>
 
   <section class="card">
+    <div class="panel-header">
+      <div>
+        <p class="eyebrow">Release gate</p>
+        <h2>Deployed WebSocket release smoke</h2>
+        <p class="lede">Exercise real notification and NeoHub sockets, reconnects, malformed-frame recovery, persistence, and six concurrent fake robots against this deployment.</p>
+      </div>
+      <button id="runReleaseSmoke" class="primary" type="button">Run release smoke</button>
+    </div>
+    <p id="releaseSmokeStatus" class="status hidden"></p>
+    <ol id="releaseSmokeResults" class="scenario-list"></ol>
+  </section>
+
+  <section class="card">
     <p class="eyebrow">Response</p>
     <pre id="response">No request sent yet.</pre>
   </section>
 </main>
-<script src="/harness/harness.js"></script>
+<script type="module" src="/harness/harness.js"></script>
 </body>
 </html>

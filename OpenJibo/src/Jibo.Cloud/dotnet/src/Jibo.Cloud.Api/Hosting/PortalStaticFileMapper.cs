@@ -41,6 +41,8 @@ internal static class PortalStaticFileMapper
         app.MapGet("/harness/harness.css", () => Serve(harnessDirectory, "harness.css", "text/css; charset=utf-8"));
         app.MapGet("/harness/harness.js",
             () => Serve(harnessDirectory, "harness.js", "application/javascript; charset=utf-8"));
+        app.MapGet("/harness/release-smoke.mjs",
+            () => Serve(harnessDirectory, "release-smoke.mjs", "application/javascript; charset=utf-8"));
     }
 
     internal static bool IsPortalPath(PathString path)

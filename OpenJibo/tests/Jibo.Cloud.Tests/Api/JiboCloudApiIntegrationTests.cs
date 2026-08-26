@@ -28,6 +28,21 @@ public sealed class JiboCloudApiIntegrationTests
     }
 
     [Fact]
+    public async Task Harness_ServesReleaseSmokeModuleAndModuleEntryPoint()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var page = await client.GetStringAsync("/portal/admin/harness/index.html");
+        var module = await client.GetStringAsync("/harness/release-smoke.mjs");
+
+        Assert.Contains("runReleaseSmoke", page, StringComparison.Ordinal);
+        Assert.Contains("type=\"module\"", page, StringComparison.Ordinal);
+        Assert.Contains("export async function runReleaseSmoke", module, StringComparison.Ordinal);
+        Assert.Contains("concurrent fake robot sockets", module, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task HttpProtocolDispatch_HandlesCreateHubTokenTarget()
     {
         await using var factory = CreateFactory();

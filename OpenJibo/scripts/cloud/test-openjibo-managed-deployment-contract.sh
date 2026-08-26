@@ -240,7 +240,7 @@ for marker in "containerapp env show" "firewall-rule create" "firewall-rule upda
   fi
 done
 
-for marker in "deployment_target" "openjibo-staging-gate" "clone-openjibo-managed-databases.sh" "production_backup_confirmed" "backup.backupRetentionDays" "properties.active" '[[ "$revision_active" == "true" ]]' "revision deactivate" "revision activate" "PREVIOUS_REVISION" "Restore previous image after failure"; do
+for marker in "deployment_target" "openjibo-staging-gate" "clone-openjibo-managed-databases.sh" "production_backup_confirmed" "backup.backupRetentionDays" "properties.active" '[[ "$revision_active" == "true" ]]' "revision deactivate" "revision activate" "PREVIOUS_REVISION" "Restore previous image after failure" "Run deployed WebSocket release smoke" "invoke-release-smoke.mjs" "webSocketReleaseSmoke"; do
   if [[ "$workflow_text" != *"$marker"* ]]; then
     echo "Workflow is missing staging or promotion safeguard: $marker" >&2
     exit 1

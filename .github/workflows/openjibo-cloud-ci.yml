@@ -57,6 +57,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Build and start stack
         shell: bash
         run: bash ./scripts/cloud/invoke-openjibo-self-hosted-stack.sh --run-migration
@@ -85,6 +90,12 @@ jobs:
         run: bash ./scripts/cloud/invoke-cloud-smoke.sh
         env:
           BASE_URL: http://localhost:8080
+
+      - name: Run WebSocket release smoke
+        run: node ./scripts/cloud/invoke-release-smoke.mjs
+        env:
+          BASE_URL: http://localhost:8080
+          TEST_ROBOT_ID: release-smoke-ci-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Capture logs
         if: always()

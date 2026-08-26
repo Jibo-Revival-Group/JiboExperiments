@@ -71,14 +71,14 @@ public sealed class WebSocketRequestCoordinatorTests
             new FakeWebSocketFrame(WebSocketMessageType.Close, []));
         var context = CreateContext(socket);
         context.Request.Host = new HostString("192.168.7.142");
-        context.Request.Path = "/v1/listen";
+        context.Request.Path = "/v1/listen/test-token";
 
         var coordinator = CreateCoordinator(out var telemetrySink, out var store);
 
         await coordinator.HandleAsync(context);
 
         Assert.True(socket.Accepted);
-        Assert.Null(store.FindSessionByToken("v1/listen"));
+        Assert.Null(store.FindSessionByToken("test-token"));
         Assert.NotNull(telemetrySink.LastConnectionId);
         Assert.Null(store.FindSessionByToken($"conn:{telemetrySink.LastConnectionId}"));
         Assert.NotNull(telemetrySink.ClosedSession);

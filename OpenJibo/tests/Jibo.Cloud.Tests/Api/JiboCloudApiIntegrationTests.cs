@@ -28,6 +28,21 @@ public sealed class JiboCloudApiIntegrationTests
     }
 
     [Fact]
+    public async Task Harness_ServesReleaseSmokeModuleAndModuleEntryPoint()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var page = await client.GetStringAsync("/portal/admin/harness/index.html");
+        var module = await client.GetStringAsync("/harness/release-smoke.mjs");
+
+        Assert.Contains("runReleaseSmoke", page, StringComparison.Ordinal);
+        Assert.Contains("type=\"module\"", page, StringComparison.Ordinal);
+        Assert.Contains("export async function runReleaseSmoke", module, StringComparison.Ordinal);
+        Assert.Contains("concurrent fake robot sockets", module, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task HttpProtocolDispatch_HandlesCreateHubTokenTarget()
     {
         await using var factory = CreateFactory();
@@ -84,6 +99,31 @@ public sealed class JiboCloudApiIntegrationTests
             client.ConnectAsync(new Uri("ws://neo-hub.jibo.com/"), CancellationToken.None));
 
         Assert.Contains("401", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WebSocket_MissingTokenOnSelfHostedListenRoute_ReturnsUnauthorized()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.Server.CreateWebSocketClient();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            client.ConnectAsync(new Uri("ws://localhost/v1/listen"), CancellationToken.None));
+
+        Assert.Contains("401", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WebSocket_TokenPathOnSelfHostedListenRoute_Connects()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.Server.CreateWebSocketClient();
+
+        using var socket =
+            await client.ConnectAsync(new Uri("ws://localhost/v1/listen/test-token"), CancellationToken.None);
+
+        Assert.Equal(WebSocketState.Open, socket.State);
+        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "test-complete", CancellationToken.None);
     }
 
     [Fact]

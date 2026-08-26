@@ -295,6 +295,81 @@ jobs:
           echo "utc=$recovery_utc" >> "$GITHUB_OUTPUT"
           echo "retention_days=$retention_days" >> "$GITHUB_OUTPUT"
 
+      - name: Verify production hostname DNS prerequisites
+        if: inputs.deployment_target == 'production'
+        shell: bash
+        run: |
+          app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
+          if [[ -z "$app_name" ]]; then
+            echo "The production Container App was not found for hostname validation." >&2
+            exit 1
+          fi
+
+          app_json="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --output json)"
+          verification_id="$(python3 - "$app_json" <<'PY'
+          import json
+          import sys
+
+          app = json.loads(sys.argv[1])
+          print(app.get("properties", {}).get("customDomainVerificationId", ""))
+          PY
+          )"
+          app_fqdn="$(python3 - "$app_json" <<'PY'
+          import json
+          import sys
+
+          app = json.loads(sys.argv[1])
+          print(app.get("properties", {}).get("configuration", {}).get("ingress", {}).get("fqdn", ""))
+          PY
+          )"
+
+          if [[ -z "$verification_id" || -z "$app_fqdn" ]]; then
+            echo "The production Container App did not report its hostname verification ID and ingress FQDN." >&2
+            exit 1
+          fi
+          if ! command -v dig >/dev/null 2>&1; then
+            echo "The runner is missing 'dig', which is required for production DNS preflight." >&2
+            exit 1
+          fi
+
+          expected_verification_id="${verification_id^^}"
+          expected_fqdn="${app_fqdn%.}"
+          expected_fqdn="${expected_fqdn,,}"
+          hostnames=(
+            "${{ inputs.api_hostname }}"
+            "${{ inputs.socket_hostname }}"
+            "${{ inputs.neohub_hostname }}"
+            open-jibo.jibo.pro
+            open-jibo-socket.jibo.pro
+          )
+
+          for hostname in "${hostnames[@]}"; do
+            cname="$(dig +short CNAME "$hostname" | head -n 1)"
+            cname="${cname%.}"
+            cname="${cname,,}"
+            if [[ "$cname" != "$expected_fqdn" ]]; then
+              echo "${hostname} must CNAME directly to ${app_fqdn}; found '${cname:-no CNAME}'." >&2
+              exit 1
+            fi
+
+            verification_match=false
+            while IFS= read -r txt_value; do
+              txt_value="$(printf '%s' "$txt_value" | tr -d '"')"
+              txt_value="${txt_value^^}"
+              if [[ "$txt_value" == "$expected_verification_id" ]]; then
+                verification_match=true
+                break
+              fi
+            done < <(dig +short TXT "asuid.${hostname}")
+
+            if [[ "$verification_match" != "true" ]]; then
+              echo "asuid.${hostname} must contain Azure verification value ${verification_id}." >&2
+              exit 1
+            fi
+          done
+
+          echo "Production CNAME and Azure TXT verification records are ready for all managed hostnames."
+
       - name: Build and push immutable managed image
         shell: bash
         run: >
@@ -418,7 +493,12 @@ jobs:
           echo "Deployment failed; restoring the previous image."
           az containerapp update             --resource-group "$OPENJIBO_RESOURCE_GROUP"             --name "$PREVIOUS_APP"             --image "$PREVIOUS_IMAGE"             --min-replicas "$PREVIOUS_MIN_REPLICAS"             --max-replicas "$PREVIOUS_MAX_REPLICAS"             --output none
           if [[ -n "$PREVIOUS_REVISION" ]]; then
-            az containerapp revision activate               --resource-group "$OPENJIBO_RESOURCE_GROUP"               --name "$PREVIOUS_APP"               --revision "$PREVIOUS_REVISION"               --output none
+            previous_revision_active="$(az containerapp revision show               --resource-group "$OPENJIBO_RESOURCE_GROUP"               --name "$PREVIOUS_APP"               --revision "$PREVIOUS_REVISION"               --query properties.active               --output tsv)"
+            if [[ "$previous_revision_active" != "true" ]]; then
+              az containerapp revision activate                 --resource-group "$OPENJIBO_RESOURCE_GROUP"                 --name "$PREVIOUS_APP"                 --revision "$PREVIOUS_REVISION"                 --output none
+            else
+              echo "Previous revision '$PREVIOUS_REVISION' is already active."
+            fi
           fi
 
       - name: Create staging promotion gate

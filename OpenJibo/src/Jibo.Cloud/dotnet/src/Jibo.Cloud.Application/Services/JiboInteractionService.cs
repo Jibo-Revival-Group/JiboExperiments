@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Runtime.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -24,7 +25,8 @@ public sealed partial class JiboInteractionService(
     JiboVerificationService? jiboVerificationService = null,
     HomeAssistantCommandService? homeAssistantCommandService = null,
     HomeAssistantPendingClimateStore? homeAssistantPendingClimateStore = null,
-    RepeatLastCommandStore? repeatLastCommandStore = null)
+    RepeatLastCommandStore? repeatLastCommandStore = null,
+    ILogger<JiboInteractionService>? logger = null)
 {
     private const string GreetingRouteMetadataKey = "greetingsRoute";
     private const string GreetingSpeakerMetadataKey = "greetingsSpeaker";

@@ -145,6 +145,26 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         Assert.DoesNotContain(result, person => person.PersonId == "scoped-b");
     }
 
+    [Fact]
+    public void SyncPeopleFromLoopUsers_UsesResolvedLoopOwnerInsteadOfDefaultAccount()
+    {
+        var people = new RecordingPersonRepository();
+        var members = new RecordingLoopMemberRepository();
+        var store = CreateStore(new FakeTokenRepository(), people: people, members: members);
+
+        var count = store.SyncPeopleFromLoopUsers(
+            "tenant-loop",
+            "tenant-robot",
+            [new LoopUserSnapshot("person-1", FirstName: "Ada", Type: "owner")],
+            "tenant-account");
+
+        Assert.Equal(1, count);
+        Assert.Equal("tenant-account", people.LastUpsert!.AccountId);
+        Assert.Equal("tenant-loop", people.LastUpsert.LoopId);
+        Assert.Equal("tenant-account", members.LastAccountId);
+        Assert.Equal("tenant-loop", members.LastUpsert!.LoopId);
+    }
+
     private static PostgreSqlCloudStateStore CreateStore(FakeTokenRepository tokens,
         TimeSpan? robotTokenLifetime = null, ICloudUserRepository? users = null,
         ILoopKeyRepository? loopKeys = null, IHolidayOverrideRepository? holidays = null,
@@ -204,6 +224,7 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         internal string? LastAccountId { get; private set; }
         internal string? LastLoopId { get; private set; }
         internal int LastLimit { get; private set; }
+        internal PersonRecord? LastUpsert { get; private set; }
 
         public Task<IReadOnlyList<PersonRecord>> ListAsync(string accountId, string loopId, int limit = 250,
             CancellationToken cancellationToken = default)
@@ -216,9 +237,37 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         }
 
         public Task<PersonRecord> UpsertAsync(PersonRecord person,
-            CancellationToken cancellationToken = default) => Task.FromResult(person);
+            CancellationToken cancellationToken = default)
+        {
+            LastUpsert = person;
+            return Task.FromResult(person);
+        }
 
         public Task<bool> DeleteAsync(string accountId, string loopId, string personId,
+            CancellationToken cancellationToken = default) => Task.FromResult(false);
+    }
+
+    private sealed class RecordingLoopMemberRepository : ILoopMemberRepository
+    {
+        internal string? LastAccountId { get; private set; }
+        internal LoopMemberRecord? LastUpsert { get; private set; }
+
+        public Task<IReadOnlyList<LoopMemberRecord>> ListAsync(string accountId, string loopId, int limit = 250,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<LoopMemberRecord>>([]);
+
+        public Task<LoopMemberRecord?> GetAsync(string accountId, string loopId, string memberId,
+            CancellationToken cancellationToken = default) => Task.FromResult<LoopMemberRecord?>(null);
+
+        public Task<LoopMemberRecord> UpsertAsync(string accountId, LoopMemberRecord member,
+            CancellationToken cancellationToken = default)
+        {
+            LastAccountId = accountId;
+            LastUpsert = member;
+            return Task.FromResult(member);
+        }
+
+        public Task<bool> DeleteAsync(string accountId, string loopId, string memberId,
             CancellationToken cancellationToken = default) => Task.FromResult(false);
     }
 

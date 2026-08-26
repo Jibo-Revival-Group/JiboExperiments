@@ -1176,7 +1176,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return resolved;
     }
 
-    public int SyncPeopleFromLoopUsers(string loopId, string? robotId, IReadOnlyList<LoopUserSnapshot> loopUsers)
+    public int SyncPeopleFromLoopUsers(string loopId, string? robotId, IReadOnlyList<LoopUserSnapshot> loopUsers,
+        string? ownerAccountId = null)
     {
         if (string.IsNullOrWhiteSpace(loopId) || loopUsers is null || loopUsers.Count == 0)
             return 0;

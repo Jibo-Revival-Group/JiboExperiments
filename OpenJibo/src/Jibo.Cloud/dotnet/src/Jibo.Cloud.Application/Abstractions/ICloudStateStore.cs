@@ -54,7 +54,8 @@ public interface ICloudStateStore
     /// People are scoped to <paramref name="loopId"/> + <paramref name="robotId"/> so
     /// multiple Jibos on one cloud do not merge households.
     /// </summary>
-    int SyncPeopleFromLoopUsers(string loopId, string? robotId, IReadOnlyList<LoopUserSnapshot> loopUsers);
+    int SyncPeopleFromLoopUsers(string loopId, string? robotId, IReadOnlyList<LoopUserSnapshot> loopUsers,
+        string? ownerAccountId = null);
     IReadOnlyList<LoopMemberRecord> GetLoopMembers(string loopId);
     IReadOnlyList<TrustedServerRecord> GetTrustedServers();
     IReadOnlyList<TrustedServerAdmissionRecord> GetTrustedServerAdmissions(string? canonicalHost = null);

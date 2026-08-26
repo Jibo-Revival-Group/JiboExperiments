@@ -9,6 +9,7 @@ using Jibo.Cloud.Infrastructure.Commute;
 using Jibo.Cloud.Infrastructure.Content;
 using Jibo.Cloud.Infrastructure.Persistence;
 using Jibo.Runtime.Abstractions;
+using Moq;
 
 namespace Jibo.Cloud.Tests.WebSockets;
 
@@ -49,6 +50,37 @@ public sealed class JiboInteractionServiceTests
         Assert.Equal("joke", decision.IntentName);
         Assert.Equal("@be/joke", decision.SkillName);
         Assert.Equal("Why did the robot cross the road? Because it was programmed by the chicken.", decision.ReplyText);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_RosterPersistenceFailure_DoesNotTerminateSpeechTurn()
+    {
+        var cloudStateStore = new Mock<ICloudStateStore>();
+        cloudStateStore
+            .Setup(store => store.AddLoop(null, "tenant-account", "Royal-Current-Sage-Canvas",
+                "Royal-Current-Sage-Canvas"))
+            .Throws(new InvalidOperationException("Loop scope was not found."));
+        cloudStateStore.Setup(store => store.GetHolidays(It.IsAny<string?>())).Returns([]);
+        var service = CreateService(cloudStateStore: cloudStateStore.Object);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "tell me a joke",
+            NormalizedTranscript = "tell me a joke",
+            DeviceId = "Royal-Current-Sage-Canvas",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "tenant-account",
+                ["robotFriendlyId"] = "Royal-Current-Sage-Canvas",
+                ["context"] =
+                    """{"runtime":{"loop":{"users":[{"id":"person-1","firstName":"Ada","type":"owner"}]}}}"""
+            }
+        });
+
+        Assert.Equal("joke", decision.IntentName);
+        Assert.Equal("Why did the robot cross the road? Because it was programmed by the chicken.", decision.ReplyText);
+        cloudStateStore.Verify(store => store.AddLoop(null, "tenant-account", "Royal-Current-Sage-Canvas",
+            "Royal-Current-Sage-Canvas"), Times.Once);
     }
 
     [Theory]

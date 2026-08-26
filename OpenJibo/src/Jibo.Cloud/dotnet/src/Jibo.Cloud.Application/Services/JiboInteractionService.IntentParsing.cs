@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Runtime.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Jibo.Cloud.Application.Services;
 
@@ -522,14 +523,25 @@ public sealed partial class JiboInteractionService
         var loopUsers = TryReadLoopUsersFromTurn(turn);
         if (loopUsers.Count == 0) return;
 
-        var robotId = ResolveTurnRobotId(turn);
-        // Both fields store friendlyId (BE robotFriendlyId / Pegasus robotID) — never a shared serial.
-        var loop = cloudStateStore.AddLoop(
-            null,
-            ReadTenantAttribute(turn, "accountId"),
-            robotId,
-            robotId);
-        cloudStateStore.SyncPeopleFromLoopUsers(loop.LoopId, robotId, loopUsers);
+        try
+        {
+            var robotId = ResolveTurnRobotId(turn);
+            // Both fields store friendlyId (BE robotFriendlyId / Pegasus robotID) — never a shared serial.
+            var loop = cloudStateStore.AddLoop(
+                null,
+                ReadTenantAttribute(turn, "accountId"),
+                robotId,
+                robotId);
+            cloudStateStore.SyncPeopleFromLoopUsers(loop.LoopId, robotId, loopUsers, loop.OwnerAccountId);
+        }
+        catch (Exception exception)
+        {
+            // Roster enrichment is auxiliary. A persistence failure must never terminate a live speech turn.
+            logger?.LogWarning(exception,
+                "Could not synchronize loop people from the robot context; continuing the interaction. turnId={TurnId} deviceId={DeviceId}",
+                turn.TurnId,
+                turn.DeviceId);
+        }
     }
 
     private string ResolveTurnRobotId(TurnContext turn)

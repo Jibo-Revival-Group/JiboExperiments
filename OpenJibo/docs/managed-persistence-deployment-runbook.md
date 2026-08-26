@@ -144,6 +144,8 @@ Run the workflow with:
 | `image_tag`                       | blank                                          |
 | Production hostnames              | retain current defaults                        |
 
+If the production resource group moved to another Azure subscription, `uniqueString(resourceGroup().id)` changes even though the resources moved intact. Supply all six `existing_*_name` inputs together so the workflow reuses the original Log Analytics workspace, Container Registry, Key Vault, Storage Account, PostgreSQL server, and Speech Services account. Recover these exact names from the active Container App configuration or the most recent successful production deployment; never mix old and newly generated foundation names.
+
 Promotion is refused if the staging gate is missing, belongs to another commit, lacks a passing smoke test, backup confirmation is absent, or PITR retention is below seven days.
 
 Downtime begins when the old revision is quiesced and ends after the new revision passes smoke checks.

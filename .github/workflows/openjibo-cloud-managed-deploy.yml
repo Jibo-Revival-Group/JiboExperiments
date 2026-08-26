@@ -35,6 +35,30 @@ on:
         required: true
         type: boolean
         default: false
+      existing_log_analytics_workspace_name:
+        description: Existing Log Analytics workspace name after a resource-group subscription move
+        required: false
+        default: ""
+      existing_container_registry_name:
+        description: Existing Container Registry name after a resource-group subscription move
+        required: false
+        default: ""
+      existing_key_vault_name:
+        description: Existing Key Vault name after a resource-group subscription move
+        required: false
+        default: ""
+      existing_storage_account_name:
+        description: Existing Storage Account name after a resource-group subscription move
+        required: false
+        default: ""
+      existing_postgres_server_name:
+        description: Existing PostgreSQL server name after a resource-group subscription move
+        required: false
+        default: ""
+      existing_speech_services_account_name:
+        description: Existing Speech Services account name after a resource-group subscription move
+        required: false
+        default: ""
       image_tag:
         description: Optional immutable image tag; defaults to sha-<commit>
         required: false
@@ -135,6 +159,23 @@ jobs:
             exit 1
           fi
 
+          foundation_identity=(
+            "${{ inputs.existing_log_analytics_workspace_name }}"
+            "${{ inputs.existing_container_registry_name }}"
+            "${{ inputs.existing_key_vault_name }}"
+            "${{ inputs.existing_storage_account_name }}"
+            "${{ inputs.existing_postgres_server_name }}"
+            "${{ inputs.existing_speech_services_account_name }}"
+          )
+          specified_identity_count=0
+          for resource_name in "${foundation_identity[@]}"; do
+            [[ -n "$resource_name" ]] && specified_identity_count=$((specified_identity_count + 1))
+          done
+          if [[ "$specified_identity_count" -ne 0 && "$specified_identity_count" -ne "${#foundation_identity[@]}" ]]; then
+            echo "Specify every existing foundation resource name together, or leave all of them blank." >&2
+            exit 1
+          fi
+
       - name: Validate managed deployment contract
         shell: bash
         run: bash ./scripts/cloud/test-openjibo-managed-deployment-contract.sh
@@ -207,6 +248,17 @@ jobs:
             --search-backend "$OPENJIBO_SEARCH_BACKEND"
             --search-fallback "$OPENJIBO_SEARCH_FALLBACK"
           )
+
+          if [[ -n "${{ inputs.existing_key_vault_name }}" ]]; then
+            foundation_args+=(
+              --log-analytics-workspace-name "${{ inputs.existing_log_analytics_workspace_name }}"
+              --container-registry-name "${{ inputs.existing_container_registry_name }}"
+              --key-vault-name "${{ inputs.existing_key_vault_name }}"
+              --storage-account-name "${{ inputs.existing_storage_account_name }}"
+              --postgres-server-name "${{ inputs.existing_postgres_server_name }}"
+              --speech-services-account-name "${{ inputs.existing_speech_services_account_name }}"
+            )
+          fi
 
           bash ./scripts/cloud/deploy-openjibo-managed-foundation.sh             "${foundation_args[@]}" | tee "$deployment_output"
 

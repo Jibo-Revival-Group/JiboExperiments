@@ -135,6 +135,13 @@ required_workflow_markers=(
   "steps.foundation.outputs.registryName"
   "steps.foundation.outputs.keyVaultName"
   "inputs.location"
+  "existing_log_analytics_workspace_name"
+  "existing_container_registry_name"
+  "existing_key_vault_name"
+  "existing_storage_account_name"
+  "existing_postgres_server_name"
+  "existing_speech_services_account_name"
+  "Specify every existing foundation resource name together"
   "api_hostname"
   "socket_hostname"
   "neohub_hostname"
@@ -201,7 +208,7 @@ for marker in "managedEnvironmentName" "--environment" "--validation-method CNAM
   fi
 done
 
-for marker in "seedPrincipalObjectId" "openjibo-media-connection-string" "openjibo-postgres-admin-password" "openjibo-search-backend" "openjibo-search-fallback" "postgresFullyQualifiedDomainName" "run_command_with_retry"; do
+for marker in "--log-analytics-workspace-name" "--container-registry-name" "--key-vault-name" "--storage-account-name" "--postgres-server-name" "--speech-services-account-name" 'f"--value={value}"' "seedPrincipalObjectId" "openjibo-media-connection-string" "openjibo-postgres-admin-password" "openjibo-search-backend" "openjibo-search-fallback" "postgresFullyQualifiedDomainName" "run_command_with_retry"; do
   if [[ "$linux_foundation_script_text" != *"$marker"* ]]; then
     echo "Linux foundation script is missing expected marker: $marker" >&2
     exit 1

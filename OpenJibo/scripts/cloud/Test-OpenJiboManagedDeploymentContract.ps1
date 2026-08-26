@@ -140,6 +140,13 @@ $requiredWorkflowMarkers = @(
     "steps.foundation.outputs.registryName",
     "steps.foundation.outputs.keyVaultName",
     "inputs.location",
+    "existing_log_analytics_workspace_name",
+    "existing_container_registry_name",
+    "existing_key_vault_name",
+    "existing_storage_account_name",
+    "existing_postgres_server_name",
+    "existing_speech_services_account_name",
+    "Specify every existing foundation resource name together",
     "api_hostname",
     "socket_hostname",
     "neohub_hostname",
@@ -187,7 +194,7 @@ foreach ($marker in @("containerapp env show", "firewall-rule create", "firewall
     Assert-ContainsMarker -Text $managedScriptText -Marker $marker -FailurePrefix "Managed deploy script is missing firewall marker"
 }
 
-foreach ($marker in @("seedPrincipalObjectId", "openjibo-media-connection-string", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "run_command_with_retry")) {
+foreach ($marker in @("--log-analytics-workspace-name", "--container-registry-name", "--key-vault-name", "--storage-account-name", "--postgres-server-name", "--speech-services-account-name", 'f"--value={value}"', "seedPrincipalObjectId", "openjibo-media-connection-string", "openjibo-postgres-admin-password", "postgresFullyQualifiedDomainName", "run_command_with_retry")) {
     Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker $marker -FailurePrefix "Linux foundation script is missing expected marker"
 }
 

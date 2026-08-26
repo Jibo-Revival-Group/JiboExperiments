@@ -101,10 +101,11 @@ public sealed partial class PostgreSqlCloudStateStore
         return Sync(Require(_people, "people").UpsertAsync(resolved));
     }
 
-    public int SyncPeopleFromLoopUsers(string loopId, string? robotId, IReadOnlyList<LoopUserSnapshot> loopUsers)
+    public int SyncPeopleFromLoopUsers(string loopId, string? robotId, IReadOnlyList<LoopUserSnapshot> loopUsers,
+        string? ownerAccountId = null)
     {
         if (string.IsNullOrWhiteSpace(loopId) || loopUsers is null || loopUsers.Count == 0) return 0;
-        var account = GetAccount().AccountId;
+        var account = string.IsNullOrWhiteSpace(ownerAccountId) ? GetAccount().AccountId : ownerAccountId.Trim();
         var resolvedLoop = loopId.Trim();
         var resolvedRobot = string.IsNullOrWhiteSpace(robotId) ? GetRobot().RobotId : robotId.Trim();
         var people = Require(_people, "people");

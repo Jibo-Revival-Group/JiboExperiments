@@ -154,7 +154,13 @@ internal static class SkillListenOwnership
 
     public static bool ShouldStayInCloudConversation(TurnContext turn, string? intentName)
     {
-        return IsCloudOwnedFollowUp(turn) && IsHeyJiboSkillLaunch(intentName);
+        // An explicit wake-word turn starts a new command even when the robot reports Nimbus as
+        // its current context skill. Native robots include that context on ordinary hotphrase
+        // turns, so treating it as a follow-up would incorrectly route commands such as
+        // "what time is it" through knowledge search instead of the local clock skill.
+        return !ReadListenHotphrase(turn) &&
+               IsCloudOwnedFollowUp(turn) &&
+               IsHeyJiboSkillLaunch(intentName);
     }
 
     public static bool IsHeyJiboSkillLaunch(string? intentName)

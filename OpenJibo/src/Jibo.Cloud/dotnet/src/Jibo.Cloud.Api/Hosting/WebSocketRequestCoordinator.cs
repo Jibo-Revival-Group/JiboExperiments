@@ -19,6 +19,9 @@ internal sealed class WebSocketRequestCoordinator(
     ILogger<WebSocketRequestCoordinator> logger)
 {
     private static readonly TimeSpan TurnWatchdogInterval = TimeSpan.FromMilliseconds(250);
+    private const string ActiveConnectionIdMetadataKey = "openjibo.activeWebSocketConnectionId";
+    private static readonly object SessionGateRegistryLock = new();
+    private static readonly Dictionary<string, SessionGate> SessionGates = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Test helper constructor. Production DI injects the full primary constructor.
@@ -118,7 +121,18 @@ internal sealed class WebSocketRequestCoordinator(
         transportMetrics.WebSocketConnectionOpened(kind);
         var connectionId = Guid.NewGuid().ToString("N");
         var openEnvelope = CreateEnvelope(context, kind, token, connectionId);
-        var session = webSocketService.GetOrCreateSession(openEnvelope);
+        var sessionKey = ResolveSessionKey(openEnvelope);
+        CloudSession session;
+        using (var gateLease = AcquireSessionGate(sessionKey))
+        {
+            lock (gateLease.Gate.SyncRoot)
+            {
+                session = webSocketService.GetOrCreateSession(openEnvelope);
+                // Replacement sockets for one token share the active session. Record ownership
+                // so an older socket cannot tear down state established by its successor.
+                session.Metadata[ActiveConnectionIdMetadataKey] = connectionId;
+            }
+        }
         var initialRobotKeys = ResolveRobotKeys(token, session);
         logger.LogInformation(
             "WebSocket connection accepted connectionId={ConnectionId} traceId={TraceId} kind={Kind} " +
@@ -154,6 +168,7 @@ internal sealed class WebSocketRequestCoordinator(
 
         var isPrematureClose = false;
         var loopTransId = session.TurnState.TransId;
+        var sessionStateOwnedOnClose = false;
 
         try
         {
@@ -265,13 +280,24 @@ internal sealed class WebSocketRequestCoordinator(
             if (registeredApiSocket)
                 robotNotificationRegistry.Remove(socket);
             robotPresenceRegistry.Remove(presenceConnectionId);
-            WebSocketTurnFinalizationService.ReleaseBufferedAudio(session);
-            cloudStateStore.CloseSession(session.SessionId);
+            using (var gateLease = AcquireSessionGate(sessionKey))
+            {
+                lock (gateLease.Gate.SyncRoot)
+                {
+                    sessionStateOwnedOnClose = OwnsSessionState(session, connectionId);
+                    if (sessionStateOwnedOnClose)
+                    {
+                        WebSocketTurnFinalizationService.ReleaseBufferedAudio(session);
+                        session.Metadata.Remove(ActiveConnectionIdMetadataKey);
+                        cloudStateStore.CloseSession(session.SessionId);
+                    }
+                }
+            }
             transportMetrics.WebSocketConnectionClosed(kind);
         }
 
         var closeEnvelope = CreateEnvelope(context, kind, token, connectionId);
-        if (isPrematureClose)
+        if (isPrematureClose && sessionStateOwnedOnClose)
             webSocketService.MarkPrematureSocketLoopEnded(session, loopTransId);
 
         await telemetrySink.RecordConnectionClosedAsync(closeEnvelope, session,
@@ -468,6 +494,63 @@ internal sealed class WebSocketRequestCoordinator(
             await socket.SendAsync(payload, WebSocketMessageType.Text, true, cancellationToken);
             transportMetrics.WebSocketMessage("out", socketKind, "text-json",
                 SocketMessageTypeReader.Read(reply.Text), payload.Length);
+        }
+    }
+
+    internal static bool OwnsSessionState(CloudSession session, string connectionId)
+    {
+        return session.Metadata.TryGetValue(ActiveConnectionIdMetadataKey, out var owner) &&
+               string.Equals(owner?.ToString(), connectionId, StringComparison.Ordinal);
+    }
+
+    private static string ResolveSessionKey(WebSocketMessageEnvelope envelope)
+    {
+        var token = envelope.Token?.Trim();
+        if (string.IsNullOrWhiteSpace(token) ||
+            token.Equals("v1/listen", StringComparison.OrdinalIgnoreCase) ||
+            token.Equals("listen", StringComparison.OrdinalIgnoreCase) ||
+            token.Equals("v1/proactive", StringComparison.OrdinalIgnoreCase) ||
+            token.Equals("proactive", StringComparison.OrdinalIgnoreCase))
+            return $"conn:{envelope.ConnectionId}";
+
+        return token;
+    }
+
+    private static SessionGateLease AcquireSessionGate(string sessionKey)
+    {
+        lock (SessionGateRegistryLock)
+        {
+            if (!SessionGates.TryGetValue(sessionKey, out var gate))
+            {
+                gate = new SessionGate();
+                SessionGates[sessionKey] = gate;
+            }
+
+            gate.ReferenceCount += 1;
+            return new SessionGateLease(sessionKey, gate);
+        }
+    }
+
+    private sealed class SessionGate
+    {
+        public object SyncRoot { get; } = new();
+
+        public int ReferenceCount { get; set; }
+    }
+
+    private sealed class SessionGateLease(string sessionKey, SessionGate gate) : IDisposable
+    {
+        public SessionGate Gate { get; } = gate;
+
+        public void Dispose()
+        {
+            lock (SessionGateRegistryLock)
+            {
+                Gate.ReferenceCount -= 1;
+                if (Gate.ReferenceCount == 0 && SessionGates.TryGetValue(sessionKey, out var current) &&
+                    ReferenceEquals(current, Gate))
+                    SessionGates.Remove(sessionKey);
+            }
         }
     }
 

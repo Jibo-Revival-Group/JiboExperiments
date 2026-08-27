@@ -147,17 +147,22 @@ async function expectRejectedSocket(WebSocketImpl, url, timeoutMs = DEFAULT_TIME
   });
 }
 
-export function createProtocolCaller(baseUrl, hostName = "api.openjibo.com", fetchImpl = globalThis.fetch) {
+export function createProtocolCaller(baseUrl, hostName = "api.openjibo.com", fetchImpl = globalThis.fetch,
+  releaseSmokeSecret = null) {
   return async (service, operation, body) => {
+    const headers = {
+      "Content-Type": "application/json",
+      "X-Amz-Target": `${service}.${operation}`,
+      "X-OpenJibo-Harness-Host": hostName,
+      "X-OpenJibo-AppVersion": "1.0.20",
+    };
+    if (releaseSmokeSecret && service === "Notification_20160715" && operation === "NewRobotToken") {
+      headers["X-OpenJibo-Registration-Source"] = "deployment-smoke";
+      headers["X-OpenJibo-Release-Smoke-Secret"] = releaseSmokeSecret;
+    }
     const response = await fetchImpl(`${baseUrl.replace(/\/$/, "")}/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Amz-Target": `${service}.${operation}`,
-        "X-OpenJibo-Harness-Host": hostName,
-        "X-OpenJibo-AppVersion": "1.0.20",
-        "X-OpenJibo-Registration-Source": "release-smoke",
-      },
+      headers,
       body: JSON.stringify(body),
     });
     const text = await response.text();

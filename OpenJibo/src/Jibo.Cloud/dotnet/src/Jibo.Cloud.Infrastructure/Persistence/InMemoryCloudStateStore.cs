@@ -228,6 +228,26 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         string? registrationSource = null)
     {
         var source = RobotRegistrationSources.Normalize(registrationSource, deviceId);
+        if (source == RobotRegistrationSources.DeploymentSmoke ||
+            RobotRegistrationSources.IsDeploymentSmokeNamespace(deviceId))
+            throw new InvalidOperationException("Deployment-smoke devices require authenticated smoke registration.");
+        return GetOrCreateDeviceCore(deviceId, firmwareVersion, applicationVersion, source);
+    }
+
+    public DeviceRegistration GetOrCreateDeploymentSmokeDevice(DeploymentSmokeRegistrationAuthorization authorization,
+        string? firmwareVersion, string? applicationVersion)
+    {
+        ArgumentNullException.ThrowIfNull(authorization);
+        if (!RobotRegistrationSources.IsAllowedDeploymentSmokeDeviceId(authorization.DeviceId,
+                authorization.MaxConcurrentDevices))
+            throw new InvalidOperationException("Deployment-smoke device ID is outside the configured bounded set.");
+        return GetOrCreateDeviceCore(authorization.DeviceId.Trim(), firmwareVersion, applicationVersion,
+            RobotRegistrationSources.DeploymentSmoke);
+    }
+
+    private DeviceRegistration GetOrCreateDeviceCore(string deviceId, string? firmwareVersion,
+        string? applicationVersion, string source)
+    {
         var device = _devices.AddOrUpdate(
             deviceId,
             _ => new DeviceRegistration
@@ -273,6 +293,11 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         ArgumentNullException.ThrowIfNull(registration);
         if (string.IsNullOrWhiteSpace(registration.DeviceId))
             throw new ArgumentException("DeviceId is required.", nameof(registration));
+        if ((RobotRegistrationSources.IsDeploymentSmokeNamespace(registration.DeviceId) ||
+             RobotRegistrationSources.Normalize(registration.RegistrationSource, registration.DeviceId) ==
+             RobotRegistrationSources.DeploymentSmoke) &&
+            !_devices.ContainsKey(registration.DeviceId.Trim()))
+            throw new InvalidOperationException("Deployment-smoke devices require authenticated smoke registration.");
 
         _devices[registration.DeviceId.Trim()] = registration;
         TouchState();
@@ -796,6 +821,36 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
 
         TouchState();
         return token;
+    }
+
+    public string IssueDeploymentSmokeRobotToken(string deviceId)
+    {
+        ValidateDeploymentSmokeDeviceId(deviceId);
+        var normalizedDeviceId = deviceId.Trim();
+        if (!_devices.TryGetValue(normalizedDeviceId, out var device) ||
+            !string.Equals(RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+                RobotRegistrationSources.DeploymentSmoke, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Deployment-smoke token device is not classified as deployment-smoke.");
+        _sessions.RemoveDurableForDevice(normalizedDeviceId, "robot");
+        var token = $"token-{normalizedDeviceId}-{Guid.NewGuid():N}";
+        _sessions.RegisterDurableToken(token, new CloudSession
+        {
+            Kind = "robot",
+            AccountId = _account.AccountId,
+            Token = token,
+            DeviceId = normalizedDeviceId,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(15),
+            Metadata = BuildSessionMetadata(_account.AccountId, normalizedDeviceId, ResolveDefaultLoopId())
+        });
+        TouchState();
+        return token;
+    }
+
+    private static void ValidateDeploymentSmokeDeviceId(string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId) ||
+            !deviceId.Trim().StartsWith("open-jibo-smoke-staging-", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Deployment-smoke tokens require the fixed staging smoke namespace.");
     }
 
     public CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path)
@@ -3306,6 +3361,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             HostName = session.HostName,
             Path = session.Path,
             CreatedUtc = session.CreatedUtc,
+            ExpiresUtc = session.ExpiresUtc,
             LastSeenUtc = session.LastSeenUtc,
             FollowUpExpiresUtc = session.FollowUpExpiresUtc,
             LastMessageType = session.LastMessageType,
@@ -3353,6 +3409,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             HostName = session.HostName,
             Path = session.Path,
             CreatedUtc = session.CreatedUtc,
+            ExpiresUtc = session.ExpiresUtc,
             LastSeenUtc = session.LastSeenUtc,
             FollowUpExpiresUtc = session.FollowUpExpiresUtc,
             LastMessageType = session.LastMessageType,
@@ -3858,6 +3915,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         public string? HostName { get; init; }
         public string? Path { get; init; }
         public DateTimeOffset CreatedUtc { get; init; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset? ExpiresUtc { get; init; }
         public DateTimeOffset LastSeenUtc { get; init; } = DateTimeOffset.UtcNow;
         public DateTimeOffset? FollowUpExpiresUtc { get; init; }
         public string? LastMessageType { get; init; }
@@ -3879,6 +3937,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 HostName = HostName,
                 Path = Path,
                 CreatedUtc = CreatedUtc,
+                ExpiresUtc = ExpiresUtc,
                 LastSeenUtc = LastSeenUtc,
                 FollowUpExpiresUtc = FollowUpExpiresUtc,
                 LastMessageType = LastMessageType,

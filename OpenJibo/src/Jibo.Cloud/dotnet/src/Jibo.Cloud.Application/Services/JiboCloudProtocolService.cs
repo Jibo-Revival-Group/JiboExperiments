@@ -447,6 +447,15 @@ public sealed class JiboCloudProtocolService(
         var robotId = ReadString(body, "id") ??
                       ReadString(body, "robotId") ??
                       (string.IsNullOrWhiteSpace(envelope.DeviceId) ? "unknown-robot" : envelope.DeviceId!);
+        var setupRegistrationSource = envelope.Headers.TryGetValue("X-OpenJibo-Registration-Source",
+            out var setupSourceHeader)
+            ? setupSourceHeader
+            : null;
+        if (RobotRegistrationSources.Normalize(setupRegistrationSource, robotId) ==
+            RobotRegistrationSources.DeploymentSmoke)
+            return ProtocolDispatchResult.Raw(403,
+                "{\"message\":\"Deployment smoke identities cannot be created through OOBE.\"}",
+                "application/x-amz-json-1.1");
 
         var state = _oobeTokens.GetOrAdd(token ?? $"oobe-implicit-{robotId}", _ => new OobeTokenState
         {
@@ -1616,6 +1625,11 @@ public sealed class JiboCloudProtocolService(
         {
             var body = envelope.TryParseBody();
             var explicitRobotId = _configuredRobotId ?? ReadString(body, "id");
+            if (RobotRegistrationSources.Normalize(null, explicitRobotId) ==
+                RobotRegistrationSources.DeploymentSmoke)
+                return ProtocolDispatchResult.Raw(403,
+                    "{\"message\":\"Deployment smoke identities cannot be created through robot setup.\"}",
+                    "application/x-amz-json-1.1");
             var registeredDevice = !string.IsNullOrWhiteSpace(explicitRobotId)
                 ? stateStore.FindDeviceByFriendlyId(explicitRobotId) ??
                   stateStore.GetOrCreateDevice(explicitRobotId, envelope.FirmwareVersion, envelope.ApplicationVersion)

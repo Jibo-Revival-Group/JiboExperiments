@@ -20,6 +20,48 @@ public sealed partial class PostgreSqlCloudStateStoreTests
     }
 
     [Fact]
+    public void DeploymentSmokeRobotToken_ReplacesPriorActiveTokenAndUsesShortLifetime()
+    {
+        var tokens = new FakeTokenRepository();
+        var smoke = new DeviceRegistration
+        {
+            DeviceId = "open-jibo-smoke-staging-primary",
+            RobotId = "open-jibo-smoke-staging-primary",
+            FriendlyName = "Deployment smoke",
+            RegistrationSource = RobotRegistrationSources.DeploymentSmoke,
+            IsHidden = true,
+            ArchivedUtc = DateTimeOffset.UtcNow
+        };
+        var store = CreateStore(tokens, robotTokenLifetime: TimeSpan.FromDays(45), device: smoke);
+
+        var first = store.IssueDeploymentSmokeRobotToken(smoke.DeviceId);
+        var second = store.IssueDeploymentSmokeRobotToken(smoke.DeviceId);
+
+        Assert.Equal(2, tokens.RevokeForDeviceCalls);
+        Assert.All(tokens.IssuedRecords, issued =>
+            Assert.InRange(issued.ExpiresUtc - issued.IssuedUtc, TimeSpan.FromMinutes(14), TimeSpan.FromMinutes(16)));
+        Assert.DoesNotContain(store.GetSessions(), session => session.Token == first);
+        Assert.NotNull(store.FindSessionByToken(second));
+        Assert.Single(store.GetSessions(), session => session.Kind == "robot" && session.DeviceId == smoke.DeviceId);
+    }
+
+    [Fact]
+    public void NormalPostgreSqlCreationAndUpsert_RejectReservedSmokeNamespace()
+    {
+        var store = CreateStore(new FakeTokenRepository());
+
+        Assert.Throws<InvalidOperationException>(() =>
+            store.GetOrCreateDevice("open-jibo-smoke-staging-primary", null, null,
+                RobotRegistrationSources.Physical));
+        Assert.Throws<InvalidOperationException>(() => store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "open-jibo-smoke-staging-primary",
+            RobotId = "open-jibo-smoke-staging-primary",
+            RegistrationSource = RobotRegistrationSources.Physical
+        }));
+    }
+
+    [Fact]
     public void OpenSession_CopiesDurableMetadataIntoSeparateBoundedActiveSession()
     {
         var store = CreateStore(new FakeTokenRepository());
@@ -175,10 +217,10 @@ public sealed partial class PostgreSqlCloudStateStoreTests
         IRecognitionObservationRepository? recognition = null,
         ICommuteProfileRepository? commutes = null, ICalendarEventRepository? calendar = null,
         IGreetingPresenceRepository? greetings = null, IAtomicLoopBackupRestorer? atomicBackupRestorer = null,
-        ICloudStateSecretProtector? secretProtector = null)
+        ICloudStateSecretProtector? secretProtector = null, DeviceRegistration? device = null)
     {
         var account = new AccountProfile { AccountId = "account-1", Email = "owner@example.com" };
-        var device = new DeviceRegistration
+        device ??= new DeviceRegistration
         {
             DeviceId = "device-1",
             RobotId = "robot-1",
@@ -323,18 +365,27 @@ public sealed partial class PostgreSqlCloudStateStoreTests
     private sealed class FakeTokenRepository : ICloudAuthTokenRepository
     {
         internal CloudAuthTokenRecord? Issued { get; private set; }
+        internal List<CloudAuthTokenRecord> IssuedRecords { get; } = [];
+        internal int RevokeForDeviceCalls { get; private set; }
         public Task<CloudAuthTokenRecord> IssueAsync(string token, string tokenKind, string? accountId,
             string? deviceId, DateTimeOffset expiresUtc, IReadOnlyDictionary<string, object?>? metadata = null,
             CancellationToken cancellationToken = default)
         {
             Issued = new CloudAuthTokenRecord(tokenKind, accountId, deviceId, DateTimeOffset.UtcNow, expiresUtc,
                 null, metadata ?? new Dictionary<string, object?>());
+            IssuedRecords.Add(Issued);
             return Task.FromResult(Issued);
         }
         public Task<CloudAuthTokenRecord?> FindValidAsync(string token, DateTimeOffset? now = null,
             CancellationToken cancellationToken = default) => Task.FromResult(Issued);
         public Task<bool> RevokeAsync(string token, CancellationToken cancellationToken = default) =>
             Task.FromResult(true);
+        public Task<int> RevokeForDeviceAsync(string deviceId, string tokenKind,
+            CancellationToken cancellationToken = default)
+        {
+            RevokeForDeviceCalls++;
+            return Task.FromResult(1);
+        }
         public Task<int> RevokeForAccountAsync(string accountId,
             CancellationToken cancellationToken = default) => Task.FromResult(0);
     }

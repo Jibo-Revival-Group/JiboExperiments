@@ -241,6 +241,9 @@ public static class ServiceCollectionExtensions
                     provider.GetRequiredService<ITransportMetrics>());
             });
         }
+        var releaseSmokeAuthorization = new ReleaseSmokeAuthorizationOptions();
+        configuration?.GetSection("OpenJibo:ReleaseSmoke").Bind(releaseSmokeAuthorization);
+        services.AddSingleton(releaseSmokeAuthorization);
         services.AddSingleton<ICloudAuthProtocolHandler, CloudAuthProtocolHandler>();
         services.AddSingleton<IPersonalMemoryStore>(provider =>
         {

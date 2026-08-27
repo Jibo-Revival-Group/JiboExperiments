@@ -21,6 +21,7 @@ internal sealed class BoundedCloudSessionRegistry(int maximumActiveSessions = 25
     {
         get
         {
+            RemoveExpiredDurableTokens();
             var active = _active.ToArray();
             var activeKeys = active.Select(pair => pair.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
             return active.Select(pair => pair.Value)
@@ -29,10 +30,23 @@ internal sealed class BoundedCloudSessionRegistry(int maximumActiveSessions = 25
         }
     }
 
-    public IReadOnlyCollection<string> Keys =>
-        _active.Keys.Concat(_durableTokens.Keys).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    public IReadOnlyCollection<string> Keys
+    {
+        get
+        {
+            RemoveExpiredDurableTokens();
+            return _active.Keys.Concat(_durableTokens.Keys).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        }
+    }
 
-    public IReadOnlyCollection<CloudSession> DurableTokenValues => _durableTokens.Values.ToArray();
+    public IReadOnlyCollection<CloudSession> DurableTokenValues
+    {
+        get
+        {
+            RemoveExpiredDurableTokens();
+            return _durableTokens.Values.ToArray();
+        }
+    }
 
     public void RegisterDurableToken(string token, CloudSession session)
     {
@@ -66,10 +80,16 @@ internal sealed class BoundedCloudSessionRegistry(int maximumActiveSessions = 25
     }
 
     public CloudSession? Find(string token) =>
-        _active.GetValueOrDefault(token) ?? _durableTokens.GetValueOrDefault(token);
+        _active.GetValueOrDefault(token) ?? FindDurable(token);
 
     public CloudSession? FindActive(string token) => _active.GetValueOrDefault(token);
-    public CloudSession? FindDurable(string token) => _durableTokens.GetValueOrDefault(token);
+    public CloudSession? FindDurable(string token)
+    {
+        var durable = _durableTokens.GetValueOrDefault(token);
+        if (durable?.ExpiresUtc is null || durable.ExpiresUtc > DateTimeOffset.UtcNow) return durable;
+        _durableTokens.TryRemove(token, out _);
+        return null;
+    }
 
     public bool RemoveBySessionId(string sessionId)
     {
@@ -87,6 +107,23 @@ internal sealed class BoundedCloudSessionRegistry(int maximumActiveSessions = 25
         session = active ?? durable;
         if (removedActive) _transportMetrics.ActiveSessionsChanged(-1);
         return removedActive || removedDurable;
+    }
+
+    public int RemoveDurableForDevice(string deviceId, string kind)
+    {
+        var removed = 0;
+        foreach (var pair in _durableTokens.Where(pair =>
+                     string.Equals(pair.Value.DeviceId, deviceId, StringComparison.OrdinalIgnoreCase) &&
+                     string.Equals(pair.Value.Kind, kind, StringComparison.OrdinalIgnoreCase)).ToArray())
+            if (_durableTokens.TryRemove(pair.Key, out _)) removed++;
+        return removed;
+    }
+
+    private void RemoveExpiredDurableTokens()
+    {
+        var now = DateTimeOffset.UtcNow;
+        foreach (var pair in _durableTokens.Where(pair => pair.Value.ExpiresUtc <= now).ToArray())
+            _durableTokens.TryRemove(pair.Key, out _);
     }
 
     public void Clear()

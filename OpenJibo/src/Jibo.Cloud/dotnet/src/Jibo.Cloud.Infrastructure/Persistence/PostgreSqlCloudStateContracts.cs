@@ -58,6 +58,8 @@ public interface ICloudAuthTokenRepository
         CancellationToken cancellationToken = default);
     Task<bool> RevokeAsync(string token, CancellationToken cancellationToken = default);
     Task<int> RevokeForAccountAsync(string accountId, CancellationToken cancellationToken = default);
+    Task<int> RevokeForDeviceAsync(string deviceId, string tokenKind,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IRobotIdentityLinkRepository

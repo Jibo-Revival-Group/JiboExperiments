@@ -26,6 +26,7 @@ public sealed class DeviceRegistration
 
 public static class RobotRegistrationSources
 {
+    public const string DeploymentSmokePrefix = "open-jibo-smoke-staging";
     public const string Unknown = "unknown";
     public const string Physical = "physical";
     public const string BrowserHarness = "browser-harness";
@@ -51,4 +52,20 @@ public static class RobotRegistrationSources
         string.Equals(source, BrowserHarness, StringComparison.OrdinalIgnoreCase) ||
         string.Equals(source, DeploymentSmoke, StringComparison.OrdinalIgnoreCase) ||
         string.Equals(source, Bootstrap, StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsDeploymentSmokeNamespace(string? deviceId) =>
+        !string.IsNullOrWhiteSpace(deviceId) &&
+        deviceId.Trim().StartsWith($"{DeploymentSmokePrefix}-", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsAllowedDeploymentSmokeDeviceId(string? deviceId, int maxConcurrentDevices)
+    {
+        var normalized = deviceId?.Trim() ?? string.Empty;
+        if (string.Equals(normalized, $"{DeploymentSmokePrefix}-primary", StringComparison.Ordinal)) return true;
+        var prefix = $"{DeploymentSmokePrefix}-concurrent-";
+        if (!normalized.StartsWith(prefix, StringComparison.Ordinal)) return false;
+        var suffix = normalized[prefix.Length..];
+        return int.TryParse(suffix, out var index) && index >= 1 &&
+               index <= Math.Clamp(maxConcurrentDevices, 1, 50) &&
+               suffix == index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
 }

@@ -124,6 +124,21 @@ public sealed class TransportMetricsTests
     }
 
     [Fact]
+    public void SessionRegistry_DoesNotReturnExpiredDurableToken()
+    {
+        var registry = new BoundedCloudSessionRegistry(2, 2);
+        registry.RegisterDurableToken("expired-token", new CloudSession
+        {
+            Token = "expired-token",
+            Kind = "robot",
+            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(-1)
+        });
+
+        Assert.Null(registry.FindDurable("expired-token"));
+        Assert.Empty(registry.DurableTokenValues);
+    }
+
+    [Fact]
     public void BufferedAudio_RecordsAcceptedAndRejectedBytesWithoutTags()
     {
         var measurements = new List<MeasurementRecord>();

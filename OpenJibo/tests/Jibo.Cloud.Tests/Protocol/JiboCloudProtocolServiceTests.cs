@@ -162,6 +162,241 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public void NewRobotToken_DeploymentSmokeReusesSyntheticDeviceAndReplacesPriorToken()
+    {
+        var store = new InMemoryCloudStateStore();
+        var handler = new CloudAuthProtocolHandler(store, releaseSmokeAuthorization: new ReleaseSmokeAuthorizationOptions
+        {
+            Enabled = true,
+            Secret = "test-smoke-secret",
+            MaxConcurrentDevices = 6
+        });
+        var envelope = new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"open-jibo-smoke-staging-primary"}""",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["X-OpenJibo-Registration-Source"] = RobotRegistrationSources.DeploymentSmoke,
+                ["X-OpenJibo-Release-Smoke-Secret"] = "test-smoke-secret"
+            }
+        };
+
+        var first = handler.HandleNotification("NewRobotToken", envelope);
+        var second = handler.HandleNotification("NewRobotToken", envelope);
+
+        using var firstPayload = JsonDocument.Parse(first.BodyText);
+        using var secondPayload = JsonDocument.Parse(second.BodyText);
+        var firstToken = firstPayload.RootElement.GetProperty("token").GetString()!;
+        var secondToken = secondPayload.RootElement.GetProperty("token").GetString()!;
+        var device = Assert.Single(store.GetDevices(), candidate =>
+            candidate.DeviceId == "open-jibo-smoke-staging-primary");
+        Assert.Equal(RobotRegistrationSources.DeploymentSmoke, device.RegistrationSource);
+        Assert.True(device.IsHidden);
+        Assert.NotNull(device.ArchivedUtc);
+        Assert.NotEqual(firstToken, secondToken);
+        Assert.Null(store.FindSessionByToken(firstToken));
+        Assert.NotNull(store.FindSessionByToken(secondToken));
+        var smokeSession = Assert.Single(store.GetSessions(), session => session.Kind == "robot" &&
+            session.DeviceId == device.DeviceId);
+        Assert.InRange(smokeSession.ExpiresUtc!.Value - smokeSession.CreatedUtc,
+            TimeSpan.FromMinutes(14), TimeSpan.FromMinutes(16));
+    }
+
+    [Fact]
+    public void NewRobotToken_DeploymentSmokeHeaderOutsideFixedNamespaceCannotUseSyntheticBehavior()
+    {
+        var store = new InMemoryCloudStateStore();
+        var handler = new CloudAuthProtocolHandler(store, releaseSmokeAuthorization: new ReleaseSmokeAuthorizationOptions
+        {
+            Enabled = true,
+            Secret = "test-smoke-secret",
+            MaxConcurrentDevices = 6
+        });
+
+        var result = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"real-robot-with-spoofed-header"}""",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["X-OpenJibo-Registration-Source"] = RobotRegistrationSources.DeploymentSmoke,
+                ["X-OpenJibo-Release-Smoke-Secret"] = "test-smoke-secret"
+            }
+        });
+
+        Assert.Equal(403, result.StatusCode);
+        Assert.DoesNotContain(store.GetDevices(), candidate =>
+            candidate.DeviceId == "real-robot-with-spoofed-header");
+    }
+
+    [Theory]
+    [InlineData(false, "test-smoke-secret", "open-jibo-smoke-staging-primary")]
+    [InlineData(true, null, "open-jibo-smoke-staging-primary")]
+    [InlineData(true, "wrong-secret", "open-jibo-smoke-staging-primary")]
+    [InlineData(true, "test-smoke-secret", "open-jibo-smoke-staging-concurrent-7")]
+    [InlineData(true, "test-smoke-secret", "open-jibo-smoke-staging-concurrent-01")]
+    [InlineData(true, "test-smoke-secret", "open-jibo-smoke-staging-arbitrary")]
+    public void NewRobotToken_DeploymentSmokeFailsClosedWhenAuthorizationIsInvalid(bool enabled,
+        string? presentedSecret, string deviceId)
+    {
+        var store = new InMemoryCloudStateStore();
+        var handler = new CloudAuthProtocolHandler(store, releaseSmokeAuthorization: new ReleaseSmokeAuthorizationOptions
+        {
+            Enabled = enabled,
+            Secret = "test-smoke-secret",
+            MaxConcurrentDevices = 6
+        });
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["X-OpenJibo-Registration-Source"] = RobotRegistrationSources.DeploymentSmoke
+        };
+        if (presentedSecret is not null) headers["X-OpenJibo-Release-Smoke-Secret"] = presentedSecret;
+
+        var result = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = JsonSerializer.Serialize(new { deviceId }),
+            Headers = headers
+        });
+
+        Assert.Equal(403, result.StatusCode);
+        Assert.DoesNotContain(store.GetDevices(), candidate => candidate.DeviceId == deviceId);
+        Assert.DoesNotContain("test-smoke-secret", result.BodyText, StringComparison.Ordinal);
+        Assert.DoesNotContain("wrong-secret", result.BodyText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NewRobotToken_ReservedSmokeNamespaceRequiresExplicitSmokeClassification()
+    {
+        var store = new InMemoryCloudStateStore();
+        var handler = new CloudAuthProtocolHandler(store, releaseSmokeAuthorization: new ReleaseSmokeAuthorizationOptions
+        {
+            Enabled = true,
+            Secret = "test-smoke-secret",
+            MaxConcurrentDevices = 6
+        });
+
+        var result = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"open-jibo-smoke-staging-primary"}""",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["X-OpenJibo-Release-Smoke-Secret"] = "test-smoke-secret"
+            }
+        });
+
+        Assert.Equal(403, result.StatusCode);
+        Assert.DoesNotContain(store.GetDevices(), candidate =>
+            candidate.DeviceId == "open-jibo-smoke-staging-primary");
+    }
+
+    [Fact]
+    public void CreateHubToken_CannotUseDeploymentSmokeRegistrationPath()
+    {
+        var store = new InMemoryCloudStateStore();
+        var handler = new CloudAuthProtocolHandler(store, releaseSmokeAuthorization: new ReleaseSmokeAuthorizationOptions
+        {
+            Enabled = true,
+            Secret = "test-smoke-secret",
+            MaxConcurrentDevices = 6
+        });
+
+        var result = handler.HandleAccount("CreateHubToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"open-jibo-smoke-staging-primary"}""",
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["X-OpenJibo-Registration-Source"] = RobotRegistrationSources.DeploymentSmoke,
+                ["X-OpenJibo-Release-Smoke-Secret"] = "test-smoke-secret"
+            }
+        });
+
+        Assert.Equal(403, result.StatusCode);
+        Assert.DoesNotContain(store.GetDevices(), candidate =>
+            candidate.DeviceId == "open-jibo-smoke-staging-primary");
+    }
+
+    [Theory]
+    [InlineData("open-jibo-smoke-staging-primary")]
+    [InlineData("open-jibo-smoke-staging-concurrent-1")]
+    [InlineData("open-jibo-smoke-staging-concurrent-6")]
+    public void NewRobotToken_DeploymentSmokeAcceptsOnlyConfiguredBoundedIdentities(string deviceId)
+    {
+        var store = new InMemoryCloudStateStore();
+        var handler = new CloudAuthProtocolHandler(store, releaseSmokeAuthorization: new ReleaseSmokeAuthorizationOptions
+        {
+            Enabled = true,
+            Secret = "test-smoke-secret",
+            MaxConcurrentDevices = 6
+        });
+
+        var result = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = JsonSerializer.Serialize(new { deviceId }),
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["X-OpenJibo-Registration-Source"] = RobotRegistrationSources.DeploymentSmoke,
+                ["X-OpenJibo-Release-Smoke-Secret"] = "test-smoke-secret"
+            }
+        });
+
+        Assert.Equal(200, result.StatusCode);
+        Assert.Contains(store.GetDevices(), candidate => candidate.DeviceId == deviceId && candidate.IsHidden &&
+            candidate.ArchivedUtc is not null &&
+            candidate.RegistrationSource == RobotRegistrationSources.DeploymentSmoke);
+    }
+
+    [Fact]
+    public void NormalStoreCreation_RejectsReservedSmokeNamespaceEvenWithPhysicalClassification()
+    {
+        var store = new InMemoryCloudStateStore();
+
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            store.GetOrCreateDevice("open-jibo-smoke-staging-primary", null, null,
+                RobotRegistrationSources.Physical));
+
+        Assert.Contains("authenticated smoke registration", error.Message);
+        Assert.DoesNotContain(store.GetDevices(), candidate =>
+            candidate.DeviceId == "open-jibo-smoke-staging-primary");
+    }
+
+    [Fact]
+    public void NormalStoreUpsert_RejectsNewReservedSmokeNamespaceRecord()
+    {
+        var store = new InMemoryCloudStateStore();
+
+        var error = Assert.Throws<InvalidOperationException>(() => store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "open-jibo-smoke-staging-primary",
+            RobotId = "open-jibo-smoke-staging-primary",
+            RegistrationSource = RobotRegistrationSources.Physical
+        }));
+
+        Assert.Contains("authenticated smoke registration", error.Message);
+        Assert.DoesNotContain(store.GetDevices(), candidate =>
+            candidate.DeviceId == "open-jibo-smoke-staging-primary");
+    }
+
+    [Fact]
+    public void NewRobotToken_RealRobotTokensRetainNormalDurability()
+    {
+        var store = new InMemoryCloudStateStore();
+        var handler = new CloudAuthProtocolHandler(store);
+        var envelope = new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"physical-token-durability"}"""
+        };
+
+        var first = handler.HandleNotification("NewRobotToken", envelope);
+        var second = handler.HandleNotification("NewRobotToken", envelope);
+
+        using var firstPayload = JsonDocument.Parse(first.BodyText);
+        using var secondPayload = JsonDocument.Parse(second.BodyText);
+        Assert.NotNull(store.FindSessionByToken(firstPayload.RootElement.GetProperty("token").GetString()!));
+        Assert.NotNull(store.FindSessionByToken(secondPayload.RootElement.GetProperty("token").GetString()!));
+        Assert.Equal(2, store.GetSessions().Count(session => session.Kind == "robot" &&
+            session.DeviceId == "physical-token-durability"));
+    }
+
+    [Fact]
     public void NewRobotToken_MismatchedPresentedNameBecomesSuggestionWithoutRenamingDevice()
     {
         var store = new InMemoryCloudStateStore();
@@ -1247,7 +1482,7 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
-    public async Task SetupRobot_WithDeploymentSmokeRegistrationPersistsHostMappingsForVerification()
+    public async Task SetupRobot_RejectsDeploymentSmokeRegistrationBeforeIdentityWrite()
     {
         var store = new InMemoryCloudStateStore();
         var service = new JiboCloudProtocolService(store);
@@ -1266,28 +1501,30 @@ public sealed class JiboCloudProtocolServiceTests
                 """{"token":"smoke-token","id":"open-jibo-smoke-robot-123","targetMode":"open-jibo","rollbackSnapshotId":"rollback-smoke"}"""
         });
 
-        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(403, result.StatusCode);
+        Assert.Null(store.FindDeviceByFriendlyId("open-jibo-smoke-robot-123"));
+    }
 
-        var robot = store.FindDeviceByFriendlyId("open-jibo-smoke-robot-123");
-        Assert.NotNull(robot);
-        Assert.Equal("api.openjibo.com", robot!.HostMappings["api.jibo.com"]);
-        Assert.Equal("api.openjibo.com", robot.HostMappings["api-socket.jibo.com"]);
-        Assert.Equal("api.openjibo.com", robot.HostMappings["neo-hub.jibo.com"]);
+    [Fact]
+    public async Task UpdateRobot_RejectsReservedSmokeNamespaceAndPreservesRealRobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        var original = store.GetRobot().DeviceId;
+        var service = new JiboCloudProtocolService(store);
 
-        var proof = await service.DispatchAsync(new ProtocolEnvelope
+        var result = await service.DispatchAsync(new ProtocolEnvelope
         {
-            HostName = "api.openjibo.com",
+            HostName = "api.jibo.com",
             Method = "POST",
-            ServicePrefix = "OOBE_20160715",
-            Operation = "VerifyConnection",
-            BodyText =
-                """{"token":"smoke-token","reportedConnectionHost":"api.openjibo.com","reportedHostMappings":{"api.jibo.com":"api.openjibo.com","api-socket.jibo.com":"api.openjibo.com","open-jibo-socket.openjibo.com":"api.openjibo.com","neo-hub.jibo.com":"api.openjibo.com","neohub.openjibo.com":"api.openjibo.com"}}"""
+            ServicePrefix = "Robot_20160225",
+            Operation = "UpdateRobot",
+            BodyText = """{"id":"open-jibo-smoke-staging-primary"}"""
         });
 
-        Assert.Equal(200, proof.StatusCode);
-        using var proofPayload = JsonDocument.Parse(proof.BodyText);
-        Assert.True(proofPayload.RootElement.GetProperty("connected").GetBoolean());
-        Assert.Empty(proofPayload.RootElement.GetProperty("connectionBlockers").EnumerateArray());
+        Assert.Equal(403, result.StatusCode);
+        Assert.Equal(original, store.GetRobot().DeviceId);
+        Assert.DoesNotContain(store.GetDevices(), candidate =>
+            candidate.DeviceId == "open-jibo-smoke-staging-primary");
     }
 
 

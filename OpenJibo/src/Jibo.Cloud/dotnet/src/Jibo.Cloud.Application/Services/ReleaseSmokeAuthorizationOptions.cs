@@ -1,0 +1,41 @@
+using System.Security.Cryptography;
+using System.Text;
+using Jibo.Cloud.Domain.Models;
+
+namespace Jibo.Cloud.Application.Services;
+
+public sealed class ReleaseSmokeAuthorizationOptions
+{
+    public const string FixedPrefix = RobotRegistrationSources.DeploymentSmokePrefix;
+
+    public bool Enabled { get; set; }
+    public string? Secret { get; set; }
+    public int MaxConcurrentDevices { get; set; } = 6;
+
+    public bool TryAuthorize(string deviceId, string? presentedSecret,
+        out DeploymentSmokeRegistrationAuthorization? authorization)
+    {
+        authorization = null;
+        if (!Enabled || string.IsNullOrWhiteSpace(Secret) || !IsAllowedDeviceId(deviceId)) return false;
+        var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(Secret));
+        var presentedHash = SHA256.HashData(Encoding.UTF8.GetBytes(presentedSecret ?? string.Empty));
+        if (!CryptographicOperations.FixedTimeEquals(expectedHash, presentedHash)) return false;
+        authorization = new DeploymentSmokeRegistrationAuthorization(deviceId, MaxConcurrentDevices);
+        return true;
+    }
+
+    public bool IsAllowedDeviceId(string deviceId) =>
+        RobotRegistrationSources.IsAllowedDeploymentSmokeDeviceId(deviceId, MaxConcurrentDevices);
+}
+
+public sealed class DeploymentSmokeRegistrationAuthorization
+{
+    internal DeploymentSmokeRegistrationAuthorization(string deviceId, int maxConcurrentDevices)
+    {
+        DeviceId = deviceId;
+        MaxConcurrentDevices = maxConcurrentDevices;
+    }
+
+    public string DeviceId { get; }
+    public int MaxConcurrentDevices { get; }
+}

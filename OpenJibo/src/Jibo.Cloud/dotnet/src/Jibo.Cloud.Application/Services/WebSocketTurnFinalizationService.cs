@@ -1963,7 +1963,15 @@ public sealed class WebSocketTurnFinalizationService(
             return false;
 
         if (!transcriptHintEarlyFinalize && elapsedSinceLastAudio < AutoFinalizeHotphraseOggEarlyProbeGap)
-            return hotphraseOggProbeReady;
+        {
+            // Native robots keep streaming OGG while the mic is open, so a silence
+            // gap never appears. Do not use the 900ms early probe mid-utterance
+            // (that closed Hey Jibo at ~1s), but do allow the 1.8s continuous
+            // probe and an explicit OGG end-of-stream.
+            return HasReceivedOggEndOfStream(turnState)
+                ? hotphraseOggProbeReady
+                : ShouldContinuousProbeHotphraseOggAudio(turnState, pageCounts, turnAge);
+        }
 
         return transcriptHintEarlyFinalize ||
                hotphraseOggProbeReady ||
@@ -1975,10 +1983,7 @@ public sealed class WebSocketTurnFinalizationService(
         BufferedAudioPageCounts pageCounts,
         TimeSpan turnAge)
     {
-        if (!turnState.ListenHotphrase ||
-            !turnState.SawContext ||
-            !HasOggOpusFrames(turnState) ||
-            !IsHotphraseLaunchListen(turnState))
+        if (!IsHotphraseOggProbeCandidate(turnState))
             return false;
 
         if (HasReceivedOggEndOfStream(turnState))
@@ -1989,9 +1994,28 @@ public sealed class WebSocketTurnFinalizationService(
         return (turnAge >= AutoFinalizeHotphraseOggEarlyProbeMinTurnAge &&
                 turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes &&
                 pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggEarlyProbeMinAudioPages) ||
-               (turnAge >= AutoFinalizeHotphraseOggContinuousProbeMinTurnAge &&
-                turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes &&
-                pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggContinuousProbeMinAudioPages);
+               ShouldContinuousProbeHotphraseOggAudio(turnState, pageCounts, turnAge);
+    }
+
+    private static bool ShouldContinuousProbeHotphraseOggAudio(
+        WebSocketTurnState turnState,
+        BufferedAudioPageCounts pageCounts,
+        TimeSpan turnAge)
+    {
+        if (!IsHotphraseOggProbeCandidate(turnState) || HasReceivedOggEndOfStream(turnState))
+            return false;
+
+        return turnAge >= AutoFinalizeHotphraseOggContinuousProbeMinTurnAge &&
+               turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes &&
+               pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggContinuousProbeMinAudioPages;
+    }
+
+    private static bool IsHotphraseOggProbeCandidate(WebSocketTurnState turnState)
+    {
+        return turnState.ListenHotphrase &&
+               turnState.SawContext &&
+               HasOggOpusFrames(turnState) &&
+               IsHotphraseLaunchListen(turnState);
     }
 
     private static bool CanRetryEarlyAutoFinalizeProbe(WebSocketTurnState turnState)
@@ -2104,6 +2128,12 @@ public sealed class WebSocketTurnFinalizationService(
             {
                 "cloud version",
                 "what time is it",
+                "how old are you",
+                "what is your age",
+                "what's your age",
+                "whats your age",
+                "what's your favorite color",
+                "what is your favorite color",
                 "play word of the day",
                 "word of the day",
                 "stop",
@@ -2222,6 +2252,9 @@ public sealed class WebSocketTurnFinalizationService(
         if (string.Equals(session.LastIntent, "stop", StringComparison.OrdinalIgnoreCase))
             return false;
 
+        if (!IsDiagnosticSpeechIntent(session.LastIntent))
+            return false;
+
         var ignoreUntilUtc = session.TurnState.IgnoreLateListenSetupUntilUtc;
         if (!ignoreUntilUtc.HasValue || ignoreUntilUtc.Value <= DateTimeOffset.UtcNow ||
             !IsHotphraseLaunchListenSetup(text))
@@ -2282,9 +2315,14 @@ public sealed class WebSocketTurnFinalizationService(
         if (string.Equals(plan.IntentName, "stop", StringComparison.OrdinalIgnoreCase))
             return WebSocketTurnState.StopCommandLateAudioIgnoreWindow;
 
-        return string.Equals(plan.IntentName, "cloud_version", StringComparison.OrdinalIgnoreCase)
+        return IsDiagnosticSpeechIntent(plan.IntentName)
             ? WebSocketTurnState.DiagnosticSpeechLateAudioIgnoreWindow
             : WebSocketTurnState.DefaultLateAudioIgnoreWindow;
+    }
+
+    private static bool IsDiagnosticSpeechIntent(string? intentName)
+    {
+        return string.Equals(intentName, "cloud_version", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool ShouldIgnoreAudioWithoutListen(WebSocketTurnState turnState)
@@ -3300,7 +3338,9 @@ public sealed class WebSocketTurnFinalizationService(
             "what s the cloud" or "what is the cloud" or
             "what's your favorite" or "whats your favorite" or "what s your favorite" or
             "what is your favorite" or "what's your favourite" or "whats your favourite" or
-            "what s your favourite" or "what is your favourite";
+            "what s your favourite" or "what is your favourite" or
+            "how old" or "how old are" or "how old r" or
+            "what is your age" or "what's your age" or "what s your age" or "whats your age";
     }
 
     private static bool IsHotphraseOnlyTranscript(string normalized)

@@ -13,6 +13,7 @@ internal static class LegacyMimIntentResolver
             ["robot_what_are_you_made_of"] = "JBO_WhatAreYou",
             ["robot_how_do_you_work"] = "JBO_HowDoYouWork",
             ["robot_age"] = "JBO_HowOldAreYou",
+            ["robot_how_old_are_you"] = "JBO_HowOldAreYou",
             ["robot_birthday"] = "JBO_WhenWereYouBorn",
             ["robot_name"] = "JBO_WhatsYourName",
             ["robot_taxes"] = "JBO_DoYouPayTaxes",

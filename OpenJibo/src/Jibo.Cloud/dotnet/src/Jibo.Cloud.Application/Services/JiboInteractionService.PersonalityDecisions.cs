@@ -50,6 +50,7 @@ public sealed partial class JiboInteractionService
             return new JiboInteractionDecision(
                 intentName,
                 reply,
+                SkillName: "chitchat-skill",
                 ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
 
         var ageDescription = DescribePersonaAge(referenceDate, birthdate);
@@ -58,6 +59,7 @@ public sealed partial class JiboInteractionService
         return new JiboInteractionDecision(
             intentName,
             reply,
+            SkillName: "chitchat-skill",
             ContextUpdates: ScriptedResponseDecisionBuilder.BuildScriptedResponseContextUpdates());
     }
 

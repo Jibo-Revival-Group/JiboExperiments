@@ -186,8 +186,25 @@ public sealed class ResponsePlanToSocketMessagesMapper
                                      SearchThinkingPreludeFactory.AnswerSkillId,
                                      StringComparison.OrdinalIgnoreCase) ||
                                  isKnowledgeSearchIntent;
+        var localOnRobotSkillId = isWordOfDayLaunch ? "@be/word-of-the-day" :
+            isRadioLaunch ? "@be/radio" :
+            isBadAppleLaunch ? "@be/bad-apple" :
+            isSettingsLaunch ? "@be/settings" :
+            isPhotoGalleryLaunch ? "@be/gallery" :
+            isPhotoCreateLaunch ? "@be/create" :
+            isClockSkillLaunch ? "@be/clock" :
+            isIntroductionsLaunch ? "@be/introductions" :
+            null;
+        var shouldEmitCloudSpeak = emitSkillActions &&
+                                   speak is not null &&
+                                   !isSkillListenIntent &&
+                                   !isPromptEchoIntent &&
+                                   !(isYesNoIntent && isSkillOwnedYesNoTurn);
         // Pegasus answer LISTEN: skillID="answer", onRobot=false, launch=true, no cloudSkill on wire.
         // Robot remaps skillID → match.cloudSkill and launches @be/nimbus (Thinking_Eye for answer/news).
+        // Stock jetstream skill-switch uses match.skillID, not nlu.skill. Hotphrase + Nimbus
+        // context suppresses delayed SKILL_REDIRECT, so the initial LISTEN match must carry
+        // the on-robot skill or Nimbus will never leave idle.
         object? listenMatch;
         if (isSleepCommand)
         {
@@ -225,6 +242,34 @@ public sealed class ResponsePlanToSocketMessagesMapper
                 skipSurprises = true
             };
         }
+        else if (!string.IsNullOrWhiteSpace(localOnRobotSkillId))
+        {
+            listenMatch = new
+            {
+                intent = outboundIntent,
+                rule = outboundRules.FirstOrDefault() ?? string.Empty,
+                score = 0.95,
+                skillID = localOnRobotSkillId,
+                onRobot = true,
+                launch = true,
+                cloudSkill,
+                skipSurprises = true
+            };
+        }
+        else if (shouldEmitCloudSpeak)
+        {
+            listenMatch = new
+            {
+                intent = outboundIntent,
+                rule = outboundRules.FirstOrDefault() ?? string.Empty,
+                score = 0.95,
+                skillID = "@be/nimbus",
+                onRobot = false,
+                launch = true,
+                cloudSkill = string.IsNullOrWhiteSpace(cloudSkill) ? "chitchat-skill" : cloudSkill,
+                skipSurprises = true
+            };
+        }
         else
         {
             listenMatch = new
@@ -255,16 +300,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
                     outboundIntent,
                     outboundRules,
                     entities,
-                    isWordOfDayLaunch ? "@be/word-of-the-day" :
-                    isRadioLaunch ? "@be/radio" :
-                    isBadAppleLaunch ? "@be/bad-apple" :
-                    isSettingsLaunch ? "@be/settings" :
-                    isPhotoGalleryLaunch ? "@be/gallery" :
-                    isPhotoCreateLaunch ? "@be/create" :
-                    isClockSkillLaunch ? "@be/clock" :
-                    isReportSkillLaunch ? "report-skill" :
-                    isIntroductionsLaunch ? "@be/introductions" :
-                    null,
+                    localOnRobotSkillId ??
+                    (isReportSkillLaunch ? "report-skill" : null),
                     isGlobalCommand ? nluDomain ?? "global_commands" : null),
                 ["match"] = listenMatch
             }
@@ -471,13 +508,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         // Don't emit a chitchat SKILL_ACTION for tutorial yes/no turns: the tutorial skill handles
         // the response locally. Sending a competing chitchat-skill action with final:true causes the
         // GLSM to double-dispatch and the tutorial never advances (dance question repeats forever).
-        if (emitSkillActions &&
-            speak is not null &&
-            !isSkillListenIntent &&
-            !isPromptEchoIntent &&
-            !(isYesNoIntent && isSkillOwnedYesNoTurn))
+        if (shouldEmitCloudSpeak)
             messages.Add(new SocketReplyPlan(
-                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak, skill, outboundAsrText)),
+                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak!, skill, outboundAsrText)),
                 75));
 
         return messages;

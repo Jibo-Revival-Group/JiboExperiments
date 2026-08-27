@@ -710,9 +710,12 @@ public sealed partial class JiboInteractionService
         if (MatchesAny(
                 loweredTranscript,
                 "how old are you",
+                "how old are ya",
+                "how old r you",
                 "what is your age",
+                "what's your age",
                 "what s your age",
-                "how old r you"))
+                "whats your age"))
             return "robot_how_old_are_you";
 
         if (MatchesAny(

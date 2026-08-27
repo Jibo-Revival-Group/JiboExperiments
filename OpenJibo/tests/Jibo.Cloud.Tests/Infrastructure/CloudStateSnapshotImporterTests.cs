@@ -101,6 +101,31 @@ public sealed class CloudStateSnapshotImporterTests
     }
 
     [Fact]
+    public void GetLegacyDurableFamilyCounts_EmitsOnlyAggregateCounts()
+    {
+        const string json = """
+                              {
+                                "Robot": { "DeviceId": "device-a", "RobotId": "robot-a" },
+                                "Devices": [
+                                  { "DeviceId": "DEVICE-A", "RobotId": "robot-a" },
+                                  { "DeviceId": "device-b", "RobotId": "robot-b" }
+                                ],
+                                "Sessions": [
+                                  { "DeviceId": "observed-a", "Token": "token-secret",
+                                    "Metadata": { "registeredDeviceId": "device-a" } },
+                                  { "DeviceId": "device-b", "Token": "conn:live" }
+                                ]
+                              }
+                              """;
+
+        var counts = PostgreSqlCloudStateSnapshotImporter.GetLegacyDurableFamilyCounts(json);
+
+        Assert.Equal(2, counts["devices"]);
+        Assert.Equal(1, counts["issuedTokens"]);
+        Assert.Equal(1, counts["robotIdentityLinks"]);
+        Assert.DoesNotContain("device-a", counts.Keys, StringComparer.OrdinalIgnoreCase);
+    }
+    [Fact]
     public void TokenHashAndIdentityAudit_DoNotPersistReusableTokenOrObjectShapedAudit()
     {
         const string token = "token-device-1-super-secret";

@@ -139,6 +139,13 @@ public sealed class PostgreSqlCloudStateSnapshotImporter
     internal static string Sha256(string value) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
 
+    /// <summary>
+    /// Returns redacted, aggregate counts from a legacy cloud-state document.
+    /// This intentionally exposes no document identifiers, credentials, or payloads.
+    /// </summary>
+    public static IReadOnlyDictionary<string, int> GetLegacyDurableFamilyCounts(string sourceJson) =>
+        ParseSnapshot(sourceJson).GetDurableFamilyCounts();
+
     internal static RobotIdentityLinkAuditEntry[] BuildLegacyIdentityLinkAudit(
         string inventoryDeviceId, DateTimeOffset occurredUtc) =>
         [new RobotIdentityLinkAuditEntry(

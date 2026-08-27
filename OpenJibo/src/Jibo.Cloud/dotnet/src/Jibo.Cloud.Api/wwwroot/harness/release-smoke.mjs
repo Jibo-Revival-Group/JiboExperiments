@@ -167,8 +167,35 @@ export function createProtocolCaller(baseUrl, hostName = "api.openjibo.com", fet
     });
     const text = await response.text();
     const payload = text ? JSON.parse(text) : null;
-    if (!response.ok) throw new Error(`${service}.${operation} returned HTTP ${response.status}: ${text}`);
+    if (!response.ok) {
+      const error = new Error(`${service}.${operation} returned HTTP ${response.status}: ${text}`);
+      error.status = response.status;
+      error.responseText = text;
+      throw error;
+    }
     return payload;
+  };
+}
+
+export function withDeploymentSmokeAuthorizationRetry(protocolCall, {
+  attempts = 12,
+  intervalMs = 5000,
+  delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+} = {}) {
+  return async (service, operation, body) => {
+    const isRegistration = service === "Notification_20160715" && operation === "NewRobotToken";
+    if (!isRegistration) return protocolCall(service, operation, body);
+
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await protocolCall(service, operation, body);
+      } catch (error) {
+        const isAuthorizationRollout = error?.status === 403 &&
+          error?.responseText?.includes("Deployment smoke is not authorized.");
+        if (!isAuthorizationRollout || attempt >= attempts) throw error;
+        await delay(intervalMs);
+      }
+    }
   };
 }
 

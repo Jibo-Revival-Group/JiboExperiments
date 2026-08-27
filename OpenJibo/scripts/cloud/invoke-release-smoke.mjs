@@ -3,6 +3,7 @@
 import {
   createProtocolCaller,
   runReleaseSmoke,
+  withDeploymentSmokeAuthorizationRetry,
 } from "../../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/wwwroot/harness/release-smoke.mjs";
 
 const baseUrl = process.env.BASE_URL || process.argv[2];
@@ -42,9 +43,11 @@ const protocolHost = process.env.OPENJIBO_RELEASE_SMOKE_HOST ||
   (isLocal ? baseHost : "api.openjibo.com");
 
 try {
+  const protocolCall = withDeploymentSmokeAuthorizationRetry(
+    createProtocolCaller(baseUrl, protocolHost, globalThis.fetch, releaseSmokeSecret));
   const result = await runReleaseSmoke({
     baseUrl,
-    protocolCall: createProtocolCaller(baseUrl, protocolHost, globalThis.fetch, releaseSmokeSecret),
+    protocolCall,
     robotPrefix,
     concurrency: process.env.RELEASE_SMOKE_CONCURRENCY || 6,
     turnPercent: process.env.RELEASE_SMOKE_TURN_PERCENT || 25,

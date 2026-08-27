@@ -6,6 +6,7 @@ import {
   createProtocolCaller,
   normalizeLoadOptions,
   runReleaseSmoke,
+  withDeploymentSmokeAuthorizationRetry,
 } from "../../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/wwwroot/harness/release-smoke.mjs";
 
 class FakeWebSocket {
@@ -111,6 +112,39 @@ test("createProtocolCaller classifies registration as deployment smoke", async (
   assert.equal(requests[0].options.headers["X-OpenJibo-Release-Smoke-Secret"], "test-smoke-secret");
   assert.equal(requests[1].options.headers["X-OpenJibo-Registration-Source"], undefined);
   assert.equal(requests[1].options.headers["X-OpenJibo-Release-Smoke-Secret"], undefined);
+});
+
+test("managed registration tolerates bounded authorization rollout and no other failures", async () => {
+  let calls = 0;
+  const delays = [];
+  const rolloutCall = withDeploymentSmokeAuthorizationRetry(async () => {
+    calls += 1;
+    if (calls < 3) {
+      const error = new Error("not ready");
+      error.status = 403;
+      error.responseText = '{"message":"Deployment smoke is not authorized."}';
+      throw error;
+    }
+    return { token: "ready-token" };
+  }, {
+    attempts: 3,
+    intervalMs: 5,
+    delay: async (milliseconds) => delays.push(milliseconds),
+  });
+
+  assert.deepEqual(await rolloutCall("Notification_20160715", "NewRobotToken", {}),
+    { token: "ready-token" });
+  assert.equal(calls, 3);
+  assert.deepEqual(delays, [5, 5]);
+
+  const wrongSecret = new Error("wrong secret");
+  wrongSecret.status = 403;
+  wrongSecret.responseText = '{"message":"Forbidden."}';
+  const failClosed = withDeploymentSmokeAuthorizationRetry(async () => { throw wrongSecret; }, {
+    attempts: 3,
+    delay: async () => assert.fail("unrelated 403 must not be retried"),
+  });
+  await assert.rejects(failClosed("Notification_20160715", "NewRobotToken", {}), wrongSecret);
 });
 
 function runManagedCli(environment) {

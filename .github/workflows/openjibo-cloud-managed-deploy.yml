@@ -640,6 +640,57 @@ jobs:
                 "OpenJibo__ReleaseSmoke__Secret=secretref:release-smoke-authorization" \
                 "OpenJibo__ReleaseSmoke__MaxConcurrentDevices=${{ inputs.staging_smoke_robot_count }}" \
               --output none
+
+            configured_revision="$(az containerapp show \
+              --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+              --name "$app_name" \
+              --query properties.latestRevisionName \
+              --output tsv)"
+            if [[ -z "$configured_revision" ]]; then
+              echo "The release-smoke configuration did not create a Container App revision." >&2
+              exit 1
+            fi
+
+            # App-level secret changes are not loaded by an already-running replica. Restart the
+            # exact revision created by the env update, then wait for that revision—not an older
+            # healthy revision—to own staging traffic before presenting the authorization secret.
+            az containerapp revision restart \
+              --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+              --name "$app_name" \
+              --revision "$configured_revision" \
+              --output none
+
+            configured_revision_ready=false
+            for _ in $(seq 1 30); do
+              latest_ready_revision="$(az containerapp show \
+                --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+                --name "$app_name" \
+                --query properties.latestReadyRevisionName \
+                --output tsv)"
+              revision_active="$(az containerapp revision show \
+                --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+                --name "$app_name" \
+                --revision "$configured_revision" \
+                --query properties.active \
+                --output tsv)"
+              revision_running_state="$(az containerapp revision show \
+                --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+                --name "$app_name" \
+                --revision "$configured_revision" \
+                --query properties.runningState \
+                --output tsv)"
+              if [[ "$latest_ready_revision" == "$configured_revision" &&
+                    "$revision_active" == "true" &&
+                    "$revision_running_state" == "Running" ]]; then
+                configured_revision_ready=true
+                break
+              fi
+              sleep 5
+            done
+            if [[ "$configured_revision_ready" != "true" ]]; then
+              echo "The release-smoke revision did not become active and ready." >&2
+              exit 1
+            fi
           else
             bash ./scripts/cloud/cleanup-release-smoke-authorization.sh \
               --resource-group "$OPENJIBO_RESOURCE_GROUP" \

@@ -1,3 +1,4 @@
+using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
 using Npgsql;
 using NpgsqlTypes;
@@ -20,11 +21,13 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
 
     private readonly BoundedExpiringCache<string, DeviceRegistration> _cache;
     private readonly PostgreSqlCloudStateDataSource _dataSource;
+    private readonly ITransportMetrics _metrics;
 
     public PostgreSqlCloudDeviceRepository(PostgreSqlCloudStateDataSource dataSource, int cacheMaxEntries = 256,
-        TimeSpan? cacheTtl = null, TimeProvider? timeProvider = null)
+        TimeSpan? cacheTtl = null, TimeProvider? timeProvider = null, ITransportMetrics? transportMetrics = null)
     {
         _dataSource = dataSource;
+        _metrics = transportMetrics ?? NullTransportMetrics.Instance;
         _cache = new BoundedExpiringCache<string, DeviceRegistration>(cacheMaxEntries,
             cacheTtl ?? TimeSpan.FromMinutes(5), StringComparer.OrdinalIgnoreCase, timeProvider);
     }
@@ -36,7 +39,12 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
     {
         if (string.IsNullOrWhiteSpace(deviceId)) return null;
         var key = deviceId.Trim();
-        if (_cache.TryGet(key, out var cached)) return Clone(cached);
+        if (_cache.TryGet(key, out var cached))
+        {
+            _metrics.PersistenceCacheAccess("cloud_device", "hit");
+            return Clone(cached);
+        }
+        _metrics.PersistenceCacheAccess("cloud_device", "miss");
 
         var device = await ReadOneAsync("LOWER(DeviceId) = LOWER(@value)", key, cancellationToken);
         if (device is not null) _cache.Set(device.DeviceId, Clone(device));
@@ -48,7 +56,12 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
     {
         if (string.IsNullOrWhiteSpace(friendlyId)) return null;
         var value = friendlyId.Trim();
-        if (_cache.TryGet(value, out var cached)) return Clone(cached);
+        if (_cache.TryGet(value, out var cached))
+        {
+            _metrics.PersistenceCacheAccess("cloud_device", "hit");
+            return Clone(cached);
+        }
+        _metrics.PersistenceCacheAccess("cloud_device", "miss");
 
         var device = await ReadOneAsync("""
                                         LOWER(DeviceId) = LOWER(@value) OR

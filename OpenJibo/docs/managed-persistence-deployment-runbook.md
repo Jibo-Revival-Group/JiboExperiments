@@ -111,10 +111,23 @@ Expected sequence:
 7. Import and verify both legacy snapshots.
 8. Store embedded backups in staging Azure Blob Storage.
 9. Deploy and run the HTTP smoke test against staging.
-10. Run the deployed WebSocket release smoke through Azure ingress: token issuance, notification reconnect, `CLIENT_ASR`, `CLIENT_NLU`, malformed-frame recovery, missing-token rejection, persistence, and six concurrent fake robots.
+10. Run the deployed WebSocket release smoke through Azure ingress: token issuance, notification reconnect, `CLIENT_ASR`, `CLIENT_NLU`, malformed-frame recovery, missing-token rejection, persistence, and the selected connected-robot/simultaneous-turn tier. The quick gate defaults to six connected robots and 25% simultaneous turns for one round.
 11. Upload `openjibo-staging-gate-<commit>` with both smoke results.
 
 The same WebSocket release smoke is available from the admin harness and runs against the current deployment. A failed HTTP or WebSocket smoke restores the previous revision and produces no promotion gate.
+
+Fleet peer synchronization is disabled by default and the managed workflow forbids enabling it in staging, even
+when staging was cloned from production and has the same trusted-server rows or shared-key secret. Production
+must deliberately set `enable_fleet_peer_sync` and provide exact comma-separated
+`fleet_peer_allowed_hosts`; the application applies that allowlist to both outbound and inbound presence reports.
+Do not enable it until the remote peer has the matching key and reciprocal trust configuration.
+
+Immediate staging containment was applied on `2026-08-26`: the
+`OpenJibo__FleetNetwork__PeerSyncSharedKey` environment reference was removed from `rg-openjibo-staging`, creating
+healthy revision `openjibo-cloud--0000009`. The six-robot/25%-turn smoke passed on that revision at 209-212 ms,
+and its console tail contained no FleetPeerSync or smoke error markers. The secret remains stored for controlled
+future use but is not exposed to the staging container. Deploy this source patch before running the managed
+workflow again; an older workflow definition would restore the environment reference.
 
 ## Staging Verification
 

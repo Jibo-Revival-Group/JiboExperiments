@@ -16,22 +16,25 @@ public sealed class PostgreSqlPersonalMemoryStore : IPersonalMemoryStore, IDispo
     private readonly NpgsqlDataSource _dataSource;
     private readonly bool _ownsDataSource;
     private readonly ScopedMemoryCache _cache;
+    private readonly ITransportMetrics _metrics;
     private DateTimeOffset? _lastLoadedUtc;
     private DateTimeOffset? _lastSavedUtc;
     private long _revision;
 
     public PostgreSqlPersonalMemoryStore(NpgsqlDataSource dataSource, int cacheMaxEntries = 256,
-        TimeSpan? cacheTtl = null)
+        TimeSpan? cacheTtl = null, ITransportMetrics? transportMetrics = null)
     {
         _dataSource = dataSource;
-        _cache = new ScopedMemoryCache(cacheMaxEntries, cacheTtl ?? TimeSpan.FromMinutes(5));
+        _metrics = transportMetrics ?? NullTransportMetrics.Instance;
+        _cache = new ScopedMemoryCache(cacheMaxEntries, cacheTtl ?? TimeSpan.FromMinutes(5),
+            result => _metrics.PersistenceCacheAccess("personal_memory", result));
         ImportLegacySnapshotOnce();
         LoadPersistedState();
     }
 
     public PostgreSqlPersonalMemoryStore(string connectionString, int maxPoolSize = 4,
-        int cacheMaxEntries = 256, TimeSpan? cacheTtl = null)
-        : this(CreateDataSource(connectionString, maxPoolSize), cacheMaxEntries, cacheTtl)
+        int cacheMaxEntries = 256, TimeSpan? cacheTtl = null, ITransportMetrics? transportMetrics = null)
+        : this(CreateDataSource(connectionString, maxPoolSize), cacheMaxEntries, cacheTtl, transportMetrics)
     {
         _ownsDataSource = true;
     }
@@ -445,7 +448,7 @@ public sealed class PostgreSqlPersonalMemoryStore : IPersonalMemoryStore, IDispo
         public Dictionary<string, List<string>> Lists { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
-    private sealed class ScopedMemoryCache(int maxEntries, TimeSpan ttl)
+    private sealed class ScopedMemoryCache(int maxEntries, TimeSpan ttl, Action<string>? recordAccess = null)
     {
         private readonly Dictionary<string, CacheEntry> _entries = new(StringComparer.OrdinalIgnoreCase);
         private readonly Lock _syncRoot = new();
@@ -460,11 +463,14 @@ public sealed class PostgreSqlPersonalMemoryStore : IPersonalMemoryStore, IDispo
                 if (_entries.TryGetValue(key, out var cached) && cached.ExpiresUtc > now)
                 {
                     cached.LastAccessUtc = now;
+                    recordAccess?.Invoke("hit");
                     return cached.Value;
                 }
 
                 _entries.Remove(key);
             }
+
+            recordAccess?.Invoke("miss");
 
             // Do not hold the cache lock during database I/O. Concurrent misses may
             // perform the same bounded scoped read, but unrelated tenants never block.

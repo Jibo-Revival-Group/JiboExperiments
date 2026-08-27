@@ -9,6 +9,12 @@ public interface ITransportMetrics
     void ActiveSessionsChanged(long delta);
     void BufferedAudioAccepted(long bytes);
     void BufferedAudioLimitRejected(long bytes);
+    void ActiveTurnsChanged(long delta);
+    void TurnPhaseCompleted(string phase, string outcome, double durationMilliseconds);
+    void TurnFinalizationSuppressed(string reason);
+    void TurnRepliesEmitted(long count, bool hasEndOfStream);
+    void PersistenceCacheAccess(string store, string result);
+    void PostgreSqlPoolConfigured(string store, int maximumConnections);
 }
 
 public sealed class NullTransportMetrics : ITransportMetrics
@@ -23,4 +29,10 @@ public sealed class NullTransportMetrics : ITransportMetrics
     public void ActiveSessionsChanged(long delta) { }
     public void BufferedAudioAccepted(long bytes) { }
     public void BufferedAudioLimitRejected(long bytes) { }
+    public void ActiveTurnsChanged(long delta) { }
+    public void TurnPhaseCompleted(string phase, string outcome, double durationMilliseconds) { }
+    public void TurnFinalizationSuppressed(string reason) { }
+    public void TurnRepliesEmitted(long count, bool hasEndOfStream) { }
+    public void PersistenceCacheAccess(string store, string result) { }
+    public void PostgreSqlPoolConfigured(string store, int maximumConnections) { }
 }

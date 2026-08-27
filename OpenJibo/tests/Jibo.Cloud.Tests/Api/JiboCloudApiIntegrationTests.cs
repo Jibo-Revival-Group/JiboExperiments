@@ -37,9 +37,11 @@ public sealed class JiboCloudApiIntegrationTests
         var module = await client.GetStringAsync("/harness/release-smoke.mjs");
 
         Assert.Contains("runReleaseSmoke", page, StringComparison.Ordinal);
+        Assert.Contains("releaseTurnPercent", page, StringComparison.Ordinal);
         Assert.Contains("type=\"module\"", page, StringComparison.Ordinal);
         Assert.Contains("export async function runReleaseSmoke", module, StringComparison.Ordinal);
-        Assert.Contains("concurrent fake robot sockets", module, StringComparison.Ordinal);
+        Assert.Contains("connected fake robots with concurrent turns", module, StringComparison.Ordinal);
+        Assert.Contains("turnLatencyMs", module, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -179,6 +181,12 @@ public sealed class JiboCloudApiIntegrationTests
         public void ActiveSessionsChanged(long delta) { }
         public void BufferedAudioAccepted(long bytes) { }
         public void BufferedAudioLimitRejected(long bytes) { }
+        public void ActiveTurnsChanged(long delta) { }
+        public void TurnPhaseCompleted(string phase, string outcome, double durationMilliseconds) { }
+        public void TurnFinalizationSuppressed(string reason) { }
+        public void TurnRepliesEmitted(long count, bool hasEndOfStream) { }
+        public void PersistenceCacheAccess(string store, string result) { }
+        public void PostgreSqlPoolConfigured(string store, int maximumConnections) { }
     }
 
     private sealed record HttpPayloadRecord(

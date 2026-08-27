@@ -26,6 +26,7 @@ builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 
     loggerConfiguration
         .MinimumLevel.Is(minimumLevel)
+        .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
         .Enrich.FromLogContext()
         .Enrich.WithProperty("Application", "OpenJibo.Cloud.Api")
         .Filter.ByExcluding(e =>
@@ -86,6 +87,12 @@ app.Use(async (context, next) =>
         .CreateLogger("Jibo.Cloud.Api.RequestDiagnostics");
     var remoteIp = context.Connection.RemoteIpAddress?.ToString();
     var userAgent = context.Request.Headers.UserAgent.ToString();
+    var socketKind = context.WebSockets.IsWebSocketRequest
+        ? SocketKindResolver.Resolve(context.Request.Host.Host, context.Request.Path)
+        : "http";
+    var safePath = RequestLogSanitizer.RedactWebSocketPath(socketKind, context.Request.Path);
+    var safeQuery = RequestLogSanitizer.RedactQuery(context.Request.QueryString,
+        context.WebSockets.IsWebSocketRequest);
 
     logger.LogInformation(
         "HTTP request started traceId={TraceId} method={Method} host={Host} path={Path} " +
@@ -93,8 +100,8 @@ app.Use(async (context, next) =>
         context.TraceIdentifier,
         context.Request.Method,
         context.Request.Host.Host,
-        context.Request.Path,
-        context.Request.QueryString.HasValue ? context.Request.QueryString.Value : null,
+        safePath,
+        safeQuery,
         remoteIp,
         userAgent,
         context.WebSockets.IsWebSocketRequest);
@@ -111,7 +118,7 @@ app.Use(async (context, next) =>
             context.TraceIdentifier,
             context.Request.Method,
             context.Request.Host.Host,
-            context.Request.Path,
+            safePath,
             remoteIp,
             context.WebSockets.IsWebSocketRequest);
         throw;
@@ -124,7 +131,7 @@ app.Use(async (context, next) =>
             context.TraceIdentifier,
             context.Request.Method,
             context.Request.Host.Host,
-            context.Request.Path,
+            safePath,
             context.Response.StatusCode,
             Stopwatch.GetElapsedTime(started).TotalMilliseconds,
             remoteIp,

@@ -13,6 +13,7 @@ public sealed class BoundedAudioBufferBudgetTests
         Assert.True(budget.TryReserve("session-b", 4));
         Assert.False(budget.TryReserve("session-c", 1));
         Assert.Equal(10, budget.ReservedBytes);
+        Assert.Equal(10, budget.HighWaterMarkBytes);
 
         budget.Release("session-a");
 
@@ -21,5 +22,6 @@ public sealed class BoundedAudioBufferBudgetTests
         budget.Release("session-b");
         budget.Release("session-c");
         Assert.Equal(0, budget.ReservedBytes);
+        Assert.Equal(10, budget.HighWaterMarkBytes);
     }
 }

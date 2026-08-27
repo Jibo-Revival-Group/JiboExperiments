@@ -137,6 +137,7 @@ public sealed class TransportMetricsTests
 
         var accepted = Assert.Single(measurements, item => item.Name == "openjibo.audio.accepted_bytes");
         var current = measurements.Where(item => item.Name == "openjibo.audio.current_buffered_bytes").ToArray();
+        var highWater = measurements.Where(item => item.Name == "openjibo.audio.buffered_high_water_bytes").ToArray();
         var rejected = Assert.Single(measurements, item => item.Name == "openjibo.audio.rejected_bytes");
         var rejection = Assert.Single(measurements,
             item => item.Name == "openjibo.audio.buffer_limit_rejections");
@@ -145,15 +146,85 @@ public sealed class TransportMetricsTests
         Assert.Equal(1, rejection.Value);
         Assert.Contains(current,
             item => item.Value == WebSocketTurnFinalizationService.CurrentBufferedAudioBytes);
+        Assert.Contains(highWater,
+            item => item.Value == WebSocketTurnFinalizationService.BufferedAudioHighWaterMarkBytes);
         Assert.Empty(accepted.Tags);
         Assert.All(current, item => Assert.Empty(item.Tags));
+        Assert.All(highWater, item => Assert.Empty(item.Tags));
         Assert.Empty(rejected.Tags);
         Assert.Empty(rejection.Tags);
     }
 
+    [Fact]
+    public void TurnMetrics_RecordTimingAndOutcomesWithOnlyBoundedTags()
+    {
+        var measurements = new List<MeasurementRecord>();
+        var doubleMeasurements = new List<DoubleMeasurementRecord>();
+        using var listener = CreateListener(measurements, doubleMeasurements);
+        using var metrics = new TransportMetrics();
+
+        metrics.ActiveTurnsChanged(1);
+        metrics.TurnPhaseCompleted("secret-phase", "secret-outcome", -12.5);
+        metrics.TurnFinalizationSuppressed("secret-reason");
+        metrics.TurnRepliesEmitted(-4, true);
+        metrics.ActiveTurnsChanged(-1);
+
+        var operations = Assert.Single(measurements,
+            item => item.Name == "openjibo.turn.phase.operations");
+        Assert.Equal(1, operations.Value);
+        Assert.Equal("other", operations.Tags["phase"]);
+        Assert.Equal("other", operations.Tags["outcome"]);
+
+        var duration = Assert.Single(doubleMeasurements,
+            item => item.Name == "openjibo.turn.phase.duration");
+        Assert.Equal(0, duration.Value);
+        Assert.Equal(operations.Tags, duration.Tags);
+
+        Assert.Equal([1L, -1L], measurements
+            .Where(item => item.Name == "openjibo.turn.active")
+            .Select(item => item.Value));
+        Assert.Equal("other", Assert.Single(measurements,
+            item => item.Name == "openjibo.turn.finalization_suppressions").Tags["reason"]);
+        Assert.Equal(0, Assert.Single(measurements,
+            item => item.Name == "openjibo.turn.reply_count").Value);
+        Assert.Equal("true", Assert.Single(measurements,
+            item => item.Name == "openjibo.turn.reply_batches").Tags["has_eos"]);
+        Assert.DoesNotContain(measurements.SelectMany(item => item.Tags.Values),
+            value => value?.Contains("secret", StringComparison.Ordinal) == true);
+    }
+
+    [Fact]
+    public void PersistenceMetrics_RecordBoundedCacheAndPoolDimensions()
+    {
+        var measurements = new List<MeasurementRecord>();
+        using var listener = CreateListener(measurements);
+        using var metrics = new TransportMetrics();
+
+        metrics.PersistenceCacheAccess("secret-store", "secret-result");
+        metrics.PersistenceCacheAccess("cloud_device", "hit");
+        metrics.PostgreSqlPoolConfigured("cloud_state", 8);
+        metrics.PostgreSqlPoolConfigured("secret-store", -2);
+        listener.RecordObservableInstruments();
+
+        var accesses = measurements.Where(item => item.Name == "openjibo.persistence.cache.accesses").ToArray();
+        Assert.Contains(accesses, item => item.Tags["store"] == "other" && item.Tags["result"] == "other");
+        Assert.Contains(accesses, item => item.Tags["store"] == "cloud_device" && item.Tags["result"] == "hit");
+
+        var poolLimits = measurements
+            .Where(item => item.Name == "openjibo.persistence.postgresql.configured_max_connections")
+            .ToArray();
+        Assert.Contains(poolLimits, item => item.Value == 8 && item.Tags["store"] == "cloud_state");
+        Assert.Contains(poolLimits, item => item.Value == 1 && item.Tags["store"] == "other");
+        Assert.DoesNotContain(measurements.SelectMany(item => item.Tags.Values),
+            value => value?.Contains("secret", StringComparison.Ordinal) == true);
+    }
+
     private sealed record MeasurementRecord(string Name, long Value, Dictionary<string, string?> Tags);
 
-    private static MeterListener CreateListener(List<MeasurementRecord> measurements)
+    private sealed record DoubleMeasurementRecord(string Name, double Value, Dictionary<string, string?> Tags);
+
+    private static MeterListener CreateListener(List<MeasurementRecord> measurements,
+        List<DoubleMeasurementRecord>? doubleMeasurements = null)
     {
         var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, meterListener) =>
@@ -164,6 +235,11 @@ public sealed class TransportMetricsTests
         listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             measurements.Add(new MeasurementRecord(instrument.Name, measurement,
+                tags.ToArray().ToDictionary(pair => pair.Key, pair => pair.Value?.ToString())));
+        });
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
+        {
+            doubleMeasurements?.Add(new DoubleMeasurementRecord(instrument.Name, measurement,
                 tags.ToArray().ToDictionary(pair => pair.Key, pair => pair.Value?.ToString())));
         });
         listener.Start();

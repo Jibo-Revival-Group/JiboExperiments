@@ -50,7 +50,8 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         : this(
             new PostgreSqlCloudStateMetadataRepository(dataSource),
             new PostgreSqlCloudAccountRepository(dataSource, secretProtector),
-            new PostgreSqlCloudDeviceRepository(dataSource, deviceCacheMaxEntries, deviceCacheTtl),
+            new PostgreSqlCloudDeviceRepository(dataSource, deviceCacheMaxEntries, deviceCacheTtl,
+                transportMetrics: transportMetrics),
             new PostgreSqlCloudAuthTokenRepository(dataSource),
             new PostgreSqlRobotIdentityLinkRepository(dataSource),
             new BoundedCloudSessionRegistry(maximumActiveSessions, transportMetrics: transportMetrics),

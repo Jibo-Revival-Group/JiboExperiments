@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Jibo.Cloud.Application.Abstractions;
@@ -19,6 +20,13 @@ public sealed class TransportMetrics : ITransportMetrics, IDisposable
         "context", "listen", "client_nlu", "client_asr", "trigger", "loop_updated", "register", "ping",
         "pong", "paired", "unpaired", "verification_code", "command", "command_result", "error", "other"
     ];
+    private static readonly HashSet<string> TurnPhases = ["stt", "plan", "finalize"];
+    private static readonly HashSet<string> TurnOutcomes =
+        ["success", "bypassed", "unavailable", "failure", "canceled"];
+    private static readonly HashSet<string> FinalizationSuppressionReasons = ["concurrent"];
+    private static readonly HashSet<string> PersistenceStores =
+        ["cloud_state", "cloud_device", "personal_memory"];
+    private static readonly HashSet<string> CacheResults = ["hit", "miss"];
 
     private readonly Meter _meter = new(MeterName);
     private readonly Counter<long> _messages;
@@ -31,9 +39,19 @@ public sealed class TransportMetrics : ITransportMetrics, IDisposable
     private readonly UpDownCounter<long> _activeSessions;
     private readonly Counter<long> _acceptedBufferedAudioBytes;
     private readonly ObservableGauge<long> _currentBufferedAudioBytes;
+    private readonly ObservableGauge<long> _bufferedAudioHighWaterMarkBytes;
     private readonly Histogram<long> _bufferedAudioFrameSize;
     private readonly Counter<long> _bufferedAudioLimitRejections;
     private readonly Counter<long> _rejectedBufferedAudioBytes;
+    private readonly UpDownCounter<long> _activeTurns;
+    private readonly Histogram<double> _turnPhaseDuration;
+    private readonly Counter<long> _turnPhaseOperations;
+    private readonly Counter<long> _turnFinalizationSuppressions;
+    private readonly Counter<long> _turnReplyBatches;
+    private readonly Histogram<long> _turnReplyCount;
+    private readonly Counter<long> _persistenceCacheAccesses;
+    private readonly ConcurrentDictionary<string, long> _configuredPostgreSqlPoolLimits = new();
+    private readonly ObservableGauge<long> _configuredPostgreSqlPoolLimit;
 
     public TransportMetrics()
     {
@@ -49,10 +67,25 @@ public sealed class TransportMetrics : ITransportMetrics, IDisposable
         _acceptedBufferedAudioBytes = _meter.CreateCounter<long>("openjibo.audio.accepted_bytes", unit: "By");
         _currentBufferedAudioBytes = _meter.CreateObservableGauge("openjibo.audio.current_buffered_bytes",
             () => WebSocketTurnFinalizationService.CurrentBufferedAudioBytes, unit: "By");
+        _bufferedAudioHighWaterMarkBytes = _meter.CreateObservableGauge("openjibo.audio.buffered_high_water_bytes",
+            () => WebSocketTurnFinalizationService.BufferedAudioHighWaterMarkBytes, unit: "By");
         _bufferedAudioFrameSize = _meter.CreateHistogram<long>("openjibo.audio.buffered_frame_size", unit: "By");
         _bufferedAudioLimitRejections = _meter.CreateCounter<long>("openjibo.audio.buffer_limit_rejections",
             unit: "{rejection}");
         _rejectedBufferedAudioBytes = _meter.CreateCounter<long>("openjibo.audio.rejected_bytes", unit: "By");
+        _activeTurns = _meter.CreateUpDownCounter<long>("openjibo.turn.active", unit: "{turn}");
+        _turnPhaseDuration = _meter.CreateHistogram<double>("openjibo.turn.phase.duration", unit: "ms");
+        _turnPhaseOperations = _meter.CreateCounter<long>("openjibo.turn.phase.operations", unit: "{operation}");
+        _turnFinalizationSuppressions = _meter.CreateCounter<long>("openjibo.turn.finalization_suppressions",
+            unit: "{suppression}");
+        _turnReplyBatches = _meter.CreateCounter<long>("openjibo.turn.reply_batches", unit: "{batch}");
+        _turnReplyCount = _meter.CreateHistogram<long>("openjibo.turn.reply_count", unit: "{reply}");
+        _persistenceCacheAccesses = _meter.CreateCounter<long>("openjibo.persistence.cache.accesses",
+            unit: "{access}");
+        _configuredPostgreSqlPoolLimit = _meter.CreateObservableGauge(
+            "openjibo.persistence.postgresql.configured_max_connections",
+            ObserveConfiguredPostgreSqlPoolLimits,
+            unit: "{connection}");
     }
 
     public void HttpPayload(string direction, string endpointClass, string method, int statusCode, long bytes)
@@ -107,6 +140,43 @@ public sealed class TransportMetrics : ITransportMetrics, IDisposable
         _rejectedBufferedAudioBytes.Add(Math.Max(0, bytes));
     }
 
+    public void ActiveTurnsChanged(long delta) => _activeTurns.Add(delta);
+
+    public void TurnPhaseCompleted(string phase, string outcome, double durationMilliseconds)
+    {
+        var tags = new TagList
+        {
+            { "phase", NormalizeTurnPhase(phase) },
+            { "outcome", NormalizeTurnOutcome(outcome) }
+        };
+        _turnPhaseOperations.Add(1, tags);
+        _turnPhaseDuration.Record(Math.Max(0, durationMilliseconds), tags);
+    }
+
+    public void TurnFinalizationSuppressed(string reason) =>
+        _turnFinalizationSuppressions.Add(1,
+            new KeyValuePair<string, object?>("reason", NormalizeFinalizationSuppressionReason(reason)));
+
+    public void TurnRepliesEmitted(long count, bool hasEndOfStream)
+    {
+        var tags = new TagList { { "has_eos", hasEndOfStream ? "true" : "false" } };
+        _turnReplyBatches.Add(1, tags);
+        _turnReplyCount.Record(Math.Max(0, count), tags);
+    }
+
+    public void PersistenceCacheAccess(string store, string result)
+    {
+        var tags = new TagList
+        {
+            { "store", NormalizePersistenceStore(store) },
+            { "result", CacheResults.Contains(result) ? result : "other" }
+        };
+        _persistenceCacheAccesses.Add(1, tags);
+    }
+
+    public void PostgreSqlPoolConfigured(string store, int maximumConnections) =>
+        _configuredPostgreSqlPoolLimits[NormalizePersistenceStore(store)] = Math.Max(1, maximumConnections);
+
     public void Dispose() => _meter.Dispose();
 
     private static string NormalizeSocketKind(string value) => SocketKinds.Contains(value) ? value : "other";
@@ -132,4 +202,18 @@ public sealed class TransportMetrics : ITransportMetrics, IDisposable
         var normalized = value?.Trim().ToLowerInvariant() ?? "other";
         return MessageClasses.Contains(normalized) ? normalized : "other";
     }
+
+    private IEnumerable<Measurement<long>> ObserveConfiguredPostgreSqlPoolLimits() =>
+        _configuredPostgreSqlPoolLimits.Select(pair => new Measurement<long>(pair.Value,
+            new KeyValuePair<string, object?>("store", pair.Key)));
+
+    private static string NormalizeTurnPhase(string value) => TurnPhases.Contains(value) ? value : "other";
+
+    private static string NormalizeTurnOutcome(string value) => TurnOutcomes.Contains(value) ? value : "other";
+
+    private static string NormalizeFinalizationSuppressionReason(string value) =>
+        FinalizationSuppressionReasons.Contains(value) ? value : "other";
+
+    private static string NormalizePersistenceStore(string value) =>
+        PersistenceStores.Contains(value) ? value : "other";
 }

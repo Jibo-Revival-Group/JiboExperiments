@@ -62,13 +62,14 @@ internal sealed class WebSocketRequestCoordinator(
     internal async Task HandleAsync(HttpContext context)
     {
         var kind = SocketKindResolver.Resolve(context.Request.Host.Host, context.Request.Path);
+        var safePath = RequestLogSanitizer.RedactWebSocketPath(kind, context.Request.Path);
         if (string.Equals(kind, "home-assistant", StringComparison.OrdinalIgnoreCase))
         {
             logger.LogInformation(
                 "WebSocket request routed to Home Assistant handler traceId={TraceId} host={Host} path={Path} remoteIp={RemoteIp}",
                 context.TraceIdentifier,
                 context.Request.Host.Host,
-                context.Request.Path,
+                safePath,
                 context.Connection.RemoteIpAddress?.ToString());
             await homeAssistantWebSocketHandler.HandleAsync(context);
             return;
@@ -83,7 +84,7 @@ internal sealed class WebSocketRequestCoordinator(
             kind,
             tokenFingerprint,
             context.Request.Host.Host,
-            context.Request.Path,
+            safePath,
             context.Connection.RemoteIpAddress?.ToString(),
             context.Request.Headers.UserAgent.ToString());
         switch (kind)
@@ -91,14 +92,14 @@ internal sealed class WebSocketRequestCoordinator(
             case "unknown":
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
                 logger.LogWarning("WebSocket request rejected as unknown kind={Kind} host={Host} path={Path}",
-                    kind, context.Request.Host.Host, context.Request.Path);
+                    kind, context.Request.Host.Host, safePath);
                 return;
             case "api-socket" when string.IsNullOrWhiteSpace(token):
             case "neo-hub-listen" or "neo-hub-proactive" when string.IsNullOrWhiteSpace(token):
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 logger.LogWarning(
                     "WebSocket request rejected due to missing token kind={Kind} host={Host} path={Path} remoteIp={RemoteIp}",
-                    kind, context.Request.Host.Host, context.Request.Path,
+                    kind, context.Request.Host.Host, safePath,
                     context.Connection.RemoteIpAddress?.ToString());
                 return;
         }
@@ -420,7 +421,7 @@ internal sealed class WebSocketRequestCoordinator(
         {
             ConnectionId = connectionId,
             HostName = context.Request.Host.Host,
-            Path = context.Request.Path.Value ?? "/",
+            Path = RequestLogSanitizer.RedactWebSocketPath(kind, context.Request.Path),
             Kind = kind,
             Token = token,
             Text = text,

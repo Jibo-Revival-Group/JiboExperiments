@@ -5166,6 +5166,65 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task DemoConversationBroker_SurpriseFunFact_DoesNotOpenFollowUpListen()
+    {
+        var broker = new DemoConversationBroker(CreateService());
+
+        var plan = await broker.HandleTurnAsync(new TurnContext
+        {
+            RawTranscript = "surprise me",
+            NormalizedTranscript = "surprise me"
+        });
+
+        Assert.Equal("proactive_fun_fact", plan.IntentName);
+        Assert.False(plan.FollowUp.KeepMicOpen);
+        Assert.DoesNotContain(plan.Actions, action => action is ListenAction);
+    }
+
+    [Fact]
+    public async Task DemoConversationBroker_SurpriseJoke_DoesNotOpenFollowUpListen()
+    {
+        var broker = new DemoConversationBroker(CreateService(randomizer: new ProactiveJokeRandomizer()));
+
+        var plan = await broker.HandleTurnAsync(new TurnContext
+        {
+            RawTranscript = "surprise me",
+            NormalizedTranscript = "surprise me"
+        });
+
+        Assert.Equal("proactive_joke", plan.IntentName);
+        Assert.False(plan.FollowUp.KeepMicOpen);
+        Assert.DoesNotContain(plan.Actions, action => action is ListenAction);
+    }
+
+    [Fact]
+    public async Task DemoConversationBroker_SurpriseFallback_DoesNotOpenFollowUpListen()
+    {
+        var memoryStore = new InMemoryPersonalMemoryStore();
+        memoryStore.SetAffinity(
+            new PersonalMemoryTenantScope("acct-a", "loop-a", "device-a"),
+            "pizza",
+            PersonalAffinity.Dislike);
+        var broker = new DemoConversationBroker(CreateService(personalMemoryStore: memoryStore));
+
+        var plan = await broker.HandleTurnAsync(new TurnContext
+        {
+            RawTranscript = "surprise me",
+            NormalizedTranscript = "surprise me",
+            DeviceId = "device-a",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["accountId"] = "acct-a",
+                ["loopId"] = "loop-a"
+            }
+        });
+
+        Assert.Equal("surprise", plan.IntentName);
+        Assert.False(plan.FollowUp.KeepMicOpen);
+        Assert.DoesNotContain(plan.Actions, action => action is ListenAction);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_WordOfDayOfferPrompt_WithNoisyAffirmation_MapsToWordOfDayLaunch()
     {
         var service = CreateService();
@@ -6993,6 +7052,18 @@ public sealed class JiboInteractionServiceTests
         {
             return typeof(T).Name == "ProactiveFactCategory"
                 ? items[^1]
+                : items[0];
+        }
+
+        public double NextUnitInterval() => 0.0;
+    }
+
+    private sealed class ProactiveJokeRandomizer : IJiboRandomizer
+    {
+        public T Choose<T>(IReadOnlyList<T> items)
+        {
+            return typeof(T).Name == "ProactivityCandidate"
+                ? items[1]
                 : items[0];
         }
 

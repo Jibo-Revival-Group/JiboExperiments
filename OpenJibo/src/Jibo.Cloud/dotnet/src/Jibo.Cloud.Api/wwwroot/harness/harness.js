@@ -201,9 +201,14 @@ $("runReleaseSmoke").addEventListener("click", async () => {
       baseUrl: window.location.origin,
       protocolCall: createProtocolCaller(window.location.origin, $("hostName").value.trim() || "api.openjibo.com"),
       robotPrefix: `browser-release-smoke-${Date.now()}`,
+      concurrency: $("releaseRobotCount").value,
+      turnPercent: $("releaseTurnPercent").value,
+      turnRounds: $("releaseTurnRounds").value,
+      holdMs: $("releaseHoldMs").value,
+      roundIntervalMs: $("releaseRoundIntervalMs").value,
       onStep: renderStep,
     });
-    releaseStatus.textContent = `Release smoke passed: ${run.results.length} scenarios, including six concurrent sockets.`;
+    releaseStatus.textContent = `Release smoke passed: ${run.load.robotCount} connected robots, ${run.load.completedTurns} turns, turn P95 ${run.load.turnLatencyMs.p95 ?? "n/a"} ms.`;
     releaseStatus.className = "status success";
   } catch (error) {
     releaseStatus.textContent = `Release smoke failed: ${error.message}`;

@@ -226,7 +226,7 @@ if [[ "$linux_publish_script_text" != *"az acr build"* ]]; then
   exit 1
 fi
 
-for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "--native-compatibility-api-hostname" "--native-compatibility-socket-hostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "az containerapp hostname add" "az containerapp hostname bind" 'prepare-openjibo-managed-databases.sh' "--skip-hostname-binding" "portal-status-password" "openjibo-portal-status-password" "searchBackend" "searchFallback" "openjibo-search-backend" "openjibo-search-fallback" "run_command_with_retry"; do
+for marker in "--run-smoke" "--run-migration" "--api-hostname" "--socket-hostname" "--neohub-hostname" "--native-compatibility-api-hostname" "--native-compatibility-socket-hostname" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "az containerapp hostname add" "az containerapp hostname bind" 'prepare-openjibo-managed-databases.sh' "--skip-hostname-binding" "--enable-peer-sync" "--disable-peer-sync" "--peer-sync-allowed-hosts" "peerSyncEnabled" "allowedPeerHosts" "portal-status-password" "openjibo-portal-status-password" "searchBackend" "searchFallback" "openjibo-search-backend" "openjibo-search-fallback" "run_command_with_retry"; do
   if [[ "$linux_managed_script_text" != *"$marker"* ]]; then
     echo "Linux managed deploy script is missing expected marker: $marker" >&2
     exit 1
@@ -247,14 +247,14 @@ for marker in "containerapp env show" "firewall-rule create" "firewall-rule upda
   fi
 done
 
-for marker in "deployment_target" "openjibo-staging-gate" "clone-openjibo-managed-databases.sh" "production_backup_confirmed" "backup.backupRetentionDays" "Verify production hostname DNS prerequisites" "customDomainVerificationId" "dig +short CNAME" "dig +short TXT" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "properties.active" '[[ "$revision_active" == "true" ]]' '[[ "$previous_revision_active" != "true" ]]' "already active" "revision deactivate" "revision activate" "PREVIOUS_REVISION" "Restore previous image after failure" "Run deployed WebSocket release smoke" "invoke-release-smoke.mjs" "webSocketReleaseSmoke"; do
+for marker in "deployment_target" "openjibo-staging-gate" "clone-openjibo-managed-databases.sh" "production_backup_confirmed" "enable_fleet_peer_sync" "fleet_peer_allowed_hosts" "Fleet peer sync cannot be enabled by the staging workflow" "backup.backupRetentionDays" "Verify production hostname DNS prerequisites" "customDomainVerificationId" "dig +short CNAME" "dig +short TXT" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "properties.active" '[[ "$revision_active" == "true" ]]' '[[ "$previous_revision_active" != "true" ]]' "already active" "revision deactivate" "revision activate" "PREVIOUS_REVISION" "Restore previous image after failure" "Run deployed WebSocket release smoke" "invoke-release-smoke.mjs" "webSocketReleaseSmoke"; do
   if [[ "$workflow_text" != *"$marker"* ]]; then
     echo "Workflow is missing staging or promotion safeguard: $marker" >&2
     exit 1
   fi
 done
 
-for marker in "OPENJIBO_USER_ENCRYPT" "OPENJIBO_USER_SALT" "user-encryption-passphrase" "user-encryption-salt"; do
+for marker in "OPENJIBO_USER_ENCRYPT" "OPENJIBO_USER_SALT" "user-encryption-passphrase" "user-encryption-salt" "OpenJibo__FleetNetwork__PeerSyncEnabled" "OpenJibo__FleetNetwork__AllowedPeerHosts"; do
   if [[ "$managed_text" != *"$marker"* ]]; then
     echo "Managed template is missing encryption marker: $marker" >&2
     exit 1

@@ -1251,6 +1251,17 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task FleetPresence_WhenPeerSyncIsDisabled_FailsClosed()
+    {
+        await using var factory = CreateFactory(peerSyncEnabled: false);
+        var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/network/fleet-presence", new FleetPeerPresencePayload(
+            "remote-server", "fleet.example.openjibo.com", "instance", [], 0, DateTimeOffset.UtcNow));
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
+
+    [Fact]
     public async Task IdentityCleanup_PreviewsAndResetsHistoricalAssociations()
     {
         await using var factory = CreateFactory();
@@ -1487,7 +1498,7 @@ public sealed class HomeAssistantPortalApiTests
         }
     }
 
-    private static WebApplicationFactory<Program> CreateFactory()
+    private static WebApplicationFactory<Program> CreateFactory(bool peerSyncEnabled = true)
     {
         var root = Path.Combine(Path.GetTempPath(), $"openjibo-portal-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
@@ -1515,6 +1526,8 @@ public sealed class HomeAssistantPortalApiTests
                     Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
                 builder.UseSetting("OpenJibo:Portal:StatusPassword", "test-admin-password");
+                builder.UseSetting("OpenJibo:FleetNetwork:PeerSyncEnabled", peerSyncEnabled.ToString());
+                builder.UseSetting("OpenJibo:FleetNetwork:AllowedPeerHosts", "fleet.example.openjibo.com");
                 builder.UseSetting("OpenJibo:FleetNetwork:PeerSyncSharedKey", "test-peer-key");
             });
     }

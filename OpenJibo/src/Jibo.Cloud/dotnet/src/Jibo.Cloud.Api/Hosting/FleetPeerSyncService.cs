@@ -15,17 +15,30 @@ internal sealed class FleetPeerSyncService(
     IConfiguration configuration,
     ILogger<FleetPeerSyncService> logger) : BackgroundService
 {
+    private readonly FleetPeerSyncPolicy _policy = FleetPeerSyncPolicy.FromConfiguration(configuration);
     private readonly TimeSpan _interval = TimeSpan.FromSeconds(Math.Clamp(
         configuration.GetValue("OpenJibo:FleetNetwork:SyncIntervalSeconds", 30), 10, 300));
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!_policy.Enabled)
+        {
+            logger.LogInformation("Fleet peer sync is disabled by configuration");
+            return;
+        }
+
+        if (_policy.AllowedPeerHosts.Count == 0)
+        {
+            logger.LogWarning("Fleet peer sync is enabled without an allowed peer host; outbound sync is disabled");
+            return;
+        }
+
         using var timer = new PeriodicTimer(_interval);
         do
         {
             try
             {
-                await PublishAsync(stoppingToken);
+                await PublishOnceAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -38,7 +51,7 @@ internal sealed class FleetPeerSyncService(
         } while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 
-    private async Task PublishAsync(CancellationToken cancellationToken)
+    internal async Task PublishOnceAsync(CancellationToken cancellationToken)
     {
         var sharedKey = configuration["OpenJibo:FleetNetwork:PeerSyncSharedKey"];
         if (string.IsNullOrWhiteSpace(sharedKey)) return;
@@ -69,6 +82,7 @@ internal sealed class FleetPeerSyncService(
         var signature = FleetPeerSyncAuthentication.Sign(payload.ServerId, timestamp, payloadHash, sharedKey);
         var peers = cloudStateStore.GetTrustedServers()
             .Where(server => server.IsActive && server.ParticipatesInCloudSync &&
+                             _policy.Allows(server.CanonicalHost) &&
                              !server.ServerId.Equals(serverIdentity.ServerId, StringComparison.OrdinalIgnoreCase) &&
                              !server.CanonicalHost.Equals(serverIdentity.CanonicalHost, StringComparison.OrdinalIgnoreCase))
             .ToArray();
@@ -105,6 +119,42 @@ internal sealed class FleetPeerSyncService(
                 logger.LogWarning(exception, "Fleet peer {Host} could not be reached", peer.CanonicalHost);
             }
         }
+    }
+}
+
+internal sealed class FleetPeerSyncPolicy
+{
+    private FleetPeerSyncPolicy(bool enabled, HashSet<string> allowedPeerHosts)
+    {
+        Enabled = enabled;
+        AllowedPeerHosts = allowedPeerHosts;
+    }
+
+    internal bool Enabled { get; }
+    internal IReadOnlySet<string> AllowedPeerHosts { get; }
+
+    internal bool Allows(string? host) =>
+        NormalizeHost(host) is { } normalized && AllowedPeerHosts.Contains(normalized);
+
+    internal static FleetPeerSyncPolicy FromConfiguration(IConfiguration configuration)
+    {
+        var enabled = configuration.GetValue("OpenJibo:FleetNetwork:PeerSyncEnabled", false);
+        var configuredHosts = configuration["OpenJibo:FleetNetwork:AllowedPeerHosts"] ?? string.Empty;
+        var allowedHosts = configuredHosts
+            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(NormalizeHost)
+            .Where(host => host is not null)
+            .Cast<string>()
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return new FleetPeerSyncPolicy(enabled, allowedHosts);
+    }
+
+    private static string? NormalizeHost(string? host)
+    {
+        var normalized = host?.Trim().TrimEnd('.').ToLowerInvariant();
+        return !string.IsNullOrWhiteSpace(normalized) && Uri.CheckHostName(normalized) != UriHostNameType.Unknown
+            ? normalized
+            : null;
     }
 }
 

@@ -5,12 +5,21 @@ internal sealed class BoundedAudioBufferBudget
     private readonly Dictionary<string, int> _reservations = new(StringComparer.Ordinal);
     private readonly long _maximumBytes;
     private readonly Lock _syncRoot = new();
+    private long _highWaterMarkBytes;
     private long _reservedBytes;
 
     internal BoundedAudioBufferBudget(long maximumBytes)
     {
         if (maximumBytes < 1) throw new ArgumentOutOfRangeException(nameof(maximumBytes));
         _maximumBytes = maximumBytes;
+    }
+
+    internal long HighWaterMarkBytes
+    {
+        get
+        {
+            lock (_syncRoot) return _highWaterMarkBytes;
+        }
     }
 
     internal long ReservedBytes
@@ -31,6 +40,7 @@ internal sealed class BoundedAudioBufferBudget
             _reservations.TryGetValue(sessionId, out var current);
             _reservations[sessionId] = checked(current + bytes);
             _reservedBytes += bytes;
+            _highWaterMarkBytes = Math.Max(_highWaterMarkBytes, _reservedBytes);
             return true;
         }
     }

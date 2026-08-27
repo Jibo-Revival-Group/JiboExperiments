@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Domain.Models;
@@ -19,6 +20,8 @@ public sealed class WebSocketTurnFinalizationService(
     ITransportMetrics? transportMetrics = null
 )
 {
+    private readonly ITransportMetrics _metrics = transportMetrics ?? NullTransportMetrics.Instance;
+
     internal const int MaximumBufferedAudioBytes = 4 * 1024 * 1024;
     internal const int MaximumTotalBufferedAudioBytes = 64 * 1024 * 1024;
     internal const int MaximumBufferedAudioFrames = 2048;
@@ -26,6 +29,7 @@ public sealed class WebSocketTurnFinalizationService(
     private static readonly BoundedAudioBufferBudget AudioBufferBudget =
         new(MaximumTotalBufferedAudioBytes);
     public static long CurrentBufferedAudioBytes => AudioBufferBudget.ReservedBytes;
+    public static long BufferedAudioHighWaterMarkBytes => AudioBufferBudget.HighWaterMarkBytes;
     private const int AutoFinalizeMinBufferedAudioBytes = 8500;
     private const int AutoFinalizeMinBufferedAudioPages = 3;
     private const int AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes = 9_000;
@@ -346,7 +350,7 @@ public sealed class WebSocketTurnFinalizationService(
                 turnState.BufferedAudioFrames.Count >= MaximumBufferedAudioFrames ||
                 !AudioBufferBudget.TryReserve(session.SessionId, incomingBytes))
             {
-                transportMetrics?.BufferedAudioLimitRejected(incomingBytes);
+                _metrics.BufferedAudioLimitRejected(incomingBytes);
                 logger.LogWarning(
                     "Turn binary audio rejected at memory limit session={SessionId} transId={TransId} bufferedBytes={BufferedBytes} incomingBytes={IncomingBytes} frameCount={FrameCount}",
                     session.SessionId,
@@ -372,7 +376,7 @@ public sealed class WebSocketTurnFinalizationService(
             session.LastMessageType = "BINARY_AUDIO";
             turnState.BufferedAudioChunkCount += 1;
             turnState.BufferedAudioBytes += envelope.Binary?.Length ?? 0;
-            transportMetrics?.BufferedAudioAccepted(incomingBytes);
+            _metrics.BufferedAudioAccepted(incomingBytes);
             if (envelope.Binary is { Length: > 0 }) turnState.BufferedAudioFrames.Add([.. envelope.Binary]);
             turnState.AwaitingTurnCompletion = true;
             session.Metadata["lastAudioBytes"] = envelope.Binary?.Length ?? 0;
@@ -711,6 +715,10 @@ public sealed class WebSocketTurnFinalizationService(
     private async Task<TurnContext> ResolveTranscriptAsync(TurnContext turn, CloudSession session,
         WebSocketMessageEnvelope envelope, CancellationToken cancellationToken)
     {
+        var phaseStarted = Stopwatch.GetTimestamp();
+        void RecordPhase(string outcome) =>
+            _metrics.TurnPhaseCompleted("stt", outcome, Stopwatch.GetElapsedTime(phaseStarted).TotalMilliseconds);
+
         logger.LogDebug("Resolve transcript entered session={SessionId} turnId={TurnId} bufferedBytes={BufferedBytes}",
             session.SessionId,
             turn.TurnId,
@@ -725,6 +733,7 @@ public sealed class WebSocketTurnFinalizationService(
                 !string.IsNullOrWhiteSpace(turn.NormalizedTranscript) ||
                 !string.IsNullOrWhiteSpace(turn.RawTranscript),
                 session.TurnState.BufferedAudioBytes);
+            RecordPhase("bypassed");
             return turn;
         }
 
@@ -737,7 +746,11 @@ public sealed class WebSocketTurnFinalizationService(
                 session.SessionId,
                 turn.TurnId,
                 strategy?.Name);
-            if (strategy is null) return turn;
+            if (strategy is null)
+            {
+                RecordPhase("unavailable");
+                return turn;
+            }
         }
         catch (InvalidOperationException ex) when (string.Equals(ex.Message,
                                                        "No STT strategy can handle the current turn.",
@@ -746,10 +759,12 @@ public sealed class WebSocketTurnFinalizationService(
             logger.LogDebug(ex, "Resolve transcript no strategy available session={SessionId} turnId={TurnId}",
                 session.SessionId,
                 turn.TurnId);
+            RecordPhase("unavailable");
             return turn;
         }
         catch (Exception ex)
         {
+            RecordPhase(ex is OperationCanceledException ? "canceled" : "failure");
             session.TurnState.LastSttError = ex.Message;
             session.TurnState.LastSttErrorUtc = DateTimeOffset.UtcNow;
             MarkSttFailureGrace(session);
@@ -783,7 +798,7 @@ public sealed class WebSocketTurnFinalizationService(
             var rawTranscript = sttResult.Text.Trim();
             var normalizedTranscript = NormalizeBufferedAudioTranscript(turn, rawTranscript);
 
-            return new TurnContext
+            var resolvedTurn = new TurnContext
             {
                 TurnId = turn.TurnId,
                 SessionId = turn.SessionId,
@@ -805,9 +820,12 @@ public sealed class WebSocketTurnFinalizationService(
                 IsFollowUpEligible = turn.IsFollowUpEligible,
                 Attributes = attributes
             };
+            RecordPhase("success");
+            return resolvedTurn;
         }
         catch (Exception ex)
         {
+            RecordPhase(ex is OperationCanceledException ? "canceled" : "failure");
             session.TurnState.LastSttError = ex.Message;
             session.TurnState.LastSttErrorUtc = DateTimeOffset.UtcNow;
             MarkSttFailureGrace(session);
@@ -1013,6 +1031,7 @@ public sealed class WebSocketTurnFinalizationService(
         var turnState = session.TurnState;
         if (!turnState.TryBeginFinalization())
         {
+            _metrics.TurnFinalizationSuppressed("concurrent");
             logger.LogDebug(
                 "Finalize turn ignored because another finalization is active session={SessionId} messageType={MessageType} transId={TransId}",
                 session.SessionId,
@@ -1020,6 +1039,10 @@ public sealed class WebSocketTurnFinalizationService(
                 turnState.TransId);
             return [];
         }
+
+        var finalizeStarted = Stopwatch.GetTimestamp();
+        var finalizeOutcome = "success";
+        _metrics.ActiveTurnsChanged(1);
 
         logger.LogDebug(
             "Finalize turn entered session={SessionId} messageType={MessageType} transId={TransId} allowFallback={AllowFallback} bufferedBytes={BufferedBytes} bufferedChunks={BufferedChunks} awaiting={Awaiting}",
@@ -1543,7 +1566,8 @@ public sealed class WebSocketTurnFinalizationService(
             }
 
             AmbientTurnProgressPublisher.BindTurn(finalizedTurn, session);
-            var plan = await conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken);
+            var plan = await MeasurePhaseAsync("plan",
+                () => conversationBroker.HandleTurnAsync(finalizedTurn, cancellationToken), cancellationToken);
 
             var intentName = plan.IntentName;
 
@@ -1724,6 +1748,9 @@ public sealed class WebSocketTurnFinalizationService(
                     Text = map.Text,
                     DelayMs = map.DelayMs
                 }).ToArray();
+            var hasEndOfStream = replies.Any(reply => string.Equals(ReadReplyType(reply), "EOS",
+                StringComparison.OrdinalIgnoreCase));
+            _metrics.TurnRepliesEmitted(replies.Length, hasEndOfStream);
 
             await sink.RecordTurnDiagnosticAsync(
                 "turn_reply_emitted",
@@ -1733,8 +1760,7 @@ public sealed class WebSocketTurnFinalizationService(
                     ["intent"] = intentName,
                     ["replyCount"] = replies.Length,
                     ["replyTypes"] = ReadReplyTypes(replies),
-                    ["hasEos"] = replies.Any(reply => string.Equals(ReadReplyType(reply), "EOS",
-                        StringComparison.OrdinalIgnoreCase)),
+                    ["hasEos"] = hasEndOfStream,
                     ["keepMicOpen"] = plan.FollowUp.KeepMicOpen,
                     ["followUpOpen"] = session.FollowUpOpen,
                     ["lastTranscript"] = finalizedTurn.NormalizedTranscript ?? finalizedTurn.RawTranscript
@@ -1746,7 +1772,7 @@ public sealed class WebSocketTurnFinalizationService(
                 messageType,
                 plan.IntentName,
                 replies.Length,
-                replies.Any(reply => string.Equals(ReadReplyType(reply), "EOS", StringComparison.OrdinalIgnoreCase)),
+                hasEndOfStream,
                 ReadReplyTypes(replies));
 
             if (IsYesNoTurn(finalizedTurn))
@@ -1770,14 +1796,49 @@ public sealed class WebSocketTurnFinalizationService(
             ClearListenTracking(turnState);
             return replies;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            finalizeOutcome = "canceled";
+            throw;
+        }
+        catch
+        {
+            finalizeOutcome = "failure";
+            throw;
+        }
         finally
         {
+            _metrics.TurnPhaseCompleted("finalize", finalizeOutcome,
+                Stopwatch.GetElapsedTime(finalizeStarted).TotalMilliseconds);
+            _metrics.ActiveTurnsChanged(-1);
             turnState.EndFinalization();
             await TrackGlsmPhaseAsync(session, envelope, $"finalize:{messageType}", cancellationToken);
             logger.LogDebug("Finalize turn exit session={SessionId} messageType={MessageType} transId={TransId}",
                 session.SessionId,
                 messageType,
                 session.TurnState.TransId);
+        }
+    }
+
+    private async Task<T> MeasurePhaseAsync<T>(string phase, Func<Task<T>> operation,
+        CancellationToken cancellationToken)
+    {
+        var started = Stopwatch.GetTimestamp();
+        try
+        {
+            var result = await operation();
+            _metrics.TurnPhaseCompleted(phase, "success", Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            return result;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _metrics.TurnPhaseCompleted(phase, "canceled", Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            throw;
+        }
+        catch
+        {
+            _metrics.TurnPhaseCompleted(phase, "failure", Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            throw;
         }
     }
 

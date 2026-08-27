@@ -1902,7 +1902,7 @@ public sealed class WebSocketTurnFinalizationService(
             return false;
 
         if (!transcriptHintEarlyFinalize && elapsedSinceLastAudio < AutoFinalizeHotphraseOggEarlyProbeGap)
-            return hotphraseOggProbeReady;
+            return hotphraseOggProbeReady && HasReceivedOggEndOfStream(turnState);
 
         return transcriptHintEarlyFinalize ||
                hotphraseOggProbeReady ||
@@ -2161,6 +2161,9 @@ public sealed class WebSocketTurnFinalizationService(
         if (string.Equals(session.LastIntent, "stop", StringComparison.OrdinalIgnoreCase))
             return false;
 
+        if (!IsDiagnosticSpeechIntent(session.LastIntent))
+            return false;
+
         var ignoreUntilUtc = session.TurnState.IgnoreLateListenSetupUntilUtc;
         return ignoreUntilUtc.HasValue &&
                ignoreUntilUtc.Value > DateTimeOffset.UtcNow &&
@@ -2215,9 +2218,14 @@ public sealed class WebSocketTurnFinalizationService(
         if (string.Equals(plan.IntentName, "stop", StringComparison.OrdinalIgnoreCase))
             return WebSocketTurnState.StopCommandLateAudioIgnoreWindow;
 
-        return string.Equals(plan.IntentName, "cloud_version", StringComparison.OrdinalIgnoreCase)
+        return IsDiagnosticSpeechIntent(plan.IntentName)
             ? WebSocketTurnState.DiagnosticSpeechLateAudioIgnoreWindow
             : WebSocketTurnState.DefaultLateAudioIgnoreWindow;
+    }
+
+    private static bool IsDiagnosticSpeechIntent(string? intentName)
+    {
+        return string.Equals(intentName, "cloud_version", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool ShouldIgnoreAudioWithoutListen(WebSocketTurnState turnState)

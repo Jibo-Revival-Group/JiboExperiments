@@ -236,6 +236,9 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         return Sync(_devices.ListForAccountAsync(account.AccountId, includeArchived: true));
     }
 
+    public IReadOnlyList<DeviceRegistration> GetDevicesForAdministration() =>
+        Sync(_devices.ListAllAsync(includeArchived: true));
+
     public IReadOnlyList<CloudSession> GetSessions() => _sessions.Values.ToArray();
 
     public RobotProfile GetRobotProfile()
@@ -295,6 +298,12 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         return Sync(_devices.UpsertAsync(registration, GetAccount().AccountId));
     }
 
+    public DeviceRegistration UpsertDeviceForAdministration(DeviceRegistration registration)
+    {
+        ArgumentNullException.ThrowIfNull(registration);
+        return Sync(_devices.UpsertAsync(registration));
+    }
+
     public DeviceRegistration RenameDevice(string deviceId, string robotId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
@@ -303,6 +312,16 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
                        throw new KeyNotFoundException("Robot record was not found.");
         return Sync(_devices.UpsertAsync(CloneDevice(existing, robotId: robotId.Trim(),
             friendlyName: robotId.Trim()), GetAccount().AccountId));
+    }
+
+    public DeviceRegistration RenameDeviceForAdministration(string deviceId, string robotId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(robotId);
+        var existing = Sync(_devices.GetByDeviceIdAsync(deviceId)) ??
+                       throw new KeyNotFoundException("Robot record was not found.");
+        return Sync(_devices.UpsertAsync(CloneDevice(existing, robotId: robotId.Trim(),
+            friendlyName: robotId.Trim())));
     }
 
     public DeviceRegistration? FindDeviceByFriendlyId(string friendlyId) =>

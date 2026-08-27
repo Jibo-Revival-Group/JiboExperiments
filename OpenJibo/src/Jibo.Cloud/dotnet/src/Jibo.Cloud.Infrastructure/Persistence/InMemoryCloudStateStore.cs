@@ -212,6 +212,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         }
     }
 
+    public IReadOnlyList<DeviceRegistration> GetDevicesForAdministration() => GetDevices();
+
     public IReadOnlyList<CloudSession> GetSessions()
     {
         return _sessions.Values.Select(CloneSession).ToArray();
@@ -277,6 +279,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         return registration;
     }
 
+    public DeviceRegistration UpsertDeviceForAdministration(DeviceRegistration registration) => UpsertDevice(registration);
+
     public DeviceRegistration RenameDevice(string deviceId, string robotId)
     {
         if (string.IsNullOrWhiteSpace(deviceId) || string.IsNullOrWhiteSpace(robotId))
@@ -315,6 +319,8 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             return renamed;
         }
     }
+
+    public DeviceRegistration RenameDeviceForAdministration(string deviceId, string robotId) => RenameDevice(deviceId, robotId);
 
     public DeviceRegistration? FindDeviceByFriendlyId(string friendlyId)
     {
@@ -442,6 +448,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         TouchState();
         return new RobotMergeResult(source.DeviceId, targetDeviceId, migratedSessions, migratedBindings, DateTimeOffset.UtcNow);
     }
+
+    public RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId) =>
+        MergeRobotRecords(sourceDeviceId, targetDeviceId);
 
     public RobotIdentityCleanupPreview PreviewRobotIdentityCleanup()
     {

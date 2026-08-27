@@ -21,6 +21,17 @@ namespace Jibo.Cloud.Tests.Api;
 public sealed class HomeAssistantPortalApiTests
 {
     [Fact]
+    public async Task StatusSummaryAndMutations_RequireAdminSession()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await client.GetAsync("/api/portal/status/summary")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await client.PostAsJsonAsync("/api/portal/status/robots/any-device/archive", new { hidden = true })).StatusCode);
+    }
+
+    [Fact]
     public async Task Links_RequiresPortalSession()
     {
         await using var factory = CreateFactory();
@@ -355,6 +366,12 @@ public sealed class HomeAssistantPortalApiTests
 
         Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
         var summary = await summaryResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var summaryText = await summaryResponse.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("PasswordHash", summaryText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PasswordSalt", summaryText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("SecretAccessKey", summaryText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("\"token\":", summaryText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("test-admin-password", summaryText, StringComparison.Ordinal);
         Assert.True(summary.GetProperty("fleet").GetProperty("registeredRobots").GetInt32() >= 1);
         Assert.Equal(2, summary.GetProperty("fleet").GetProperty("hiddenRobots").GetInt32());
         Assert.True(summary.GetProperty("service").GetProperty("uptimeSeconds").GetInt64() >= 0);

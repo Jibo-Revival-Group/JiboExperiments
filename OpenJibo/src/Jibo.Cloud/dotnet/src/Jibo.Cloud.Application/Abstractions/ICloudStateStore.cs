@@ -10,12 +10,15 @@ public interface ICloudStateStore
     AccountProfile GetAccount();
     DeviceRegistration GetRobot();
     IReadOnlyList<DeviceRegistration> GetDevices();
+    IReadOnlyList<DeviceRegistration> GetDevicesForAdministration();
     IReadOnlyList<CloudSession> GetSessions();
     RobotProfile GetRobotProfile();
     DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion,
         string? registrationSource = null);
     DeviceRegistration UpsertDevice(DeviceRegistration registration);
+    DeviceRegistration UpsertDeviceForAdministration(DeviceRegistration registration);
     DeviceRegistration RenameDevice(string deviceId, string robotId);
+    DeviceRegistration RenameDeviceForAdministration(string deviceId, string robotId);
     DeviceRegistration? FindDeviceByFriendlyId(string friendlyId);
     DeviceRegistration? FindDeviceByAwsCredentialFingerprint(string accessKeyFingerprint);
     IReadOnlyList<RobotCredentialBinding> GetRobotCredentialBindings();
@@ -24,6 +27,7 @@ public interface ICloudStateStore
     IReadOnlyList<RobotCredentialBinding> SwapAwsCredentialFingerprintBindings(string firstAccessKeyFingerprint,
         string secondAccessKeyFingerprint, string claimSource);
     RobotMergeResult MergeRobotRecords(string sourceDeviceId, string targetDeviceId);
+    RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId);
     RobotIdentityCleanupPreview PreviewRobotIdentityCleanup();
     RobotIdentityCleanupResult ResetRobotIdentityAssociations();
     UserRecord? CreateUser(string email, string password, string? firstName, string? lastName);

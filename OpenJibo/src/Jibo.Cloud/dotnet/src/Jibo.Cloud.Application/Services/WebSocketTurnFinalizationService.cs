@@ -2067,6 +2067,12 @@ public sealed class WebSocketTurnFinalizationService(
             {
                 "cloud version",
                 "what time is it",
+                "how old are you",
+                "what is your age",
+                "what's your age",
+                "whats your age",
+                "what's your favorite color",
+                "what is your favorite color",
                 "play word of the day",
                 "word of the day",
                 "stop",
@@ -3265,7 +3271,9 @@ public sealed class WebSocketTurnFinalizationService(
             "what s the cloud" or "what is the cloud" or
             "what's your favorite" or "whats your favorite" or "what s your favorite" or
             "what is your favorite" or "what's your favourite" or "whats your favourite" or
-            "what s your favourite" or "what is your favourite";
+            "what s your favourite" or "what is your favourite" or
+            "how old" or "how old are" or "how old r" or
+            "what is your age" or "what's your age" or "what s your age" or "whats your age";
     }
 
     private static bool IsHotphraseOnlyTranscript(string normalized)

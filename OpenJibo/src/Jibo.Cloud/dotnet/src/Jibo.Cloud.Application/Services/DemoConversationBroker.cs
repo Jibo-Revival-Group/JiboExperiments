@@ -56,11 +56,12 @@ public sealed class DemoConversationBroker(JiboInteractionService interactionSer
                 Mode = "follow-up"
             });
 
-        if (!string.IsNullOrWhiteSpace(decision.SkillName))
+        if (!string.IsNullOrWhiteSpace(decision.SkillName) ||
+            (decision.SkillPayload is { Count: > 0 }))
             plan.Actions.Add(new InvokeNativeSkillAction
             {
                 Sequence = 2,
-                SkillName = decision.SkillName,
+                SkillName = string.IsNullOrWhiteSpace(decision.SkillName) ? "chitchat-skill" : decision.SkillName,
                 Payload = decision.SkillPayload ?? new Dictionary<string, object?>()
             });
 

@@ -194,7 +194,7 @@ public sealed class JiboWebSocketServiceTests
             Kind = "neo-hub-listen",
             Token = "hub-cloud-version-token",
             Text =
-                """{"type":"LISTEN","transID":"trans-cloud-version-guarded","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
+                """{"type":"LISTEN","transID":"trans-cloud-version","data":{"hotphrase":true,"rules":["launch","globals/global_commands_launch"]}}"""
         });
 
         Assert.Equal(3, guardedListenReplies.Count);
@@ -203,7 +203,7 @@ public sealed class JiboWebSocketServiceTests
         Assert.Equal("SKILL_REDIRECT", ReadReplyType(guardedListenReplies[2]));
         using (var lateListenPayload = JsonDocument.Parse(guardedListenReplies[0].Text!))
         {
-            Assert.Equal("trans-cloud-version-guarded",
+            Assert.Equal("trans-cloud-version",
                 lateListenPayload.RootElement.GetProperty("transID").GetString());
             Assert.Equal("launch",
                 lateListenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("rules")[0]
@@ -8496,6 +8496,46 @@ public sealed class JiboWebSocketServiceTests
             Assert.NotNull(session);
             Assert.False(session.FollowUpOpen);
             Assert.Null(session.FollowUpExpiresUtc);
+        }
+    }
+
+    [Fact]
+    public async Task ClientAsr_BackToBackSurpriseHotphraseListens_AcceptNewTransaction()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = CreateService(store, randomizer: new FirstItemRandomizer());
+        var token = store.IssueRobotToken("back-to-back-hotphrase-surprise-device");
+
+        foreach (var transId in new[] { "trans-surprise-hotphrase-first", "trans-surprise-hotphrase-second" })
+        {
+            var setupReplies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = token,
+                Text = $"{{\"type\":\"LISTEN\",\"transID\":\"{transId}\",\"data\":{{\"hotphrase\":true,\"rules\":[\"launch\",\"globals/global_commands_launch\"]}}}}"
+            });
+            Assert.Empty(setupReplies);
+
+            var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = token,
+                Text = $"{{\"type\":\"CLIENT_ASR\",\"transID\":\"{transId}\",\"data\":{{\"text\":\"surprise me\"}}}}"
+            });
+
+            Assert.Equal(3, replies.Count);
+            using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+            Assert.Equal("proactive_fun_fact",
+                listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+            var session = store.FindSessionByToken(token);
+            Assert.NotNull(session);
+            Assert.False(session.FollowUpOpen);
+            Assert.False(session.TurnState.AwaitingTurnCompletion);
+            Assert.False(session.TurnState.SawListen);
         }
     }
 

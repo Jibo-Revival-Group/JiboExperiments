@@ -120,6 +120,83 @@ public sealed class WebSocketRequestCoordinatorTests
         Assert.NotEmpty(socket.SentPayloads);
     }
 
+    [Fact]
+    public void ReplacedSocket_CannotOwnCleanupForNewerSharedSessionState()
+    {
+        var store = new InMemoryCloudStateStore();
+        var session = store.OpenSession("neo-hub-listen", "robot-replaced", "shared-token",
+            "neo-hub.jibo.com", "/listen");
+        session.TurnState.TransId = "trans-b";
+        session.TurnState.SawListen = true;
+        session.TurnState.SawContext = true;
+        session.TurnState.BufferedAudioBytes = 4096;
+        session.Metadata["openjibo.activeWebSocketConnectionId"] = "connection-b";
+
+        Assert.False(WebSocketRequestCoordinator.OwnsSessionState(session, "connection-a"));
+        Assert.True(WebSocketRequestCoordinator.OwnsSessionState(session, "connection-b"));
+        Assert.Equal("trans-b", session.TurnState.TransId);
+        Assert.Equal(4096, session.TurnState.BufferedAudioBytes);
+        Assert.NotNull(store.FindActiveSessionByToken("shared-token"));
+    }
+
+    [Fact]
+    public async Task ReplacedSocket_OldPrematureCloseCannotClearNewSocketTurn()
+    {
+        var service = CreateWebSocketService(out var store);
+        var token = store.IssueRobotToken("robot-replaced-concurrency");
+        var firstReceive = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseOldSocket = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseNewSocket = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var oldSocket = new FakeWebSocket(
+            new FakeWebSocketFrame(WebSocketMessageType.Text,
+                Encoding.UTF8.GetBytes(
+                    "{\"type\":\"LISTEN\",\"transID\":\"trans-a\",\"data\":{\"hotphrase\":true,\"rules\":[\"launch\"]}}")));
+        oldSocket.PauseBeforeReceiveNumber = 2;
+        oldSocket.ReceiveGate = releaseOldSocket;
+        oldSocket.ThrowPrematureOnNextReceive = true;
+        oldSocket.FirstFrameReceived = firstReceive;
+        var newSocket = new FakeWebSocket(
+            new FakeWebSocketFrame(WebSocketMessageType.Text,
+                Encoding.UTF8.GetBytes(
+                    "{\"type\":\"LISTEN\",\"transID\":\"trans-b\",\"data\":{\"hotphrase\":true,\"rules\":[\"launch\"]}}")),
+            new FakeWebSocketFrame(WebSocketMessageType.Text,
+                Encoding.UTF8.GetBytes("{\"type\":\"CONTEXT\",\"transID\":\"trans-b\",\"data\":{\"skill\":{\"id\":null}}}")),
+            new FakeWebSocketFrame(WebSocketMessageType.Binary, [1, 2, 3, 4]),
+            new FakeWebSocketFrame(WebSocketMessageType.Close, []));
+        newSocket.PauseBeforeReceiveNumber = 4;
+        newSocket.ReceiveGate = releaseNewSocket;
+        var oldContext = CreateContext(oldSocket);
+        oldContext.Request.Host = new HostString("neo-hub.jibo.com");
+        oldContext.Request.Path = "/listen";
+        oldContext.Request.Headers.Authorization = $"Bearer {token}";
+        var newContext = CreateContext(newSocket);
+        newContext.Request.Host = new HostString("neo-hub.jibo.com");
+        newContext.Request.Path = "/listen";
+        newContext.Request.Headers.Authorization = $"Bearer {token}";
+        var oldCoordinator = CreateCoordinator(service, store);
+        var newCoordinator = CreateCoordinator(service, store);
+
+        var oldTask = oldCoordinator.HandleAsync(oldContext);
+        await firstReceive.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var newTask = newCoordinator.HandleAsync(newContext);
+        await newSocket.BinaryFrameReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        releaseOldSocket.TrySetResult(true);
+        await oldTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var active = store.FindActiveSessionByToken(token);
+        Assert.NotNull(active);
+        Assert.Equal("trans-b", active.TurnState.TransId);
+        Assert.True(active.TurnState.SawListen);
+        Assert.True(active.TurnState.SawContext);
+        Assert.Equal(4, active.TurnState.BufferedAudioBytes);
+
+        releaseNewSocket.TrySetResult(true);
+        await newSocket.CloseFrameReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await newTask.WaitAsync(TimeSpan.FromSeconds(15));
+        Assert.Null(store.FindActiveSessionByToken(token));
+        Assert.Equal(WebSocketState.Closed, newSocket.State);
+    }
+
     private static WebSocketRequestCoordinator CreateCoordinator(out RecordingWebSocketTelemetrySink telemetrySink)
     {
         var service = CreateWebSocketService(out var store);
@@ -134,6 +211,15 @@ public sealed class WebSocketRequestCoordinatorTests
     {
         var service = CreateWebSocketService(out store);
         telemetrySink = new RecordingWebSocketTelemetrySink();
+        var haHandler = new HomeAssistantWebSocketHandler(new HomeAssistantConnectionRegistry());
+        return new WebSocketRequestCoordinator(service, haHandler, telemetrySink, store);
+    }
+
+    private static WebSocketRequestCoordinator CreateCoordinator(
+        JiboWebSocketService service,
+        InMemoryCloudStateStore store)
+    {
+        var telemetrySink = new RecordingWebSocketTelemetrySink();
         var haHandler = new HomeAssistantWebSocketHandler(new HomeAssistantConnectionRegistry());
         return new WebSocketRequestCoordinator(service, haHandler, telemetrySink, store);
     }
@@ -231,10 +317,25 @@ public sealed class WebSocketRequestCoordinatorTests
     {
         private readonly Queue<FakeWebSocketFrame> _frames = new(frames);
         private WebSocketState _state = WebSocketState.Open;
+        private int _receiveCount;
 
         public bool Accepted { get; set; }
 
         public List<byte[]> SentPayloads { get; } = [];
+
+        public int PauseBeforeReceiveNumber { get; set; }
+
+        public TaskCompletionSource<bool>? ReceiveGate { get; set; }
+
+        public bool ThrowPrematureOnNextReceive { get; set; }
+
+        public TaskCompletionSource<bool>? FirstFrameReceived { get; set; }
+
+        public TaskCompletionSource<bool> BinaryFrameReceived { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource<bool> CloseFrameReceived { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public override WebSocketCloseStatus? CloseStatus { get; } = null;
 
@@ -268,17 +369,32 @@ public sealed class WebSocketRequestCoordinatorTests
         {
         }
 
-        public override Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer,
+        public override async Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer,
             CancellationToken cancellationToken)
         {
+            _receiveCount += 1;
+            if (_receiveCount == 1)
+                FirstFrameReceived?.TrySetResult(true);
+            if (_receiveCount == PauseBeforeReceiveNumber && ReceiveGate is not null)
+                await ReceiveGate.Task.WaitAsync(cancellationToken);
+            if (ThrowPrematureOnNextReceive)
+            {
+                ThrowPrematureOnNextReceive = false;
+                throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely);
+            }
+
             var frame = _frames.Dequeue();
             if (frame.Payload.Length > 0)
                 Array.Copy(frame.Payload, 0, buffer.Array!, buffer.Offset, frame.Payload.Length);
 
-            return Task.FromResult(new WebSocketReceiveResult(
+            if (frame.MessageType == WebSocketMessageType.Binary)
+                BinaryFrameReceived.TrySetResult(true);
+            if (frame.MessageType == WebSocketMessageType.Close)
+                CloseFrameReceived.TrySetResult(true);
+            return new WebSocketReceiveResult(
                 frame.Payload.Length,
                 frame.MessageType,
-                frame.EndOfMessage));
+                frame.EndOfMessage);
         }
 
         public override Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType, bool endOfMessage,

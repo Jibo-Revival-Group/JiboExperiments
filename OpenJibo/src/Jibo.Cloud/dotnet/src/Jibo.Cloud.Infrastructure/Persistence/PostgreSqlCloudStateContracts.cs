@@ -27,6 +27,10 @@ public interface ICloudDeviceRepository
     Task<DeviceRegistration?> GetDefaultAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DeviceRegistration>> ListForAccountAsync(string accountId, bool includeArchived = false,
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DeviceRegistration>> ListAllAsync(bool includeArchived = true,
+        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> ListAccountIdsAsync(string deviceId,
+        CancellationToken cancellationToken = default);
     Task<DeviceRegistration> UpsertAsync(DeviceRegistration device, string? accountId = null,
         bool? isDefault = null, CancellationToken cancellationToken = default);
     Task<RobotCredentialBinding?> GetCredentialBindingAsync(string accessKeyFingerprint,

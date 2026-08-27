@@ -4,7 +4,13 @@ namespace Jibo.Cloud.Infrastructure.Persistence;
 
 public sealed partial class PostgreSqlCloudStateStore
 {
-    public RobotMergeResult MergeRobotRecords(string sourceDeviceId, string targetDeviceId)
+    public RobotMergeResult MergeRobotRecords(string sourceDeviceId, string targetDeviceId) =>
+        MergeRobotRecordsCore(sourceDeviceId, targetDeviceId, administration: false);
+
+    public RobotMergeResult MergeRobotRecordsForAdministration(string sourceDeviceId, string targetDeviceId) =>
+        MergeRobotRecordsCore(sourceDeviceId, targetDeviceId, administration: true);
+
+    private RobotMergeResult MergeRobotRecordsCore(string sourceDeviceId, string targetDeviceId, bool administration)
     {
         if (string.IsNullOrWhiteSpace(sourceDeviceId) || string.IsNullOrWhiteSpace(targetDeviceId) ||
             sourceDeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase))
@@ -14,7 +20,15 @@ public sealed partial class PostgreSqlCloudStateStore
         var source = Sync(_devices.GetByDeviceIdAsync(sourceDeviceId)) ??
                      throw new KeyNotFoundException("Source robot record was not found.");
         var target = Sync(_devices.GetByDeviceIdAsync(targetDeviceId)) ??
-                     throw new KeyNotFoundException("Target robot record was not found.");
+                      throw new KeyNotFoundException("Target robot record was not found.");
+        if (administration)
+        {
+            var sourceAccounts = Sync(_devices.ListAccountIdsAsync(source.DeviceId));
+            var targetAccounts = Sync(_devices.ListAccountIdsAsync(target.DeviceId));
+            if (!sourceAccounts.ToHashSet(StringComparer.OrdinalIgnoreCase)
+                    .SetEquals(targetAccounts))
+                throw new InvalidOperationException("Admin merge requires identical account associations.");
+        }
 
         var migratedSessions = 0;
         foreach (var session in _sessions.Values.Where(item =>
@@ -34,7 +48,7 @@ public sealed partial class PostgreSqlCloudStateStore
             ["openjibo.mergedIntoDeviceId"] = target.DeviceId
         };
         Sync(_devices.UpsertAsync(CopyDeviceIdentityState(source, false, true, DateTimeOffset.UtcNow, mappings),
-            GetAccount().AccountId));
+            administration ? null : GetAccount().AccountId));
         Sync(_identityLinks.UpsertAsync(source.DeviceId, target.DeviceId, "robot-merge"));
         return new RobotMergeResult(source.DeviceId, target.DeviceId, migratedSessions, migratedBindings,
             DateTimeOffset.UtcNow);

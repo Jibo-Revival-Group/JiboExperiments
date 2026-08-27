@@ -937,14 +937,14 @@ internal static class PortalEndpoints
             if (session is null || !IsAdminSession(session))
                 return Results.Unauthorized();
 
-            var device = cloudStateStore.GetDevices().FirstOrDefault(candidate =>
+            var device = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(candidate =>
                 candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null)
                 return Results.NotFound(new { error = "Robot record was not found." });
 
             var isHidden = request.Hidden;
             var updated = CopyDevice(device, isHidden, isHidden ? DateTimeOffset.UtcNow : null);
-            cloudStateStore.UpsertDevice(updated);
+            cloudStateStore.UpsertDeviceForAdministration(updated);
             return Results.Json(new { ok = true, deviceId = updated.DeviceId, hidden = updated.IsHidden });
         });
 
@@ -982,7 +982,7 @@ internal static class PortalEndpoints
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
 
-            var device = cloudStateStore.GetDevices().FirstOrDefault(candidate =>
+            var device = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(candidate =>
                 candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
 
@@ -1024,7 +1024,7 @@ internal static class PortalEndpoints
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
 
-            var device = cloudStateStore.GetDevices().FirstOrDefault(candidate =>
+            var device = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(candidate =>
                 candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null || !path.StartsWith("logs/", StringComparison.OrdinalIgnoreCase))
                 return Results.NotFound(new { error = "Log artifact was not found." });
@@ -1058,7 +1058,7 @@ internal static class PortalEndpoints
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
-            var device = cloudStateStore.GetDevices().FirstOrDefault(candidate =>
+            var device = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(candidate =>
                 candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
 
@@ -1111,7 +1111,7 @@ internal static class PortalEndpoints
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
-            var device = cloudStateStore.GetDevices().FirstOrDefault(candidate =>
+            var device = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(candidate =>
                 candidate.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null || string.IsNullOrWhiteSpace(path))
                 return Results.NotFound(new { error = "Artifact was not found." });
@@ -1208,8 +1208,9 @@ internal static class PortalEndpoints
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
-            var source = cloudStateStore.GetDevices().FirstOrDefault(device => device.DeviceId.Equals(sourceDeviceId, StringComparison.OrdinalIgnoreCase));
-            var target = cloudStateStore.GetDevices().FirstOrDefault(device => device.DeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase));
+            var adminDevices = cloudStateStore.GetDevicesForAdministration();
+            var source = adminDevices.FirstOrDefault(device => device.DeviceId.Equals(sourceDeviceId, StringComparison.OrdinalIgnoreCase));
+            var target = adminDevices.FirstOrDefault(device => device.DeviceId.Equals(targetDeviceId, StringComparison.OrdinalIgnoreCase));
             if (source is null || target is null || source.DeviceId.Equals(target.DeviceId, StringComparison.OrdinalIgnoreCase))
                 return Results.BadRequest(new { error = "Choose two different registered robots." });
             var artifactCount = (await mediaContentStore.ListAsync(string.Empty, 1000, cancellationToken))
@@ -1232,7 +1233,7 @@ internal static class PortalEndpoints
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
             try
             {
-                var result = cloudStateStore.MergeRobotRecords(sourceDeviceId, request.TargetDeviceId ?? string.Empty);
+                var result = cloudStateStore.MergeRobotRecordsForAdministration(sourceDeviceId, request.TargetDeviceId ?? string.Empty);
                 var migratedArtifacts = await ReassignArtifactsAsync(mediaContentStore, result.SourceDeviceId,
                     result.TargetDeviceId, "robot-merge", cancellationToken);
                 return Results.Json(new { ok = true, result, migratedArtifacts });
@@ -1248,7 +1249,7 @@ internal static class PortalEndpoints
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
-            var device = cloudStateStore.GetDevices().FirstOrDefault(item =>
+            var device = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(item =>
                 item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
 
@@ -1323,7 +1324,7 @@ internal static class PortalEndpoints
             var session = ResolvePortalSession(httpRequest, request.PortalSessionToken, portalSessionService);
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
             if (!request.Confirmed) return Results.BadRequest(new { error = "Confirm the identity correction." });
-            var device = cloudStateStore.GetDevices().FirstOrDefault(item =>
+            var device = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(item =>
                 item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (device is null) return Results.NotFound(new { error = "Robot record was not found." });
             if (!IsSafeIdentityName(device.DeviceId))
@@ -1332,7 +1333,7 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "The robot identity already matches its device ID." });
             try
             {
-                var restored = cloudStateStore.RenameDevice(device.DeviceId, device.DeviceId);
+                var restored = cloudStateStore.RenameDeviceForAdministration(device.DeviceId, device.DeviceId);
                 return Results.Json(new { ok = true, device = restored });
             }
             catch (InvalidOperationException exception)
@@ -1352,7 +1353,7 @@ internal static class PortalEndpoints
             if (session is null || !IsAdminSession(session)) return Results.Unauthorized();
             if (!IsSafeIdentityName(request.ProposedRobotId))
                 return Results.BadRequest(new { error = "Provide a valid robot ID." });
-            var source = cloudStateStore.GetDevices().FirstOrDefault(item =>
+            var source = cloudStateStore.GetDevicesForAdministration().FirstOrDefault(item =>
                 item.DeviceId.Equals(deviceId, StringComparison.OrdinalIgnoreCase));
             if (source is null) return Results.NotFound(new { error = "Robot record was not found." });
             var proposedRobotId = request.ProposedRobotId!.Trim();
@@ -1363,13 +1364,13 @@ internal static class PortalEndpoints
             var target = cloudStateStore.FindDeviceByFriendlyId(proposedRobotId);
             if (target is not null && !target.DeviceId.Equals(source.DeviceId, StringComparison.OrdinalIgnoreCase))
             {
-                var result = cloudStateStore.MergeRobotRecords(source.DeviceId, target.DeviceId);
+                var result = cloudStateStore.MergeRobotRecordsForAdministration(source.DeviceId, target.DeviceId);
                 var migratedArtifacts = await ReassignArtifactsAsync(mediaContentStore, result.SourceDeviceId,
                     result.TargetDeviceId, "robot-identity-suggestion-merge", cancellationToken);
                 identitySuggestionStore.Dismiss(source.DeviceId, proposedRobotId);
                 return Results.Json(new { ok = true, action = "merge", result, migratedArtifacts });
             }
-            var renamed = cloudStateStore.RenameDevice(source.DeviceId, proposedRobotId);
+            var renamed = cloudStateStore.RenameDeviceForAdministration(source.DeviceId, proposedRobotId);
             identitySuggestionStore.Dismiss(source.DeviceId, proposedRobotId);
             return Results.Json(new { ok = true, action = "rename", device = renamed });
         });
@@ -1717,7 +1718,7 @@ internal static class PortalEndpoints
         var now = DateTimeOffset.UtcNow;
         using var process = Process.GetCurrentProcess();
         var processStartUtc = process.StartTime.ToUniversalTime();
-        var allDevices = cloudStateStore.GetDevices();
+        var allDevices = cloudStateStore.GetDevicesForAdministration();
         var sessions = cloudStateStore.GetSessions();
         var recentSessions = sessions
             .Where(session => now - session.LastSeenUtc <= StatusHeartbeatWindow)

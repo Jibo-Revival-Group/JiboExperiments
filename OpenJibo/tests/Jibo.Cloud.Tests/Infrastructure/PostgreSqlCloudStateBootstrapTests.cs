@@ -69,6 +69,8 @@ public sealed class PostgreSqlCloudStateBootstrapTests
         public Task<DeviceRegistration?> FindByFriendlyIdAsync(string friendlyId, CancellationToken cancellationToken = default) => Task.FromResult(Device);
         public Task<DeviceRegistration?> GetDefaultAsync(CancellationToken cancellationToken = default) => Task.FromResult(Device);
         public Task<IReadOnlyList<DeviceRegistration>> ListForAccountAsync(string accountId, bool includeArchived = false, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<DeviceRegistration>>(Device is null ? [] : [Device]);
+        public Task<IReadOnlyList<DeviceRegistration>> ListAllAsync(bool includeArchived = true, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<DeviceRegistration>>(Device is null ? [] : [Device]);
+        public Task<IReadOnlyList<string>> ListAccountIdsAsync(string deviceId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<string>>(["test-account"]);
         public Task<DeviceRegistration> UpsertAsync(DeviceRegistration device, string? accountId = null, bool? isDefault = null, CancellationToken cancellationToken = default)
         { Device = device; UpsertCount++; return Task.FromResult(device); }
         public Task<RobotCredentialBinding?> GetCredentialBindingAsync(string accessKeyFingerprint, CancellationToken cancellationToken = default) => Task.FromResult<RobotCredentialBinding?>(null);

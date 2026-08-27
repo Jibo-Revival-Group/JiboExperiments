@@ -76,6 +76,74 @@ public sealed class PostgreSqlCloudStateFacadeIntegrationTests
 
     [PostgreSqlIntegrationFact]
     [Trait("Category", "PostgreSqlIntegration")]
+    public async Task AdministrationInventory_SeesEveryAccountWithoutBroadeningNormalReads()
+    {
+        await using var database = await CloudStateTestDatabase.CreateAsync();
+        await using var source = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        var store = new PostgreSqlCloudStateStore(source, new PlaintextTestProtector());
+        await database.ExecuteAsync("""
+            INSERT INTO Accounts (AccountId,Email,AccessKeyId,IsDefault)
+            VALUES ('other-account','other@example.invalid','other-access',FALSE);
+            INSERT INTO Devices (DeviceId,RobotId,FriendlyName,RegistrationSource,IsHidden,ArchivedUtc)
+            VALUES ('other-visible','duplicate-robot-name','Duplicate Robot','physical',FALSE,NULL),
+                   ('other-archived','duplicate-robot-name','Duplicate Robot','physical',TRUE,NOW());
+            INSERT INTO AccountDevices (AccountId,DeviceId)
+            VALUES ('other-account','other-visible'),('other-account','other-archived');
+            """);
+
+        Assert.DoesNotContain(store.GetDevices(), device => device.DeviceId.StartsWith("other-", StringComparison.Ordinal));
+        var administration = store.GetDevicesForAdministration();
+        Assert.Contains(administration, device => device.DeviceId == "other-visible");
+        Assert.Contains(administration, device => device.DeviceId == "other-archived" && device.IsHidden);
+        Assert.Equal(2, administration.Count(device => device.FriendlyName == "Duplicate Robot"));
+
+        var visible = administration.Single(device => device.DeviceId == "other-visible");
+        store.UpsertDeviceForAdministration(new DeviceRegistration
+        {
+            DeviceId = visible.DeviceId, RobotId = visible.RobotId, FriendlyName = visible.FriendlyName,
+            RegistrationSource = visible.RegistrationSource, IsHidden = true, ArchivedUtc = DateTimeOffset.UtcNow
+        });
+        Assert.Equal(0, await database.ExecuteScalarAsync<long>("""
+            SELECT COUNT(*) FROM AccountDevices ad JOIN Accounts a ON a.AccountId=ad.AccountId
+            WHERE ad.DeviceId='other-visible' AND a.IsDefault
+            """));
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId='other-visible'"));
+
+        store.RenameDeviceForAdministration("other-visible", "Other-Renamed-Robot");
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId='other-visible' AND AccountId='other-account'"));
+        Assert.Throws<InvalidOperationException>(() =>
+            store.MergeRobotRecordsForAdministration("other-visible", "openjibo-bootstrap-default"));
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId='other-visible' AND AccountId='other-account'"));
+
+        await database.ExecuteAsync("""
+            INSERT INTO Devices (DeviceId,RobotId,FriendlyName,RegistrationSource)
+            VALUES ('single-source','single-source','Single Source','physical'),
+                   ('single-target','single-target','Single Target','physical'),
+                   ('multi-source','multi-source','Multi Source','physical'),
+                   ('multi-target','multi-target','Multi Target','physical'),
+                   ('zero-source','zero-source','Zero Source','physical'),
+                   ('zero-target','zero-target','Zero Target','physical');
+            INSERT INTO AccountDevices (AccountId,DeviceId)
+            VALUES ('other-account','single-source'),('other-account','single-target'),
+                   ('other-account','multi-source'),('other-account','multi-target'),
+                   ('usr_openjibo_owner','multi-source'),('usr_openjibo_owner','multi-target');
+            """);
+        store.MergeRobotRecordsForAdministration("single-source", "single-target");
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId='single-source' AND AccountId='other-account'"));
+        store.MergeRobotRecordsForAdministration("multi-source", "multi-target");
+        Assert.Equal(2, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId='multi-source'"));
+        store.MergeRobotRecordsForAdministration("zero-source", "zero-target");
+        Assert.Equal(0, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM AccountDevices WHERE DeviceId IN ('zero-source','zero-target')"));
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
     public async Task TwoBackups_CreateBoundedManifestsAndExternalPayloadsWithoutSnapshotRewrite()
     {
         await using var database = await CloudStateTestDatabase.CreateAsync();

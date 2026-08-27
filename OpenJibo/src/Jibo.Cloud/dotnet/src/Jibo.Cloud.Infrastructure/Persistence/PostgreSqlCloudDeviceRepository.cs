@@ -104,6 +104,46 @@ public sealed class PostgreSqlCloudDeviceRepository : ICloudDeviceRepository
         return devices.Select(Clone).ToArray();
     }
 
+    public async Task<IReadOnlyList<DeviceRegistration>> ListAllAsync(bool includeArchived = true,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _dataSource.Value.OpenConnectionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"""
+                               SELECT {QualifiedDeviceColumns}
+                               FROM Devices d
+                               WHERE @includeArchived OR (NOT d.IsHidden AND d.ArchivedUtc IS NULL)
+                               ORDER BY d.FriendlyName, d.DeviceId
+                               """;
+        command.Parameters.AddWithValue("includeArchived", includeArchived);
+        var devices = new List<DeviceRegistration>();
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+            while (await reader.ReadAsync(cancellationToken)) devices.Add(MapDevice(reader));
+
+        await LoadHostMappingsAsync(connection, devices, cancellationToken);
+        foreach (var device in devices) _cache.Set(device.DeviceId, Clone(device));
+        return devices.Select(Clone).ToArray();
+    }
+
+    public async Task<IReadOnlyList<string>> ListAccountIdsAsync(string deviceId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        await using var connection = await _dataSource.Value.OpenConnectionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+                              SELECT AccountId
+                              FROM AccountDevices
+                              WHERE DeviceId = @deviceId
+                              ORDER BY AccountId
+                              """;
+        command.Parameters.AddWithValue("deviceId", deviceId.Trim());
+        var accountIds = new List<string>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken)) accountIds.Add(reader.GetString(0));
+        return accountIds;
+    }
+
     public async Task<DeviceRegistration> UpsertAsync(DeviceRegistration device, string? accountId = null,
         bool? isDefault = null, CancellationToken cancellationToken = default)
     {

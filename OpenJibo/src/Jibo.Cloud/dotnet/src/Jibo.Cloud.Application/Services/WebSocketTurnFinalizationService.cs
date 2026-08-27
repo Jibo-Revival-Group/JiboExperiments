@@ -2223,9 +2223,15 @@ public sealed class WebSocketTurnFinalizationService(
             return false;
 
         var ignoreUntilUtc = session.TurnState.IgnoreLateListenSetupUntilUtc;
-        return ignoreUntilUtc.HasValue &&
-               ignoreUntilUtc.Value > DateTimeOffset.UtcNow &&
-               IsHotphraseLaunchListenSetup(text);
+        if (!ignoreUntilUtc.HasValue || ignoreUntilUtc.Value <= DateTimeOffset.UtcNow ||
+            !IsHotphraseLaunchListenSetup(text))
+            return false;
+
+        if (session.TurnState.AwaitingTurnCompletion)
+            return true;
+
+        return !TryReadTransId(text, out var nextTransId) ||
+               string.Equals(session.TurnState.TransId, nextTransId, StringComparison.Ordinal);
     }
 
     public static bool TryRecoverStalePendingListen(CloudSession session, out int staleAgeMs)

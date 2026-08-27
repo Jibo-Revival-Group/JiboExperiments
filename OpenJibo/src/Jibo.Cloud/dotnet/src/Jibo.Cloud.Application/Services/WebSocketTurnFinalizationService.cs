@@ -1902,7 +1902,15 @@ public sealed class WebSocketTurnFinalizationService(
             return false;
 
         if (!transcriptHintEarlyFinalize && elapsedSinceLastAudio < AutoFinalizeHotphraseOggEarlyProbeGap)
-            return hotphraseOggProbeReady && HasReceivedOggEndOfStream(turnState);
+        {
+            // Native robots keep streaming OGG while the mic is open, so a silence
+            // gap never appears. Do not use the 900ms early probe mid-utterance
+            // (that closed Hey Jibo at ~1s), but do allow the 1.8s continuous
+            // probe and an explicit OGG end-of-stream.
+            return HasReceivedOggEndOfStream(turnState)
+                ? hotphraseOggProbeReady
+                : ShouldContinuousProbeHotphraseOggAudio(turnState, pageCounts, turnAge);
+        }
 
         return transcriptHintEarlyFinalize ||
                hotphraseOggProbeReady ||
@@ -1914,10 +1922,7 @@ public sealed class WebSocketTurnFinalizationService(
         BufferedAudioPageCounts pageCounts,
         TimeSpan turnAge)
     {
-        if (!turnState.ListenHotphrase ||
-            !turnState.SawContext ||
-            !HasOggOpusFrames(turnState) ||
-            !IsHotphraseLaunchListen(turnState))
+        if (!IsHotphraseOggProbeCandidate(turnState))
             return false;
 
         if (HasReceivedOggEndOfStream(turnState))
@@ -1928,9 +1933,28 @@ public sealed class WebSocketTurnFinalizationService(
         return (turnAge >= AutoFinalizeHotphraseOggEarlyProbeMinTurnAge &&
                 turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggEarlyProbeMinBufferedAudioBytes &&
                 pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggEarlyProbeMinAudioPages) ||
-               (turnAge >= AutoFinalizeHotphraseOggContinuousProbeMinTurnAge &&
-                turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes &&
-                pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggContinuousProbeMinAudioPages);
+               ShouldContinuousProbeHotphraseOggAudio(turnState, pageCounts, turnAge);
+    }
+
+    private static bool ShouldContinuousProbeHotphraseOggAudio(
+        WebSocketTurnState turnState,
+        BufferedAudioPageCounts pageCounts,
+        TimeSpan turnAge)
+    {
+        if (!IsHotphraseOggProbeCandidate(turnState) || HasReceivedOggEndOfStream(turnState))
+            return false;
+
+        return turnAge >= AutoFinalizeHotphraseOggContinuousProbeMinTurnAge &&
+               turnState.BufferedAudioBytes >= AutoFinalizeHotphraseOggContinuousProbeMinBufferedAudioBytes &&
+               pageCounts.AudioBearingPageCount >= AutoFinalizeHotphraseOggContinuousProbeMinAudioPages;
+    }
+
+    private static bool IsHotphraseOggProbeCandidate(WebSocketTurnState turnState)
+    {
+        return turnState.ListenHotphrase &&
+               turnState.SawContext &&
+               HasOggOpusFrames(turnState) &&
+               IsHotphraseLaunchListen(turnState);
     }
 
     private static bool CanRetryEarlyAutoFinalizeProbe(WebSocketTurnState turnState)

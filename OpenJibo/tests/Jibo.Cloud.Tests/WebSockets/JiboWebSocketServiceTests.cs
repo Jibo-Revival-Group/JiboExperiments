@@ -8465,6 +8465,41 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ClientAsr_BackToBackSurpriseAnnouncements_CloseEachTurn()
+    {
+        var store = new InMemoryCloudStateStore();
+        var service = CreateService(store, randomizer: new FirstItemRandomizer());
+        var token = store.IssueRobotToken("back-to-back-surprise-device");
+
+        foreach (var transId in new[] { "trans-surprise-first", "trans-surprise-second" })
+        {
+            var replies = await service.HandleMessageAsync(new WebSocketMessageEnvelope
+            {
+                HostName = "neo-hub.jibo.com",
+                Path = "/listen",
+                Kind = "neo-hub-listen",
+                Token = token,
+                Text = JsonSerializer.Serialize(new
+                {
+                    type = "CLIENT_ASR",
+                    transID = transId,
+                    data = new { text = "surprise me" }
+                })
+            });
+
+            Assert.Equal(3, replies.Count);
+            using var listenPayload = JsonDocument.Parse(replies[0].Text!);
+            Assert.Equal("proactive_fun_fact",
+                listenPayload.RootElement.GetProperty("data").GetProperty("nlu").GetProperty("intent").GetString());
+
+            var session = store.FindSessionByToken(token);
+            Assert.NotNull(session);
+            Assert.False(session.FollowUpOpen);
+            Assert.Null(session.FollowUpExpiresUtc);
+        }
+    }
+
+    [Fact]
     public async Task ClientAsrSurpriseOffer_PersistsPendingOfferAndResolvesYesFollowUpWithTail()
     {
         var token = _store.IssueRobotToken("proactivity-device-a-tail");
@@ -9652,13 +9687,14 @@ public sealed class JiboWebSocketServiceTests
         ICalendarReportProvider? calendarReportProvider = null,
         ICommuteReportProvider? commuteReportProvider = null,
         INewsBriefingProvider? newsBriefingProvider = null,
-        IReadOnlyList<ISttStrategy>? sttStrategies = null)
+        IReadOnlyList<ISttStrategy>? sttStrategies = null,
+        IJiboRandomizer? randomizer = null)
     {
         var contentRepository = new InMemoryJiboExperienceContentRepository();
         var contentCache = new JiboExperienceContentCache(contentRepository);
         var interactionService = new JiboInteractionService(
             contentCache,
-            new DefaultJiboRandomizer(),
+            randomizer ?? new DefaultJiboRandomizer(),
             new InMemoryPersonalMemoryStore(),
             weatherReportProvider,
             calendarReportProvider,
@@ -9896,6 +9932,14 @@ public sealed class JiboWebSocketServiceTests
         public T Choose<T>(IReadOnlyList<T> items)
         {
             return items[^1];
+        }
+    }
+
+    private sealed class FirstItemRandomizer : IJiboRandomizer
+    {
+        public T Choose<T>(IReadOnlyList<T> items)
+        {
+            return items[0];
         }
     }
 

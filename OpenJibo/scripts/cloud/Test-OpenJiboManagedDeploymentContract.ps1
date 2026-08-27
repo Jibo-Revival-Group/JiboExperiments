@@ -201,7 +201,7 @@ foreach ($marker in @("--log-analytics-workspace-name", "--container-registry-na
 Assert-ContainsMarker -Text $linuxFoundationScriptText -Marker '"az", "storage", "account", "show-connection-string"' -FailurePrefix "Linux foundation script does not resolve the storage connection string outside Bicep outputs"
 Assert-ContainsMarker -Text $linuxPublishScriptText -Marker "az acr build" -FailurePrefix "Linux publish script is missing the ACR build path"
 
-foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "--socket-hostname", "--neohub-hostname", "az containerapp hostname add", "az containerapp hostname bind", "--skip-hostname-binding", "portal-status-password", "openjibo-portal-status-password", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
+foreach ($marker in @("--run-smoke", "--run-migration", "--api-hostname", "--socket-hostname", "--neohub-hostname", "az containerapp hostname add", "az containerapp hostname bind", "--skip-hostname-binding", "--enable-peer-sync", "--disable-peer-sync", "--peer-sync-allowed-hosts", "peerSyncEnabled", "allowedPeerHosts", "portal-status-password", "openjibo-portal-status-password", "searchBackend", "searchFallback", "openjibo-search-backend", "openjibo-search-fallback")) {
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing expected marker"
 }
 
@@ -209,11 +209,11 @@ foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-m
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing hostname binding environment marker"
 }
 
-foreach ($marker in @("deployment_target", "openjibo-staging-gate", "clone-openjibo-managed-databases.sh", "production_backup_confirmed", "backup.backupRetentionDays", "Verify production hostname DNS prerequisites", "customDomainVerificationId", "dig +short CNAME", "dig +short TXT", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "properties.active", '[[ "$revision_active" == "true" ]]', '[[ "$previous_revision_active" != "true" ]]', "already active", "revision deactivate", "revision activate", "PREVIOUS_REVISION", "Restore previous image after failure", "Run deployed WebSocket release smoke", "invoke-release-smoke.mjs", "webSocketReleaseSmoke")) {
+foreach ($marker in @("deployment_target", "openjibo-staging-gate", "clone-openjibo-managed-databases.sh", "production_backup_confirmed", "enable_fleet_peer_sync", "fleet_peer_allowed_hosts", "Fleet peer sync cannot be enabled by the staging workflow", "backup.backupRetentionDays", "Verify production hostname DNS prerequisites", "customDomainVerificationId", "dig +short CNAME", "dig +short TXT", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "properties.active", '[[ "$revision_active" == "true" ]]', '[[ "$previous_revision_active" != "true" ]]', "already active", "revision deactivate", "revision activate", "PREVIOUS_REVISION", "Restore previous image after failure", "Run deployed WebSocket release smoke", "invoke-release-smoke.mjs", "webSocketReleaseSmoke")) {
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing staging or promotion safeguard"
 }
 
-foreach ($marker in @("OPENJIBO_USER_ENCRYPT", "OPENJIBO_USER_SALT", "user-encryption-passphrase", "user-encryption-salt")) {
+foreach ($marker in @("OPENJIBO_USER_ENCRYPT", "OPENJIBO_USER_SALT", "user-encryption-passphrase", "user-encryption-salt", "OpenJibo__FleetNetwork__PeerSyncEnabled", "OpenJibo__FleetNetwork__AllowedPeerHosts")) {
     Assert-ContainsMarker -Text $managedText -Marker $marker -FailurePrefix "Managed template is missing encryption marker"
 }
 

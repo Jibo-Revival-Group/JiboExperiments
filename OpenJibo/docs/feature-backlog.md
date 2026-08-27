@@ -645,12 +645,16 @@ These are the carryover items that need a clean proof pass first:
   - scoped people/device hot paths and bounded 30-second caches avoid fleet-wide startup and interaction hydration while bounding cross-replica staleness
   - backup payloads live in Blob/file storage with hashed manifests; v2 loop restores are point-in-time, account-scoped, and atomic, while imported v1 backups remain restorable
   - the explicit importer is locked, transactional, idempotent, source-preserving, and fails startup safely when an unimported legacy snapshot is detected
-  - aggregate traffic, active-session, accepted/rejected audio, and current buffered-audio metrics contain no robot/session identifiers or payload data
+  - aggregate traffic, active-session, accepted/rejected/current/high-water audio, active-turn, bounded turn phase/outcome, reply-batch, cache hit/miss, and configured pool metrics contain no robot/session identifiers or payload data
+  - the browser/CLI release smoke supports configurable connected-robot tiers, simultaneous-turn percentages, rotating rounds, quiet holds, and client-observed turn latency summaries; CI tests the driver and staging exposes the bounded load controls
+  - an initial staging proof held six fake notification sockets while two simultaneous turns completed with the expected reply order at 218 ms and 247 ms client-observed latency; this is driver evidence, not capacity certification
+  - fleet peer sync now fails closed unless explicitly enabled with an exact host allowlist; the managed workflow forbids it in staging and applies the allowlist to both outbound and inbound reports, preventing cloned production trust rows from causing cross-environment calls
+  - immediate staging containment removed the peer-sync shared-key environment reference and produced healthy revision `openjibo-cloud--0000009`; the post-change six-robot smoke passed with 209-212 ms turn latency and no peer-sync/error markers in the revision log tail
 - Remaining rollout and measurement work:
   - run the PostgreSQL integration suite in CI (local verification skips it when `OPENJIBO_TEST_POSTGRES_CONNECTION_STRING` is absent), then execute a production-snapshot dry run in a restored staging database
   - verify imported family counts, identity mappings, v1 backup restore, and two-replica behavior before switching the managed API revision
   - observe traffic and memory metrics for at least seven representative days and reconcile application payload bytes with Azure ingress/egress
-  - add exporter-side alerts for runtime working set/GC, persistence failures/latency, audio-limit rejection, and unexpected legacy snapshot selection
+  - wire the application meter plus .NET runtime and Npgsql provider meters to the production telemetry backend, then add alerts for working set/GC, pool waits, persistence failures/latency, audio-limit rejection, and unexpected legacy snapshot selection
   - keep WebSocket compression disabled until a stock OS 1.9 physical-client canary proves negotiation and reconnect behavior; evaluate static HTTP text compression separately
 - Exit criteria:
   - production DI does not resolve `InMemoryCloudStateStore` for durable cloud state or personal memory

@@ -23,7 +23,7 @@ These scripts help exercise the new .NET hosted cloud locally.
 - `publish-openjibo-managed.sh`
   Bash build-and-push wrapper for the managed ACR image.
 - `deploy-openjibo-managed.sh`
-  Bash deploy wrapper for the managed Container Apps stack plus optional migration and smoke. It defaults to the canonical managed host trio: `--api-hostname api.openjibo.com`, `--socket-hostname open-jibo-socket.openjibo.com`, and `--neohub-hostname neohub.openjibo.com`.
+  Bash deploy wrapper for the managed Container Apps stack plus optional migration and smoke. It defaults to the canonical managed host trio: `--api-hostname api.openjibo.com`, `--socket-hostname open-jibo-socket.openjibo.com`, and `--neohub-hostname neohub.openjibo.com`. Fleet peer sync is disabled by default; `--enable-peer-sync` requires `--peer-sync-allowed-hosts` with exact hosts.
 - `Test-OpenJiboManagedDeploymentContract.ps1`
   Validates the managed deployment contract by checking the Bicep templates, workflow, and deploy scripts for expected markers before any Azure calls run.
 - `test-openjibo-managed-deployment-contract.sh`
@@ -70,6 +70,12 @@ These scripts help exercise the new .NET hosted cloud locally.
   Bash wrapper for the PostgreSQL migration runner so Linux container and self-hosted flows do not depend on PowerShell.
 - `invoke-cloud-smoke.sh`
   Bash onboarding replay and health smoke for Linux CI and containerized self-hosted runs.
+- `invoke-release-smoke.mjs`
+  Runs the browser-shared HTTP/WebSocket release gate and configurable fake-robot load scenario. Defaults to six
+  connected notification sockets with one round of 25% simultaneous `CLIENT_ASR` turns. Configure it with
+  `RELEASE_SMOKE_CONCURRENCY`, `RELEASE_SMOKE_TURN_PERCENT`, `RELEASE_SMOKE_TURN_ROUNDS`,
+  `RELEASE_SMOKE_HOLD_MS`, `RELEASE_SMOKE_ROUND_INTERVAL_MS`, and `RELEASE_SMOKE_TIMEOUT_MS`. The JSON result
+  includes completed-turn count and min/P50/P95/max client-observed latency.
 - `test-openjibo-self-hosted-deployment-contract.sh`
   Bash contract checker for the self-hosted compose/migration/smoke trio.
 - `get-websocket-capture-summary.sh`

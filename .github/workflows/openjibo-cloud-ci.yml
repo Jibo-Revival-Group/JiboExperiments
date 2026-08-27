@@ -62,6 +62,9 @@ jobs:
         with:
           node-version: 24
 
+      - name: Test release smoke load driver
+        run: node --test ./tests/Jibo.Cloud.JavaScript.Tests/release-smoke.test.mjs
+
       - name: Build and start stack
         shell: bash
         run: bash ./scripts/cloud/invoke-openjibo-self-hosted-stack.sh --run-migration

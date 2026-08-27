@@ -1,7 +1,49 @@
 const DEFAULT_TIMEOUT_MS = 6000;
+const DEFAULT_LOAD_OPTIONS = Object.freeze({
+  robotCount: 6,
+  turnPercent: 25,
+  turnRounds: 1,
+  holdMs: 500,
+  roundIntervalMs: 0,
+  timeoutMs: DEFAULT_TIMEOUT_MS,
+});
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+function boundedInteger(value, name, minimum, maximum) {
+  const parsed = typeof value === "number" ? value : Number.parseInt(String(value), 10);
+  assert(Number.isInteger(parsed) && parsed >= minimum && parsed <= maximum,
+    `${name} must be an integer from ${minimum} through ${maximum}.`);
+  return parsed;
+}
+
+export function normalizeLoadOptions(options = {}) {
+  return {
+    robotCount: boundedInteger(options.robotCount ?? options.concurrency ?? DEFAULT_LOAD_OPTIONS.robotCount,
+      "robotCount", 1, 100),
+    turnPercent: boundedInteger(options.turnPercent ?? DEFAULT_LOAD_OPTIONS.turnPercent,
+      "turnPercent", 0, 100),
+    turnRounds: boundedInteger(options.turnRounds ?? DEFAULT_LOAD_OPTIONS.turnRounds,
+      "turnRounds", 1, 1000),
+    holdMs: boundedInteger(options.holdMs ?? DEFAULT_LOAD_OPTIONS.holdMs,
+      "holdMs", 0, 86_400_000),
+    roundIntervalMs: boundedInteger(options.roundIntervalMs ?? DEFAULT_LOAD_OPTIONS.roundIntervalMs,
+      "roundIntervalMs", 0, 3_600_000),
+    timeoutMs: boundedInteger(options.timeoutMs ?? DEFAULT_LOAD_OPTIONS.timeoutMs,
+      "timeoutMs", 100, 120_000),
+  };
+}
+
+function delay(milliseconds) {
+  return milliseconds > 0 ? new Promise((resolve) => setTimeout(resolve, milliseconds)) : Promise.resolve();
+}
+
+function percentile(values, fraction) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((left, right) => left - right);
+  return sorted[Math.ceil(fraction * sorted.length) - 1];
 }
 
 function websocketUrl(baseUrl, path) {
@@ -131,11 +173,24 @@ export async function runReleaseSmoke({
   WebSocketImpl = globalThis.WebSocket,
   robotPrefix = `release-smoke-${Date.now()}`,
   concurrency = 6,
+  turnPercent,
+  turnRounds,
+  holdMs,
+  roundIntervalMs,
+  timeoutMs,
   onStep = () => {},
 }) {
   assert(baseUrl, "baseUrl is required.");
   assert(typeof protocolCall === "function", "protocolCall is required.");
   assert(typeof WebSocketImpl === "function", "A WebSocket implementation is required.");
+  const loadOptions = normalizeLoadOptions({
+    concurrency,
+    turnPercent,
+    turnRounds,
+    holdMs,
+    roundIntervalMs,
+    timeoutMs,
+  });
   const results = [];
   const runStep = async (name, action) => {
     const started = Date.now();
@@ -170,9 +225,9 @@ export async function runReleaseSmoke({
 
   await runStep("Notification socket connect and reconnect", async () => {
     const url = websocketUrl(baseUrl, `/${encodeURIComponent(token)}`);
-    const first = await openSocket(WebSocketImpl, url, "notification");
+    const first = await openSocket(WebSocketImpl, url, "notification", loadOptions.timeoutMs);
     await closeSocket(first);
-    const second = await openSocket(WebSocketImpl, url, "notification reconnect");
+    const second = await openSocket(WebSocketImpl, url, "notification reconnect", loadOptions.timeoutMs);
     await closeSocket(second);
     return "connected twice with the issued token";
   });
@@ -180,9 +235,9 @@ export async function runReleaseSmoke({
   await runStep("CLIENT_ASR joke response order", async () => {
     const transID = `${robotPrefix}-joke`;
     const socket = await openSocket(WebSocketImpl,
-      websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(token)}`), "NeoHub joke");
+      websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(token)}`), "NeoHub joke", loadOptions.timeoutMs);
     try {
-      const repliesPromise = readReplyTypes(socket, 3, "joke turn");
+      const repliesPromise = readReplyTypes(socket, 3, "joke turn", loadOptions.timeoutMs);
       socket.send(JSON.stringify({
         type: "CLIENT_ASR",
         transID,
@@ -200,7 +255,8 @@ export async function runReleaseSmoke({
   await runStep("Malformed frame recovery and CLIENT_NLU clock turn", async () => {
     const transID = `${robotPrefix}-clock`;
     const socket = await openSocket(WebSocketImpl,
-      websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(token)}-clock`), "NeoHub clock");
+      websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(token)}-clock`), "NeoHub clock",
+      loadOptions.timeoutMs);
     try {
       socket.send("{not-valid-json");
       socket.send(JSON.stringify({
@@ -209,7 +265,7 @@ export async function runReleaseSmoke({
         data: { lang: "en-US", rules: ["clock/clock_menu"], mode: "CLIENT_NLU" },
       }));
       await new Promise((resolve) => setTimeout(resolve, 100));
-      const repliesPromise = readReplyTypes(socket, 2, "clock turn");
+      const repliesPromise = readReplyTypes(socket, 2, "clock turn", loadOptions.timeoutMs);
       socket.send(JSON.stringify({
         type: "CLIENT_NLU",
         transID,
@@ -225,14 +281,15 @@ export async function runReleaseSmoke({
   });
 
   await runStep("Missing-token socket rejection", async () => {
-    await expectRejectedSocket(WebSocketImpl, websocketUrl(baseUrl, "/v1/listen"));
+    await expectRejectedSocket(WebSocketImpl, websocketUrl(baseUrl, "/v1/listen"), loadOptions.timeoutMs);
     return "connection rejected before WebSocket upgrade";
   });
 
-  await runStep(`${concurrency} concurrent fake robot sockets`, async () => {
+  let loadSummary;
+  await runStep(`${loadOptions.robotCount} connected fake robots with concurrent turns`, async () => {
     const sockets = [];
     try {
-      const tokens = await Promise.all(Array.from({ length: concurrency }, async (_, index) => {
+      const tokens = await Promise.all(Array.from({ length: loadOptions.robotCount }, async (_, index) => {
         const concurrentDeviceId = `${robotPrefix}-concurrent-${index + 1}`;
         const issued = await protocolCall("Notification_20160715", "NewRobotToken", {
           deviceId: concurrentDeviceId,
@@ -243,11 +300,57 @@ export async function runReleaseSmoke({
       }));
       sockets.push(...await Promise.all(tokens.map((issuedToken, index) =>
         openSocket(WebSocketImpl, websocketUrl(baseUrl, `/${encodeURIComponent(issuedToken)}`),
-          `concurrent robot ${index + 1}`))));
-      await new Promise((resolve) => setTimeout(resolve, 500));
+          `concurrent robot ${index + 1}`, loadOptions.timeoutMs))));
+      await delay(loadOptions.holdMs);
       assert(sockets.every((socket) => socket.readyState === 1),
         "One or more concurrent robot sockets closed unexpectedly.");
-      return `${sockets.length} sockets remained open together`;
+
+      const activeTurnsPerRound = loadOptions.turnPercent === 0
+        ? 0
+        : Math.max(1, Math.ceil(loadOptions.robotCount * loadOptions.turnPercent / 100));
+      const durations = [];
+      for (let round = 0; round < loadOptions.turnRounds; round += 1) {
+        const selected = Array.from({ length: activeTurnsPerRound }, (_, index) =>
+          (round * activeTurnsPerRound + index) % tokens.length);
+        const roundDurations = await Promise.all(selected.map(async (robotIndex) => {
+          const label = `load robot ${robotIndex + 1} round ${round + 1}`;
+          const started = Date.now();
+          const listenSocket = await openSocket(WebSocketImpl,
+            websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(tokens[robotIndex])}`), label,
+            loadOptions.timeoutMs);
+          try {
+            const repliesPromise = readReplyTypes(listenSocket, 3, label, loadOptions.timeoutMs);
+            listenSocket.send(JSON.stringify({
+              type: "CLIENT_ASR",
+              transID: `${robotPrefix}-load-${round + 1}-${robotIndex + 1}`,
+              data: { text: "tell me a joke", rules: ["wake-word"] },
+            }));
+            const replies = await repliesPromise;
+            assertReplyOrder(replies, ["LISTEN", "EOS", "SKILL_ACTION"], label);
+            assert(replies[2]?.data?.skill?.id === "@be/joke", `${label} returned the wrong skill action.`);
+            return Date.now() - started;
+          } finally {
+            await closeSocket(listenSocket);
+          }
+        }));
+        durations.push(...roundDurations);
+        if (round + 1 < loadOptions.turnRounds) await delay(loadOptions.roundIntervalMs);
+      }
+
+      assert(sockets.every((socket) => socket.readyState === 1),
+        "One or more quiet notification sockets closed while turns were running.");
+      loadSummary = {
+        ...loadOptions,
+        activeTurnsPerRound,
+        completedTurns: durations.length,
+        turnLatencyMs: {
+          min: durations.length ? Math.min(...durations) : null,
+          p50: percentile(durations, 0.50),
+          p95: percentile(durations, 0.95),
+          max: durations.length ? Math.max(...durations) : null,
+        },
+      };
+      return `${sockets.length} sockets; ${durations.length} turns; p95 ${loadSummary.turnLatencyMs.p95 ?? "n/a"} ms`;
     } finally {
       await Promise.all(sockets.map(closeSocket));
     }
@@ -259,5 +362,5 @@ export async function runReleaseSmoke({
     return `read ${deviceId} after all socket sessions closed`;
   });
 
-  return { ok: true, baseUrl, robotPrefix, concurrency, results };
+  return { ok: true, baseUrl, robotPrefix, concurrency: loadOptions.robotCount, load: loadSummary, results };
 }

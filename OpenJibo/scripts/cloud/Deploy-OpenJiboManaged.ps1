@@ -21,7 +21,9 @@ param(
     [string]$ParametersPath = "infra/azure/container-apps/openjibo-managed.parameters.json",
     [switch]$RunMigration,
     [switch]$RunSmoke,
-    [switch]$SkipHostnameBinding
+    [switch]$SkipHostnameBinding,
+    [switch]$EnablePeerSync,
+    [string]$PeerSyncAllowedHosts = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,6 +46,10 @@ if ([string]::IsNullOrWhiteSpace($KeyVaultName)) {
 
 if ([string]::IsNullOrWhiteSpace($RegistryName)) {
     throw "RegistryName is required."
+}
+
+if ($EnablePeerSync -and [string]::IsNullOrWhiteSpace($PeerSyncAllowedHosts)) {
+    throw "PeerSyncAllowedHosts is required when EnablePeerSync is set."
 }
 
 $RegistryLoginServer = "$RegistryName.azurecr.io"
@@ -307,6 +313,8 @@ $arguments = @(
     "--parameters", "newsApiKey=$newsApiKey",
     "--parameters", "portalStatusPassword=$portalStatusPassword",
     "--parameters", "peerSyncSharedKey=$peerSyncSharedKey",
+    "--parameters", "peerSyncEnabled=$($EnablePeerSync.IsPresent.ToString().ToLowerInvariant())",
+    "--parameters", "allowedPeerHosts=$PeerSyncAllowedHosts",
     "--parameters", "userEncryptionPassphrase=$userEncryptionPassphrase",
     "--parameters", "userEncryptionSalt=$userEncryptionSalt"
 )

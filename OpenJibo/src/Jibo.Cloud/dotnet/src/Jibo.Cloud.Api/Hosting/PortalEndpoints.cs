@@ -1452,6 +1452,10 @@ internal static class PortalEndpoints
             ICloudStateStore cloudStateStore,
             FleetNetworkPresenceRegistry fleetNetworkPresenceRegistry) =>
         {
+            var peerSyncPolicy = FleetPeerSyncPolicy.FromConfiguration(configuration);
+            if (!peerSyncPolicy.Enabled || !peerSyncPolicy.Allows(payload.CanonicalHost))
+                return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+
             var sharedKey = configuration["OpenJibo:FleetNetwork:PeerSyncSharedKey"];
             if (string.IsNullOrWhiteSpace(sharedKey))
                 return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);

@@ -20,7 +20,12 @@ try {
     baseUrl,
     protocolCall: createProtocolCaller(baseUrl, protocolHost),
     robotPrefix: process.env.TEST_ROBOT_ID || `release-smoke-${Date.now()}-${process.pid}`,
-    concurrency: Number.parseInt(process.env.RELEASE_SMOKE_CONCURRENCY || "6", 10),
+    concurrency: process.env.RELEASE_SMOKE_CONCURRENCY || 6,
+    turnPercent: process.env.RELEASE_SMOKE_TURN_PERCENT || 25,
+    turnRounds: process.env.RELEASE_SMOKE_TURN_ROUNDS || 1,
+    holdMs: process.env.RELEASE_SMOKE_HOLD_MS || 500,
+    roundIntervalMs: process.env.RELEASE_SMOKE_ROUND_INTERVAL_MS || 0,
+    timeoutMs: process.env.RELEASE_SMOKE_TIMEOUT_MS || 6000,
     onStep: (step) => console.error(`${step.status.toUpperCase()}: ${step.name}${step.detail ? ` - ${step.detail}` : ""}`),
   });
   console.log(JSON.stringify(result, null, 2));

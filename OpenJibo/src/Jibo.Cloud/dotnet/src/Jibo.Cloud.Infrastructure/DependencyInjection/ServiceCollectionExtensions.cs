@@ -205,8 +205,13 @@ public static class ServiceCollectionExtensions
                                             "OpenJibo:State:Cache:TtlSeconds") ?? 30;
             var maximumActiveSessions = configuration?.GetValue<int?>(
                                             "OpenJibo:State:Sessions:MaximumActive") ?? 256;
-            services.AddSingleton(_ => new PostgreSqlCloudStateDataSource(
-                stateConnectionString!, Math.Max(1, maxPoolSize)));
+            services.AddSingleton(provider =>
+            {
+                var boundedMaxPoolSize = Math.Max(1, maxPoolSize);
+                provider.GetRequiredService<ITransportMetrics>()
+                    .PostgreSqlPoolConfigured("cloud_state", boundedMaxPoolSize);
+                return new PostgreSqlCloudStateDataSource(stateConnectionString!, boundedMaxPoolSize);
+            });
             services.AddSingleton<ICloudStateSecretProtector>(provider =>
                 new UserDataCloudStateSecretProtector(provider.GetRequiredService<UserDataEncryptionService>()));
             services.AddSingleton<IBackupPayloadStore, MediaContentBackupPayloadStore>();
@@ -247,11 +252,15 @@ public static class ServiceCollectionExtensions
                                           "OpenJibo:PersonalMemory:Cache:MaxEntries") ?? 256;
                 var cacheTtlSeconds = configuration?.GetValue<int?>(
                                           "OpenJibo:PersonalMemory:Cache:TtlSeconds") ?? 30;
+                var boundedMaxPoolSize = Math.Max(1, maxPoolSize);
+                var metrics = provider.GetRequiredService<ITransportMetrics>();
+                metrics.PostgreSqlPoolConfigured("personal_memory", boundedMaxPoolSize);
                 return new PostgreSqlPersonalMemoryStore(
                     personalMemoryConnectionString!,
-                    maxPoolSize,
+                    boundedMaxPoolSize,
                     cacheMaxEntries,
-                    TimeSpan.FromSeconds(Math.Max(1, cacheTtlSeconds)));
+                    TimeSpan.FromSeconds(Math.Max(1, cacheTtlSeconds)),
+                    metrics);
             }
 
             var snapshotFactory = provider.GetRequiredService<IPersistenceSnapshotStoreFactory>();

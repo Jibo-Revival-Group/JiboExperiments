@@ -19,6 +19,8 @@ run_migration=false
 run_smoke=false
 smoke_generated_fqdn=false
 skip_hostname_binding=false
+peer_sync_enabled=false
+allowed_peer_hosts=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -98,12 +100,29 @@ while [[ $# -gt 0 ]]; do
       skip_hostname_binding=true
       shift
       ;;
+    --enable-peer-sync)
+      peer_sync_enabled=true
+      shift
+      ;;
+    --disable-peer-sync)
+      peer_sync_enabled=false
+      shift
+      ;;
+    --peer-sync-allowed-hosts)
+      allowed_peer_hosts="${2:-}"
+      shift 2
+      ;;
     *)
       echo "Unknown argument: $1" >&2
       exit 2
       ;;
   esac
 done
+
+if [[ "$peer_sync_enabled" == true && -z "$allowed_peer_hosts" ]]; then
+  echo "--peer-sync-allowed-hosts is required when --enable-peer-sync is used" >&2
+  exit 2
+fi
 
 for required_name in resource_group_name key_vault_name registry_name; do
   if [[ -z "${!required_name}" ]]; then
@@ -288,6 +307,8 @@ deployment_args=(
   --parameters "newsApiKey=${news_api_key}"
   --parameters "portalStatusPassword=${portal_status_password}"
   --parameters "peerSyncSharedKey=${peer_sync_shared_key}"
+  --parameters "peerSyncEnabled=${peer_sync_enabled}"
+  --parameters "allowedPeerHosts=${allowed_peer_hosts}"
   --parameters "userEncryptionPassphrase=${user_encryption_passphrase}"
   --parameters "userEncryptionSalt=${user_encryption_salt}"
 )

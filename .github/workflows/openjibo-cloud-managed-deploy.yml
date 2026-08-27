@@ -88,6 +88,42 @@ on:
         description: Optional Azure Speech region override
         required: false
         default: ""
+      staging_smoke_robot_count:
+        description: Connected fake robots in the staging WebSocket smoke
+        required: true
+        type: choice
+        options:
+          - "6"
+          - "10"
+          - "15"
+          - "20"
+        default: "6"
+      staging_smoke_turn_percent:
+        description: Percent of connected fake robots turning simultaneously per round
+        required: true
+        type: choice
+        options:
+          - "10"
+          - "25"
+          - "50"
+        default: "25"
+      staging_smoke_turn_rounds:
+        description: Concurrent-turn rounds in the staging smoke (1-1000)
+        required: true
+        default: "1"
+      staging_smoke_round_interval_ms:
+        description: Delay between staging turn rounds in milliseconds
+        required: true
+        default: "0"
+      enable_fleet_peer_sync:
+        description: Enable exact-host fleet peer sync in production only
+        required: true
+        type: boolean
+        default: false
+      fleet_peer_allowed_hosts:
+        description: Exact comma-separated peer hosts required when fleet peer sync is enabled
+        required: false
+        default: ""
 
 concurrency:
   group: openjibo-managed-${{ inputs.deployment_target }}
@@ -156,6 +192,18 @@ jobs:
           if [[ "${{ inputs.deployment_target }}" == "production" &&
                 "${{ inputs.production_backup_confirmed }}" != "true" ]]; then
             echo "production_backup_confirmed must be checked for production." >&2
+            exit 1
+          fi
+
+          if [[ "${{ inputs.deployment_target }}" != "production" &&
+                "${{ inputs.enable_fleet_peer_sync }}" == "true" ]]; then
+            echo "Fleet peer sync cannot be enabled by the staging workflow." >&2
+            exit 1
+          fi
+
+          if [[ "${{ inputs.enable_fleet_peer_sync }}" == "true" &&
+                -z "${{ inputs.fleet_peer_allowed_hosts }}" ]]; then
+            echo "fleet_peer_allowed_hosts is required when fleet peer sync is enabled." >&2
             exit 1
           fi
 
@@ -466,11 +514,23 @@ jobs:
             fi
           fi
 
+
+          if [[ "${{ inputs.enable_fleet_peer_sync }}" == "true" ]]; then
+            deploy_args+=(--enable-peer-sync --peer-sync-allowed-hosts "${{ inputs.fleet_peer_allowed_hosts }}")
+          else
+            deploy_args+=(--disable-peer-sync)
+          fi
+
           bash ./scripts/cloud/deploy-openjibo-managed.sh "${deploy_args[@]}"
 
       - name: Run deployed WebSocket release smoke
         if: inputs.deployment_target == 'staging'
         shell: bash
+        env:
+          RELEASE_SMOKE_CONCURRENCY: ${{ inputs.staging_smoke_robot_count }}
+          RELEASE_SMOKE_TURN_PERCENT: ${{ inputs.staging_smoke_turn_percent }}
+          RELEASE_SMOKE_TURN_ROUNDS: ${{ inputs.staging_smoke_turn_rounds }}
+          RELEASE_SMOKE_ROUND_INTERVAL_MS: ${{ inputs.staging_smoke_round_interval_ms }}
         run: |
           app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
           app_fqdn="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.configuration.ingress.fqdn --output tsv)"

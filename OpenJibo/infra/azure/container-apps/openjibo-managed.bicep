@@ -85,6 +85,12 @@ param portalStatusPassword string = ''
 @secure()
 param peerSyncSharedKey string = ''
 
+@description('Explicitly enables fleet peer synchronization. Disabled by default, including staging.')
+param peerSyncEnabled bool = false
+
+@description('Comma- or semicolon-separated exact peer host allowlist. Required when peer sync is enabled.')
+param allowedPeerHosts string = ''
+
 @secure()
 @description('Passphrase used to protect normalized durable secrets.')
 param userEncryptionPassphrase string = ''
@@ -314,6 +320,14 @@ var managedEnvVars = concat([
   {
     name: 'OpenJibo__FleetNetwork__PeerSyncSharedKey'
     secretRef: 'peer-sync-shared-key'
+  }
+  {
+    name: 'OpenJibo__FleetNetwork__PeerSyncEnabled'
+    value: string(peerSyncEnabled)
+  }
+  {
+    name: 'OpenJibo__FleetNetwork__AllowedPeerHosts'
+    value: allowedPeerHosts
   }
   {
     name: 'OPENJIBO_USER_ENCRYPT'

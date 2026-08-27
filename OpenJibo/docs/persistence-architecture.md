@@ -127,6 +127,7 @@ Implemented:
 - audio buffering is independently bounded at 4 MiB per session and 64 MiB across the process, with buffer release tied to WebSocket teardown.
 - the normalized cloud-state migration now defines target-specific relational tables for all durable state families, excluding live WebSocket/turn state.
 - aggregate WebSocket message/byte/connection metrics cover primary, notification, and Home Assistant send paths without recording payloads or identifiers.
+- bounded turn phase/outcome, active-turn, reply-batch, audio high-water, cache hit/miss, and configured PostgreSQL pool metrics are emitted without customer identifiers; collection and provider metric requirements are documented in [runtime operational metrics](architecture/runtime-operational-metrics.md).
 
 Configuration overrides are `OpenJibo:PersonalMemory:PostgreSql:MaxPoolSize`,
 `OpenJibo:PersonalMemory:Cache:MaxEntries`, and `OpenJibo:PersonalMemory:Cache:TtlSeconds`.
@@ -151,6 +152,7 @@ receives the default self-hosted account, hidden bootstrap robot, loop, profile,
 - validate two-replica cache-expiry and committed-write behavior in PostgreSQL CI and staging
 - add replication/invalidation primitives only if the measured 30-second cache convergence bound is insufficient
 - alert if startup encounters an unimported legacy snapshot or normalized persistence fails
+- export the application meter alongside .NET runtime, Npgsql, Container Apps, and PostgreSQL platform metrics
 - retain export snapshots only as operational recovery artifacts, never runtime truth
 
 ## Non-Goals For Now

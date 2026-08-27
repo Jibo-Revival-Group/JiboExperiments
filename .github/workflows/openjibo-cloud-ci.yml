@@ -65,6 +65,15 @@ jobs:
       - name: Test release smoke load driver
         run: node --test ./tests/Jibo.Cloud.JavaScript.Tests/release-smoke.test.mjs
 
+      - name: Generate local release smoke authorization
+        shell: bash
+        run: |
+          smoke_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$smoke_secret"
+          echo "OPENJIBO_RELEASE_SMOKE_ENABLED=true" >> "$GITHUB_ENV"
+          echo "OPENJIBO_RELEASE_SMOKE_SECRET=$smoke_secret" >> "$GITHUB_ENV"
+          echo "OPENJIBO_RELEASE_SMOKE_MAX_CONCURRENT=6" >> "$GITHUB_ENV"
+
       - name: Build and start stack
         shell: bash
         run: bash ./scripts/cloud/invoke-openjibo-self-hosted-stack.sh --run-migration
@@ -98,7 +107,8 @@ jobs:
         run: node ./scripts/cloud/invoke-release-smoke.mjs
         env:
           BASE_URL: http://localhost:8080
-          TEST_ROBOT_ID: release-smoke-ci-${{ github.run_id }}-${{ github.run_attempt }}
+          OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST: localhost
+          TEST_ROBOT_ID: open-jibo-smoke-staging
 
       - name: Capture logs
         if: always()

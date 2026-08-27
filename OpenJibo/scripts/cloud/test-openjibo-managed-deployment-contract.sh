@@ -11,6 +11,7 @@ linux_publish_script_path="scripts/cloud/publish-openjibo-managed.sh"
 linux_managed_script_path="scripts/cloud/deploy-openjibo-managed.sh"
 linux_prepare_script_path="scripts/cloud/prepare-openjibo-managed-databases.sh"
 linux_clone_script_path="scripts/cloud/clone-openjibo-managed-databases.sh"
+release_smoke_cleanup_script_path="scripts/cloud/cleanup-release-smoke-authorization.sh"
 smoke_script_path="scripts/cloud/Invoke-CloudSmoke.ps1"
 linux_smoke_script_path="scripts/cloud/invoke-cloud-smoke.sh"
 dockerfile_path="Dockerfile"
@@ -33,6 +34,7 @@ get_repo_file_text() {
 foundation_text="$(get_repo_file_text "$foundation_template_path")"
 managed_text="$(get_repo_file_text "$managed_template_path")"
 workflow_text="$(get_repo_file_text "$workflow_path")"
+release_smoke_cleanup_text="$(get_repo_file_text "$release_smoke_cleanup_script_path")"
 foundation_script_text="$(get_repo_file_text "$foundation_script_path")"
 managed_script_text="$(get_repo_file_text "$managed_script_path")"
 linux_foundation_script_text="$(get_repo_file_text "$linux_foundation_script_path")"
@@ -247,12 +249,36 @@ for marker in "containerapp env show" "firewall-rule create" "firewall-rule upda
   fi
 done
 
-for marker in "deployment_target" "openjibo-staging-gate" "clone-openjibo-managed-databases.sh" "keyVaultUrl" "keyVaultUri" "urlsplit" "openjibo-managed-" "containerAppName" "properties.outputs" "user-encryption-passphrase" "user-encryption-salt" "production_backup_confirmed" "enable_fleet_peer_sync" "fleet_peer_allowed_hosts" "Fleet peer sync cannot be enabled by the staging workflow" "backup.backupRetentionDays" "Verify production hostname DNS prerequisites" "customDomainVerificationId" "dig +short CNAME" "dig +short TXT" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "properties.active" '[[ "$revision_active" == "true" ]]' '[[ "$previous_revision_active" != "true" ]]' "already active" "revision deactivate" "revision activate" "PREVIOUS_REVISION" "Restore previous image after failure" "Run deployed WebSocket release smoke" "invoke-release-smoke.mjs" "webSocketReleaseSmoke"; do
+for marker in "deployment_target" "openjibo-staging-gate" "clone-openjibo-managed-databases.sh" "keyVaultUrl" "keyVaultUri" "urlsplit" "openjibo-managed-" "containerAppName" "properties.outputs" "user-encryption-passphrase" "user-encryption-salt" "production_backup_confirmed" "enable_fleet_peer_sync" "fleet_peer_allowed_hosts" "Fleet peer sync cannot be enabled by the staging workflow" "backup.backupRetentionDays" "Verify production hostname DNS prerequisites" "customDomainVerificationId" "dig +short CNAME" "dig +short TXT" "open-jibo.jibo.pro" "open-jibo-socket.jibo.pro" "properties.active" '[[ "$revision_active" == "true" ]]' '[[ "$previous_revision_active" != "true" ]]' "already active" "revision deactivate" "revision activate" "PREVIOUS_REVISION" "Restore previous image after failure" "Re-disable release smoke authorization after rollback" "Run deployed WebSocket release smoke" "invoke-release-smoke.mjs" "cleanup-release-smoke-authorization.sh" "TEST_ROBOT_ID: open-jibo-smoke-staging" "openssl rand -hex 32" "release-smoke-authorization" "OpenJibo__ReleaseSmoke__Enabled=true" "OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST" "cancel-in-progress: false" "webSocketReleaseSmoke"; do
   if [[ "$workflow_text" != *"$marker"* ]]; then
     echo "Workflow is missing staging or promotion safeguard: $marker" >&2
     exit 1
   fi
 done
+
+for marker in "OpenJibo__ReleaseSmoke__Enabled=false" "--remove-env-vars" "OpenJibo__ReleaseSmoke__Secret" "/health" "containerapp secret remove" "release-smoke-authorization" "failures="; do
+  if [[ "$release_smoke_cleanup_text" != *"$marker"* ]]; then
+    echo "Release-smoke cleanup script is missing lifecycle safeguard: $marker" >&2
+    exit 1
+  fi
+done
+disabled_config_line="$(grep -n -- "OpenJibo__ReleaseSmoke__Enabled=false" <<<"$release_smoke_cleanup_text" | head -1 | cut -d: -f1)"
+health_check_line="$(grep -n -- '/health' <<<"$release_smoke_cleanup_text" | head -1 | cut -d: -f1)"
+secret_delete_line="$(grep -n -- "containerapp secret remove" <<<"$release_smoke_cleanup_text" | head -1 | cut -d: -f1)"
+if [[ ! ( "$disabled_config_line" -lt "$health_check_line" && "$health_check_line" -lt "$secret_delete_line" ) ]]; then
+  echo "Release-smoke cleanup must deploy disabled/no-reference configuration, wait healthy, then delete the secret." >&2
+  exit 1
+fi
+
+disable_smoke_line="$(grep -n -- "- name: Disable staging release smoke authorization" <<<"$workflow_text" | cut -d: -f1)"
+restore_line="$(grep -n -- "- name: Restore previous image after failure" <<<"$workflow_text" | cut -d: -f1)"
+redisable_line="$(grep -n -- "- name: Re-disable release smoke authorization after rollback" <<<"$workflow_text" | cut -d: -f1)"
+promotion_gate_line="$(grep -n -- "- name: Create staging promotion gate" <<<"$workflow_text" | cut -d: -f1)"
+if [[ -z "$disable_smoke_line" || -z "$restore_line" || -z "$redisable_line" || -z "$promotion_gate_line" ||
+      ! ( "$disable_smoke_line" -lt "$restore_line" && "$restore_line" -lt "$redisable_line" && "$redisable_line" -lt "$promotion_gate_line" ) ]]; then
+  echo "Release-smoke cleanup and rollback safeguards must complete before the staging promotion gate." >&2
+  exit 1
+fi
 
 for marker in "OPENJIBO_USER_ENCRYPT" "OPENJIBO_USER_SALT" "user-encryption-passphrase" "user-encryption-salt" "OpenJibo__FleetNetwork__PeerSyncEnabled" "OpenJibo__FleetNetwork__AllowedPeerHosts"; do
   if [[ "$managed_text" != *"$marker"* ]]; then

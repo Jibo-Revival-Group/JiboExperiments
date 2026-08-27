@@ -10,6 +10,7 @@ public sealed class CloudSession
     public string? HostName { get; init; }
     public string? Path { get; init; }
     public DateTimeOffset CreatedUtc { get; init; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? ExpiresUtc { get; init; }
     public DateTimeOffset LastSeenUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? FollowUpExpiresUtc { get; set; }
     public string? LastMessageType { get; set; }

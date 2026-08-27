@@ -112,6 +112,29 @@ public sealed class PostgreSqlCloudAuthTokenRepository(PostgreSqlCloudStateDataS
         return affected;
     }
 
+    public async Task<int> RevokeForDeviceAsync(string deviceId, string tokenKind,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tokenKind);
+        var normalizedKind = tokenKind.Trim().ToLowerInvariant();
+        if (!SupportedKinds.Contains(normalizedKind))
+            throw new ArgumentException("Token kind must be hub, robot, or access.", nameof(tokenKind));
+        await using var connection = await dataSource.Value.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var command = new NpgsqlCommand("""
+                                                    UPDATE CloudAuthTokens SET RevokedUtc = NOW()
+                                                    WHERE DeviceId = @deviceId AND TokenKind = @tokenKind
+                                                      AND RevokedUtc IS NULL AND ExpiresUtc > NOW()
+                                                    """, connection, transaction);
+        command.Parameters.AddWithValue("deviceId", deviceId.Trim());
+        command.Parameters.AddWithValue("tokenKind", normalizedKind);
+        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
+        if (affected > 0) await CloudStateRevision.BumpAsync(connection, transaction, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return affected;
+    }
+
     private static CloudAuthTokenRecord Map(NpgsqlDataReader reader) => new(
         reader.GetString(0),
         reader.IsDBNull(1) ? null : reader.GetString(1),

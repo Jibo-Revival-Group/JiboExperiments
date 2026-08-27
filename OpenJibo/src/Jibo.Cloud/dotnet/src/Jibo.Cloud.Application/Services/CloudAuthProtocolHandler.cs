@@ -9,9 +9,12 @@ namespace Jibo.Cloud.Application.Services;
 public sealed class CloudAuthProtocolHandler(
     ICloudStateStore stateStore,
     ILogger<CloudAuthProtocolHandler>? logger = null,
-    RobotIdentitySuggestionStore? identitySuggestionStore = null) : ICloudAuthProtocolHandler
+    RobotIdentitySuggestionStore? identitySuggestionStore = null,
+    ReleaseSmokeAuthorizationOptions? releaseSmokeAuthorization = null) : ICloudAuthProtocolHandler
 {
     private readonly ILogger _logger = logger ?? NullLogger<CloudAuthProtocolHandler>.Instance;
+    private readonly ReleaseSmokeAuthorizationOptions _releaseSmokeAuthorization =
+        releaseSmokeAuthorization ?? new ReleaseSmokeAuthorizationOptions();
     public ProtocolDispatchResult HandleAccount(string operation, ProtocolEnvelope envelope)
     {
         var account = stateStore.GetAccount();
@@ -41,6 +44,13 @@ public sealed class CloudAuthProtocolHandler(
                     out var sourceHeader)
                     ? sourceHeader
                     : null;
+                if (string.Equals(registrationSource, RobotRegistrationSources.DeploymentSmoke,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    deviceId.StartsWith($"{ReleaseSmokeAuthorizationOptions.FixedPrefix}-",
+                        StringComparison.OrdinalIgnoreCase))
+                    return ProtocolDispatchResult.Raw(403,
+                        "{\"message\":\"Deployment smoke registration requires NewRobotToken.\"}",
+                        "application/x-amz-json-1.1");
                 stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion,
                     registrationSource);
             }
@@ -216,13 +226,33 @@ public sealed class CloudAuthProtocolHandler(
         var registrationSource = envelope.Headers.TryGetValue("X-OpenJibo-Registration-Source", out var sourceHeader)
             ? sourceHeader
             : null;
-        var existing = stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion,
-            registrationSource);
+        var isDeploymentSmoke = string.Equals(registrationSource, RobotRegistrationSources.DeploymentSmoke,
+            StringComparison.OrdinalIgnoreCase);
+        DeploymentSmokeRegistrationAuthorization? smokeAuthorization = null;
+        var usesReservedSmokeNamespace = deviceId.StartsWith(
+            $"{ReleaseSmokeAuthorizationOptions.FixedPrefix}-", StringComparison.OrdinalIgnoreCase);
+        if (isDeploymentSmoke || usesReservedSmokeNamespace)
+        {
+            var presentedSecret = envelope.Headers.TryGetValue("X-OpenJibo-Release-Smoke-Secret", out var secretHeader)
+                ? secretHeader
+                : null;
+            if (!isDeploymentSmoke ||
+                !_releaseSmokeAuthorization.TryAuthorize(deviceId, presentedSecret, out smokeAuthorization))
+                return ProtocolDispatchResult.Raw(403, "{\"message\":\"Deployment smoke is not authorized.\"}",
+                    "application/x-amz-json-1.1");
+        }
+        var existing = isDeploymentSmoke
+            ? stateStore.GetOrCreateDeploymentSmokeDevice(smokeAuthorization!, envelope.FirmwareVersion,
+                envelope.ApplicationVersion)
+            : stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion,
+                registrationSource);
         if (!string.IsNullOrWhiteSpace(presentedRobotId))
             identitySuggestionStore?.Observe(existing.DeviceId, presentedRobotId,
                 "auth:Notification.NewRobotToken", "robotId");
 
-        var token = stateStore.IssueRobotToken(deviceId);
+        var token = isDeploymentSmoke
+            ? stateStore.IssueDeploymentSmokeRobotToken(deviceId)
+            : stateStore.IssueRobotToken(deviceId);
         _logger.LogInformation(
             "Notification NewRobotToken issued deviceId={DeviceId} robotId={RobotId}",
             deviceId,

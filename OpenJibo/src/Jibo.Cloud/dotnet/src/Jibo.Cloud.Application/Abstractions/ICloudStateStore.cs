@@ -1,4 +1,5 @@
 using Jibo.Cloud.Domain.Models;
+using Jibo.Cloud.Application.Services;
 
 namespace Jibo.Cloud.Application.Abstractions;
 
@@ -15,6 +16,8 @@ public interface ICloudStateStore
     RobotProfile GetRobotProfile();
     DeviceRegistration GetOrCreateDevice(string deviceId, string? firmwareVersion, string? applicationVersion,
         string? registrationSource = null);
+    DeviceRegistration GetOrCreateDeploymentSmokeDevice(DeploymentSmokeRegistrationAuthorization authorization,
+        string? firmwareVersion, string? applicationVersion);
     DeviceRegistration UpsertDevice(DeviceRegistration registration);
     DeviceRegistration UpsertDeviceForAdministration(DeviceRegistration registration);
     DeviceRegistration RenameDevice(string deviceId, string robotId);
@@ -37,6 +40,7 @@ public interface ICloudStateStore
     UserRecord UpdateUser(string id, string? firstName, string? lastName, string? gender, long? birthday);
     string IssueHubToken(string? deviceId = null, bool useDefaultRobot = true);
     string IssueRobotToken(string deviceId);
+    string IssueDeploymentSmokeRobotToken(string deviceId);
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
     void CloseSession(string sessionId);
     CloudSession? FindActiveSessionByToken(string token);

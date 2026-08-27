@@ -1407,13 +1407,13 @@ public sealed class HomeAssistantPortalApiTests
         var client = factory.CreateClient();
         var store = factory.Services.GetRequiredService<ICloudStateStore>();
 
-        var placeholder = store.UpsertDevice(new DeviceRegistration
+        var authorizationOptions = new ReleaseSmokeAuthorizationOptions
         {
-            DeviceId = "5c0b221fdf9d450019c5e254",
-            RobotId = "robot-5c0b221fdf9d450019c5e254",
-            FriendlyName = "OpenJibo Registered Robot",
-            RegistrationSource = RobotRegistrationSources.DeploymentSmoke
-        });
+            Enabled = true, Secret = "portal-fixture-secret", MaxConcurrentDevices = 6
+        };
+        Assert.True(authorizationOptions.TryAuthorize("open-jibo-smoke-staging-primary",
+            "portal-fixture-secret", out var smokeAuthorization));
+        var placeholder = store.GetOrCreateDeploymentSmokeDevice(smokeAuthorization!, null, null);
         var namedIdentity = store.UpsertDevice(new DeviceRegistration
         {
             DeviceId = "Royal-Current-Sage-Canvas",

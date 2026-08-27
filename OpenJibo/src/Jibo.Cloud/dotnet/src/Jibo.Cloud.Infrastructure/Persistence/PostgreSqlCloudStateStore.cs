@@ -1,4 +1,5 @@
 using Jibo.Cloud.Application.Abstractions;
+using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Domain.Models;
 
 namespace Jibo.Cloud.Infrastructure.Persistence;
@@ -263,6 +264,27 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         string? applicationVersion, string? registrationSource = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        var source = RobotRegistrationSources.Normalize(registrationSource, deviceId);
+        if (source == RobotRegistrationSources.DeploymentSmoke ||
+            RobotRegistrationSources.IsDeploymentSmokeNamespace(deviceId))
+            throw new InvalidOperationException("Deployment-smoke devices require authenticated smoke registration.");
+        return GetOrCreateDeviceCore(deviceId, firmwareVersion, applicationVersion, source);
+    }
+
+    public DeviceRegistration GetOrCreateDeploymentSmokeDevice(DeploymentSmokeRegistrationAuthorization authorization,
+        string? firmwareVersion, string? applicationVersion)
+    {
+        ArgumentNullException.ThrowIfNull(authorization);
+        if (!RobotRegistrationSources.IsAllowedDeploymentSmokeDeviceId(authorization.DeviceId,
+                authorization.MaxConcurrentDevices))
+            throw new InvalidOperationException("Deployment-smoke device ID is outside the configured bounded set.");
+        return GetOrCreateDeviceCore(authorization.DeviceId.Trim(), firmwareVersion, applicationVersion,
+            RobotRegistrationSources.DeploymentSmoke);
+    }
+
+    private DeviceRegistration GetOrCreateDeviceCore(string deviceId, string? firmwareVersion,
+        string? applicationVersion, string source)
+    {
         var existing = Sync(_devices.GetByDeviceIdAsync(deviceId));
         var accountId = GetAccount().AccountId;
         if (existing is not null)
@@ -276,7 +298,6 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
                 applicationVersion: applicationVersion ?? existing.ApplicationVersion), accountId));
         }
 
-        var source = RobotRegistrationSources.Normalize(registrationSource, deviceId);
         var synthetic = RobotRegistrationSources.IsSynthetic(source);
         var created = new DeviceRegistration
         {
@@ -295,13 +316,24 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
     public DeviceRegistration UpsertDevice(DeviceRegistration registration)
     {
         ArgumentNullException.ThrowIfNull(registration);
+        RejectUnauthenticatedSmokeCreation(registration);
         return Sync(_devices.UpsertAsync(registration, GetAccount().AccountId));
     }
 
     public DeviceRegistration UpsertDeviceForAdministration(DeviceRegistration registration)
     {
         ArgumentNullException.ThrowIfNull(registration);
+        RejectUnauthenticatedSmokeCreation(registration);
         return Sync(_devices.UpsertAsync(registration));
+    }
+
+    private void RejectUnauthenticatedSmokeCreation(DeviceRegistration registration)
+    {
+        if ((RobotRegistrationSources.IsDeploymentSmokeNamespace(registration.DeviceId) ||
+             RobotRegistrationSources.Normalize(registration.RegistrationSource, registration.DeviceId) ==
+             RobotRegistrationSources.DeploymentSmoke) &&
+            Sync(_devices.GetByDeviceIdAsync(registration.DeviceId)) is null)
+            throw new InvalidOperationException("Deployment-smoke devices require authenticated smoke registration.");
     }
 
     public DeviceRegistration RenameDevice(string deviceId, string robotId)
@@ -365,6 +397,28 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         return token;
     }
 
+    public string IssueDeploymentSmokeRobotToken(string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId) ||
+            !deviceId.Trim().StartsWith("open-jibo-smoke-staging-", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Deployment-smoke tokens require the fixed staging smoke namespace.");
+        var normalizedDeviceId = deviceId.Trim();
+        var device = Sync(_devices.GetByDeviceIdAsync(normalizedDeviceId)) ??
+                     throw new KeyNotFoundException("Robot record was not found.");
+        if (!string.Equals(RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+                RobotRegistrationSources.DeploymentSmoke, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Deployment-smoke token device is not classified as deployment-smoke.");
+        Sync(_authTokens.RevokeForDeviceAsync(normalizedDeviceId, "robot"));
+        foreach (var existing in _sessions.DurableTokenValues.Where(session =>
+                     string.Equals(session.DeviceId, normalizedDeviceId, StringComparison.OrdinalIgnoreCase) &&
+                     string.Equals(session.Kind, "robot", StringComparison.OrdinalIgnoreCase)).ToArray())
+            if (!string.IsNullOrWhiteSpace(existing.Token)) _sessions.TryRemove(existing.Token, out _);
+        var account = GetAccount();
+        var token = $"token-{device.DeviceId}-{Guid.NewGuid():N}";
+        RegisterIssuedToken(token, "robot", account.AccountId, device.DeviceId, TimeSpan.FromMinutes(15));
+        return token;
+    }
+
     public CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path)
     {
         var sessionToken = string.IsNullOrWhiteSpace(token) ? $"conn:{Guid.NewGuid():N}" : token.Trim();
@@ -406,7 +460,7 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
             var stored = Sync(_authTokens.FindValidAsync(key));
             if (stored is null) return null;
             durable = CreateSession(stored.TokenKind, stored.AccountId, stored.DeviceId, key, null, null,
-                stored.IssuedUtc);
+                stored.IssuedUtc, stored.ExpiresUtc);
             foreach (var pair in stored.Metadata) durable.Metadata[pair.Key] = pair.Value;
             _sessions.RegisterDurableToken(key, durable);
         }
@@ -484,11 +538,12 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         var metadata = BuildSessionMetadata(accountId, deviceId);
         var stored = Sync(_authTokens.IssueAsync(token, kind, accountId, deviceId, expiresUtc, metadata));
         _sessions.RegisterDurableToken(token,
-            CreateSession(stored.TokenKind, stored.AccountId, stored.DeviceId, token, null, null, stored.IssuedUtc));
+            CreateSession(stored.TokenKind, stored.AccountId, stored.DeviceId, token, null, null, stored.IssuedUtc,
+                stored.ExpiresUtc));
     }
 
     private static CloudSession CreateSession(string kind, string? accountId, string? deviceId, string token,
-        string? hostName, string? path, DateTimeOffset? createdUtc = null) => new()
+        string? hostName, string? path, DateTimeOffset? createdUtc = null, DateTimeOffset? expiresUtc = null) => new()
     {
         Kind = kind,
         AccountId = accountId,
@@ -497,6 +552,7 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         HostName = hostName,
         Path = path,
         CreatedUtc = createdUtc ?? DateTimeOffset.UtcNow,
+        ExpiresUtc = expiresUtc,
         LastSeenUtc = DateTimeOffset.UtcNow,
         Metadata = BuildSessionMetadata(accountId, deviceId)
     };
@@ -539,7 +595,8 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
     private static CloudSession CloneSession(CloudSession source)
     {
         var clone = CreateSession(source.Kind, source.AccountId, source.DeviceId,
-            source.Token ?? $"conn:{Guid.NewGuid():N}", source.HostName, source.Path, source.CreatedUtc);
+            source.Token ?? $"conn:{Guid.NewGuid():N}", source.HostName, source.Path, source.CreatedUtc,
+            source.ExpiresUtc);
         clone.LastSeenUtc = source.LastSeenUtc;
         clone.FollowUpExpiresUtc = source.FollowUpExpiresUtc;
         clone.LastMessageType = source.LastMessageType;

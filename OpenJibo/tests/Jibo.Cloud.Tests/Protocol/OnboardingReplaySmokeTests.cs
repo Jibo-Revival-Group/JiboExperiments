@@ -14,7 +14,7 @@ public sealed class OnboardingReplaySmokeTests
     {
         var email = $"openjibo-smoke-{Guid.NewGuid():N}@example.com";
         const string password = "OpenJiboSmokePass!42";
-        const string robotId = "open-jibo-smoke-robot";
+        const string robotId = "onboarding-replay-robot";
 
         var create = await DispatchAsync("Account_20151111", "Create", new
         {

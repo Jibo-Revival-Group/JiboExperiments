@@ -12,14 +12,40 @@ if (!baseUrl) {
 }
 
 const baseHost = new URL(baseUrl).hostname;
+const isLocal = ["localhost", "127.0.0.1", "::1"].includes(baseHost);
+const allowedHost = (process.env.OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST || "").trim().toLowerCase().replace(/\.$/, "");
+if (!allowedHost || !/^[a-z0-9.-]+$/.test(allowedHost)) {
+  console.error("Set OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST to the exact approved target hostname.");
+  process.exit(2);
+}
+if (baseHost.toLowerCase().replace(/\.$/, "") !== allowedHost) {
+  console.error("Release smoke target hostname does not match OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST.");
+  process.exit(2);
+}
+const productionHosts = new Set(["api.openjibo.com", "api.jibo.com", "open-jibo.jibo.pro"]);
+if (productionHosts.has(baseHost.toLowerCase()) &&
+    process.env.OPENJIBO_RELEASE_SMOKE_DANGEROUSLY_ALLOW_PRODUCTION !== "true") {
+  console.error("Refusing to run release smoke against a production hostname. Set OPENJIBO_RELEASE_SMOKE_DANGEROUSLY_ALLOW_PRODUCTION=true only for an explicitly approved emergency run.");
+  process.exit(2);
+}
+const releaseSmokeSecret = process.env.OPENJIBO_RELEASE_SMOKE_SECRET;
+if (!releaseSmokeSecret) {
+  console.error("Set OPENJIBO_RELEASE_SMOKE_SECRET to the deployment-scoped staging authorization secret.");
+  process.exit(2);
+}
+const robotPrefix = process.env.TEST_ROBOT_ID || (isLocal ? "open-jibo-smoke-local" : null);
+if (robotPrefix !== "open-jibo-smoke-staging") {
+  console.error("Set TEST_ROBOT_ID to the fixed open-jibo-smoke-staging namespace.");
+  process.exit(2);
+}
 const protocolHost = process.env.OPENJIBO_RELEASE_SMOKE_HOST ||
-  (["localhost", "127.0.0.1", "::1"].includes(baseHost) ? baseHost : "api.openjibo.com");
+  (isLocal ? baseHost : "api.openjibo.com");
 
 try {
   const result = await runReleaseSmoke({
     baseUrl,
-    protocolCall: createProtocolCaller(baseUrl, protocolHost),
-    robotPrefix: process.env.TEST_ROBOT_ID || `release-smoke-${Date.now()}-${process.pid}`,
+    protocolCall: createProtocolCaller(baseUrl, protocolHost, globalThis.fetch, releaseSmokeSecret),
+    robotPrefix,
     concurrency: process.env.RELEASE_SMOKE_CONCURRENCY || 6,
     turnPercent: process.env.RELEASE_SMOKE_TURN_PERCENT || 25,
     turnRounds: process.env.RELEASE_SMOKE_TURN_ROUNDS || 1,

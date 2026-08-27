@@ -9,6 +9,7 @@ param(
     [string]$LinuxManagedScriptPath = "scripts/cloud/deploy-openjibo-managed.sh",
     [string]$LinuxPrepareScriptPath = "scripts/cloud/prepare-openjibo-managed-databases.sh",
     [string]$LinuxCloneScriptPath = "scripts/cloud/clone-openjibo-managed-databases.sh",
+    [string]$ReleaseSmokeCleanupScriptPath = "scripts/cloud/cleanup-release-smoke-authorization.sh",
     [string]$SmokeScriptPath = "scripts/cloud/Invoke-CloudSmoke.ps1",
     [string]$LinuxSmokeScriptPath = "scripts/cloud/invoke-cloud-smoke.sh",
     [string]$DockerfilePath = "Dockerfile"
@@ -43,6 +44,7 @@ function Assert-ContainsMarker {
 
 $foundationText = Get-RepoFileText -RelativePath $FoundationTemplatePath
 $managedText = Get-RepoFileText -RelativePath $ManagedTemplatePath
+$releaseSmokeCleanupText = Get-RepoFileText -RelativePath $ReleaseSmokeCleanupScriptPath
 $workflowText = Get-RepoFileText -RelativePath $WorkflowPath
 $foundationScriptText = Get-RepoFileText -RelativePath $FoundationScriptPath
 $managedScriptText = Get-RepoFileText -RelativePath $ManagedScriptPath
@@ -209,8 +211,27 @@ foreach ($marker in @("managedEnvironmentName", "--environment", "--validation-m
     Assert-ContainsMarker -Text $linuxManagedScriptText -Marker $marker -FailurePrefix "Linux managed deploy script is missing hostname binding environment marker"
 }
 
-foreach ($marker in @("deployment_target", "openjibo-staging-gate", "clone-openjibo-managed-databases.sh", "keyVaultUrl", "keyVaultUri", "urlsplit", "openjibo-managed-", "containerAppName", "properties.outputs", "user-encryption-passphrase", "user-encryption-salt", "production_backup_confirmed", "enable_fleet_peer_sync", "fleet_peer_allowed_hosts", "Fleet peer sync cannot be enabled by the staging workflow", "backup.backupRetentionDays", "Verify production hostname DNS prerequisites", "customDomainVerificationId", "dig +short CNAME", "dig +short TXT", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "properties.active", '[[ "$revision_active" == "true" ]]', '[[ "$previous_revision_active" != "true" ]]', "already active", "revision deactivate", "revision activate", "PREVIOUS_REVISION", "Restore previous image after failure", "Run deployed WebSocket release smoke", "invoke-release-smoke.mjs", "webSocketReleaseSmoke")) {
+foreach ($marker in @("deployment_target", "openjibo-staging-gate", "clone-openjibo-managed-databases.sh", "keyVaultUrl", "keyVaultUri", "urlsplit", "openjibo-managed-", "containerAppName", "properties.outputs", "user-encryption-passphrase", "user-encryption-salt", "production_backup_confirmed", "enable_fleet_peer_sync", "fleet_peer_allowed_hosts", "Fleet peer sync cannot be enabled by the staging workflow", "backup.backupRetentionDays", "Verify production hostname DNS prerequisites", "customDomainVerificationId", "dig +short CNAME", "dig +short TXT", "open-jibo.jibo.pro", "open-jibo-socket.jibo.pro", "properties.active", '[[ "$revision_active" == "true" ]]', '[[ "$previous_revision_active" != "true" ]]', "already active", "revision deactivate", "revision activate", "PREVIOUS_REVISION", "Restore previous image after failure", "Re-disable release smoke authorization after rollback", "Run deployed WebSocket release smoke", "invoke-release-smoke.mjs", "cleanup-release-smoke-authorization.sh", "TEST_ROBOT_ID: open-jibo-smoke-staging", "openssl rand -hex 32", "release-smoke-authorization", "OpenJibo__ReleaseSmoke__Enabled=true", "OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST", "cancel-in-progress: false", "webSocketReleaseSmoke")) {
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing staging or promotion safeguard"
+}
+
+foreach ($marker in @("OpenJibo__ReleaseSmoke__Enabled=false", "--remove-env-vars", "OpenJibo__ReleaseSmoke__Secret", "/health", "containerapp secret remove", "release-smoke-authorization", "failures=")) {
+    Assert-ContainsMarker -Text $releaseSmokeCleanupText -Marker $marker -FailurePrefix "Release-smoke cleanup script is missing lifecycle safeguard"
+}
+$disabledConfigIndex = $releaseSmokeCleanupText.IndexOf("OpenJibo__ReleaseSmoke__Enabled=false", [StringComparison]::Ordinal)
+$healthCheckIndex = $releaseSmokeCleanupText.IndexOf('"https://${app_fqdn}/health"', [StringComparison]::Ordinal)
+$secretDeleteIndex = $releaseSmokeCleanupText.IndexOf("containerapp secret remove", [StringComparison]::Ordinal)
+if (-not ($disabledConfigIndex -lt $healthCheckIndex -and $healthCheckIndex -lt $secretDeleteIndex)) {
+    throw "Release-smoke cleanup must deploy disabled/no-reference configuration, wait healthy, then delete the secret."
+}
+
+$disableSmokeIndex = $workflowText.IndexOf("- name: Disable staging release smoke authorization", [StringComparison]::Ordinal)
+$restoreIndex = $workflowText.IndexOf("- name: Restore previous image after failure", [StringComparison]::Ordinal)
+$redisableIndex = $workflowText.IndexOf("- name: Re-disable release smoke authorization after rollback", [StringComparison]::Ordinal)
+$promotionGateIndex = $workflowText.IndexOf("- name: Create staging promotion gate", [StringComparison]::Ordinal)
+if ($disableSmokeIndex -lt 0 -or $restoreIndex -lt 0 -or $redisableIndex -lt 0 -or $promotionGateIndex -lt 0 -or
+    -not ($disableSmokeIndex -lt $restoreIndex -and $restoreIndex -lt $redisableIndex -and $redisableIndex -lt $promotionGateIndex)) {
+    throw "Release-smoke cleanup and rollback safeguards must complete before the staging promotion gate."
 }
 
 foreach ($marker in @("OPENJIBO_USER_ENCRYPT", "OPENJIBO_USER_SALT", "user-encryption-passphrase", "user-encryption-salt", "OpenJibo__FleetNetwork__PeerSyncEnabled", "OpenJibo__FleetNetwork__AllowedPeerHosts")) {

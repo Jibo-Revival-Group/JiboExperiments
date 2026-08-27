@@ -432,6 +432,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes postgresql-client
 
+      - name: Remove release smoke authorization before production deployment
+        if: inputs.deployment_target == 'production'
+        shell: bash
+        run: |
+          app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
+          if [[ -n "$app_name" ]]; then
+            bash ./scripts/cloud/cleanup-release-smoke-authorization.sh \
+              --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+              --app-name "$app_name"
+          fi
+
       - name: Quiesce previous target revision
         id: previous
         shell: bash
@@ -548,6 +559,14 @@ jobs:
           --target-resource-group "$OPENJIBO_RESOURCE_GROUP"
           --target-key-vault-name "${{ steps.foundation.outputs.keyVaultName }}"
 
+      - name: Generate staging release smoke authorization
+        if: inputs.deployment_target == 'staging'
+        shell: bash
+        run: |
+          smoke_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$smoke_secret"
+          echo "OPENJIBO_RELEASE_SMOKE_SECRET=$smoke_secret" >> "$GITHUB_ENV"
+
       - name: Deploy and smoke-test managed Container App
         id: deploy
         shell: bash
@@ -599,10 +618,39 @@ jobs:
 
           bash ./scripts/cloud/deploy-openjibo-managed.sh "${deploy_args[@]}"
 
+      - name: Configure release smoke authorization
+        shell: bash
+        run: |
+          app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
+          if [[ -z "$app_name" ]]; then
+            echo "The managed Container App could not be resolved." >&2
+            exit 1
+          fi
+          if [[ "${{ inputs.deployment_target }}" == "staging" ]]; then
+            az containerapp secret set \
+              --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+              --name "$app_name" \
+              --secrets "release-smoke-authorization=$OPENJIBO_RELEASE_SMOKE_SECRET" \
+              --output none
+            az containerapp update \
+              --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+              --name "$app_name" \
+              --set-env-vars \
+                "OpenJibo__ReleaseSmoke__Enabled=true" \
+                "OpenJibo__ReleaseSmoke__Secret=secretref:release-smoke-authorization" \
+                "OpenJibo__ReleaseSmoke__MaxConcurrentDevices=${{ inputs.staging_smoke_robot_count }}" \
+              --output none
+          else
+            bash ./scripts/cloud/cleanup-release-smoke-authorization.sh \
+              --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+              --app-name "$app_name"
+          fi
+
       - name: Run deployed WebSocket release smoke
         if: inputs.deployment_target == 'staging'
         shell: bash
         env:
+          TEST_ROBOT_ID: open-jibo-smoke-staging
           RELEASE_SMOKE_CONCURRENCY: ${{ inputs.staging_smoke_robot_count }}
           RELEASE_SMOKE_TURN_PERCENT: ${{ inputs.staging_smoke_turn_percent }}
           RELEASE_SMOKE_TURN_ROUNDS: ${{ inputs.staging_smoke_turn_rounds }}
@@ -614,7 +662,20 @@ jobs:
             echo "The staging Container App did not report an ingress FQDN." >&2
             exit 1
           fi
-          BASE_URL="https://${app_fqdn}" node ./scripts/cloud/invoke-release-smoke.mjs
+          OPENJIBO_RELEASE_SMOKE_ALLOWED_HOST="$app_fqdn" \
+            BASE_URL="https://${app_fqdn}" \
+            node ./scripts/cloud/invoke-release-smoke.mjs
+
+      - name: Disable staging release smoke authorization
+        if: always() && inputs.deployment_target == 'staging'
+        shell: bash
+        run: |
+          app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
+          if [[ -n "$app_name" ]]; then
+            bash ./scripts/cloud/cleanup-release-smoke-authorization.sh \
+              --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+              --app-name "$app_name"
+          fi
 
       - name: Restore previous image after failure
         if: failure() && steps.previous.outputs.exists == 'true'
@@ -636,6 +697,14 @@ jobs:
               echo "Previous revision '$PREVIOUS_REVISION' is already active."
             fi
           fi
+
+      - name: Re-disable release smoke authorization after rollback
+        if: failure() && steps.previous.outputs.exists == 'true'
+        shell: bash
+        run: |
+          bash ./scripts/cloud/cleanup-release-smoke-authorization.sh \
+            --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+            --app-name "${{ steps.previous.outputs.app_name }}"
 
       - name: Create staging promotion gate
         if: success() && inputs.deployment_target == 'staging'

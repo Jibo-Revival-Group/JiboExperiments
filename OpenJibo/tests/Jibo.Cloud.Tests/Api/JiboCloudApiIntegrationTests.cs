@@ -104,15 +104,16 @@ public sealed class JiboCloudApiIntegrationTests
     }
 
     [Fact]
-    public async Task WebSocket_MissingTokenOnSelfHostedListenRoute_ReturnsUnauthorized()
+    public async Task WebSocket_TokenlessSelfHostedListenRoute_UsesConnectionScopedFallback()
     {
         await using var factory = CreateFactory();
         var client = factory.Server.CreateWebSocketClient();
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.ConnectAsync(new Uri("ws://localhost/v1/listen"), CancellationToken.None));
+        using var socket =
+            await client.ConnectAsync(new Uri("ws://localhost/v1/listen"), CancellationToken.None);
 
-        Assert.Contains("401", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(WebSocketState.Open, socket.State);
+        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "test-complete", CancellationToken.None);
     }
 
     [Fact]

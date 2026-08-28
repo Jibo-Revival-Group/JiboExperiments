@@ -735,6 +735,19 @@ public sealed partial class JiboInteractionService
             preferredSnippets);
     }
 
+    private JiboInteractionDecision BuildClientDescriptorDecision(
+        JiboExperienceCatalog catalog,
+        IReadOnlyDictionary<string, string> clientEntities)
+    {
+        var descriptor = clientEntities.TryGetValue("GeneralDescriptor", out var value)
+            ? value.Trim().ToLowerInvariant()
+            : string.Empty;
+        var intentName = string.IsNullOrWhiteSpace(descriptor)
+            ? "robot_personality"
+            : $"robot_is_{descriptor.Replace(" ", "_", StringComparison.Ordinal)}";
+        return BuildScriptedPersonalityDecision(catalog, intentName);
+    }
+
     private JiboInteractionDecision BuildSneezeDecision(JiboExperienceCatalog catalog)
     {
         var decision = BuildScriptedPersonalityDecision(catalog, "request_sneeze");

@@ -1156,6 +1156,9 @@ public sealed class JiboInteractionServiceTests
 
     [Theory]
     [InlineData("sneeze", "request_sneeze", "Robots don't sneeze")]
+    [InlineData("are you ready", "robot_is_ready", "ready for anything")]
+    [InlineData("are you ready for today", "robot_is_ready_for_day", "ready")]
+    [InlineData("I'm ready", "user_is_ready", "glad that you're ready")]
     [InlineData("what is your IQ", "robot_what_is_your_iq", "I Q")]
     [InlineData("what is Be a Maker", "robot_what_is_be_a_maker", "Be a Maker")]
     [InlineData("why don't you have arms", "robot_why_no_arms", "made")]
@@ -1203,6 +1206,57 @@ public sealed class JiboInteractionServiceTests
 
     [Theory]
     [InlineData("sneeze", "request_sneeze", "RA_JBO_Sneeze")]
+    [InlineData("are you ready", "robot_is_ready", "RI_JBO_IsReady")]
+    [InlineData("are you ready for today", "robot_is_ready_for_day", "RI_JBO_IsReadyForDay")]
+    [InlineData("I'm ready", "user_is_ready", "RN_IAmReady")]
+    [InlineData("what kind of robot are you", "robot_what_kind_of_robot", "JBO_WhatKindOfRobotAreYou")]
+    [InlineData("when do you sleep", "robot_when_do_you_sleep", "JBO_WhenDoYouSleep")]
+    [InlineData("are you a boy or a girl", "robot_is_boy_or_girl", "CCAreYouBoyOrGirl")]
+    [InlineData("are you growing a mustache", "robot_is_growing_mustache", "RI_JBO_IsGrowingMustache")]
+    [InlineData("are you a spy", "robot_is_spy", "RI_JBO_IsSpy")]
+    [InlineData("are you ticklish", "robot_is_ticklish", "RI_JBO_IsTicklish")]
+    [InlineData("are you naughty or nice", "robot_is_naughty_or_nice", "RI_JBO_IsNaughtyOrNice")]
+    [InlineData("are you on TV", "robot_is_on_tv", "RI_JBO_IsOnTV")]
+    [InlineData("are you going to the holiday party", "robot_is_going_to_holiday_party",
+        "RI_JBO_IsGoingToHolidayParty")]
+    [InlineData("what is your native language", "robot_native_language", "RI_JBO_NativeLanguage")]
+    [InlineData("how can you recognize voices", "robot_how_can_recognize_voices",
+        "RI_JBO_HowCanRecognizeVoices")]
+    [InlineData("what games do you play", "robot_what_games", "RI_JBO_WhatGames")]
+    [InlineData("what do you see through your telescope", "robot_what_sees_through_telescope",
+        "RI_JBO_WhatSeesThroughTelescope")]
+    [InlineData("what do you want to do", "robot_what_wants_to_do", "RI_JBO_WhatWantsToDo")]
+    [InlineData("when do you wake up", "robot_when_wakes_up", "RI_JBO_WhenWakesUp")]
+    [InlineData("what is your halloween costume", "robot_what_halloween_costume",
+        "RI_JBO_WhatHalloweenCostume")]
+    [InlineData("were you on the cover of time magazine", "robot_on_time_magazine_cover",
+        "OI_JBO_OnTimeMagazineCover")]
+    [InlineData("have you seen santa", "robot_saw_santa", "RI_JBO_SawSanta")]
+    [InlineData("did santa give you a christmas present", "robot_received_christmas_gift_from_santa",
+        "RI_JBO_ReceivedChristmasGiftFromSanta")]
+    [InlineData("who is your master", "robot_who_is_your_master", "JBO_WhoIsYourMaster")]
+    [InlineData("will you die", "robot_will_you_die", "JBO_WillYouDie")]
+    [InlineData("will you go on a date", "robot_will_you_go_on_date", "JBO_WillYouGoOnDate")]
+    [InlineData("do you understand anything", "robot_you_dont_understand_anything",
+        "JBO_YouDontUnderstandAnything")]
+    [InlineData("why can't you work", "robot_why_cannot_work", "RI_JBO_WhyCannotWork")]
+    [InlineData("do you have the flu", "robot_has_flu", "RI_JBO_HasFlu")]
+    [InlineData("do you have an IFTTT skill", "robot_has_ifttt_skill", "RI_JBO_HasIFTTTSkill")]
+    [InlineData("how can I get help", "robot_how_get_help", "RI_JBO_HowGetHelp")]
+    [InlineData("how did you sleep", "robot_how_was_sleep", "RI_JBO_HowWasSleep")]
+    [InlineData("are you asleep", "robot_is_asleep", "RI_JBO_IsAsleep")]
+    [InlineData("do you have kids", "robot_has_kids", "RI_JBO_HasKids")]
+    [InlineData("do you like 2017", "robot_likes_2017", "RI_JBO_Likes2017")]
+    [InlineData("have you ever been in love", "robot_have_you_been_in_love", "JBO_HaveYouBeenInLove")]
+    [InlineData("is climate change real", "robot_is_climate_change_real", "JBO_IsClimateChangeReal")]
+    [InlineData("do you know about television", "robot_know_about_tv", "JBO_KnowAboutTV")]
+    [InlineData("should i shut you down", "robot_should_i_shut_you_down", "JBO_ShouldIShutYouDown")]
+    [InlineData("is this your home", "robot_this_is_your_home", "CCThisIsYourHome")]
+    [InlineData("welcome to the family", "robot_welcome_to_family", "JBO_WelcomeToFamily")]
+    [InlineData("why do you sound like a girl", "robot_why_are_you_sound_like_girl",
+        "JBO_WhyAreYouSoundLikeGirl")]
+    [InlineData("why is your name jibo", "robot_why_name_jibo", "CCWhyNameJibo")]
+    [InlineData("your eye is nice", "robot_your_eye_is_nice", "JBO_YourEyeIsNice")]
     [InlineData("what is your favorite holiday", "robot_favorite_holiday", "RI_JBO_HasFavoriteHoliday")]
     [InlineData("what is your favorite Star Wars character", "robot_favorite_star_wars_character",
         "RI_JBO_HasFavoriteStarWarsCharacter")]
@@ -5740,6 +5794,144 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("request_sneeze", decision.IntentName);
         Assert.Equal("RA_JBO_Sneeze", decision.SkillPayload!["mim_id"]);
+    }
+
+    [Theory]
+    [InlineData("Ready", "robot_is_ready", "RI_JBO_IsReady")]
+    [InlineData("ReadyForDay", "robot_is_ready_for_day", "RI_JBO_IsReadyForDay")]
+    public async Task BuildDecisionAsync_ReadyDescriptorClientIntent_UsesReadyMim(
+        string descriptor,
+        string expectedIntent,
+        string expectedMimId)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "are you ready",
+            NormalizedTranscript = "are you ready",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "isJiboDescriptor",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["GeneralDescriptor"] = descriptor
+                }
+            }
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Equal(expectedMimId, decision.SkillPayload!["mim_id"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_UserReadyDescriptorClientIntent_UsesReadyMim()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "ready",
+            NormalizedTranscript = "ready",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "userIsDescriptor",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["GeneralDescriptor"] = "Ready"
+                }
+            }
+        });
+
+        Assert.Equal("user_is_ready", decision.IntentName);
+        Assert.Equal("RN_IAmReady", decision.SkillPayload!["mim_id"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanJiboAction_PlayInstrumentGuitar_UsesGuitarMim()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you play guitar",
+            NormalizedTranscript = "can you play guitar",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "canJiboAction",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["Action"] = "PlayInstrument",
+                    ["MusicalInstrument"] = "Guitar"
+                }
+            }
+        });
+
+        Assert.Equal("robot_can_play_guitar", decision.IntentName);
+        Assert.Equal("RI_JBO_CanPlayGuitar", decision.SkillPayload!["mim_id"]);
+    }
+
+    [Theory]
+    [InlineData("Blue", "robot_likes_blue", "RI_JBO_LikesBlue")]
+    [InlineData("Pink", "robot_likes_pink", "RI_JBO_LikesPink")]
+    [InlineData("Green", "robot_likes_color", "RI_JBO_Likes_SS_Color")]
+    public async Task BuildDecisionAsync_LikeColorEntity_UsesTypedColorMim(
+        string color,
+        string expectedIntent,
+        string expectedMimId)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = $"do you like {color}",
+            NormalizedTranscript = $"do you like {color}",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "doesJiboLikeThing",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["Color"] = color
+                }
+            }
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Equal(expectedMimId, decision.SkillPayload!["mim_id"]);
+    }
+
+    [Theory]
+    [InlineData("isJiboUserRelation", "Relation", "", "robot_is_user_relation", "KU_AreYouMy")]
+    [InlineData("isJiboSkilledAtThing", "SchoolSubject", "Math", "robot_is_skilled_at_math",
+        "RI_JBO_IsSkilledAtMath")]
+    [InlineData("canJiboBeDescriptor", "Emotion", "Sad", "robot_can_get_depressed",
+        "RI_JBO_CanGetDepressed")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Funny", "robot_is_funny", "RI_JBO_IsFunny")]
+    public async Task BuildDecisionAsync_PegasusPersonalityMetadata_UsesExactMim(
+        string clientIntent,
+        string entityName,
+        string entityValue,
+        string expectedIntent,
+        string expectedMimId)
+    {
+        var service = CreateService();
+        var entities = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(entityValue))
+            entities[entityName] = entityValue;
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "personality question",
+            NormalizedTranscript = "personality question",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = clientIntent,
+                ["clientEntities"] = entities
+            }
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Equal(expectedMimId, decision.SkillPayload!["mim_id"]);
     }
 
     [Fact]

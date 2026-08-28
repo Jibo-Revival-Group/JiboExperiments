@@ -364,6 +364,11 @@ internal static class ChitchatStateMachine
         return BuildErrorResponseDecision("chat", replyText, transcript);
     }
 
+    public static JiboInteractionDecision BuildNotUnderstoodDecision(string transcript)
+    {
+        return BuildErrorResponseDecision("not_understood", "I don't understand.", transcript);
+    }
+
     public static JiboInteractionDecision BuildKnowledgeSearchResponseDecision(string replyText)
     {
         return new JiboInteractionDecision(

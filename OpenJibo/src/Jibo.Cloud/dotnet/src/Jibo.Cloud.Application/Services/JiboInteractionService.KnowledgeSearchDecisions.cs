@@ -20,6 +20,10 @@ public sealed partial class JiboInteractionService
             preferredName);
         if (emotionDecision is not null) return emotionDecision;
 
+        var isQuestion = TranscriptHeuristics.IsLikelyQuestion(transcript);
+        if (!isQuestion)
+            return ChitchatStateMachine.BuildNotUnderstoodDecision(transcript);
+
         var isWhoWhatLookup = WikipediaLookupParser.TryParse(transcript, out _);
         var skipKnowledgeSearch = SkillListenOwnership.IsNonQuestionKnowledgeQuery(lowered);
         var willSearch =

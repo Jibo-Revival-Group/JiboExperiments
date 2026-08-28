@@ -203,6 +203,60 @@ public sealed class KnowledgeSearchSocketMappingTests
             display.GetProperty("view").GetProperty("data").GetProperty("viewConfig").GetProperty("id").GetString());
         Assert.False(display.GetProperty("view").GetProperty("pause").GetBoolean());
     }
+
+    [Fact]
+    public void Map_NotUnderstood_ShowsHeardTranscriptOnDisplay()
+    {
+        var plan = new ResponsePlan
+        {
+            IntentName = "not_understood",
+            Actions =
+            {
+                new SpeakAction
+                {
+                    Sequence = 0,
+                    Text = "I don't understand.",
+                    Voice = "griffin"
+                }
+            }
+        };
+        var turn = new TurnContext
+        {
+            NormalizedTranscript = "Gling lang gone",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["transID"] = "trans-not-understood",
+                ["messageType"] = "LISTEN",
+                ["listenRules"] = new[] { "launch" }
+            }
+        };
+
+        var replies = ResponsePlanToSocketMessagesMapper.Map(plan, turn, new CloudSession(), emitSkillActions: true);
+        var skillAction = replies
+            .Select(reply => reply.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .Select(text => JsonDocument.Parse(text!))
+            .First(document => document.RootElement.GetProperty("type").GetString() == "SKILL_ACTION");
+        var display = skillAction.RootElement
+            .GetProperty("data")
+            .GetProperty("action")
+            .GetProperty("config")
+            .GetProperty("jcp")
+            .GetProperty("config")
+            .GetProperty("display");
+        var labelText = display
+            .GetProperty("view")
+            .GetProperty("data")
+            .GetProperty("componentConfigs")[0]
+            .GetProperty("text")
+            .GetString();
+
+        Assert.Equal("\"Gling lang gone\"", labelText);
+        Assert.Equal(
+            "global_not_matched_text",
+            display.GetProperty("view").GetProperty("data").GetProperty("viewConfig").GetProperty("id").GetString());
+        Assert.False(display.GetProperty("view").GetProperty("pause").GetBoolean());
+    }
 }
 
 public sealed class SearchThinkingPreludeFactoryTests

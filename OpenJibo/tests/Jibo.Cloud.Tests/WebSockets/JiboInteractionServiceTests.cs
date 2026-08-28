@@ -1929,7 +1929,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_UnhandledChat_RoutesThroughErrorResponseSplit()
+    public async Task BuildDecisionAsync_UnhandledNonQuestion_RoutesThroughErrorResponseSplit()
     {
         var service = CreateService();
 
@@ -1939,9 +1939,28 @@ public sealed class JiboInteractionServiceTests
             NormalizedTranscript = "blargh"
         });
 
-        Assert.Equal("chat", decision.IntentName);
+        Assert.Equal("not_understood", decision.IntentName);
+        Assert.Equal("I don't understand.", decision.ReplyText);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("ErrorResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_UnhandledNonQuestion_WithKnowledgeSearchConfigured_DoesNotSearch()
+    {
+        var search = new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("This should not be used.", SearchBackendKind.Wolfram));
+        var service = CreateService(knowledgeSearchService: search);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Gling lang gone",
+            NormalizedTranscript = "Gling lang gone"
+        });
+
+        Assert.Equal("not_understood", decision.IntentName);
+        Assert.Equal("I don't understand.", decision.ReplyText);
+        Assert.Equal(0, search.SearchCount);
     }
 
     [Fact]
@@ -1989,32 +2008,32 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_UnhandledChat_SearchNotFound_SaysCantFindAnything()
+    public async Task BuildDecisionAsync_UnhandledQuestion_SearchNotFound_SaysCantFindAnything()
     {
         var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
             KnowledgeSearchResult.NotFound(SearchBackendKind.Wolfram)));
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "blargh",
-            NormalizedTranscript = "blargh"
+            RawTranscript = "What is blargh",
+            NormalizedTranscript = "What is blargh"
         });
 
         Assert.Equal("knowledge_search_not_found", decision.IntentName);
         Assert.Equal("I can't find anything.", decision.ReplyText);
-        Assert.Equal("blargh", decision.ContextUpdates?["chitchatRawTranscript"]);
+        Assert.Equal("What is blargh", decision.ContextUpdates?["chitchatRawTranscript"]);
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_UnhandledChat_SearchUnavailable_SaysSourcesAreDown()
+    public async Task BuildDecisionAsync_UnhandledQuestion_SearchUnavailable_SaysSourcesAreDown()
     {
         var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
             KnowledgeSearchResult.Unavailable(SearchBackendKind.Wolfram)));
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "blargh",
-            NormalizedTranscript = "blargh"
+            RawTranscript = "What is blargh",
+            NormalizedTranscript = "What is blargh"
         });
 
         Assert.Equal("knowledge_search_unavailable", decision.IntentName);
@@ -2024,14 +2043,14 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_UnhandledChat_WolframFails_FallsBackToGenericReply()
+    public async Task BuildDecisionAsync_UnhandledQuestion_WolframFails_SaysSourcesAreDown()
     {
         var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(null));
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "blargh",
-            NormalizedTranscript = "blargh"
+            RawTranscript = "What is blargh",
+            NormalizedTranscript = "What is blargh"
         });
 
         Assert.Equal("knowledge_search_unavailable", decision.IntentName);
@@ -6882,6 +6901,24 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_WordOfADayStartPhrase_MapsToSkillIntent()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "start word of a day",
+            NormalizedTranscript = "start word of a day"
+        });
+
+        Assert.Equal("word_of_the_day", decision.IntentName);
+        Assert.Equal("Starting word of the day.", decision.ReplyText);
+        Assert.Equal("@be/word-of-the-day", decision.SkillName);
+        Assert.Equal("word-of-the-day", decision.SkillPayload!["domain"]);
+        Assert.Equal("@be/word-of-the-day", decision.SkillPayload["skillId"]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_WordOfDayGuess_LineNumberUsesListenHints()
     {
         var service = CreateService();
@@ -7133,9 +7170,11 @@ public sealed class JiboInteractionServiceTests
     private sealed class StubKnowledgeSearchService(KnowledgeSearchResult? result) : IKnowledgeSearchService
     {
         public bool IsConfigured => true;
+        public int SearchCount { get; private set; }
 
         public Task<KnowledgeSearchResult?> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
+            SearchCount += 1;
             return Task.FromResult(result);
         }
     }

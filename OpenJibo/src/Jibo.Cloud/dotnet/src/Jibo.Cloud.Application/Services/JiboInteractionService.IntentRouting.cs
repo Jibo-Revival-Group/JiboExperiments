@@ -233,10 +233,15 @@ public sealed partial class JiboInteractionService
         if (MatchesAny(
                 loweredTranscript,
                 "word of the day",
+                "word of a day",
                 "start word of the day",
+                "start word of a day",
                 "play word of the day",
+                "play word of a day",
                 "do word of the day",
-                "open word of the day"))
+                "do word of a day",
+                "open word of the day",
+                "open word of a day"))
             return "word_of_the_day";
 
         if (wordOfDayPuzzleTurn && !string.IsNullOrWhiteSpace(loweredTranscript)) return "word_of_the_day_guess";

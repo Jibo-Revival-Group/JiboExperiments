@@ -10,6 +10,29 @@ public sealed class PostgreSqlCloudStateFacadeIntegrationTests
 {
     [PostgreSqlIntegrationFact]
     [Trait("Category", "PostgreSqlIntegration")]
+    public async Task HubToken_PreservesUnlinkedObservedIdentityWithoutCreatingInventory()
+    {
+        await using var database = await CloudStateTestDatabase.CreateAsync();
+        await using var source = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        var store = new PostgreSqlCloudStateStore(source, new PlaintextTestProtector());
+
+        var token = store.IssueHubToken("unlinked-observed-device");
+        var session = store.OpenSession(
+            "neo-hub-listen",
+            null,
+            token,
+            "neohub.openjibo.com",
+            "/v1/listen");
+
+        Assert.Equal("unlinked-observed-device", session.DeviceId);
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM CloudAuthTokens WHERE DeviceId='unlinked-observed-device'"));
+        Assert.Equal(0, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM Devices WHERE DeviceId='unlinked-observed-device'"));
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
     public async Task IndependentStores_ObserveCommittedScopedChangesWithoutSnapshotOrSessionWrites()
     {
         await using var database = await CloudStateTestDatabase.CreateAsync();

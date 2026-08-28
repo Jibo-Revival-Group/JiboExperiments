@@ -37,6 +37,15 @@ get_repo_file_text() {
 foundation_text="$(get_repo_file_text "$foundation_template_path")"
 managed_text="$(get_repo_file_text "$managed_template_path")"
 workflow_text="$(get_repo_file_text "$workflow_path")"
+workflow_dispatch_input_count="$(
+  printf '%s\n' "$workflow_text" |
+    sed -n '/^    inputs:$/,/^concurrency:$/p' |
+    grep -Ec '^      [A-Za-z0-9_]+:$' || true
+)"
+if (( workflow_dispatch_input_count > 25 )); then
+  echo "GitHub workflow_dispatch supports at most 25 inputs; found ${workflow_dispatch_input_count}." >&2
+  exit 1
+fi
 release_smoke_cleanup_text="$(get_repo_file_text "$release_smoke_cleanup_script_path")"
 production_database_binding_script_text="$(get_repo_file_text "$production_database_binding_script_path")"
 foundation_script_text="$(get_repo_file_text "$foundation_script_path")"

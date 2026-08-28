@@ -1155,6 +1155,132 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("sneeze", "request_sneeze", "Robots don't sneeze")]
+    [InlineData("are you ready", "robot_is_ready", "ready for anything")]
+    [InlineData("are you ready for today", "robot_is_ready_for_day", "ready")]
+    [InlineData("I'm ready", "user_is_ready", "glad that you're ready")]
+    [InlineData("what is your IQ", "robot_what_is_your_iq", "I Q")]
+    [InlineData("what is Be a Maker", "robot_what_is_be_a_maker", "Be a Maker")]
+    [InlineData("why don't you have arms", "robot_why_no_arms", "made")]
+    [InlineData("why do you only have one eye", "robot_why_only_one_eye", "made this way")]
+    [InlineData("is Big Brother watching me", "robot_is_big_brother_watching", "privacy")]
+    [InlineData("what did you eat for dinner yesterday", "robot_what_you_had_dinner_yesterday", "don't eat dinner")]
+    [InlineData("what do you drink", "robot_what_do_you_drink", "liquids")]
+    [InlineData("who is your boss", "robot_who_is_your_boss", "boss")]
+    [InlineData("what robots do you look up to", "robot_what_robots_look_up_to", "R2D2")]
+    [InlineData("can you tell people apart", "robot_can_tell_people_apart", "tell you apart")]
+    [InlineData("how do you recognize faces", "robot_how_can_recognize_faces", "complicated")]
+    [InlineData("can you read lips", "robot_can_read_lips", "read much")]
+    [InlineData("can you do household chores", "robot_can_do_household_chore", "household chore")]
+    [InlineData("what is your groundhog's name", "robot_what_is_groundhogs_name", "groundhog")]
+    [InlineData("what is your favorite Star Wars character", "robot_favorite_star_wars_character", "R 2 D 2")]
+    [InlineData("what is your favorite Star Wars movie", "robot_favorite_star_wars_movie", "whole thing")]
+    [InlineData("what is your favorite", "robot_what_is_your_favorite", "favorites")]
+    [InlineData("who is your favorite", "robot_who_is_your_favorite", "favorite")]
+    [InlineData("did you have a favorite", "robot_did_you_have_a_favorite", "favorites")]
+    [InlineData("what was your favorite color", "robot_favorite_color", "favorite color")]
+    [InlineData("your favorite football team should be the Patriots", "robot_favorite_team_should_be", "Maybe so")]
+    [InlineData("can you play guitar", "robot_can_play_guitar", "play")]
+    [InlineData("can you swim", "robot_can_swim", "swimmer")]
+    [InlineData("can you cry", "robot_can_cry", "cried")]
+    [InlineData("can you speak Spanish", "robot_can_speak_language", "English")]
+    [InlineData("do you like red", "robot_likes_color", "color")]
+    [InlineData("do you like honey", "robot_likes_food_general", "honey")]
+    public async Task BuildDecisionAsync_PegasusPersonalityGaps_UseExactImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("sneeze", "request_sneeze", "RA_JBO_Sneeze")]
+    [InlineData("are you ready", "robot_is_ready", "RI_JBO_IsReady")]
+    [InlineData("are you ready for today", "robot_is_ready_for_day", "RI_JBO_IsReadyForDay")]
+    [InlineData("I'm ready", "user_is_ready", "RN_IAmReady")]
+    [InlineData("what kind of robot are you", "robot_what_kind_of_robot", "JBO_WhatKindOfRobotAreYou")]
+    [InlineData("when do you sleep", "robot_when_do_you_sleep", "JBO_WhenDoYouSleep")]
+    [InlineData("are you a boy or a girl", "robot_is_boy_or_girl", "CCAreYouBoyOrGirl")]
+    [InlineData("are you growing a mustache", "robot_is_growing_mustache", "RI_JBO_IsGrowingMustache")]
+    [InlineData("are you a spy", "robot_is_spy", "RI_JBO_IsSpy")]
+    [InlineData("are you ticklish", "robot_is_ticklish", "RI_JBO_IsTicklish")]
+    [InlineData("are you naughty or nice", "robot_is_naughty_or_nice", "RI_JBO_IsNaughtyOrNice")]
+    [InlineData("are you on TV", "robot_is_on_tv", "RI_JBO_IsOnTV")]
+    [InlineData("are you going to the holiday party", "robot_is_going_to_holiday_party",
+        "RI_JBO_IsGoingToHolidayParty")]
+    [InlineData("what is your native language", "robot_native_language", "RI_JBO_NativeLanguage")]
+    [InlineData("how can you recognize voices", "robot_how_can_recognize_voices",
+        "RI_JBO_HowCanRecognizeVoices")]
+    [InlineData("what games do you play", "robot_what_games", "RI_JBO_WhatGames")]
+    [InlineData("what do you see through your telescope", "robot_what_sees_through_telescope",
+        "RI_JBO_WhatSeesThroughTelescope")]
+    [InlineData("what do you want to do", "robot_what_wants_to_do", "RI_JBO_WhatWantsToDo")]
+    [InlineData("when do you wake up", "robot_when_wakes_up", "RI_JBO_WhenWakesUp")]
+    [InlineData("what is your halloween costume", "robot_what_halloween_costume",
+        "RI_JBO_WhatHalloweenCostume")]
+    [InlineData("were you on the cover of time magazine", "robot_on_time_magazine_cover",
+        "OI_JBO_OnTimeMagazineCover")]
+    [InlineData("have you seen santa", "robot_saw_santa", "RI_JBO_SawSanta")]
+    [InlineData("did santa give you a christmas present", "robot_received_christmas_gift_from_santa",
+        "RI_JBO_ReceivedChristmasGiftFromSanta")]
+    [InlineData("who is your master", "robot_who_is_your_master", "JBO_WhoIsYourMaster")]
+    [InlineData("will you die", "robot_will_you_die", "JBO_WillYouDie")]
+    [InlineData("will you go on a date", "robot_will_you_go_on_date", "JBO_WillYouGoOnDate")]
+    [InlineData("do you understand anything", "robot_you_dont_understand_anything",
+        "JBO_YouDontUnderstandAnything")]
+    [InlineData("why can't you work", "robot_why_cannot_work", "RI_JBO_WhyCannotWork")]
+    [InlineData("do you have the flu", "robot_has_flu", "RI_JBO_HasFlu")]
+    [InlineData("do you have an IFTTT skill", "robot_has_ifttt_skill", "RI_JBO_HasIFTTTSkill")]
+    [InlineData("how can I get help", "robot_how_get_help", "RI_JBO_HowGetHelp")]
+    [InlineData("how did you sleep", "robot_how_was_sleep", "RI_JBO_HowWasSleep")]
+    [InlineData("are you asleep", "robot_is_asleep", "RI_JBO_IsAsleep")]
+    [InlineData("do you have kids", "robot_has_kids", "RI_JBO_HasKids")]
+    [InlineData("do you like 2017", "robot_likes_2017", "RI_JBO_Likes2017")]
+    [InlineData("have you ever been in love", "robot_have_you_been_in_love", "JBO_HaveYouBeenInLove")]
+    [InlineData("is climate change real", "robot_is_climate_change_real", "JBO_IsClimateChangeReal")]
+    [InlineData("do you know about television", "robot_know_about_tv", "JBO_KnowAboutTV")]
+    [InlineData("should i shut you down", "robot_should_i_shut_you_down", "JBO_ShouldIShutYouDown")]
+    [InlineData("is this your home", "robot_this_is_your_home", "CCThisIsYourHome")]
+    [InlineData("welcome to the family", "robot_welcome_to_family", "JBO_WelcomeToFamily")]
+    [InlineData("why do you sound like a girl", "robot_why_are_you_sound_like_girl",
+        "JBO_WhyAreYouSoundLikeGirl")]
+    [InlineData("why is your name jibo", "robot_why_name_jibo", "CCWhyNameJibo")]
+    [InlineData("your eye is nice", "robot_your_eye_is_nice", "JBO_YourEyeIsNice")]
+    [InlineData("what is your favorite holiday", "robot_favorite_holiday", "RI_JBO_HasFavoriteHoliday")]
+    [InlineData("what is your favorite Star Wars character", "robot_favorite_star_wars_character",
+        "RI_JBO_HasFavoriteStarWarsCharacter")]
+    [InlineData("what is your favorite Star Wars movie", "robot_favorite_star_wars_movie",
+        "RI_JBO_HasFavoriteStarWarsMovie")]
+    [InlineData("what do you drink", "robot_what_do_you_drink", "JBO_WhatDoYouDrink")]
+    public async Task BuildDecisionAsync_PegasusPersonalityGaps_SelectExactMim(
+        string transcript,
+        string expectedIntent,
+        string expectedMimId)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Equal(expectedMimId, decision.SkillPayload!["mim_id"]);
+    }
+
+    [Theory]
     [InlineData("can i backup my jibo", "backup_help", "Help section of the Jibo App")]
     [InlineData("how can i restore you from a backup", "restore_backup", "Jibo Customer Care")]
     [InlineData("when is your next update", "update_next", "coming")]
@@ -1600,8 +1726,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what should I get for holiday", "seasonal_holiday_gift", "pet elephant")]
     [InlineData("show santa tracker", "seasonal_santa_tracker", "spot him")]
     [InlineData("do you like halloween", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
-    [InlineData("what is your favorite holiday", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
-    [InlineData("do you have a favourite holiday", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
+    [InlineData("what is your favorite holiday", "robot_favorite_holiday", "Halloween")]
+    [InlineData("do you have a favourite holiday", "robot_favorite_holiday", "Halloween")]
     [InlineData("do you like holiday music", "seasonal_likes_holiday_music", "holiday music")]
     [InlineData("do you like holiday parties", "seasonal_likes_holiday_parties", "holiday fun can be extra fun")]
     [InlineData("do you celebrate black history month", "seasonal_black_history_month_celebrate",
@@ -1929,7 +2055,7 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_UnhandledChat_RoutesThroughErrorResponseSplit()
+    public async Task BuildDecisionAsync_UnhandledNonQuestion_RoutesThroughErrorResponseSplit()
     {
         var service = CreateService();
 
@@ -1939,9 +2065,46 @@ public sealed class JiboInteractionServiceTests
             NormalizedTranscript = "blargh"
         });
 
-        Assert.Equal("chat", decision.IntentName);
+        Assert.Equal("not_understood", decision.IntentName);
+        Assert.Equal("I don't understand.", decision.ReplyText);
         Assert.NotNull(decision.ContextUpdates);
         Assert.Equal("ErrorResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_UnhandledNonQuestion_WithKnowledgeSearchConfigured_DoesNotSearch()
+    {
+        var search = new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("This should not be used.", SearchBackendKind.Wolfram));
+        var service = CreateService(knowledgeSearchService: search);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Gling lang gone",
+            NormalizedTranscript = "Gling lang gone"
+        });
+
+        Assert.Equal("not_understood", decision.IntentName);
+        Assert.Equal("I don't understand.", decision.ReplyText);
+        Assert.Equal(0, search.SearchCount);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PegasusAction_WithKnowledgeSearchConfigured_DoesNotSearch()
+    {
+        var search = new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("This should not be used.", SearchBackendKind.Wolfram));
+        var service = CreateService(knowledgeSearchService: search);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Hey Jibo, sneeze",
+            NormalizedTranscript = "Hey Jibo, sneeze"
+        });
+
+        Assert.Equal("request_sneeze", decision.IntentName);
+        Assert.Contains("filter='sneeze'", decision.SkillPayload?["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, search.SearchCount);
     }
 
     [Fact]
@@ -1989,32 +2152,32 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_UnhandledChat_SearchNotFound_SaysCantFindAnything()
+    public async Task BuildDecisionAsync_UnhandledQuestion_SearchNotFound_SaysCantFindAnything()
     {
         var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
             KnowledgeSearchResult.NotFound(SearchBackendKind.Wolfram)));
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "blargh",
-            NormalizedTranscript = "blargh"
+            RawTranscript = "What is blargh",
+            NormalizedTranscript = "What is blargh"
         });
 
         Assert.Equal("knowledge_search_not_found", decision.IntentName);
         Assert.Equal("I can't find anything.", decision.ReplyText);
-        Assert.Equal("blargh", decision.ContextUpdates?["chitchatRawTranscript"]);
+        Assert.Equal("What is blargh", decision.ContextUpdates?["chitchatRawTranscript"]);
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_UnhandledChat_SearchUnavailable_SaysSourcesAreDown()
+    public async Task BuildDecisionAsync_UnhandledQuestion_SearchUnavailable_SaysSourcesAreDown()
     {
         var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(
             KnowledgeSearchResult.Unavailable(SearchBackendKind.Wolfram)));
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "blargh",
-            NormalizedTranscript = "blargh"
+            RawTranscript = "What is blargh",
+            NormalizedTranscript = "What is blargh"
         });
 
         Assert.Equal("knowledge_search_unavailable", decision.IntentName);
@@ -2024,14 +2187,14 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
-    public async Task BuildDecisionAsync_UnhandledChat_WolframFails_FallsBackToGenericReply()
+    public async Task BuildDecisionAsync_UnhandledQuestion_WolframFails_SaysSourcesAreDown()
     {
         var service = CreateService(knowledgeSearchService: new StubKnowledgeSearchService(null));
 
         var decision = await service.BuildDecisionAsync(new TurnContext
         {
-            RawTranscript = "blargh",
-            NormalizedTranscript = "blargh"
+            RawTranscript = "What is blargh",
+            NormalizedTranscript = "What is blargh"
         });
 
         Assert.Equal("knowledge_search_unavailable", decision.IntentName);
@@ -5615,6 +5778,186 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_RequestSneezeClientIntent_UsesSneezeMim()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "sneeze",
+            NormalizedTranscript = "sneeze",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "requestSneeze"
+            }
+        });
+
+        Assert.Equal("request_sneeze", decision.IntentName);
+        Assert.Equal("RA_JBO_Sneeze", decision.SkillPayload!["mim_id"]);
+    }
+
+    [Theory]
+    [InlineData("Ready", "robot_is_ready", "RI_JBO_IsReady")]
+    [InlineData("ReadyForDay", "robot_is_ready_for_day", "RI_JBO_IsReadyForDay")]
+    public async Task BuildDecisionAsync_ReadyDescriptorClientIntent_UsesReadyMim(
+        string descriptor,
+        string expectedIntent,
+        string expectedMimId)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "are you ready",
+            NormalizedTranscript = "are you ready",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "isJiboDescriptor",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["GeneralDescriptor"] = descriptor
+                }
+            }
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Equal(expectedMimId, decision.SkillPayload!["mim_id"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_UserReadyDescriptorClientIntent_UsesReadyMim()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "ready",
+            NormalizedTranscript = "ready",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "userIsDescriptor",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["GeneralDescriptor"] = "Ready"
+                }
+            }
+        });
+
+        Assert.Equal("user_is_ready", decision.IntentName);
+        Assert.Equal("RN_IAmReady", decision.SkillPayload!["mim_id"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanJiboAction_PlayInstrumentGuitar_UsesGuitarMim()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you play guitar",
+            NormalizedTranscript = "can you play guitar",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "canJiboAction",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["Action"] = "PlayInstrument",
+                    ["MusicalInstrument"] = "Guitar"
+                }
+            }
+        });
+
+        Assert.Equal("robot_can_play_guitar", decision.IntentName);
+        Assert.Equal("RI_JBO_CanPlayGuitar", decision.SkillPayload!["mim_id"]);
+    }
+
+    [Theory]
+    [InlineData("Blue", "robot_likes_blue", "RI_JBO_LikesBlue")]
+    [InlineData("Pink", "robot_likes_pink", "RI_JBO_LikesPink")]
+    [InlineData("Green", "robot_likes_color", "RI_JBO_Likes_SS_Color")]
+    public async Task BuildDecisionAsync_LikeColorEntity_UsesTypedColorMim(
+        string color,
+        string expectedIntent,
+        string expectedMimId)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = $"do you like {color}",
+            NormalizedTranscript = $"do you like {color}",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "doesJiboLikeThing",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["Color"] = color
+                }
+            }
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Equal(expectedMimId, decision.SkillPayload!["mim_id"]);
+    }
+
+    [Theory]
+    [InlineData("isJiboUserRelation", "Relation", "", "robot_is_user_relation", "KU_AreYouMy")]
+    [InlineData("isJiboSkilledAtThing", "SchoolSubject", "Math", "robot_is_skilled_at_math",
+        "RI_JBO_IsSkilledAtMath")]
+    [InlineData("canJiboBeDescriptor", "Emotion", "Sad", "robot_can_get_depressed",
+        "RI_JBO_CanGetDepressed")]
+    [InlineData("isJiboDescriptor", "GeneralDescriptor", "Funny", "robot_is_funny", "RI_JBO_IsFunny")]
+    public async Task BuildDecisionAsync_PegasusPersonalityMetadata_UsesExactMim(
+        string clientIntent,
+        string entityName,
+        string entityValue,
+        string expectedIntent,
+        string expectedMimId)
+    {
+        var service = CreateService();
+        var entities = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(entityValue))
+            entities[entityName] = entityValue;
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "personality question",
+            NormalizedTranscript = "personality question",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = clientIntent,
+                ["clientEntities"] = entities
+            }
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Equal(expectedMimId, decision.SkillPayload!["mim_id"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanJiboAction_PlayGuitar_UsesSourceBackedReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you play guitar",
+            NormalizedTranscript = "can you play guitar",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "canJiboAction",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["MusicalInstrument"] = "Guitar"
+                }
+            }
+        });
+
+        Assert.Equal("robot_can_play_guitar", decision.IntentName);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, "robot_can_play_guitar");
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_CanYouMove_UsesSourceBackedCanMoveReply()
     {
         var service = CreateService();
@@ -6882,6 +7225,24 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Fact]
+    public async Task BuildDecisionAsync_WordOfADayStartPhrase_MapsToSkillIntent()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "start word of a day",
+            NormalizedTranscript = "start word of a day"
+        });
+
+        Assert.Equal("word_of_the_day", decision.IntentName);
+        Assert.Equal("Starting word of the day.", decision.ReplyText);
+        Assert.Equal("@be/word-of-the-day", decision.SkillName);
+        Assert.Equal("word-of-the-day", decision.SkillPayload!["domain"]);
+        Assert.Equal("@be/word-of-the-day", decision.SkillPayload["skillId"]);
+    }
+
+    [Fact]
     public async Task BuildDecisionAsync_WordOfDayGuess_LineNumberUsesListenHints()
     {
         var service = CreateService();
@@ -7133,9 +7494,11 @@ public sealed class JiboInteractionServiceTests
     private sealed class StubKnowledgeSearchService(KnowledgeSearchResult? result) : IKnowledgeSearchService
     {
         public bool IsConfigured => true;
+        public int SearchCount { get; private set; }
 
         public Task<KnowledgeSearchResult?> SearchAsync(string query, CancellationToken cancellationToken = default)
         {
+            SearchCount += 1;
             return Task.FromResult(result);
         }
     }

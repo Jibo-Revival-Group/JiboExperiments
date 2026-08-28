@@ -858,6 +858,10 @@ public sealed class ResponsePlanToSocketMessagesMapper
             plan.IntentName,
             "knowledge_search_not_found",
             StringComparison.OrdinalIgnoreCase);
+        var isNotUnderstood = string.Equals(
+            plan.IntentName,
+            "not_understood",
+            StringComparison.OrdinalIgnoreCase);
         var payloadSkill = ReadPayloadString(skillPayload, "skillId");
         var skillId = string.IsNullOrWhiteSpace(payloadSkill)
             ? isJoke ? "@be/joke" : skill?.SkillName ?? "chitchat-skill"
@@ -910,8 +914,9 @@ public sealed class ResponsePlanToSocketMessagesMapper
         }
 
         // Answer/Nimbus clears the eye during Thinking_Eye, so LISTEN asr.text alone never
-        // paints Idle's quoted "heard" Label. Attach that view on not-found speak instead.
-        if (isKnowledgeSearchNotFound && !string.IsNullOrWhiteSpace(heardTranscript))
+        // paints Idle's quoted "heard" Label. Attach that view on not-found or not-understood
+        // speech instead.
+        if ((isKnowledgeSearchNotFound || isNotUnderstood) && !string.IsNullOrWhiteSpace(heardTranscript))
             AttachHeardTranscriptDisplay(jcpConfig, heardTranscript.Trim());
 
         var weatherHiLoView = BuildWeatherHiLoView(skillPayload);

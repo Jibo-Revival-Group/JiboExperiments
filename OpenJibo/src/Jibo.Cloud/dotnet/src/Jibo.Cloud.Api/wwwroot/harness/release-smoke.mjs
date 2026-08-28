@@ -126,9 +126,25 @@ function assertReplyOrder(replies, expected, label) {
     `${label} expected ${expected.join(" -> ")} but received ${actual.join(" -> ")}.`);
 }
 
-async function expectConnectionScopedFallback(WebSocketImpl, url, timeoutMs = DEFAULT_TIMEOUT_MS) {
-  const socket = await openSocket(WebSocketImpl, url, "Tokenless fallback", timeoutMs);
-  await closeSocket(socket);
+async function expectRejectedSocket(WebSocketImpl, url, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  await new Promise((resolve, reject) => {
+    const socket = new WebSocketImpl(url);
+    const timer = setTimeout(() => {
+      socket.close();
+      reject(new Error("Missing-token WebSocket was not rejected promptly."));
+    }, timeoutMs);
+    socket.addEventListener("open", () => {
+      clearTimeout(timer);
+      socket.close();
+      reject(new Error("Missing-token WebSocket unexpectedly opened."));
+    }, { once: true });
+    const rejected = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    socket.addEventListener("error", rejected, { once: true });
+    socket.addEventListener("close", rejected, { once: true });
+  });
 }
 
 export function createProtocolCaller(baseUrl, hostName = "api.openjibo.com", fetchImpl = globalThis.fetch,
@@ -296,10 +312,9 @@ export async function runReleaseSmoke({
     }
   });
 
-  await runStep("Tokenless connection-scoped fallback", async () => {
-    await expectConnectionScopedFallback(WebSocketImpl, websocketUrl(baseUrl, "/v1/listen"),
-      loadOptions.timeoutMs);
-    return "connection accepted and closed cleanly";
+  await runStep("Missing-token socket rejection", async () => {
+    await expectRejectedSocket(WebSocketImpl, websocketUrl(baseUrl, "/v1/listen"), loadOptions.timeoutMs);
+    return "connection rejected before WebSocket upgrade";
   });
 
   let loadSummary;

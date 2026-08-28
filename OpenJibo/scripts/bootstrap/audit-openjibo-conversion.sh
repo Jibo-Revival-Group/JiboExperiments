@@ -372,6 +372,17 @@ if (!oobeConfigPath) recommendations.push("Confirm the oobe-config bundle before
 if (!region) recommendations.push("Region is not set yet; that needs to be recorded before any write helper runs.");
 if (!serverLibraryPath) recommendations.push("Locate /usr/local/lib/libJiboServerService.so before conversion so the native robot-token hostname can be patched.");
 if (serverLibrary && serverLibrary.State === "unsupported") recommendations.push(`Refuse to patch unknown libJiboServerService.so variant ${serverLibrary.Md5}; expected the supported stock or patched MD5.`);
+if (hubClientOverride && typeof hubClientOverride === "object") {
+  const overrideHubHostname = getField(hubClientOverride, "hub_hostname");
+  const overrideEntrypointHostname = getField(hubClientOverride, "entrypoint_hostname");
+  const overrideEntrypointPort = getField(hubClientOverride, "entrypoint_port");
+  if (overrideHubHostname && !overrideEntrypointHostname) {
+    recommendations.push("HubClient.override retargets the Hub without an entrypoint_hostname; configure the API endpoint that issues CreateHubToken.");
+  }
+  if (overrideHubHostname && (overrideEntrypointPort === undefined || overrideEntrypointPort === null || String(overrideEntrypointPort).trim() === "")) {
+    recommendations.push("HubClient.override is missing entrypoint_port; write it explicitly so non-443 self-hosted clients request CreateHubToken from the intended API service.");
+  }
+}
 
 const audit = {
   RobotRoot: robotRoot,

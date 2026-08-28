@@ -95,10 +95,39 @@ const SERVER_LIBRARY_VARIANTS = [
 const robotRoot = path.resolve(process.argv[2]);
 const planPath = path.resolve(process.argv[3]);
 const targetMode = process.argv[4];
-const apiHostname = (process.argv[5] || "api.openjibo.com").trim() || "api.openjibo.com";
-const hubHostname = (process.argv[6] || "").trim() || apiHostname;
+const apiEndpointInput = (process.argv[5] || "api.openjibo.com").trim() || "api.openjibo.com";
+const hubEndpointInput = (process.argv[6] || "").trim() || apiEndpointInput;
 const outputPath = (process.argv[7] || "").trim();
 const strict = String(process.argv[8]).toLowerCase() === "true";
+
+function parseEndpoint(value, defaultPort) {
+  const text = String(value || "").trim();
+  const schemeMatch = text.match(/^([a-z][a-z0-9+.-]*):\/\//i);
+  let authority = text.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "");
+  authority = authority.split("/")[0];
+  let hostname = authority;
+  let port = defaultPort;
+  const bracketed = authority.match(/^\[([^\]]+)\](?::(\d+))?$/);
+  const hostAndPort = authority.match(/^(.+):(\d+)$/);
+  if (bracketed) {
+    hostname = bracketed[1];
+    if (bracketed[2]) port = Number(bracketed[2]);
+  } else if (hostAndPort) {
+    hostname = hostAndPort[1];
+    port = Number(hostAndPort[2]);
+  }
+  if (!hostname || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid OpenJibo endpoint: ${value}`);
+  }
+  const scheme = schemeMatch ? schemeMatch[1].toLowerCase() : null;
+  const secure = scheme ? scheme === "https" || scheme === "wss" : port === 443;
+  return { hostname, port, secure };
+}
+
+const apiEndpoint = parseEndpoint(apiEndpointInput, 443);
+const hubEndpoint = parseEndpoint(hubEndpointInput, apiEndpoint.port);
+const apiHostname = apiEndpoint.hostname;
+const hubHostname = hubEndpoint.hostname;
 
 function ensureDir(dirPath) {
   if (!dirPath || fs.existsSync(dirPath)) return;
@@ -390,16 +419,19 @@ const openJiboRegion = {};
 for (const key of Object.keys(baseRegion)) {
   openJiboRegion[key] = baseRegion[key];
 }
-openJiboRegion.hub_port = baseRegion.hub_port || 443;
-openJiboRegion.entrypoint_port = baseRegion.entrypointPort || 443;
+openJiboRegion.hub_port = hubEndpoint.port;
+openJiboRegion.hub_secure = hubEndpoint.secure;
+openJiboRegion.entrypoint_port = apiEndpoint.port;
 openJiboRegion.hub_hostname = hubHostname;
 openJiboRegion.entrypoint_hostname = apiHostname;
 
 regionSettings["open-jibo"] = openJiboRegion;
 
 jetstream.HubClient.override = {
-  hub_port: 443,
+  hub_port: hubEndpoint.port,
   hub_hostname: hubHostname,
+  hub_secure: hubEndpoint.secure,
+  entrypoint_port: apiEndpoint.port,
   entrypoint_hostname: apiHostname
 };
 
@@ -415,7 +447,9 @@ oobe.openJiboConversion = {
   targetMode,
   state: "pending",
   apiHostname,
+  apiPort: apiEndpoint.port,
   hubHostname,
+  hubPort: hubEndpoint.port,
   notificationSocketSuffix: "-socket.openjibo.com",
   createdUtc: new Date().toISOString(),
   backupRoot,
@@ -571,6 +605,7 @@ const applyManifest = {
     "The active credentials region is rewritten to open-jibo so the robot boots against the converted routing state.",
     "The staged open-jibo region points to the canonical Open Jibo API hostname.",
     "The HubClient.override section directly overrides hub and entrypoint hostnames, bypassing library hostname construction.",
+    "Hub and API entrypoint ports are written independently so non-443 self-hosted targets can acquire CreateHubToken before opening NeoHub.",
     "The staged notification subsystem suffix points the robot at open-jibo-socket.openjibo.com while the deployment binds neohub.openjibo.com separately.",
     "The helper also normalizes bundled jibo-server-client region templates in live robot bundles, including api, service-scoped api, and socket host forms.",
     "The helper now also normalizes the live jibo-ssm runtime bundle when it hardcodes region + .jibo.com or api.jibo.com.",

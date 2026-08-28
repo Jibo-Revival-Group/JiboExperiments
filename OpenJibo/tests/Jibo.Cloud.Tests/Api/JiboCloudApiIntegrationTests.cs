@@ -116,6 +116,36 @@ public sealed class JiboCloudApiIntegrationTests
     }
 
     [Fact]
+    public async Task WebSocket_CreateHubTokenBearerOnExactListenRoute_Connects()
+    {
+        await using var factory = CreateFactory();
+        var protocolClient = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/")
+        {
+            Content = JsonContent.Create(new { })
+        };
+        request.Headers.TryAddWithoutValidation("X-Amz-Target", "Account_20160715.CreateHubToken");
+        request.Headers.Host = "api.jibo.com";
+
+        var response = await protocolClient.SendAsync(request);
+        var payload = await response.Content.ReadFromJsonAsync<CreateHubTokenResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(payload);
+        Assert.False(string.IsNullOrWhiteSpace(payload.Token));
+
+        var webSocketClient = factory.Server.CreateWebSocketClient();
+        webSocketClient.ConfigureRequest = socketRequest =>
+            socketRequest.Headers.Authorization = $"Bearer {payload.Token}";
+
+        using var socket = await webSocketClient.ConnectAsync(
+            new Uri("ws://localhost/v1/listen"), CancellationToken.None);
+
+        Assert.Equal(WebSocketState.Open, socket.State);
+        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "test-complete", CancellationToken.None);
+    }
+
+    [Fact]
     public async Task WebSocket_TokenPathOnSelfHostedListenRoute_Connects()
     {
         await using var factory = CreateFactory();

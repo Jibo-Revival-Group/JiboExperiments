@@ -75,10 +75,39 @@ const path = require("path");
 
 const auditPath = path.resolve(process.argv[2]);
 const targetMode = process.argv[3];
-const apiHostname = (process.argv[4] || "api.openjibo.com").trim() || "api.openjibo.com";
-const hubHostname = (process.argv[5] || "").trim() || apiHostname;
+const apiEndpointInput = (process.argv[4] || "api.openjibo.com").trim() || "api.openjibo.com";
+const hubEndpointInput = (process.argv[5] || "").trim() || apiEndpointInput;
 const outputPath = (process.argv[6] || "").trim();
 const strict = String(process.argv[7]).toLowerCase() === "true";
+
+function parseEndpoint(value, defaultPort) {
+  const text = String(value || "").trim();
+  const schemeMatch = text.match(/^([a-z][a-z0-9+.-]*):\/\//i);
+  let authority = text.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "");
+  authority = authority.split("/")[0];
+  let hostname = authority;
+  let port = defaultPort;
+  const bracketed = authority.match(/^\[([^\]]+)\](?::(\d+))?$/);
+  const hostAndPort = authority.match(/^(.+):(\d+)$/);
+  if (bracketed) {
+    hostname = bracketed[1];
+    if (bracketed[2]) port = Number(bracketed[2]);
+  } else if (hostAndPort) {
+    hostname = hostAndPort[1];
+    port = Number(hostAndPort[2]);
+  }
+  if (!hostname || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid OpenJibo endpoint: ${value}`);
+  }
+  const scheme = schemeMatch ? schemeMatch[1].toLowerCase() : null;
+  const secure = scheme ? scheme === "https" || scheme === "wss" : port === 443;
+  return { hostname, port, secure };
+}
+
+const apiEndpoint = parseEndpoint(apiEndpointInput, 443);
+const hubEndpoint = parseEndpoint(hubEndpointInput, apiEndpoint.port);
+const apiHostname = apiEndpoint.hostname;
+const hubHostname = hubEndpoint.hostname;
 
 function ensureDir(dirPath) {
   if (!dirPath || fs.existsSync(dirPath)) return;
@@ -105,8 +134,12 @@ const proposedChanges = [
       "write region-settings only under HubClient and remove conversion-created top-level duplicates",
       `add target mode region entry for ${targetMode}`,
       `set entrypoint_hostname to ${apiHostname}`,
+      `set entrypoint_port to ${apiEndpoint.port}`,
       `set hub_hostname to ${hubHostname}`,
+      `set hub_port to ${hubEndpoint.port}`,
+      `set hub_secure to ${hubEndpoint.secure}`,
       "add HubClient.override section to directly override hub and entrypoint hostnames",
+      "write both override ports so CreateHubToken and NeoHub use the intended self-hosted endpoints",
       "this bypasses library hostname construction and prevents open-jibo.openjibo.com issues",
     ],
   },

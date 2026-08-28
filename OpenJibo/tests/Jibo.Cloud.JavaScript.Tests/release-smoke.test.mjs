@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import vm from "node:vm";
 import {
   createProtocolCaller,
   normalizeLoadOptions,
@@ -76,6 +78,30 @@ class FakeWebSocket {
     });
   }
 }
+
+test("conversion scripts preserve explicit self-hosted API and Hub endpoints", () => {
+  const scriptUrls = [
+    new URL("../../scripts/bootstrap/apply-openjibo-conversion.sh", import.meta.url),
+    new URL("../../scripts/bootstrap/plan-openjibo-conversion.sh", import.meta.url),
+  ];
+
+  for (const scriptUrl of scriptUrls) {
+    const source = readFileSync(scriptUrl, "utf8");
+    const parserSource = source.match(/function parseEndpoint\(value, defaultPort\) \{[\s\S]*?\n\}/)?.[0];
+    assert(parserSource, `${fileURLToPath(scriptUrl)} does not contain parseEndpoint.`);
+    const context = {};
+    vm.createContext(context);
+    vm.runInContext(parserSource, context);
+
+    const api = context.parseEndpoint("http://192.168.1.133:8080", 443);
+    const hub = context.parseEndpoint("192.168.1.133:9000", api.port);
+    const managed = context.parseEndpoint("neohub.openjibo.com", 443);
+
+    assert.deepEqual({ ...api }, { hostname: "192.168.1.133", port: 8080, secure: false });
+    assert.deepEqual({ ...hub }, { hostname: "192.168.1.133", port: 9000, secure: false });
+    assert.deepEqual({ ...managed }, { hostname: "neohub.openjibo.com", port: 443, secure: true });
+  }
+});
 
 test("normalizeLoadOptions validates and preserves bounded load controls", () => {
   assert.deepEqual(normalizeLoadOptions({

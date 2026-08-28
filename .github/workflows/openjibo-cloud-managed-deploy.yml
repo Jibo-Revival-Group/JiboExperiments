@@ -64,10 +64,6 @@ on:
         description: Existing Speech Services account name after a resource-group subscription move
         required: false
         default: ""
-      image_tag:
-        description: Optional immutable image tag; defaults to sha-<commit>
-        required: false
-        default: ""
       location:
         description: Optional Azure region override
         required: false
@@ -157,14 +153,7 @@ jobs:
         id: image
         shell: bash
         run: |
-          image_tag="${{ inputs.image_tag }}"
-          if [[ -z "$image_tag" ]]; then
-            image_tag="sha-${GITHUB_SHA:0:12}"
-          fi
-          if [[ ! "$image_tag" =~ ^[A-Za-z0-9_.-]+$ ]]; then
-            echo "Image tag contains unsupported characters." >&2
-            exit 1
-          fi
+          image_tag="sha-${GITHUB_SHA:0:12}"
           echo "tag=$image_tag" >> "$GITHUB_OUTPUT"
 
       - name: Validate workflow inputs

@@ -379,10 +379,8 @@ public sealed class HomeAssistantPortalApiTests
             robot.GetProperty("deviceId").GetString() == "physical-status-robot" &&
             robot.GetProperty("presence").GetString() == "never-connected" &&
             robot.GetProperty("verifiedSerialNumber").GetString() == "BOJW-1000-0017-1114-0008");
-        Assert.Contains(summary.GetProperty("robots").EnumerateArray(), robot =>
-            robot.GetProperty("deviceId").GetString() == "live-hub-jibo" &&
-            robot.GetProperty("presence").GetString() == "never-connected" &&
-            !robot.GetProperty("hasOpenSocket").GetBoolean());
+        Assert.DoesNotContain(summary.GetProperty("robots").EnumerateArray(), robot =>
+            robot.GetProperty("deviceId").GetString() == "live-hub-jibo");
         Assert.DoesNotContain(summary.GetProperty("robots").EnumerateArray(), robot =>
             robot.GetProperty("deviceId").GetString() == "archived-live-jibo");
 

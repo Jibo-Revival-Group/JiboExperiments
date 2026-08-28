@@ -13,14 +13,7 @@ class FakeWebSocket {
     this.url = url;
     this.readyState = 0;
     this.listeners = new Map();
-    const path = new URL(url).pathname;
     queueMicrotask(() => {
-      if (path === "/v1/listen") {
-        this.readyState = 3;
-        this.emit("error", { message: "rejected" });
-        this.emit("close", {});
-        return;
-      }
       this.readyState = 1;
       this.emit("open", {});
     });

@@ -143,6 +143,9 @@ public sealed partial class JiboInteractionService
 
         if (string.Equals(clientIntent, "requestOrderPizza", StringComparison.OrdinalIgnoreCase)) return "order_pizza";
 
+        if (string.Equals(clientIntent, "requestSneeze", StringComparison.OrdinalIgnoreCase))
+            return "request_sneeze";
+
         if (string.Equals(clientIntent, "requestWeatherPR", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(clientIntent, "requestWeather", StringComparison.OrdinalIgnoreCase))
         {
@@ -183,8 +186,28 @@ public sealed partial class JiboInteractionService
                 "walkdog" => "robot_can_walk_dog",
                 "watchmovie" => "robot_can_watch_movies",
                 "watchtv" => "robot_can_watch_tv",
+                "playguitar" => "robot_can_play_guitar",
+                "swim" => "robot_can_swim",
+                "cry" => "robot_can_cry",
+                "speaklanguage" or "speak" => "robot_can_speak_language",
+                "tellpeopleapart" => "robot_can_tell_people_apart",
                 _ => "chat"
             };
+
+        if (string.Equals(clientIntent, "canJiboAction", StringComparison.OrdinalIgnoreCase) &&
+            clientEntities.TryGetValue("MusicalInstrument", out var instrument) &&
+            string.Equals(instrument, "Guitar", StringComparison.OrdinalIgnoreCase))
+            return "robot_can_play_guitar";
+
+        if ((string.Equals(clientIntent, "doesJiboLikeThing", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(clientIntent, "didJiboLikeThing", StringComparison.OrdinalIgnoreCase)) &&
+            clientEntities.ContainsKey("Color"))
+            return "robot_likes_color";
+
+        if ((string.Equals(clientIntent, "doesJiboLikeThing", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(clientIntent, "didJiboLikeThing", StringComparison.OrdinalIgnoreCase)) &&
+            clientEntities.ContainsKey("FoodGeneral"))
+            return "robot_likes_food_general";
 
         if (IsCancelRequest(clientIntent, loweredTranscript))
         {
@@ -589,6 +612,9 @@ public sealed partial class JiboInteractionService
                 "do you laugh"))
             return "robot_can_laugh";
 
+        if (MatchesAny(loweredTranscript, "can you read lips", "can you lip read", "do you read lips"))
+            return "robot_can_read_lips";
+
         if (MatchesAny(
                 loweredTranscript,
                 "can you read",
@@ -891,9 +917,17 @@ public sealed partial class JiboInteractionService
                 loweredTranscript,
                 "what do you eat",
                 "do you eat",
-                "what do you drink",
-                "do you drink"))
+                "have you eaten"))
             return "robot_what_do_you_eat";
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what do you drink",
+                "do you drink",
+                "what do you like to drink",
+                "have you ever drank",
+                "have you ever drunk"))
+            return "robot_what_do_you_drink";
 
         if (MatchesAny(
                 loweredTranscript,
@@ -3187,7 +3221,348 @@ public sealed partial class JiboInteractionService
 
         if (IsDateRequest(loweredTranscript)) return "date";
 
+        if (TryResolvePegasusPersonalityGap(loweredTranscript, out var pegasusGapIntent))
+            return pegasusGapIntent!;
+
         return MatchesAny(loweredTranscript, "hello", "hi", "hey") ? "hello" : "chat";
+    }
+
+    private static bool TryResolvePegasusPersonalityGap(
+        string loweredTranscript,
+        out string? semanticIntent)
+    {
+        semanticIntent = null;
+
+        if (MatchesAny(loweredTranscript, "sneeze", "please sneeze", "jibo sneeze", "hey jibo sneeze"))
+        {
+            semanticIntent = "request_sneeze";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your iq",
+                "what's your iq",
+                "what s your iq",
+                "what is your i q",
+                "what is your intelligence quotient",
+                "how smart are you"))
+        {
+            semanticIntent = "robot_what_is_your_iq";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is be a maker",
+                "what's be a maker",
+                "what is the be a maker skill",
+                "what is the be a maker app",
+                "what does be a maker do",
+                "what is be a maker used for",
+                "explain be a maker"))
+        {
+            semanticIntent = "robot_what_is_be_a_maker";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "why don't you have arms",
+                "why don t you have arms",
+                "why do you not have arms",
+                "why do you have no arms",
+                "why no arms"))
+        {
+            semanticIntent = "robot_why_no_arms";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "why do you only have one eye",
+                "why do you have one eye",
+                "why only one eye",
+                "why don't you have two eyes",
+                "why don t you have two eyes"))
+        {
+            semanticIntent = "robot_why_only_one_eye";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "is big brother watching",
+                "is big brother watching me",
+                "is the government watching me",
+                "is the government spying on me",
+                "are you spying on me"))
+        {
+            semanticIntent = "robot_is_big_brother_watching";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what did you have for dinner yesterday",
+                "what did you eat for dinner yesterday",
+                "what did you eat last night",
+                "what did you have for dinner last night"))
+        {
+            semanticIntent = "robot_what_you_had_dinner_yesterday";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "who is your boss",
+                "who's your boss",
+                "who s your boss",
+                "who is your manager",
+                "who's your manager",
+                "who is in charge of you"))
+        {
+            semanticIntent = "robot_who_is_your_boss";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what robots do you look up to",
+                "what robots do you admire",
+                "what robots do you aspire to be like"))
+        {
+            semanticIntent = "robot_what_robots_look_up_to";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you tell people apart",
+                "can you tell humans apart",
+                "can you distinguish people"))
+        {
+            semanticIntent = "robot_can_tell_people_apart";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "how do you recognize faces",
+                "how does your face recognition work",
+                "how does your facial recognition work"))
+        {
+            semanticIntent = "robot_how_can_recognize_faces";
+            return true;
+        }
+
+        if (MatchesAny(loweredTranscript, "can you read lips", "can you lip read", "do you read lips"))
+        {
+            semanticIntent = "robot_can_read_lips";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you do household chores",
+                "can you do housework",
+                "can you do chores",
+                "can you help with household chores"))
+        {
+            semanticIntent = "robot_can_do_household_chore";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your groundhog's name",
+                "what is your groundhogs name",
+                "what's your groundhog's name",
+                "what is the groundhog's name",
+                "what is the groundhogs name"))
+        {
+            semanticIntent = "robot_what_is_groundhogs_name";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite star wars character",
+                "what's your favorite star wars character",
+                "who is your favorite star wars character",
+                "what star wars character do you like"))
+        {
+            semanticIntent = "robot_favorite_star_wars_character";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite star wars movie",
+                "what's your favorite star wars movie",
+                "what star wars movie do you like",
+                "what is your favorite movie from star wars"))
+        {
+            semanticIntent = "robot_favorite_star_wars_movie";
+            return true;
+        }
+
+        if (TryResolvePastFavoriteIntent(loweredTranscript, out var pastFavoriteIntent))
+        {
+            semanticIntent = pastFavoriteIntent;
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "what is your favorite",
+                "what's your favorite",
+                "what s your favorite",
+                "who is your favorite",
+                "who's your favorite",
+                "who s your favorite",
+                "tell me your favorite",
+                "tell us your favorite"))
+        {
+            semanticIntent = loweredTranscript.StartsWith("who", StringComparison.Ordinal)
+                ? "robot_who_is_your_favorite"
+                : "robot_what_is_your_favorite";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "did you have a favorite",
+                "what was your favorite",
+                "what used to be your favorite"))
+        {
+            semanticIntent = "robot_did_you_have_a_favorite";
+            return true;
+        }
+
+        if (Regex.IsMatch(
+                loweredTranscript,
+                @"^\s*why\s+(is|are|was|were)\s+.+\s+your\s+favorite(?:\s+.+)?\s*$",
+                RegexOptions.CultureInvariant) ||
+            Regex.IsMatch(
+                loweredTranscript,
+                @"^\s*why\s+(do|did)\s+you\s+(think|consider|believe).+\s+(the\s+)?(best|coolest)\s*$",
+                RegexOptions.CultureInvariant))
+        {
+            semanticIntent = "robot_why_is_thing_favorite";
+            return true;
+        }
+
+        if (Regex.IsMatch(
+                loweredTranscript,
+                @"^\s*your\s+favorite\s+.+\s+team\s+should\s+be\s+.+\s*$",
+                RegexOptions.CultureInvariant))
+        {
+            semanticIntent = "robot_favorite_team_should_be";
+            return true;
+        }
+
+        if (MatchesAny(
+                loweredTranscript,
+                "can you play guitar",
+                "do you play guitar",
+                "can you swim",
+                "do you swim",
+                "can you cry",
+                "do you cry"))
+        {
+            semanticIntent = loweredTranscript.Contains("guitar", StringComparison.Ordinal)
+                ? "robot_can_play_guitar"
+                : loweredTranscript.Contains("swim", StringComparison.Ordinal)
+                    ? "robot_can_swim"
+                    : "robot_can_cry";
+            return true;
+        }
+
+        if (Regex.IsMatch(
+                loweredTranscript,
+                @"^\s*(can|could|do)\s+you\s+(speak|understand)\s+\S+",
+                RegexOptions.CultureInvariant))
+        {
+            semanticIntent = "robot_can_speak_language";
+            return true;
+        }
+
+        if (Regex.IsMatch(
+                loweredTranscript,
+                @"^\s*do\s+you\s+(like|love|enjoy)\s+(the\s+)?(red|orange|yellow|green|blue|purple|violet|pink|black|white|brown|gray|grey)\s*$",
+                RegexOptions.CultureInvariant))
+        {
+            semanticIntent = "robot_likes_color";
+            return true;
+        }
+
+        if (Regex.IsMatch(
+                loweredTranscript,
+                @"^\s*do\s+you\s+(like|love|enjoy)\s+(the\s+)?(honey|banana|bananas|apple|apples|peach|peaches|pear|pears|strawberry|strawberries|grapes|orange|oranges|watermelon|carrot|carrots|broccoli|cereal|pancakes|waffles)\s*$",
+                RegexOptions.CultureInvariant))
+        {
+            semanticIntent = "robot_likes_food_general";
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryResolvePastFavoriteIntent(
+        string loweredTranscript,
+        out string? semanticIntent)
+    {
+        semanticIntent = null;
+        var normalized = NormalizeCommandPhrase(loweredTranscript);
+        if (!Regex.IsMatch(
+                normalized,
+                @"^(what|which|who) was your favorite(?:\s+.+)?$",
+                RegexOptions.CultureInvariant))
+            return false;
+
+        var favoriteMarker = normalized.IndexOf(" your favorite ", StringComparison.Ordinal);
+        if (favoriteMarker < 0) return false;
+
+        var subject = normalized[(favoriteMarker + " your favorite ".Length)..];
+        semanticIntent = subject switch
+        {
+            "animal" => "robot_favorite_animal",
+            "bird" => "robot_favorite_bird",
+            "book" => "robot_favorite_book",
+            "car" => "robot_favorite_car",
+            "celebrity" => "robot_favorite_celebrity",
+            "color" or "colour" => "robot_favorite_color",
+            "country musician" => "robot_favorite_country_musician",
+            "dance" => "robot_favorite_dance",
+            "dessert" => "robot_favorite_dessert",
+            "drink" => "robot_favorite_drink",
+            "food" => "robot_favorite_food",
+            "fruit" => "robot_favorite_fruit",
+            "hobby" => "robot_favorite_hobby",
+            "holiday" => "robot_favorite_holiday",
+            "ice cream flavor" => "robot_favorite_ice_cream_flavor",
+            "joke" => "robot_favorite_joke",
+            "movie" => "robot_favorite_movie",
+            "music" => "robot_favorite_music",
+            "music genre" => "robot_favorite_music_genre",
+            "number" => "robot_favorite_number",
+            "pastime" => "robot_favorite_pastime",
+            "pet" => "robot_favorite_pet",
+            "planet" => "robot_favorite_planet",
+            "president" => "robot_favorite_president",
+            "rapper" => "robot_favorite_rapper",
+            "reindeer" => "robot_favorite_reindeer",
+            "rock band" => "robot_favorite_rock_band",
+            "season" => "robot_favorite_season",
+            "singer" => "robot_favorite_singer",
+            "song" => "robot_favorite_song",
+            "sport" => "robot_favorite_sport",
+            "video game" => "robot_favorite_video_game",
+            "weather" => "robot_favorite_weather",
+            _ => "robot_did_you_have_a_favorite"
+        };
+        return true;
     }
 
     private static bool IsInlineHouseholdListRequest(string loweredTranscript)

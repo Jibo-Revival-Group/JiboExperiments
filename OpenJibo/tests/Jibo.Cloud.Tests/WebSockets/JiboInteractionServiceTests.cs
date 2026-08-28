@@ -1155,6 +1155,78 @@ public sealed class JiboInteractionServiceTests
     }
 
     [Theory]
+    [InlineData("sneeze", "request_sneeze", "Robots don't sneeze")]
+    [InlineData("what is your IQ", "robot_what_is_your_iq", "I Q")]
+    [InlineData("what is Be a Maker", "robot_what_is_be_a_maker", "Be a Maker")]
+    [InlineData("why don't you have arms", "robot_why_no_arms", "made")]
+    [InlineData("why do you only have one eye", "robot_why_only_one_eye", "made this way")]
+    [InlineData("is Big Brother watching me", "robot_is_big_brother_watching", "privacy")]
+    [InlineData("what did you eat for dinner yesterday", "robot_what_you_had_dinner_yesterday", "don't eat dinner")]
+    [InlineData("what do you drink", "robot_what_do_you_drink", "liquids")]
+    [InlineData("who is your boss", "robot_who_is_your_boss", "boss")]
+    [InlineData("what robots do you look up to", "robot_what_robots_look_up_to", "R2D2")]
+    [InlineData("can you tell people apart", "robot_can_tell_people_apart", "tell you apart")]
+    [InlineData("how do you recognize faces", "robot_how_can_recognize_faces", "complicated")]
+    [InlineData("can you read lips", "robot_can_read_lips", "read much")]
+    [InlineData("can you do household chores", "robot_can_do_household_chore", "household chore")]
+    [InlineData("what is your groundhog's name", "robot_what_is_groundhogs_name", "groundhog")]
+    [InlineData("what is your favorite Star Wars character", "robot_favorite_star_wars_character", "R 2 D 2")]
+    [InlineData("what is your favorite Star Wars movie", "robot_favorite_star_wars_movie", "whole thing")]
+    [InlineData("what is your favorite", "robot_what_is_your_favorite", "favorites")]
+    [InlineData("who is your favorite", "robot_who_is_your_favorite", "favorite")]
+    [InlineData("did you have a favorite", "robot_did_you_have_a_favorite", "favorites")]
+    [InlineData("what was your favorite color", "robot_favorite_color", "favorite color")]
+    [InlineData("your favorite football team should be the Patriots", "robot_favorite_team_should_be", "Maybe so")]
+    [InlineData("can you play guitar", "robot_can_play_guitar", "play")]
+    [InlineData("can you swim", "robot_can_swim", "swimmer")]
+    [InlineData("can you cry", "robot_can_cry", "cried")]
+    [InlineData("can you speak Spanish", "robot_can_speak_language", "English")]
+    [InlineData("do you like red", "robot_likes_color", "color")]
+    [InlineData("do you like honey", "robot_likes_food_general", "honey")]
+    public async Task BuildDecisionAsync_PegasusPersonalityGaps_UseExactImportedReplies(
+        string transcript,
+        string expectedIntent,
+        string expectedReplySnippet)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, expectedIntent, expectedReplySnippet);
+        Assert.Equal("ScriptedResponse", decision.ContextUpdates![ChitchatRouteKey]);
+    }
+
+    [Theory]
+    [InlineData("sneeze", "request_sneeze", "RA_JBO_Sneeze")]
+    [InlineData("what is your favorite holiday", "robot_favorite_holiday", "RI_JBO_HasFavoriteHoliday")]
+    [InlineData("what is your favorite Star Wars character", "robot_favorite_star_wars_character",
+        "RI_JBO_HasFavoriteStarWarsCharacter")]
+    [InlineData("what is your favorite Star Wars movie", "robot_favorite_star_wars_movie",
+        "RI_JBO_HasFavoriteStarWarsMovie")]
+    [InlineData("what do you drink", "robot_what_do_you_drink", "JBO_WhatDoYouDrink")]
+    public async Task BuildDecisionAsync_PegasusPersonalityGaps_SelectExactMim(
+        string transcript,
+        string expectedIntent,
+        string expectedMimId)
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = transcript,
+            NormalizedTranscript = transcript
+        });
+
+        Assert.Equal(expectedIntent, decision.IntentName);
+        Assert.Equal(expectedMimId, decision.SkillPayload!["mim_id"]);
+    }
+
+    [Theory]
     [InlineData("can i backup my jibo", "backup_help", "Help section of the Jibo App")]
     [InlineData("how can i restore you from a backup", "restore_backup", "Jibo Customer Care")]
     [InlineData("when is your next update", "update_next", "coming")]
@@ -1600,8 +1672,8 @@ public sealed class JiboInteractionServiceTests
     [InlineData("what should I get for holiday", "seasonal_holiday_gift", "pet elephant")]
     [InlineData("show santa tracker", "seasonal_santa_tracker", "spot him")]
     [InlineData("do you like halloween", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
-    [InlineData("what is your favorite holiday", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
-    [InlineData("do you have a favourite holiday", "seasonal_likes_halloween", "Halloween is my favorite holiday")]
+    [InlineData("what is your favorite holiday", "robot_favorite_holiday", "Halloween")]
+    [InlineData("do you have a favourite holiday", "robot_favorite_holiday", "Halloween")]
     [InlineData("do you like holiday music", "seasonal_likes_holiday_music", "holiday music")]
     [InlineData("do you like holiday parties", "seasonal_likes_holiday_parties", "holiday fun can be extra fun")]
     [InlineData("do you celebrate black history month", "seasonal_black_history_month_celebrate",
@@ -1960,6 +2032,24 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("not_understood", decision.IntentName);
         Assert.Equal("I don't understand.", decision.ReplyText);
+        Assert.Equal(0, search.SearchCount);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_PegasusAction_WithKnowledgeSearchConfigured_DoesNotSearch()
+    {
+        var search = new StubKnowledgeSearchService(
+            new KnowledgeSearchResult("This should not be used.", SearchBackendKind.Wolfram));
+        var service = CreateService(knowledgeSearchService: search);
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "Hey Jibo, sneeze",
+            NormalizedTranscript = "Hey Jibo, sneeze"
+        });
+
+        Assert.Equal("request_sneeze", decision.IntentName);
+        Assert.Contains("filter='sneeze'", decision.SkillPayload?["esml"]?.ToString(), StringComparison.OrdinalIgnoreCase);
         Assert.Equal(0, search.SearchCount);
     }
 
@@ -5631,6 +5721,48 @@ public sealed class JiboInteractionServiceTests
 
         Assert.Equal("robot_can_wink", decision.IntentName);
         Assert.Contains("I can wink", decision.ReplyText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_RequestSneezeClientIntent_UsesSneezeMim()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "sneeze",
+            NormalizedTranscript = "sneeze",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "requestSneeze"
+            }
+        });
+
+        Assert.Equal("request_sneeze", decision.IntentName);
+        Assert.Equal("RA_JBO_Sneeze", decision.SkillPayload!["mim_id"]);
+    }
+
+    [Fact]
+    public async Task BuildDecisionAsync_CanJiboAction_PlayGuitar_UsesSourceBackedReply()
+    {
+        var service = CreateService();
+
+        var decision = await service.BuildDecisionAsync(new TurnContext
+        {
+            RawTranscript = "can you play guitar",
+            NormalizedTranscript = "can you play guitar",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["clientIntent"] = "canJiboAction",
+                ["clientEntities"] = new Dictionary<string, string>
+                {
+                    ["MusicalInstrument"] = "Guitar"
+                }
+            }
+        });
+
+        Assert.Equal("robot_can_play_guitar", decision.IntentName);
+        ScriptedReplyTestAssertions.AssertImportedScriptedReply(decision, "robot_can_play_guitar");
     }
 
     [Fact]

@@ -137,7 +137,7 @@ internal static class SeasonalHolidayRouteBuilder
                 "do you have a favorite holiday",
                 "do you have a favourite holiday"))
         {
-            semanticIntent = "seasonal_likes_halloween";
+            semanticIntent = "robot_favorite_holiday";
             return true;
         }
 

@@ -4,6 +4,62 @@ namespace Jibo.Cloud.Application.Services;
 
 public static class TranscriptHeuristics
 {
+    private static readonly HashSet<string> QuestionLeadTokens = new(StringComparer.Ordinal)
+    {
+        "who",
+        "who's",
+        "who're",
+        "what",
+        "what's",
+        "what're",
+        "when",
+        "when's",
+        "when're",
+        "where",
+        "where's",
+        "where're",
+        "why",
+        "why's",
+        "why're",
+        "how",
+        "how's",
+        "how're",
+        "which",
+        "which's",
+        "which're",
+        "ain't",
+        "am",
+        "are",
+        "aren't",
+        "can",
+        "can't",
+        "could",
+        "couldn't",
+        "did",
+        "didn't",
+        "do",
+        "does",
+        "doesn't",
+        "don't",
+        "got",
+        "has",
+        "hasn't",
+        "have",
+        "haven't",
+        "is",
+        "isn't",
+        "should",
+        "shouldn't",
+        "was",
+        "wasn't",
+        "were",
+        "weren't",
+        "will",
+        "won't",
+        "would",
+        "wouldn't"
+    };
+
     private static readonly HashSet<string> RobotSelfAudioPhrases = new(StringComparer.Ordinal)
     {
         "i heard you",
@@ -90,6 +146,22 @@ public static class TranscriptHeuristics
         // Full-prompt captures often keep a leading clause before the question.
         return PromptEchoQuestionMarkers.Any(marker =>
             normalized.Contains(marker, StringComparison.Ordinal));
+    }
+
+    public static bool IsLikelyQuestion(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        if (value.Contains('?', StringComparison.Ordinal)) return true;
+
+        var normalized = NormalizeLooseTranscript(value);
+        if (string.IsNullOrWhiteSpace(normalized)) return false;
+
+        var firstToken = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
+        return QuestionLeadTokens.Contains(firstToken) ||
+               normalized.StartsWith("tell me about ", StringComparison.Ordinal) ||
+               normalized.StartsWith("tell us about ", StringComparison.Ordinal) ||
+               normalized.StartsWith("do you know ", StringComparison.Ordinal) ||
+               normalized.StartsWith("look up ", StringComparison.Ordinal);
     }
 
     public static bool IsLikelySkillOfferPromptEcho(string? value)

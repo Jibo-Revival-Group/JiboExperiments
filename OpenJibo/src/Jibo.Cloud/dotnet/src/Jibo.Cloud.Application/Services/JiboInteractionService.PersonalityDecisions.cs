@@ -735,6 +735,33 @@ public sealed partial class JiboInteractionService
             preferredSnippets);
     }
 
+    private JiboInteractionDecision BuildClientDescriptorDecision(
+        JiboExperienceCatalog catalog,
+        IReadOnlyDictionary<string, string> clientEntities)
+    {
+        var descriptor = clientEntities.TryGetValue("GeneralDescriptor", out var value)
+            ? value.Trim().ToLowerInvariant()
+            : string.Empty;
+        var intentName = string.IsNullOrWhiteSpace(descriptor)
+            ? "robot_personality"
+            : $"robot_is_{descriptor.Replace(" ", "_", StringComparison.Ordinal)}";
+        return BuildScriptedPersonalityDecision(catalog, intentName);
+    }
+
+    private JiboInteractionDecision BuildSneezeDecision(JiboExperienceCatalog catalog)
+    {
+        var decision = BuildScriptedPersonalityDecision(catalog, "request_sneeze");
+        var payload = new Dictionary<string, object?>(
+            decision.SkillPayload ?? new Dictionary<string, object?>(),
+            StringComparer.OrdinalIgnoreCase)
+        {
+            ["esml"] =
+                $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{decision.ReplyText}</es><anim cat='various' filter='sneeze' /></speak>"
+        };
+
+        return decision with { SkillPayload = payload };
+    }
+
     private JiboInteractionDecision BuildScriptedFavoriteAnimalDecision(
         JiboExperienceCatalog catalog,
         string intentName,

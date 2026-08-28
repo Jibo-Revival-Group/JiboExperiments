@@ -768,26 +768,35 @@ robot must keep isolated websocket turn state. If both wake on "Hey Jibo" at the
 same time while sharing one cloud session, they can both enter listen mode and
 remain stuck in the blue ring until reboot.
 
-### Path token vs hub token
+### Authenticated Hub configuration
 
-Robots can connect to neohub in two ways:
+NeoHub connections use a per-robot token from `Account.CreateHubToken`:
 
 ```text
-Authorization: Bearer hub-<account>-<guid>   # per-robot hub token from CreateHubToken
-token=v1/listen                              # path fallback when no Bearer header
+Authorization: Bearer hub-<account>-<guid>
 ```
 
-The path fallback is common when robots reach the server by IP, for example
-`http://192.168.7.142:24605/v1/listen`. Before connection-scoped session keying,
-every path-only connection shared one `CloudSession` keyed as `v1/listen`, which
-corrupted turn state across robots.
+The exact route `/v1/listen` is not a token. Older self-hosted behavior mistakenly
+treated the route text `v1/listen` as a connection token, which allowed direct-IP
+clients to connect without authentication. Do not restore that fallback.
 
-Current behavior:
+A direct-IP override must configure both the API entrypoint that issues the token
+and the Hub listener that consumes it. The ports may differ:
 
-- path tokens such as `v1/listen` are keyed per websocket connection as
-  `conn:<connectionId>`
-- bearer hub tokens such as `hub-*` still share session state by token, with
-  per-robot `deviceId` binding from `CreateHubToken`
+```json
+"override": {
+  "entrypoint_hostname": "192.168.1.133",
+  "entrypoint_port": 8080,
+  "hub_hostname": "192.168.1.133",
+  "hub_port": 9000,
+  "hub_secure": false
+}
+```
+
+The process on the entrypoint port must implement `Account.CreateHubToken`. Pointing
+only `hub_hostname` and `hub_port` at a local Hub shim leaves Jetstream without a
+credential, causing it to send an empty Bearer header. If one process serves both
+HTTP protocol calls and WebSockets, use that process's port for both settings.
 
 Minimum setup:
 
@@ -795,8 +804,8 @@ Minimum setup:
    and related hosts rewritten to the server).
 2. Complete `SetupRobot` separately for each robot with a unique friendly id and
    device id. Example ids: `BOJW-KITCHEN-0001`, `BOJW-OFFICE-0002`.
-3. Prefer letting each robot request its own hub token via `CreateHubToken`. The
-   cloud binds that token to the robot `deviceId` when the request includes one.
+3. Confirm each robot requests its own hub token via `CreateHubToken`. The cloud
+   binds that token to the robot `deviceId` when the request includes one.
 4. Say "Hey Jibo" once while both robots are in range.
 
 Expected behavior with isolated robot sessions:
@@ -811,7 +820,6 @@ Live proof checklist:
 capture robot logs from both devices
 capture websocket turn telemetry for both connections
 confirm both robots receive their own greeting/skill response
-confirm path-token logs show distinct session ids even when token=v1/listen
 confirm hub-token logs show distinct hub-* tokens when Bearer auth is in use
 ```
 

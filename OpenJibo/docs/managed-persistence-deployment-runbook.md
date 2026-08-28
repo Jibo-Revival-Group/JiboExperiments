@@ -185,3 +185,30 @@ Do not delete legacy snapshots or imported backup payloads during the verificati
 ## After Production
 
 Monitor Container App restarts and memory, PostgreSQL connections and latency, WebSocket connections and bytes, and robot reconnect behavior. Remove legacy recovery artifacts only in a later, separately reviewed release.
+
+## Inventory Audit and Device Recovery
+
+Run the aggregate audit before recovery:
+
+```powershell
+dotnet Jibo.Cloud.Migrations.dll --audit-cloud-state --state-connection "<target-state-connection>"
+```
+
+When comparing the preserved normalized database with the current target, recovery is dry-run by default and emits aggregate-only counts:
+
+```powershell
+dotnet Jibo.Cloud.Migrations.dll --recover-missing-devices `
+  --source-state-connection "<preserved-state-connection>" `
+  --target-state-connection "<target-state-connection>"
+```
+
+Review the dry-run counts, then require both explicit apply flags to mutate the target:
+
+```powershell
+dotnet Jibo.Cloud.Migrations.dll --recover-missing-devices --apply `
+  --confirm-recover-missing-devices `
+  --source-state-connection "<preserved-state-connection>" `
+  --target-state-connection "<target-state-connection>"
+```
+
+Recovery is limited to missing non-synthetic devices, existing-account links, and host mappings for newly inserted devices. It does not copy accounts, tokens, sessions, credentials, profiles, identity links, or other dependent families. Keep the source database preserved and read-only throughout the process.

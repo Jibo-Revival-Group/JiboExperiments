@@ -53,6 +53,9 @@ try
         }));
         return 0;
     }
+    if (options.RecoverMissingDevices)
+        return await RecoverMissingDevicesAsync(options);
+
     MigrationTarget[] targets = options.Target switch
     {
         MigrationTarget.All => [MigrationTarget.State, MigrationTarget.PersonalMemory],
@@ -409,6 +412,298 @@ static async Task<IReadOnlyDictionary<string, int>> LoadNormalizedCloudStateCoun
     return counts;
 }
 
+static async Task<int> RecoverMissingDevicesAsync(MigrationOptions options)
+{
+    if (string.IsNullOrWhiteSpace(options.SourceStateConnectionString) ||
+        string.IsNullOrWhiteSpace(options.TargetStateConnectionString))
+    {
+        Log.Error("Recovery requires both --source-state-connection and --target-state-connection.");
+        return 1;
+    }
+
+    if (options.ApplyRequested && !options.RecoveryConfirmation)
+    {
+        Log.Error("Recovery mutations require --apply and --confirm-recover-missing-devices.");
+        return 1;
+    }
+
+    var source = await LoadRecoverySourceAsync(options.SourceStateConnectionString);
+    var report = await ExecuteRecoveryAsync(options.TargetStateConnectionString, source,
+        options.ApplyRequested);
+    Console.WriteLine(JsonSerializer.Serialize(report, new JsonSerializerOptions
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    }));
+    return 0;
+}
+
+static async Task<RecoverySourceData> LoadRecoverySourceAsync(string connectionString)
+{
+    var builder = new NpgsqlConnectionStringBuilder(connectionString);
+    var existingOptions = builder.Options;
+    builder.Options = string.IsNullOrWhiteSpace(existingOptions)
+        ? "-c default_transaction_read_only=on"
+        : $"{existingOptions} -c default_transaction_read_only=on";
+    await using var connection = new NpgsqlConnection(builder.ConnectionString);
+    await connection.OpenAsync();
+    await using var transaction = await connection.BeginTransactionAsync(
+        System.Data.IsolationLevel.RepeatableRead);
+    await using (var readOnly = new NpgsqlCommand("SET TRANSACTION READ ONLY", connection, transaction))
+        await readOnly.ExecuteNonQueryAsync();
+
+    var allDevices = new List<RecoveryDevice>();
+    await using (var command = new NpgsqlCommand("""
+                                                  SELECT DeviceId, RobotId, FriendlyName, FirmwareVersion,
+                                                         ApplicationVersion, IsActive, CertificateThumbprint,
+                                                         IssuedIdentityId, BuildHash, ConfigHash,
+                                                         VerifiedSerialNumber, SerialEvidenceSource,
+                                                         SerialEvidenceVerifiedUtc, RegistrationSource,
+                                                         IsHidden, IsDefault, ArchivedUtc, CreatedUtc, UpdatedUtc
+                                                  FROM Devices
+                                                  """, connection, transaction))
+    await using (var reader = await command.ExecuteReaderAsync())
+    {
+        while (await reader.ReadAsync())
+        {
+            allDevices.Add(new RecoveryDevice(
+                reader.GetString(0), reader.GetString(1), reader.GetString(2), NullableString(reader, 3),
+                NullableString(reader, 4), reader.GetBoolean(5), NullableString(reader, 6),
+                NullableString(reader, 7), NullableString(reader, 8), NullableString(reader, 9),
+                NullableString(reader, 10), NullableString(reader, 11), NullableDate(reader, 12),
+                reader.GetString(13), reader.GetBoolean(14), reader.GetBoolean(15), NullableDate(reader, 16),
+                reader.GetFieldValue<DateTimeOffset>(17), reader.GetFieldValue<DateTimeOffset>(18)));
+        }
+    }
+
+
+    var links = new List<RecoveryAccountDeviceLink>();
+    var mappings = new List<RecoveryDeviceMapping>();
+    var ids = allDevices.Select(device => device.DeviceId).ToArray();
+    if (ids.Length > 0)
+    {
+        await using var linksCommand = new NpgsqlCommand("""
+                                                         SELECT AccountId, DeviceId, Relationship, CreatedUtc
+                                                         FROM AccountDevices
+                                                         WHERE DeviceId = ANY(@deviceIds)
+                                                         """, connection, transaction);
+        linksCommand.Parameters.AddWithValue("deviceIds", ids);
+        await using (var reader = await linksCommand.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+                links.Add(new RecoveryAccountDeviceLink(reader.GetString(0), reader.GetString(1),
+                    reader.GetString(2), reader.GetFieldValue<DateTimeOffset>(3)));
+        }
+
+        await using var mappingsCommand = new NpgsqlCommand("""
+                                                            SELECT DeviceId, MappingKey, MappingValue, UpdatedUtc
+                                                            FROM DeviceHostMappings
+                                                            WHERE DeviceId = ANY(@deviceIds)
+                                                            """, connection, transaction);
+        mappingsCommand.Parameters.AddWithValue("deviceIds", ids);
+        await using var mappingsReader = await mappingsCommand.ExecuteReaderAsync();
+        while (await mappingsReader.ReadAsync())
+            mappings.Add(new RecoveryDeviceMapping(mappingsReader.GetString(0), mappingsReader.GetString(1),
+                mappingsReader.GetString(2), mappingsReader.GetFieldValue<DateTimeOffset>(3)));
+    }
+
+    await transaction.CommitAsync();
+    return new RecoverySourceData(allDevices, links, mappings);
+}
+
+static async Task<RecoveryReport> ExecuteRecoveryAsync(
+    string connectionString, RecoverySourceData source, bool apply)
+{
+    await using var connection = new NpgsqlConnection(connectionString);
+    await connection.OpenAsync();
+    await using var transaction = await connection.BeginTransactionAsync(
+        System.Data.IsolationLevel.Serializable);
+    if (apply)
+    {
+        await using var lockCommand = new NpgsqlCommand(
+            "SELECT pg_advisory_xact_lock(hashtext('openjibo:recover-missing-devices'))",
+            connection, transaction);
+        await lockCommand.ExecuteNonQueryAsync();
+    }
+    else
+    {
+        await using var readOnly = new NpgsqlCommand("SET TRANSACTION READ ONLY", connection, transaction);
+        await readOnly.ExecuteNonQueryAsync();
+    }
+
+    var sourceIds = source.Devices.Select(device => device.DeviceId).ToArray();
+    var existingDevices = await ReadExistingDeviceIdsAsync(connection, transaction, sourceIds);
+    var sourceLinks = source.AccountDeviceLinks;
+    var sourceMappings = source.DeviceMappings;
+    var accounts = await ReadExistingAccountIdsAsync(connection, transaction,
+        sourceLinks.Select(link => link.AccountId));
+    var existingLinks = await ReadExistingLinksAsync(connection, transaction, sourceLinks);
+    var existingMappings = await ReadExistingMappingsAsync(connection, transaction, sourceMappings);
+    var plan = RecoveryPlanner.Build(source.Devices, sourceLinks, sourceMappings, existingDevices,
+        accounts, existingLinks, existingMappings);
+    var insertedDevices = 0;
+    var insertedLinks = 0;
+    var insertedMappings = 0;
+    var revisionBumped = false;
+    if (apply)
+    {
+        foreach (var device in plan.DevicesToInsert)
+        {
+            await using var command = new NpgsqlCommand("""
+                                                         INSERT INTO Devices
+                                                           (DeviceId, RobotId, FriendlyName, FirmwareVersion,
+                                                            ApplicationVersion, IsActive, CertificateThumbprint,
+                                                            IssuedIdentityId, BuildHash, ConfigHash,
+                                                            VerifiedSerialNumber, SerialEvidenceSource,
+                                                            SerialEvidenceVerifiedUtc, RegistrationSource,
+                                                            IsHidden, IsDefault, ArchivedUtc, CreatedUtc, UpdatedUtc)
+                                                         VALUES (@deviceId,@robotId,@friendly,@firmware,@application,@active,
+                                                                 @certificate,@identity,@build,@config,@serial,@serialSource,
+                                                                 @serialUtc,@registration,@hidden,FALSE,@archived,@created,@updated)
+                                                         ON CONFLICT DO NOTHING
+                                                         """, connection, transaction);
+            AddRecoveryDeviceParameters(command, device);
+            insertedDevices += await command.ExecuteNonQueryAsync();
+        }
+
+        foreach (var link in plan.AccountDeviceLinksToInsert)
+        {
+            await using var command = new NpgsqlCommand("""
+                                                         INSERT INTO AccountDevices(AccountId,DeviceId,Relationship,CreatedUtc)
+                                                         VALUES (@account,@device,@relationship,@created)
+                                                         ON CONFLICT DO NOTHING
+                                                         """, connection, transaction);
+            command.Parameters.AddWithValue("account", link.AccountId);
+            command.Parameters.AddWithValue("device", link.DeviceId);
+            command.Parameters.AddWithValue("relationship", link.Relationship);
+            command.Parameters.AddWithValue("created", link.CreatedUtc);
+            insertedLinks += await command.ExecuteNonQueryAsync();
+        }
+
+        foreach (var mapping in plan.DeviceHostMappingsToInsert)
+        {
+            await using var command = new NpgsqlCommand("""
+                                                         INSERT INTO DeviceHostMappings(DeviceId,MappingKey,MappingValue,UpdatedUtc)
+                                                         VALUES (@device,@key,@value,@updated)
+                                                         ON CONFLICT DO NOTHING
+                                                         """, connection, transaction);
+            command.Parameters.AddWithValue("device", mapping.DeviceId);
+            command.Parameters.AddWithValue("key", mapping.MappingKey);
+            command.Parameters.AddWithValue("value", mapping.MappingValue);
+            command.Parameters.AddWithValue("updated", mapping.UpdatedUtc);
+            insertedMappings += await command.ExecuteNonQueryAsync();
+        }
+
+        if (insertedDevices + insertedLinks + insertedMappings > 0)
+        {
+            await using var revision = new NpgsqlCommand("""
+                                                         UPDATE CloudStateMetadata
+                                                         SET Revision = Revision + 1, UpdatedUtc = NOW()
+                                                         WHERE StateKey = 'cloud-state'
+                                                         """, connection, transaction);
+            var revisionRows = await revision.ExecuteNonQueryAsync();
+            if (!RecoveryPlanner.IsRevisionUpdateSuccessful(revisionRows))
+                throw new InvalidOperationException(
+                    "CloudStateMetadata revision update did not affect exactly one row; recovery was rolled back.");
+            revisionBumped = true;
+        }
+        await transaction.CommitAsync();
+    }
+    else
+        await transaction.RollbackAsync();
+
+    return new RecoveryReport(plan.SourceDeviceCount,
+        plan.EligibleDevices.Count, plan.ExcludedSyntheticDevices, plan.AlreadyPresentDevices,
+        plan.DevicesToInsert.Count, plan.SourceAccountDeviceLinks.Count, plan.AccountDeviceLinksToInsert.Count,
+        plan.LinksMissingTargetAccounts, plan.SourceDeviceHostMappings.Count,
+        plan.DeviceHostMappingsToInsert.Count, apply, insertedDevices, insertedLinks, insertedMappings,
+        revisionBumped);
+}
+
+static async Task<HashSet<string>> ReadExistingDeviceIdsAsync(NpgsqlConnection connection,
+    NpgsqlTransaction transaction, IReadOnlyCollection<string> ids)
+{
+    if (ids.Count == 0) return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    await using var command = new NpgsqlCommand(
+        "SELECT DeviceId FROM Devices WHERE LOWER(DeviceId) = ANY(@ids)", connection, transaction);
+    command.Parameters.AddWithValue("ids", ids.Select(id => id.ToLowerInvariant()).ToArray());
+    var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    await using var reader = await command.ExecuteReaderAsync();
+    while (await reader.ReadAsync()) result.Add(reader.GetString(0));
+    return result;
+}
+
+static async Task<HashSet<string>> ReadExistingAccountIdsAsync(NpgsqlConnection connection,
+    NpgsqlTransaction transaction, IEnumerable<string> ids)
+{
+    var values = ids.Distinct(StringComparer.Ordinal).ToArray();
+    if (values.Length == 0) return new HashSet<string>(StringComparer.Ordinal);
+    await using var command = new NpgsqlCommand(
+        "SELECT AccountId FROM Accounts WHERE AccountId = ANY(@ids)", connection, transaction);
+    command.Parameters.AddWithValue("ids", values);
+    var result = new HashSet<string>(StringComparer.Ordinal);
+    await using var reader = await command.ExecuteReaderAsync();
+    while (await reader.ReadAsync()) result.Add(reader.GetString(0));
+    return result;
+}
+
+static async Task<HashSet<(string AccountId, string DeviceId)>> ReadExistingLinksAsync(
+    NpgsqlConnection connection, NpgsqlTransaction transaction, IReadOnlyCollection<RecoveryAccountDeviceLink> links)
+{
+    var result = new HashSet<(string, string)>();
+    foreach (var link in links)
+    {
+        await using var command = new NpgsqlCommand(
+            "SELECT 1 FROM AccountDevices WHERE AccountId=@account AND DeviceId=@device", connection, transaction);
+        command.Parameters.AddWithValue("account", link.AccountId);
+        command.Parameters.AddWithValue("device", link.DeviceId);
+        if (await command.ExecuteScalarAsync() is not null) result.Add((link.AccountId, link.DeviceId));
+    }
+    return result;
+}
+
+static async Task<HashSet<(string DeviceId, string MappingKey)>> ReadExistingMappingsAsync(
+    NpgsqlConnection connection, NpgsqlTransaction transaction, IReadOnlyCollection<RecoveryDeviceMapping> mappings)
+{
+    var result = new HashSet<(string, string)>();
+    foreach (var mapping in mappings)
+    {
+        await using var command = new NpgsqlCommand(
+            "SELECT 1 FROM DeviceHostMappings WHERE DeviceId=@device AND MappingKey=@key", connection, transaction);
+        command.Parameters.AddWithValue("device", mapping.DeviceId);
+        command.Parameters.AddWithValue("key", mapping.MappingKey);
+        if (await command.ExecuteScalarAsync() is not null) result.Add((mapping.DeviceId, mapping.MappingKey));
+    }
+    return result;
+}
+
+static string? NullableString(NpgsqlDataReader reader, int ordinal) =>
+    reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+
+static DateTimeOffset? NullableDate(NpgsqlDataReader reader, int ordinal) =>
+    reader.IsDBNull(ordinal) ? null : reader.GetFieldValue<DateTimeOffset>(ordinal);
+
+static void AddRecoveryDeviceParameters(NpgsqlCommand command, RecoveryDevice device)
+{
+    command.Parameters.AddWithValue("deviceId", device.DeviceId);
+    command.Parameters.AddWithValue("robotId", device.RobotId);
+    command.Parameters.AddWithValue("friendly", device.FriendlyName);
+    command.Parameters.AddWithValue("firmware", (object?)device.FirmwareVersion ?? DBNull.Value);
+    command.Parameters.AddWithValue("application", (object?)device.ApplicationVersion ?? DBNull.Value);
+    command.Parameters.AddWithValue("active", device.IsActive);
+    command.Parameters.AddWithValue("certificate", (object?)device.CertificateThumbprint ?? DBNull.Value);
+    command.Parameters.AddWithValue("identity", (object?)device.IssuedIdentityId ?? DBNull.Value);
+    command.Parameters.AddWithValue("build", (object?)device.BuildHash ?? DBNull.Value);
+    command.Parameters.AddWithValue("config", (object?)device.ConfigHash ?? DBNull.Value);
+    command.Parameters.AddWithValue("serial", (object?)device.VerifiedSerialNumber ?? DBNull.Value);
+    command.Parameters.AddWithValue("serialSource", (object?)device.SerialEvidenceSource ?? DBNull.Value);
+    command.Parameters.AddWithValue("serialUtc", (object?)device.SerialEvidenceVerifiedUtc ?? DBNull.Value);
+    command.Parameters.AddWithValue("registration", device.RegistrationSource);
+    command.Parameters.AddWithValue("hidden", device.IsHidden);
+    command.Parameters.AddWithValue("archived", (object?)device.ArchivedUtc ?? DBNull.Value);
+    command.Parameters.AddWithValue("created", device.CreatedUtc);
+    command.Parameters.AddWithValue("updated", device.UpdatedUtc);
+}
 static bool AppliesToTarget(string scriptPath, MigrationTarget target)
 {
     var fileName = Path.GetFileName(scriptPath);
@@ -441,6 +736,11 @@ internal sealed record MigrationOptions(
     bool ImportLegacyPersonalMemory,
     bool Verify,
     bool AuditCloudState,
+    bool RecoverMissingDevices,
+    bool ApplyRequested,
+    bool RecoveryConfirmation,
+    string? SourceStateConnectionString,
+    string? TargetStateConnectionString,
     bool ShowHelp)
 {
     public static string HelpText =>
@@ -468,6 +768,14 @@ internal sealed record MigrationOptions(
                                   Explicitly import PersistenceSnapshots/personal-memory
           --verify                Fail unless legacy snapshots have matching import ledgers
           --audit-cloud-state     Read-only aggregate comparison of legacy and normalized cloud state
+          --recover-missing-devices
+                                  Compare/recover missing non-synthetic Devices, links, and mappings
+          --source-state-connection
+                                  Preserved normalized PostgreSQL source (read-only)
+          --target-state-connection
+                                  Current normalized PostgreSQL target
+          --confirm-recover-missing-devices
+                                  Required with --apply for recovery mutations
           --verbose               Print already-applied scripts too
           --help                  Show this help
         """;
@@ -496,6 +804,11 @@ internal sealed record MigrationOptions(
         var importLegacyPersonalMemory = false;
         var verify = false;
         var auditCloudState = false;
+        var recoverMissingDevices = false;
+        var applyRequested = false;
+        var recoveryConfirmation = false;
+        string? sourceStateConnectionString = Environment.GetEnvironmentVariable("OPENJIBO_SOURCE_STATE_CONNECTION_STRING");
+        string? targetStateConnectionString = Environment.GetEnvironmentVariable("OPENJIBO_TARGET_STATE_CONNECTION_STRING");
 
         for (var index = 0; index < args.Length; index += 1)
         {
@@ -513,6 +826,7 @@ internal sealed record MigrationOptions(
                     break;
                 case "--apply":
                     previewOnly = false;
+                    applyRequested = true;
                     break;
                 case "--verbose":
                     verbose = true;
@@ -528,6 +842,18 @@ internal sealed record MigrationOptions(
                     break;
                 case "--audit-cloud-state":
                     auditCloudState = true;
+                    break;
+                case "--recover-missing-devices":
+                    recoverMissingDevices = true;
+                    break;
+                case "--confirm-recover-missing-devices":
+                    recoveryConfirmation = true;
+                    break;
+                case "--source-state-connection":
+                    sourceStateConnectionString = GetValue(args, ref index, "--source-state-connection");
+                    break;
+                case "--target-state-connection":
+                    targetStateConnectionString = GetValue(args, ref index, "--target-state-connection");
                     break;
                 case "--target":
                     target = ParseTarget(GetValue(args, ref index, "--target"));
@@ -563,6 +889,11 @@ internal sealed record MigrationOptions(
             importLegacyPersonalMemory,
             verify,
             auditCloudState,
+            recoverMissingDevices,
+            applyRequested,
+            recoveryConfirmation,
+            sourceStateConnectionString,
+            targetStateConnectionString,
             showHelp);
     }
 

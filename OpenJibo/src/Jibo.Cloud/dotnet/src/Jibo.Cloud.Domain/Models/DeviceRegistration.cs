@@ -48,6 +48,9 @@ public static class RobotRegistrationSources
         return Unknown;
     }
 
+    public static bool IsRecoverable(string? source, string? deviceId) =>
+        !IsSynthetic(Normalize(source, deviceId));
+
     public static bool IsSynthetic(string source) =>
         string.Equals(source, BrowserHarness, StringComparison.OrdinalIgnoreCase) ||
         string.Equals(source, DeploymentSmoke, StringComparison.OrdinalIgnoreCase) ||

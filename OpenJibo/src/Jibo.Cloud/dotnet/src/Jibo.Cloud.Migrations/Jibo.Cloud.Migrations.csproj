@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Jibo.Cloud.Application\Jibo.Cloud.Application.csproj" />
     <ProjectReference Include="..\Jibo.Cloud.Infrastructure\Jibo.Cloud.Infrastructure.csproj" />
+    <ProjectReference Include="..\Jibo.Cloud.Domain\Jibo.Cloud.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

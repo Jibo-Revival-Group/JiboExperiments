@@ -65,7 +65,7 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
-    public void CreateHubToken_WithDeviceId_BindsSessionToRobot()
+    public void CreateHubToken_WithDeviceId_BindsSessionWithoutCreatingVisibleInventory()
     {
         var store = new InMemoryCloudStateStore();
         var handler = new CloudAuthProtocolHandler(store);
@@ -93,8 +93,44 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("BOJW-KITCHEN-0001", kitchenSession.DeviceId);
         Assert.Equal("BOJW-OFFICE-0002", officeSession.DeviceId);
         Assert.NotEqual(kitchenSession.DeviceId, officeSession.DeviceId);
-        Assert.Contains(store.GetDevices(), device => device.DeviceId == "BOJW-KITCHEN-0001");
-        Assert.Contains(store.GetDevices(), device => device.DeviceId == "BOJW-OFFICE-0002");
+        Assert.DoesNotContain(store.GetDevices(), device => device.DeviceId == "BOJW-KITCHEN-0001");
+        Assert.DoesNotContain(store.GetDevices(), device => device.DeviceId == "BOJW-OFFICE-0002");
+    }
+
+    [Fact]
+    public void CreateHubToken_ReconnectInheritsExplicitCanonicalRobotLinkWithoutDuplicateInventory()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "Royal-Current-Sage-Canvas",
+            RobotId = "Royal-Current-Sage-Canvas",
+            FriendlyName = "Royal-Current-Sage-Canvas"
+        });
+        var handler = new CloudAuthProtocolHandler(store);
+
+        var firstResult = handler.HandleAccount("CreateHubToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"5c0b221fdf9d450019c5e254"}"""
+        });
+        using var firstPayload = JsonDocument.Parse(firstResult.BodyText);
+        var firstSession = store.OpenSession("neo-hub-listen", null,
+            firstPayload.RootElement.GetProperty("token").GetString(), "neohub.openjibo.com", "/v1/listen");
+
+        Assert.True(store.BindSessionToDevice(firstSession.SessionId, "Royal-Current-Sage-Canvas"));
+
+        var reconnectResult = handler.HandleAccount("CreateHubToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"5c0b221fdf9d450019c5e254"}"""
+        });
+        using var reconnectPayload = JsonDocument.Parse(reconnectResult.BodyText);
+        var reconnect = store.OpenSession("neo-hub-listen", null,
+            reconnectPayload.RootElement.GetProperty("token").GetString(), "neohub.openjibo.com", "/v1/listen");
+
+        Assert.Equal("5c0b221fdf9d450019c5e254", reconnect.DeviceId);
+        Assert.Equal("Royal-Current-Sage-Canvas", reconnect.Metadata["registeredDeviceId"]?.ToString());
+        Assert.Equal("Royal-Current-Sage-Canvas", reconnect.Metadata["registeredRobotId"]?.ToString());
+        Assert.DoesNotContain(store.GetDevices(), device => device.DeviceId == "5c0b221fdf9d450019c5e254");
     }
 
     [Fact]

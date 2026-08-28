@@ -36,8 +36,10 @@ public sealed class CloudAuthProtocolHandler(
                     stateStore.GetRobot().DeviceId));
 
             // Real hardware often reaches the cloud through the hub-token flow before it has
-            // completed a separate registration exchange. Preserve that observed identity so
-            // dashboard activity can be joined to a concrete robot record.
+            // completed a separate registration exchange. Preserve the observed identity on the
+            // durable token/session, but do not promote it into visible inventory. A trusted
+            // RobotIdentityLink can attach the session to an existing canonical robot; genuinely
+            // new hardware remains an unlinked observed session until it is explicitly registered.
             if (!string.IsNullOrWhiteSpace(deviceId))
             {
                 var registrationSource = envelope.Headers.TryGetValue("X-OpenJibo-Registration-Source",
@@ -51,8 +53,6 @@ public sealed class CloudAuthProtocolHandler(
                     return ProtocolDispatchResult.Raw(403,
                         "{\"message\":\"Deployment smoke registration requires NewRobotToken.\"}",
                         "application/x-amz-json-1.1");
-                stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion,
-                    registrationSource);
             }
 
             return ProtocolDispatchResult.Ok(new

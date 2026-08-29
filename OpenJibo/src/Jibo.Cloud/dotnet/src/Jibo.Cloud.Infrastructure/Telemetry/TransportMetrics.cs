@@ -88,6 +88,8 @@ public sealed class TransportMetrics : ITransportMetrics, IDisposable
             unit: "{connection}");
     }
 
+    internal Meter Meter => _meter;
+
     public void HttpPayload(string direction, string endpointClass, string method, int statusCode, long bytes)
     {
         var tags = new TagList

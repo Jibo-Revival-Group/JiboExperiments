@@ -800,6 +800,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AccountId = _account.AccountId,
             Token = token,
             DeviceId = resolvedDeviceId,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365),
             Metadata = BuildSessionMetadata(_account.AccountId, resolvedDeviceId, ResolveDefaultLoopId())
         });
 
@@ -816,6 +817,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AccountId = _account.AccountId,
             Token = token,
             DeviceId = deviceId,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365),
             Metadata = BuildSessionMetadata(_account.AccountId, deviceId, ResolveDefaultLoopId())
         });
 
@@ -984,6 +986,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                string.Equals(key, "lastClockDomain", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(key, "sleepState", StringComparison.OrdinalIgnoreCase);
     }
+
+    public CloudSession? FindIssuedToken(string token) =>
+        string.IsNullOrWhiteSpace(token) ? null : _sessions.FindDurable(token.Trim());
 
     public CloudSession? FindSessionByToken(string token)
     {

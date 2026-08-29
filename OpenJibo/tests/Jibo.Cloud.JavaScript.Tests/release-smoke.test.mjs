@@ -250,6 +250,8 @@ test("runReleaseSmoke holds quiet robots and completes rotating concurrent turns
   const protocolCall = async (service, operation, body) => {
     if (service === "Notification_20160715" && operation === "NewRobotToken")
       return { token: `token-${body.deviceId}` };
+    if (service === "Account_20160715" && operation === "CreateHubToken")
+      return { token: `hub-${body.deviceId}` };
     if (service === "Robot_20160225" && operation === "GetRobot") return { id: body.id };
     throw new Error(`Unexpected protocol call ${service}.${operation}`);
   };

@@ -450,7 +450,7 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
     public CloudSession? FindActiveSessionByToken(string token) =>
         string.IsNullOrWhiteSpace(token) ? null : _sessions.FindActive(token.Trim());
 
-    public CloudSession? FindSessionByToken(string token)
+    public CloudSession? FindIssuedToken(string token)
     {
         if (string.IsNullOrWhiteSpace(token)) return null;
         var key = token.Trim();
@@ -467,6 +467,9 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
 
         return durable;
     }
+
+    public CloudSession? FindSessionByToken(string token) =>
+        string.IsNullOrWhiteSpace(token) ? null : _sessions.FindActive(token.Trim()) ?? FindIssuedToken(token);
 
     public bool BindSessionToDevice(string sessionId, string deviceId)
     {

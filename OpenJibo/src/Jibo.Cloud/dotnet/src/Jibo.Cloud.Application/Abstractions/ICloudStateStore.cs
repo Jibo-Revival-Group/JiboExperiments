@@ -41,6 +41,7 @@ public interface ICloudStateStore
     string IssueHubToken(string? deviceId = null, bool useDefaultRobot = true);
     string IssueRobotToken(string deviceId);
     string IssueDeploymentSmokeRobotToken(string deviceId);
+    CloudSession? FindIssuedToken(string token);
     CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path);
     void CloseSession(string sessionId);
     CloudSession? FindActiveSessionByToken(string token);

@@ -124,6 +124,10 @@ h2 {
   margin-top: 1rem;
 }
 
+.grid.two > .wide-panel {
+  grid-column: 1 / -1;
+}
+
 .meta-list.compact {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

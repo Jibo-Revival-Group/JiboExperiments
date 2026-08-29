@@ -518,7 +518,7 @@ async function renderLogin(message = "", isError = false) {
         <p class="lede">Sign in with your OpenJibo account to manage your paired robots.</p>
 
         <label for="accountEmail">Email</label>
-        <input id="accountEmail" type="email" autocomplete="email" placeholder="you@example.com">
+        <input id="accountEmail" type="email" autocomplete="email" placeholder="ChunkyLover53@aol.com">
 
         <label for="accountPassword">Password</label>
         <input id="accountPassword" type="password" autocomplete="current-password" minlength="8" maxlength="32">
@@ -559,7 +559,7 @@ async function renderCreateAccount(message = "", isError = false) {
         <p class="lede">Use 8 to 32 characters for your password.</p>
 
         <label for="accountEmail">Email</label>
-        <input id="accountEmail" type="email" autocomplete="email" placeholder="you@example.com">
+        <input id="accountEmail" type="email" autocomplete="email" placeholder="ChunkyLover53@aol.com">
         <label for="accountPassword">Password</label>
         <input id="accountPassword" type="password" autocomplete="new-password" minlength="8" maxlength="32">
         <label for="accountPasswordConfirm">Confirm password</label>
@@ -1033,7 +1033,7 @@ function renderLoopPanel(dashboard) {
     `).join("");
 
   return `
-    <section class="card panel">
+    <section class="card panel wide-panel">
       <div class="panel-header">
         <div>
           <p class="eyebrow">Household</p>

@@ -516,6 +516,68 @@ public sealed class ResponsePlanToSocketMessagesMapper
         return messages;
     }
 
+    public static IReadOnlyList<SocketReplyPlan> MapProactive(
+        ResponsePlan plan,
+        TurnContext turn,
+        CloudSession session)
+    {
+        var transId = turn.Attributes.TryGetValue("transID", out var value)
+            ? value?.ToString() ?? string.Empty
+            : session.LastTransId ?? string.Empty;
+        var speak = plan.Actions.OfType<SpeakAction>().FirstOrDefault();
+        var skill = plan.Actions.OfType<InvokeNativeSkillAction>().FirstOrDefault();
+        var noAction = string.IsNullOrWhiteSpace(plan.IntentName) ||
+                       string.Equals(plan.IntentName, "trigger_ignored", StringComparison.OrdinalIgnoreCase) ||
+                       speak is null && skill is null;
+        if (noAction)
+            return MapProactiveNoAction(transId);
+
+        var onRobot = skill?.SkillName?.StartsWith("@be/", StringComparison.OrdinalIgnoreCase) == true;
+        var skillId = onRobot ? skill!.SkillName : "chitchat-skill";
+        var emitSkillAction = speak is not null && !onRobot;
+        var messages = new List<SocketReplyPlan>
+        {
+            new(JsonSerializer.Serialize(new
+            {
+                type = "PROACTIVE",
+                msgID = CloudMessageIdFactory.CreateHubMessageId(),
+                ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                transID = transId,
+                data = new
+                {
+                    match = new
+                    {
+                        skillID = skillId,
+                        onRobot,
+                        isProactive = true,
+                        launch = true,
+                        skipSurprises = true
+                    }
+                },
+                final = !emitSkillAction
+            }))
+        };
+
+        if (emitSkillAction)
+            messages.Add(new SocketReplyPlan(
+                JsonSerializer.Serialize(BuildSkillPayload(plan, transId, speak!, skill)),
+                75));
+        return messages;
+    }
+
+    public static IReadOnlyList<SocketReplyPlan> MapProactiveNoAction(string transId) =>
+    [
+        new SocketReplyPlan(JsonSerializer.Serialize(new
+        {
+            type = "PROACTIVE",
+            msgID = CloudMessageIdFactory.CreateHubMessageId(),
+            ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            transID = transId,
+            data = new { },
+            final = true
+        }))
+    ];
+
     public static IReadOnlyList<SocketReplyPlan> MapFallback(string transId,
         IReadOnlyList<string> rules)
     {
@@ -871,8 +933,8 @@ public sealed class ResponsePlanToSocketMessagesMapper
         var esml = ReadPayloadString(skillPayload, "esml") ?? (isDance
             ? "<speak>Okay.<break size='0.2'/> Watch this.<anim cat='dance' filter='music, rom-upbeat' /></speak>"
             : isJoke
-                ? $"<speak><es cat='happy' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>"
-                : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXml(speak.Text)}</es></speak>");
+                ? $"<speak><es cat='happy' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXmlText(speak.Text)}</es></speak>"
+                : $"<speak><es cat='neutral' filter='!ssa-only, !sfx-only' endNeutral='true'>{EscapeXmlText(speak.Text)}</es></speak>");
         var mimId = ReadPayloadString(skillPayload, "mim_id") ?? (isJoke ? "runtime-joke" : "runtime-chat");
         var mimType = ReadPayloadString(skillPayload, "mim_type") ?? "announcement";
         var promptId = ReadPayloadString(skillPayload, "prompt_id") ?? "RUNTIME_PROMPT";
@@ -1298,6 +1360,14 @@ public sealed class ResponsePlanToSocketMessagesMapper
             .Replace("<", "&lt;", StringComparison.Ordinal)
             .Replace(">", "&gt;", StringComparison.Ordinal)
             .Replace("\"", "&quot;", StringComparison.Ordinal);
+    }
+
+    private static string EscapeXmlText(string value)
+    {
+        return value
+            .Replace("&", "&amp;", StringComparison.Ordinal)
+            .Replace("<", "&lt;", StringComparison.Ordinal)
+            .Replace(">", "&gt;", StringComparison.Ordinal);
     }
 
     private static string? ReadPayloadString(IDictionary<string, object?>? payload, string key)

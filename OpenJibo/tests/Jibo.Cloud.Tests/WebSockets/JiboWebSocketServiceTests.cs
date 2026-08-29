@@ -9236,6 +9236,82 @@ public sealed class JiboWebSocketServiceTests
     }
 
     [Fact]
+    public async Task ProactiveTrigger_WaitsForContext_AndEmitsFinalNoActionWithoutListenFrames()
+    {
+        var token = _store.IssueHubToken("proactive-contract-device-a");
+        const string connectionId = "proactive-contract-connection-a";
+
+        var triggerReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = connectionId,
+            HostName = "neo-hub.jibo.com",
+            Path = "/v1/proactive",
+            Kind = "neo-hub-proactive",
+            Token = token,
+            Text =
+                """{"type":"TRIGGER","transID":"trans-proactive-contract-a","data":{"triggerSource":"SURPRISE","triggerData":{"looperID":"person-1"}}}"""
+        });
+
+        Assert.Empty(triggerReplies);
+
+        var contextReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = connectionId,
+            HostName = "neo-hub.jibo.com",
+            Path = "/v1/proactive",
+            Kind = "neo-hub-proactive",
+            Token = token,
+            Text =
+                """{"type":"CONTEXT","transID":"trans-proactive-contract-a","data":{"runtime":{"perception":{"speaker":"person-1"},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}}"""
+        });
+
+        var reply = Assert.Single(contextReplies);
+        Assert.Equal("PROACTIVE", ReadReplyType(reply));
+        Assert.DoesNotContain(contextReplies, candidate => ReadReplyType(candidate) is "LISTEN" or "EOS");
+        using var payload = JsonDocument.Parse(reply.Text!);
+        Assert.True(payload.RootElement.GetProperty("final").GetBoolean());
+        Assert.Empty(payload.RootElement.GetProperty("data").EnumerateObject());
+    }
+
+    [Fact]
+    public async Task ProactivePresence_EmitsMatchThenSkillActionWithoutListenFrames()
+    {
+        var token = _store.IssueHubToken("proactive-contract-device-b");
+        const string connectionId = "proactive-contract-connection-b";
+
+        var triggerReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = connectionId,
+            HostName = "neo-hub.jibo.com",
+            Path = "/v1/proactive",
+            Kind = "neo-hub-proactive",
+            Token = token,
+            Text =
+                """{"type":"TRIGGER","transID":"trans-proactive-contract-b","data":{"triggerSource":"PRESENCE","triggerData":{"looperID":"person-1"}}}"""
+        });
+        Assert.Empty(triggerReplies);
+
+        var contextReplies = await _service.HandleMessageAsync(new WebSocketMessageEnvelope
+        {
+            ConnectionId = connectionId,
+            HostName = "neo-hub.jibo.com",
+            Path = "/v1/proactive",
+            Kind = "neo-hub-proactive",
+            Token = token,
+            Text =
+                """{"type":"CONTEXT","transID":"trans-proactive-contract-b","data":{"runtime":{"perception":{"speaker":"person-1","peoplePresent":[{"id":"person-1"}]},"loop":{"users":[{"id":"person-1","firstName":"jake"}]}}}}"""
+        });
+
+        Assert.NotEmpty(contextReplies);
+        Assert.Equal("PROACTIVE", ReadReplyType(contextReplies[0]));
+        Assert.DoesNotContain(contextReplies, candidate => ReadReplyType(candidate) is "LISTEN" or "EOS");
+        Assert.Contains(contextReplies, candidate => ReadReplyType(candidate) == "SKILL_ACTION");
+        using var payload = JsonDocument.Parse(contextReplies[0].Text!);
+        Assert.False(payload.RootElement.GetProperty("final").GetBoolean());
+        Assert.True(payload.RootElement.GetProperty("data").TryGetProperty("match", out _));
+    }
+
+    [Fact]
     public async Task WhoAmI_DoesNotLeaveFollowUpOpen()
     {
         var token = _store.IssueRobotToken("identity-close-token");

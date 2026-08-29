@@ -625,6 +625,61 @@ public sealed class WebSocketTurnFinalizationService(
         return replies;
     }
 
+    public async Task<IReadOnlyList<WebSocketReply>> HandleProactiveAsync(
+        CloudSession session,
+        WebSocketMessageEnvelope envelope,
+        CancellationToken cancellationToken = default)
+    {
+        var turnState = session.TurnState;
+        if (!turnState.TryBeginFinalization())
+            return ResponsePlanToSocketMessagesMapper.MapProactiveNoAction(
+                    session.LastTransId ?? string.Empty)
+                .Select(map => new WebSocketReply
+                {
+                    Text = map.Text,
+                    DelayMs = map.DelayMs
+                })
+                .ToArray();
+
+        try
+        {
+            var turn = ProtocolToTurnContextMapper.MapListenMessage(envelope, session, "TRIGGER");
+            AmbientTurnProgressPublisher.BindTurn(turn, session);
+            var plan = await conversationBroker.HandleTurnAsync(turn, cancellationToken);
+            session.LastTranscript = turn.NormalizedTranscript ?? turn.RawTranscript;
+            session.LastIntent = plan.IntentName;
+            session.LastListenType = null;
+            UpdatePendingProactivityOffer(session, plan.IntentName);
+            await ApplyContextUpdatesAsync(
+                session,
+                plan.ContextUpdates,
+                envelope,
+                plan.IntentName,
+                cancellationToken);
+            PersistInvokedSkillId(
+                session,
+                plan.Actions.OfType<InvokeNativeSkillAction>().FirstOrDefault(),
+                false);
+            session.FollowUpExpiresUtc = null;
+            turnState.AwaitingTurnCompletion = false;
+
+            var replies = ResponsePlanToSocketMessagesMapper.MapProactive(plan, turn, session)
+                .Select(map => new WebSocketReply
+                {
+                    Text = map.Text,
+                    DelayMs = map.DelayMs
+                })
+                .ToArray();
+            ResetBufferedAudio(session);
+            ClearListenTracking(turnState);
+            return replies;
+        }
+        finally
+        {
+            turnState.EndFinalization();
+        }
+    }
+
     public IReadOnlyList<WebSocketReply> HandleListenSetup(CloudSession session,
         WebSocketMessageEnvelope envelope)
     {

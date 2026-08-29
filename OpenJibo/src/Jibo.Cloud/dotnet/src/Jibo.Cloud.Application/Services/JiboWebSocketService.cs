@@ -12,13 +12,19 @@ public sealed class JiboWebSocketService(
     ICloudStateStore stateStore,
     IWebSocketTelemetrySink telemetrySink,
     WebSocketTurnFinalizationService turnFinalizationService,
+    ProactiveTransactionHandler proactiveTransactionHandler,
     ILogger<JiboWebSocketService> logger)
 {
     public JiboWebSocketService(
         ICloudStateStore stateStore,
         IWebSocketTelemetrySink telemetrySink,
         WebSocketTurnFinalizationService turnFinalizationService)
-        : this(stateStore, telemetrySink, turnFinalizationService, NullLogger<JiboWebSocketService>.Instance)
+        : this(
+            stateStore,
+            telemetrySink,
+            turnFinalizationService,
+            new ProactiveTransactionHandler(turnFinalizationService),
+            NullLogger<JiboWebSocketService>.Instance)
     {
     }
 
@@ -124,6 +130,23 @@ public sealed class JiboWebSocketService(
         {
             case "CONTEXT":
             {
+                if (string.Equals(envelope.Kind, "neo-hub-proactive", StringComparison.OrdinalIgnoreCase) &&
+                    proactiveTransactionHandler.HasPendingTrigger(envelope))
+                {
+                    var proactiveReplies = await proactiveTransactionHandler.HandleContextAsync(
+                        session,
+                        envelope,
+                        cancellationToken);
+                    await telemetrySink.RecordTurnEventAsync(envelope, session, "proactive_context_completed",
+                        new Dictionary<string, object?>
+                        {
+                            ["replyCount"] = proactiveReplies.Count,
+                            ["replyTypes"] = proactiveReplies.Select(reply => ReadMessageType(reply.Text)).ToArray(),
+                            ["transID"] = session.LastTransId
+                        }, cancellationToken);
+                    return proactiveReplies;
+                }
+
                 var replies = await turnFinalizationService.HandleContextAsync(session, envelope, cancellationToken);
                 if (!string.IsNullOrWhiteSpace(session.DeviceId))
                     stateStore.ReinheritDialogMetadata(session);
@@ -158,6 +181,17 @@ public sealed class JiboWebSocketService(
                         ["glsmPhase"] = WebSocketTurnFinalizationService.ResolveGlsmPhase(session),
                         ["staleListenRecovered"] = staleListenRecovered,
                         ["staleListenAgeMs"] = staleListenAgeMs
+                    }, cancellationToken);
+                return replies;
+            }
+            case "TRIGGER" when
+                string.Equals(envelope.Kind, "neo-hub-proactive", StringComparison.OrdinalIgnoreCase):
+            {
+                var replies = proactiveTransactionHandler.HandleTrigger(session, envelope, cancellationToken);
+                await telemetrySink.RecordTurnEventAsync(envelope, session, "proactive_trigger_held",
+                    new Dictionary<string, object?>
+                    {
+                        ["transID"] = session.LastTransId
                     }, cancellationToken);
                 return replies;
             }

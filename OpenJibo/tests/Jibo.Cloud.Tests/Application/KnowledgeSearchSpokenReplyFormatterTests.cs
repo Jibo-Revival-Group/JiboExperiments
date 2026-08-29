@@ -69,6 +69,26 @@ public sealed class KnowledgeSearchSpokenReplyFormatterTests
         Assert.Equal($"According to wikipedia dot org. {expectedBody}", reply);
     }
 
+    [Theory]
+    [InlineData(
+        "The definition of & quot ;our& quot ; is possessive.",
+        "The definition of \"our\" is possessive.")]
+    [InlineData(
+        "The definition of &quot;our&quot; is possessive.",
+        "The definition of \"our\" is possessive.")]
+    [InlineData(
+        "The definition of &amp;quot;our&amp;quot; is possessive.",
+        "The definition of \"our\" is possessive.")]
+    [InlineData(
+        "Rock & amp ; roll uses an ampersand.",
+        "Rock & roll uses an ampersand.")]
+    public void FormatReply_DecodesValidAndMalformedHtmlEntities(string input, string expectedBody)
+    {
+        var reply = KnowledgeSearchSpokenReplyFormatter.FormatReply(input, SearchBackendKind.Wolfram);
+
+        Assert.Equal($"According to wolf ram alpha. {expectedBody}", reply);
+    }
+
     [Fact]
     public void FormatReply_ReturnsEmpty_WhenAnswerMissing()
     {

@@ -297,6 +297,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ProtocolToTurnContextMapper>();
         services.AddSingleton<ResponsePlanToSocketMessagesMapper>();
         services.AddSingleton<WebSocketTurnFinalizationService>();
+        services.AddSingleton<ProactiveTransactionHandler>();
         services.AddSingleton<JiboCloudProtocolService>();
         services.AddSingleton<JiboWebSocketService>();
         services.AddSingleton<JiboVerificationService>();

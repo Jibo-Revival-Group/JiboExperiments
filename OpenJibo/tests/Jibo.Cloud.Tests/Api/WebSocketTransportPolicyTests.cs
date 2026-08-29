@@ -20,6 +20,26 @@ public sealed class WebSocketTransportPolicyTests
     }
 
     [Fact]
+    public void IsAllowed_RejectsPlainHttpInManagedModeByDefault()
+    {
+        var policy = CreatePolicy("managed");
+        var context = new DefaultHttpContext();
+        context.Request.Scheme = "http";
+
+        Assert.False(policy.IsAllowed(context.Request));
+    }
+
+    [Fact]
+    public void IsAllowed_AllowsPlainHttpInManagedModeWhenSecurityIsDisabled()
+    {
+        var policy = CreatePolicy("managed", securityMode: "false");
+        var context = new DefaultHttpContext();
+        context.Request.Scheme = "http";
+
+        Assert.True(policy.IsAllowed(context.Request));
+    }
+
+    [Fact]
     public void IsAllowed_AllowsHttpOnlyForExplicitIsolatedSelfHosting()
     {
         var policy = CreatePolicy("self-hosted-isolated");
@@ -66,13 +86,15 @@ public sealed class WebSocketTransportPolicyTests
 
     private static WebSocketTransportPolicy CreatePolicy(
         string? deploymentMode,
-        string? containerAppRevision = null)
+        string? containerAppRevision = null,
+        string? securityMode = null)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["OpenJibo:Deployment:Mode"] = deploymentMode,
-                ["CONTAINER_APP_REVISION"] = containerAppRevision
+                ["CONTAINER_APP_REVISION"] = containerAppRevision,
+                ["OpenJibo:Security:Mode"] = securityMode
             })
             .Build();
         return new WebSocketTransportPolicy(configuration);

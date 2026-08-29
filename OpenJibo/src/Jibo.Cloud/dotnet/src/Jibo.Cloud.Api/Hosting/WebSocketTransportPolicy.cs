@@ -7,6 +7,7 @@ namespace Jibo.Cloud.Api.Hosting;
 internal sealed class WebSocketTransportPolicy(IConfiguration configuration)
 {
     private const string DeploymentModeConfigurationKey = "OpenJibo:Deployment:Mode";
+    private const string SecurityModeConfigurationKey = "OpenJibo:Security:Mode";
     private const string IsolatedSelfHostedMode = "self-hosted-isolated";
     private const string ManagedMode = "managed";
 
@@ -26,6 +27,12 @@ internal sealed class WebSocketTransportPolicy(IConfiguration configuration)
         if (string.Equals(deploymentMode, IsolatedSelfHostedMode, StringComparison.OrdinalIgnoreCase))
             return true;
 
+        // Managed deployments remain secure by default, but an explicitly
+        // disabled security mode supports controlled legacy HTTP/Ws operation.
+        if (string.Equals(deploymentMode, ManagedMode, StringComparison.OrdinalIgnoreCase) &&
+            !IsSecurityModeEnabled())
+            return true;
+
         if (request.IsHttps)
             return true;
 
@@ -39,5 +46,11 @@ internal sealed class WebSocketTransportPolicy(IConfiguration configuration)
         var forwardedValues = request.Headers["X-Forwarded-Proto"];
         return forwardedValues.Count == 1 &&
                string.Equals(forwardedValues[0], "https", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsSecurityModeEnabled()
+    {
+        var configuredValue = configuration[SecurityModeConfigurationKey];
+        return !bool.TryParse(configuredValue, out var enabled) || enabled;
     }
 }

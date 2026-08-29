@@ -12,6 +12,7 @@ param environmentName string = 'managed'
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var compactName = replace('${workloadName}${environmentName}', '-', '')
 var resolvedLogAnalyticsWorkspaceName = empty(logAnalyticsWorkspaceName) ? 'log-${workloadName}-${environmentName}' : logAnalyticsWorkspaceName
+var resolvedApplicationInsightsName = 'appi-${workloadName}-${environmentName}'
 var resolvedContainerRegistryName = empty(containerRegistryName) ? 'cr${compactName}${uniqueSuffix}' : containerRegistryName
 var resolvedKeyVaultName = empty(keyVaultName) ? 'kv-${take(workloadName, 7)}-${take(environmentName, 5)}-${take(uniqueSuffix, 6)}' : keyVaultName
 var resolvedStorageAccountName = empty(storageAccountName) ? 'st${take(compactName, 11)}${take(uniqueSuffix, 11)}' : storageAccountName
@@ -79,6 +80,19 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
       name: 'PerGB2018'
     }
     retentionInDays: 30
+  }
+}
+
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: resolvedApplicationInsightsName
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalyticsWorkspace.id
+    IngestionMode: 'LogAnalytics'
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
   }
 }
 
@@ -223,6 +237,7 @@ resource postgresDeploymentRunnerFirewallRule 'Microsoft.DBforPostgreSQL/flexibl
 }
 
 output keyVaultName string = keyVault.name
+output applicationInsightsName string = applicationInsights.name
 output keyVaultUri string = keyVault.properties.vaultUri
 output registryName string = registry.name
 output registryLoginServer string = registry.properties.loginServer

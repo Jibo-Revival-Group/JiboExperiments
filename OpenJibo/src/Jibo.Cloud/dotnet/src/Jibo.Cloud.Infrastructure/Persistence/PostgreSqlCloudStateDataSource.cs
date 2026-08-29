@@ -19,7 +19,11 @@ public sealed class PostgreSqlCloudStateDataSource : IDisposable, IAsyncDisposab
             MaxPoolSize = Math.Max(1, maxPoolSize),
             ApplicationName = "OpenJibo.CloudState"
         };
-        Value = NpgsqlDataSource.Create(builder.ConnectionString);
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.ConnectionString)
+        {
+            Name = "cloud_state"
+        };
+        Value = dataSourceBuilder.Build();
     }
 
     public void Dispose() => Value.Dispose();

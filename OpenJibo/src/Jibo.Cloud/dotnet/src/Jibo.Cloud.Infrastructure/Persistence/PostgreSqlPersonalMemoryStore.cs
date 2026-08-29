@@ -419,7 +419,11 @@ public sealed class PostgreSqlPersonalMemoryStore : IPersonalMemoryStore, IDispo
             MaxPoolSize = Math.Max(1, maxPoolSize),
             ApplicationName = "OpenJibo.PersonalMemory"
         };
-        return NpgsqlDataSource.Create(connectionBuilder.ConnectionString);
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionBuilder.ConnectionString)
+        {
+            Name = "personal_memory"
+        };
+        return dataSourceBuilder.Build();
     }
 
     private static bool TryParseLegacyScope(string tenantKey, out PersonalMemoryTenantScope scope)

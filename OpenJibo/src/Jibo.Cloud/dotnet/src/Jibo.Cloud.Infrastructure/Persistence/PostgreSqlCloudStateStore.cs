@@ -376,6 +376,13 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
             friendlyName: robotId.Trim())));
     }
 
+    public DeviceRegistration RenameDeviceName(string deviceId, string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        return Sync(_devices.UpdateFriendlyNameAsync(deviceId.Trim(), name.Trim()));
+    }
+
     public DeviceRegistration? FindDeviceByFriendlyId(string friendlyId) =>
         Sync(_devices.FindByFriendlyIdAsync(friendlyId));
 

@@ -209,7 +209,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     {
         lock (_syncRoot)
         {
-            return _devices.Values.Select(CloneDeviceRegistration).ToArray();
+            return _devices.Values.Select(device => CloneDeviceRegistration(device)).ToArray();
         }
     }
 
@@ -347,6 +347,27 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
     }
 
     public DeviceRegistration RenameDeviceForAdministration(string deviceId, string robotId) => RenameDevice(deviceId, robotId);
+
+    public DeviceRegistration RenameDeviceName(string deviceId, string name)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId) || string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Device ID and name are required.");
+
+        lock (_syncRoot)
+        {
+            if (!_devices.TryGetValue(deviceId.Trim(), out var existing))
+                throw new KeyNotFoundException("Robot record was not found.");
+            if (existing.IsHidden || existing.ArchivedUtc is not null)
+                throw new InvalidOperationException("Archived robot records cannot be renamed.");
+
+            var renamed = CloneDeviceRegistration(existing, name.Trim());
+            _devices[existing.DeviceId] = renamed;
+            if (existing.DeviceId.Equals(_robot.DeviceId, StringComparison.OrdinalIgnoreCase))
+                _robot = renamed;
+            TouchState();
+            return renamed;
+        }
+    }
 
     public DeviceRegistration? FindDeviceByFriendlyId(string friendlyId)
     {
@@ -829,7 +850,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             return _devices.Values
                 .Where(item => deviceIds.Contains(item.DeviceId))
-                .Select(CloneDeviceRegistration)
+                .Select(device => CloneDeviceRegistration(device))
                 .OrderBy(item => item.FriendlyName, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(item => item.DeviceId, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
@@ -3431,13 +3452,14 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         };
     }
 
-    private static DeviceRegistration CloneDeviceRegistration(DeviceRegistration device)
+    private static DeviceRegistration CloneDeviceRegistration(DeviceRegistration device,
+        string? friendlyName = null)
     {
         return new DeviceRegistration
         {
             DeviceId = device.DeviceId,
             RobotId = device.RobotId,
-            FriendlyName = device.FriendlyName,
+            FriendlyName = friendlyName ?? device.FriendlyName,
             FirmwareVersion = device.FirmwareVersion,
             ApplicationVersion = device.ApplicationVersion,
             IsActive = device.IsActive,

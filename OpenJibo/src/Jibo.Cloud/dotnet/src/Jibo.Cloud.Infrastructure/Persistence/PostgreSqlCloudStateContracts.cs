@@ -33,6 +33,9 @@ public interface ICloudDeviceRepository
         CancellationToken cancellationToken = default);
     Task<DeviceRegistration> UpsertAsync(DeviceRegistration device, string? accountId = null,
         bool? isDefault = null, CancellationToken cancellationToken = default);
+    Task<DeviceRegistration> UpdateFriendlyNameAsync(string deviceId, string friendlyName,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Friendly-name updates are not supported by this device repository.");
     Task<RobotCredentialBinding?> GetCredentialBindingAsync(string accessKeyFingerprint,
         CancellationToken cancellationToken = default);
     Task<IReadOnlyList<RobotCredentialBinding>> ListCredentialBindingsAsync(string deviceId,

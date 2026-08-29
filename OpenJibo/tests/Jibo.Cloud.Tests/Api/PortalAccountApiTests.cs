@@ -90,10 +90,23 @@ public sealed class PortalAccountApiTests
         var robot = secondAccount.GetProperty("robots").EnumerateArray().Single();
         Assert.Equal("device-kitchen", robot.GetProperty("deviceId").GetString());
 
+        var rename = await secondClient.PutAsJsonAsync(
+            "/api/portal/robots/device-kitchen/name", new { name = "Kitchen Jibo" });
+        Assert.Equal(HttpStatusCode.OK, rename.StatusCode);
+        var renamedAccount = await secondClient.GetFromJsonAsync<JsonElement>("/api/portal/account");
+        Assert.Equal("Kitchen Jibo",
+            renamedAccount.GetProperty("robots").EnumerateArray().Single().GetProperty("friendlyName").GetString());
+
         var select = await secondClient.PostAsJsonAsync(
             "/api/portal/robots/select", new { deviceId = "device-kitchen" });
         Assert.Equal(HttpStatusCode.OK, select.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await secondClient.GetAsync("/api/portal/dashboard")).StatusCode);
+        var selected = await select.Content.ReadFromJsonAsync<JsonElement>();
+        secondClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", selected.GetProperty("portalSessionToken").GetString());
+        var dashboardResponse = await secondClient.GetAsync("/api/portal/dashboard");
+        Assert.Equal(HttpStatusCode.OK, dashboardResponse.StatusCode);
+        var dashboard = await dashboardResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Kitchen Jibo", dashboard.GetProperty("jiboName").GetString());
     }
 
     [Fact]

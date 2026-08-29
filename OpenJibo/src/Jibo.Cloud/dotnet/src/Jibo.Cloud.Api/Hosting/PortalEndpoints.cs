@@ -396,6 +396,46 @@ internal static class PortalEndpoints
             });
         });
 
+        app.MapPut("/api/portal/robots/{deviceId}/name", (
+            string deviceId,
+            [FromBody] RenamePortalRobotRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var accountSession = ResolvePortalSession(httpRequest, request.PortalSessionToken,
+                portalSessionService);
+            if (accountSession?.UserId is null)
+                return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return Results.BadRequest(new { error = "name is required." });
+
+            var name = request.Name.Trim();
+            if (name.Length > 64)
+                return Results.BadRequest(new { error = "name must be 64 characters or fewer." });
+
+            var ownsRobot = cloudStateStore.GetDevicesForUser(accountSession.UserId)
+                .Any(robot => robot.DeviceId.Equals(deviceId.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (!ownsRobot)
+                return Results.NotFound(new { error = "That robot is not paired to this account." });
+
+            try
+            {
+                var renamed = cloudStateStore.RenameDeviceName(deviceId, name);
+                return Results.Json(new
+                {
+                    deviceId = renamed.DeviceId,
+                    robotId = renamed.RobotId,
+                    friendlyName = renamed.FriendlyName
+                });
+            }
+            catch (InvalidOperationException exception)
+            {
+                return Results.BadRequest(new { error = exception.Message });
+            }
+        });
+
         app.MapPost("/api/portal/jibo-verification/confirm", (
             [FromBody] ConfirmJiboVerificationRequest request,
             JiboVerificationService verificationService,
@@ -2901,10 +2941,12 @@ internal static class PortalEndpoints
         ICloudStateStore cloudStateStore,
         IUserIntegrationStore integrationStore)
     {
+        var robot = cloudStateStore.FindDeviceByFriendlyId(session.DeviceId);
         return new
         {
             jiboFriendlyId = session.FriendlyId,
             jiboDeviceId = session.DeviceId,
+            jiboName = robot?.FriendlyName ?? session.FriendlyId,
             accountUserId = session.UserId,
             sessionExpiresAtUtc = session.ExpiresAtUtc,
             homeAssistant = link is null
@@ -3180,6 +3222,7 @@ internal static class PortalEndpoints
     private sealed record PortalAccountLoginRequest(string? Email, string? Password);
     private sealed record PairPortalRobotRequest(string? PortalSessionToken, string? Code);
     private sealed record SelectPortalRobotRequest(string? PortalSessionToken, string? DeviceId);
+    private sealed record RenamePortalRobotRequest(string? PortalSessionToken, string? Name);
 
     private sealed record LinkHomeAssistantRequest(string? PortalSessionToken, string? HaCode);
 

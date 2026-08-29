@@ -690,11 +690,21 @@ async function renderAccountHome(message = "", isError = false) {
         <h1>Your Jibos</h1>
         <p class="lede">${escapeHtml(account.email)} · Select a robot or pair a new one.</p>
         ${robots.length ? `
-          <div class="button-row">
+          <div>
             ${robots.map(robot => `
-              <button class="button secondary robot-select-button" data-device-id="${escapeHtml(robot.deviceId)}" type="button">
-                ${escapeHtml(robot.friendlyName || robot.robotId)}
-              </button>
+              <div class="robot-name-row">
+                <div>
+                  <strong>${escapeHtml(robot.friendlyName || robot.robotId)}</strong>
+                  <div class="muted">${escapeHtml(robot.robotId)}</div>
+                </div>
+                <input class="robot-name-input" data-device-id="${escapeHtml(robot.deviceId)}"
+                  value="${escapeHtml(robot.friendlyName || robot.robotId)}" maxlength="64"
+                  aria-label="Name for ${escapeHtml(robot.friendlyName || robot.robotId)}">
+                <div class="robot-name-actions">
+                  <button class="button secondary robot-select-button" data-device-id="${escapeHtml(robot.deviceId)}" type="button">Open</button>
+                  <button class="button secondary robot-name-save-button" data-device-id="${escapeHtml(robot.deviceId)}" type="button">Save name</button>
+                </div>
+              </div>
             `).join("")}
           </div>
         ` : `<p class="status info">No robots are paired to this account yet.</p>`}
@@ -715,6 +725,13 @@ async function renderAccountHome(message = "", isError = false) {
 
   document.querySelectorAll(".robot-select-button").forEach(button => {
     button.addEventListener("click", () => selectRobot(button.dataset.deviceId));
+  });
+  document.querySelectorAll(".robot-name-save-button").forEach(button => {
+    button.addEventListener("click", () => {
+      const row = button.closest(".robot-name-row");
+      const input = row.querySelector(".robot-name-input");
+      saveRobotName(button.dataset.deviceId, input.value.trim());
+    });
   });
   const pairCode = document.getElementById("pairCode");
   document.getElementById("pairRobotButton").addEventListener("click", () => pairRobot(pairCode.value.trim()));
@@ -751,6 +768,22 @@ async function selectRobot(deviceId) {
     });
     setSessionToken(payload.portalSessionToken);
     await renderDashboard();
+  } catch (error) {
+    await renderAccountHome(error.message, true);
+  }
+}
+
+async function saveRobotName(deviceId, name) {
+  if (!name) {
+    await renderAccountHome("Enter a name for this robot.", true);
+    return;
+  }
+  try {
+    await apiFetch(`/api/portal/robots/${encodeURIComponent(deviceId)}/name`, {
+      method: "PUT",
+      body: JSON.stringify({ name }),
+    });
+    await renderAccountHome("Robot name saved.");
   } catch (error) {
     await renderAccountHome(error.message, true);
   }
@@ -1139,7 +1172,7 @@ async function renderDashboard(message = "", tone = "success") {
       <header class="dashboard-header">
         <div>
           <p class="eyebrow">OpenJibo Dashboard</p>
-          <h1>${escapeHtml(dashboard.jiboFriendlyId || "Your Jibo")}</h1>
+          <h1>${escapeHtml(dashboard.jiboName || dashboard.jiboFriendlyId || "Your Jibo")}</h1>
           <p class="muted">Manage integrations for this robot.</p>
         </div>
         <div class="button-row" style="margin-top: 0;">
@@ -1153,6 +1186,7 @@ async function renderDashboard(message = "", tone = "success") {
           <p class="eyebrow">Robot</p>
           <h2>Jibo profile</h2>
           <div class="meta-list">
+            <div class="meta-item"><span>Name</span><span>${escapeHtml(dashboard.jiboName || "—")}</span></div>
             <div class="meta-item"><span>Friendly ID</span><span>${escapeHtml(dashboard.jiboFriendlyId || "—")}</span></div>
             <div class="meta-item"><span>Device ID</span><span>${escapeHtml(dashboard.jiboDeviceId || "—")}</span></div>
             <div class="meta-item"><span>Portal session</span><span>${formatDate(dashboard.sessionExpiresAtUtc)}</span></div>

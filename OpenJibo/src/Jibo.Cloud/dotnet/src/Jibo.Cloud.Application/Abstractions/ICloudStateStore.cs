@@ -22,6 +22,7 @@ public interface ICloudStateStore
     DeviceRegistration UpsertDeviceForAdministration(DeviceRegistration registration);
     DeviceRegistration RenameDevice(string deviceId, string robotId);
     DeviceRegistration RenameDeviceForAdministration(string deviceId, string robotId);
+    DeviceRegistration RenameDeviceName(string deviceId, string name);
     DeviceRegistration? FindDeviceByFriendlyId(string friendlyId);
     DeviceRegistration? FindDeviceByAwsCredentialFingerprint(string accessKeyFingerprint);
     IReadOnlyList<RobotCredentialBinding> GetRobotCredentialBindings();

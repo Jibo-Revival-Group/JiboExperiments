@@ -17,6 +17,7 @@ internal sealed class WebSocketRequestCoordinator(
     ICloudStateStore cloudStateStore,
     ITransportMetrics transportMetrics,
     SingleRobotHttpHubAccessGuard singleRobotHttpHubAccessGuard,
+    WebSocketTransportPolicy transportPolicy,
     ILogger<WebSocketRequestCoordinator> logger)
 {
     private static readonly TimeSpan TurnWatchdogInterval = TimeSpan.FromMilliseconds(250);
@@ -41,6 +42,7 @@ internal sealed class WebSocketRequestCoordinator(
             cloudStateStore,
             NullTransportMetrics.Instance,
             new SingleRobotHttpHubAccessGuard(false),
+            new WebSocketTransportPolicy(true),
             NullLogger<WebSocketRequestCoordinator>.Instance)
     {
     }
@@ -60,6 +62,7 @@ internal sealed class WebSocketRequestCoordinator(
             cloudStateStore,
             NullTransportMetrics.Instance,
             singleRobotHttpHubAccessGuard,
+            new WebSocketTransportPolicy(true),
             NullLogger<WebSocketRequestCoordinator>.Instance)
     {
     }
@@ -80,6 +83,7 @@ internal sealed class WebSocketRequestCoordinator(
             cloudStateStore,
             NullTransportMetrics.Instance,
             new SingleRobotHttpHubAccessGuard(false),
+            new WebSocketTransportPolicy(true),
             logger)
     {
     }
@@ -88,6 +92,27 @@ internal sealed class WebSocketRequestCoordinator(
     {
         var kind = SocketKindResolver.Resolve(context.Request.Host.Host, context.Request.Path);
         var safePath = RequestLogSanitizer.RedactWebSocketPath(kind, context.Request.Path);
+        if (string.Equals(kind, "openjibo", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            logger.LogWarning(
+                "WebSocket request rejected because the route has no authenticated socket kind host={Host} path={Path}",
+                context.Request.Host.Host,
+                safePath);
+            return;
+        }
+
+        if (!transportPolicy.IsAllowed(context.Request))
+        {
+            context.Response.StatusCode = StatusCodes.Status426UpgradeRequired;
+            logger.LogWarning(
+                "WebSocket request rejected because secure transport is required kind={Kind} host={Host} path={Path}",
+                kind,
+                context.Request.Host.Host,
+                safePath);
+            return;
+        }
+
         if (string.Equals(kind, "home-assistant", StringComparison.OrdinalIgnoreCase))
         {
             logger.LogInformation(

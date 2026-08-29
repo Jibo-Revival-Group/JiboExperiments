@@ -847,6 +847,28 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         TouchState();
         return token;
     }
+    public string IssueDeploymentSmokeHubToken(string deviceId)
+    {
+        ValidateDeploymentSmokeDeviceId(deviceId);
+        var normalizedDeviceId = deviceId.Trim();
+        if (!_devices.TryGetValue(normalizedDeviceId, out var device) ||
+            !string.Equals(RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+                RobotRegistrationSources.DeploymentSmoke, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Deployment-smoke token device is not classified as deployment-smoke.");
+        _sessions.RemoveDurableForDevice(normalizedDeviceId, "hub");
+        var token = $"hub-{_account.AccountId}-{Guid.NewGuid():N}";
+        _sessions.RegisterDurableToken(token, new CloudSession
+        {
+            Kind = "hub",
+            AccountId = _account.AccountId,
+            Token = token,
+            DeviceId = normalizedDeviceId,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(15),
+            Metadata = BuildSessionMetadata(_account.AccountId, normalizedDeviceId, ResolveDefaultLoopId())
+        });
+        TouchState();
+        return token;
+    }
 
     private static void ValidateDeploymentSmokeDeviceId(string deviceId)
     {

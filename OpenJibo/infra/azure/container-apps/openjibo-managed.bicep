@@ -299,6 +299,10 @@ var managedEnvVars = concat([
     value: 'PostgreSql'
   }
   {
+    name: 'OpenJibo__Deployment__Mode'
+    value: 'managed'
+  }
+  {
     name: 'OpenJibo__Deployment__PostgreSqlServerName'
     value: postgresServerName
   }

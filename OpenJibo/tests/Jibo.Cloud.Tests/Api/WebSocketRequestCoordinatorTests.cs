@@ -15,6 +15,26 @@ namespace Jibo.Cloud.Tests.Api;
 
 public sealed class WebSocketRequestCoordinatorTests
 {
+    [Theory]
+    [InlineData("openjibo.com", "/", StatusCodes.Status404NotFound)]
+    [InlineData("api.openjibo.com", "/", StatusCodes.Status404NotFound)]
+    [InlineData("openjibo.ai", "/unexpected", StatusCodes.Status401Unauthorized)]
+    public async Task HandleAsync_RejectsGenericOpenJiboWebSocketRoutes(string host, string path, int expectedStatus)
+    {
+        var socket = new FakeWebSocket();
+        var context = CreateContext(socket);
+        context.Request.Host = new HostString(host);
+        context.Request.Path = path;
+        context.Request.Headers.Authorization = "Bearer attacker-supplied-token";
+        var coordinator = CreateCoordinator(out var telemetrySink);
+
+        await coordinator.HandleAsync(context);
+
+        Assert.Equal(expectedStatus, context.Response.StatusCode);
+        Assert.False(socket.Accepted);
+        Assert.Empty(telemetrySink.Events);
+    }
+
     [Fact]
     public async Task HandleAsync_ReturnsUnauthorized_WhenNeoHubTokenIsMissing()
     {

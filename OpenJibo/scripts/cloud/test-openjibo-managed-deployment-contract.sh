@@ -142,6 +142,7 @@ required_managed_markers=(
   "value: 'PostgreSql'"
   "value: 'AzureBlob'"
   "keyVaultContainerAppSecretAccessPolicy"
+  "OpenJibo__Deployment__Mode"
   "OPENJIBO_SEARCH_BACKEND"
   "OPENJIBO_SEARCH_FALLBACK"
   "OpenJibo__Deployment__PostgreSqlServerName"

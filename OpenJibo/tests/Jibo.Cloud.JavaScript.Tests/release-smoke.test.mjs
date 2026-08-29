@@ -124,7 +124,7 @@ test("normalizeLoadOptions validates and preserves bounded load controls", () =>
   assert.throws(() => normalizeLoadOptions({ turnRounds: "not-a-number" }), /turnRounds/);
 });
 
-test("createProtocolCaller classifies registration as deployment smoke", async () => {
+test("createProtocolCaller authorizes bounded deployment-smoke token issuance", async () => {
   const requests = [];
   const call = createProtocolCaller("https://staging.example", "api.openjibo.com", async (url, options) => {
     requests.push({ url, options });
@@ -132,12 +132,15 @@ test("createProtocolCaller classifies registration as deployment smoke", async (
   }, "test-smoke-secret");
 
   await call("Notification_20160715", "NewRobotToken", { deviceId: "open-jibo-smoke-staging-primary" });
+  await call("Account_20160715", "CreateHubToken", { deviceId: "open-jibo-smoke-staging-primary" });
   await call("Robot_20160225", "GetRobot", { id: "open-jibo-smoke-staging-primary" });
 
   assert.equal(requests[0].options.headers["X-OpenJibo-Registration-Source"], "deployment-smoke");
   assert.equal(requests[0].options.headers["X-OpenJibo-Release-Smoke-Secret"], "test-smoke-secret");
-  assert.equal(requests[1].options.headers["X-OpenJibo-Registration-Source"], undefined);
-  assert.equal(requests[1].options.headers["X-OpenJibo-Release-Smoke-Secret"], undefined);
+  assert.equal(requests[1].options.headers["X-OpenJibo-Registration-Source"], "deployment-smoke");
+  assert.equal(requests[1].options.headers["X-OpenJibo-Release-Smoke-Secret"], "test-smoke-secret");
+  assert.equal(requests[2].options.headers["X-OpenJibo-Registration-Source"], undefined);
+  assert.equal(requests[2].options.headers["X-OpenJibo-Release-Smoke-Secret"], undefined);
 });
 
 test("managed registration tolerates bounded authorization rollout and no other failures", async () => {
@@ -159,6 +162,13 @@ test("managed registration tolerates bounded authorization rollout and no other 
   });
 
   assert.deepEqual(await rolloutCall("Notification_20160715", "NewRobotToken", {}),
+    { token: "ready-token" });
+  assert.equal(calls, 3);
+  assert.deepEqual(delays, [5, 5]);
+
+  calls = 0;
+  delays.length = 0;
+  assert.deepEqual(await rolloutCall("Account_20160715", "CreateHubToken", {}),
     { token: "ready-token" });
   assert.equal(calls, 3);
   assert.deepEqual(delays, [5, 5]);

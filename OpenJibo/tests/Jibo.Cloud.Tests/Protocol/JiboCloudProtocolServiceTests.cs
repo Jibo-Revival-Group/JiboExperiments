@@ -349,6 +349,55 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.DoesNotContain(store.GetDevices(), candidate =>
             candidate.DeviceId == "open-jibo-smoke-staging-primary");
     }
+    [Fact]
+    public void CreateHubToken_DeploymentSmokeRequiresPriorAuthorizedRegistration()
+    {
+        const string deviceId = "open-jibo-smoke-staging-primary";
+        var store = new InMemoryCloudStateStore();
+        var handler = new CloudAuthProtocolHandler(store, releaseSmokeAuthorization: new ReleaseSmokeAuthorizationOptions
+        {
+            Enabled = true,
+            Secret = "test-smoke-secret",
+            MaxConcurrentDevices = 6
+        });
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["X-OpenJibo-Registration-Source"] = RobotRegistrationSources.DeploymentSmoke,
+            ["X-OpenJibo-Release-Smoke-Secret"] = "test-smoke-secret"
+        };
+
+        var registration = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = JsonSerializer.Serialize(new { deviceId }),
+            Headers = headers
+        });
+        var hubResult = handler.HandleAccount("CreateHubToken", new ProtocolEnvelope
+        {
+            BodyText = JsonSerializer.Serialize(new { deviceId }),
+            Headers = headers
+        });
+
+        Assert.Equal(200, registration.StatusCode);
+        Assert.Equal(200, hubResult.StatusCode);
+        using var payload = JsonDocument.Parse(hubResult.BodyText);
+        var token = payload.RootElement.GetProperty("token").GetString();
+        var issued = store.FindIssuedToken(token!);
+        Assert.NotNull(issued);
+        Assert.Equal("hub", issued.Kind);
+        Assert.Equal(deviceId, issued.DeviceId);
+        Assert.InRange(issued.ExpiresUtc!.Value - issued.CreatedUtc,
+            TimeSpan.FromMinutes(14), TimeSpan.FromMinutes(16));
+
+        var rejected = handler.HandleAccount("CreateHubToken", new ProtocolEnvelope
+        {
+            BodyText = JsonSerializer.Serialize(new { deviceId }),
+            Headers = new Dictionary<string, string>(headers, StringComparer.OrdinalIgnoreCase)
+            {
+                ["X-OpenJibo-Release-Smoke-Secret"] = "wrong-secret"
+            }
+        });
+        Assert.Equal(403, rejected.StatusCode);
+    }
 
     [Theory]
     [InlineData("open-jibo-smoke-staging-primary")]

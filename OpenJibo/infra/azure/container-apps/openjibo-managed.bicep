@@ -118,6 +118,10 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   name: 'log-${workloadName}-${environmentName}'
 }
 
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
+  name: 'appi-${workloadName}-${environmentName}'
+}
+
 var registryName = split(registryLoginServer, '.')[0]
 var canonicalApiBaseUrl = 'https://${apiHostname}'
 var canonicalSocketBaseUrl = 'https://${socketHostname}'
@@ -229,6 +233,18 @@ var managedEnvVars = concat([
   {
     name: 'ASPNETCORE_ENVIRONMENT'
     value: 'Production'
+  }
+  {
+    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+    value: applicationInsights.properties.ConnectionString
+  }
+  {
+    name: 'APPLICATIONINSIGHTS_METRIC_NAMESPACE_OPT_IN'
+    value: 'true'
+  }
+  {
+    name: 'OTEL_SERVICE_NAME'
+    value: 'openjibo-cloud'
   }
   {
     name: 'OpenJibo__Telemetry__Enabled'

@@ -63,7 +63,7 @@ jobs:
           node-version: 24
 
       - name: Test release smoke load driver
-        run: node --test ./tests/Jibo.Cloud.JavaScript.Tests/release-smoke.test.mjs
+        run: node --test ./tests/Jibo.Cloud.JavaScript.Tests/*.test.mjs
 
       - name: Generate local release smoke authorization
         shell: bash

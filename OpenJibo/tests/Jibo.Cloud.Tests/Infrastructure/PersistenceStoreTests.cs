@@ -21,7 +21,10 @@ public sealed class PersistenceStoreTests
         for (var index = 0; index < 300; index++)
             store.OpenSession("neo-hub-listen", "bounded-session-robot", $"conn:{index}", "neohub", "/v1/listen");
 
-        Assert.NotNull(store.FindSessionByToken(issuedToken));
+        var durableToken = store.FindIssuedToken(issuedToken);
+        Assert.NotNull(durableToken);
+        Assert.NotNull(durableToken.ExpiresUtc);
+        Assert.InRange(durableToken.ExpiresUtc.Value - durableToken.CreatedUtc, TimeSpan.FromDays(364), TimeSpan.FromDays(366));
         Assert.Equal(256, store.GetSessions().Count(session =>
             session.Token?.StartsWith("conn:", StringComparison.OrdinalIgnoreCase) == true));
         Assert.Null(store.FindSessionByToken("conn:0"));

@@ -46,13 +46,8 @@ public sealed class CloudAuthProtocolHandler(
                     out var sourceHeader)
                     ? sourceHeader
                     : null;
-                if (string.Equals(registrationSource, RobotRegistrationSources.DeploymentSmoke,
-                        StringComparison.OrdinalIgnoreCase) ||
-                    deviceId.StartsWith($"{ReleaseSmokeAuthorizationOptions.FixedPrefix}-",
-                        StringComparison.OrdinalIgnoreCase))
-                    return ProtocolDispatchResult.Raw(403,
-                        "{\"message\":\"Deployment smoke registration requires NewRobotToken.\"}",
-                        "application/x-amz-json-1.1");
+                var smokeHubToken = TryIssueDeploymentSmokeHubToken(deviceId, registrationSource, envelope);
+                if (smokeHubToken is not null) return smokeHubToken;
             }
 
             return ProtocolDispatchResult.Ok(new
@@ -264,6 +259,39 @@ public sealed class CloudAuthProtocolHandler(
         });
     }
 
+    private ProtocolDispatchResult? TryIssueDeploymentSmokeHubToken(string deviceId, string? registrationSource,
+        ProtocolEnvelope envelope)
+    {
+        var isDeploymentSmoke = string.Equals(registrationSource, RobotRegistrationSources.DeploymentSmoke,
+            StringComparison.OrdinalIgnoreCase);
+        var usesReservedNamespace = deviceId.StartsWith($"{ReleaseSmokeAuthorizationOptions.FixedPrefix}-",
+            StringComparison.OrdinalIgnoreCase);
+        if (!isDeploymentSmoke && !usesReservedNamespace) return null;
+
+        var presentedSecret = envelope.Headers.TryGetValue("X-OpenJibo-Release-Smoke-Secret", out var secretHeader)
+            ? secretHeader
+            : null;
+        if (!isDeploymentSmoke ||
+            !_releaseSmokeAuthorization.TryAuthorize(deviceId, presentedSecret, out _))
+            return ProtocolDispatchResult.Raw(403, "{\"message\":\"Deployment smoke is not authorized.\"}",
+                "application/x-amz-json-1.1");
+
+        var existing = stateStore.GetDevices().FirstOrDefault(candidate =>
+            string.Equals(candidate.DeviceId, deviceId, StringComparison.OrdinalIgnoreCase));
+        if (existing is null ||
+            !string.Equals(RobotRegistrationSources.Normalize(existing.RegistrationSource, existing.DeviceId),
+                RobotRegistrationSources.DeploymentSmoke, StringComparison.OrdinalIgnoreCase))
+            return ProtocolDispatchResult.Raw(403,
+                "{\"message\":\"Deployment smoke registration requires NewRobotToken.\"}",
+                "application/x-amz-json-1.1");
+
+        var token = stateStore.IssueDeploymentSmokeHubToken(existing.DeviceId);
+        return ProtocolDispatchResult.Ok(new
+        {
+            token,
+            expires = DateTimeOffset.UtcNow.AddMinutes(15).ToUnixTimeMilliseconds()
+        });
+    }
     private static string? ReadString(JsonElement? body, string propertyName)
     {
         return body is { ValueKind: JsonValueKind.Object } element &&

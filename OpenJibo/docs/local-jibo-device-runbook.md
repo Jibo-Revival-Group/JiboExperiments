@@ -779,6 +779,10 @@ Authorization: Bearer hub-<account>-<guid>
 The exact route `/v1/listen` is not a token. Older self-hosted behavior mistakenly
 treated the route text `v1/listen` as a connection token, which allowed direct-IP
 clients to connect without authentication. Do not restore that fallback.
+An explicit, disabled-by-default single-robot LAN compatibility mode is documented
+in [Single-Robot HTTP Self-Hosting](single-robot-http-self-hosting.md). It does not
+restore implicit route-token behavior.
+
 
 A direct-IP override must configure both the API entrypoint that issues the token
 and the Hub listener that consumes it. The ports may differ:

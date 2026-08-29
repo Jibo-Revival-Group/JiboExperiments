@@ -36,6 +36,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       OpenJibo__State__Backend: PostgreSql
+      OpenJibo__Deployment__Mode: self-hosted-isolated
       OPENJIBO_POSTGRES_HOST: postgres
       OPENJIBO_POSTGRES_PORT: "5432"
       OPENJIBO_POSTGRES_USER: openjibo
@@ -52,6 +53,7 @@ services:
       OpenJibo__ReleaseSmoke__Enabled: ${OPENJIBO_RELEASE_SMOKE_ENABLED:-false}
       OpenJibo__ReleaseSmoke__Secret: ${OPENJIBO_RELEASE_SMOKE_SECRET:-}
       OpenJibo__ReleaseSmoke__MaxConcurrentDevices: ${OPENJIBO_RELEASE_SMOKE_MAX_CONCURRENT:-6}
+      OpenJibo__SelfHosted__AllowTokenlessSingleRobotHub: ${OPENJIBO_ALLOW_TOKENLESS_SINGLE_ROBOT_HUB:-false}
     ports:
       - "8080:8080"
     depends_on:

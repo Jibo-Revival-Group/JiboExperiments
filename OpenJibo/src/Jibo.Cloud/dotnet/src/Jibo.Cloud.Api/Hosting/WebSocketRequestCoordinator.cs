@@ -16,6 +16,8 @@ internal sealed class WebSocketRequestCoordinator(
     RobotPresenceRegistry robotPresenceRegistry,
     ICloudStateStore cloudStateStore,
     ITransportMetrics transportMetrics,
+    SingleRobotHttpHubAccessGuard singleRobotHttpHubAccessGuard,
+    WebSocketTransportPolicy transportPolicy,
     ILogger<WebSocketRequestCoordinator> logger)
 {
     private static readonly TimeSpan TurnWatchdogInterval = TimeSpan.FromMilliseconds(250);
@@ -39,6 +41,28 @@ internal sealed class WebSocketRequestCoordinator(
             new RobotPresenceRegistry(),
             cloudStateStore,
             NullTransportMetrics.Instance,
+            new SingleRobotHttpHubAccessGuard(false),
+            new WebSocketTransportPolicy(true),
+            NullLogger<WebSocketRequestCoordinator>.Instance)
+    {
+    }
+
+    internal WebSocketRequestCoordinator(
+        JiboWebSocketService webSocketService,
+        HomeAssistantWebSocketHandler homeAssistantWebSocketHandler,
+        IWebSocketTelemetrySink telemetrySink,
+        ICloudStateStore cloudStateStore,
+        SingleRobotHttpHubAccessGuard singleRobotHttpHubAccessGuard)
+        : this(
+            webSocketService,
+            homeAssistantWebSocketHandler,
+            telemetrySink,
+            new RobotNotificationRegistry(),
+            new RobotPresenceRegistry(),
+            cloudStateStore,
+            NullTransportMetrics.Instance,
+            singleRobotHttpHubAccessGuard,
+            new WebSocketTransportPolicy(true),
             NullLogger<WebSocketRequestCoordinator>.Instance)
     {
     }
@@ -58,6 +82,8 @@ internal sealed class WebSocketRequestCoordinator(
             new RobotPresenceRegistry(),
             cloudStateStore,
             NullTransportMetrics.Instance,
+            new SingleRobotHttpHubAccessGuard(false),
+            new WebSocketTransportPolicy(true),
             logger)
     {
     }
@@ -66,6 +92,27 @@ internal sealed class WebSocketRequestCoordinator(
     {
         var kind = SocketKindResolver.Resolve(context.Request.Host.Host, context.Request.Path);
         var safePath = RequestLogSanitizer.RedactWebSocketPath(kind, context.Request.Path);
+        if (string.Equals(kind, "openjibo", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            logger.LogWarning(
+                "WebSocket request rejected because the route has no authenticated socket kind host={Host} path={Path}",
+                context.Request.Host.Host,
+                safePath);
+            return;
+        }
+
+        if (!transportPolicy.IsAllowed(context.Request))
+        {
+            context.Response.StatusCode = StatusCodes.Status426UpgradeRequired;
+            logger.LogWarning(
+                "WebSocket request rejected because secure transport is required kind={Kind} host={Host} path={Path}",
+                kind,
+                context.Request.Host.Host,
+                safePath);
+            return;
+        }
+
         if (string.Equals(kind, "home-assistant", StringComparison.OrdinalIgnoreCase))
         {
             logger.LogInformation(
@@ -80,6 +127,7 @@ internal sealed class WebSocketRequestCoordinator(
 
         var token = TokenResolver.Resolve(context.Request);
         var tokenFingerprint = Fingerprint(token);
+        IDisposable? singleRobotHttpHubLease = null;
         logger.LogInformation(
             "WebSocket request received traceId={TraceId} kind={Kind} tokenFingerprint={TokenFingerprint} " +
             "host={Host} path={Path} remoteIp={RemoteIp} userAgent={UserAgent}",
@@ -98,14 +146,51 @@ internal sealed class WebSocketRequestCoordinator(
                     kind, context.Request.Host.Host, safePath);
                 return;
             case "api-socket" when string.IsNullOrWhiteSpace(token):
-            case "neo-hub-listen" or "neo-hub-proactive" when string.IsNullOrWhiteSpace(token):
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 logger.LogWarning(
                     "WebSocket request rejected due to missing token kind={Kind} host={Host} path={Path} remoteIp={RemoteIp}",
                     kind, context.Request.Host.Host, safePath,
                     context.Connection.RemoteIpAddress?.ToString());
                 return;
+            case "neo-hub-listen" or "neo-hub-proactive" when string.IsNullOrWhiteSpace(token):
+                var access = singleRobotHttpHubAccessGuard.TryAcquire(context, kind);
+                if (!access.IsAllowed)
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    logger.LogWarning(
+                        "WebSocket request rejected due to missing token kind={Kind} host={Host} path={Path} " +
+                        "remoteIp={RemoteIp} tokenlessCompatibilityReason={TokenlessCompatibilityReason}",
+                        kind, context.Request.Host.Host, safePath,
+                        context.Connection.RemoteIpAddress?.ToString(), access.Reason);
+                    return;
+                }
+
+                singleRobotHttpHubLease = access.Lease;
+                logger.LogWarning(
+                    "Tokenless single-robot HTTP Hub compatibility accepted kind={Kind} host={Host} path={Path} " +
+                    "remoteIp={RemoteIp}",
+                    kind, context.Request.Host.Host, safePath,
+                    context.Connection.RemoteIpAddress?.ToString());
+                break;
         }
+
+        if (!string.IsNullOrWhiteSpace(token) && TryResolveRequiredTokenKind(kind, out var requiredTokenKind))
+        {
+            var issuedToken = cloudStateStore.FindIssuedToken(token);
+            if (issuedToken is null ||
+                !string.Equals(issuedToken.Kind, requiredTokenKind, StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                logger.LogWarning(
+                    "WebSocket request rejected due to invalid token kind={Kind} tokenFingerprint={TokenFingerprint} " +
+                    "requiredTokenKind={RequiredTokenKind} host={Host} path={Path} remoteIp={RemoteIp}",
+                    kind, tokenFingerprint, requiredTokenKind, context.Request.Host.Host, safePath,
+                    context.Connection.RemoteIpAddress?.ToString());
+                return;
+            }
+        }
+
+        using var singleRobotHttpHubLeaseScope = singleRobotHttpHubLease;
 
         // Stock OS 1.9's Neo Hub client closes when ASP.NET sends a WebSocket
         // control-frame keepalive: first at the default two-minute interval,
@@ -514,6 +599,18 @@ internal sealed class WebSocketRequestCoordinator(
             return $"conn:{envelope.ConnectionId}";
 
         return token;
+    }
+
+    private static bool TryResolveRequiredTokenKind(string socketKind, out string tokenKind)
+    {
+        tokenKind = socketKind switch
+        {
+            "api-socket" => "robot",
+            "neo-hub-listen" or "neo-hub-proactive" => "hub",
+            _ => string.Empty
+        };
+
+        return tokenKind.Length > 0;
     }
 
     private static SessionGateLease AcquireSessionGate(string sessionKey)

@@ -418,6 +418,28 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         RegisterIssuedToken(token, "robot", account.AccountId, device.DeviceId, TimeSpan.FromMinutes(15));
         return token;
     }
+    public string IssueDeploymentSmokeHubToken(string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId) ||
+            !deviceId.Trim().StartsWith("open-jibo-smoke-staging-", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Deployment-smoke tokens require the fixed staging smoke namespace.");
+        var normalizedDeviceId = deviceId.Trim();
+        var device = Sync(_devices.GetByDeviceIdAsync(normalizedDeviceId)) ??
+                     throw new KeyNotFoundException("Robot record was not found.");
+        if (!string.Equals(RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+                RobotRegistrationSources.DeploymentSmoke, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Deployment-smoke token device is not classified as deployment-smoke.");
+        Sync(_authTokens.RevokeForDeviceAsync(normalizedDeviceId, "hub"));
+        foreach (var existing in _sessions.DurableTokenValues.Where(session =>
+                     string.Equals(session.DeviceId, normalizedDeviceId, StringComparison.OrdinalIgnoreCase) &&
+                     string.Equals(session.Kind, "hub", StringComparison.OrdinalIgnoreCase)).ToArray())
+            if (!string.IsNullOrWhiteSpace(existing.Token)) _sessions.TryRemove(existing.Token, out _);
+        var account = GetAccount();
+        var token = $"hub-{account.AccountId}-{Guid.NewGuid():N}";
+        RegisterIssuedToken(token, "hub", account.AccountId, device.DeviceId, TimeSpan.FromMinutes(15));
+        return token;
+    }
+
 
     public CloudSession OpenSession(string kind, string? deviceId, string? token, string? hostName, string? path)
     {
@@ -450,7 +472,7 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
     public CloudSession? FindActiveSessionByToken(string token) =>
         string.IsNullOrWhiteSpace(token) ? null : _sessions.FindActive(token.Trim());
 
-    public CloudSession? FindSessionByToken(string token)
+    public CloudSession? FindIssuedToken(string token)
     {
         if (string.IsNullOrWhiteSpace(token)) return null;
         var key = token.Trim();
@@ -467,6 +489,9 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
 
         return durable;
     }
+
+    public CloudSession? FindSessionByToken(string token) =>
+        string.IsNullOrWhiteSpace(token) ? null : _sessions.FindActive(token.Trim()) ?? FindIssuedToken(token);
 
     public bool BindSessionToDevice(string sessionId, string deviceId)
     {

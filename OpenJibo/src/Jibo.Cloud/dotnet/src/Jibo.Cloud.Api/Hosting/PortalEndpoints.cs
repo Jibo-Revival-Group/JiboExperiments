@@ -3264,11 +3264,17 @@ internal static class PortalEndpoints
     {
         if (string.IsNullOrWhiteSpace(host)) return true;
 
-        return host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-               host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
-               host.Equals("::1", StringComparison.OrdinalIgnoreCase) ||
-               host.EndsWith(".local", StringComparison.OrdinalIgnoreCase) ||
-               IPAddress.TryParse(host, out _);
+        if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+            host.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!IPAddress.TryParse(host, out var address)) return false;
+        if (address.IsIPv4MappedToIPv6) address = address.MapToIPv4();
+        if (IPAddress.IsLoopback(address) || IsPrivateIpv4(address)) return true;
+        if (address.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6) return false;
+
+        var bytes = address.GetAddressBytes();
+        return address.IsIPv6LinkLocal || (bytes[0] & 0xfe) == 0xfc;
     }
 
     private static TrustedServerRecord UpsertLifecycleServer(

@@ -358,6 +358,10 @@ var managedEnvVars = concat([
     name: 'OPENJIBO_USER_SALT'
     secretRef: 'user-encryption-salt'
   }
+  {
+    name: 'OPENJIBO_USER_REQUIRED_LOGIN'
+    value: 'false'
+  }
 ], azureSpeechEnvEntries, searchEnvEntries, searchFallbackEnvEntries)
 
 resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {

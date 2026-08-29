@@ -49,6 +49,16 @@ public interface ICloudDeviceRepository
         CancellationToken cancellationToken = default);
 }
 
+public interface IUserDeviceLinkRepository
+{
+    Task<UserDeviceLink> LinkAsync(string userId, string deviceId, string claimSource,
+        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> ListDeviceIdsForUserAsync(string userId,
+        CancellationToken cancellationToken = default);
+    Task<string?> FindUserIdByDeviceAsync(string deviceId,
+        CancellationToken cancellationToken = default);
+}
+
 public interface ICloudAuthTokenRepository
 {
     Task<CloudAuthTokenRecord> IssueAsync(string token, string tokenKind, string? accountId, string? deviceId,

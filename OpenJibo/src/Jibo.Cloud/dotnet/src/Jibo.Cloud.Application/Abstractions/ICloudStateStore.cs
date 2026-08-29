@@ -38,6 +38,9 @@ public interface ICloudStateStore
     UserRecord? GetUserById(string id);
     UserRecord? GetUserByEmail(string email);
     UserRecord UpdateUser(string id, string? firstName, string? lastName, string? gender, long? birthday);
+    UserDeviceLink LinkUserToDevice(string userId, string deviceId, string claimSource);
+    IReadOnlyList<DeviceRegistration> GetDevicesForUser(string userId);
+    string? GetUserIdForDevice(string deviceId);
     string IssueHubToken(string? deviceId = null, bool useDefaultRobot = true);
     string IssueRobotToken(string deviceId);
     string IssueDeploymentSmokeRobotToken(string deviceId);

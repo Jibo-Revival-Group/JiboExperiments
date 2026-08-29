@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
+using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -274,6 +275,125 @@ internal static class PortalEndpoints
                 Encoding.UTF8.GetBytes(payload),
                 "application/json; charset=utf-8",
                 fileName);
+        });
+
+        app.MapPost("/api/portal/account/register", (
+            [FromBody] PortalAccountRegisterRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            if (!IsValidEmail(request.Email))
+                return Results.BadRequest(new { error = "A valid email address is required." });
+            if (!IsValidPortalPassword(request.Password))
+                return Results.BadRequest(new { error = "Password must be between 8 and 32 characters." });
+
+            var user = cloudStateStore.CreateUser(request.Email!.Trim(), request.Password!,
+                null, null);
+            if (user is null)
+                return Results.Conflict(new { error = "An account with this email already exists." });
+
+            return Results.Json(BuildAccountSessionPayload(portalSessionService, cloudStateStore, user));
+        });
+
+        app.MapPost("/api/portal/account/login", (
+            [FromBody] PortalAccountLoginRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrEmpty(request.Password))
+                return Results.BadRequest(new { error = "Email and password are required." });
+
+            var user = cloudStateStore.AuthenticateUser(request.Email.Trim(), request.Password);
+            if (user is null)
+                return Results.Unauthorized();
+
+            return Results.Json(BuildAccountSessionPayload(portalSessionService, cloudStateStore, user));
+        });
+
+        app.MapGet("/api/portal/account", (
+            HttpRequest request,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var session = ResolvePortalSession(request, null, portalSessionService);
+            if (session?.UserId is null)
+                return Results.Unauthorized();
+
+            var user = cloudStateStore.GetUserById(session.UserId);
+            if (user is null)
+                return Results.Unauthorized();
+
+            return Results.Json(BuildAccountPayload(user, cloudStateStore));
+        });
+
+        app.MapPost("/api/portal/robots/pair", (
+            [FromBody] PairPortalRobotRequest request,
+            HttpRequest httpRequest,
+            JiboVerificationService verificationService,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var accountSession = ResolvePortalSession(httpRequest, request.PortalSessionToken,
+                portalSessionService);
+            if (accountSession?.UserId is null)
+                return Results.Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(request.Code))
+                return Results.BadRequest(new { error = "code is required." });
+
+            var user = cloudStateStore.GetUserById(accountSession.UserId);
+            if (user is null)
+                return Results.Unauthorized();
+
+            var result = verificationService.TryConfirmByCode(request.Code);
+            if (!result.Ok)
+                return Results.BadRequest(new { error = result.Error });
+
+            RegisterVerifiedRobotIdentity(cloudStateStore, result.DeviceId!, result.FriendlyId!);
+            cloudStateStore.LinkUserToDevice(user.Id, result.DeviceId!, "portal-pairing");
+            var session = portalSessionService.CreateSession(result.DeviceId!, result.FriendlyId!, user.Id);
+
+            return Results.Json(new
+            {
+                portalSessionToken = session.Token,
+                jiboFriendlyId = result.FriendlyId,
+                jiboDeviceId = result.DeviceId,
+                expiresAtUtc = session.ExpiresAtUtc
+            });
+        });
+
+        app.MapPost("/api/portal/robots/select", (
+            [FromBody] SelectPortalRobotRequest request,
+            HttpRequest httpRequest,
+            PortalSessionService portalSessionService,
+            ICloudStateStore cloudStateStore) =>
+        {
+            var accountSession = ResolvePortalSession(httpRequest, request.PortalSessionToken,
+                portalSessionService);
+            if (accountSession?.UserId is null)
+                return Results.Unauthorized();
+
+            var selector = request.DeviceId?.Trim();
+            if (string.IsNullOrWhiteSpace(selector))
+                return Results.BadRequest(new { error = "deviceId is required." });
+
+            var robot = cloudStateStore.GetDevicesForUser(accountSession.UserId)
+                .FirstOrDefault(device =>
+                    device.DeviceId.Equals(selector, StringComparison.OrdinalIgnoreCase) ||
+                    device.RobotId.Equals(selector, StringComparison.OrdinalIgnoreCase) ||
+                    device.FriendlyName.Equals(selector, StringComparison.OrdinalIgnoreCase));
+            if (robot is null)
+                return Results.NotFound(new { error = "That robot is not paired to this account." });
+
+            var session = portalSessionService.CreateSession(robot.DeviceId, robot.RobotId,
+                accountSession.UserId);
+            return Results.Json(new
+            {
+                portalSessionToken = session.Token,
+                jiboFriendlyId = robot.RobotId,
+                jiboDeviceId = robot.DeviceId,
+                expiresAtUtc = session.ExpiresAtUtc
+            });
         });
 
         app.MapPost("/api/portal/jibo-verification/confirm", (
@@ -2574,6 +2694,63 @@ internal static class PortalEndpoints
         return portalSessionService.TryGetSession(ResolvePortalSessionToken(request, portalSessionToken));
     }
 
+    private static object BuildAccountSessionPayload(
+        PortalSessionService portalSessionService,
+        ICloudStateStore cloudStateStore,
+        UserRecord user)
+    {
+        var session = portalSessionService.CreateSession("portal-account", user.Email, user.Id);
+        return new
+        {
+            portalSessionToken = session.Token,
+            userId = user.Id,
+            email = user.Email,
+            expiresAtUtc = session.ExpiresAtUtc,
+            robots = BuildUserRobotPayload(cloudStateStore, user.Id)
+        };
+    }
+
+    private static object BuildAccountPayload(UserRecord user, ICloudStateStore cloudStateStore) =>
+        new
+        {
+            userId = user.Id,
+            email = user.Email,
+            robots = BuildUserRobotPayload(cloudStateStore, user.Id)
+        };
+
+    private static object[] BuildUserRobotPayload(ICloudStateStore cloudStateStore, string userId) =>
+        cloudStateStore.GetDevicesForUser(userId)
+            .Select(robot => new
+            {
+                deviceId = robot.DeviceId,
+                robotId = robot.RobotId,
+                friendlyName = robot.FriendlyName,
+                isActive = robot.IsActive,
+                isHidden = robot.IsHidden,
+                archivedUtc = robot.ArchivedUtc
+            })
+            .Cast<object>()
+            .ToArray();
+
+    private static bool IsValidEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return false;
+        try
+        {
+            var parsed = new MailAddress(email.Trim());
+            return string.Equals(parsed.Address, email.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                   parsed.User.Length > 0 &&
+                   parsed.Host.Length > 0;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
+    private static bool IsValidPortalPassword(string? password) =>
+        !string.IsNullOrEmpty(password) && password.Length is >= 8 and <= 32;
+
     private static bool IsAdminSession(PortalSessionService.PortalSession session)
     {
         return string.Equals(session.DeviceId, AdminSessionDeviceId, StringComparison.OrdinalIgnoreCase);
@@ -2728,6 +2905,7 @@ internal static class PortalEndpoints
         {
             jiboFriendlyId = session.FriendlyId,
             jiboDeviceId = session.DeviceId,
+            accountUserId = session.UserId,
             sessionExpiresAtUtc = session.ExpiresAtUtc,
             homeAssistant = link is null
                 ? new
@@ -2997,6 +3175,11 @@ internal static class PortalEndpoints
     }
 
     private sealed record ConfirmJiboVerificationRequest(string? Code);
+
+    private sealed record PortalAccountRegisterRequest(string? Email, string? Password);
+    private sealed record PortalAccountLoginRequest(string? Email, string? Password);
+    private sealed record PairPortalRobotRequest(string? PortalSessionToken, string? Code);
+    private sealed record SelectPortalRobotRequest(string? PortalSessionToken, string? DeviceId);
 
     private sealed record LinkHomeAssistantRequest(string? PortalSessionToken, string? HaCode);
 

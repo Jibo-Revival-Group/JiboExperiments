@@ -22,6 +22,7 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
     private readonly IRecognitionObservationRepository? _recognition;
     private readonly IRobotProfileRepository? _robotProfiles;
     private readonly ICloudUserRepository? _users;
+    private readonly IUserDeviceLinkRepository? _userDeviceLinks;
     private readonly ILoopKeyRepository? _loopKeys;
     private readonly IHolidayOverrideRepository? _holidays;
     private readonly ICommuteProfileRepository? _commutes;
@@ -70,7 +71,8 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
             new PostgreSqlBackupManifestRepository(dataSource), backupPayloadStore,
             new PostgreSqlAtomicLoopBackupRestorer(dataSource),
             secretProtector,
-            ownerFirstName, ownerLastName)
+            ownerFirstName, ownerLastName,
+            new PostgreSqlUserDeviceLinkRepository(dataSource))
     {
         LoadPersistedState();
     }
@@ -96,7 +98,8 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         IBackupPayloadStore? backupPayloads = null, IAtomicLoopBackupRestorer? atomicBackupRestorer = null,
         ICloudStateSecretProtector? secretProtector = null,
         string? ownerFirstName = null,
-        string? ownerLastName = null)
+        string? ownerLastName = null,
+        IUserDeviceLinkRepository? userDeviceLinks = null)
     {
         _metadata = metadata;
         _accounts = accounts;
@@ -110,6 +113,7 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
         _recognition = recognition;
         _robotProfiles = robotProfiles;
         _users = users;
+        _userDeviceLinks = userDeviceLinks;
         _loopKeys = loopKeys;
         _holidays = holidays;
         _commutes = commutes;
@@ -223,6 +227,22 @@ public sealed partial class PostgreSqlCloudStateStore : ICloudStateStore
 
     public UserRecord UpdateUser(string id, string? firstName, string? lastName, string? gender, long? birthday) =>
         Sync(RequireUsers().UpdateProfileAsync(id, firstName, lastName, gender, birthday));
+
+    public UserDeviceLink LinkUserToDevice(string userId, string deviceId, string claimSource) =>
+        Sync(Require(_userDeviceLinks, "user-device links").LinkAsync(userId, deviceId, claimSource));
+
+    public IReadOnlyList<DeviceRegistration> GetDevicesForUser(string userId)
+    {
+        var deviceIds = Sync(Require(_userDeviceLinks, "user-device links").ListDeviceIdsForUserAsync(userId));
+        return deviceIds
+            .Select(deviceId => Sync(_devices.GetByDeviceIdAsync(deviceId)))
+            .Where(device => device is not null)
+            .Cast<DeviceRegistration>()
+            .ToArray();
+    }
+
+    public string? GetUserIdForDevice(string deviceId) =>
+        Sync(Require(_userDeviceLinks, "user-device links").FindUserIdByDeviceAsync(deviceId));
 
     private ICloudUserRepository RequireUsers() => _users ??
         throw new InvalidOperationException("The normalized user repository is not configured.");

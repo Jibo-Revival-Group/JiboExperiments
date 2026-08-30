@@ -342,7 +342,7 @@ for marker in "deployment_target" "openjibo-staging-gate" "clone-openjibo-manage
   fi
 done
 configure_smoke_line="$(grep -n -- "OpenJibo__ReleaseSmoke__Enabled=true" <<<"$workflow_text" | head -1 | cut -d: -f1)"
-for marker in "Capture staging scale before two-replica proof" "--min-replicas 2" "RELEASE_SMOKE_MIN_REPLICAS" "RELEASE_SMOKE_EXPECTED_REVISION" "minimumReplicasObserved" "Restore staging scale after two-replica proof"; do
+for marker in "Capture staging scale before two-replica proof" "--min-replicas 2" '"$revision_running_state" == "RunningAtMaxScale"' "RELEASE_SMOKE_MIN_REPLICAS" "RELEASE_SMOKE_EXPECTED_REVISION" "minimumReplicasObserved" "Restore staging scale after two-replica proof"; do
   if [[ "$workflow_text" != *"$marker"* ]]; then
     echo "Workflow is missing two-replica staging safeguard: $marker" >&2
     exit 1

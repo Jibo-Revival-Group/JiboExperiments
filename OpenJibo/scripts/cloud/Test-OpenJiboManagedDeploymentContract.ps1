@@ -223,6 +223,7 @@ $configureSmokeIndex = $workflowText.IndexOf("OpenJibo__ReleaseSmoke__Enabled=tr
 $twoReplicaMarkers = @(
     "Capture staging scale before two-replica proof",
     "--min-replicas 2",
+    '"$revision_running_state" == "RunningAtMaxScale"',
     "RELEASE_SMOKE_MIN_REPLICAS",
     "RELEASE_SMOKE_EXPECTED_REVISION",
     "minimumReplicasObserved",

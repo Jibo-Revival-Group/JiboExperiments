@@ -784,7 +784,8 @@ jobs:
                 --output tsv)"
               if [[ "$latest_ready_revision" == "$configured_revision" &&
                     "$revision_active" == "true" &&
-                    "$revision_running_state" == "Running" &&
+                    ( "$revision_running_state" == "Running" ||
+                      "$revision_running_state" == "RunningAtMaxScale" ) &&
                     "${running_replicas:-0}" -ge 2 ]]; then
                 configured_revision_ready=true
                 break

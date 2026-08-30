@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.RegularExpressions;
 using Jibo.Cloud.Application.Abstractions;
 
@@ -35,7 +36,7 @@ internal static partial class KnowledgeSearchSpokenReplyFormatter
     {
         if (string.IsNullOrWhiteSpace(answerText)) return string.Empty;
 
-        var spokenBody = ReplaceSpokenTerms(answerText.Trim());
+        var spokenBody = ReplaceSpokenTerms(NormalizeHtmlEntities(answerText.Trim()));
         return $"According to {DescribeSource(backendKind)}. {spokenBody}";
     }
 
@@ -65,6 +66,25 @@ internal static partial class KnowledgeSearchSpokenReplyFormatter
         spoken = ParentheticalAcronymPattern().Replace(spoken, ExpandParentheticalAcronym);
         spoken = StandaloneAcronymPattern().Replace(spoken, ExpandStandaloneAcronym);
         return spoken;
+    }
+
+    private static string NormalizeHtmlEntities(string text)
+    {
+        var normalized = BrokenHtmlEntityPattern().Replace(
+            text,
+            static match => $"&{match.Groups["entity"].Value};");
+
+        // A backend response may be encoded more than once. Decode only a small,
+        // bounded number of layers; the ESML mapper will XML-escape markup
+        // characters again before placing this text in a speak element.
+        for (var pass = 0; pass < 3; pass++)
+        {
+            var decoded = WebUtility.HtmlDecode(normalized);
+            if (string.Equals(decoded, normalized, StringComparison.Ordinal)) break;
+            normalized = decoded;
+        }
+
+        return normalized;
     }
 
     private static string ExpandParentheticalAcronym(Match match)
@@ -128,4 +148,9 @@ internal static partial class KnowledgeSearchSpokenReplyFormatter
     // Standalone ALL-CAPS acronyms (2–8 letters), optional lowercase plural s
     [GeneratedRegex(@"\b([A-Z]{2,8})(s)?\b", RegexOptions.CultureInvariant)]
     private static partial Regex StandaloneAcronymPattern();
+
+    [GeneratedRegex(
+        @"&\s*(?<entity>quot|apos|amp|lt|gt|#\d+|#x[0-9a-f]+)\s*;",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex BrokenHtmlEntityPattern();
 }

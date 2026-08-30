@@ -150,9 +150,10 @@ public sealed class JiboCloudApiIntegrationTests
     {
         await using var factory = CreateFactory();
         var client = factory.Server.CreateWebSocketClient();
+        var token = await IssueHubTokenAsync(factory);
 
         using var socket =
-            await client.ConnectAsync(new Uri("ws://localhost/v1/listen/test-token"), CancellationToken.None);
+            await client.ConnectAsync(new Uri($"ws://localhost/v1/listen/{token}"), CancellationToken.None);
 
         Assert.Equal(WebSocketState.Open, socket.State);
         await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "test-complete", CancellationToken.None);
@@ -163,12 +164,43 @@ public sealed class JiboCloudApiIntegrationTests
     {
         await using var factory = CreateFactory();
         var client = factory.Server.CreateWebSocketClient();
+        var token = await IssueHubTokenAsync(factory);
 
         using var socket =
-            await client.ConnectAsync(new Uri("ws://neo-hub.jibo.com/test-token"), CancellationToken.None);
+            await client.ConnectAsync(new Uri($"ws://neo-hub.jibo.com/{token}"), CancellationToken.None);
 
         Assert.Equal(WebSocketState.Open, socket.State);
         await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "test-complete", CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task WebSocket_UnknownTokenOnNeoHubListen_ReturnsUnauthorized()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.Server.CreateWebSocketClient();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            client.ConnectAsync(new Uri("ws://neo-hub.jibo.com/not-an-issued-token"), CancellationToken.None));
+
+        Assert.Contains("401", exception.Message, StringComparison.Ordinal);
+    }
+
+    private static async Task<string> IssueHubTokenAsync(WebApplicationFactory<Program> factory)
+    {
+        var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/")
+        {
+            Content = JsonContent.Create(new { })
+        };
+        request.Headers.TryAddWithoutValidation("X-Amz-Target", "Account_20160715.CreateHubToken");
+        request.Headers.Host = "api.jibo.com";
+
+        var response = await client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        var payload = await response.Content.ReadFromJsonAsync<CreateHubTokenResponse>();
+
+        Assert.NotNull(payload);
+        return payload.Token;
     }
 
     private static WebApplicationFactory<Program> CreateFactory(ITransportMetrics? transportMetrics = null)
@@ -179,6 +211,7 @@ public sealed class JiboCloudApiIntegrationTests
         return new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.UseSetting("OpenJibo:Deployment:Mode", "self-hosted-isolated");
                 builder.UseSetting("OpenJibo:Telemetry:DirectoryPath", Path.Combine(root, "websocket"));
                 builder.UseSetting("OpenJibo:ProtocolTelemetry:DirectoryPath", Path.Combine(root, "http"));
                 builder.UseSetting("OpenJibo:TurnTelemetry:DirectoryPath", Path.Combine(root, "turn"));

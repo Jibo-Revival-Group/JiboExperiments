@@ -1125,6 +1125,19 @@ public sealed class HomeAssistantPortalApiTests
         Assert.False(localPayload.GetProperty("requiresHttps").GetBoolean());
         Assert.Equal("self-hosted", localPayload.GetProperty("serverMode").GetString());
 
+        var publicIpResponse = await client.PostAsJsonAsync(
+            "/api/onboarding/self-hosted/validate",
+            new
+            {
+                serverMode = "self-hosted",
+                serverHost = "203.0.113.10"
+            });
+
+        Assert.Equal(HttpStatusCode.OK, publicIpResponse.StatusCode);
+        var publicIpPayload = await publicIpResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(publicIpPayload.GetProperty("isLocalTarget").GetBoolean());
+        Assert.False(publicIpPayload.GetProperty("allowsHttp").GetBoolean());
+
         var hybridResponse = await client.PostAsJsonAsync(
             "/api/onboarding/self-hosted/validate",
             new
@@ -1526,6 +1539,7 @@ public sealed class HomeAssistantPortalApiTests
                     services.RemoveAll<IMediaContentStore>();
                     services.AddSingleton<IMediaContentStore>(new FileMediaContentStore(Path.Combine(root, "media")));
                 });
+                builder.UseSetting("OpenJibo:Deployment:Mode", "self-hosted-isolated");
                 builder.UseSetting("OpenJibo:Telemetry:DirectoryPath", Path.Combine(root, "websocket"));
                 builder.UseSetting("OpenJibo:ProtocolTelemetry:DirectoryPath", Path.Combine(root, "http"));
                 builder.UseSetting("OpenJibo:TurnTelemetry:DirectoryPath", Path.Combine(root, "turn"));

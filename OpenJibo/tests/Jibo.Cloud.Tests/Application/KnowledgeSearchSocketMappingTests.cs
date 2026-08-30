@@ -129,6 +129,67 @@ public sealed class KnowledgeSearchSocketMappingTests
     }
 
     [Fact]
+    public void Map_KnowledgeSearch_PreservesLiteralQuotesInSpokenEsmlText()
+    {
+        var plan = new ResponsePlan
+        {
+            IntentName = "knowledge_search",
+            Actions =
+            {
+                new SpeakAction
+                {
+                    Sequence = 0,
+                    Text = "According to wolf ram alpha. The definition of \"our\" is possessive.",
+                    Voice = "griffin"
+                },
+                new InvokeNativeSkillAction
+                {
+                    Sequence = 1,
+                    SkillName = "chitchat-skill",
+                    Payload = new Dictionary<string, object?>
+                    {
+                        ["cloudSkill"] = SearchThinkingPreludeFactory.AnswerSkillId
+                    }
+                }
+            }
+        };
+        var turn = new TurnContext
+        {
+            NormalizedTranscript = "define our",
+            Attributes = new Dictionary<string, object?>
+            {
+                ["transID"] = "trans-knowledge-quotes",
+                ["messageType"] = "LISTEN",
+                ["listenRules"] = new[] { "launch" }
+            }
+        };
+
+        var replies = ResponsePlanToSocketMessagesMapper.Map(
+            plan,
+            turn,
+            new CloudSession(),
+            emitSkillActions: true);
+        using var skillAction = replies
+            .Select(reply => reply.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .Select(text => JsonDocument.Parse(text!))
+            .First(document => document.RootElement.GetProperty("type").GetString() == "SKILL_ACTION");
+        var esml = skillAction.RootElement
+            .GetProperty("data")
+            .GetProperty("action")
+            .GetProperty("config")
+            .GetProperty("jcp")
+            .GetProperty("config")
+            .GetProperty("play")
+            .GetProperty("esml")
+            .GetString();
+
+        Assert.Contains("\"our\"", esml, StringComparison.Ordinal);
+        Assert.DoesNotContain("&quot;", esml, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("& quot ;", esml, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Map_KnowledgeSearchNotFound_ShowsHeardTranscriptOnDisplay()
     {
         var plan = new ResponsePlan

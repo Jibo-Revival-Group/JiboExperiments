@@ -156,7 +156,9 @@ export function createProtocolCaller(baseUrl, hostName = "api.openjibo.com", fet
       "X-OpenJibo-Harness-Host": hostName,
       "X-OpenJibo-AppVersion": "1.0.20",
     };
-    if (releaseSmokeSecret && service === "Notification_20160715" && operation === "NewRobotToken") {
+    const isSmokeTokenRequest = (service === "Notification_20160715" && operation === "NewRobotToken") ||
+      (service === "Account_20160715" && operation === "CreateHubToken");
+    if (releaseSmokeSecret && isSmokeTokenRequest) {
       headers["X-OpenJibo-Registration-Source"] = "deployment-smoke";
       headers["X-OpenJibo-Release-Smoke-Secret"] = releaseSmokeSecret;
     }
@@ -183,8 +185,9 @@ export function withDeploymentSmokeAuthorizationRetry(protocolCall, {
   delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
 } = {}) {
   return async (service, operation, body) => {
-    const isRegistration = service === "Notification_20160715" && operation === "NewRobotToken";
-    if (!isRegistration) return protocolCall(service, operation, body);
+    const isSmokeTokenRequest = (service === "Notification_20160715" && operation === "NewRobotToken") ||
+      (service === "Account_20160715" && operation === "CreateHubToken");
+    if (!isSmokeTokenRequest) return protocolCall(service, operation, body);
 
     for (let attempt = 1; ; attempt += 1) {
       try {
@@ -241,22 +244,26 @@ export async function runReleaseSmoke({
     }
   };
 
-  let token;
+  let robotToken;
+  let hubToken;
   const deviceId = `${robotPrefix}-primary`;
   await runStep("Issue robot token and persist identity", async () => {
     const issued = await protocolCall("Notification_20160715", "NewRobotToken", {
       deviceId,
       robotId: deviceId,
     });
-    token = issued?.token;
-    assert(token, `NewRobotToken did not return a token: ${JSON.stringify(issued)}`);
+    robotToken = issued?.token;
+    assert(robotToken, `NewRobotToken did not return a token: ${JSON.stringify(issued)}`);
+    const hub = await protocolCall("Account_20160715", "CreateHubToken", { deviceId });
+    hubToken = hub?.token;
+    assert(hubToken, `CreateHubToken did not return a token: ${JSON.stringify(hub)}`);
     const robot = await protocolCall("Robot_20160225", "GetRobot", { id: deviceId });
     assert(robot, "GetRobot did not return the persisted fake robot.");
     return `persisted ${deviceId}`;
   });
 
   await runStep("Notification socket connect and reconnect", async () => {
-    const url = websocketUrl(baseUrl, `/${encodeURIComponent(token)}`);
+    const url = websocketUrl(baseUrl, `/${encodeURIComponent(robotToken)}`);
     const first = await openSocket(WebSocketImpl, url, "notification", loadOptions.timeoutMs);
     await closeSocket(first);
     const second = await openSocket(WebSocketImpl, url, "notification reconnect", loadOptions.timeoutMs);
@@ -267,7 +274,7 @@ export async function runReleaseSmoke({
   await runStep("CLIENT_ASR joke response order", async () => {
     const transID = `${robotPrefix}-joke`;
     const socket = await openSocket(WebSocketImpl,
-      websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(token)}`), "NeoHub joke", loadOptions.timeoutMs);
+      websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(hubToken)}`), "NeoHub joke", loadOptions.timeoutMs);
     try {
       const repliesPromise = readReplyTypes(socket, 3, "joke turn", loadOptions.timeoutMs);
       socket.send(JSON.stringify({
@@ -287,7 +294,7 @@ export async function runReleaseSmoke({
   await runStep("Malformed frame recovery and CLIENT_NLU clock turn", async () => {
     const transID = `${robotPrefix}-clock`;
     const socket = await openSocket(WebSocketImpl,
-      websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(token)}-clock`), "NeoHub clock",
+      websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(hubToken)}`), "NeoHub clock",
       loadOptions.timeoutMs);
     try {
       socket.send("{not-valid-json");
@@ -328,9 +335,11 @@ export async function runReleaseSmoke({
           robotId: concurrentDeviceId,
         });
         assert(issued?.token, `Concurrent fake robot ${index + 1} did not receive a token.`);
-        return issued.token;
+        const hub = await protocolCall("Account_20160715", "CreateHubToken", { deviceId: concurrentDeviceId });
+        assert(hub?.token, `Concurrent fake robot ${index + 1} did not receive a Hub token.`);
+        return { deviceId: concurrentDeviceId, robotToken: issued.token, hubToken: hub.token };
       }));
-      sockets.push(...await Promise.all(tokens.map((issuedToken, index) =>
+      sockets.push(...await Promise.all(tokens.map(({ robotToken: issuedToken }, index) =>
         openSocket(WebSocketImpl, websocketUrl(baseUrl, `/${encodeURIComponent(issuedToken)}`),
           `concurrent robot ${index + 1}`, loadOptions.timeoutMs))));
       await delay(loadOptions.holdMs);
@@ -347,8 +356,12 @@ export async function runReleaseSmoke({
         const roundDurations = await Promise.all(selected.map(async (robotIndex) => {
           const label = `load robot ${robotIndex + 1} round ${round + 1}`;
           const started = Date.now();
+          const refreshedHub = await protocolCall("Account_20160715", "CreateHubToken", {
+            deviceId: tokens[robotIndex].deviceId,
+          });
+          assert(refreshedHub?.token, `${label} did not receive a refreshed Hub token.`);
           const listenSocket = await openSocket(WebSocketImpl,
-            websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(tokens[robotIndex])}`), label,
+            websocketUrl(baseUrl, `/v1/listen/${encodeURIComponent(refreshedHub.token)}`), label,
             loadOptions.timeoutMs);
           try {
             const repliesPromise = readReplyTypes(listenSocket, 3, label, loadOptions.timeoutMs);

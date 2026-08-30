@@ -464,3 +464,4 @@ OpenJibo/src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/appsettings.json
 
 # dump files
 dump.bin
+src/Jibo.Cloud/node/package-lock.json

@@ -39,17 +39,22 @@ wire protocol.
 The audio high-water value is monotonic for the life of one process and resets when that replica restarts. The
 configured PostgreSQL gauge is a ceiling, not live pool use.
 
-## Collection Gap And Provider Metrics
+## Collection And Provider Metrics
 
-`System.Diagnostics.Metrics` creates instruments but does not persist or transmit them. The API currently does
-not register a production metrics exporter. Before load certification, configure the deployment's telemetry
-collector to subscribe to:
+Managed Azure deployments provision a workspace-backed Application Insights resource and register the Azure
+Monitor OpenTelemetry metrics exporter when `APPLICATIONINSIGHTS_CONNECTION_STRING` is present. The exporter
+subscribes to:
 
 - `OpenJibo.Transport` for the application instruments above;
 - the .NET runtime metrics for working set, managed heap, allocation rate, GC collections, and pause duration;
 - Npgsql's native metrics for pool connections, pending requests/waits, command duration, and failures;
 - Azure Container Apps and Azure Database for PostgreSQL platform metrics for replica, CPU, memory, restart,
   database CPU/storage/connection, and network evidence.
+
+Only the metrics signal is exported by the application; request traces and Serilog events continue through the
+existing Container Apps Log Analytics path so enabling operational measurements does not duplicate those data.
+Npgsql data sources use the bounded names `cloud_state` and `personal_memory`; never allow a connection string
+to become the pool-name attribute.
 
 Do not duplicate Npgsql internals with a second application-side pool tracker. Reconcile the provider's live pool
 measurements against `openjibo.persistence.postgresql.configured_max_connections` instead.

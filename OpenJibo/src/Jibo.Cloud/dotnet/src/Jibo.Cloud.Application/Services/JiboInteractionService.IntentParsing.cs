@@ -281,6 +281,7 @@ public sealed partial class JiboInteractionService
         if (string.IsNullOrWhiteSpace(normalized)) return false;
 
         if (normalized is "time" or "the time" or "current time" or "what time is it" or "what s the time"
+            or "what's the time"
             or "what is the time") return true;
 
         return normalized.StartsWith("what time", StringComparison.Ordinal) ||

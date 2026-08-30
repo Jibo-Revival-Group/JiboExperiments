@@ -879,6 +879,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AccountId = _account.AccountId,
             Token = token,
             DeviceId = resolvedDeviceId,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365),
             Metadata = BuildSessionMetadata(_account.AccountId, resolvedDeviceId, ResolveDefaultLoopId())
         });
 
@@ -895,6 +896,7 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             AccountId = _account.AccountId,
             Token = token,
             DeviceId = deviceId,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365),
             Metadata = BuildSessionMetadata(_account.AccountId, deviceId, ResolveDefaultLoopId())
         });
 
@@ -915,6 +917,28 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
         _sessions.RegisterDurableToken(token, new CloudSession
         {
             Kind = "robot",
+            AccountId = _account.AccountId,
+            Token = token,
+            DeviceId = normalizedDeviceId,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(15),
+            Metadata = BuildSessionMetadata(_account.AccountId, normalizedDeviceId, ResolveDefaultLoopId())
+        });
+        TouchState();
+        return token;
+    }
+    public string IssueDeploymentSmokeHubToken(string deviceId)
+    {
+        ValidateDeploymentSmokeDeviceId(deviceId);
+        var normalizedDeviceId = deviceId.Trim();
+        if (!_devices.TryGetValue(normalizedDeviceId, out var device) ||
+            !string.Equals(RobotRegistrationSources.Normalize(device.RegistrationSource, device.DeviceId),
+                RobotRegistrationSources.DeploymentSmoke, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Deployment-smoke token device is not classified as deployment-smoke.");
+        _sessions.RemoveDurableForDevice(normalizedDeviceId, "hub");
+        var token = $"hub-{_account.AccountId}-{Guid.NewGuid():N}";
+        _sessions.RegisterDurableToken(token, new CloudSession
+        {
+            Kind = "hub",
             AccountId = _account.AccountId,
             Token = token,
             DeviceId = normalizedDeviceId,
@@ -1063,6 +1087,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
                string.Equals(key, "lastClockDomain", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(key, "sleepState", StringComparison.OrdinalIgnoreCase);
     }
+
+    public CloudSession? FindIssuedToken(string token) =>
+        string.IsNullOrWhiteSpace(token) ? null : _sessions.FindDurable(token.Trim());
 
     public CloudSession? FindSessionByToken(string token)
     {

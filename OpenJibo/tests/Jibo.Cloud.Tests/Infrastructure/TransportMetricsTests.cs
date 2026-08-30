@@ -109,8 +109,8 @@ public sealed class TransportMetricsTests
     public void SessionRegistry_ReportsActiveCountChangesWithoutIdentifiers()
     {
         var measurements = new List<MeasurementRecord>();
-        using var listener = CreateListener(measurements);
         using var metrics = new TransportMetrics();
+        using var listener = CreateListener(measurements, meter: metrics.Meter);
         var registry = new BoundedCloudSessionRegistry(2, 2, metrics);
 
         registry.RegisterActive("secret-token-1", new CloudSession { SessionId = "secret-session-1" });
@@ -239,12 +239,14 @@ public sealed class TransportMetricsTests
     private sealed record DoubleMeasurementRecord(string Name, double Value, Dictionary<string, string?> Tags);
 
     private static MeterListener CreateListener(List<MeasurementRecord> measurements,
-        List<DoubleMeasurementRecord>? doubleMeasurements = null)
+        List<DoubleMeasurementRecord>? doubleMeasurements = null,
+        Meter? meter = null)
     {
         var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, meterListener) =>
         {
-            if (instrument.Meter.Name == TransportMetrics.MeterName)
+            if (meter is not null ? ReferenceEquals(instrument.Meter, meter) :
+                instrument.Meter.Name == TransportMetrics.MeterName)
                 meterListener.EnableMeasurementEvents(instrument);
         };
         listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>

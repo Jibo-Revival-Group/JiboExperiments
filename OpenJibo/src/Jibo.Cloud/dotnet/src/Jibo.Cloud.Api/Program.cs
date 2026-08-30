@@ -1,7 +1,11 @@
+using Azure.Monitor.OpenTelemetry.Exporter;
 using Jibo.Cloud.Api.Hosting;
 using Jibo.Cloud.Application.Abstractions;
 using Jibo.Cloud.Application.Services;
 using Jibo.Cloud.Infrastructure.DependencyInjection;
+using Jibo.Cloud.Infrastructure.Telemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -11,6 +15,8 @@ using System.Text;
 OpenJiboEnvLoader.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+ConfigureOperationalMetrics(builder);
 
 if (ShouldResetDiagnosticsOnStartup(builder.Configuration))
     ResetDiagnosticsDirectories(builder.Configuration);
@@ -47,6 +53,8 @@ builder.Host.UseSerilog((context, _, loggerConfiguration) =>
 
 builder.Services.AddOpenJiboCloud(builder.Configuration);
 builder.Services.AddSingleton<HomeAssistantWebSocketHandler>();
+builder.Services.AddSingleton<SingleRobotHttpHubAccessGuard>();
+builder.Services.AddSingleton<WebSocketTransportPolicy>();
 builder.Services.AddSingleton<WebSocketRequestCoordinator>();
 builder.Services.AddHttpClient("OpenJiboFleetPeerSync", client => client.Timeout = TimeSpan.FromSeconds(10));
 builder.Services.AddHostedService<FleetPeerSyncService>();
@@ -229,6 +237,26 @@ return;
 static bool ShouldResetDiagnosticsOnStartup(IConfiguration configuration)
 {
     return bool.TryParse(configuration["OpenJibo:Logging:ResetOnStartup"], out var reset) && reset;
+}
+
+static void ConfigureOperationalMetrics(WebApplicationBuilder builder)
+{
+    var connectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+    if (string.IsNullOrWhiteSpace(connectionString)) return;
+
+    var revision = Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? "local";
+    var replica = Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName;
+
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService(
+            serviceName: "openjibo-cloud",
+            serviceVersion: OpenJiboCloudBuildInfo.Version,
+            serviceInstanceId: $"{revision}/{replica}"))
+        .WithMetrics(metrics => metrics
+            .AddMeter(TransportMetrics.MeterName)
+            .AddMeter("System.Runtime")
+            .AddMeter("Npgsql")
+            .AddAzureMonitorMetricExporter(options => options.ConnectionString = connectionString));
 }
 
 static void ResetDiagnosticsDirectories(IConfiguration configuration)

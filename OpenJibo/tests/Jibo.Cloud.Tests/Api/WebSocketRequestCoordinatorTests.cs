@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using Jibo.Cloud.Api.Hosting;
@@ -14,6 +15,26 @@ namespace Jibo.Cloud.Tests.Api;
 
 public sealed class WebSocketRequestCoordinatorTests
 {
+    [Theory]
+    [InlineData("openjibo.com", "/", StatusCodes.Status404NotFound)]
+    [InlineData("api.openjibo.com", "/", StatusCodes.Status404NotFound)]
+    [InlineData("openjibo.ai", "/unexpected", StatusCodes.Status401Unauthorized)]
+    public async Task HandleAsync_RejectsGenericOpenJiboWebSocketRoutes(string host, string path, int expectedStatus)
+    {
+        var socket = new FakeWebSocket();
+        var context = CreateContext(socket);
+        context.Request.Host = new HostString(host);
+        context.Request.Path = path;
+        context.Request.Headers.Authorization = "Bearer attacker-supplied-token";
+        var coordinator = CreateCoordinator(out var telemetrySink);
+
+        await coordinator.HandleAsync(context);
+
+        Assert.Equal(expectedStatus, context.Response.StatusCode);
+        Assert.False(socket.Accepted);
+        Assert.Empty(telemetrySink.Events);
+    }
+
     [Fact]
     public async Task HandleAsync_ReturnsUnauthorized_WhenNeoHubTokenIsMissing()
     {
@@ -31,6 +52,61 @@ public sealed class WebSocketRequestCoordinatorTests
         Assert.Empty(telemetrySink.Events);
     }
 
+    [Theory]
+    [InlineData("neo-hub.jibo.com", true)]
+    [InlineData("192.168.7.142", false)]
+    public async Task HandleAsync_RejectsIssuedTokenWithWrongSocketKind(string host, bool useRobotToken)
+    {
+        var socket = new FakeWebSocket();
+        var context = CreateContext(socket);
+        context.Request.Host = new HostString(host);
+
+        var coordinator = CreateCoordinator(out _, out var store);
+        var token = useRobotToken
+            ? store.IssueRobotToken("wrong-kind-robot")
+            : store.IssueHubToken("wrong-kind-hub");
+        if (host.Equals("neo-hub.jibo.com", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Request.Path = "/listen";
+            context.Request.Headers.Authorization = $"Bearer {token}";
+        }
+        else
+        {
+            context.Request.Path = $"/{token}";
+        }
+
+        await coordinator.HandleAsync(context);
+
+        Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
+        Assert.False(socket.Accepted);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ExplicitSingleRobotHttpModeAcceptsPrivateTokenlessHubSocket()
+    {
+        var socket = new FakeWebSocket(new FakeWebSocketFrame(WebSocketMessageType.Close, []));
+        var context = CreateContext(socket);
+        context.Request.Host = new HostString("10.0.0.80");
+        context.Request.Path = "/v1/listen";
+        context.Request.Scheme = "http";
+        context.Connection.RemoteIpAddress = IPAddress.Parse("10.0.0.81");
+
+        var service = CreateWebSocketService(out var store);
+        var telemetrySink = new RecordingWebSocketTelemetrySink();
+        var haHandler = new HomeAssistantWebSocketHandler(new HomeAssistantConnectionRegistry());
+        var coordinator = new WebSocketRequestCoordinator(
+            service,
+            haHandler,
+            telemetrySink,
+            store,
+            new SingleRobotHttpHubAccessGuard(true));
+
+        await coordinator.HandleAsync(context);
+
+        Assert.True(socket.Accepted);
+        Assert.Equal(WebSocketState.Closed, socket.State);
+    }
+
     [Fact]
     public async Task HandleAsync_ProcessesBinaryFrame_AndClosesCleanly()
     {
@@ -40,9 +116,9 @@ public sealed class WebSocketRequestCoordinatorTests
         var context = CreateContext(socket);
         context.Request.Host = new HostString("neo-hub.jibo.com");
         context.Request.Path = "/listen";
-        context.Request.Headers.Authorization = "Bearer test-token";
-
         var coordinator = CreateCoordinator(out var telemetrySink, out var store);
+        var token = store.IssueHubToken("robot-binary-frame");
+        context.Request.Headers.Authorization = $"Bearer {token}";
 
         await coordinator.HandleAsync(context);
 
@@ -54,7 +130,8 @@ public sealed class WebSocketRequestCoordinatorTests
         Assert.Contains(telemetrySink.Events, eventName => eventName == "outbound:0");
         Assert.Contains(telemetrySink.Events, eventName => eventName == "closed:socket-loop-ended");
 
-        Assert.Null(store.FindSessionByToken("test-token"));
+        Assert.NotNull(store.FindIssuedToken(token));
+        Assert.Null(store.FindActiveSessionByToken(token));
         Assert.NotNull(telemetrySink.ClosedSession);
         Assert.Equal(0, telemetrySink.ClosedSession.TurnState.BufferedAudioBytes);
         Assert.Empty(telemetrySink.ClosedSession.TurnState.BufferedAudioFrames);
@@ -71,14 +148,15 @@ public sealed class WebSocketRequestCoordinatorTests
             new FakeWebSocketFrame(WebSocketMessageType.Close, []));
         var context = CreateContext(socket);
         context.Request.Host = new HostString("192.168.7.142");
-        context.Request.Path = "/v1/listen/test-token";
-
         var coordinator = CreateCoordinator(out var telemetrySink, out var store);
+        var token = store.IssueHubToken("robot-path-token");
+        context.Request.Path = $"/v1/listen/{token}";
 
         await coordinator.HandleAsync(context);
 
         Assert.True(socket.Accepted);
-        Assert.Null(store.FindSessionByToken("test-token"));
+        Assert.NotNull(store.FindIssuedToken(token));
+        Assert.Null(store.FindActiveSessionByToken(token));
         Assert.NotNull(telemetrySink.LastConnectionId);
         Assert.Null(store.FindSessionByToken($"conn:{telemetrySink.LastConnectionId}"));
         Assert.NotNull(telemetrySink.ClosedSession);
@@ -95,9 +173,9 @@ public sealed class WebSocketRequestCoordinatorTests
         var socket = new FakeWebSocket(new FakeWebSocketFrame(WebSocketMessageType.Close, []));
         var context = CreateContext(socket);
         context.Request.Host = new HostString("192.168.7.142");
-        context.Request.Path = "/token-Ghost-Instance-Onion-Silk-123456";
-
         var service = CreateWebSocketService(out var store);
+        var token = store.IssueRobotToken("Ghost-Instance-Onion-Silk");
+        context.Request.Path = $"/{token}";
         var telemetrySink = new RecordingWebSocketTelemetrySink();
         var pendingStore = new RobotPendingNotificationStore();
         var registry = new RobotNotificationRegistry(pendingStore);
@@ -143,7 +221,7 @@ public sealed class WebSocketRequestCoordinatorTests
     public async Task ReplacedSocket_OldPrematureCloseCannotClearNewSocketTurn()
     {
         var service = CreateWebSocketService(out var store);
-        var token = store.IssueRobotToken("robot-replaced-concurrency");
+        var token = store.IssueHubToken("robot-replaced-concurrency");
         var firstReceive = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseOldSocket = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseNewSocket = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

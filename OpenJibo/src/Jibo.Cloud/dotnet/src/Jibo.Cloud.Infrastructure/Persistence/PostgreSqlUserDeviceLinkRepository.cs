@@ -19,7 +19,7 @@ public sealed class PostgreSqlUserDeviceLinkRepository(PostgreSqlCloudStateDataS
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         await using (var delete = new NpgsqlCommand(
-                         "DELETE FROM UserDevices WHERE DeviceId = @deviceId", connection, transaction))
+                         "DELETE FROM UserDevices WHERE LOWER(DeviceId) = LOWER(@deviceId)", connection, transaction))
         {
             delete.Parameters.AddWithValue("deviceId", normalizedDeviceId);
             await delete.ExecuteNonQueryAsync(cancellationToken);

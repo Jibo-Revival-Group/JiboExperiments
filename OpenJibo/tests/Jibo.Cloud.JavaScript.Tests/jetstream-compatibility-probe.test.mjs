@@ -1,16 +1,33 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  formatProbeStepDetail,
   isPrivateTarget,
   normalizeProbeOptions,
+  probeErrorMessage,
   runJetstreamCompatibilityProbe,
   tokenFingerprint,
 } from "../../scripts/cloud/jetstream-compatibility-probe.mjs";
+
+test("aggregate connection failures retain useful diagnostics", () => {
+  const ipv6 = Object.assign(new Error("connect ECONNREFUSED ::1:8080"), { code: "ECONNREFUSED" });
+  const ipv4 = Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:8080"), { code: "ECONNREFUSED" });
+  assert.equal(probeErrorMessage(new AggregateError([ipv6, ipv4])),
+    "connect ECONNREFUSED ::1:8080; connect ECONNREFUSED 127.0.0.1:8080");
+});
+
+test("step details render structured probe evidence instead of object coercion", () => {
+  assert.equal(formatProbeStepDetail(null), "");
+  assert.equal(formatProbeStepDetail("connected"), "connected");
+  assert.equal(formatProbeStepDetail({ listenConnected: true, thirdSocketRejected: true }),
+    '{"listenConnected":true,"thirdSocketRejected":true}');
+});
 
 class FakeSocketClient {
   constructor({ tokenlessAccepted = false } = {}) {
     this.tokenlessAccepted = tokenlessAccepted;
     this.opens = [];
+    this.openedSockets = [];
     this.activeTokenless = 0;
     this.activeSockets = 0;
     this.maxActiveSockets = 0;
@@ -30,14 +47,20 @@ class FakeSocketClient {
     }
     this.activeSockets += 1;
     this.maxActiveSockets = Math.max(this.maxActiveSockets, this.activeSockets);
-    return { options, tokenlessHub, readyState: 1 };
+    const socket = { options, tokenlessHub, readyState: 1 };
+    this.openedSockets.push(socket);
+    return socket;
   }
 
   send(socket, payload) {
-    socket.sent = payload;
+    socket.sent ??= [];
+    socket.sent.push(JSON.parse(payload));
   }
 
-  async readJson() {
+  async readJson(socket) {
+    if (new URL(socket.options.url).pathname === "/v1/proactive") {
+      return [{ type: "PROACTIVE", final: true, data: {} }];
+    }
     return [
       { type: "LISTEN" },
       { type: "EOS" },
@@ -80,6 +103,14 @@ test("normalization derives local Hub defaults and validates bounded options", (
   assert.equal(normalized.hubUrl.href, "ws://127.0.0.1:24605/");
   assert.equal(normalized.notificationUrl.href, "ws://127.0.0.1:24606/");
   assert.equal(normalized.robots, 2);
+  assert.equal(normalized.sendListenTurn, true);
+  assert.equal(normalized.sendProactiveTransaction, true);
+  const proactiveOnly = normalizeProbeOptions({ sendListenTurn: false });
+  assert.equal(proactiveOnly.sendListenTurn, false);
+  assert.equal(proactiveOnly.sendProactiveTransaction, true);
+  const handshakeOnly = normalizeProbeOptions({ sendTurn: false });
+  assert.equal(handshakeOnly.sendListenTurn, false);
+  assert.equal(handshakeOnly.sendProactiveTransaction, false);
   assert.throws(() => normalizeProbeOptions({ robots: 21 }), /1 through 20/);
   assert.throws(() => normalizeProbeOptions({ hubUrl: "http://localhost:8080" }), /ws: or wss:/);
 });
@@ -125,6 +156,12 @@ test("authenticated probe issues tokens and uses stock-style bearer Hub headers"
     call.options.headers["X-Amz-Target"] === "Notification_20150505.NewRobotToken");
   assert.equal(notificationCalls.length, 2);
   assert.deepEqual(Object.keys(JSON.parse(notificationCalls[0].options.body)), ["deviceId"]);
+  assert.deepEqual(result.authenticated.map((robot) => robot.proactiveReplyTypes),
+    [["PROACTIVE"], ["PROACTIVE"]]);
+  const proactiveSocketPayloads = sockets.openedSockets
+    .filter((socket) => new URL(socket.options.url).pathname === "/v1/proactive")
+    .map((socket) => socket.sent.map((message) => message.type));
+  assert.deepEqual(proactiveSocketPayloads, [["TRIGGER", "CONTEXT"], ["TRIGGER", "CONTEXT"]]);
   const output = JSON.stringify(result);
   assert.equal(output.includes("super-secret"), false);
   assert.equal(output.includes("hub-secret"), false);
@@ -151,4 +188,22 @@ test("tokenless accepted mode holds two leases and requires the third rejection"
   assert.equal(result.tokenless.listenConnected, true);
   assert.equal(result.tokenless.proactiveConnected, true);
   assert.equal(result.tokenless.thirdSocketRejected, true);
+  assert.deepEqual(result.tokenless.proactiveReplyTypes, ["PROACTIVE"]);
+});
+
+test("proactive-only mode skips CLIENT_ASR and still proves TRIGGER then CONTEXT", async () => {
+  const sockets = new FakeSocketClient({ tokenlessAccepted: true });
+  const result = await runJetstreamCompatibilityProbe({
+    mode: "tokenless",
+    expectTokenless: "accepted",
+    sendListenTurn: false,
+    holdMs: 0,
+  }, { fetchImpl: fakeFetch().fetchImpl, socketClient: sockets });
+  const listen = sockets.openedSockets.find((socket) =>
+    new URL(socket.options.url).pathname === "/v1/listen");
+  const proactive = sockets.openedSockets.find((socket) =>
+    new URL(socket.options.url).pathname === "/v1/proactive");
+  assert.equal(listen.sent, undefined);
+  assert.deepEqual(proactive.sent.map((message) => message.type), ["TRIGGER", "CONTEXT"]);
+  assert.deepEqual(result.tokenless.proactiveReplyTypes, ["PROACTIVE"]);
 });

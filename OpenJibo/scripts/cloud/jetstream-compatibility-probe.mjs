@@ -8,6 +8,22 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+export function formatProbeStepDetail(detail) {
+  if (detail === null || detail === undefined || detail === "") return "";
+  return typeof detail === "string" ? detail : JSON.stringify(detail);
+}
+
+export function probeErrorMessage(error) {
+  const direct = String(error?.message ?? "").trim();
+  if (direct) return direct;
+  const nested = Array.isArray(error?.errors)
+    ? error.errors.map((candidate) => probeErrorMessage(candidate)).filter(Boolean)
+    : [];
+  if (nested.length) return [...new Set(nested)].join("; ");
+  if (error?.code) return String(error.code);
+  return String(error ?? "Unknown probe failure.");
+}
+
 function integer(value, name, minimum, maximum) {
   const parsed = Number(value);
   assert(Number.isInteger(parsed) && parsed >= minimum && parsed <= maximum,
@@ -41,6 +57,7 @@ export function normalizeProbeOptions(options = {}) {
   const expectTokenless = options.expectTokenless ?? "rejected";
   assert(MODES.has(mode), "mode must be authenticated, tokenless, or both.");
   assert(TOKENLESS_EXPECTATIONS.has(expectTokenless), "expectTokenless must be accepted or rejected.");
+  const sendTransactions = options.sendTurn !== false;
 
   return {
     entrypointUrl,
@@ -53,7 +70,8 @@ export function normalizeProbeOptions(options = {}) {
     holdMs: integer(options.holdMs ?? 250, "holdMs", 0, 60000),
     devicePrefix: String(options.devicePrefix ?? "jetstream-probe").trim(),
     includeNotification: options.includeNotification !== false,
-    sendTurn: options.sendTurn !== false,
+    sendListenTurn: sendTransactions && options.sendListenTurn !== false,
+    sendProactiveTransaction: sendTransactions && options.sendProactiveTransaction !== false,
     localAddress: options.localAddress ? String(options.localAddress).trim() : undefined,
     secondaryLocalAddress: options.secondaryLocalAddress
       ? String(options.secondaryLocalAddress).trim()
@@ -150,7 +168,8 @@ async function runStep(results, onStep, name, action) {
     onStep(result);
     return detail;
   } catch (error) {
-    const result = { name, status: "failed", durationMs: Date.now() - started, detail: error.message };
+    const result = { name, status: "failed", durationMs: Date.now() - started,
+      detail: probeErrorMessage(error) };
     results.push(result);
     onStep(result);
     throw Object.assign(error, { results });
@@ -161,6 +180,36 @@ function assertReplyOrder(messages, expected) {
   const actual = messages.map((message) => message?.type);
   assert(expected.every((type, index) => actual[index] === type),
     `Expected ${expected.join(" -> ")}, received ${actual.join(" -> ") || "no replies"}.`);
+}
+
+async function runProactiveNoActionContract(config, socketClient, socket, transactionId) {
+  const repliesPromise = socketClient.readJson(socket, 1, config.timeoutMs);
+  socketClient.send(socket, JSON.stringify({
+    type: "TRIGGER",
+    transID: transactionId,
+    data: {
+      triggerSource: "SURPRISE",
+      triggerData: { looperID: "jetstream-probe-person" },
+    },
+  }));
+  socketClient.send(socket, JSON.stringify({
+    type: "CONTEXT",
+    transID: transactionId,
+    data: {
+      runtime: {
+        perception: { speaker: "jetstream-probe-person" },
+        loop: { users: [{ id: "jetstream-probe-person", firstName: "probe" }] },
+      },
+    },
+  }));
+  const replies = await repliesPromise;
+  const reply = replies[0];
+  assert(reply?.type === "PROACTIVE",
+    `Expected final PROACTIVE, received ${reply?.type ?? "no reply"}.`);
+  assert(reply.final === true, "Expected the no-action PROACTIVE reply to be final.");
+  assert(reply.data && typeof reply.data === "object" && Object.keys(reply.data).length === 0,
+    "Expected the no-action PROACTIVE reply data to be empty.");
+  return replies;
 }
 
 async function runAuthenticatedRobot(config, dependencies, deviceId) {
@@ -208,7 +257,8 @@ async function runAuthenticatedRobot(config, dependencies, deviceId) {
     });
 
     let replies = [];
-    if (config.sendTurn) {
+    let proactiveReplies = [];
+    if (config.sendListenTurn) {
       const repliesPromise = socketClient.readJson(listen, 3, config.timeoutMs);
       socketClient.send(listen, JSON.stringify({
         type: "CLIENT_ASR",
@@ -217,6 +267,10 @@ async function runAuthenticatedRobot(config, dependencies, deviceId) {
       }));
       replies = await repliesPromise;
       assertReplyOrder(replies, ["LISTEN", "EOS", "SKILL_ACTION"]);
+    }
+    if (config.sendProactiveTransaction) {
+      proactiveReplies = await runProactiveNoActionContract(config, socketClient, proactive,
+        `${deviceId}-proactive-${Date.now()}`);
     }
 
     await delay(config.holdMs);
@@ -228,6 +282,7 @@ async function runAuthenticatedRobot(config, dependencies, deviceId) {
       listenConnected: true,
       proactiveConnected: true,
       replyTypes: replies.map((message) => message.type),
+      proactiveReplyTypes: proactiveReplies.map((message) => message.type),
     };
   } finally {
     await Promise.all([
@@ -270,6 +325,11 @@ async function runTokenless(config, socketClient) {
       timeoutMs: config.timeoutMs,
       localAddress: config.localAddress,
     });
+    let proactiveReplies = [];
+    if (config.sendProactiveTransaction) {
+      proactiveReplies = await runProactiveNoActionContract(config, socketClient, proactive,
+        `tokenless-proactive-${Date.now()}`);
+    }
     const third = await expectSocketRejected(socketClient, {
       ...listenOptions,
       label: "tokenless third socket",
@@ -288,6 +348,7 @@ async function runTokenless(config, socketClient) {
       proactiveConnected: true,
       thirdSocketRejected: third.rejected,
       secondClientRejected: secondary?.rejected ?? null,
+      proactiveReplyTypes: proactiveReplies.map((message) => message.type),
     };
   } finally {
     await Promise.all([
@@ -316,7 +377,9 @@ export async function runJetstreamCompatibilityProbe(options, dependencies = {})
         runAuthenticatedRobot(config, { fetchImpl, socketClient }, `${config.devicePrefix}-${index + 1}`))));
       assert(new Set(authenticated.map((robot) => robot.hubTokenFingerprint)).size === authenticated.length,
         "Authenticated robots did not receive distinct Hub tokens.");
-      return `${authenticated.length} robot(s) completed token and socket checks${config.sendTurn ? " with a turn" : ""}`;
+      const checks = [config.sendListenTurn && "listen turn",
+        config.sendProactiveTransaction && "proactive transaction"].filter(Boolean);
+      return `${authenticated.length} robot(s) completed token and socket checks${checks.length ? ` with ${checks.join(" and ")}` : ""}`;
     });
   }
 

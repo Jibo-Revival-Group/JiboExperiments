@@ -38,8 +38,14 @@ node src/Jibo.Cloud/node/invoke-jetstream-compatibility-probe.mjs `
 ```
 
 `--skip-turn` isolates token and WebSocket connectivity. Omit it when the local
-server also has its interaction dependencies configured and should prove the
-`CLIENT_ASR` reply sequence.
+server also has its interaction dependencies configured. The active check proves
+both the `CLIENT_ASR` reply sequence and the proactive `TRIGGER` then `CONTEXT`
+transaction. The deterministic `SURPRISE` transaction must return one final,
+empty `PROACTIVE` reply.
+
+To test that proactive contract without invoking the configured interaction
+provider, replace `--skip-turn` with `--skip-listen-turn`. Conversely,
+`--skip-proactive-transaction` tests only the `CLIENT_ASR` path.
 
 Expected authenticated evidence:
 
@@ -47,6 +53,8 @@ Expected authenticated evidence:
 - notification, listen, and proactive sockets return HTTP 101
 - every robot has a distinct non-`none` Hub-token fingerprint
 - Hub tokens are sent in the Authorization header, not placed in the URL
+- active checks return `LISTEN`, `EOS`, `SKILL_ACTION` on the listen socket and
+  final `PROACTIVE` on the proactive socket
 
 ## Tokenless compatibility checks
 
@@ -70,11 +78,13 @@ node src/Jibo.Cloud/node/invoke-jetstream-compatibility-probe.mjs `
   --hub-url ws://127.0.0.1:8080 `
   --mode tokenless `
   --expect-tokenless accepted `
-  --skip-turn
+  --skip-listen-turn
 ```
 
-The accepted check holds listen and proactive sockets open together and verifies
-that a third tokenless socket receives HTTP 401. To exercise the second-client
+The accepted check above holds listen and proactive sockets open together, sends
+`TRIGGER` then `CONTEXT`, requires final `PROACTIVE`, and verifies that a third
+tokenless socket receives HTTP 401. Use `--skip-turn` instead when only the
+handshakes and connection limit should be tested. To exercise the second-client
 address boundary, assign two local addresses or use separate network namespaces,
 then add `--local-address` and `--secondary-local-address`.
 
@@ -102,7 +112,8 @@ a single base URL.
 | Hub handshake returns 401 with a fingerprint | token was unknown, expired, or the wrong kind |
 | Hub handshake returns 426 | HTTP was used outside isolated self-hosting |
 | Listen connects but proactive fails | proactive route or second Hub connection handling |
-| Both sockets connect but a turn times out | interaction/provider path, not authentication |
+| Proactive connects but returns no final `PROACTIVE` | proactive transaction routing or `TRIGGER`/`CONTEXT` correlation |
+| Both sockets connect but a listen turn times out | interaction/provider path, not authentication |
 
 The server log path `/v1/listen/{token}` is always redacted and does not prove a
 token was present. Use `tokenFingerprint` as the authoritative signal.

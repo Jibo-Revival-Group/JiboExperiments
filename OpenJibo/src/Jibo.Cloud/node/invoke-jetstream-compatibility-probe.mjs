@@ -5,6 +5,7 @@ import http from "node:http";
 import https from "node:https";
 import WebSocket from "ws";
 import {
+  formatProbeStepDetail,
   isPrivateTarget,
   normalizeProbeOptions,
   runJetstreamCompatibilityProbe,
@@ -28,7 +29,9 @@ Options:
   --local-address IP         Bind the primary probe sockets to this local address
   --secondary-local-address IP  Exercise the one-client guard from a second local address
   --skip-notification        Skip NewRobotToken and the notification socket
-  --skip-turn                Connect Hub sockets without sending CLIENT_ASR
+  --skip-turn                Connect Hub sockets without listen/proactive transactions
+  --skip-listen-turn         Skip CLIENT_ASR but still test the proactive transaction
+  --skip-proactive-transaction  Skip TRIGGER/CONTEXT but still test CLIENT_ASR
   --ca-file PATH             Trust an additional PEM certificate authority
   --allow-public-target      Permit a non-private endpoint (diagnostic state is created)
   --dangerously-allow-production  Permit a known OpenJibo production hostname
@@ -57,6 +60,8 @@ function parseArgs(argv) {
     if (argument === "--help") values.help = true;
     else if (argument === "--skip-notification") values.includeNotification = false;
     else if (argument === "--skip-turn") values.sendTurn = false;
+    else if (argument === "--skip-listen-turn") values.sendListenTurn = false;
+    else if (argument === "--skip-proactive-transaction") values.sendProactiveTransaction = false;
     else if (argument === "--allow-public-target") values.allowPublicTarget = true;
     else if (argument === "--dangerously-allow-production") values.allowProduction = true;
     else if (valueOptions.has(argument)) {
@@ -207,7 +212,10 @@ try {
   const result = await runJetstreamCompatibilityProbe(cli, {
     fetchImpl: createProtocolFetch({ ca }),
     socketClient: createSocketClient({ ca }),
-    onStep: (step) => console.error(`${step.status.toUpperCase()}: ${step.name}${step.detail ? ` - ${step.detail}` : ""}`),
+    onStep: (step) => {
+      const detail = formatProbeStepDetail(step.detail);
+      console.error(`${step.status.toUpperCase()}: ${step.name}${detail ? ` - ${detail}` : ""}`);
+    },
   });
   console.log(JSON.stringify(result, null, 2));
 } catch (error) {

@@ -24,13 +24,8 @@ internal sealed class WebSocketTransportPolicy(IConfiguration configuration)
     internal bool IsAllowed(HttpRequest request)
     {
         var deploymentMode = configuration[DeploymentModeConfigurationKey];
-        if (string.Equals(deploymentMode, IsolatedSelfHostedMode, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        // Managed deployments remain secure by default, but an explicitly
-        // disabled security mode supports controlled legacy HTTP/Ws operation.
-        if (string.Equals(deploymentMode, ManagedMode, StringComparison.OrdinalIgnoreCase) &&
-            !IsSecurityModeEnabled())
+        if (string.Equals(deploymentMode, IsolatedSelfHostedMode, StringComparison.OrdinalIgnoreCase) &&
+            !IsSecurityModeEnabled(deploymentMode))
             return true;
 
         if (request.IsHttps)
@@ -48,9 +43,14 @@ internal sealed class WebSocketTransportPolicy(IConfiguration configuration)
                string.Equals(forwardedValues[0], "https", StringComparison.OrdinalIgnoreCase);
     }
 
-    private bool IsSecurityModeEnabled()
+    private bool IsSecurityModeEnabled(string? deploymentMode)
     {
         var configuredValue = configuration[SecurityModeConfigurationKey];
-        return !bool.TryParse(configuredValue, out var enabled) || enabled;
+        if (bool.TryParse(configuredValue, out var enabled))
+            return enabled;
+
+        // Preserve stock-robot HTTP compatibility only for explicitly isolated
+        // self-hosting. Every other deployment mode remains fail-closed.
+        return !string.Equals(deploymentMode, IsolatedSelfHostedMode, StringComparison.OrdinalIgnoreCase);
     }
 }

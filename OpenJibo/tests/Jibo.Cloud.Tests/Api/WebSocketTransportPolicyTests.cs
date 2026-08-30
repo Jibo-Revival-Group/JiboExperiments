@@ -30,13 +30,13 @@ public sealed class WebSocketTransportPolicyTests
     }
 
     [Fact]
-    public void IsAllowed_AllowsPlainHttpInManagedModeWhenSecurityIsDisabled()
+    public void IsAllowed_RejectsPlainHttpInManagedModeWhenSecurityIsDisabled()
     {
         var policy = CreatePolicy("managed", securityMode: "false");
         var context = new DefaultHttpContext();
         context.Request.Scheme = "http";
 
-        Assert.True(policy.IsAllowed(context.Request));
+        Assert.False(policy.IsAllowed(context.Request));
     }
 
     [Fact]
@@ -47,6 +47,16 @@ public sealed class WebSocketTransportPolicyTests
         context.Request.Scheme = "http";
 
         Assert.True(policy.IsAllowed(context.Request));
+    }
+
+    [Fact]
+    public void IsAllowed_RejectsPlainHttpInIsolatedModeWhenSecurityIsEnabled()
+    {
+        var policy = CreatePolicy("self-hosted-isolated", securityMode: "true");
+        var context = new DefaultHttpContext();
+        context.Request.Scheme = "http";
+
+        Assert.False(policy.IsAllowed(context.Request));
     }
 
     [Fact]

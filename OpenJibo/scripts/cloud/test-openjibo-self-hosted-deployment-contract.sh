@@ -43,6 +43,8 @@ required_compose_markers=(
   "OPENJIBO_POSTGRES_PASSWORD"
   "OpenJibo__State__Backend: PostgreSql"
   "OpenJibo__Deployment__Mode: self-hosted-isolated"
+  "OpenJibo__AcceptedHosts__0: localhost"
+  "OpenJibo__AcceptedHosts__1: 127.0.0.1"
   "OpenJibo__PersonalMemory__Backend: PostgreSql"
   "OpenJibo__Media__Backend: File"
   "OpenJibo__SelfHosted__AllowTokenlessSingleRobotHub"

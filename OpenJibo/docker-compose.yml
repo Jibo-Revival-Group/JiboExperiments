@@ -49,7 +49,8 @@ services:
       OpenJibo__OwnerFirstName: Jibo
       OpenJibo__OwnerLastName: Owner
       OpenJibo__AcceptedHosts__0: localhost
-      OpenJibo__AcceptedHosts__1: api.jibo.com
+      OpenJibo__AcceptedHosts__1: 127.0.0.1
+      OpenJibo__AcceptedHosts__2: api.jibo.com
       OpenJibo__ReleaseSmoke__Enabled: ${OPENJIBO_RELEASE_SMOKE_ENABLED:-false}
       OpenJibo__ReleaseSmoke__Secret: ${OPENJIBO_RELEASE_SMOKE_SECRET:-}
       OpenJibo__ReleaseSmoke__MaxConcurrentDevices: ${OPENJIBO_RELEASE_SMOKE_MAX_CONCURRENT:-6}

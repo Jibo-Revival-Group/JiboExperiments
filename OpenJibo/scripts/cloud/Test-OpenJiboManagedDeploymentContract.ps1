@@ -220,6 +220,17 @@ foreach ($marker in @("deployment_target", "openjibo-staging-gate", "clone-openj
     Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing staging or promotion safeguard"
 }
 $configureSmokeIndex = $workflowText.IndexOf("OpenJibo__ReleaseSmoke__Enabled=true", [StringComparison]::Ordinal)
+$twoReplicaMarkers = @(
+    "Capture staging scale before two-replica proof",
+    "--min-replicas 2",
+    "RELEASE_SMOKE_MIN_REPLICAS",
+    "RELEASE_SMOKE_EXPECTED_REVISION",
+    "minimumReplicasObserved",
+    "Restore staging scale after two-replica proof"
+)
+foreach ($marker in $twoReplicaMarkers) {
+    Assert-ContainsMarker -Text $workflowText -Marker $marker -FailurePrefix "Workflow is missing two-replica staging safeguard"
+}
 $restartSmokeIndex = $workflowText.IndexOf("az containerapp revision restart", [StringComparison]::Ordinal)
 $runSmokeIndex = $workflowText.IndexOf("- name: Run deployed WebSocket release smoke", [StringComparison]::Ordinal)
 if ($configureSmokeIndex -lt 0 -or $restartSmokeIndex -lt 0 -or $runSmokeIndex -lt 0 -or

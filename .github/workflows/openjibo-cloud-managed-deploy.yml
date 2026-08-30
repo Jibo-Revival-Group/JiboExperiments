@@ -256,6 +256,10 @@ jobs:
               )
           if gate.get("smoke") != "passed":
               raise SystemExit("Staging gate does not record a passing smoke test.")
+          if gate.get("webSocketReleaseSmoke") != "passed":
+              raise SystemExit("Staging gate does not record a passing WebSocket release smoke.")
+          if gate.get("replicaEvidence") != "passed" or gate.get("minimumReplicasObserved", 0) < 2:
+              raise SystemExit("Staging gate does not prove two serving replicas.")
           PY
 
       - name: Setup .NET
@@ -694,7 +698,21 @@ jobs:
             --set tags.openjiboDatabaseBindingBootstrapCompleted=true \
             --output none
 
+      - name: Capture staging scale before two-replica proof
+        if: inputs.deployment_target == 'staging'
+        id: staging_scale
+        shell: bash
+        run: |
+          app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
+          min_replicas="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.template.scale.minReplicas --output tsv)"
+          max_replicas="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.template.scale.maxReplicas --output tsv)"
+          echo "captured=true" >> "$GITHUB_OUTPUT"
+          echo "app_name=$app_name" >> "$GITHUB_OUTPUT"
+          echo "min_replicas=${min_replicas:-1}" >> "$GITHUB_OUTPUT"
+          echo "max_replicas=${max_replicas:-2}" >> "$GITHUB_OUTPUT"
+
       - name: Configure release smoke authorization
+        id: release_smoke_config
         shell: bash
         run: |
           app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
@@ -711,6 +729,8 @@ jobs:
             az containerapp update \
               --resource-group "$OPENJIBO_RESOURCE_GROUP" \
               --name "$app_name" \
+              --min-replicas 2 \
+              --max-replicas 2 \
               --set-env-vars \
                 "OpenJibo__ReleaseSmoke__Enabled=true" \
                 "OpenJibo__ReleaseSmoke__Secret=secretref:release-smoke-authorization" \
@@ -726,6 +746,7 @@ jobs:
               echo "The release-smoke configuration did not create a Container App revision." >&2
               exit 1
             fi
+            echo "revision=$configured_revision" >> "$GITHUB_OUTPUT"
 
             # App-level secret changes are not loaded by an already-running replica. Restart the
             # exact revision created by the env update, then wait for that revision—not an older
@@ -755,9 +776,16 @@ jobs:
                 --revision "$configured_revision" \
                 --query properties.runningState \
                 --output tsv)"
+              running_replicas="$(az containerapp replica list \
+                --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+                --name "$app_name" \
+                --revision "$configured_revision" \
+                --query "[?properties.runningState=='Running'] | length(@)" \
+                --output tsv)"
               if [[ "$latest_ready_revision" == "$configured_revision" &&
                     "$revision_active" == "true" &&
-                    "$revision_running_state" == "Running" ]]; then
+                    "$revision_running_state" == "Running" &&
+                    "${running_replicas:-0}" -ge 2 ]]; then
                 configured_revision_ready=true
                 break
               fi
@@ -782,6 +810,8 @@ jobs:
           RELEASE_SMOKE_TURN_PERCENT: ${{ inputs.staging_smoke_turn_percent }}
           RELEASE_SMOKE_TURN_ROUNDS: ${{ inputs.staging_smoke_turn_rounds }}
           RELEASE_SMOKE_ROUND_INTERVAL_MS: ${{ inputs.staging_smoke_round_interval_ms }}
+          RELEASE_SMOKE_MIN_REPLICAS: "2"
+          RELEASE_SMOKE_EXPECTED_REVISION: ${{ steps.release_smoke_config.outputs.revision }}
         run: |
           app_name="$(az containerapp list --resource-group "$OPENJIBO_RESOURCE_GROUP" --query "[0].name" --output tsv)"
           app_fqdn="$(az containerapp show --resource-group "$OPENJIBO_RESOURCE_GROUP" --name "$app_name" --query properties.configuration.ingress.fqdn --output tsv)"
@@ -803,6 +833,17 @@ jobs:
               --resource-group "$OPENJIBO_RESOURCE_GROUP" \
               --app-name "$app_name"
           fi
+
+      - name: Restore staging scale after two-replica proof
+        if: always() && inputs.deployment_target == 'staging' && steps.staging_scale.outputs.captured == 'true'
+        shell: bash
+        run: |
+          az containerapp update \
+            --resource-group "$OPENJIBO_RESOURCE_GROUP" \
+            --name "${{ steps.staging_scale.outputs.app_name }}" \
+            --min-replicas "${{ steps.staging_scale.outputs.min_replicas }}" \
+            --max-replicas "${{ steps.staging_scale.outputs.max_replicas }}" \
+            --output none
 
       - name: Restore previous image after failure
         if: failure() && steps.previous.outputs.exists == 'true'
@@ -850,6 +891,8 @@ jobs:
               "imageTag": "${{ steps.image.outputs.tag }}",
               "smoke": "passed",
               "webSocketReleaseSmoke": "passed",
+              "replicaEvidence": "passed",
+              "minimumReplicasObserved": 2,
           }
           with open(sys.argv[1], "w", encoding="utf-8") as gate_file:
               json.dump(gate, gate_file, indent=2)

@@ -650,9 +650,11 @@ These are the carryover items that need a clean proof pass first:
   - an initial staging proof held six fake notification sockets while two simultaneous turns completed with the expected reply order at 218 ms and 247 ms client-observed latency; this is driver evidence, not capacity certification
   - fleet peer sync now fails closed unless explicitly enabled with an exact host allowlist; the managed workflow forbids it in staging and applies the allowlist to both outbound and inbound reports, preventing cloned production trust rows from causing cross-environment calls
   - immediate staging containment removed the peer-sync shared-key environment reference and produced healthy revision `openjibo-cloud--0000009`; the post-change six-robot smoke passed with 209-212 ms turn latency and no peer-sync/error markers in the revision log tail
+  - cloud CI now provisions PostgreSQL 16 and supplies the environment-gated integration connection string to the complete .NET suite
+  - the managed staging workflow now captures the normal scale, temporarily pins two replicas, waits for both to run, requires the protected smoke probe to observe two distinct serving instances through ingress, records the evidence in the promotion artifact, and restores the prior scale afterward
 - Remaining rollout and measurement work:
-  - run the PostgreSQL integration suite in CI (local verification skips it when `OPENJIBO_TEST_POSTGRES_CONNECTION_STRING` is absent), then execute a production-snapshot dry run in a restored staging database
-  - verify imported family counts, identity mappings, v1 backup restore, and two-replica behavior before switching the managed API revision
+  - run the new exact-commit two-replica gate against a production-snapshot clone in staging
+  - verify imported family counts, identity mappings, v1 backup restore, and cross-replica cache convergence before switching the managed API revision
   - observe traffic and memory metrics for at least seven representative days and reconcile application payload bytes with Azure ingress/egress
   - wire the application meter plus .NET runtime and Npgsql provider meters to the production telemetry backend, then add alerts for working set/GC, pool waits, persistence failures/latency, audio-limit rejection, and unexpected legacy snapshot selection
   - keep WebSocket compression disabled until a stock OS 1.9 physical-client canary proves negotiation and reconnect behavior; evaluate static HTTP text compression separately
@@ -665,7 +667,7 @@ These are the carryover items that need a clean proof pass first:
   - migration dry-run, apply, verification, rollback/export, backup creation, and restore all have automated tests and a managed-deployment smoke check
   - operators can detect persistence degradation before robot requests begin timing out while `/health` remains green
 - Next action:
-  - enforce the production PostgreSQL binding guard, run the environment-gated PostgreSQL suite in CI, complete the two-replica staging proof, and collect seven days of the low-cardinality transport/memory metrics before making a capacity claim
+  - deploy this exact commit to refreshed staging, retain the two-replica gate artifact, verify cross-replica committed-read convergence and v1 restore, and collect seven days of the low-cardinality transport/memory metrics before making a capacity claim
 
 ### Next Up (`2026-05-06`): Dialog Parsing Expansion And Ambiguity Guardrails
 

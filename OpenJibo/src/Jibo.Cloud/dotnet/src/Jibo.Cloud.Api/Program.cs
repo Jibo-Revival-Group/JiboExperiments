@@ -166,6 +166,25 @@ app.MapGet("/health", () => Results.Json(new
     version = OpenJiboCloudBuildInfo.Version
 }));
 
+app.MapGet("/health/replica", (HttpContext context, ReleaseSmokeAuthorizationOptions authorization) =>
+{
+    if (!authorization.Enabled) return Results.NotFound();
+    if (!authorization.IsSecretAuthorized(
+            context.Request.Headers[ReleaseSmokeAuthorizationOptions.SecretHeaderName].ToString()))
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+
+    context.Response.Headers.CacheControl = "no-store";
+    var revision = Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? "local";
+    var replica = Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName;
+    return Results.Json(new
+    {
+        ok = true,
+        revision,
+        replica,
+        instanceId = $"{revision}/{replica}"
+    });
+});
+
 app.MapPortalStaticFiles();
 app.MapPortalEndpoints();
 

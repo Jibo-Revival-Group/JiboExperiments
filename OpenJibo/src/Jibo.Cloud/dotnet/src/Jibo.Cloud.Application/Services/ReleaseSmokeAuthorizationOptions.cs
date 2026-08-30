@@ -7,6 +7,7 @@ namespace Jibo.Cloud.Application.Services;
 public sealed class ReleaseSmokeAuthorizationOptions
 {
     public const string FixedPrefix = RobotRegistrationSources.DeploymentSmokePrefix;
+    public const string SecretHeaderName = "X-OpenJibo-Release-Smoke-Secret";
 
     public bool Enabled { get; set; }
     public string? Secret { get; set; }
@@ -16,12 +17,17 @@ public sealed class ReleaseSmokeAuthorizationOptions
         out DeploymentSmokeRegistrationAuthorization? authorization)
     {
         authorization = null;
-        if (!Enabled || string.IsNullOrWhiteSpace(Secret) || !IsAllowedDeviceId(deviceId)) return false;
-        var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(Secret));
-        var presentedHash = SHA256.HashData(Encoding.UTF8.GetBytes(presentedSecret ?? string.Empty));
-        if (!CryptographicOperations.FixedTimeEquals(expectedHash, presentedHash)) return false;
+        if (!IsAllowedDeviceId(deviceId) || !IsSecretAuthorized(presentedSecret)) return false;
         authorization = new DeploymentSmokeRegistrationAuthorization(deviceId, MaxConcurrentDevices);
         return true;
+    }
+
+    public bool IsSecretAuthorized(string? presentedSecret)
+    {
+        if (!Enabled || string.IsNullOrWhiteSpace(Secret)) return false;
+        var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(Secret));
+        var presentedHash = SHA256.HashData(Encoding.UTF8.GetBytes(presentedSecret ?? string.Empty));
+        return CryptographicOperations.FixedTimeEquals(expectedHash, presentedHash);
     }
 
     public bool IsAllowedDeviceId(string deviceId) =>

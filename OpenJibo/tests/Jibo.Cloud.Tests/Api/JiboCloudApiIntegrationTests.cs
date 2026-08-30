@@ -28,6 +28,32 @@ public sealed class JiboCloudApiIntegrationTests
     }
 
     [Fact]
+    public async Task ReplicaHealth_IsHiddenUnlessDeploymentSmokeIsEnabledAndAuthorized()
+    {
+        await using var disabledFactory = CreateFactory();
+        var disabledResponse = await disabledFactory.CreateClient().GetAsync("/health/replica");
+        Assert.Equal(HttpStatusCode.NotFound, disabledResponse.StatusCode);
+
+        await using var enabledFactory = CreateFactory(enableReleaseSmoke: true);
+        var client = enabledFactory.CreateClient();
+        var forbiddenResponse = await client.GetAsync("/health/replica");
+        Assert.Equal(HttpStatusCode.Forbidden, forbiddenResponse.StatusCode);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/health/replica");
+        request.Headers.TryAddWithoutValidation(ReleaseSmokeAuthorizationOptions.SecretHeaderName,
+            "integration-test-secret");
+        var response = await client.SendAsync(request);
+        var body = await response.Content.ReadFromJsonAsync<ReplicaHealthResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.True(body.Ok);
+        Assert.False(string.IsNullOrWhiteSpace(body.Revision));
+        Assert.False(string.IsNullOrWhiteSpace(body.Replica));
+        Assert.Equal($"{body.Revision}/{body.Replica}", body.InstanceId);
+    }
+
+    [Fact]
     public async Task Harness_ServesReleaseSmokeModuleAndModuleEntryPoint()
     {
         await using var factory = CreateFactory();
@@ -203,7 +229,8 @@ public sealed class JiboCloudApiIntegrationTests
         return payload.Token;
     }
 
-    private static WebApplicationFactory<Program> CreateFactory(ITransportMetrics? transportMetrics = null)
+    private static WebApplicationFactory<Program> CreateFactory(ITransportMetrics? transportMetrics = null,
+        bool enableReleaseSmoke = false)
     {
         var root = Path.Combine(Path.GetTempPath(), $"openjibo-api-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
@@ -220,12 +247,19 @@ public sealed class JiboCloudApiIntegrationTests
                     Path.Combine(root, "personal-memory.json"));
                 builder.UseSetting("OpenJibo:Media:DirectoryPath", Path.Combine(root, "media"));
                 builder.UseSetting("OpenJibo:Stt:EnableLocalWhisperCpp", "false");
+                if (enableReleaseSmoke)
+                {
+                    builder.UseSetting("OpenJibo:ReleaseSmoke:Enabled", "true");
+                    builder.UseSetting("OpenJibo:ReleaseSmoke:Secret", "integration-test-secret");
+                }
                 if (transportMetrics is not null)
                     builder.ConfigureServices(services => services.AddSingleton(transportMetrics));
             });
     }
 
     private sealed record HealthResponse(bool Ok, string Service, string Version);
+
+    private sealed record ReplicaHealthResponse(bool Ok, string Revision, string Replica, string InstanceId);
 
     private sealed record CreateHubTokenResponse(string Token);
 

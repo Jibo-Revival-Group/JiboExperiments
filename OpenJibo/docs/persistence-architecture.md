@@ -149,7 +149,9 @@ receives the default self-hosted account, hidden bootstrap robot, loop, profile,
 
 ### Phase 3: Scale And Remove Snapshot Fallback
 
-- validate two-replica cache-expiry and committed-write behavior in PostgreSQL CI and staging
+- the PostgreSQL integration suite runs in CI against PostgreSQL 16 whenever cloud CI runs
+- staging automation now temporarily pins two replicas, requires Azure to report both running, requires the protected release-smoke probe to observe two distinct serving instances through ingress, records that evidence in the promotion gate, and restores the previous scale afterward
+- run that exact-commit staging gate and validate cache-expiry plus committed-write behavior across the observed replicas
 - add replication/invalidation primitives only if the measured 30-second cache convergence bound is insufficient
 - alert if startup encounters an unimported legacy snapshot or normalized persistence fails
 - export the application meter alongside .NET runtime, Npgsql, Container Apps, and PostgreSQL platform metrics
@@ -166,8 +168,9 @@ receives the default self-hosted account, hidden bootstrap robot, loop, profile,
 ## Immediate Next Step
 
 Keep the production PostgreSQL binding pinned through the
-[managed persistence deployment runbook](managed-persistence-deployment-runbook.md), complete the
-environment-gated PostgreSQL integration suite and two-replica staging proof, then collect seven representative
+[managed persistence deployment runbook](managed-persistence-deployment-runbook.md), run the new two-replica
+staging gate against a restored production snapshot, verify family counts, identity mappings, v1 restore, and
+cache convergence, then collect seven representative
 days of application, .NET, Npgsql, Container Apps, and PostgreSQL metrics. Preserve the legacy snapshots,
 pre-cutover database, and exported v1 backup payloads until that observation window and a separately reviewed
 recovery drill pass.

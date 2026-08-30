@@ -43,6 +43,18 @@ const protocolHost = process.env.OPENJIBO_RELEASE_SMOKE_HOST ||
   (isLocal ? baseHost : "api.openjibo.com");
 
 try {
+  const replicaProbe = async () => {
+    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/health/replica`, {
+      headers: {
+        "X-OpenJibo-Release-Smoke-Secret": releaseSmokeSecret,
+        Connection: "close",
+      },
+      cache: "no-store",
+    });
+    const text = await response.text();
+    if (!response.ok) throw new Error(`Replica probe returned HTTP ${response.status}: ${text}`);
+    return JSON.parse(text);
+  };
   const protocolCall = withDeploymentSmokeAuthorizationRetry(
     createProtocolCaller(baseUrl, protocolHost, globalThis.fetch, releaseSmokeSecret));
   const result = await runReleaseSmoke({
@@ -55,7 +67,15 @@ try {
     holdMs: process.env.RELEASE_SMOKE_HOLD_MS || 500,
     roundIntervalMs: process.env.RELEASE_SMOKE_ROUND_INTERVAL_MS || 0,
     timeoutMs: process.env.RELEASE_SMOKE_TIMEOUT_MS || 6000,
-    onStep: (step) => console.error(`${step.status.toUpperCase()}: ${step.name}${step.detail ? ` - ${step.detail}` : ""}`),
+    replicaProbe,
+    minimumReplicas: process.env.RELEASE_SMOKE_MIN_REPLICAS || 1,
+    replicaProbeAttempts: process.env.RELEASE_SMOKE_REPLICA_ATTEMPTS || 40,
+    replicaProbeIntervalMs: process.env.RELEASE_SMOKE_REPLICA_INTERVAL_MS || 250,
+    expectedRevision: process.env.RELEASE_SMOKE_EXPECTED_REVISION || null,
+    onStep: (step) => {
+      const detail = typeof step.detail === "string" ? step.detail : JSON.stringify(step.detail ?? "");
+      console.error(`${step.status.toUpperCase()}: ${step.name}${detail ? ` - ${detail}` : ""}`);
+    },
   });
   console.log(JSON.stringify(result, null, 2));
 } catch (error) {

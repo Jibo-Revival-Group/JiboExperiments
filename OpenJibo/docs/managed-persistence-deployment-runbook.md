@@ -121,10 +121,12 @@ Expected sequence:
 7. Import and verify both legacy snapshots.
 8. Store embedded backups in staging Azure Blob Storage.
 9. Deploy and run the HTTP smoke test against staging.
-10. Run the deployed WebSocket release smoke through Azure ingress: token issuance, notification reconnect, `CLIENT_ASR`, `CLIENT_NLU`, malformed-frame recovery, missing-token rejection, persistence, and the selected connected-robot/simultaneous-turn tier. The quick gate defaults to six connected robots and 25% simultaneous turns for one round.
-11. Upload `openjibo-staging-gate-<commit>` with both smoke results.
+10. Capture the deployed scale, temporarily pin staging to two replicas, and wait until both replicas report running.
+11. Run the deployed WebSocket release smoke through Azure ingress: require the protected replica probe to observe two distinct serving instance ids, then exercise token issuance, notification reconnect, `CLIENT_ASR`, `CLIENT_NLU`, malformed-frame recovery, missing-token rejection, persistence, and the selected connected-robot/simultaneous-turn tier. The quick gate defaults to six connected robots and 25% simultaneous turns for one round.
+12. Disable the deployment-scoped smoke authorization and restore the captured staging scale so the proof does not silently increase ongoing cost.
+13. Upload `openjibo-staging-gate-<commit>` with HTTP smoke, WebSocket smoke, and two-replica ingress evidence. Production promotion rejects an older gate that lacks the replica evidence.
 
-The same WebSocket release smoke is available from the admin harness and runs against the current deployment. A failed HTTP or WebSocket smoke restores the previous revision and produces no promotion gate.
+The same WebSocket release smoke is available from the admin harness and runs against the current deployment. The protected `/health/replica` endpoint is hidden while deployment smoke is disabled and requires the short-lived smoke secret while enabled. A failed HTTP, WebSocket, or replica-evidence check restores the previous revision and produces no promotion gate.
 
 Fleet peer synchronization is disabled by default and the managed workflow forbids enabling it in staging, even
 when staging was cloned from production and has the same trusted-server rows or shared-key secret. Production

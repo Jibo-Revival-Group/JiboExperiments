@@ -5,11 +5,49 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import vm from "node:vm";
 import {
+  collectReplicaEvidence,
   createProtocolCaller,
   normalizeLoadOptions,
   runReleaseSmoke,
   withDeploymentSmokeAuthorizationRetry,
 } from "../../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/wwwroot/harness/release-smoke.mjs";
+
+test("replica evidence requires distinct serving instances", async () => {
+  const sequence = ["revision-a/replica-1", "revision-a/replica-1", "revision-a/replica-2"];
+  const evidence = await collectReplicaEvidence({
+    probe: async () => {
+      const instanceId = sequence.shift();
+      const [revision, replica] = instanceId.split("/");
+      return { instanceId, revision, replica };
+    },
+    minimumReplicas: 2,
+    attempts: 3,
+    intervalMs: 0,
+    expectedRevision: "revision-a",
+  });
+  assert.equal(evidence.required, 2);
+  assert.equal(evidence.observed, 2);
+  assert.equal(evidence.attempts, 3);
+  assert.equal(evidence.expectedRevision, "revision-a");
+  assert.deepEqual(evidence.instances.map((item) => item.replica), ["replica-1", "replica-2"]);
+});
+
+test("replica evidence rejects traffic from an unexpected revision", async () => {
+  await assert.rejects(() => collectReplicaEvidence({
+    probe: async () => ({ instanceId: "revision-old/replica-1", revision: "revision-old" }),
+    expectedRevision: "revision-new",
+    minimumReplicas: 1,
+  }), /reached revision revision-old; expected revision-new/);
+});
+
+test("replica evidence fails when traffic never reaches the required replica count", async () => {
+  await assert.rejects(() => collectReplicaEvidence({
+    probe: async () => ({ instanceId: "revision-a/replica-1" }),
+    minimumReplicas: 2,
+    attempts: 2,
+    intervalMs: 0,
+  }), /Observed 1 of 2 required replicas/);
+});
 
 class FakeWebSocket {
   constructor(url) {

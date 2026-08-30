@@ -40,6 +40,41 @@ function delay(milliseconds) {
   return milliseconds > 0 ? new Promise((resolve) => setTimeout(resolve, milliseconds)) : Promise.resolve();
 }
 
+export async function collectReplicaEvidence({
+  probe,
+  minimumReplicas = 1,
+  attempts = 40,
+  intervalMs = 250,
+  expectedRevision = null,
+  delayImpl = delay,
+}) {
+  assert(typeof probe === "function", "replica probe is required.");
+  const required = boundedInteger(minimumReplicas, "minimumReplicas", 1, 20);
+  const maximumAttempts = boundedInteger(attempts, "replicaProbeAttempts", required, 500);
+  const interval = boundedInteger(intervalMs, "replicaProbeIntervalMs", 0, 60_000);
+  const instances = new Map();
+  for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
+    const evidence = await probe();
+    assert(evidence?.instanceId, "Replica probe did not return an instanceId.");
+    if (expectedRevision) {
+      assert(evidence.revision === expectedRevision,
+        `Replica probe reached revision ${evidence.revision ?? "unknown"}; expected ${expectedRevision}.`);
+    }
+    instances.set(evidence.instanceId, evidence);
+    if (instances.size >= required) {
+      return {
+        required,
+        observed: instances.size,
+        attempts: attempt,
+        instances: [...instances.values()],
+        expectedRevision,
+      };
+    }
+    if (attempt < maximumAttempts) await delayImpl(interval);
+  }
+  throw new Error(`Observed ${instances.size} of ${required} required replicas after ${maximumAttempts} attempts.`);
+}
+
 function percentile(values, fraction) {
   if (!values.length) return null;
   const sorted = [...values].sort((left, right) => left - right);
@@ -213,6 +248,11 @@ export async function runReleaseSmoke({
   holdMs,
   roundIntervalMs,
   timeoutMs,
+  replicaProbe = null,
+  minimumReplicas = 1,
+  replicaProbeAttempts = 40,
+  replicaProbeIntervalMs = 250,
+  expectedRevision = null,
   onStep = () => {},
 }) {
   assert(baseUrl, "baseUrl is required.");
@@ -243,6 +283,20 @@ export async function runReleaseSmoke({
       throw Object.assign(error, { results });
     }
   };
+
+  let replicaEvidence = null;
+  if (replicaProbe) {
+    replicaEvidence = await runStep(`Observe ${minimumReplicas} serving replica(s)`, async () => {
+      const evidence = await collectReplicaEvidence({
+        probe: replicaProbe,
+        minimumReplicas,
+        attempts: replicaProbeAttempts,
+        intervalMs: replicaProbeIntervalMs,
+        expectedRevision,
+      });
+      return evidence;
+    });
+  }
 
   let robotToken;
   let hubToken;
@@ -407,5 +461,13 @@ export async function runReleaseSmoke({
     return `read ${deviceId} after all socket sessions closed`;
   });
 
-  return { ok: true, baseUrl, robotPrefix, concurrency: loadOptions.robotCount, load: loadSummary, results };
+  return {
+    ok: true,
+    baseUrl,
+    robotPrefix,
+    concurrency: loadOptions.robotCount,
+    replicaEvidence,
+    load: loadSummary,
+    results,
+  };
 }

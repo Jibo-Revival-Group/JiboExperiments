@@ -632,7 +632,8 @@ async function loginAccount(email, password) {
     setSessionToken(payload.portalSessionToken);
     await renderAccountHome();
   } catch (error) {
-    await renderLogin(error.message, true);
+    const message = error.status === 401 ? "Invalid email or password." : error.message;
+    await renderLogin(message, true);
   }
 }
 

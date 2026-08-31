@@ -653,13 +653,15 @@ These are the carryover items that need a clean proof pass first:
   - cloud CI now provisions PostgreSQL 16 and supplies the environment-gated integration connection string to the complete .NET suite
   - the managed staging workflow now captures the normal scale, temporarily pins two replicas, waits for both to run, requires the protected smoke probe to observe two distinct serving instances through ingress, and requires a different replica to read a newly committed bounded smoke-device registration before recording the evidence and restoring the prior scale
   - the aggregate staging audit exposed a superseded robot profile left by the historically mutating `GetRobot` path; `GetRobot` is now read-only, explicit updates transactionally remove older same-device profiles, and a conservative migration removes a stale row only when its correct replacement already exists
+  - exact commit `b5b75f1949e7a8452ccdc784ed86db527597749f` passed the two-replica staging gate on revision `openjibo-cloud--0000075`; its retained promotion artifact includes cross-replica committed-read and WebSocket evidence
+  - the post-deploy aggregate audit reports 27 linked devices, two robot profiles, zero mismatched profiles, zero orphaned active devices, zero duplicate active robot IDs, seven available schema-v2 backups, and no unsupported backup schemas
+  - staging contains no schema-v1 backup candidate (`backupSchemaV1=0`), so a destructive live v1 drill is not applicable to this clone; v1 compatibility remains covered by the PostgreSQL integration suite
+  - the application, .NET runtime, and Npgsql meters are exported to Application Insights; the exact-revision capacity reporter reconciles those values with Container Apps wire/memory/restart metrics and the PostgreSQL server limit without exposing identifiers or pool names
+  - managed pool ceilings are explicit at eight cloud-state plus four personal-memory connections per replica, producing a 24/50 worst-case pool budget at the configured two-replica maximum
 - Remaining rollout and measurement work:
-  - run the enhanced exact-commit two-replica gate against a production-snapshot clone in staging and retain its promotion artifact
-  - run the aggregate-only cloud-state audit against refreshed staging to verify imported family counts,
-    identity-link integrity, and schema-v1 backup availability, then perform the bounded v1 restore drill
-    before switching the managed API revision
-  - observe traffic and memory metrics for at least seven representative days and reconcile application payload bytes with Azure ingress/egress
-  - wire the application meter plus .NET runtime and Npgsql provider meters to the production telemetry backend, then add alerts for working set/GC, pool waits, persistence failures/latency, audio-limit rejection, and unexpected legacy snapshot selection
+  - keep exact revision `b5b75f1949e7a8452ccdc784ed86db527597749f` continuously available long enough to collect seven representative days, then retain the generated capacity report beside its staging gate artifact
+  - use the report to reconcile application payload bytes with Container Apps `RxBytes + TxBytes`; separate steady robot traffic from deployment/image/startup overhead before forming a bandwidth hypothesis
+  - add reviewed alerts for working set/GC, pool waits, persistence failures/latency, audio-limit rejection, and unexpected legacy snapshot selection after the representative baseline establishes non-noisy thresholds and an operator action group
   - keep WebSocket compression disabled until a stock OS 1.9 physical-client canary proves negotiation and reconnect behavior; evaluate static HTTP text compression separately
 - Exit criteria:
   - production DI does not resolve `InMemoryCloudStateStore` for durable cloud state or personal memory
@@ -670,7 +672,7 @@ These are the carryover items that need a clean proof pass first:
   - migration dry-run, apply, verification, rollback/export, backup creation, and restore all have automated tests and a managed-deployment smoke check
   - operators can detect persistence degradation before robot requests begin timing out while `/health` remains green
 - Next action:
-  - deploy this exact commit to refreshed staging, retain the cross-replica gate artifact, verify v1 restore, and collect seven days of the low-cardinality transport/memory metrics before making a capacity claim
+  - keep the current exact revision in staging and run `openjibo-capacity-report.mjs --days 7 --average-robots 2.5` after the observation window; do not make a fleet-capacity claim from the current deployment/smoke-heavy sample
 
 ### Next Up (`2026-05-06`): Dialog Parsing Expansion And Ambiguity Guardrails
 

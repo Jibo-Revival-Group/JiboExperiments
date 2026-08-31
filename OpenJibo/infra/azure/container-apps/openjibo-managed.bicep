@@ -114,6 +114,16 @@ param minReplicas int = 1
 @description('Maximum number of replicas for the runtime container.')
 param maxReplicas int = 2
 
+@minValue(1)
+@maxValue(12)
+@description('Maximum PostgreSQL cloud-state connections opened by each replica.')
+param statePostgreSqlMaxPoolSize int = 8
+
+@minValue(1)
+@maxValue(6)
+@description('Maximum PostgreSQL personal-memory connections opened by each replica.')
+param personalMemoryPostgreSqlMaxPoolSize int = 4
+
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name: 'log-${workloadName}-${environmentName}'
 }
@@ -299,6 +309,10 @@ var managedEnvVars = concat([
     value: 'PostgreSql'
   }
   {
+    name: 'OpenJibo__State__PostgreSql__MaxPoolSize'
+    value: string(statePostgreSqlMaxPoolSize)
+  }
+  {
     name: 'OpenJibo__Deployment__Mode'
     value: 'managed'
   }
@@ -321,6 +335,10 @@ var managedEnvVars = concat([
   {
     name: 'OpenJibo__PersonalMemory__Backend'
     value: 'PostgreSql'
+  }
+  {
+    name: 'OpenJibo__PersonalMemory__PostgreSql__MaxPoolSize'
+    value: string(personalMemoryPostgreSqlMaxPoolSize)
   }
   {
     name: 'OpenJibo__Media__Backend'

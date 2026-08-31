@@ -1,6 +1,6 @@
 # Runtime Operational Metrics
 
-Status date: `2026-08-26`
+Status date: `2026-08-31`
 
 OpenJibo emits privacy-safe aggregate measurements through the .NET meter `OpenJibo.Transport`. These
 measurements are intended to establish a concurrency and cost envelope; they are not a customer activity log.
@@ -58,6 +58,49 @@ to become the pool-name attribute.
 
 Do not duplicate Npgsql internals with a second application-side pool tracker. Reconcile the provider's live pool
 measurements against `openjibo.persistence.postgresql.configured_max_connections` instead.
+
+Managed deployments explicitly set the cloud-state pool ceiling to `8` and personal-memory to `4` connections
+per replica. At the current maximum of two replicas, the static worst-case application pool budget is therefore
+`24` of PostgreSQL's `50` connections. The configured ceiling is not an assertion that all 24 connections are
+open; live Npgsql usage remains the primary observation. Deployment parameters are capped at `12` and `6`
+respectively so one accidental override cannot consume the current server budget.
+
+Azure Monitor does not preserve arbitrary percentiles for OpenTelemetry histogram exports. The capacity report
+therefore labels runtime GC-pause and Npgsql command-duration values as weighted average and observed maximum;
+it does not present a percentile computed from already-aggregated histogram rows. Application gauges and
+counters retain their valid P50/P95 summaries.
+
+## Seven-Day Evidence Command
+
+Install the official Azure CLI Application Insights extension once, then run the report from the repository root:
+
+```powershell
+az extension add --name application-insights --yes
+node scripts/cloud/openjibo-capacity-report.mjs `
+  --resource-group rg-openjibo-staging `
+  --container-app openjibo-cloud `
+  --application-insights appi-openjibo-managed `
+  --days 7 `
+  --average-robots 2.5 `
+  --format markdown `
+  --output artifact-output/openjibo-staging-capacity.md
+```
+
+The report resolves the latest ready revision first and filters both Application Insights and Container Apps
+metrics to that exact revision. This prevents an old rollback, failed deployment, or overlapping rollout replica
+from being attributed to the build under observation. It reads only aggregate metric values; it does not query or
+emit robot, device, account, session, transcript, credential, connection-string, or pool-name values.
+
+An observation is `insufficient-evidence` until its exact revision covers at least 80% of the requested window
+(134.4 hours for a seven-day run). A restart, database command failure, or audio-limit rejection also prevents a
+representative classification. The window must also contain application payload traffic and database command
+samples; seven idle days are not representative robot evidence. A passing classification remains a bounded operating hypothesis, not a linear
+robot-count extrapolation. Preserve the generated report with the exact-commit staging gate artifact and note any
+deployment, load-smoke, or unusual robot-use periods that overlap the window.
+
+Application payload bytes are expected to be below Container Apps `RxBytes + TxBytes`: platform traffic also
+contains TLS/WebSocket framing, database and provider calls, health traffic, image/startup activity, and other
+protocol overhead. Investigate a rising gap across comparable quiet windows; do not expect equality.
 
 ## Capacity Worksheet
 

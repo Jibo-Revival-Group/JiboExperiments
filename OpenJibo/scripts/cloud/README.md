@@ -76,6 +76,11 @@ These scripts help exercise the new .NET hosted cloud locally.
   `RELEASE_SMOKE_CONCURRENCY`, `RELEASE_SMOKE_TURN_PERCENT`, `RELEASE_SMOKE_TURN_ROUNDS`,
   `RELEASE_SMOKE_HOLD_MS`, `RELEASE_SMOKE_ROUND_INTERVAL_MS`, and `RELEASE_SMOKE_TIMEOUT_MS`. The JSON result
   includes completed-turn count and min/P50/P95/max client-observed latency.
+- `openjibo-capacity-report.mjs`
+  Reads aggregate-only Application Insights, Npgsql, .NET runtime, Container Apps, and PostgreSQL limit data for
+  the exact ready revision. It reconciles application payload bytes with platform wire bytes, calculates memory
+  and connection headroom, and refuses to classify a short observation window as representative evidence. The
+  Azure CLI `application-insights` extension is required.
 - `test-openjibo-self-hosted-deployment-contract.sh`
   Bash contract checker for the self-hosted compose/migration/smoke trio.
 - `get-websocket-capture-summary.sh`

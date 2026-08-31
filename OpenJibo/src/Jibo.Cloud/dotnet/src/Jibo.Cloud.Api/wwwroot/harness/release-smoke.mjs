@@ -40,6 +40,14 @@ function delay(milliseconds) {
   return milliseconds > 0 ? new Promise((resolve) => setTimeout(resolve, milliseconds)) : Promise.resolve();
 }
 
+const protocolResponseMetadata = new WeakMap();
+
+export function getProtocolResponseMetadata(payload) {
+  return payload && typeof payload === "object"
+    ? protocolResponseMetadata.get(payload) ?? null
+    : null;
+}
+
 export async function collectReplicaEvidence({
   probe,
   minimumReplicas = 1,
@@ -73,6 +81,49 @@ export async function collectReplicaEvidence({
     if (attempt < maximumAttempts) await delayImpl(interval);
   }
   throw new Error(`Observed ${instances.size} of ${required} required replicas after ${maximumAttempts} attempts.`);
+}
+
+export async function collectCrossReplicaCommittedReadEvidence({
+  writerInstanceId,
+  writerRevision = null,
+  read,
+  attempts = 40,
+  intervalMs = 250,
+  expectedRevision = null,
+  delayImpl = delay,
+}) {
+  assert(writerInstanceId, "Committed-write response did not identify its serving instance.");
+  assert(typeof read === "function", "cross-replica read callback is required.");
+  const maximumAttempts = boundedInteger(attempts, "crossReplicaReadAttempts", 1, 500);
+  const interval = boundedInteger(intervalMs, "crossReplicaReadIntervalMs", 0, 60_000);
+  if (expectedRevision) {
+    assert(writerRevision === expectedRevision,
+      `Committed write reached revision ${writerRevision ?? "unknown"}; expected ${expectedRevision}.`);
+  }
+  const observedReaders = new Set();
+  for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
+    const observation = await read();
+    assert(observation?.instanceId, "Committed-read response did not identify its serving instance.");
+    if (expectedRevision) {
+      assert(observation.revision === expectedRevision,
+        `Committed read reached revision ${observation.revision ?? "unknown"}; expected ${expectedRevision}.`);
+    }
+    observedReaders.add(observation.instanceId);
+    if (observation.instanceId !== writerInstanceId) {
+      assert(observation.value, "A different replica did not return the committed value.");
+      return {
+        writerInstanceId,
+        readerInstanceId: observation.instanceId,
+        writerRevision,
+        readerRevision: observation.revision ?? null,
+        attempts: attempt,
+        observedReaders: [...observedReaders],
+      };
+    }
+    if (attempt < maximumAttempts) await delayImpl(interval);
+  }
+  throw new Error(
+    `No replica other than writer ${writerInstanceId} returned the committed value after ${maximumAttempts} attempts.`);
 }
 
 function percentile(values, fraction) {
@@ -193,9 +244,9 @@ export function createProtocolCaller(baseUrl, hostName = "api.openjibo.com", fet
     };
     const isSmokeTokenRequest = (service === "Notification_20160715" && operation === "NewRobotToken") ||
       (service === "Account_20160715" && operation === "CreateHubToken");
-    if (releaseSmokeSecret && isSmokeTokenRequest) {
-      headers["X-OpenJibo-Registration-Source"] = "deployment-smoke";
+    if (releaseSmokeSecret) {
       headers["X-OpenJibo-Release-Smoke-Secret"] = releaseSmokeSecret;
+      if (isSmokeTokenRequest) headers["X-OpenJibo-Registration-Source"] = "deployment-smoke";
     }
     const response = await fetchImpl(`${baseUrl.replace(/\/$/, "")}/`, {
       method: "POST",
@@ -209,6 +260,13 @@ export function createProtocolCaller(baseUrl, hostName = "api.openjibo.com", fet
       error.status = response.status;
       error.responseText = text;
       throw error;
+    }
+    const instanceId = response.headers?.get?.("X-OpenJibo-Replica-Instance") ?? null;
+    if (payload && typeof payload === "object" && instanceId) {
+      protocolResponseMetadata.set(payload, {
+        instanceId,
+        revision: response.headers?.get?.("X-OpenJibo-Replica-Revision") ?? null,
+      });
     }
     return payload;
   };
@@ -300,6 +358,8 @@ export async function runReleaseSmoke({
 
   let robotToken;
   let hubToken;
+  let writerMetadata;
+  let initialCommittedRead;
   const deviceId = `${robotPrefix}-primary`;
   await runStep("Issue robot token and persist identity", async () => {
     const issued = await protocolCall("Notification_20160715", "NewRobotToken", {
@@ -308,13 +368,41 @@ export async function runReleaseSmoke({
     });
     robotToken = issued?.token;
     assert(robotToken, `NewRobotToken did not return a token: ${JSON.stringify(issued)}`);
+    writerMetadata = getProtocolResponseMetadata(issued);
     const hub = await protocolCall("Account_20160715", "CreateHubToken", { deviceId });
     hubToken = hub?.token;
     assert(hubToken, `CreateHubToken did not return a token: ${JSON.stringify(hub)}`);
-    const robot = await protocolCall("Robot_20160225", "GetRobot", { id: deviceId });
-    assert(robot, "GetRobot did not return the persisted fake robot.");
+    initialCommittedRead = {
+      value: hubToken,
+      ...getProtocolResponseMetadata(hub),
+    };
     return `persisted ${deviceId}`;
   });
+
+  let crossReplicaEvidence = null;
+  if (minimumReplicas > 1) {
+    crossReplicaEvidence = await runStep("Different replica reads committed robot", async () => {
+      let firstRead = initialCommittedRead;
+      return collectCrossReplicaCommittedReadEvidence({
+        writerInstanceId: writerMetadata?.instanceId,
+        writerRevision: writerMetadata?.revision,
+        expectedRevision,
+        attempts: replicaProbeAttempts,
+        intervalMs: replicaProbeIntervalMs,
+        read: async () => {
+          if (firstRead) {
+            const result = firstRead;
+            firstRead = null;
+            return result;
+          }
+          const hub = await protocolCall("Account_20160715", "CreateHubToken", { deviceId });
+          assert(hub?.token, "Cross-replica CreateHubToken did not return a token.");
+          const metadata = getProtocolResponseMetadata(hub);
+          return { value: hub.token, ...metadata };
+        },
+      });
+    });
+  }
 
   await runStep("Notification socket connect and reconnect", async () => {
     const url = websocketUrl(baseUrl, `/${encodeURIComponent(robotToken)}`);
@@ -455,10 +543,10 @@ export async function runReleaseSmoke({
     }
   });
 
-  await runStep("Persisted robot survives socket sessions", async () => {
-    const robot = await protocolCall("Robot_20160225", "GetRobot", { id: deviceId });
-    assert(robot, "Persisted fake robot could not be read after socket reconnects.");
-    return `read ${deviceId} after all socket sessions closed`;
+  await runStep("Persisted robot authorization survives socket sessions", async () => {
+    const hub = await protocolCall("Account_20160715", "CreateHubToken", { deviceId });
+    assert(hub?.token, "Persisted fake robot could not issue a Hub token after socket reconnects.");
+    return `authorized ${deviceId} after all socket sessions closed`;
   });
 
   return {
@@ -467,6 +555,7 @@ export async function runReleaseSmoke({
     robotPrefix,
     concurrency: loadOptions.robotCount,
     replicaEvidence,
+    crossReplicaEvidence,
     load: loadSummary,
     results,
   };

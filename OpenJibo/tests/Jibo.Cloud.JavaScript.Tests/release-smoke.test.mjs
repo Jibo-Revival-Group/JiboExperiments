@@ -5,12 +5,51 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import vm from "node:vm";
 import {
+  collectCrossReplicaCommittedReadEvidence,
   collectReplicaEvidence,
   createProtocolCaller,
+  getProtocolResponseMetadata,
   normalizeLoadOptions,
   runReleaseSmoke,
   withDeploymentSmokeAuthorizationRetry,
 } from "../../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/wwwroot/harness/release-smoke.mjs";
+
+test("cross-replica committed read requires a reader different from the writer", async () => {
+  const reads = [
+    { value: { id: "robot-1" }, instanceId: "revision-a/replica-1", revision: "revision-a" },
+    { value: { id: "robot-1" }, instanceId: "revision-a/replica-2", revision: "revision-a" },
+  ];
+  const evidence = await collectCrossReplicaCommittedReadEvidence({
+    writerInstanceId: "revision-a/replica-1",
+    writerRevision: "revision-a",
+    expectedRevision: "revision-a",
+    attempts: 2,
+    intervalMs: 0,
+    read: async () => reads.shift(),
+  });
+  assert.equal(evidence.readerInstanceId, "revision-a/replica-2");
+  assert.equal(evidence.attempts, 2);
+});
+
+test("cross-replica committed read rejects stale or single-instance observations", async () => {
+  await assert.rejects(() => collectCrossReplicaCommittedReadEvidence({
+    writerInstanceId: "revision-a/replica-1",
+    writerRevision: "revision-a",
+    expectedRevision: "revision-a",
+    attempts: 1,
+    intervalMs: 0,
+    read: async () => ({ value: { id: "robot-1" }, instanceId: "revision-old/replica-2",
+      revision: "revision-old" }),
+  }), /Committed read reached revision revision-old/);
+  await assert.rejects(() => collectCrossReplicaCommittedReadEvidence({
+    writerInstanceId: "revision-a/replica-1",
+    writerRevision: "revision-a",
+    attempts: 2,
+    intervalMs: 0,
+    read: async () => ({ value: { id: "robot-1" }, instanceId: "revision-a/replica-1",
+      revision: "revision-a" }),
+  }), /No replica other than writer/);
+});
 
 test("replica evidence requires distinct serving instances", async () => {
   const sequence = ["revision-a/replica-1", "revision-a/replica-1", "revision-a/replica-2"];
@@ -166,7 +205,15 @@ test("createProtocolCaller authorizes bounded deployment-smoke token issuance", 
   const requests = [];
   const call = createProtocolCaller("https://staging.example", "api.openjibo.com", async (url, options) => {
     requests.push({ url, options });
-    return { ok: true, text: async () => "{}" };
+    return {
+      ok: true,
+      text: async () => "{}",
+      headers: {
+        get: (name) => name === "X-OpenJibo-Replica-Instance"
+          ? "revision-a/replica-1"
+          : name === "X-OpenJibo-Replica-Revision" ? "revision-a" : null,
+      },
+    };
   }, "test-smoke-secret");
 
   await call("Notification_20160715", "NewRobotToken", { deviceId: "open-jibo-smoke-staging-primary" });
@@ -178,7 +225,12 @@ test("createProtocolCaller authorizes bounded deployment-smoke token issuance", 
   assert.equal(requests[1].options.headers["X-OpenJibo-Registration-Source"], "deployment-smoke");
   assert.equal(requests[1].options.headers["X-OpenJibo-Release-Smoke-Secret"], "test-smoke-secret");
   assert.equal(requests[2].options.headers["X-OpenJibo-Registration-Source"], undefined);
-  assert.equal(requests[2].options.headers["X-OpenJibo-Release-Smoke-Secret"], undefined);
+  assert.equal(requests[2].options.headers["X-OpenJibo-Release-Smoke-Secret"], "test-smoke-secret");
+  const robotPayload = await call("Robot_20160225", "GetRobot", { id: "open-jibo-smoke-staging-primary" });
+  assert.deepEqual(getProtocolResponseMetadata(robotPayload), {
+    instanceId: "revision-a/replica-1",
+    revision: "revision-a",
+  });
 });
 
 test("managed registration tolerates bounded authorization rollout and no other failures", async () => {
@@ -294,15 +346,33 @@ test("managed release smoke requires a deployment-scoped secret", () => {
   assert.match(result.stderr, /OPENJIBO_RELEASE_SMOKE_SECRET/);
 });
 
-test("runReleaseSmoke holds quiet robots and completes rotating concurrent turns", async () => {
-  const protocolCall = async (service, operation, body) => {
-    if (service === "Notification_20160715" && operation === "NewRobotToken")
-      return { token: `token-${body.deviceId}` };
-    if (service === "Account_20160715" && operation === "CreateHubToken")
-      return { token: `hub-${body.deviceId}` };
-    if (service === "Robot_20160225" && operation === "GetRobot") return { id: body.id };
-    throw new Error(`Unexpected protocol call ${service}.${operation}`);
-  };
+test("runReleaseSmoke proves cross-replica persistence and rotating concurrent turns", async () => {
+  const protocolCall = createProtocolCaller("http://localhost:8080", "api.jibo.com",
+    async (_url, options) => {
+      const body = JSON.parse(options.body);
+      const target = options.headers["X-Amz-Target"];
+      let payload;
+      let instance = "revision-a/replica-2";
+      if (target === "Notification_20160715.NewRobotToken") {
+        payload = { token: `token-${body.deviceId}` };
+        if (body.deviceId === "test-load-primary") instance = "revision-a/replica-1";
+      } else if (target === "Account_20160715.CreateHubToken") {
+        payload = { token: `hub-${body.deviceId}` };
+      } else {
+        throw new Error(`Unexpected protocol call ${target}`);
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify(payload),
+        headers: {
+          get: (name) => name === "X-OpenJibo-Replica-Instance"
+            ? instance
+            : name === "X-OpenJibo-Replica-Revision" ? "revision-a" : null,
+        },
+      };
+    }, "test-smoke-secret");
+  let replicaProbeCalls = 0;
 
   const result = await runReleaseSmoke({
     baseUrl: "http://localhost:8080",
@@ -315,12 +385,24 @@ test("runReleaseSmoke holds quiet robots and completes rotating concurrent turns
     holdMs: 0,
     roundIntervalMs: 0,
     timeoutMs: 500,
+    replicaProbe: async () => {
+      replicaProbeCalls += 1;
+      const replica = replicaProbeCalls === 1 ? "replica-1" : "replica-2";
+      return { instanceId: `revision-a/${replica}`, revision: "revision-a", replica };
+    },
+    minimumReplicas: 2,
+    replicaProbeAttempts: 2,
+    replicaProbeIntervalMs: 0,
+    expectedRevision: "revision-a",
   });
 
   assert.equal(result.ok, true);
+  assert.equal(result.replicaEvidence.observed, 2);
+  assert.equal(result.crossReplicaEvidence.writerInstanceId, "revision-a/replica-1");
+  assert.equal(result.crossReplicaEvidence.readerInstanceId, "revision-a/replica-2");
   assert.equal(result.load.robotCount, 4);
   assert.equal(result.load.activeTurnsPerRound, 2);
   assert.equal(result.load.completedTurns, 4);
   assert.equal(result.results.find((step) => step.name.includes("connected fake robots"))?.status, "passed");
-  assert.equal(result.results.length, 7);
+  assert.equal(result.results.length, 9);
 });

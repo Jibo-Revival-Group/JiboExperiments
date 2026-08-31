@@ -54,6 +54,46 @@ public sealed class JiboCloudApiIntegrationTests
     }
 
     [Fact]
+    public async Task ProtocolResponse_ExposesReplicaOnlyToAuthorizedDeploymentSmoke()
+    {
+        await using var factory = CreateFactory(enableReleaseSmoke: true);
+        var client = factory.CreateClient();
+
+        using var ordinaryRequest = new HttpRequestMessage(HttpMethod.Post, "/");
+        ordinaryRequest.Content = JsonContent.Create(new { });
+        ordinaryRequest.Headers.TryAddWithoutValidation("X-Amz-Target", "Backup_20170222.List");
+        ordinaryRequest.Headers.Host = "api.jibo.com";
+        var ordinaryResponse = await client.SendAsync(ordinaryRequest);
+        Assert.False(ordinaryResponse.Headers.Contains(ReleaseSmokeAuthorizationOptions.ReplicaInstanceHeaderName));
+        Assert.False(ordinaryResponse.Headers.Contains(ReleaseSmokeAuthorizationOptions.ReplicaRevisionHeaderName));
+
+        using var rejectedRequest = new HttpRequestMessage(HttpMethod.Post, "/");
+        rejectedRequest.Content = JsonContent.Create(new { });
+        rejectedRequest.Headers.TryAddWithoutValidation("X-Amz-Target", "Backup_20170222.List");
+        rejectedRequest.Headers.TryAddWithoutValidation(ReleaseSmokeAuthorizationOptions.SecretHeaderName,
+            "wrong-secret");
+        rejectedRequest.Headers.Host = "api.jibo.com";
+        var rejectedResponse = await client.SendAsync(rejectedRequest);
+        Assert.False(rejectedResponse.Headers.Contains(ReleaseSmokeAuthorizationOptions.ReplicaInstanceHeaderName));
+        Assert.False(rejectedResponse.Headers.Contains(ReleaseSmokeAuthorizationOptions.ReplicaRevisionHeaderName));
+
+        using var smokeRequest = new HttpRequestMessage(HttpMethod.Post, "/");
+        smokeRequest.Content = JsonContent.Create(new { });
+        smokeRequest.Headers.TryAddWithoutValidation("X-Amz-Target", "Backup_20170222.List");
+        smokeRequest.Headers.TryAddWithoutValidation(ReleaseSmokeAuthorizationOptions.SecretHeaderName,
+            "integration-test-secret");
+        smokeRequest.Headers.Host = "api.jibo.com";
+        var smokeResponse = await client.SendAsync(smokeRequest);
+
+        Assert.True(smokeResponse.Headers.TryGetValues(
+            ReleaseSmokeAuthorizationOptions.ReplicaInstanceHeaderName, out var instances));
+        Assert.Contains("/", Assert.Single(instances), StringComparison.Ordinal);
+        Assert.True(smokeResponse.Headers.TryGetValues(
+            ReleaseSmokeAuthorizationOptions.ReplicaRevisionHeaderName, out var revisions));
+        Assert.False(string.IsNullOrWhiteSpace(Assert.Single(revisions)));
+    }
+
+    [Fact]
     public async Task Harness_ServesReleaseSmokeModuleAndModuleEntryPoint()
     {
         await using var factory = CreateFactory();

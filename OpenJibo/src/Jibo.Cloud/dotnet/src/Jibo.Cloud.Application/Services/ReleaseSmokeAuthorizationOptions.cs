@@ -8,6 +8,8 @@ public sealed class ReleaseSmokeAuthorizationOptions
 {
     public const string FixedPrefix = RobotRegistrationSources.DeploymentSmokePrefix;
     public const string SecretHeaderName = "X-OpenJibo-Release-Smoke-Secret";
+    public const string ReplicaInstanceHeaderName = "X-OpenJibo-Replica-Instance";
+    public const string ReplicaRevisionHeaderName = "X-OpenJibo-Replica-Revision";
 
     public bool Enabled { get; set; }
     public string? Secret { get; set; }

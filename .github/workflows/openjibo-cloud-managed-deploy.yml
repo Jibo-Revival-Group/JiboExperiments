@@ -260,6 +260,8 @@ jobs:
               raise SystemExit("Staging gate does not record a passing WebSocket release smoke.")
           if gate.get("replicaEvidence") != "passed" or gate.get("minimumReplicasObserved", 0) < 2:
               raise SystemExit("Staging gate does not prove two serving replicas.")
+          if gate.get("crossReplicaCommittedRead") != "passed":
+              raise SystemExit("Staging gate does not prove a cross-replica committed read.")
           PY
 
       - name: Setup .NET
@@ -894,6 +896,7 @@ jobs:
               "webSocketReleaseSmoke": "passed",
               "replicaEvidence": "passed",
               "minimumReplicasObserved": 2,
+              "crossReplicaCommittedRead": "passed",
           }
           with open(sys.argv[1], "w", encoding="utf-8") as gate_file:
               json.dump(gate, gate_file, indent=2)

@@ -227,6 +227,7 @@ $twoReplicaMarkers = @(
     "RELEASE_SMOKE_MIN_REPLICAS",
     "RELEASE_SMOKE_EXPECTED_REVISION",
     "minimumReplicasObserved",
+    "crossReplicaCommittedRead",
     "Restore staging scale after two-replica proof"
 )
 foreach ($marker in $twoReplicaMarkers) {

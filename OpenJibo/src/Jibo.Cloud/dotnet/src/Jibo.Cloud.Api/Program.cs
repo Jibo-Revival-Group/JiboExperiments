@@ -189,7 +189,8 @@ app.MapPortalStaticFiles();
 app.MapPortalEndpoints();
 
 app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, JiboCloudProtocolService service,
-    IProtocolTelemetrySink telemetrySink, ITransportMetrics transportMetrics, CancellationToken cancellationToken) =>
+    IProtocolTelemetrySink telemetrySink, ITransportMetrics transportMetrics,
+    ReleaseSmokeAuthorizationOptions releaseSmokeAuthorization, CancellationToken cancellationToken) =>
 {
     if (PortalStaticFileMapper.IsPortalPath(context.Request.Path))
     {
@@ -232,6 +233,15 @@ app.MapMethods("/{**path}", ["GET", "POST", "PUT"], async (HttpContext context, 
 
     context.Response.StatusCode = result.StatusCode;
     context.Response.ContentType = result.ContentType;
+    if (releaseSmokeAuthorization.IsSecretAuthorized(
+            context.Request.Headers[ReleaseSmokeAuthorizationOptions.SecretHeaderName].ToString()))
+    {
+        var revision = Environment.GetEnvironmentVariable("CONTAINER_APP_REVISION") ?? "local";
+        var replica = Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName;
+        context.Response.Headers[ReleaseSmokeAuthorizationOptions.ReplicaInstanceHeaderName] =
+            $"{revision}/{replica}";
+        context.Response.Headers[ReleaseSmokeAuthorizationOptions.ReplicaRevisionHeaderName] = revision;
+    }
 
     app.Logger.LogInformation(
         "Protocol request completed requestId={RequestId} traceId={TraceId} operation={Operation} " +

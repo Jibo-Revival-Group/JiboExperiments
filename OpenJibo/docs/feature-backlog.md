@@ -654,7 +654,9 @@ These are the carryover items that need a clean proof pass first:
   - the managed staging workflow now captures the normal scale, temporarily pins two replicas, waits for both to run, requires the protected smoke probe to observe two distinct serving instances through ingress, and requires a different replica to read a newly committed bounded smoke-device registration before recording the evidence and restoring the prior scale
 - Remaining rollout and measurement work:
   - run the enhanced exact-commit two-replica gate against a production-snapshot clone in staging and retain its promotion artifact
-  - verify imported family counts, identity mappings, and v1 backup restore before switching the managed API revision
+  - run the aggregate-only cloud-state audit against refreshed staging to verify imported family counts,
+    identity-link integrity, and schema-v1 backup availability, then perform the bounded v1 restore drill
+    before switching the managed API revision
   - observe traffic and memory metrics for at least seven representative days and reconcile application payload bytes with Azure ingress/egress
   - wire the application meter plus .NET runtime and Npgsql provider meters to the production telemetry backend, then add alerts for working set/GC, pool waits, persistence failures/latency, audio-limit rejection, and unexpected legacy snapshot selection
   - keep WebSocket compression disabled until a stock OS 1.9 physical-client canary proves negotiation and reconnect behavior; evaluate static HTTP text compression separately

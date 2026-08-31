@@ -45,7 +45,7 @@ try
             return 1;
         }
 
-        var report = await AuditCloudStateAsync(connectionString);
+        var report = await PostgreSqlCloudStateAuditor.AuditAsync(connectionString);
         Console.WriteLine(JsonSerializer.Serialize(report, new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -334,82 +334,6 @@ static async Task<string?> LoadSnapshotAsync(NpgsqlConnection connection, string
                                                 """, connection);
     command.Parameters.AddWithValue("snapshotName", snapshotName);
     return await command.ExecuteScalarAsync() as string;
-}
-
-static async Task<CloudStateAuditReport> AuditCloudStateAsync(string connectionString)
-{
-    var builder = new NpgsqlConnectionStringBuilder(connectionString);
-    var existingOptions = builder.Options;
-    builder.Options = string.IsNullOrWhiteSpace(existingOptions)
-        ? "-c default_transaction_read_only=on"
-        : $"{existingOptions} -c default_transaction_read_only=on";
-
-    await using var connection = new NpgsqlConnection(builder.ConnectionString);
-    await connection.OpenAsync();
-
-    string? snapshotJson;
-    await using (var snapshot = new NpgsqlCommand("""
-                                                   SELECT SnapshotJson
-                                                   FROM PersistenceSnapshots
-                                                   WHERE SnapshotName = 'cloud-state'
-                                                   """, connection))
-    {
-        snapshotJson = await snapshot.ExecuteScalarAsync() as string;
-    }
-
-    var legacy = snapshotJson is null
-        ? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
-        : new Dictionary<string, int>(
-            PostgreSqlCloudStateSnapshotImporter.GetLegacyDurableFamilyCounts(snapshotJson),
-            StringComparer.OrdinalIgnoreCase);
-    var normalized = await LoadNormalizedCloudStateCountsAsync(connection);
-    var delta = normalized.Keys.ToDictionary(
-        key => key,
-        key => normalized[key] - legacy.GetValueOrDefault(key),
-        StringComparer.OrdinalIgnoreCase);
-
-    return new CloudStateAuditReport(snapshotJson is not null, legacy, normalized, delta);
-}
-
-static async Task<IReadOnlyDictionary<string, int>> LoadNormalizedCloudStateCountsAsync(
-    NpgsqlConnection connection)
-{
-    await using var command = new NpgsqlCommand("""
-                                                SELECT
-                                                  (SELECT COUNT(*) FROM Accounts) AS accounts,
-                                                  (SELECT COUNT(*) FROM Devices) AS devices,
-                                                  (SELECT COUNT(*) FROM RobotProfiles) AS "robotProfiles",
-                                                  (SELECT COUNT(*) FROM RobotCredentialBindings) AS "robotCredentialBindings",
-                                                  (SELECT COUNT(*) FROM CloudAuthTokens) AS "issuedTokens",
-                                                  (SELECT COUNT(*) FROM RobotIdentityLinks) AS "robotIdentityLinks",
-                                                  (SELECT COUNT(*) FROM LoopSymmetricKeys) AS "symmetricKeys",
-                                                  (SELECT COUNT(*) FROM KeyRequests) AS "keyRequests",
-                                                  (SELECT COUNT(*) FROM UpdateManifests) AS updates,
-                                                  (SELECT COUNT(*) FROM MediaRecords) AS media,
-                                                  (SELECT COUNT(*) FROM BackupManifests) AS backups,
-                                                  (SELECT COUNT(*) FROM CommuteProfiles) AS "commuteProfiles",
-                                                  (SELECT COUNT(*) FROM CalendarEvents) AS "calendarEvents",
-                                                  (SELECT COUNT(*) FROM GreetingPresences) AS "greetingPresences",
-                                                  (SELECT COUNT(*) FROM Loops) AS loops,
-                                                  (SELECT COUNT(*) FROM HolidayOverrides) AS holidays,
-                                                  (SELECT COUNT(*) FROM LoopMembers) AS "loopMembers",
-                                                  (SELECT COUNT(*) FROM People) AS people,
-                                                  (SELECT COUNT(*) FROM Users) AS users,
-                                                  (SELECT COUNT(*) FROM RecognitionObservations) AS "recognitionObservations",
-                                                  (SELECT COUNT(*) FROM RevokedIdentityGraphAnchors) AS "revokedIdentityGraphAnchors",
-                                                  (SELECT COUNT(*) FROM TrustedServerAdmissions) AS "trustedServerAdmissions",
-                                                  (SELECT COUNT(*) FROM TrustedServers) AS "trustedServers"
-                                                """, connection);
-
-    var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-    await using var reader = await command.ExecuteReaderAsync();
-    if (!await reader.ReadAsync())
-        throw new InvalidOperationException("The normalized cloud-state count query returned no row.");
-
-    for (var index = 0; index < reader.FieldCount; index++)
-        counts[reader.GetName(index)] = checked((int)reader.GetInt64(index));
-
-    return counts;
 }
 
 static async Task<int> RecoverMissingDevicesAsync(MigrationOptions options)
@@ -945,9 +869,3 @@ internal sealed record MigrationOptions(
         return args[index];
     }
 }
-
-internal sealed record CloudStateAuditReport(
-    bool SnapshotPresent,
-    IReadOnlyDictionary<string, int> Legacy,
-    IReadOnlyDictionary<string, int> Normalized,
-    IReadOnlyDictionary<string, int> Delta);

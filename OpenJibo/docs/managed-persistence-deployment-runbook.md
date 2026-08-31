@@ -199,6 +199,12 @@ Run the aggregate audit before recovery:
 dotnet Jibo.Cloud.Migrations.dll --audit-cloud-state --state-connection "<target-state-connection>"
 ```
 
+The report is aggregate-only. Its `integrity` section includes account/device linkage,
+robot-profile and identity-link anomalies, default-record cardinality, and backup counts by
+schema version. A nonzero `backupSchemaV1` count identifies a candidate for the required
+legacy restore drill; `unsupportedBackupSchemas` must be zero. No identifiers, token material,
+connection strings, or backup payloads are emitted.
+
 When comparing the preserved normalized database with the current target, recovery is dry-run by default and emits aggregate-only counts:
 
 ```powershell

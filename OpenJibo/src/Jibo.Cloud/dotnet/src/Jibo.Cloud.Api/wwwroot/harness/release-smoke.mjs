@@ -403,7 +403,8 @@ export async function runReleaseSmoke({
   if (minimumReplicas > 1) {
     crossReplicaEvidence = await runStep("Different replica reads committed robot", async () => {
       let firstRead = initialCommittedRead;
-      return collectCrossReplicaCommittedReadEvidence({
+      let latestRead = initialCommittedRead;
+      const evidence = await collectCrossReplicaCommittedReadEvidence({
         writerInstanceId: writerMetadata?.instanceId,
         writerRevision: writerMetadata?.revision,
         expectedRevision,
@@ -413,14 +414,21 @@ export async function runReleaseSmoke({
           if (firstRead) {
             const result = firstRead;
             firstRead = null;
+            latestRead = result;
             return result;
           }
           const hub = await protocolCall("Account_20160715", "CreateHubToken", { deviceId });
           assert(hub?.token, "Cross-replica CreateHubToken did not return a token.");
           const metadata = getProtocolResponseMetadata(hub);
-          return { value: hub.token, ...metadata };
+          latestRead = { value: hub.token, ...metadata };
+          return latestRead;
         },
       });
+      // Deployment-smoke Hub token issuance intentionally revokes the preceding Hub token for
+      // the same device. Retain the final read token so later socket checks never reuse one that
+      // this cross-replica probe revoked itself.
+      hubToken = latestRead.value;
+      return evidence;
     });
   }
 

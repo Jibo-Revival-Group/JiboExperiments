@@ -90,8 +90,11 @@ test("replica evidence fails when traffic never reaches the required replica cou
 });
 
 class FakeWebSocket {
+  static openedUrls = [];
+
   constructor(url) {
     this.url = url;
+    FakeWebSocket.openedUrls.push(url);
     this.readyState = 0;
     this.listeners = new Map();
     const path = new URL(url).pathname;
@@ -403,6 +406,8 @@ test("managed release smoke requires a deployment-scoped secret", () => {
 });
 
 test("runReleaseSmoke proves cross-replica persistence and rotating concurrent turns", async () => {
+  FakeWebSocket.openedUrls.length = 0;
+  const hubIssueCounts = new Map();
   const protocolCall = createProtocolCaller("http://localhost:8080", "api.jibo.com",
     async (_url, options) => {
       const body = JSON.parse(options.body);
@@ -413,7 +418,11 @@ test("runReleaseSmoke proves cross-replica persistence and rotating concurrent t
         payload = { token: `token-${body.deviceId}` };
         if (body.deviceId === "test-load-primary") instance = "revision-a/replica-1";
       } else if (target === "Account_20160715.CreateHubToken") {
-        payload = { token: `hub-${body.deviceId}` };
+        const issueCount = (hubIssueCounts.get(body.deviceId) ?? 0) + 1;
+        hubIssueCounts.set(body.deviceId, issueCount);
+        payload = { token: `hub-${body.deviceId}-${issueCount}` };
+        if (body.deviceId === "test-load-primary" && issueCount === 1)
+          instance = "revision-a/replica-1";
       } else {
         throw new Error(`Unexpected protocol call ${target}`);
       }
@@ -456,6 +465,12 @@ test("runReleaseSmoke proves cross-replica persistence and rotating concurrent t
   assert.equal(result.replicaEvidence.observed, 2);
   assert.equal(result.crossReplicaEvidence.writerInstanceId, "revision-a/replica-1");
   assert.equal(result.crossReplicaEvidence.readerInstanceId, "revision-a/replica-2");
+  const primaryListenUrls = FakeWebSocket.openedUrls.filter((url) =>
+    new URL(url).pathname.startsWith("/v1/listen/hub-test-load-primary-"));
+  assert.equal(hubIssueCounts.get("test-load-primary"), 3);
+  assert.equal(primaryListenUrls.length, 2);
+  assert(primaryListenUrls.every((url) => new URL(url).pathname.endsWith("hub-test-load-primary-2")),
+    "socket checks must use the final Hub token issued by the cross-replica read");
   assert.equal(result.load.robotCount, 4);
   assert.equal(result.load.activeTurnsPerRound, 2);
   assert.equal(result.load.completedTurns, 4);

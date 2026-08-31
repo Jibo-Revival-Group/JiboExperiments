@@ -78,6 +78,37 @@ public sealed class PostgreSqlCloudStateFacadeIntegrationTests
 
     [PostgreSqlIntegrationFact]
     [Trait("Category", "PostgreSqlIntegration")]
+    public async Task ExplicitRobotUpdate_RemovesSupersededProfileForSameDevice()
+    {
+        await using var database = await CloudStateTestDatabase.CreateAsync();
+        await using var source = new PostgreSqlCloudStateDataSource(database.ConnectionString, 2);
+        var store = new PostgreSqlCloudStateStore(source, new PlaintextTestProtector());
+        var original = store.GetRobot();
+
+        store.UpdateRobot(new DeviceRegistration
+        {
+            DeviceId = original.DeviceId,
+            RobotId = "replacement-robot-id",
+            FriendlyName = original.FriendlyName,
+            FirmwareVersion = original.FirmwareVersion,
+            ApplicationVersion = original.ApplicationVersion,
+            IsActive = original.IsActive,
+            RegistrationSource = original.RegistrationSource,
+            IsHidden = original.IsHidden,
+            ArchivedUtc = original.ArchivedUtc,
+            HostMappings = original.HostMappings
+        });
+
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            $"SELECT COUNT(*) FROM RobotProfiles WHERE DeviceId='{original.DeviceId}'"));
+        Assert.Equal(1, await database.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM RobotProfiles WHERE RobotId='replacement-robot-id'"));
+        Assert.Equal(0, await database.ExecuteScalarAsync<long>(
+            $"SELECT COUNT(*) FROM RobotProfiles WHERE RobotId='{original.RobotId}'"));
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
     public async Task FreshBootstrap_PreservesLargeUnscopedFleetAndAddsOnlyItsScopedDefaults()
     {
         await using var database = await CloudStateTestDatabase.CreateAsync();

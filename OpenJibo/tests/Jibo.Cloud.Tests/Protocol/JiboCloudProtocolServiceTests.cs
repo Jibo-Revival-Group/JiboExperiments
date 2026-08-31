@@ -575,6 +575,31 @@ public sealed class JiboCloudProtocolServiceTests
         Assert.Equal("robot-configured-123", payload.RootElement.GetProperty("id").GetString());
     }
 
+    [Fact]
+    public async Task GetRobot_WithRequestedId_DoesNotMutateRobotOrProfile()
+    {
+        var store = new InMemoryCloudStateStore();
+        var originalRobot = store.GetRobot();
+        var originalProfile = store.GetRobotProfile();
+        var service = new JiboCloudProtocolService(store);
+
+        var result = await service.DispatchAsync(new ProtocolEnvelope
+        {
+            HostName = "api.jibo.com",
+            Method = "POST",
+            ServicePrefix = "Robot_20160225",
+            Operation = "GetRobot",
+            BodyText = """{"id":"robot-requested-456"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal("robot-requested-456", payload.RootElement.GetProperty("id").GetString());
+        Assert.Equal(originalRobot.DeviceId, store.GetRobot().DeviceId);
+        Assert.Equal(originalRobot.RobotId, store.GetRobot().RobotId);
+        Assert.Equal(originalProfile.RobotId, store.GetRobotProfile().RobotId);
+    }
+
 
     [Fact]
     public async Task PlanConversion_IsNonDestructiveAndReportsSelfHostedHostBlocker()

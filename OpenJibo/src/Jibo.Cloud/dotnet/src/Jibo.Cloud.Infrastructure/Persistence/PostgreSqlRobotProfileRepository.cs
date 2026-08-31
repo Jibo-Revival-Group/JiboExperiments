@@ -49,6 +49,17 @@ public sealed class PostgreSqlRobotProfileRepository(PostgreSqlCloudStateDataSou
         command.Parameters.AddWithValue("created", profile.CreatedUtc);
         command.Parameters.AddWithValue("updated", profile.UpdatedUtc);
         await command.ExecuteNonQueryAsync(cancellationToken);
+        if (!string.IsNullOrWhiteSpace(deviceId))
+        {
+            await using var cleanup = new NpgsqlCommand("""
+                                                        DELETE FROM RobotProfiles
+                                                        WHERE DeviceId = @deviceId
+                                                          AND LOWER(RobotId) <> LOWER(@robotId)
+                                                        """, connection, transaction);
+            cleanup.Parameters.AddWithValue("deviceId", deviceId.Trim());
+            cleanup.Parameters.AddWithValue("robotId", profile.RobotId.Trim());
+            await cleanup.ExecuteNonQueryAsync(cancellationToken);
+        }
         await CloudStateRevision.BumpAsync(connection, transaction, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return profile;

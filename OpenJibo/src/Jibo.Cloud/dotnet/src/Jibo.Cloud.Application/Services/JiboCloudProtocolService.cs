@@ -1672,28 +1672,6 @@ public sealed class JiboCloudProtocolService(
 
         var profile = stateStore.GetRobotProfile();
         var requestedRobotId = _configuredRobotId ?? ReadString(envelope.TryParseBody(), "id");
-        if (!string.IsNullOrWhiteSpace(requestedRobotId) &&
-            !requestedRobotId.Equals(robot.RobotId, StringComparison.OrdinalIgnoreCase))
-            stateStore.UpdateRobot(new DeviceRegistration
-            {
-                DeviceId = robot.DeviceId,
-                RobotId = requestedRobotId,
-                FriendlyName = robot.FriendlyName,
-                FirmwareVersion = envelope.FirmwareVersion ?? robot.FirmwareVersion,
-                ApplicationVersion = envelope.ApplicationVersion ?? robot.ApplicationVersion,
-                CertificateThumbprint = robot.CertificateThumbprint,
-                IssuedIdentityId = robot.IssuedIdentityId,
-                BuildHash = robot.BuildHash,
-                ConfigHash = robot.ConfigHash,
-                VerifiedSerialNumber = robot.VerifiedSerialNumber,
-                SerialEvidenceSource = robot.SerialEvidenceSource,
-                SerialEvidenceVerifiedUtc = robot.SerialEvidenceVerifiedUtc,
-                RegistrationSource = robot.RegistrationSource,
-                IsHidden = robot.IsHidden,
-                ArchivedUtc = robot.ArchivedUtc,
-                HostMappings = robot.HostMappings
-            });
-
         return ProtocolDispatchResult.Ok(new
         {
             id = requestedRobotId ?? profile.RobotId,

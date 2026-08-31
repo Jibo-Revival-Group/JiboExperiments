@@ -652,6 +652,7 @@ These are the carryover items that need a clean proof pass first:
   - immediate staging containment removed the peer-sync shared-key environment reference and produced healthy revision `openjibo-cloud--0000009`; the post-change six-robot smoke passed with 209-212 ms turn latency and no peer-sync/error markers in the revision log tail
   - cloud CI now provisions PostgreSQL 16 and supplies the environment-gated integration connection string to the complete .NET suite
   - the managed staging workflow now captures the normal scale, temporarily pins two replicas, waits for both to run, requires the protected smoke probe to observe two distinct serving instances through ingress, and requires a different replica to read a newly committed bounded smoke-device registration before recording the evidence and restoring the prior scale
+  - the aggregate staging audit exposed a superseded robot profile left by the historically mutating `GetRobot` path; `GetRobot` is now read-only, explicit updates transactionally remove older same-device profiles, and a conservative migration removes a stale row only when its correct replacement already exists
 - Remaining rollout and measurement work:
   - run the enhanced exact-commit two-replica gate against a production-snapshot clone in staging and retain its promotion artifact
   - run the aggregate-only cloud-state audit against refreshed staging to verify imported family counts,

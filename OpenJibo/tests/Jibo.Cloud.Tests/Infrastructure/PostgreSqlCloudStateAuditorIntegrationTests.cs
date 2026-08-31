@@ -7,6 +7,58 @@ public sealed class PostgreSqlCloudStateAuditorIntegrationTests
 {
     [PostgreSqlIntegrationFact]
     [Trait("Category", "PostgreSqlIntegration")]
+    public async Task SupersededProfileMigration_RemovesOnlyRowsWithCorrectReplacement()
+    {
+        const string variable = "OPENJIBO_TEST_POSTGRES_CONNECTION_STRING";
+        var adminConnectionString = Environment.GetEnvironmentVariable(variable)
+                                    ?? throw new InvalidOperationException($"Set {variable}.");
+        var schema = $"openjibo_profile_repair_{Guid.NewGuid():N}";
+        await ExecuteAdminAsync(adminConnectionString, $"CREATE SCHEMA \"{schema}\"");
+        var builder = new NpgsqlConnectionStringBuilder(adminConnectionString) { SearchPath = schema };
+        var scopedConnectionString = builder.ConnectionString;
+
+        try
+        {
+            await ApplyStateMigrationsAsync(scopedConnectionString,
+                excludedFileName: "007_remove_superseded_robot_profiles.state.sql");
+            await using (var connection = new NpgsqlConnection(scopedConnectionString))
+            {
+                await connection.OpenAsync();
+                await using var seed = connection.CreateCommand();
+                seed.CommandText = """
+                                   INSERT INTO Devices (DeviceId, RobotId, FriendlyName)
+                                   VALUES
+                                     ('device-replaced', 'robot-current', 'Replaced'),
+                                     ('device-unresolved', 'robot-target', 'Unresolved');
+                                   INSERT INTO RobotProfiles (RobotId, DeviceId, UpdatedUtc)
+                                   VALUES
+                                     ('robot-stale', 'device-replaced', NOW() - INTERVAL '1 minute'),
+                                     ('robot-current', 'device-replaced', NOW()),
+                                     ('robot-only-stale', 'device-unresolved', NOW());
+                                   """;
+                await seed.ExecuteNonQueryAsync();
+                await using var migrate = connection.CreateCommand();
+                migrate.CommandText = await File.ReadAllTextAsync(Path.Combine(
+                    AppContext.BaseDirectory, "Migrations", "PostgreSql",
+                    "007_remove_superseded_robot_profiles.state.sql"));
+                await migrate.ExecuteNonQueryAsync();
+            }
+
+            Assert.Equal(0, await ScalarAsync<long>(scopedConnectionString,
+                "SELECT COUNT(*) FROM RobotProfiles WHERE RobotId='robot-stale'"));
+            Assert.Equal(1, await ScalarAsync<long>(scopedConnectionString,
+                "SELECT COUNT(*) FROM RobotProfiles WHERE RobotId='robot-current'"));
+            Assert.Equal(1, await ScalarAsync<long>(scopedConnectionString,
+                "SELECT COUNT(*) FROM RobotProfiles WHERE RobotId='robot-only-stale'"));
+        }
+        finally
+        {
+            await ExecuteAdminAsync(adminConnectionString, $"DROP SCHEMA \"{schema}\" CASCADE");
+        }
+    }
+
+    [PostgreSqlIntegrationFact]
+    [Trait("Category", "PostgreSqlIntegration")]
     public async Task AuditAsync_ReportsBackupSchemasAndIdentityIntegrityWithoutIdentifiers()
     {
         const string variable = "OPENJIBO_TEST_POSTGRES_CONNECTION_STRING";
@@ -88,11 +140,13 @@ public sealed class PostgreSqlCloudStateAuditorIntegrationTests
         }
     }
 
-    private static async Task ApplyStateMigrationsAsync(string connectionString)
+    private static async Task ApplyStateMigrationsAsync(string connectionString, string? excludedFileName = null)
     {
         var directory = Path.Combine(AppContext.BaseDirectory, "Migrations", "PostgreSql");
         var scripts = Directory.GetFiles(directory, "*.sql")
             .Where(path => !path.EndsWith(".personal-memory.sql", StringComparison.OrdinalIgnoreCase))
+            .Where(path => excludedFileName is null ||
+                           !Path.GetFileName(path).Equals(excludedFileName, StringComparison.OrdinalIgnoreCase))
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase);
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
@@ -110,5 +164,14 @@ public sealed class PostgreSqlCloudStateAuditorIntegrationTests
         await connection.OpenAsync();
         await using var command = new NpgsqlCommand(sql, connection);
         await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task<T> ScalarAsync<T>(string connectionString, string sql)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(sql, connection);
+        var value = await command.ExecuteScalarAsync();
+        return (T)Convert.ChangeType(value!, typeof(T), System.Globalization.CultureInfo.InvariantCulture);
     }
 }

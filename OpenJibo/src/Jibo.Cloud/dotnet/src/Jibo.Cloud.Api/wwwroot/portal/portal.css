@@ -124,6 +124,10 @@ h2 {
   margin-top: 1rem;
 }
 
+.grid.two > .wide-panel {
+  grid-column: 1 / -1;
+}
+
 .meta-list.compact {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -180,6 +184,29 @@ h2 {
 .member-row-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.robot-name-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-soft);
+}
+
+.robot-name-row input {
+  margin-top: 0;
+}
+
+.robot-name-actions {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
@@ -416,6 +443,14 @@ select:focus {
   }
 
   .member-row-actions {
+    justify-content: flex-start;
+  }
+
+  .robot-name-row {
+    grid-template-columns: 1fr;
+  }
+
+  .robot-name-actions {
     justify-content: flex-start;
   }
 }

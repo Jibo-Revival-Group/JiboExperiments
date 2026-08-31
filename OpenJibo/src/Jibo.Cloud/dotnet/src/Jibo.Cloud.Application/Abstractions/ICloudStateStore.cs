@@ -22,6 +22,7 @@ public interface ICloudStateStore
     DeviceRegistration UpsertDeviceForAdministration(DeviceRegistration registration);
     DeviceRegistration RenameDevice(string deviceId, string robotId);
     DeviceRegistration RenameDeviceForAdministration(string deviceId, string robotId);
+    DeviceRegistration RenameDeviceName(string deviceId, string name);
     DeviceRegistration? FindDeviceByFriendlyId(string friendlyId);
     DeviceRegistration? FindDeviceByAwsCredentialFingerprint(string accessKeyFingerprint);
     IReadOnlyList<RobotCredentialBinding> GetRobotCredentialBindings();
@@ -38,6 +39,9 @@ public interface ICloudStateStore
     UserRecord? GetUserById(string id);
     UserRecord? GetUserByEmail(string email);
     UserRecord UpdateUser(string id, string? firstName, string? lastName, string? gender, long? birthday);
+    UserDeviceLink LinkUserToDevice(string userId, string deviceId, string claimSource);
+    IReadOnlyList<DeviceRegistration> GetDevicesForUser(string userId);
+    string? GetUserIdForDevice(string deviceId);
     string IssueHubToken(string? deviceId = null, bool useDefaultRobot = true);
     string IssueRobotToken(string deviceId);
     string IssueDeploymentSmokeRobotToken(string deviceId);

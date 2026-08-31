@@ -10,6 +10,7 @@ import {
   createProtocolCaller,
   getProtocolResponseMetadata,
   normalizeLoadOptions,
+  openSocket,
   runReleaseSmoke,
   withDeploymentSmokeAuthorizationRetry,
 } from "../../src/Jibo.Cloud/dotnet/src/Jibo.Cloud.Api/wwwroot/harness/release-smoke.mjs";
@@ -155,6 +156,61 @@ class FakeWebSocket {
     });
   }
 }
+
+test("openSocket retries bounded transient handshake failures", async () => {
+  let constructions = 0;
+  class TransientHandshakeWebSocket {
+    constructor() {
+      this.readyState = 0;
+      this.listeners = new Map();
+      constructions += 1;
+      const attempt = constructions;
+      queueMicrotask(() => {
+        if (attempt === 1) {
+          this.readyState = 3;
+          this.emit("error", { message: "transient ingress close" });
+          return;
+        }
+        this.readyState = 1;
+        this.emit("open", {});
+      });
+    }
+
+    addEventListener(type, handler, options = {}) {
+      const registrations = this.listeners.get(type) ?? [];
+      registrations.push({ handler, once: options.once === true });
+      this.listeners.set(type, registrations);
+    }
+
+    removeEventListener(type, handler) {
+      this.listeners.set(type, (this.listeners.get(type) ?? [])
+        .filter((registration) => registration.handler !== handler));
+    }
+
+    emit(type, event) {
+      for (const registration of [...(this.listeners.get(type) ?? [])]) {
+        registration.handler(event);
+        if (registration.once) this.removeEventListener(type, registration.handler);
+      }
+    }
+
+    close() {
+      this.readyState = 3;
+    }
+  }
+
+  const delays = [];
+  const socket = await openSocket(TransientHandshakeWebSocket, "wss://staging.example/v1/listen/token",
+    "transient test", 1000, {
+      attempts: 3,
+      retryDelayMs: 25,
+      delayImpl: async (milliseconds) => delays.push(milliseconds),
+    });
+
+  assert.equal(socket.readyState, 1);
+  assert.equal(constructions, 2);
+  assert.deepEqual(delays, [25]);
+});
 
 test("conversion scripts preserve explicit self-hosted API and Hub endpoints", () => {
   const scriptUrls = [

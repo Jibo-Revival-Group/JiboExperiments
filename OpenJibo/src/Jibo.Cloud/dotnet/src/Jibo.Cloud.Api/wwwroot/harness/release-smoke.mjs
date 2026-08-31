@@ -142,7 +142,7 @@ function socketError(label, event) {
   return new Error(`${label} WebSocket failed${event?.message ? `: ${event.message}` : "."}`);
 }
 
-function openSocket(WebSocketImpl, url, label, timeoutMs = DEFAULT_TIMEOUT_MS) {
+function openSocketOnce(WebSocketImpl, url, label, timeoutMs) {
   return new Promise((resolve, reject) => {
     const socket = new WebSocketImpl(url);
     const timer = setTimeout(() => {
@@ -158,6 +158,26 @@ function openSocket(WebSocketImpl, url, label, timeoutMs = DEFAULT_TIMEOUT_MS) {
       reject(socketError(label, event));
     }, { once: true });
   });
+}
+
+export async function openSocket(WebSocketImpl, url, label, timeoutMs = DEFAULT_TIMEOUT_MS, {
+  attempts = 3,
+  retryDelayMs = 250,
+  delayImpl = delay,
+} = {}) {
+  const maximumAttempts = boundedInteger(attempts, "webSocketOpenAttempts", 1, 10);
+  const retryDelay = boundedInteger(retryDelayMs, "webSocketOpenRetryDelayMs", 0, 10_000);
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await openSocketOnce(WebSocketImpl, url, label, timeoutMs);
+    } catch (error) {
+      if (attempt >= maximumAttempts) {
+        error.message = `${error.message} (${maximumAttempts} attempts)`;
+        throw error;
+      }
+      await delayImpl(retryDelay * attempt);
+    }
+  }
 }
 
 function closeSocket(socket) {

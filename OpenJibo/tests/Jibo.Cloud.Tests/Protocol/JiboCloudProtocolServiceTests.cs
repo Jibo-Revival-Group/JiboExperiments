@@ -602,6 +602,154 @@ public sealed class JiboCloudProtocolServiceTests
     }
 
     [Fact]
+    public void NewRobotToken_ExactDeviceIdWinsOverOtherIdentityAliases()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "shared-identity",
+            RobotId = "canonical-device",
+            FriendlyName = "Canonical device"
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "other-device",
+            RobotId = "shared-identity",
+            FriendlyName = "Other device"
+        });
+        var handler = new CloudAuthProtocolHandler(store);
+
+        var result = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"shared-identity"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var session = store.FindSessionByToken(payload.RootElement.GetProperty("token").GetString()!);
+        Assert.NotNull(session);
+        Assert.Equal("shared-identity", session.DeviceId);
+    }
+
+    [Fact]
+    public void NewRobotToken_AmbiguousAliasesDoNotReuseAnArbitraryRobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "physical-device-a",
+            RobotId = "shared-robot-name",
+            FriendlyName = "Shared robot"
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "physical-device-b",
+            RobotId = "shared-robot-name",
+            FriendlyName = "Shared robot"
+        });
+        var handler = new CloudAuthProtocolHandler(store);
+
+        var result = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"shared-robot-name"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var session = store.FindSessionByToken(payload.RootElement.GetProperty("token").GetString()!);
+        Assert.NotNull(session);
+        Assert.Equal("shared-robot-name", session.DeviceId);
+        Assert.Contains(store.GetDevices(), device => device.DeviceId == "shared-robot-name");
+    }
+
+    [Fact]
+    public void NewRobotToken_AmbiguousFriendlyNameDoesNotReuseAnArbitraryRobot()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "physical-device-a",
+            RobotId = "robot-a",
+            FriendlyName = "Shared robot"
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "physical-device-b",
+            RobotId = "robot-b",
+            FriendlyName = "Shared robot"
+        });
+        var handler = new CloudAuthProtocolHandler(store);
+
+        var result = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"Shared robot"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var session = store.FindSessionByToken(payload.RootElement.GetProperty("token").GetString()!);
+        Assert.NotNull(session);
+        Assert.Equal("Shared robot", session.DeviceId);
+        Assert.Contains(store.GetDevices(), device => device.DeviceId == "Shared robot");
+    }
+    [Fact]
+    public void NewRobotToken_UniqueVerifiedSerialReusesExistingCanonicalDevice()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "physical-device-001",
+            RobotId = "Royal-Current-Sage-Canvas",
+            FriendlyName = "Royal",
+            VerifiedSerialNumber = "BOJW-1000-0017-0815-0075"
+        });
+        var handler = new CloudAuthProtocolHandler(store);
+
+        var result = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"serialNumber":"BOJW-1000-0017-0815-0075"}"""
+        });
+
+        using var payload = JsonDocument.Parse(result.BodyText);
+        var session = store.FindSessionByToken(payload.RootElement.GetProperty("token").GetString()!);
+        Assert.NotNull(session);
+        Assert.Equal("physical-device-001", session.DeviceId);
+    }
+
+    [Fact]
+    public void NewRobotToken_HiddenOrArchivedAliasesDoNotReceiveLiveRobotTokens()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "archived-device",
+            RobotId = "retired-robot",
+            FriendlyName = "Retired robot",
+            ArchivedUtc = DateTimeOffset.UtcNow
+        });
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "hidden-device",
+            RobotId = "hidden-robot",
+            FriendlyName = "Hidden robot",
+            IsHidden = true
+        });
+        var handler = new CloudAuthProtocolHandler(store);
+
+        var archivedResult = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"retired-robot"}"""
+        });
+        var hiddenResult = handler.HandleNotification("NewRobotToken", new ProtocolEnvelope
+        {
+            BodyText = """{"deviceId":"hidden-robot"}"""
+        });
+
+        using var archivedPayload = JsonDocument.Parse(archivedResult.BodyText);
+        using var hiddenPayload = JsonDocument.Parse(hiddenResult.BodyText);
+        Assert.Equal("retired-robot", store.FindSessionByToken(
+            archivedPayload.RootElement.GetProperty("token").GetString()!)!.DeviceId);
+        Assert.Equal("hidden-robot", store.FindSessionByToken(
+            hiddenPayload.RootElement.GetProperty("token").GetString()!)!.DeviceId);
+    }
+    [Fact]
     public async Task GetRobot_WithRequestedId_DoesNotMutateRobotOrProfile()
     {
         var store = new InMemoryCloudStateStore();

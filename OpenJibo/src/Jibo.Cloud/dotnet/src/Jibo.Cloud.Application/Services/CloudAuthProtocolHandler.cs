@@ -239,15 +239,16 @@ public sealed class CloudAuthProtocolHandler(
         var existing = isDeploymentSmoke
             ? stateStore.GetOrCreateDeploymentSmokeDevice(smokeAuthorization!, envelope.FirmwareVersion,
                 envelope.ApplicationVersion)
-            : stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion,
-                registrationSource);
+            : FindVisibleDeviceByIdentity(deviceId) ??
+              stateStore.GetOrCreateDevice(deviceId, envelope.FirmwareVersion, envelope.ApplicationVersion,
+                  registrationSource);
         if (!string.IsNullOrWhiteSpace(presentedRobotId))
             identitySuggestionStore?.Observe(existing.DeviceId, presentedRobotId,
                 "auth:Notification.NewRobotToken", "robotId");
 
         var token = isDeploymentSmoke
             ? stateStore.IssueDeploymentSmokeRobotToken(deviceId)
-            : stateStore.IssueRobotToken(deviceId);
+            : stateStore.IssueRobotToken(existing.DeviceId);
         _logger.LogInformation(
             "Notification NewRobotToken issued deviceId={DeviceId} robotId={RobotId}",
             deviceId,
@@ -257,6 +258,27 @@ public sealed class CloudAuthProtocolHandler(
         {
             token
         });
+    }
+
+    private DeviceRegistration? FindVisibleDeviceByIdentity(string identity)
+    {
+        var normalized = identity.Trim();
+        return stateStore.GetDevices()
+            .Where(device => !device.IsHidden && device.ArchivedUtc is null)
+            .Where(device => new[]
+            {
+                device.DeviceId,
+                device.RobotId,
+                device.FriendlyName,
+                device.VerifiedSerialNumber
+            }.Where(value => !string.IsNullOrWhiteSpace(value))
+                .Any(value => value!.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
+            .OrderByDescending(device =>
+                device.DeviceId.Equals(normalized, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(device =>
+                device.RobotId.Equals(normalized, StringComparison.OrdinalIgnoreCase))
+            .ThenBy(device => device.DeviceId, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
     }
 
     private ProtocolDispatchResult? TryIssueDeploymentSmokeHubToken(string deviceId, string? registrationSource,

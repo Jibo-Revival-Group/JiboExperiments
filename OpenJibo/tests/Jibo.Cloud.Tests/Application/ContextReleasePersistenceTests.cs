@@ -77,4 +77,36 @@ public sealed class ContextReleasePersistenceTests
             device.DeviceId.Equals("Alpha-Beta-Dodger-Quirk", StringComparison.OrdinalIgnoreCase));
         Assert.Equal("12.10.0", store.FindDeviceByFriendlyId("observed-device-001")!.FirmwareVersion);
     }
+
+    [Fact]
+    public async Task HandleContextAsync_ReusesCanonicalDeviceWhoseRobotIdMatchesContext()
+    {
+        var store = new InMemoryCloudStateStore();
+        store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "physical-device-001",
+            RobotId = "Royal-Current-Sage-Canvas",
+            FriendlyName = "Royal-Current-Sage-Canvas",
+            RegistrationSource = RobotRegistrationSources.Physical
+        });
+        var turnService = new WebSocketTurnFinalizationService(
+            Mock.Of<IConversationBroker>(),
+            Mock.Of<ISttStrategySelector>(),
+            Mock.Of<ITurnTelemetrySink>(),
+            NullLogger<WebSocketTurnFinalizationService>.Instance,
+            cloudStateStore: store);
+        var session = store.OpenSession("neo-hub-listen", null, "conn:canonical-identity",
+            "neohub.openjibo.com", "/v1/listen");
+
+        await turnService.HandleContextAsync(session, new WebSocketMessageEnvelope
+        {
+            Text =
+                """{"type":"CONTEXT","data":{"runtime":{"loop":{"loopId":"household-loop","jibo":{"id":"Royal-Current-Sage-Canvas"},"users":[]}},"general":{"release":"12.10.0"}}}"""
+        });
+
+        Assert.DoesNotContain(store.GetDevices(), device =>
+            device.DeviceId.Equals("Royal-Current-Sage-Canvas", StringComparison.OrdinalIgnoreCase));
+        var canonical = Assert.Single(store.GetDevices(), device => device.DeviceId == "physical-device-001");
+        Assert.Equal("12.10.0", canonical.FirmwareVersion);
+    }
 }

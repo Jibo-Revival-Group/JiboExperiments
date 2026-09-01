@@ -26,7 +26,7 @@ public sealed class PortalSessionService
         _signingKey = SHA256.HashData(Encoding.UTF8.GetBytes(configuredSecret));
     }
 
-    public PortalSession CreateSession(string deviceId, string friendlyId)
+    public PortalSession CreateSession(string deviceId, string friendlyId, string? userId = null)
     {
         PurgeRevocations();
 
@@ -37,10 +37,11 @@ public sealed class PortalSessionService
             friendlyId.Trim(),
             now.ToUnixTimeSeconds(),
             expiresAt.ToUnixTimeSeconds(),
-            Guid.NewGuid().ToString("N"));
+            Guid.NewGuid().ToString("N"),
+            string.IsNullOrWhiteSpace(userId) ? null : userId.Trim());
 
         var token = BuildToken(payload);
-        return new PortalSession(token, payload.DeviceId, payload.FriendlyId, expiresAt);
+        return new PortalSession(token, payload.DeviceId, payload.FriendlyId, expiresAt, payload.UserId);
     }
 
     public PortalSession? TryGetSession(string? token)
@@ -64,7 +65,8 @@ public sealed class PortalSessionService
             normalizedToken,
             payload.DeviceId,
             payload.FriendlyId,
-            DateTimeOffset.FromUnixTimeSeconds(payload.ExpiresAtUtc));
+            DateTimeOffset.FromUnixTimeSeconds(payload.ExpiresAtUtc),
+            payload.UserId);
     }
 
     public void RevokeSession(string? token)
@@ -168,11 +170,13 @@ public sealed class PortalSessionService
         string FriendlyId,
         long IssuedAtUtc,
         long ExpiresAtUtc,
-        string Nonce);
+        string Nonce,
+        string? UserId);
 
     public sealed record PortalSession(
         string Token,
         string DeviceId,
         string FriendlyId,
-        DateTimeOffset ExpiresAtUtc);
+        DateTimeOffset ExpiresAtUtc,
+        string? UserId = null);
 }

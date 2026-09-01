@@ -41,7 +41,9 @@ async function apiFetch(path, options = {}) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || `Request failed (${response.status})`);
+    const error = new Error(payload.error || `Request failed (${response.status})`);
+    error.status = response.status;
+    throw error;
   }
 
   return payload;
@@ -512,14 +514,21 @@ async function renderLogin(message = "", isError = false) {
     <div class="center-shell">
       <section class="card login-card">
         <p class="eyebrow">OpenJibo Portal</p>
-        <h1>Sign in with Jibo</h1>
-        <p class="lede">Say <strong>"Hey Jibo, verify me"</strong>, then enter the four-digit code Jibo speaks.</p>
+        <h1>Sign in</h1>
+        <p class="lede">Sign in with your OpenJibo account to manage your paired robots.</p>
 
-        <label for="jiboCode">Verification code</label>
-        <input id="jiboCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="8042">
+        <label for="accountEmail">Email</label>
+        <input id="accountEmail" type="email" autocomplete="email" placeholder="ChunkyLover53@aol.com">
+
+        <label for="accountPassword">Password</label>
+        <input id="accountPassword" type="password" autocomplete="current-password" minlength="8" maxlength="32">
 
         <div class="button-row">
-          <button class="button primary" id="loginButton" type="button">Continue to dashboard</button>
+          <button class="button primary" id="loginButton" type="button">Sign in</button>
+        </div>
+        <div class="button-row">
+          <button class="button secondary" id="createAccountButton" type="button">Create an Account</button>
+          <button class="button secondary" id="legacyCodeButton" type="button">Legacy Code Login</button>
         </div>
 
         ${message ? `<p class="status ${isError ? "error" : "success"}">${escapeHtml(message)}</p>` : ""}
@@ -527,20 +536,136 @@ async function renderLogin(message = "", isError = false) {
     </div>
   `;
 
-  const input = document.getElementById("jiboCode");
+  const email = document.getElementById("accountEmail");
+  const password = document.getElementById("accountPassword");
   const button = document.getElementById("loginButton");
 
-  button.addEventListener("click", () => login(input.value.trim()));
+  button.addEventListener("click", () => loginAccount(email.value.trim(), password.value));
+  document.getElementById("createAccountButton").addEventListener("click", () => renderCreateAccount());
+  document.getElementById("legacyCodeButton").addEventListener("click", () => renderLegacyCodeLogin());
+  password.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") loginAccount(email.value.trim(), password.value);
+  });
+  email.focus();
+  bindPortalControls();
+}
+
+async function renderCreateAccount(message = "", isError = false) {
+  app.innerHTML = `
+    <div class="center-shell">
+      <section class="card login-card">
+        <p class="eyebrow">OpenJibo Portal</p>
+        <h1>Create an Account</h1>
+        <p class="lede">Use 8 to 32 characters for your password.</p>
+
+        <label for="accountEmail">Email</label>
+        <input id="accountEmail" type="email" autocomplete="email" placeholder="ChunkyLover53@aol.com">
+        <label for="accountPassword">Password</label>
+        <input id="accountPassword" type="password" autocomplete="new-password" minlength="8" maxlength="32">
+        <label for="accountPasswordConfirm">Confirm password</label>
+        <input id="accountPasswordConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="32">
+
+        <div class="button-row">
+          <button class="button primary" id="registerButton" type="button">Create account</button>
+          <button class="button secondary" id="backToLoginButton" type="button">Back to sign in</button>
+        </div>
+        ${message ? `<p class="status ${isError ? "error" : "success"}">${escapeHtml(message)}</p>` : ""}
+      </section>
+    </div>
+  `;
+
+  const email = document.getElementById("accountEmail");
+  const password = document.getElementById("accountPassword");
+  const confirmation = document.getElementById("accountPasswordConfirm");
+  document.getElementById("registerButton").addEventListener("click", () =>
+    registerAccount(email.value.trim(), password.value, confirmation.value));
+  document.getElementById("backToLoginButton").addEventListener("click", () => renderLogin());
+  confirmation.addEventListener("keydown", (event) => {
+    if (event.key === "Enter")
+      registerAccount(email.value.trim(), password.value, confirmation.value);
+  });
+  email.focus();
+  bindPortalControls();
+}
+
+async function renderLegacyCodeLogin(message = "", isError = false) {
+  app.innerHTML = `
+    <div class="center-shell">
+      <section class="card login-card">
+        <p class="eyebrow">OpenJibo Portal</p>
+        <h1>Legacy Code Login</h1>
+        <p class="lede">Say <strong>"Hey Jibo, verify me"</strong>, then enter the four-digit code Jibo speaks.</p>
+
+        <label for="jiboCode">Verification code</label>
+        <input id="jiboCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="8042">
+        <div class="button-row">
+          <button class="button primary" id="legacyLoginButton" type="button">Continue to dashboard</button>
+          <button class="button secondary" id="backToLoginButton" type="button">Back to sign in</button>
+        </div>
+        ${message ? `<p class="status ${isError ? "error" : "success"}">${escapeHtml(message)}</p>` : ""}
+      </section>
+    </div>
+  `;
+
+  const input = document.getElementById("jiboCode");
+  document.getElementById("legacyLoginButton").addEventListener("click", () => loginLegacyCode(input.value.trim()));
+  document.getElementById("backToLoginButton").addEventListener("click", () => renderLogin());
   input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") login(input.value.trim());
+    if (event.key === "Enter") loginLegacyCode(input.value.trim());
   });
   input.focus();
   bindPortalControls();
 }
 
-async function login(code) {
+async function loginAccount(email, password) {
+  if (!email || !password) {
+    await renderLogin("Enter your email and password.", true);
+    return;
+  }
+
+  try {
+    const payload = await apiFetch("/api/portal/account/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+
+    setSessionToken(payload.portalSessionToken);
+    await renderAccountHome();
+  } catch (error) {
+    const message = error.status === 401 ? "Invalid email or password." : error.message;
+    await renderLogin(message, true);
+  }
+}
+
+async function registerAccount(email, password, confirmation) {
+  if (!email || !password) {
+    await renderCreateAccount("Enter an email and password.", true);
+    return;
+  }
+  if (password.length < 8 || password.length > 32) {
+    await renderCreateAccount("Password must be between 8 and 32 characters.", true);
+    return;
+  }
+  if (password !== confirmation) {
+    await renderCreateAccount("The passwords do not match.", true);
+    return;
+  }
+
+  try {
+    const payload = await apiFetch("/api/portal/account/register", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    setSessionToken(payload.portalSessionToken);
+    await renderAccountHome();
+  } catch (error) {
+    await renderCreateAccount(error.message, true);
+  }
+}
+
+async function loginLegacyCode(code) {
   if (!code) {
-    await renderLogin("Enter the verification code Jibo spoke.", true);
+    await renderLegacyCodeLogin("Enter the verification code Jibo spoke.", true);
     return;
   }
 
@@ -549,11 +674,119 @@ async function login(code) {
       method: "POST",
       body: JSON.stringify({ code }),
     });
-
     setSessionToken(payload.portalSessionToken);
     await renderDashboard();
   } catch (error) {
-    await renderLogin(error.message, true);
+    await renderLegacyCodeLogin(error.message, true);
+  }
+}
+
+async function renderAccountHome(message = "", isError = false) {
+  const account = await apiFetch("/api/portal/account");
+  const robots = account.robots || [];
+  app.innerHTML = `
+    <div class="center-shell">
+      <section class="card login-card">
+        <p class="eyebrow">OpenJibo Portal</p>
+        <h1>Your Jibos</h1>
+        <p class="lede">${escapeHtml(account.email)} · Select a robot or pair a new one.</p>
+        ${robots.length ? `
+          <div>
+            ${robots.map(robot => `
+              <div class="robot-name-row">
+                <div>
+                  <strong>${escapeHtml(robot.friendlyName || robot.robotId)}</strong>
+                  <div class="muted">${escapeHtml(robot.robotId)}</div>
+                </div>
+                <input class="robot-name-input" data-device-id="${escapeHtml(robot.deviceId)}"
+                  value="${escapeHtml(robot.friendlyName || robot.robotId)}" maxlength="64"
+                  aria-label="Name for ${escapeHtml(robot.friendlyName || robot.robotId)}">
+                <div class="robot-name-actions">
+                  <button class="button secondary robot-select-button" data-device-id="${escapeHtml(robot.deviceId)}" type="button">Open</button>
+                  <button class="button secondary robot-name-save-button" data-device-id="${escapeHtml(robot.deviceId)}" type="button">Save name</button>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        ` : `<p class="status info">No robots are paired to this account yet.</p>`}
+        <div class="loop-subsection">
+          <h2>Pair a Jibo</h2>
+          <p class="muted">Say <strong>"Hey Jibo, verify me"</strong> to the robot, then enter its four-digit code.</p>
+          <label for="pairCode">Jibo verification code</label>
+          <input id="pairCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="8042">
+          <div class="button-row">
+            <button class="button primary" id="pairRobotButton" type="button">Pair Jibo</button>
+            <button class="button secondary" id="accountLogoutButton" type="button">Sign out</button>
+          </div>
+        </div>
+        ${message ? `<p class="status ${isError ? "error" : "success"}">${escapeHtml(message)}</p>` : ""}
+      </section>
+    </div>
+  `;
+
+  document.querySelectorAll(".robot-select-button").forEach(button => {
+    button.addEventListener("click", () => selectRobot(button.dataset.deviceId));
+  });
+  document.querySelectorAll(".robot-name-save-button").forEach(button => {
+    button.addEventListener("click", () => {
+      const row = button.closest(".robot-name-row");
+      const input = row.querySelector(".robot-name-input");
+      saveRobotName(button.dataset.deviceId, input.value.trim());
+    });
+  });
+  const pairCode = document.getElementById("pairCode");
+  document.getElementById("pairRobotButton").addEventListener("click", () => pairRobot(pairCode.value.trim()));
+  document.getElementById("accountLogoutButton").addEventListener("click", logout);
+  pairCode.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") pairRobot(pairCode.value.trim());
+  });
+  pairCode.focus();
+  bindPortalControls();
+}
+
+async function pairRobot(code) {
+  if (!code) {
+    await renderAccountHome("Enter the verification code Jibo spoke.", true);
+    return;
+  }
+  try {
+    const payload = await apiFetch("/api/portal/robots/pair", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+    setSessionToken(payload.portalSessionToken);
+    await renderDashboard("Jibo paired successfully.");
+  } catch (error) {
+    await renderAccountHome(error.message, true);
+  }
+}
+
+async function selectRobot(deviceId) {
+  try {
+    const payload = await apiFetch("/api/portal/robots/select", {
+      method: "POST",
+      body: JSON.stringify({ deviceId }),
+    });
+    setSessionToken(payload.portalSessionToken);
+    await renderDashboard();
+  } catch (error) {
+    await renderAccountHome(error.message, true);
+  }
+}
+
+async function saveRobotName(deviceId, name) {
+  if (!name) {
+    await renderAccountHome("Enter a name for this robot.", true);
+    return;
+  }
+  try {
+    await apiFetch(`/api/portal/robots/${encodeURIComponent(deviceId)}/name`, {
+      method: "PUT",
+      body: JSON.stringify({ name }),
+    });
+    await renderAccountHome("Robot name saved.");
+  } catch (error) {
+    await renderAccountHome(error.message, true);
   }
 }
 
@@ -801,7 +1034,7 @@ function renderLoopPanel(dashboard) {
     `).join("");
 
   return `
-    <section class="card panel">
+    <section class="card panel wide-panel">
       <div class="panel-header">
         <div>
           <p class="eyebrow">Household</p>
@@ -940,10 +1173,11 @@ async function renderDashboard(message = "", tone = "success") {
       <header class="dashboard-header">
         <div>
           <p class="eyebrow">OpenJibo Dashboard</p>
-          <h1>${escapeHtml(dashboard.jiboFriendlyId || "Your Jibo")}</h1>
+          <h1>${escapeHtml(dashboard.jiboName || dashboard.jiboFriendlyId || "Your Jibo")}</h1>
           <p class="muted">Manage integrations for this robot.</p>
         </div>
         <div class="button-row" style="margin-top: 0;">
+          ${dashboard.accountUserId ? `<button class="button secondary" id="switchRobotButton" type="button">My Jibos</button>` : ""}
           <button class="button secondary" id="logoutButton" type="button">Sign out</button>
         </div>
       </header>
@@ -953,6 +1187,7 @@ async function renderDashboard(message = "", tone = "success") {
           <p class="eyebrow">Robot</p>
           <h2>Jibo profile</h2>
           <div class="meta-list">
+            <div class="meta-item"><span>Name</span><span>${escapeHtml(dashboard.jiboName || "—")}</span></div>
             <div class="meta-item"><span>Friendly ID</span><span>${escapeHtml(dashboard.jiboFriendlyId || "—")}</span></div>
             <div class="meta-item"><span>Device ID</span><span>${escapeHtml(dashboard.jiboDeviceId || "—")}</span></div>
             <div class="meta-item"><span>Portal session</span><span>${formatDate(dashboard.sessionExpiresAtUtc)}</span></div>
@@ -972,6 +1207,8 @@ async function renderDashboard(message = "", tone = "success") {
   `;
 
   document.getElementById("logoutButton").addEventListener("click", logout);
+  if (dashboard.accountUserId)
+    document.getElementById("switchRobotButton").addEventListener("click", () => renderAccountHome());
   bindPortalControls();
 }
 
@@ -995,6 +1232,16 @@ async function logout() {
 
 async function bootstrap() {
   if (getSessionToken()) {
+    try {
+      await renderAccountHome();
+      return;
+    } catch (error) {
+      if (error.status !== 401) {
+        clearSessionToken();
+        await renderLogin(error.message, true);
+        return;
+      }
+    }
     await renderDashboard();
     return;
   }

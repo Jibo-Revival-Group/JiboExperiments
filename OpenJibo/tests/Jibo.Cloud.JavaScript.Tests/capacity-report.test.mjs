@@ -85,6 +85,8 @@ test("short observation windows cannot become capacity claims", () => {
   assert.ok(report.evidence.blockers.includes("observation-window-incomplete"));
   assert.ok(report.evidence.blockers.includes("representative-robot-activity-absent"));
   assert.ok(report.evidence.blockers.includes("required-telemetry-missing"));
+  assert.equal(report.reliability.containerRestarts, null);
+  assert.equal(report.cpu.platformMaxAverageCores, null);
 });
 
 test("thirty-day requests require eighty percent of the full requested window", () => {

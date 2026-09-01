@@ -1373,6 +1373,42 @@ public sealed class HomeAssistantPortalApiTests
     }
 
     [Fact]
+    public async Task IdentitySuggestion_InspectsUnlinkedSessionAssignedForIdentityEvidence()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var store = factory.Services.GetRequiredService<ICloudStateStore>();
+        var placeholder = store.UpsertDevice(new DeviceRegistration
+        {
+            DeviceId = "5c0b221fdf9d450019c5e254",
+            RobotId = "robot-5c0b221fdf9d450019c5e254",
+            FriendlyName = "OpenJibo Registered Robot"
+        });
+        var session = store.OpenSession("neo-hub-listen", "wire-device",
+            "conn:identity-evidence", "neo-hub-listen", "/v1/listen");
+        session.Metadata["identitySuggestionDeviceId"] = placeholder.DeviceId;
+        session.Metadata["robotFriendlyId"] = "Royal-Current-Sage-Canvas";
+
+        await AuthenticateAdminAsync(client);
+        var response = await client.GetAsync(
+            $"/api/portal/status/robots/{placeholder.DeviceId}/identity-suggestion");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(payload.GetProperty("suggested").GetBoolean());
+        Assert.Equal("Royal-Current-Sage-Canvas", payload.GetProperty("proposedRobotId").GetString());
+        Assert.Contains(payload.GetProperty("evidence").EnumerateArray(), item =>
+            item.GetProperty("source").GetString() == "stored-session");
+
+        var summary = await (await client.GetAsync("/api/portal/status/summary"))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var robot = Assert.Single(summary.GetProperty("robots").EnumerateArray(), item =>
+            item.GetProperty("deviceId").GetString() == placeholder.DeviceId);
+        Assert.False(robot.GetProperty("connected").GetBoolean());
+        Assert.Equal("never-connected", robot.GetProperty("presence").GetString());
+    }
+
+    [Fact]
     public async Task StatusSummary_PrefersNamedIdentityOverGenericHashPlaceholder()
     {
         await using var factory = CreateFactory();

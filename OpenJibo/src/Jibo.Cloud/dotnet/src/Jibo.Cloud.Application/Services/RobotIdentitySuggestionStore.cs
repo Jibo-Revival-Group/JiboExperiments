@@ -4,7 +4,9 @@ using Jibo.Cloud.Domain.Models;
 
 namespace Jibo.Cloud.Application.Services;
 
-public sealed class RobotIdentitySuggestionStore(ICloudStateStore cloudStateStore)
+public sealed class RobotIdentitySuggestionStore(
+    ICloudStateStore cloudStateStore,
+    IRobotIdentitySuggestionRepository? repository = null)
 {
     private const int MaxCandidatesPerDevice = 4;
     private const int MaxEvidencePerCandidate = 8;
@@ -23,6 +25,13 @@ public sealed class RobotIdentitySuggestionStore(ICloudStateStore cloudStateStor
 
         var normalizedCandidate = candidate!.Trim();
         var now = DateTimeOffset.UtcNow;
+        var evidence = new RobotIdentitySuggestionEvidence(source, field, normalizedCandidate, now);
+        if (repository is not null)
+        {
+            repository.Observe(device.DeviceId, normalizedCandidate, evidence);
+            return;
+        }
+
         lock (_syncRoot)
         {
             PurgeExpiredLocked(now);
@@ -56,7 +65,6 @@ public sealed class RobotIdentitySuggestionStore(ICloudStateStore cloudStateStor
 
             if (state.ObservationCount < int.MaxValue) state.ObservationCount++;
             state.LastObservedUtc = now;
-            var evidence = new RobotIdentitySuggestionEvidence(source, field, normalizedCandidate, now);
             if (!state.Evidence.Any(item =>
                     item.Source.Equals(evidence.Source, StringComparison.OrdinalIgnoreCase) &&
                     item.Field.Equals(evidence.Field, StringComparison.OrdinalIgnoreCase) &&
@@ -75,7 +83,12 @@ public sealed class RobotIdentitySuggestionStore(ICloudStateStore cloudStateStor
         var device = ResolveDevice(deviceId);
         if (device is null) return null;
 
-        lock (_syncRoot)
+        RobotIdentitySuggestionCandidate? best;
+        if (repository is not null)
+        {
+            best = repository.GetBest(device.DeviceId);
+        }
+        else lock (_syncRoot)
         {
             PurgeExpiredLocked(DateTimeOffset.UtcNow);
             if (!_candidates.TryGetValue(device.DeviceId, out var deviceCandidates)) return null;
@@ -86,31 +99,45 @@ public sealed class RobotIdentitySuggestionStore(ICloudStateStore cloudStateStor
                          .ToArray())
                 deviceCandidates.Remove(stale);
 
-            var best = deviceCandidates.Values
+            var localBest = deviceCandidates.Values
                 .OrderByDescending(candidate => candidate.ObservationCount)
                 .ThenByDescending(candidate => candidate.LastObservedUtc)
                 .FirstOrDefault();
-            if (best is null) return null;
-
-            var target = cloudStateStore.FindDeviceByFriendlyId(best.ProposedRobotId);
-            return new RobotIdentitySuggestion(
-                device.DeviceId,
-                device.RobotId,
-                best.ProposedRobotId,
-                target is null || target.DeviceId.Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase)
-                    ? "rename"
-                    : "merge",
-                target?.DeviceId,
-                best.ObservationCount,
-                best.FirstObservedUtc,
-                best.LastObservedUtc,
-                best.Evidence.ToArray());
+            best = localBest is null
+                ? null
+                : new RobotIdentitySuggestionCandidate(localBest.ProposedRobotId, localBest.ObservationCount,
+                    localBest.FirstObservedUtc, localBest.LastObservedUtc, localBest.Evidence.ToArray());
         }
+        if (best is null) return null;
+        if (MatchesCurrentIdentity(device, best.ProposedRobotId))
+        {
+            repository?.Dismiss(device.DeviceId, best.ProposedRobotId);
+            return null;
+        }
+
+        var target = cloudStateStore.FindDeviceByFriendlyId(best.ProposedRobotId);
+        return new RobotIdentitySuggestion(
+            device.DeviceId,
+            device.RobotId,
+            best.ProposedRobotId,
+            target is null || target.DeviceId.Equals(device.DeviceId, StringComparison.OrdinalIgnoreCase)
+                ? "rename"
+                : "merge",
+            target?.DeviceId,
+            best.ObservationCount,
+            best.FirstObservedUtc,
+            best.LastObservedUtc,
+            best.Evidence);
     }
 
     public void Dismiss(string? deviceId, string? proposedRobotId = null)
     {
         if (string.IsNullOrWhiteSpace(deviceId)) return;
+        if (repository is not null)
+        {
+            repository.Dismiss(deviceId.Trim(), proposedRobotId?.Trim());
+            return;
+        }
         lock (_syncRoot)
         {
             if (string.IsNullOrWhiteSpace(proposedRobotId))
@@ -167,6 +194,20 @@ public sealed class RobotIdentitySuggestionStore(ICloudStateStore cloudStateStor
         public List<RobotIdentitySuggestionEvidence> Evidence { get; } = [];
     }
 }
+
+public interface IRobotIdentitySuggestionRepository
+{
+    void Observe(string deviceId, string proposedRobotId, RobotIdentitySuggestionEvidence evidence);
+    RobotIdentitySuggestionCandidate? GetBest(string deviceId);
+    void Dismiss(string deviceId, string? proposedRobotId = null);
+}
+
+public sealed record RobotIdentitySuggestionCandidate(
+    string ProposedRobotId,
+    int ObservationCount,
+    DateTimeOffset FirstObservedUtc,
+    DateTimeOffset LastObservedUtc,
+    IReadOnlyList<RobotIdentitySuggestionEvidence> Evidence);
 
 public sealed record RobotIdentitySuggestion(
     string DeviceId,

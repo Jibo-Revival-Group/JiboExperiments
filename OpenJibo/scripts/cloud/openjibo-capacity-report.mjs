@@ -139,7 +139,11 @@ export function summarizePlatformMetric(payload, aggregation) {
 }
 
 function metricByName(rows, name) { return rows.find((row) => row.Metric === name) ?? null; }
-function finite(value) { const number = Number(value); return Number.isFinite(number) ? number : null; }
+function finite(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
 function ratio(numerator, denominator) {
   return finite(numerator) !== null && finite(denominator) > 0 ? numerator / denominator : null;
 }

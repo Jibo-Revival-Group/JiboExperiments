@@ -466,14 +466,16 @@ internal static class PortalEndpoints
             PortalSessionService portalSessionService,
             IUserIntegrationStore integrationStore,
             ICloudStateStore cloudStateStore,
-            HomeAssistantConnectionRegistry registry) =>
+            HomeAssistantConnectionRegistry registry,
+            RobotNotificationRegistry robotNotificationRegistry) =>
         {
             var session = ResolvePortalSession(request, null, portalSessionService);
             if (session is null)
                 return Results.Unauthorized();
 
             var link = integrationStore.FindLinkForJibo(session.FriendlyId, session.FriendlyId);
-            return Results.Json(BuildDashboardPayload(session, link, registry, cloudStateStore, integrationStore));
+            return Results.Json(BuildDashboardPayload(
+                session, link, registry, cloudStateStore, integrationStore, robotNotificationRegistry));
         });
 
         app.MapGet("/api/portal/calendar-feeds", (
@@ -570,9 +572,11 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "firstName is required." });
 
             var loopId = ResolvePortalLoopId(cloudStateStore, session);
+            // Stock LoopManager indexes members by accountId; portal people must have one.
+            var accountId = $"acct-{Guid.NewGuid():N}";
             var member = cloudStateStore.AddLoopMember(
                 loopId,
-                null,
+                accountId,
                 null,
                 firstName,
                 request.LastName?.Trim(),
@@ -582,8 +586,8 @@ internal static class PortalEndpoints
                 "member",
                 markPortalEdited: true);
 
-            await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
-            return Results.Json(BuildLoopMemberPayload(member));
+            var pushCount = await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
+            return Results.Json(BuildLoopMemberMutationPayload(member, pushCount));
         });
 
         app.MapPut("/api/portal/loop-members/{memberId}", async (
@@ -623,8 +627,8 @@ internal static class PortalEndpoints
                     null,
                     markPortalEdited: true);
 
-                await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
-                return Results.Json(BuildLoopMemberPayload(updated));
+                var pushCount = await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
+                return Results.Json(BuildLoopMemberMutationPayload(updated, pushCount));
             }
             catch (InvalidOperationException)
             {
@@ -654,8 +658,14 @@ internal static class PortalEndpoints
                 return Results.BadRequest(new { error = "The loop owner and robot cannot be removed here." });
 
             cloudStateStore.RemoveLoopMember(loopId, memberId);
-            await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
-            return Results.Json(new { removed = true, memberId });
+            var pushCount = await TryPushLoopUpdatedAsync(loopUpdatedPushService, session, loopId, cancellationToken);
+            return Results.Json(new
+            {
+                removed = true,
+                memberId,
+                loopUpdatedPushCount = pushCount,
+                loopUpdatedDelivered = pushCount > 0
+            });
         });
 
         app.MapPost("/api/portal/calendar-feeds/{memberId}/test", async (
@@ -2939,9 +2949,14 @@ internal static class PortalEndpoints
         HomeAssistantLinkRecord? link,
         HomeAssistantConnectionRegistry registry,
         ICloudStateStore cloudStateStore,
-        IUserIntegrationStore integrationStore)
+        IUserIntegrationStore integrationStore,
+        RobotNotificationRegistry robotNotificationRegistry)
     {
         var robot = cloudStateStore.FindDeviceByFriendlyId(session.DeviceId);
+        var loopId = ResolvePortalLoopId(cloudStateStore, session);
+        var notification = robotNotificationRegistry.GetDiagnostics();
+        var seedKeys = BuildPortalLoopUpdatedSeedKeys(session);
+        var apiSocketMatched = notification.RegisteredRobotKeys.Any(key => seedKeys.Contains(key));
         return new
         {
             jiboFriendlyId = session.FriendlyId,
@@ -2957,7 +2972,19 @@ internal static class PortalEndpoints
                 }
                 : BuildHomeAssistantPayload(link, registry),
             calendarFeeds = BuildCalendarFeedsPayload(cloudStateStore, integrationStore, session),
-            loopMembers = BuildLoopMembersPayload(cloudStateStore, ResolvePortalLoopId(cloudStateStore, session))
+            loopMembers = BuildLoopMembersPayload(cloudStateStore, loopId),
+            loopSync = new
+            {
+                loopId,
+                apiSocketOpenConnections = notification.OpenConnections,
+                apiSocketRegisteredConnections = notification.RegisteredConnections,
+                apiSocketPendingNotifications = notification.PendingNotifications,
+                apiSocketMatchedForThisRobot = apiSocketMatched,
+                // HubClient.override can make neo-hub/:24605 work without api-socket; LoopUpdated needs wss.
+                note = apiSocketMatched
+                    ? "Notification socket is registered for this robot; portal Loop edits can push LoopUpdated."
+                    : "No live api-socket for this robot. HubClient.override may still serve turns on :24605/:443, but LoopUpdated will not reach SSM until wss api-socket is connected."
+            }
         };
     }
 
@@ -3144,12 +3171,37 @@ internal static class PortalEndpoints
         return new
         {
             id = member.Id,
+            accountId = member.AccountId,
             firstName = member.FirstName,
             lastName = member.LastName,
             displayName,
             gender = member.Gender,
             type = member.Type,
             canRemove = member.Type is not "owner" and not "robot"
+        };
+    }
+
+    private static object BuildLoopMemberMutationPayload(LoopMemberRecord member, int loopUpdatedPushCount)
+    {
+        var displayName = !string.IsNullOrWhiteSpace(member.Nickname)
+            ? member.Nickname
+            : string.Join(' ', new[] { member.FirstName, member.LastName }
+                .Where(static part => !string.IsNullOrWhiteSpace(part)));
+        if (string.IsNullOrWhiteSpace(displayName))
+            displayName = member.Id;
+
+        return new
+        {
+            id = member.Id,
+            accountId = member.AccountId,
+            firstName = member.FirstName,
+            lastName = member.LastName,
+            displayName,
+            gender = member.Gender,
+            type = member.Type,
+            canRemove = member.Type is not "owner" and not "robot",
+            loopUpdatedPushCount,
+            loopUpdatedDelivered = loopUpdatedPushCount > 0
         };
     }
 
@@ -3160,7 +3212,7 @@ internal static class PortalEndpoints
         return normalized is "male" or "female" ? normalized : "unknown";
     }
 
-    private static Task TryPushLoopUpdatedAsync(
+    private static Task<int> TryPushLoopUpdatedAsync(
         LoopUpdatedPushService loopUpdatedPushService,
         PortalSessionService.PortalSession session,
         string loopId,

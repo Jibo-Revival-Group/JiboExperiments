@@ -211,9 +211,13 @@ public sealed partial class PostgreSqlCloudStateStore
         var account = GetAccount().AccountId;
         var current = Sync(repository.GetAsync(account, loopId, memberId)) ??
                       throw new KeyNotFoundException("Loop member was not found.");
+        var accountId = string.IsNullOrWhiteSpace(current.AccountId) && markPortalEdited
+            ? $"acct-{Guid.NewGuid():N}"
+            : current.AccountId;
         return Sync(repository.UpsertAsync(account, CopyMember(current, firstName: Normalize(firstName),
             lastName: Normalize(lastName), gender: Normalize(gender), birthday: birthday, isChild: isChild,
             nickname: Normalize(nickname), phoneticName: Normalize(phoneticName),
+            accountId: accountId,
             portalEditedUtc: markPortalEdited ? DateTimeOffset.UtcNow : current.PortalEditedUtc)));
     }
 
@@ -275,9 +279,9 @@ public sealed partial class PostgreSqlCloudStateStore
     private static LoopMemberRecord CopyMember(LoopMemberRecord item, string? firstName = null,
         string? lastName = null, string? gender = null, long? birthday = null, bool? isChild = null,
         string? nickname = null, string? phoneticName = null, bool? faceEnrolled = null,
-        bool? voiceEnrolled = null, DateTimeOffset? portalEditedUtc = null) => new()
+        bool? voiceEnrolled = null, string? accountId = null, DateTimeOffset? portalEditedUtc = null) => new()
     {
-        Id = item.Id, LoopId = item.LoopId, AccountId = item.AccountId, Email = item.Email,
+        Id = item.Id, LoopId = item.LoopId, AccountId = accountId ?? item.AccountId, Email = item.Email,
         FirstName = firstName ?? item.FirstName, LastName = lastName ?? item.LastName,
         Gender = gender ?? item.Gender, Birthday = birthday ?? item.Birthday,
         IsChild = isChild ?? item.IsChild, PhoneNumber = item.PhoneNumber, Status = item.Status, Type = item.Type,

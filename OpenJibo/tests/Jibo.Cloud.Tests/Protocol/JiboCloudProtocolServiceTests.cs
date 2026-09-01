@@ -2067,10 +2067,15 @@ public sealed class JiboCloudProtocolServiceTests
         using var payload = JsonDocument.Parse(result.BodyText);
         var loops = payload.RootElement.EnumerateArray().ToArray();
         Assert.NotEmpty(loops);
-        var members = loops[0].GetProperty("members").EnumerateArray().ToArray();
+        var loop = loops[0];
+        var members = loop.GetProperty("members").EnumerateArray().ToArray();
         Assert.NotEmpty(members);
         Assert.Contains(members, member => member.GetProperty("type").GetString() == "owner");
-        Assert.DoesNotContain(members, member => member.GetProperty("type").GetString() == "robot");
+        // Stock LoopManager wires KB edges from members[].accountId == loop.owner/robot.
+        var owner = Assert.Single(members, member => member.GetProperty("type").GetString() == "owner");
+        var robot = Assert.Single(members, member => member.GetProperty("type").GetString() == "robot");
+        Assert.Equal(loop.GetProperty("owner").GetString(), owner.GetProperty("accountId").GetString());
+        Assert.Equal(loop.GetProperty("robot").GetString(), robot.GetProperty("accountId").GetString());
     }
 
     [Fact]

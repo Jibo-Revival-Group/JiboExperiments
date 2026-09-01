@@ -181,12 +181,33 @@ grep -n -A5 -B2 openjibo-local /usr/local/etc/jibo-jetstream-service.json
 grep -n override /usr/local/etc/jibo-jetstream-service.json || echo "no override"
 ```
 
-Expected:
+Expected for the hosts/DNS path:
 
 ```text
 "region":"api"
 no override
 ```
+
+### Credentials region vs HubClient.override vs LoopUpdated
+
+Three separate seams:
+
+1. **`/var/jibo/credentials.json` → `region`** selects which `HubClient.region-settings`
+   entry Jetstream uses (stock dump comment: switch selected by credentials region).
+2. **`HubClient.override`** (when not prefixed `xxx_`) overrides
+   `entrypoint_hostname` / `hub_hostname` / ports for **Jetstream hub listen and
+   proactive only**. Pointing override at OpenJibo `:24605` or `:443` can make
+   voice turns work on an unmodded robot without rewriting hosts.
+3. **Portal Loop edits** also need a live notification socket classified as
+   `api-socket` (`wss://api-socket.jibo.com/...` on TLS `:443`, or the token path
+   on the OpenJibo TLS listener). On `LoopUpdated`, stock SSM re-fetches
+   `Loop.List` / `ListLoops` and applies members — including the `type=robot`
+   member whose `accountId` must equal `loop.robot`.
+
+So: override alone is not enough for portal Loop editing. If hub listen works
+but portal edits never appear on-robot, check portal dashboard `loopSync`
+(`apiSocketMatchedForThisRobot`) and cloud logs for
+`LoopUpdated push matched no live api-socket`.
 
 ## Persistent Bootstrap
 

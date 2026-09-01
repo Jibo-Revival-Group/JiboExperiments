@@ -370,11 +370,12 @@ function bindPortalControls() {
       }
 
       try {
-        await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
+        const result = await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
           method: "PUT",
           body: JSON.stringify({ firstName, lastName, gender }),
         });
-        await renderDashboard("Loop member updated.");
+        const warning = loopSyncStatusMessage(null, result);
+        await renderDashboard(warning || "Loop member updated.", warning ? "info" : "success");
       } catch (error) {
         status.textContent = error.message;
         status.className = "status error";
@@ -390,10 +391,11 @@ function bindPortalControls() {
       if (!window.confirm("Remove this person from the Loop?")) return;
 
       try {
-        await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
+        const result = await apiFetch(`/api/portal/loop-members/${encodeURIComponent(memberId)}`, {
           method: "DELETE",
         });
-        await renderDashboard("Loop member removed.");
+        const warning = loopSyncStatusMessage(null, result);
+        await renderDashboard(warning || "Loop member removed.", warning ? "info" : "success");
       } catch (error) {
         status.textContent = error.message;
         status.className = "status error";
@@ -418,11 +420,12 @@ function bindPortalControls() {
       }
 
       try {
-        await apiFetch("/api/portal/loop-members", {
+        const result = await apiFetch("/api/portal/loop-members", {
           method: "POST",
           body: JSON.stringify({ firstName, lastName, gender }),
         });
-        await renderDashboard("Loop member added.");
+        const warning = loopSyncStatusMessage(null, result);
+        await renderDashboard(warning || "Loop member added.", warning ? "info" : "success");
       } catch (error) {
         status.textContent = error.message;
         status.className = "status error";
@@ -961,6 +964,13 @@ function genderOptionsHtml(selectedGender) {
   `).join("");
 }
 
+function loopSyncStatusMessage(dashboard, mutation) {
+  if (mutation && mutation.loopUpdatedDelivered === false) {
+    return "Saved in the cloud, but the robot has no live api-socket — LoopUpdated was not delivered. Hub turns on :24605/:443 can still work while notifications stay offline.";
+  }
+  return "";
+}
+
 function renderLoopMemberRow(member) {
   const badgeLabel = member.type === "owner" ? "Owner" : "Member";
   const badgeClass = member.type === "owner" ? "success" : "neutral";
@@ -982,6 +992,10 @@ function renderLoopMemberRow(member) {
 
 function renderLoopMembersSection(dashboard) {
   const loopMembers = (dashboard.loopMembers && dashboard.loopMembers.members) || [];
+  const loopSync = dashboard.loopSync || {};
+  const syncBadge = loopSync.apiSocketMatchedForThisRobot
+    ? `<span class="badge success">api-socket connected</span>`
+    : `<span class="badge neutral">api-socket offline</span>`;
 
   const memberRows = loopMembers.length === 0
     ? `<p class="muted">No people yet. Add the first person to this robot's Loop below.</p>`
@@ -994,8 +1008,12 @@ function renderLoopMembersSection(dashboard) {
           <h3>People</h3>
         </div>
         <span class="badge success">${loopMembers.length} ${loopMembers.length === 1 ? "person" : "people"}</span>
+        ${syncBadge}
       </div>
       <p class="muted">Edit each person's name and gender, or add and remove people from this robot's Loop. The owner and the robot itself cannot be removed here.</p>
+      ${loopSync.apiSocketMatchedForThisRobot
+        ? ""
+        : `<p class="status info">LoopUpdated needs a live <code>api-socket</code> (usually <code>wss</code> on :443). Jetstream <code>HubClient.override</code> to :24605/:443 can serve voice turns without delivering portal Loop edits.</p>`}
       ${memberRows}
       <div class="member-row member-row-add">
         <input id="newMemberFirstName" type="text" placeholder="First name">

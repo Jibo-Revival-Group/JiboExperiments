@@ -65,6 +65,30 @@ public sealed class PortalLoopMemberApiTests
     }
 
     [Fact]
+    public async Task LoopMembers_AddAssignsAccountIdAndReportsPushDelivery()
+    {
+        await using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        await AuthorizeAsync(client, factory);
+
+        var addResponse = await client.PostAsJsonAsync(
+            "/api/portal/loop-members",
+            new { firstName = "Pat", lastName = "Person", gender = "unknown" });
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+        var added = await addResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(string.IsNullOrWhiteSpace(added.GetProperty("accountId").GetString()));
+        Assert.StartsWith("acct-", added.GetProperty("accountId").GetString());
+        Assert.True(added.TryGetProperty("loopUpdatedPushCount", out var pushCount));
+        Assert.Equal(0, pushCount.GetInt32());
+        Assert.False(added.GetProperty("loopUpdatedDelivered").GetBoolean());
+
+        var dashboard = await (await client.GetAsync("/api/portal/dashboard")).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(dashboard.TryGetProperty("loopSync", out var loopSync));
+        Assert.False(loopSync.GetProperty("apiSocketMatchedForThisRobot").GetBoolean());
+        Assert.Equal(0, loopSync.GetProperty("apiSocketOpenConnections").GetInt32());
+    }
+
+    [Fact]
     public async Task LoopMembers_CannotRemoveOwnerOrRobot()
     {
         await using var factory = CreateFactory();

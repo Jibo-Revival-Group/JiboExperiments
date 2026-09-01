@@ -127,6 +127,23 @@ public sealed class RobotNotificationRegistry(
 
     public int PendingCount => _pendingStore.Count;
 
+    public LoopNotificationDiagnostics GetDiagnostics()
+    {
+        var open = 0;
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pair in _connections)
+        {
+            if (pair.Value.Socket.State != WebSocketState.Open)
+                continue;
+            open++;
+            foreach (var key in pair.Value.RobotKeys)
+                keys.Add(key);
+        }
+
+        return new LoopNotificationDiagnostics(open, _connections.Count, keys.OrderBy(static k => k).ToArray(),
+            _pendingStore.Count);
+    }
+
     private async Task<int> PushBytesToLiveSocketsAsync(
         IReadOnlySet<string> targetKeys,
         byte[] bytes,
@@ -218,3 +235,9 @@ public sealed class RobotNotificationRegistry(
 
     private sealed record RobotConnection(HashSet<string> RobotKeys, WebSocket Socket);
 }
+
+public sealed record LoopNotificationDiagnostics(
+    int OpenConnections,
+    int RegisteredConnections,
+    IReadOnlyList<string> RegisteredRobotKeys,
+    int PendingNotifications);

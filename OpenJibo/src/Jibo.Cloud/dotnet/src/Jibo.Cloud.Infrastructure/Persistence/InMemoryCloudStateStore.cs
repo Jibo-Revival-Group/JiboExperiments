@@ -1791,7 +1791,9 @@ public sealed class InMemoryCloudStateStore : ICloudStateStore
             {
                 Id = existing.Id,
                 LoopId = existing.LoopId,
-                AccountId = existing.AccountId,
+                AccountId = string.IsNullOrWhiteSpace(existing.AccountId) && markPortalEdited
+                    ? $"acct-{Guid.NewGuid():N}"
+                    : existing.AccountId,
                 Email = existing.Email,
                 FirstName = firstName?.Trim() ?? existing.FirstName,
                 LastName = lastName?.Trim() ?? existing.LastName,

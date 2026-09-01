@@ -131,6 +131,24 @@ The body is a flat JSON object.
 `Loop_20160324.ListLoops` is the most important startup call. The loop object
 must include the robot id that SSM expects in its local KB.
 
+Stock SSM `LoopManager` (from the unmodded robot dump) requires:
+
+- exactly one loop
+- non-empty `members[]`
+- a `type=robot` member whose `accountId` equals `loop.robot`
+- an owner member whose `accountId` equals `loop.owner`
+- person fields under `member.account.{firstName,lastName,...}`
+
+On `LoopUpdated`, SSM debounces then re-fetches `Loop#list()` and applies
+`_applyLoopChanges` — it does not treat the push body as the sole source of
+truth. Portal Loop edits therefore need both a live `api-socket` push and a
+stock-shaped ListLoops response.
+
+Jetstream `HubClient.override` can redirect hub listen/proactive to a LAN
+OpenJibo host (`:24605`/`:443`) independently of credentials `region`. That
+override does not replace the notification `api-socket` path used for
+`LoopUpdated`.
+
 ### Robot registry
 
 Observed robot calls include:

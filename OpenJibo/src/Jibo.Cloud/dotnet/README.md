@@ -240,16 +240,18 @@ This leaves other yes/no flows, including cloud-side prompt handling, intact.
 
 ### Family loop member filtering
 
-`EnsureRobotLoopMember()` seeds an internal `type="robot"` loop member used by
-the SSM to avoid `Q4-Server_connection_lost` errors. That internal member must
-not be exposed in API responses because it has no display name and confuses the
-family list UI.
+`EnsureRobotLoopMember()` seeds an internal `type="robot"` loop member whose
+`accountId` matches `loop.robot`. Stock SSM `LoopManager` requires that member
+in `Loop.List` / `ListLoops` / `LoopUpdated` payloads so KB owner/robot edges can
+be wired (`memberIdsByAccountId[loop.robot]`).
 
-The filtering belongs in:
+Hide the robot member only from human-facing family UIs:
 
 - `ListMembers` / `ListLoopMembers`
-- `MapLoopRecord()` for loop detail responses
+- Portal `/api/portal/loop-members` and dashboard people lists
 
+Do **not** strip `type=robot` from `MapLoopRecord()` — that breaks on-robot
+LoopUpdated re-sync.
 ## Current Interaction Paths
 
 The working cloud model currently looks like three main paths:

@@ -979,7 +979,7 @@ public sealed class JiboCloudProtocolService(
             {
                 stateStore.AddLoopMember(
                     loopIdForMutation,
-                    null,
+                    $"acct-{Guid.NewGuid():N}",
                     ReadString(body, "email"),
                     ReadString(body, "firstName"),
                     ReadString(body, "lastName"),
@@ -1214,6 +1214,9 @@ public sealed class JiboCloudProtocolService(
 
     public static object MapLoopRecord(LoopRecord loop, IEnumerable<LoopMemberRecord> members)
     {
+        // Stock SSM LoopManager._isLoopGood / _applyLoopChanges require the robot
+        // member in members[] with accountId == loop.robot (and owner likewise).
+        // Do not strip type=robot here — that breaks on-robot LoopUpdated re-sync.
         return new
         {
             id = loop.LoopId,
@@ -1221,10 +1224,7 @@ public sealed class JiboCloudProtocolService(
             owner = loop.OwnerAccountId,
             robot = loop.RobotId,
             robotFriendlyId = loop.RobotFriendlyId,
-            members = members
-                .Where(static m => !string.Equals(m.Type, "robot", StringComparison.OrdinalIgnoreCase))
-                .Select(MapLoopMember)
-                .ToArray(),
+            members = members.Select(MapLoopMember).ToArray(),
             isSuspended = loop.IsSuspended,
             created = loop.CreatedUtc.ToUnixTimeMilliseconds(),
             updated = loop.UpdatedUtc.ToUnixTimeMilliseconds(),

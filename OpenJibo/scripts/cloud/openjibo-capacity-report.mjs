@@ -172,24 +172,34 @@ export function buildCapacityReport({ options, container, applicationRows, platf
   const configuredPoolCapacityAtMaxScale = finite(configuredPoolCapacityPerReplica) !== null &&
     configuredMaxReplicas !== null ? configuredPoolCapacityPerReplica * configuredMaxReplicas : null;
   const dbFailures = metricByName(applicationRows, "db.client.commands.failed");
+  const dbDuration = metricByName(applicationRows, "db.client.commands.duration");
   const pendingRequests = metricByName(applicationRows, "db.client.connections.pending_requests");
   const audioRejections = metricByName(applicationRows, "openjibo.audio.buffer_limit_rejections");
   const restarts = platform.RestartCount?.max ?? null;
+  const inferredZeroSignals = [];
+  const inferPendingRequestsZero = (finite(pendingRequests?.Samples) ?? 0) === 0 &&
+    (finite(dbDuration?.Samples) ?? 0) > 0 && (finite(connectionUsage?.Samples) ?? 0) > 0;
+  const inferRestartsZero = (finite(platform.RestartCount?.samples) ?? 0) === 0 &&
+    (finite(platform.WorkingSetBytes?.samples) ?? 0) > 0 && (finite(platform.Replicas?.samples) ?? 0) > 0;
+  if (inferPendingRequestsZero) inferredZeroSignals.push("databasePendingRequests");
+  if (inferRestartsZero) inferredZeroSignals.push("platformRestarts");
+  const pendingRequestP95 = finite(pendingRequests?.P95) ?? (inferPendingRequestsZero ? 0 : null);
+  const pendingRequestMax = finite(pendingRequests?.Max) ?? (inferPendingRequestsZero ? 0 : null);
+  const restartMax = finite(restarts) ?? (inferRestartsZero ? 0 : null);
   const sufficientCoverage = observedHours >= requestedHours * 0.8;
   const hasRepresentativeActivity = appTrafficBytes > 0 &&
     (finite(metricByName(applicationRows, "db.client.commands.duration")?.Samples) ?? 0) > 0;
   const requiredSignals = {
     applicationMemory: (finite(appMemory?.Samples) ?? 0) > 0,
-    databaseDuration: (finite(metricByName(applicationRows, "db.client.commands.duration")?.Samples) ?? 0) > 0,
+    databaseDuration: (finite(dbDuration?.Samples) ?? 0) > 0,
     databaseConnections: (finite(connectionUsage?.Samples) ?? 0) > 0,
-    databasePendingRequests: (finite(pendingRequests?.Samples) ?? 0) > 0,
+    databasePendingRequests: (finite(pendingRequests?.Samples) ?? 0) > 0 || inferPendingRequestsZero,
     platformMemory: (finite(platform.WorkingSetBytes?.samples) ?? 0) > 0,
-    platformRestarts: (finite(platform.RestartCount?.samples) ?? 0) > 0,
+    platformRestarts: (finite(platform.RestartCount?.samples) ?? 0) > 0 || inferRestartsZero,
   };
   const missingSignals = Object.entries(requiredSignals).filter(([, present]) => !present).map(([name]) => name);
   const cleanReliability = (finite(dbFailures?.Total) ?? 0) === 0 &&
-    (finite(audioRejections?.Total) ?? 0) === 0 && (finite(restarts) ?? 0) === 0 &&
-    (finite(pendingRequests?.Max) ?? 0) === 0;
+    (finite(audioRejections?.Total) ?? 0) === 0 && restartMax === 0 && pendingRequestMax === 0;
   const blockers = [];
   if (!sufficientCoverage) blockers.push("observation-window-incomplete");
   if (!hasRepresentativeActivity) blockers.push("representative-robot-activity-absent");
@@ -204,7 +214,7 @@ export function buildCapacityReport({ options, container, applicationRows, platf
       revision: container?.properties?.latestReadyRevisionName ?? null,
       replicaScale: container?.properties?.template?.scale ?? null },
     evidence: { observedHours, requestedHours, coverageRatio,
-      representativeActivityObserved: hasRepresentativeActivity, missingSignals, blockers,
+      representativeActivityObserved: hasRepresentativeActivity, missingSignals, inferredZeroSignals, blockers,
       classification: blockers.length === 0 ? "representative-evidence" : "insufficient-evidence",
       caveat: blockers.length === 0
         ? "Coverage, activity, and zero-failure checks passed; this remains a bounded hypothesis, not a linear fleet extrapolation."
@@ -228,14 +238,14 @@ export function buildCapacityReport({ options, container, applicationRows, platf
       configuredServerLimitRatio: ratio(configuredPoolCapacityAtMaxScale, postgresMaxConnections),
       commandDurationAverageSeconds: finite(metricByName(applicationRows, "db.client.commands.duration")?.Average),
       commandDurationMaxSeconds: finite(metricByName(applicationRows, "db.client.commands.duration")?.Max),
-      commandFailures: finite(dbFailures?.Total), pendingRequestP95: finite(pendingRequests?.P95),
-      pendingRequestMax: finite(pendingRequests?.Max), cacheHitRatio: ratio(cacheHits?.Total, cacheAccesses) },
+      commandFailures: finite(dbFailures?.Total), pendingRequestP95,
+      pendingRequestMax, cacheHitRatio: ratio(cacheHits?.Total, cacheAccesses) },
     traffic: { applicationInboundPayloadBytes: finite(inbound?.Total) ?? 0,
       applicationOutboundPayloadBytes: finite(outbound?.Total) ?? 0,
       platformRxBytes: finite(platform.RxBytes?.total), platformTxBytes: finite(platform.TxBytes?.total),
       applicationToPlatformRatio: ratio(appTrafficBytes, platformTrafficBytes),
       applicationBytesPerObservedRobotDay: ratio(appTrafficBytes, observedRobotDays) },
-    reliability: { containerRestarts: finite(restarts), audioLimitRejections: finite(audioRejections?.Total),
+    reliability: { containerRestarts: restartMax, audioLimitRejections: finite(audioRejections?.Total),
       requestCount: finite(platform.Requests?.total), maximumReplicasObserved: finite(platform.Replicas?.max) },
   };
 }
@@ -251,10 +261,12 @@ function formatPercent(value) { return Number.isFinite(value) ? `${(value * 100)
 function formatNumber(value, digits = 2) { return Number.isFinite(value) ? value.toFixed(digits) : "n/a"; }
 
 export function renderMarkdown(report) {
+  const inferredZeroSignals = report.evidence.inferredZeroSignals ?? [];
   return `# OpenJibo capacity evidence\n\nGenerated: ${report.generatedUtc}\n\n` +
     `Evidence classification: **${report.evidence.classification}**. ` +
     `${formatNumber(report.evidence.observedHours, 1)} of ${report.evidence.requestedHours} requested hours observed ` +
     `(${formatPercent(report.evidence.coverageRatio)}).\n\n${report.evidence.caveat}\n\n` +
+    `Inferred zero signals: ${inferredZeroSignals.length ? inferredZeroSignals.join(", ") : "none"}.\n\n` +
     `| Boundary | Observation | Headroom indicator |\n|---|---:|---:|\n` +
     `| Application working set (P95 / max) | ${formatBytes(report.memory.applicationP95Bytes)} / ${formatBytes(report.memory.applicationMaxBytes)} | ${formatPercent(report.memory.applicationMaxLimitRatio)} of container limit |\n` +
     `| Container Apps working set (max) | ${formatBytes(report.memory.platformMaxBytes)} | ${formatPercent(report.memory.platformMaxLimitRatio)} of container limit |\n` +
@@ -280,6 +292,7 @@ export async function collectCapacityReport(options, azure = runAz) {
   if (!revision) throw new Error("Container App response did not contain a ready revision name.");
   const appPayload = azure(["monitor", "app-insights", "query", "--app", options.applicationInsights,
     "--resource-group", options.resourceGroup, "--analytics-query", buildApplicationQuery(options.days, revision),
+    "--offset", `${options.days}d`,
     "--output", "json"]);
   const platform = {};
   for (const [name, aggregation] of PLATFORM_METRICS) {

@@ -102,6 +102,12 @@ Application payload bytes are expected to be below Container Apps `RxBytes + TxB
 contains TLS/WebSocket framing, database and provider calls, health traffic, image/startup activity, and other
 protocol overhead. Investigate a rising gap across comparable quiet windows; do not expect equality.
 
+The capacity report may infer a zero for missing database pending-request samples only when database
+command-duration and connection-usage samples are present. It may infer a zero for missing restart samples only
+when working-set and replica samples are present. These inferences are recorded in
+`evidence.inferredZeroSignals`; without the corroborating signals, the missing metric remains a blocker and is not
+treated as zero.
+
 ## Capacity Worksheet
 
 For each load-test tier (`6`, `10`, `15`, and `20` connected fake robots), retain the same time window and record:

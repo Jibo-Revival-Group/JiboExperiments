@@ -123,8 +123,53 @@ test("collector scopes every Azure metric request to the exact ready revision", 
   const appCall = calls.find((args) => args[1] === "app-insights");
   assert.match(appCall[appCall.indexOf("--analytics-query") + 1],
     /cloud_RoleInstance startswith 'openjibo-cloud--0000075\/'/);
+  const appOffsetIndex = appCall.indexOf("--offset");
+  assert.notEqual(appOffsetIndex, -1);
+  assert.equal(appCall[appOffsetIndex + 1], "7d");
   const platformCalls = calls.filter((args) => args[1] === "metrics");
   assert.equal(platformCalls.length, 7);
   for (const args of platformCalls)
     assert.equal(args[args.indexOf("--filter") + 1], "RevisionName eq 'openjibo-cloud--0000075'");
+});
+
+test("capacity report infers absent pending and restart metrics only with corroborating telemetry", () => {
+  const options = parseArgs([]);
+  const timestamps = { First: "2026-08-24T00:00:00Z", Last: "2026-08-31T00:00:00Z" };
+  const rows = [row("dotnet.process.memory.working_set", timestamps),
+    row("db.client.connections.usage.total", { ...timestamps, Max: 2 }),
+    row("db.client.commands.duration", timestamps),
+    row("db.client.commands.failed", { ...timestamps, Total: 0 }),
+    row("openjibo.audio.buffer_limit_rejections", { ...timestamps, Total: 0 }),
+    row("openjibo.transport.payload_bytes.in", { ...timestamps, Total: 100 })];
+  const platform = { WorkingSetBytes: { max: 1, samples: 10 }, Replicas: { max: 1, samples: 10 },
+    RestartCount: { samples: 0 }, RxBytes: { total: 100 }, TxBytes: { total: 100 }, Requests: { total: 1 } };
+  const report = buildCapacityReport({ options, container: { properties: { template: {
+    containers: [{ resources: { cpu: 1, memory: "2Gi" } }], scale: { maxReplicas: 2 } } } },
+    applicationRows: rows, platform, postgresMaxConnections: 50, configuredPoolCapacityPerReplica: 12 });
+  assert.equal(report.evidence.classification, "representative-evidence");
+  assert.deepEqual(report.evidence.inferredZeroSignals, ["databasePendingRequests", "platformRestarts"]);
+  assert.equal(report.database.pendingRequestMax, 0);
+  assert.equal(report.reliability.containerRestarts, 0);
+  assert.match(renderMarkdown(report), /Inferred zero signals: databasePendingRequests, platformRestarts/);
+});
+
+test("capacity report keeps uncorroborated missing signals blocking", () => {
+  const options = parseArgs([]);
+  const timestamps = { First: "2026-08-24T00:00:00Z", Last: "2026-08-31T00:00:00Z" };
+  const rows = [row("dotnet.process.memory.working_set", timestamps),
+    row("db.client.commands.duration", timestamps),
+    row("db.client.commands.failed", { ...timestamps, Total: 0 }),
+    row("openjibo.audio.buffer_limit_rejections", { ...timestamps, Total: 0 }),
+    row("openjibo.transport.payload_bytes.in", { ...timestamps, Total: 100 })];
+  const platform = { WorkingSetBytes: { max: 1, samples: 10 }, RestartCount: { samples: 0 },
+    RxBytes: { total: 100 }, TxBytes: { total: 100 }, Requests: { total: 1 } };
+  const report = buildCapacityReport({ options, container: { properties: { template: {
+    containers: [{ resources: { cpu: 1, memory: "2Gi" } }], scale: { maxReplicas: 2 } } } },
+    applicationRows: rows, platform, postgresMaxConnections: 50, configuredPoolCapacityPerReplica: 12 });
+  assert.equal(report.evidence.classification, "insufficient-evidence");
+  assert.deepEqual(report.evidence.inferredZeroSignals, []);
+  assert.ok(report.evidence.missingSignals.includes("databasePendingRequests"));
+  assert.ok(report.evidence.missingSignals.includes("platformRestarts"));
+  assert.equal(report.database.pendingRequestMax, null);
+  assert.equal(report.reliability.containerRestarts, null);
 });

@@ -458,6 +458,10 @@ if [[ "$linux_publish_script_text" != *"--build-arg ENABLE_LOCAL_WHISPER=false"*
   echo "Linux publish script must build managed images with ENABLE_LOCAL_WHISPER=false to stay on Azure Speech and avoid baking in whisper.cpp." >&2
   exit 1
 fi
+if ! printf '%s' "$managed_text" | grep -Eq "name: 'OpenJibo__Stt__EnableLocalWhisperCpp'[[:space:]]+value: 'false'"; then
+  echo "Managed Container App must explicitly disable local Whisper at runtime because the managed image omits whisper.cpp." >&2
+  exit 1
+fi
 
 for forbidden_marker in "OPENJIBO_MEDIA_CONNECTION_STRING" "OPENJIBO_STATE_CONNECTION_STRING" "OPENJIBO_PERSONAL_MEMORY_CONNECTION_STRING" "openjiboacr" "openjibokv" "-MediaConnectionString" "output storageConnectionString" "listKeys(storageAccount" "keyvault set-policy" "AZURE_SPEECH_SUBSCRIPTION_KEY" "--azure-speech-subscription-key"; do
   if [[ "$workflow_text" == *"$forbidden_marker"* ]]; then

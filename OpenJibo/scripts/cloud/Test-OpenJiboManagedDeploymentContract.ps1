@@ -301,7 +301,9 @@ Assert-ContainsMarker -Text $managedScriptText -Marker "Location" -FailurePrefix
 Assert-ContainsMarker -Text $dockerfileText -Marker "apt-get install -y --no-install-recommends ffmpeg" -FailurePrefix "Managed image is missing ffmpeg"
 Assert-ContainsMarker -Text ($dockerfileText + $managedText) -Marker "/usr/bin/ffmpeg" -FailurePrefix "Managed deployment is missing the ffmpeg path contract"
 Assert-ContainsMarker -Text $linuxPublishScriptText -Marker "--build-arg ENABLE_LOCAL_WHISPER=false" -FailurePrefix "Linux publish script must build managed images with ENABLE_LOCAL_WHISPER=false to stay on Azure Speech"
-
+if ($managedText -notmatch "name: 'OpenJibo__Stt__EnableLocalWhisperCpp'\s+value: 'false'") {
+    throw "Managed Container App must explicitly disable local Whisper because the managed image omits whisper.cpp"
+}
 $forbiddenMarkers = @(
     "OPENJIBO_MEDIA_CONNECTION_STRING",
     "OPENJIBO_STATE_CONNECTION_STRING",
